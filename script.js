@@ -29,7 +29,7 @@ import {
 } from './utils/validation.js';
 
 // Ініціалізація reCAPTCHA
-const RECAPTCHA_SITE_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI'; // Тестовий ключ
+const RECAPTCHA_SITE_KEY = '6LfrF-MrAAAAAJhW8g0-BwvB_3k0gTGM0mI4zcCa'; // Реальний ключ
 const recaptchaService = new RecaptchaService(RECAPTCHA_SITE_KEY);
 
 // Завантажити reCAPTCHA при старті
@@ -706,4 +706,5 @@ function setupEventListeners(){
     getActiveTestSessionId: ()=>activeTestSessionId,
     getMode: ()=>currentTest.mode
   });
+
 })();
