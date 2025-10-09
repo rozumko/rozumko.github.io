@@ -309,7 +309,6 @@ function showGradeSelector(subject) {
     
     button.onclick = () => {
       selectedGrade = grade;
-      // Підсвічуємо активну кнопку
       gradeContainer.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('is-active'));
       button.classList.add('is-active');
       checkSelections();
@@ -318,27 +317,36 @@ function showGradeSelector(subject) {
   }
 
   // --- Генерація кнопок для вибору складності ---
-  difficultyContainer.innerHTML = '';
   const difficulties = [
-    { id: 'easy', name: 'Легкий' }, 
-    { id: 'medium', name: 'Середній' }, 
-    { id: 'hard', name: 'Складний' }
+      { id: 'easy', name: 'Легкий' }, 
+      { id: 'medium', name: 'Середній' }, 
+      { id: 'hard', name: 'Складний' }
   ];
-  difficulties.forEach(diff => {
+
+  const buttonGroup = document.createElement('div');
+  buttonGroup.className = 'flex rounded-lg border border-gray-300 p-1';
+
+  difficulties.forEach((diff, index) => {
     const button = document.createElement('button');
-    button.className = 'mode-btn btn text-blue-700 font-semibold py-3 px-4 rounded-lg transition';
+    button.className = 'mode-btn btn text-blue-700 font-semibold py-2 px-4 transition w-full';
+    
+    if (index === 0) button.classList.add('rounded-l-md');
+    if (index === difficulties.length - 1) button.classList.add('rounded-r-md');
+
     button.textContent = diff.name;
-    button.dataset.difficulty = diff.id;
 
     button.onclick = () => {
       selectedDifficulty = diff.id;
-      // Підсвічуємо активну кнопку
-      difficultyContainer.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('is-active'));
+      // Важливо: шукаємо кнопки всередині buttonGroup
+      buttonGroup.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('is-active'));
       button.classList.add('is-active');
       checkSelections();
     };
-    difficultyContainer.appendChild(button);
+    buttonGroup.appendChild(button);
   });
+  
+  difficultyContainer.innerHTML = ''; // Очищуємо контейнер
+  difficultyContainer.appendChild(buttonGroup); // Додаємо групу кнопок
 
   // Обробник для кнопки "Почати тест"
   startBtn.onclick = () => {
@@ -793,3 +801,4 @@ function setupEventListeners(){
   });
 
 })();
+
