@@ -28,10 +28,20 @@ import {
   showValidationErrors
 } from './utils/validation.js';
 
-// Ініціалізація reCAPTCHA
+// Налаштування підтримуваних класів і reCAPTCHA
+const SUBJECT_GRADE_MAP = {
+  math: [2, 4],
+  ukrainian: [2, 4],
+  english: [2, 4]
+};
+const SUPPORTED_GRADES = Array.from(new Set(Object.values(SUBJECT_GRADE_MAP).flat())).sort((a, b) => a - b);
+
 const RECAPTCHA_SITE_KEY = '6LfrF-MrAAAAAJhW8g0-BwvB_3k0gTGM0mI4zcCa';
-const recaptchaService = new RecaptchaService(RECAPTCHA_SITE_KEY);
-recaptchaService.load().catch(error => console.error('Не вдалося завантажити reCAPTCHA:', error));
+const RECAPTCHA_ENABLED = false;
+const recaptchaService = RECAPTCHA_ENABLED ? new RecaptchaService(RECAPTCHA_SITE_KEY) : null;
+if (recaptchaService) {
+  recaptchaService.load().catch(error => console.error('Не вдалося завантажити reCAPTCHA:', error));
+}
 
 // DOM and UI helpers
 import { getRefs, showScreen, setLoadingState, showToast, showModal, hideModal } from './ui/dom.js';
@@ -179,62 +189,78 @@ async function trySyncOfflineScores(){
 function updateDashboard() {
     if (!currentUserData || !currentUser) return;
 
-    document.getElementById('user-email-display').textContent = currentUser.email;
-    document.getElementById('total-score').textContent = currentUserData.totalScore || 0;
+    const emailDisplay = document.getElementById('user-email-display');
+    if (emailDisplay) {
+        emailDisplay.textContent = currentUser.email;
+    }
 
-    // Оновлення селектора класу
+    const totalScoreEl = document.getElementById('total-score');
+    if (totalScoreEl) {
+        totalScoreEl.textContent = currentUserData.totalScore || 0;
+    }
+
     const gradeSelector = document.getElementById('user-grade-selector');
-    gradeSelector.innerHTML = '';
-    for (let i = 2; i <= 8; i++) {
-        const option = document.createElement('option');
-        option.value = i;
-        option.textContent = `${i} клас`;
-        if (i === currentUserData.currentGrade) {
-            option.selected = true;
-        }
-        gradeSelector.appendChild(option);
-    }
+    const userGrade = SUPPORTED_GRADES.includes(currentUserData.currentGrade)
+        ? currentUserData.currentGrade
+        : SUPPORTED_GRADES[0];
 
-    // Оновлення детального прогресу
-    const progressContainer = document.getElementById('progress-details-container');
-    progressContainer.innerHTML = `<h3 class="font-semibold text-center text-lg">Прогрес за ${currentUserData.currentGrade} клас</h3>`;
-    
-    const subjects = { math: 'Математика', ukrainian: 'Українська мова', english: 'Англійська' };
-    
-    for (const subjectId in subjects) {
-        const subjectName = subjects[subjectId];
-        const gradeScore = currentUserData.progress?.[subjectId]?.[`grade${currentUserData.currentGrade}`] || 0;
-        
-        const progressItem = document.createElement('div');
-        progressItem.className = 'text-sm';
-        progressItem.innerHTML = `
-            <div class="flex justify-between items-center mb-1">
-                <span class="font-semibold">${subjectName}</span>
-                <span class="text-blue-600 font-bold">${gradeScore} балів</span>
-            </div>
-            <div class="w-full bg-gray-200 rounded-full h-2.5">
-                <div class="bg-green-500 h-2.5 rounded-full" style="width: ${Math.min(100, (gradeScore / 200) * 100)}%"></div>
-            </div>
-        `;
-        progressContainer.appendChild(progressItem);
-    }
-
-    // Оновлення нагород (без змін)
-    const badgesContainer = document.getElementById('badges-container');
-    badgesContainer.innerHTML = '';
-    if (currentUserData.badges && currentUserData.badges.length > 0) {
-        currentUserData.badges.forEach(badgeId => {
-            const badge = badges[badgeId];
-            if (badge) {
-                const el = document.createElement('div');
-                el.className = 'badge text-4xl cursor-pointer text-yellow-500';
-                el.title = badge.name;
-                el.innerHTML = `<i class="${badge.icon}" aria-hidden="true"></i>`;
-                badgesContainer.appendChild(el);
+    if (gradeSelector) {
+        gradeSelector.innerHTML = '';
+        SUPPORTED_GRADES.forEach(gradeValue => {
+            const option = document.createElement('option');
+            option.value = gradeValue;
+            option.textContent = `${gradeValue} клас`;
+            if (gradeValue === userGrade) {
+                option.selected = true;
             }
+            gradeSelector.appendChild(option);
         });
-    } else {
-        badgesContainer.innerHTML = '<p class="text-gray-500">Поки що немає нагород.</p>';
+    }
+
+    const progressContainer = document.getElementById('progress-details-container');
+    if (progressContainer) {
+        progressContainer.innerHTML = '';
+        const heading = document.createElement('h3');
+        heading.className = 'font-semibold text-center text-lg';
+        heading.textContent = `Прогрес за ${userGrade} клас`;
+        progressContainer.appendChild(heading);
+
+        const subjects = { math: 'Математика', ukrainian: 'Українська мова', english: 'Англійська' };
+
+        Object.entries(subjects).forEach(([subjectId, subjectName]) => {
+            const gradeScore = currentUserData.progress?.[subjectId]?.[`grade${userGrade}`] || 0;
+            const progressItem = document.createElement('div');
+            progressItem.className = 'text-sm';
+            progressItem.innerHTML = `
+                <div class="flex justify-between items-center mb-1">
+                    <span class="font-semibold">${subjectName}</span>
+                    <span class="text-blue-600 font-bold">${gradeScore} балів</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                    <div class="bg-green-500 h-2.5 rounded-full" style="width: ${Math.min(100, (gradeScore / 200) * 100)}%"></div>
+                </div>
+            `;
+            progressContainer.appendChild(progressItem);
+        });
+    }
+
+    const badgesContainer = document.getElementById('badges-container');
+    if (badgesContainer) {
+        badgesContainer.innerHTML = '';
+        if (currentUserData.badges && currentUserData.badges.length > 0) {
+            currentUserData.badges.forEach(badgeId => {
+                const badge = badges[badgeId];
+                if (badge) {
+                    const el = document.createElement('div');
+                    el.className = 'badge text-4xl cursor-pointer text-yellow-500';
+                    el.title = badge.name;
+                    el.innerHTML = `<i class="${badge.icon}" aria-hidden="true"></i>`;
+                    badgesContainer.appendChild(el);
+                }
+            });
+        } else {
+            badgesContainer.innerHTML = '<p class="text-gray-500">Поки що немає нагород.</p>';
+        }
     }
 }
 
@@ -329,12 +355,14 @@ function showGradeSelector(subject) {
   }
 
   gradeContainer.innerHTML = '';
-  for (let grade = 2; grade <= 8; grade++) {
+  const availableGrades = SUBJECT_GRADE_MAP[subject] || SUPPORTED_GRADES;
+
+  availableGrades.forEach(grade => {
     const button = document.createElement('button');
     button.className = 'mode-btn btn text-blue-700 font-semibold py-3 px-4 rounded-lg transition w-full';
     button.textContent = `${grade} клас`;
     button.dataset.grade = grade;
-    
+
     button.onclick = () => {
       selectedGrade = grade;
       gradeContainer.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('is-active'));
@@ -342,11 +370,11 @@ function showGradeSelector(subject) {
       checkSelections();
     };
     gradeContainer.appendChild(button);
-  }
+  });
 
   const difficulties = [
-      { id: 'easy', name: 'Легкий' }, 
-      { id: 'medium', name: 'Середній' }, 
+      { id: 'easy', name: 'Легкий' },
+      { id: 'medium', name: 'Середній' },
       { id: 'hard', name: 'Складний' }
   ];
 
@@ -377,7 +405,7 @@ function showGradeSelector(subject) {
   startBtn.onclick = () => {
     if (selectedGrade && selectedDifficulty) {
       hideModal(modal);
-      startTest(subject, selectedGrade, selectedDifficulty);
+      startTest(subject, Number(selectedGrade), selectedDifficulty);
     }
   };
   
@@ -538,6 +566,16 @@ function setupEventListeners(){
   const reviewAnswersBtn = document.getElementById('review-answers-btn');
   const closeReviewBtn = document.getElementById('close-review-btn');
   const infoOkBtn = document.getElementById('info-ok-btn');
+  const registerGradeSelect = document.getElementById('register-grade');
+
+  if (registerGradeSelect) {
+    SUPPORTED_GRADES.forEach(gradeValue => {
+      const option = document.createElement('option');
+      option.value = gradeValue;
+      option.textContent = `${gradeValue} клас`;
+      registerGradeSelect.appendChild(option);
+    });
+  }
 
   const registerPasswordInput = document.getElementById('register-password');
   if (registerPasswordInput) {
@@ -572,12 +610,14 @@ function setupEventListeners(){
         showValidationErrors(passwordValidation.errors, 'register-validation-errors');
         return;
       }
-      
+
       setLoadingState(submitButton, true);
       try {
-        const recaptchaToken = await recaptchaService.getToken('register');
+        if (recaptchaService) {
+          await recaptchaService.getToken('register');
+        }
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        
+
         const userDocRef = doc(db, 'users', userCredential.user.uid);
         const newUserData = {
             email: email,
@@ -593,7 +633,9 @@ function setupEventListeners(){
       } catch (error) {
         console.error('Помилка реєстрації:', error);
         document.getElementById('auth-error').textContent = getAuthErrorMessage(error.code);
-        recaptchaService.reset();
+        if (recaptchaService) {
+          recaptchaService.reset();
+        }
       } finally {
         setLoadingState(submitButton, false);
       }
@@ -620,13 +662,17 @@ function setupEventListeners(){
         }
         setLoadingState(submitButton, true);
         try {
-            const recaptchaToken = await recaptchaService.getToken('login');
+            if (recaptchaService) {
+              await recaptchaService.getToken('login');
+            }
             await signInWithEmailAndPassword(auth, email, password);
             showToast('Ви успішно увійшли!', 'success');
         } catch (error) {
             console.error('Помилка входу:', error);
             document.getElementById('auth-error').textContent = getAuthErrorMessage(error.code);
-            recaptchaService.reset();
+            if (recaptchaService) {
+              recaptchaService.reset();
+            }
         } finally {
             setLoadingState(submitButton, false);
         }
@@ -639,13 +685,17 @@ function setupEventListeners(){
         document.getElementById('auth-error').textContent = '';
         setLoadingState(googleSigninBtn, true);
         try {
-            const recaptchaToken = await recaptchaService.getToken('google_signin');
+            if (recaptchaService) {
+              await recaptchaService.getToken('google_signin');
+            }
             await signInWithPopup(auth, provider);
             showToast('Ви успішно увійшли через Google!', 'success');
         } catch (error) {
             console.error('Помилка входу через Google:', error);
             document.getElementById('auth-error').textContent = getAuthErrorMessage(error.code);
-            recaptchaService.reset();
+            if (recaptchaService) {
+              recaptchaService.reset();
+            }
         } finally {
             setLoadingState(googleSigninBtn, false);
         }
@@ -782,18 +832,21 @@ function setupEventListeners(){
   });
 
   // ✅ НОВИЙ СЛУХАЧ ДЛЯ ЗМІНИ КЛАСУ В КАБІНЕТІ
-  document.getElementById('user-grade-selector').addEventListener('change', async (e) => {
-      if (!currentUser) return;
-      const newGrade = parseInt(e.target.value);
-      const userDocRef = doc(db, 'users', currentUser.uid);
-      try {
-          await updateDoc(userDocRef, { currentGrade: newGrade });
-          showToast('Клас успішно оновлено!', 'success');
-      } catch (error) {
-          showToast('Не вдалося оновити клас.', 'error');
-          console.error("Error updating grade: ", error);
-      }
-  });
+  const userGradeSelector = document.getElementById('user-grade-selector');
+  if (userGradeSelector) {
+    userGradeSelector.addEventListener('change', async (e) => {
+        if (!currentUser) return;
+        const newGrade = parseInt(e.target.value, 10);
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        try {
+            await updateDoc(userDocRef, { currentGrade: newGrade });
+            showToast('Клас успішно оновлено!', 'success');
+        } catch (error) {
+            showToast('Не вдалося оновити клас.', 'error');
+            console.error('Error updating grade: ', error);
+        }
+    });
+  }
 }
 
 // Initial setup

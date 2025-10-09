@@ -82,26 +82,34 @@
           </button>
         </form>
         <form id="register-form" class="space-y-4 hidden">
-          <input type="email" id="register-email" placeholder="Електронна пошта" 
-                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" 
+          <input type="email" id="register-email" placeholder="Електронна пошта"
+                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                  required autocomplete="email"/>
-          
+
           <div>
-            <input type="password" id="register-password" placeholder="Пароль (мінімум 6 символів)" 
-                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" 
+            <label for="register-grade" class="block text-left text-sm font-semibold text-gray-600 mb-2">
+              Оберіть ваш клас
+            </label>
+            <select id="register-grade"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    required>
+              <option value="">Оберіть клас</option>
+            </select>
+            <p class="text-xs text-gray-500 mt-1">Клас можна змінити пізніше у профілі.</p>
+          </div>
+
+          <div>
+            <input type="password" id="register-password" placeholder="Пароль (мінімум 6 символів)"
+                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                    required autocomplete="new-password"/>
             <div id="register-password-strength" class="hidden"></div>
           </div>
-          
+
           <div id="register-validation-errors"></div>
-          
+
           <button type="submit" class="btn w-full bg-green-500 text-white font-bold py-2 px-4 rounded-lg">
             Створити акаунт
           </button>
-          
-          <p class="text-xs text-gray-500 text-center mt-2">
-            Реєструючись, ви захищені Google reCAPTCHA
-          </p>
         </form>
         <p class="mt-4">
           <a href="#" id="toggle-auth" class="text-blue-500 hover:underline text-sm">Немає акаунта? Зареєструватися</a>
@@ -159,10 +167,19 @@
               <p id="total-score" class="text-5xl font-bold text-blue-600 my-2">0</p>
               <p class="text-blue-500">балів</p>
             </div>
+            <div class="mb-6">
+              <label for="user-grade-selector" class="block text-sm font-semibold text-gray-600 mb-2 text-left">
+                Активний клас
+              </label>
+              <select id="user-grade-selector"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+              </select>
+            </div>
             <div class="bg-yellow-100 p-6 rounded-xl text-center">
               <p class="text-lg font-semibold text-yellow-800 mb-4">Твої Нагороди</p>
               <div id="badges-container" class="flex flex-wrap justify-center items-center gap-x-5 gap-y-4 min-h-[40px]"></div>
             </div>
+            <div id="progress-details-container" class="mt-6 space-y-4"></div>
           </div>
         </div>
       </div>
