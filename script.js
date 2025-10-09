@@ -30,9 +30,9 @@ import {
 
 // Налаштування підтримуваних класів і reCAPTCHA
 const SUBJECT_GRADE_MAP = {
-  math: [2, 4],
-  ukrainian: [2, 4],
-  english: [2, 4]
+  math: [2, 3, 4, 5, 6, 7, 8],
+  ukrainian: [2, 3, 4, 5, 6, 7, 8],
+  english: [2, 3, 4, 5, 6, 7, 8]
 };
 const SUPPORTED_GRADES = Array.from(new Set(Object.values(SUBJECT_GRADE_MAP).flat())).sort((a, b) => a - b);
 
