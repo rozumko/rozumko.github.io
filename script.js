@@ -54,8 +54,19 @@ let activeTestSessionId = null;
 let isLockdownWarningActive = false;
 let penalizedQuestions = new Set(); // Зберігає індекси питань, де був штраф
 
-// Data
-import { questions, badges } from './data/questions.js';
+// ✅ Data: Видалено імпорт питань. Вони будуть завантажуватись динамічно.
+// Рекомендація: винести badges в окремий файл, наприклад, data/badges.js
+const badges = {
+  math_rookie:{ icon:'fas fa-calculator', name:'Математик-початківець', subject:'math', score:10 },
+  math_adept:{ icon:'fas fa-ruler-combined', name:'Знавець формул', subject:'math', score:50 },
+  ukrainian_rookie:{ icon:'fas fa-pen-nib', name:'Мовознавець-початківець', subject:'ukrainian', score:10 },
+  ukrainian_adept:{ icon:'fas fa-book-reader', name:'Хранитель мови', subject:'ukrainian', score:50 },
+  english_rookie:{ icon:'fas fa-language', name:'English Starter', subject:'english', score:10 },
+  english_adept:{ icon:'fas fa-graduation-cap', name:'English Speaker', subject:'english', score:50 },
+  genius:{ icon:'fas fa-brain', name:'Юний геній', subject:'total', score:100 },
+  mastermind:{ icon:'fas fa-trophy', name:'Володар знань', subject:'total', score:200 }
+};
+
 
 function setMode(mode){
   currentTest.mode = mode;
@@ -209,70 +220,141 @@ function shuffleArray(array){
   return array;
 }
 
-function startTest(subject) {
+// ✅ НОВА ФУНКЦІЯ ДЛЯ ДИНАМІЧНОГО ЗАВАНТАЖЕННЯ ПИТАНЬ
+async function loadQuestions(subject, grade) {
+  const path = `./data/questions/${subject}/grade${grade}.js`;
+  try {
+    const module = await import(path);
+    return module.questions;
+  } catch (error) {
+    console.error(`Не вдалося завантажити питання: ${path}`, error);
+    showToast('На жаль, для обраних налаштувань ще немає питань.', 'error');
+    return null; // Повертаємо null у разі помилки
+  }
+}
+
+// ✅ ОНОВЛЕНА ФУНКЦІЯ ЗАПУСКУ ТЕСТУ (приймає клас і складність)
+async function startTest(subject, grade, difficulty) {
     const testSessionId = Date.now();
     activeTestSessionId = testSessionId;
     penalizedQuestions.clear();
 
-    const startLogic = () => {
-        const startBtn = document.querySelector(`.start-test-btn[data-subject="${subject}"]`);
-        setLoadingState(startBtn, true);
+    const mainStartBtn = document.querySelector(`.start-test-btn[data-subject="${subject}"]`);
+    setLoadingState(mainStartBtn, true);
 
-        setTimeout(() => {
-            if (activeTestSessionId !== testSessionId) return;
+    const questionsForTest = await loadQuestions(subject, grade);
 
-            currentTest.subject = subject;
-            currentTest.questions = shuffleArray([...questions[subject]]).slice(0, TEST_LENGTH);
-            currentTest.currentIndex = 0;
-            currentTest.score = 0;
-            currentTest.reviewData = [];
+    if (!questionsForTest) {
+        setLoadingState(mainStartBtn, false);
+        return;
+    }
+    
+    const filteredQuestions = questionsForTest.filter(q => q.difficulty === difficulty);
+    
+    if (filteredQuestions.length < TEST_LENGTH) {
+        showToast(`На жаль, для рівня "${difficulty}" недостатньо питань.`, 'info');
+        setLoadingState(mainStartBtn, false);
+        return;
+    }
 
-            document.getElementById('test-title').textContent = { math: 'Математика', ukrainian: 'Українська мова', english: 'Англійська' }[subject];
-            document.getElementById('total-questions-num').textContent = currentTest.questions.length;
-            document.getElementById('current-question-num').textContent = 0;
-            document.getElementById('progress-bar').style.width = '0%';
+    currentTest.subject = subject;
+    currentTest.questions = shuffleArray([...filteredQuestions]).slice(0, TEST_LENGTH);
+    currentTest.currentIndex = 0;
+    currentTest.score = 0;
+    currentTest.reviewData = [];
 
-            const modeIndicator = document.getElementById('test-mode-indicator');
-            modeIndicator.textContent = currentTest.mode === 'exam' ? 'Іспит' : 'Навчання';
-            modeIndicator.className = `text-xs sm:text-sm font-semibold px-3 py-1 rounded-full ml-3 ${currentTest.mode === 'exam' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`;
+    document.getElementById('test-title').textContent = { math: 'Математика', ukrainian: 'Українська мова', english: 'Англійська' }[subject];
+    document.getElementById('total-questions-num').textContent = currentTest.questions.length;
+    document.getElementById('current-question-num').textContent = 0;
+    document.getElementById('progress-bar').style.width = '0%';
 
-            setLoadingState(startBtn, false);
-            showScreen('test');
-            displayQuestion();
+    const modeIndicator = document.getElementById('test-mode-indicator');
+    modeIndicator.textContent = currentTest.mode === 'exam' ? 'Іспит' : 'Навчання';
+    modeIndicator.className = `text-xs sm:text-sm font-semibold px-3 py-1 rounded-full ml-3 ${currentTest.mode === 'exam' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`;
 
-            if (currentTest.mode === 'exam') {
-                if (timerApi) timerApi.start();
-                enterExamLockdown();
-            } else {
-                document.getElementById('timer-display').classList.add('hidden');
-            }
-        }, 300);
-    };
+    setLoadingState(mainStartBtn, false);
+    showScreen('test');
+    displayQuestion();
 
     if (currentTest.mode === 'exam') {
-        showExamWarningModal(startLogic);
+        if (timerApi) timerApi.start();
+        enterExamLockdown();
     } else {
-        startLogic();
+        document.getElementById('timer-display').classList.add('hidden');
     }
 }
 
-function showExamWarningModal(onConfirm) {
-    const okBtn = document.getElementById('info-ok-btn');
+// ✅ ПОВНІСТЮ ОНОВЛЕНА ФУНКЦІЯ ДЛЯ ПОКАЗУ МОДАЛЬНОГО ВІКНА
+function showGradeSelector(subject) {
+  const modal = document.getElementById('grade-selection-modal');
+  const gradeContainer = document.getElementById('grade-buttons-container');
+  const difficultyContainer = document.getElementById('difficulty-buttons-container');
+  const startBtn = document.getElementById('start-test-from-modal-btn');
 
-    showInfoModal(
-        'Увага! Правила іспиту',
-        `<p class="mb-4">Тест проходитиме в повноекранному режимі для концентрації.</p>
-         <p class="font-bold text-red-600">Заборонено виходити з повноекранного режиму або перемикати вкладки. Якщо ви це зробите, поточне питання не буде зараховано.</p>`
-    );
+  let selectedGrade = null;
+  let selectedDifficulty = null;
 
-    okBtn.textContent = 'Я зрозумів, почати іспит';
+  // Функція для перевірки стану та активації кнопки "Старт"
+  function checkSelections() {
+    startBtn.disabled = !(selectedGrade && selectedDifficulty);
+  }
 
-    const handler = () => {
-        hideModal(infoModal);
-        okBtn.removeEventListener('click', handler);
-        onConfirm();
+  // --- Генерація кнопок для вибору класу ---
+  gradeContainer.innerHTML = '';
+  for (let grade = 2; grade <= 8; grade++) {
+    const button = document.createElement('button');
+    button.className = 'mode-btn btn text-blue-700 font-semibold py-3 px-4 rounded-lg transition';
+    button.textContent = `${grade} клас`;
+    button.dataset.grade = grade;
+    
+    button.onclick = () => {
+      selectedGrade = grade;
+      // Підсвічуємо активну кнопку
+      gradeContainer.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('is-active'));
+      button.classList.add('is-active');
+      checkSelections();
     };
-    okBtn.addEventListener('click', handler, { once: true });
+    gradeContainer.appendChild(button);
+  }
+
+  // --- Генерація кнопок для вибору складності ---
+  difficultyContainer.innerHTML = '';
+  const difficulties = [
+    { id: 'easy', name: 'Легкий' }, 
+    { id: 'medium', name: 'Середній' }, 
+    { id: 'hard', name: 'Складний' }
+  ];
+  difficulties.forEach(diff => {
+    const button = document.createElement('button');
+    button.className = 'mode-btn btn text-blue-700 font-semibold py-3 px-4 rounded-lg transition';
+    button.textContent = diff.name;
+    button.dataset.difficulty = diff.id;
+
+    button.onclick = () => {
+      selectedDifficulty = diff.id;
+      // Підсвічуємо активну кнопку
+      difficultyContainer.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('is-active'));
+      button.classList.add('is-active');
+      checkSelections();
+    };
+    difficultyContainer.appendChild(button);
+  });
+
+  // Обробник для кнопки "Почати тест"
+  startBtn.onclick = () => {
+    if (selectedGrade && selectedDifficulty) {
+      hideModal(modal);
+      startTest(subject, selectedGrade, selectedDifficulty);
+    }
+  };
+  
+  // Початкове скидання стану кнопки та виділення
+  checkSelections();
+  gradeContainer.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('is-active'));
+  difficultyContainer.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('is-active'));
+  
+  // Показуємо модальне вікно
+  showModal(modal);
 }
 
 
@@ -353,16 +435,13 @@ function exitExamLockdown(forceExitFullscreen = false) {
   }
 }
 
-// ✅ ФІНАЛЬНА ВЕРСІЯ ФУНКЦІЇ
 function handleVisibilityChange() {
   if (!activeTestSessionId || currentTest.mode !== 'exam' || isLockdownWarningActive) {
     return;
   }
   if (!document.fullscreenElement || document.hidden) {
-    // ⚠️ ВИПРАВЛЕННЯ: Більш надійна перевірка того, чи була надана відповідь.
     const questionAnswered = currentTest.reviewData.length > currentTest.currentIndex;
 
-    // Штрафуємо, тільки якщо відповіді ще не було
     if (!questionAnswered) {
       if (!penalizedQuestions.has(currentTest.currentIndex)) {
           penalizedQuestions.add(currentTest.currentIndex);
@@ -541,7 +620,6 @@ function setupEventListeners(){
     });
   }
 
-  // ✅ ФІНАЛЬНА ВЕРСІЯ ОБРОБНИКА
   optionsContainer.addEventListener('click',(e)=>{
     const button = e.target.closest('.option-btn');
     if(!button || button.disabled) return;
@@ -592,9 +670,11 @@ function setupEventListeners(){
     optionsContainer.removeEventListener('keydown', radioKeyHandler);
   });
 
+  // ✅ ОНОВЛЕНИЙ СЛУХАЧ ДЛЯ КНОПОК ПРЕДМЕТІВ
   document.querySelectorAll('.start-test-btn').forEach(btn=>{
-    btn.addEventListener('click',()=>startTest(btn.dataset.subject));
+    btn.addEventListener('click',()=>showGradeSelector(btn.dataset.subject));
   });
+
   document.querySelectorAll('.mode-btn').forEach(btn=>{
     btn.addEventListener('click',()=>setMode(btn.dataset.mode));
   });
@@ -657,6 +737,11 @@ function setupEventListeners(){
   if (infoOkBtn) {
     infoOkBtn.addEventListener('click', () => hideModal(infoModal));
   }
+  
+  // ✅ НОВИЙ СЛУХАЧ ДЛЯ КНОПКИ СКАСУВАННЯ У МОДАЛЬНОМУ ВІКНІ ВИБОРУ
+  document.getElementById('cancel-grade-selection-btn').addEventListener('click', () => {
+    hideModal(document.getElementById('grade-selection-modal'));
+  });
 }
 
 // Initial setup
@@ -696,7 +781,7 @@ function setupEventListeners(){
     showScreen('welcome');
   }
   setupEventListeners();
-  // ✅ ФІНАЛЬНА ВЕРСІЯ ІНІЦІАЛІЗАЦІЇ
+  
   timerApi = createTimer({
     onTimeout: ()=>{
       if (!isLockdownWarningActive) {
