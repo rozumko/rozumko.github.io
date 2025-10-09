@@ -10,7 +10,7 @@
   }
   .skip-link{
     position:absolute;
-    top:-40px;
+    top:1rem;
     left:1rem;
     background:#1d4ed8;
     color:#fff;
@@ -19,9 +19,20 @@
     font-weight:600;
     z-index:10000;
     transition:top .2s ease;
+    clip:rect(1px,1px,1px,1px);
+    clip-path:inset(50%);
+    width:1px;
+    height:1px;
+    overflow:hidden;
+    white-space:nowrap;
   }
   .skip-link:focus-visible{
     top:1rem;
+    clip:auto;
+    clip-path:none;
+    width:auto;
+    height:auto;
+    overflow:visible;
   }
   .app-container{transition:background-color .3s ease}
   .btn{transition:background-color .2s ease,color .2s ease,border-color .2s ease,box-shadow .2s ease}
