@@ -29,13 +29,9 @@ import {
 } from './utils/validation.js';
 
 // Ініціалізація reCAPTCHA
-const RECAPTCHA_SITE_KEY = '6LfrF-MrAAAAAJhW8g0-BwvB_3k0gTGM0mI4zcCa'; // Реальний ключ
+const RECAPTCHA_SITE_KEY = '6LfrF-MrAAAAAJhW8g0-BwvB_3k0gTGM0mI4zcCa';
 const recaptchaService = new RecaptchaService(RECAPTCHA_SITE_KEY);
-
-// Завантажити reCAPTCHA при старті
-recaptchaService.load().catch(error => {
-  console.error('Не вдалося завантажити reCAPTCHA:', error);
-});
+recaptchaService.load().catch(error => console.error('Не вдалося завантажити reCAPTCHA:', error));
 
 // DOM and UI helpers
 import { getRefs, showScreen, setLoadingState, showToast, showModal, hideModal } from './ui/dom.js';
@@ -45,17 +41,15 @@ const { welcomeContainer, authContainer, dashboardContainer, testContainer, resu
 let currentUser = null;
 let currentUserData = null;
 let unsubscribeUserDataListener = null;
-let currentTest = { questions: [], subject: '', currentIndex: 0, score: 0, mode: 'practice', reviewData: [] };
+let currentTest = { questions: [], subject: '', currentIndex: 0, score: 0, mode: 'practice', reviewData: [], grade: null, difficulty: null };
 import { createTimer } from './features/timer.js';
 import { displayQuestion as renderQuestion, updateProgressUI as renderProgress, showReview as renderReview } from './features/quiz.js';
 let timerApi = null;
 const TEST_LENGTH = 5;
 let activeTestSessionId = null;
 let isLockdownWarningActive = false;
-let penalizedQuestions = new Set(); // Зберігає індекси питань, де був штраф
+let penalizedQuestions = new Set();
 
-// ✅ Data: Видалено імпорт питань. Вони будуть завантажуватись динамічно.
-// Рекомендація: винести badges в окремий файл, наприклад, data/badges.js
 const badges = {
   math_rookie:{ icon:'fas fa-calculator', name:'Математик-початківець', subject:'math', score:10 },
   math_adept:{ icon:'fas fa-ruler-combined', name:'Знавець формул', subject:'math', score:50 },
@@ -67,15 +61,12 @@ const badges = {
   mastermind:{ icon:'fas fa-trophy', name:'Володар знань', subject:'total', score:200 }
 };
 
+// --- CORE LOGIC ---
 
 function setMode(mode){
   currentTest.mode = mode;
   document.querySelectorAll('.mode-btn').forEach(btn=>{
     const isActive = btn.dataset.mode === mode;
-    btn.classList.toggle('border-2',isActive);
-    btn.classList.toggle('border-blue-500',isActive);
-    btn.classList.toggle('bg-blue-100',isActive);
-    btn.classList.toggle('bg-white',!isActive);
     btn.classList.toggle('is-active',isActive);
   });
 }
@@ -95,17 +86,15 @@ window.addEventListener('beforeunload',(event)=>{
   }
 });
 
-// Auth + RT data
+// --- AUTH & DATA SYNC ---
+
 function setupAuthListener(){
   onAuthStateChanged(auth, async (user)=>{
     if(unsubscribeUserDataListener) unsubscribeUserDataListener();
     if(user && !user.isAnonymous){
       if (!user.emailVerified) {
         showScreen('welcome');
-        showInfoModal(
-          'Акаунт не активовано',
-          'Будь ласка, перевірте свою пошту та перейдіть за посиланням для підтвердження.'
-        );
+        showInfoModal( 'Акаунт не активовано', 'Будь ласка, перевірте свою пошту та перейдіть за посиланням для підтвердження.' );
         signOut(auth);
         currentUser = null;
         currentUserData = null;
@@ -124,17 +113,20 @@ function setupAuthListener(){
 
 function listenToUserData(userId){
   const userDocRef = doc(db, 'users', userId);
-  unsubscribeUserDataListener = onSnapshot(userDocRef, async (docSnap) => {
+  unsubscribeUserDataListener = onSnapshot(userDocRef, (docSnap) => {
     if (docSnap.exists()) {
-      const newUserData = docSnap.data();
-      currentUserData = newUserData;
+      currentUserData = docSnap.data();
       updateDashboard();
     } else {
+      // Цей блок спрацює тільки один раз для нового користувача Google Sign-In
       const newUserData = {
-        email: currentUser.email, totalScore: 0, badges: [],
-        scores: { math: 0, ukrainian: 0, english: 0 }
+        email: currentUser.email,
+        currentGrade: 4, // Клас за замовчуванням
+        totalScore: 0,
+        badges: [],
+        progress: {}
       };
-      await setDoc(userDocRef, newUserData).catch(e => console.error('Error creating user doc:', e));
+      setDoc(userDocRef, newUserData).catch(e => console.error('Error creating user doc:', e));
       currentUserData = newUserData;
       updateDashboard();
     }
@@ -144,30 +136,28 @@ function listenToUserData(userId){
   });
 }
 
+// ✅ ОНОВЛЕНА ФУНКЦІЯ ЗБЕРЕЖЕННЯ РАХУНКУ
+async function saveScore(score, subject, grade) {
+    if (!currentUser || !isFirebaseActive || score === 0) return;
+    const userDocRef = doc(db, 'users', currentUser.uid);
 
-async function saveScore(score,subject,retries=3,delay=1000){
-  if(!currentUser || !isFirebaseActive || score===0) return;
-  const userDocRef = doc(db,'users',currentUser.uid);
-  try{
-    await updateDoc(userDocRef,{
-      totalScore: increment(score),
-      [`scores.${subject}`]: increment(score)
-    });
-  }catch(error){
-    if(error.code==='unavailable' && retries>0){
-      setTimeout(()=>saveScore(score,subject,retries-1,delay*2),delay);
-    }else{
-      console.error('Failed to save score:',error);
-      showToast('Помилка збереження. Результат збережено локально.');
-      saveScoreOffline(score,subject);
-      throw error;
+    const updates = {
+        totalScore: increment(score),
+        [`progress.${subject}.grade${grade}`]: increment(score)
+    };
+
+    try {
+        await updateDoc(userDocRef, updates);
+    } catch (error) {
+        console.error('Failed to save score:', error);
+        showToast('Помилка збереження. Результат збережено локально.');
+        saveScoreOffline(score, subject, grade);
     }
-  }
 }
 
-function saveScoreOffline(score,subject){
+function saveScoreOffline(score, subject, grade){
   const offlineScores = JSON.parse(localStorage.getItem('offlineScores')||'[]');
-  offlineScores.push({ score, subject, timestamp: Date.now() });
+  offlineScores.push({ score, subject, grade, timestamp: Date.now() });
   localStorage.setItem('offlineScores',JSON.stringify(offlineScores));
 }
 
@@ -177,7 +167,7 @@ async function trySyncOfflineScores(){
   showToast(`Синхронізація ${q.length} незбережених результатів...`,'info');
   const pending = [];
   for(const item of q){
-    try{ await saveScore(item.score,item.subject); }
+    try{ await saveScore(item.score, item.subject, item.grade); }
     catch{ pending.push(item); }
   }
   localStorage.setItem('offlineScores',JSON.stringify(pending));
@@ -185,30 +175,69 @@ async function trySyncOfflineScores(){
   else if(pending.length>0) showToast(`Не вдалося синхронізувати ${pending.length} результат(и).`,'error');
 }
 
-function updateDashboard(){
-  const userEmailDisplay = document.getElementById('user-email-display');
-  const totalScoreDisplay = document.getElementById('total-score');
-  const badgesContainer = document.getElementById('badges-container');
-  if(!currentUserData || !currentUser) return;
-  userEmailDisplay.textContent = currentUser.email;
-  totalScoreDisplay.textContent = currentUserData.totalScore||0;
-  badgesContainer.innerHTML = '';
-  if(currentUserData.badges && currentUserData.badges.length>0){
-    currentUserData.badges.forEach(badgeId=>{
-      const badge = badges[badgeId];
-      if(badge){
-        const el = document.createElement('div');
-        el.className = 'badge text-4xl cursor-pointer text-yellow-500';
-        el.title = badge.name;
-        el.innerHTML = `<i class="${badge.icon}" aria-hidden="true"></i>`;
-        badgesContainer.appendChild(el);
-      }
-    });
-  }else{
-    badgesContainer.innerHTML = '<p class="text-gray-500">Поки що немає нагород.</p>';
-  }
-  setMode('practice');
+// ✅ ПОВНІСТЮ ОНОВЛЕНА ФУНКЦІЯ ДЛЯ ВІДОБРАЖЕННЯ ДАНИХ У КАБІНЕТІ
+function updateDashboard() {
+    if (!currentUserData || !currentUser) return;
+
+    document.getElementById('user-email-display').textContent = currentUser.email;
+    document.getElementById('total-score').textContent = currentUserData.totalScore || 0;
+
+    // Оновлення селектора класу
+    const gradeSelector = document.getElementById('user-grade-selector');
+    gradeSelector.innerHTML = '';
+    for (let i = 2; i <= 8; i++) {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = `${i} клас`;
+        if (i === currentUserData.currentGrade) {
+            option.selected = true;
+        }
+        gradeSelector.appendChild(option);
+    }
+
+    // Оновлення детального прогресу
+    const progressContainer = document.getElementById('progress-details-container');
+    progressContainer.innerHTML = `<h3 class="font-semibold text-center text-lg">Прогрес за ${currentUserData.currentGrade} клас</h3>`;
+    
+    const subjects = { math: 'Математика', ukrainian: 'Українська мова', english: 'Англійська' };
+    
+    for (const subjectId in subjects) {
+        const subjectName = subjects[subjectId];
+        const gradeScore = currentUserData.progress?.[subjectId]?.[`grade${currentUserData.currentGrade}`] || 0;
+        
+        const progressItem = document.createElement('div');
+        progressItem.className = 'text-sm';
+        progressItem.innerHTML = `
+            <div class="flex justify-between items-center mb-1">
+                <span class="font-semibold">${subjectName}</span>
+                <span class="text-blue-600 font-bold">${gradeScore} балів</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div class="bg-green-500 h-2.5 rounded-full" style="width: ${Math.min(100, (gradeScore / 200) * 100)}%"></div>
+            </div>
+        `;
+        progressContainer.appendChild(progressItem);
+    }
+
+    // Оновлення нагород (без змін)
+    const badgesContainer = document.getElementById('badges-container');
+    badgesContainer.innerHTML = '';
+    if (currentUserData.badges && currentUserData.badges.length > 0) {
+        currentUserData.badges.forEach(badgeId => {
+            const badge = badges[badgeId];
+            if (badge) {
+                const el = document.createElement('div');
+                el.className = 'badge text-4xl cursor-pointer text-yellow-500';
+                el.title = badge.name;
+                el.innerHTML = `<i class="${badge.icon}" aria-hidden="true"></i>`;
+                badgesContainer.appendChild(el);
+            }
+        });
+    } else {
+        badgesContainer.innerHTML = '<p class="text-gray-500">Поки що немає нагород.</p>';
+    }
 }
+
 
 function shuffleArray(array){
   let currentIndex = array.length, randomIndex;
@@ -220,7 +249,8 @@ function shuffleArray(array){
   return array;
 }
 
-// ✅ НОВА ФУНКЦІЯ ДЛЯ ДИНАМІЧНОГО ЗАВАНТАЖЕННЯ ПИТАНЬ
+// --- TEST LOGIC ---
+
 async function loadQuestions(subject, grade) {
   const path = `./data/questions/${subject}/grade${grade}.js`;
   try {
@@ -229,11 +259,10 @@ async function loadQuestions(subject, grade) {
   } catch (error) {
     console.error(`Не вдалося завантажити питання: ${path}`, error);
     showToast('На жаль, для обраних налаштувань ще немає питань.', 'error');
-    return null; // Повертаємо null у разі помилки
+    return null;
   }
 }
 
-// ✅ ОНОВЛЕНА ФУНКЦІЯ ЗАПУСКУ ТЕСТУ (приймає клас і складність)
 async function startTest(subject, grade, difficulty) {
     const testSessionId = Date.now();
     activeTestSessionId = testSessionId;
@@ -258,6 +287,8 @@ async function startTest(subject, grade, difficulty) {
     }
 
     currentTest.subject = subject;
+    currentTest.grade = grade; 
+    currentTest.difficulty = difficulty;
     currentTest.questions = shuffleArray([...filteredQuestions]).slice(0, TEST_LENGTH);
     currentTest.currentIndex = 0;
     currentTest.score = 0;
@@ -284,7 +315,6 @@ async function startTest(subject, grade, difficulty) {
     }
 }
 
-// ✅ ПОВНІСТЮ ОНОВЛЕНА ФУНКЦІЯ ДЛЯ ПОКАЗУ МОДАЛЬНОГО ВІКНА
 function showGradeSelector(subject) {
   const modal = document.getElementById('grade-selection-modal');
   const gradeContainer = document.getElementById('grade-buttons-container');
@@ -294,12 +324,10 @@ function showGradeSelector(subject) {
   let selectedGrade = null;
   let selectedDifficulty = null;
 
-  // Функція для перевірки стану та активації кнопки "Старт"
   function checkSelections() {
     startBtn.disabled = !(selectedGrade && selectedDifficulty);
   }
 
-  // --- Генерація кнопок для вибору класу ---
   gradeContainer.innerHTML = '';
   for (let grade = 2; grade <= 8; grade++) {
     const button = document.createElement('button');
@@ -316,7 +344,6 @@ function showGradeSelector(subject) {
     gradeContainer.appendChild(button);
   }
 
-  // --- Генерація кнопок для вибору складності ---
   const difficulties = [
       { id: 'easy', name: 'Легкий' }, 
       { id: 'medium', name: 'Середній' }, 
@@ -337,7 +364,6 @@ function showGradeSelector(subject) {
 
     button.onclick = () => {
       selectedDifficulty = diff.id;
-      // Важливо: шукаємо кнопки всередині buttonGroup
       buttonGroup.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('is-active'));
       button.classList.add('is-active');
       checkSelections();
@@ -345,10 +371,9 @@ function showGradeSelector(subject) {
     buttonGroup.appendChild(button);
   });
   
-  difficultyContainer.innerHTML = ''; // Очищуємо контейнер
-  difficultyContainer.appendChild(buttonGroup); // Додаємо групу кнопок
+  difficultyContainer.innerHTML = '';
+  difficultyContainer.appendChild(buttonGroup);
 
-  // Обробник для кнопки "Почати тест"
   startBtn.onclick = () => {
     if (selectedGrade && selectedDifficulty) {
       hideModal(modal);
@@ -356,15 +381,12 @@ function showGradeSelector(subject) {
     }
   };
   
-  // Початкове скидання стану кнопки та виділення
   checkSelections();
   gradeContainer.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('is-active'));
-  difficultyContainer.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('is-active'));
+  buttonGroup.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('is-active'));
   
-  // Показуємо модальне вікно
   showModal(modal);
 }
-
 
 function displayQuestion(){ renderQuestion(currentTest, optionsContainer, radioKeyHandler); }
 
@@ -393,16 +415,13 @@ async function endTest(timedOut=false){
   document.getElementById('results-score').textContent = currentTest.score;
   document.getElementById('results-total').textContent = currentTest.questions.length;
   document.getElementById('time-up-message').classList.toggle('hidden', !timedOut);
-  document.getElementById('new-badge-container').classList.add('hidden');
-
-  document.getElementById('review-answers-btn').classList.remove('hidden');
 
   if(currentUser && isFirebaseActive && !currentUser.isAnonymous){
     document.getElementById('guest-prompt').classList.add('hidden');
-    await saveScore(currentTest.score,currentTest.subject);
+    await saveScore(currentTest.score, currentTest.subject, currentTest.grade);
   }else{
     document.getElementById('guest-prompt').classList.remove('hidden');
-    saveScoreOffline(currentTest.score,currentTest.subject);
+    saveScoreOffline(currentTest.score, currentTest.subject, currentTest.grade);
   }
 }
 
@@ -516,8 +535,6 @@ function setupEventListeners(){
   const backToWelcomeBtn = document.getElementById('back-to-welcome-btn');
   const nextQuestionBtn = document.getElementById('next-question-btn');
   const quitTestBtn = document.getElementById('quit-test-btn');
-  const cancelActionBtn = document.getElementById('cancel-action-btn');
-  const confirmActionBtn = document.getElementById('confirm-action-btn');
   const reviewAnswersBtn = document.getElementById('review-answers-btn');
   const closeReviewBtn = document.getElementById('close-review-btn');
   const infoOkBtn = document.getElementById('info-ok-btn');
@@ -532,12 +549,19 @@ function setupEventListeners(){
   if (isFirebaseActive && registerForm) {
     registerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const form = e.target;
-      const email = form.querySelector('#register-email').value;
-      const password = form.querySelector('#register-password').value;
-      const submitButton = form.querySelector('button[type="submit"]');
+      const submitButton = registerForm.querySelector('button[type="submit"]');
+      const email = registerForm.querySelector('#register-email').value;
+      const password = registerForm.querySelector('#register-password').value;
+      const grade = registerForm.querySelector('#register-grade').value;
+      
       showValidationErrors([], 'register-validation-errors');
       document.getElementById('auth-error').textContent = '';
+
+      if (!grade) {
+        showValidationErrors(['Будь ласка, оберіть ваш клас'], 'register-validation-errors');
+        return;
+      }
+      
       const emailValidation = validateEmail(email);
       if (!emailValidation.isValid) {
         showValidationErrors(emailValidation.errors, 'register-validation-errors');
@@ -548,14 +572,22 @@ function setupEventListeners(){
         showValidationErrors(passwordValidation.errors, 'register-validation-errors');
         return;
       }
-      if (passwordValidation.strength < 3) {
-        const confirmWeak = confirm('Ваш пароль має низьку надійність. Рекомендуємо використати надійніший пароль.\n\nПоради:\n' + passwordValidation.warnings.join('\n') + '\n\nПродовжити з поточним паролем?');
-        if (!confirmWeak) return;
-      }
+      
       setLoadingState(submitButton, true);
       try {
         const recaptchaToken = await recaptchaService.getToken('register');
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        
+        const userDocRef = doc(db, 'users', userCredential.user.uid);
+        const newUserData = {
+            email: email,
+            currentGrade: parseInt(grade),
+            totalScore: 0,
+            badges: [],
+            progress: {}
+        };
+        await setDoc(userDocRef, newUserData);
+        
         await sendEmailVerification(userCredential.user);
         showInfoModal('Підтвердження реєстрації', 'Ми відправили вам лист для підтвердження. Будь ласка, перейдіть за посиланням у ньому, щоб активувати акаунт.');
       } catch (error) {
@@ -570,53 +602,53 @@ function setupEventListeners(){
 
   if (isFirebaseActive && loginForm) {
     loginForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const form = e.target;
-      const email = form.querySelector('#login-email').value;
-      const password = form.querySelector('#login-password').value;
-      const submitButton = form.querySelector('button[type="submit"]');
-      showValidationErrors([], 'login-validation-errors');
-      document.getElementById('auth-error').textContent = '';
-      const emailValidation = validateEmail(email);
-      if (!emailValidation.isValid) {
-        showValidationErrors(emailValidation.errors, 'login-validation-errors');
-        return;
-      }
-      if (!password || password.length < 6) {
-        showValidationErrors(['Пароль має містити щонайменше 6 символів'], 'login-validation-errors');
-        return;
-      }
-      setLoadingState(submitButton, true);
-      try {
-        const recaptchaToken = await recaptchaService.getToken('login');
-        await signInWithEmailAndPassword(auth, email, password);
-        showToast('Ви успішно увійшли!', 'success');
-      } catch (error) {
-        console.error('Помилка входу:', error);
-        document.getElementById('auth-error').textContent = getAuthErrorMessage(error.code);
-        recaptchaService.reset();
-      } finally {
-        setLoadingState(submitButton, false);
-      }
+        e.preventDefault();
+        const form = e.target;
+        const email = form.querySelector('#login-email').value;
+        const password = form.querySelector('#login-password').value;
+        const submitButton = form.querySelector('button[type="submit"]');
+        showValidationErrors([], 'login-validation-errors');
+        document.getElementById('auth-error').textContent = '';
+        const emailValidation = validateEmail(email);
+        if (!emailValidation.isValid) {
+            showValidationErrors(emailValidation.errors, 'login-validation-errors');
+            return;
+        }
+        if (!password || password.length < 6) {
+            showValidationErrors(['Пароль має містити щонайменше 6 символів'], 'login-validation-errors');
+            return;
+        }
+        setLoadingState(submitButton, true);
+        try {
+            const recaptchaToken = await recaptchaService.getToken('login');
+            await signInWithEmailAndPassword(auth, email, password);
+            showToast('Ви успішно увійшли!', 'success');
+        } catch (error) {
+            console.error('Помилка входу:', error);
+            document.getElementById('auth-error').textContent = getAuthErrorMessage(error.code);
+            recaptchaService.reset();
+        } finally {
+            setLoadingState(submitButton, false);
+        }
     });
   }
 
   if (isFirebaseActive && googleSigninBtn) {
     googleSigninBtn.addEventListener('click', async () => {
-      const provider = new GoogleAuthProvider();
-      document.getElementById('auth-error').textContent = '';
-      setLoadingState(googleSigninBtn, true);
-      try {
-        const recaptchaToken = await recaptchaService.getToken('google_signin');
-        await signInWithPopup(auth, provider);
-        showToast('Ви успішно увійшли через Google!', 'success');
-      } catch (error) {
-        console.error('Помилка входу через Google:', error);
-        document.getElementById('auth-error').textContent = getAuthErrorMessage(error.code);
-        recaptchaService.reset();
-      } finally {
-        setLoadingState(googleSigninBtn, false);
-      }
+        const provider = new GoogleAuthProvider();
+        document.getElementById('auth-error').textContent = '';
+        setLoadingState(googleSigninBtn, true);
+        try {
+            const recaptchaToken = await recaptchaService.getToken('google_signin');
+            await signInWithPopup(auth, provider);
+            showToast('Ви успішно увійшли через Google!', 'success');
+        } catch (error) {
+            console.error('Помилка входу через Google:', error);
+            document.getElementById('auth-error').textContent = getAuthErrorMessage(error.code);
+            recaptchaService.reset();
+        } finally {
+            setLoadingState(googleSigninBtn, false);
+        }
     });
   }
 
@@ -678,7 +710,6 @@ function setupEventListeners(){
     optionsContainer.removeEventListener('keydown', radioKeyHandler);
   });
 
-  // ✅ ОНОВЛЕНИЙ СЛУХАЧ ДЛЯ КНОПОК ПРЕДМЕТІВ
   document.querySelectorAll('.start-test-btn').forEach(btn=>{
     btn.addEventListener('click',()=>showGradeSelector(btn.dataset.subject));
   });
@@ -746,9 +777,22 @@ function setupEventListeners(){
     infoOkBtn.addEventListener('click', () => hideModal(infoModal));
   }
   
-  // ✅ НОВИЙ СЛУХАЧ ДЛЯ КНОПКИ СКАСУВАННЯ У МОДАЛЬНОМУ ВІКНІ ВИБОРУ
   document.getElementById('cancel-grade-selection-btn').addEventListener('click', () => {
     hideModal(document.getElementById('grade-selection-modal'));
+  });
+
+  // ✅ НОВИЙ СЛУХАЧ ДЛЯ ЗМІНИ КЛАСУ В КАБІНЕТІ
+  document.getElementById('user-grade-selector').addEventListener('change', async (e) => {
+      if (!currentUser) return;
+      const newGrade = parseInt(e.target.value);
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      try {
+          await updateDoc(userDocRef, { currentGrade: newGrade });
+          showToast('Клас успішно оновлено!', 'success');
+      } catch (error) {
+          showToast('Не вдалося оновити клас.', 'error');
+          console.error("Error updating grade: ", error);
+      }
   });
 }
 
@@ -801,6 +845,3 @@ function setupEventListeners(){
   });
 
 })();
-
-
-
