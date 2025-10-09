@@ -13,10 +13,38 @@ export function getRefs(){
   };
 }
 
-export function showScreen(screen){
+let hasManagedInitialFocus = false;
+
+export function showScreen(screen, options = {}){
   const { welcomeContainer, authContainer, dashboardContainer, testContainer } = getRefs();
-  [welcomeContainer, authContainer, dashboardContainer, testContainer].forEach(c=>c.classList.add('hidden'));
-  document.getElementById(`${screen}-container`).classList.remove('hidden');
+  [welcomeContainer, authContainer, dashboardContainer, testContainer].forEach(container=>{
+    if(!container) return;
+    container.classList.add('hidden');
+    container.setAttribute('aria-hidden','true');
+  });
+  const activeContainer = document.getElementById(`${screen}-container`);
+  if(activeContainer){
+    activeContainer.classList.remove('hidden');
+    activeContainer.setAttribute('aria-hidden','false');
+    const shouldFocus = typeof options.shouldFocus === 'boolean'
+      ? options.shouldFocus
+      : hasManagedInitialFocus;
+    if(shouldFocus){
+      const focusTarget = activeContainer.querySelector('h1, h2, [data-focus-target]');
+      if(focusTarget){
+        const hadTabIndex = focusTarget.hasAttribute('tabindex');
+        if(!hadTabIndex) focusTarget.setAttribute('tabindex','-1');
+        focusTarget.focus();
+        if(!hadTabIndex){
+          focusTarget.addEventListener('blur',()=>focusTarget.removeAttribute('tabindex'),{ once:true });
+        }
+      }else{
+        const main = document.getElementById('main-content');
+        if(main) main.focus();
+      }
+    }
+  }
+  if(!hasManagedInitialFocus) hasManagedInitialFocus = true;
 }
 
 export function setLoadingState(button,isLoading){
@@ -67,6 +95,7 @@ function handleFocusTrap(e, modal){
 export function showModal(modal){
   previouslyFocusedElement = document.activeElement;
   modal.style.display = 'flex';
+  modal.setAttribute('aria-hidden','false');
   const handler = (e)=>handleFocusTrap(e,modal);
   modal._trapHandler = handler;
   document.addEventListener('keydown', handler);
@@ -76,6 +105,7 @@ export function showModal(modal){
 
 export function hideModal(modal, shouldRefocus=true){
   modal.style.display = 'none';
+  modal.setAttribute('aria-hidden','true');
   if(modal._trapHandler){
     document.removeEventListener('keydown', modal._trapHandler);
     modal._trapHandler = null;
