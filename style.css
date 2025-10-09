@@ -20,7 +20,7 @@
     z-index:10000;
     transition:top .2s ease;
   }
-  .skip-link:focus{
+  .skip-link:focus-visible{
     top:1rem;
   }
   .app-container{transition:background-color .3s ease}
