@@ -3,14 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Розумко | Тести для підготовки до НМТ для 4 класу</title>
-  <!-- Фавікони -->
-  <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png">
-  <link rel="icon" type="image/png" sizes="128x128" href="/favicon-128x128.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <title>Розумко | Онлайн тестування</title>
+  
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
   <meta name="theme-color" content="#3b82f6">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -263,14 +262,38 @@
     </div>
   </div>
 
+  <div id="grade-selection-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="grade-selection-title">
+    <div class="modal-content bg-white p-8 rounded-2xl shadow-xl w-full max-w-2xl text-left mx-4">
+      <h2 id="grade-selection-title" class="text-2xl font-bold text-blue-600 mb-6 text-center">Налаштування тесту</h2>
+      
+      <div class="grid sm:grid-cols-2 gap-8">
+        <div>
+          <h3 class="font-semibold text-lg mb-4 text-center">1. Обери клас</h3>
+          <div id="grade-buttons-container" class="grid grid-cols-2 gap-3">
+            </div>
+        </div>
+        
+        <div>
+          <h3 class="font-semibold text-lg mb-4 text-center">2. Обери складність</h3>
+          <div id="difficulty-buttons-container" class="grid grid-cols-1 gap-3">
+            </div>
+        </div>
+      </div>
+
+      <div class="mt-8 pt-6 border-t text-center">
+        <button id="start-test-from-modal-btn" class="btn w-full sm:w-auto bg-blue-500 text-white font-bold py-3 px-12 rounded-lg" disabled>
+          Почати тест
+        </button>
+        <button id="cancel-grade-selection-btn" class="mt-4 text-gray-500 hover:underline text-sm">
+          Повернутись на головну
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast-notification" role="status" aria-live="polite"></div>
 
   <script type="module" src="script.js"></script>
   
 </body>
-
 </html>
-
-
-
-
