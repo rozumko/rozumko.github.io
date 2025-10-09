@@ -75,9 +75,10 @@ const badges = {
 
 function setMode(mode){
   currentTest.mode = mode;
-  document.querySelectorAll('.mode-btn').forEach(btn=>{
+  document.querySelectorAll('.mode-btn[data-mode]').forEach(btn=>{
     const isActive = btn.dataset.mode === mode;
     btn.classList.toggle('is-active',isActive);
+    btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
   });
 }
 
@@ -371,7 +372,9 @@ function showGradeSelector(subject) {
   let selectedDifficulty = null;
 
   function checkSelections() {
-    startBtn.disabled = !(selectedGrade && selectedDifficulty);
+    const isDisabled = !(selectedGrade && selectedDifficulty);
+    startBtn.disabled = isDisabled;
+    startBtn.setAttribute('aria-disabled', isDisabled ? 'true' : 'false');
   }
 
   gradeContainer.innerHTML = '';
@@ -382,11 +385,17 @@ function showGradeSelector(subject) {
     button.className = 'mode-btn btn text-blue-700 font-semibold py-3 px-4 rounded-lg transition w-full';
     button.textContent = `${grade} клас`;
     button.dataset.grade = grade;
+    button.type = 'button';
+    button.setAttribute('aria-pressed','false');
 
     button.onclick = () => {
       selectedGrade = grade;
-      gradeContainer.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('is-active'));
+      gradeContainer.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.remove('is-active');
+        btn.setAttribute('aria-pressed','false');
+      });
       button.classList.add('is-active');
+      button.setAttribute('aria-pressed','true');
       checkSelections();
     };
     gradeContainer.appendChild(button);
@@ -404,7 +413,9 @@ function showGradeSelector(subject) {
   difficulties.forEach((diff, index) => {
     const button = document.createElement('button');
     button.className = 'mode-btn btn text-blue-700 font-semibold py-2 px-4 transition w-full';
-    
+    button.type = 'button';
+    button.setAttribute('aria-pressed','false');
+
     if (index === 0) button.classList.add('rounded-l-md');
     if (index === difficulties.length - 1) button.classList.add('rounded-r-md');
 
@@ -412,8 +423,12 @@ function showGradeSelector(subject) {
 
     button.onclick = () => {
       selectedDifficulty = diff.id;
-      buttonGroup.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('is-active'));
+      buttonGroup.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.remove('is-active');
+        btn.setAttribute('aria-pressed','false');
+      });
       button.classList.add('is-active');
+      button.setAttribute('aria-pressed','true');
       checkSelections();
     };
     buttonGroup.appendChild(button);
@@ -430,8 +445,14 @@ function showGradeSelector(subject) {
   };
   
   checkSelections();
-  gradeContainer.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('is-active'));
-  buttonGroup.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('is-active'));
+  gradeContainer.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.classList.remove('is-active');
+    btn.setAttribute('aria-pressed','false');
+  });
+  buttonGroup.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.classList.remove('is-active');
+    btn.setAttribute('aria-pressed','false');
+  });
   
   showModal(modal);
 }
@@ -784,7 +805,7 @@ function setupEventListeners(){
     btn.addEventListener('click',()=>showGradeSelector(btn.dataset.subject));
   });
 
-  document.querySelectorAll('.mode-btn').forEach(btn=>{
+  document.querySelectorAll('.mode-btn[data-mode]').forEach(btn=>{
     btn.addEventListener('click',()=>setMode(btn.dataset.mode));
   });
 
