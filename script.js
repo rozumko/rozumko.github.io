@@ -303,7 +303,7 @@ function showGradeSelector(subject) {
   gradeContainer.innerHTML = '';
   for (let grade = 2; grade <= 8; grade++) {
     const button = document.createElement('button');
-    button.className = 'mode-btn btn text-blue-700 font-semibold py-3 px-4 rounded-lg transition';
+    button.className = 'mode-btn btn text-blue-700 font-semibold py-3 px-4 rounded-lg transition w-full';
     button.textContent = `${grade} клас`;
     button.dataset.grade = grade;
     
@@ -801,4 +801,5 @@ function setupEventListeners(){
   });
 
 })();
+
 
