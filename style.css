@@ -8,8 +8,24 @@
     font-family:'Montserrat',sans-serif;
     background:linear-gradient(180deg,#f1f5ff 0%,#f8fafc 60%,#f1f5ff 100%);
   }
+  .skip-link{
+    position:absolute;
+    top:-40px;
+    left:1rem;
+    background:#1d4ed8;
+    color:#fff;
+    padding:0.75rem 1rem;
+    border-radius:0.5rem;
+    font-weight:600;
+    z-index:10000;
+    transition:top .2s ease;
+  }
+  .skip-link:focus{
+    top:1rem;
+  }
   .app-container{transition:background-color .3s ease}
   .btn{transition:background-color .2s ease,color .2s ease,border-color .2s ease,box-shadow .2s ease}
+  .btn:focus-visible{outline:3px solid rgba(59,130,246,.65);outline-offset:2px}
   .btn:hover:not(:disabled){box-shadow:0 8px 24px rgba(15,23,42,.08)}
   .btn:disabled{cursor:not-allowed;opacity:.7}
     .mode-btn {
@@ -115,25 +131,25 @@
   }
 
   .tile-card[data-subject="math"]{
-    --tile-start:#60a5fa;
-    --tile-end:#2563eb;
-    --tile-shadow:rgba(37,99,235,.65);
+    --tile-start:#1d4ed8;
+    --tile-end:#1e3a8a;
+    --tile-shadow:rgba(29,78,216,.65);
     --tile-text:#f8fafc;
     --tile-icon-color:#f8fafc;
   }
   .tile-card[data-subject="ukrainian"]{
-    --tile-start:#fbcfe8;
-    --tile-end:#f472b6;
-    --tile-shadow:rgba(219,39,119,.55);
-    --tile-text:#fff7fb;
-    --tile-icon-color:#fff7fb;
+    --tile-start:#be185d;
+    --tile-end:#9d174d;
+    --tile-shadow:rgba(190,24,93,.55);
+    --tile-text:#fdf2f8;
+    --tile-icon-color:#fdf2f8;
   }
   .tile-card[data-subject="english"]{
-    --tile-start:#6ee7b7;
-    --tile-end:#10b981;
-    --tile-shadow:rgba(16,185,129,.5);
-    --tile-text:#f0fdfa;
-    --tile-icon-color:#f0fdfa;
+    --tile-start:#047857;
+    --tile-end:#0f766e;
+    --tile-shadow:rgba(15,118,110,.5);
+    --tile-text:#ecfdf5;
+    --tile-icon-color:#ecfdf5;
   }
 
   .panel-card{

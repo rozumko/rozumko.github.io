@@ -19,21 +19,23 @@
 </head>
 <body class="text-gray-800">
 
-  <div id="app" class="app-container min-h-screen flex items-start justify-center p-4 pt-10 sm:pt-16">
+  <a href="#main-content" class="skip-link">Перейти до основного контенту</a>
 
-    <div id="welcome-container" class="w-full max-w-2xl text-center">
+  <main id="main-content" class="app-container min-h-screen flex items-start justify-center p-4 pt-10 sm:pt-16" tabindex="-1">
+
+    <div id="welcome-container" class="w-full max-w-2xl text-center" role="region" aria-labelledby="welcome-title" aria-hidden="false">
       <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-xl">
-        <h1 class="text-3xl sm:text-4xl font-bold text-blue-600 mb-2">Перевір свої знання!</h1>
+        <h1 id="welcome-title" class="text-3xl sm:text-4xl font-bold text-blue-600 mb-2">Перевір свої знання!</h1>
         <p class="text-gray-500 mb-8">Обери предмет, щоб почати тестування</p>
 
         <div class="bg-blue-50 p-4 rounded-lg mb-6 max-w-md mx-auto">
           <p class="text-center font-semibold mb-3">Обери режим:</p>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <button data-mode="practice" class="mode-btn btn text-blue-700 font-semibold py-3 px-4 rounded-lg transition" aria-label="Обрати режим Навчання">
-              <i class="fas fa-book-open mr-2" aria-hidden="true"></i>Навчання<br><span class="text-xs font-normal">З підказками</span>
+            <button data-mode="practice" class="mode-btn btn text-blue-700 font-semibold py-3 px-4 rounded-lg transition" aria-label="Обрати режим Навчання" aria-pressed="false">
+              <i class="fas fa-book-open mr-2" aria-hidden="true"></i>Навчання<br><span class="text-sm font-normal">З підказками</span>
             </button>
-            <button data-mode="exam" class="mode-btn btn text-blue-700 font-semibold py-3 px-4 rounded-lg transition" aria-label="Обрати режим Іспит">
-              <i class="fas fa-stopwatch mr-2" aria-hidden="true"></i>Іспит<br><span class="text-xs font-normal">З таймером</span>
+            <button data-mode="exam" class="mode-btn btn text-blue-700 font-semibold py-3 px-4 rounded-lg transition" aria-label="Обрати режим Іспит" aria-pressed="false">
+              <i class="fas fa-stopwatch mr-2" aria-hidden="true"></i>Іспит<br><span class="text-sm font-normal">З таймером</span>
             </button>
           </div>
         </div>
@@ -61,30 +63,30 @@
       </div>
     </div>
 
-    <div id="auth-container" class="w-full max-w-md hidden">
+    <div id="auth-container" class="w-full max-w-md hidden" role="region" aria-labelledby="auth-title" aria-hidden="true">
       <div class="bg-white p-8 rounded-2xl shadow-xl text-center">
-        <h1 class="text-3xl font-bold text-blue-600 mb-6">Збереження прогресу</h1>
+        <h1 id="auth-title" class="text-3xl font-bold text-blue-600 mb-6">Збереження прогресу</h1>
         <button id="google-signin-btn" class="btn w-full bg-white border border-gray-300 text-gray-700 font-semibold py-3 px-4 rounded-lg hover:bg-gray-50 flex items-center justify-center space-x-2">
           <img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" alt="Google" class="h-5"/>
           <span>Увійти через Google</span>
         </button>
         <div class="my-4 flex items-center"><hr class="flex-grow"/><span class="px-2 text-gray-500 text-sm">або</span><hr class="flex-grow"/></div>
-        <form id="login-form" class="space-y-4">
-          <input type="email" id="login-email" placeholder="Електронна пошта" 
-                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+        <form id="login-form" class="space-y-4" aria-describedby="login-validation-errors auth-error">
+          <input type="email" id="login-email" placeholder="Електронна пошта"
+                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                  required autocomplete="email"/>
-          
+
           <input type="password" id="login-password" placeholder="Пароль" 
                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
                  required autocomplete="current-password"/>
           
-          <div id="login-validation-errors"></div>
-          
+          <div id="login-validation-errors" aria-live="polite"></div>
+
           <button type="submit" class="btn w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg">
             Увійти
           </button>
         </form>
-        <form id="register-form" class="space-y-4 hidden">
+        <form id="register-form" class="space-y-4 hidden" aria-describedby="register-validation-errors">
           <input type="email" id="register-email" placeholder="Електронна пошта"
                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                  required autocomplete="email"/>
@@ -98,7 +100,7 @@
                     required>
               <option value="">Оберіть клас</option>
             </select>
-            <p class="text-xs text-gray-500 mt-1">Клас можна змінити пізніше у профілі.</p>
+            <p class="text-sm text-gray-600 mt-1">Клас можна змінити пізніше у профілі.</p>
           </div>
 
           <div>
@@ -108,25 +110,25 @@
             <div id="register-password-strength" class="hidden"></div>
           </div>
 
-          <div id="register-validation-errors"></div>
+          <div id="register-validation-errors" aria-live="polite"></div>
 
           <button type="submit" class="btn w-full bg-green-500 text-white font-bold py-2 px-4 rounded-lg">
             Створити акаунт
           </button>
         </form>
         <p class="mt-4">
-          <a href="#" id="toggle-auth" class="text-blue-500 hover:underline text-sm">Немає акаунта? Зареєструватися</a>
+          <a href="#" id="toggle-auth" class="text-blue-600 hover:underline text-sm">Немає акаунта? Зареєструватися</a>
         </p>
-        <p id="auth-error" class="text-red-500 mt-4 text-sm h-4"></p>
-        <button id="back-to-welcome-btn" class="mt-4 text-gray-500 hover:underline text-sm">Повернутись на головну</button>
+        <p id="auth-error" class="text-red-500 mt-4 text-sm h-4" role="alert" aria-live="assertive"></p>
+        <button id="back-to-welcome-btn" class="mt-4 text-gray-600 hover:underline text-base">Повернутись на головну</button>
       </div>
     </div>
 
-    <div id="dashboard-container" class="w-full max-w-6xl hidden">
+    <div id="dashboard-container" class="w-full max-w-6xl hidden" role="region" aria-labelledby="dashboard-title" aria-hidden="true">
       <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-xl w-full">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div>
-            <h1 class="text-2xl sm:text-3xl font-bold text-blue-600">Привіт, розумака!</h1>
+            <h1 id="dashboard-title" class="text-2xl sm:text-3xl font-bold text-blue-600">Привіт, розумака!</h1>
             <p class="text-gray-500 text-sm sm:text-base" id="user-email-display"></p>
           </div>
           <button id="logout-btn" class="btn bg-red-500 text-white font-bold py-2 px-4 rounded-lg text-sm flex items-center gap-2 self-end sm:self-center">
@@ -141,11 +143,11 @@
             <div class="bg-blue-50 p-4 rounded-lg mb-6">
               <p class="text-center font-semibold mb-3">Обери режим:</p>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <button data-mode="practice" class="mode-btn btn text-blue-700 font-semibold py-3 px-4 rounded-lg transition">
-                  <i class="fas fa-book-open mr-2" aria-hidden="true"></i>Навчання<br/><span class="text-xs font-normal">З підказками</span>
+                <button data-mode="practice" class="mode-btn btn text-blue-700 font-semibold py-3 px-4 rounded-lg transition" aria-pressed="false">
+                  <i class="fas fa-book-open mr-2" aria-hidden="true"></i>Навчання<br/><span class="text-sm font-normal">З підказками</span>
                 </button>
-                <button data-mode="exam" class="mode-btn btn text-blue-700 font-semibold py-3 px-4 rounded-lg transition">
-                  <i class="fas fa-stopwatch mr-2" aria-hidden="true"></i>Іспит<br/><span class="text-xs font-normal">З таймером</span>
+                <button data-mode="exam" class="mode-btn btn text-blue-700 font-semibold py-3 px-4 rounded-lg transition" aria-pressed="false">
+                  <i class="fas fa-stopwatch mr-2" aria-hidden="true"></i>Іспит<br/><span class="text-sm font-normal">З таймером</span>
                 </button>
               </div>
             </div>
@@ -202,22 +204,22 @@
       </div>
     </div>
 
-    <div id="test-container" class="w-full max-w-2xl hidden">
+    <div id="test-container" class="w-full max-w-2xl hidden" role="region" aria-labelledby="test-title" aria-hidden="true">
       <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-xl">
         <div class="flex flex-wrap justify-between items-center mb-4 gap-4">
           <div class="flex items-center">
             <h2 id="test-title" class="text-xl sm:text-2xl font-bold text-blue-600">Математика</h2>
-            <span id="test-mode-indicator" class="text-xs sm:text-sm font-semibold bg-gray-200 text-gray-700 px-3 py-1 rounded-full ml-3"></span>
+            <span id="test-mode-indicator" class="text-sm sm:text-base font-semibold bg-gray-200 text-gray-700 px-3 py-1 rounded-full ml-3"></span>
           </div>
           <div class="flex items-center gap-2 sm:gap-4">
-            <div id="timer-display" class="hidden text-base sm:text-lg font-bold bg-orange-100 text-orange-700 px-3 py-2 rounded-lg items-center">
+            <div id="timer-display" class="hidden text-base sm:text-lg font-bold bg-orange-100 text-orange-700 px-3 py-2 rounded-lg items-center" role="timer" aria-live="off">
               <i class="fas fa-stopwatch mr-2" aria-hidden="true"></i>
               <div><span id="timer-minutes">5</span>:<span id="timer-seconds">00</span></div>
             </div>
             <p class="text-base sm:text-lg font-semibold">
               <span id="current-question-num">0</span> / <span id="total-questions-num">5</span>
             </p>
-            <button id="quit-test-btn" class="btn bg-gray-200 text-gray-600 text-xs sm:text-sm font-bold py-2 px-3 rounded-lg hover:bg-gray-300" aria-label="Вийти з тесту">Вийти</button>
+            <button id="quit-test-btn" class="btn bg-gray-200 text-gray-600 text-sm sm:text-base font-bold py-2 px-3 rounded-lg hover:bg-gray-300" aria-label="Вийти з тесту">Вийти</button>
           </div>
         </div>
 
@@ -232,7 +234,7 @@
         <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4" role="radiogroup" aria-labelledby="question-text"></div>
 
         <div class="text-center mt-6 min-h-[80px]">
-          <p id="feedback-text" class="font-semibold h-6"></p>
+          <p id="feedback-text" class="font-semibold h-6" role="status" aria-live="polite"></p>
           <button id="next-question-btn" class="btn bg-blue-500 text-white font-bold py-2 px-6 rounded-lg hidden mt-2">Наступне питання</button>
         </div>
 
@@ -242,9 +244,9 @@
         </div>
       </div>
     </div>
-  </div>
+  </main>
 
-  <div id="results-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="results-title" tabindex="-1">
+  <div id="results-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="results-title" tabindex="-1" aria-hidden="true">
     <div class="modal-content bg-white p-8 rounded-2xl shadow-xl w-full max-w-lg text-center mx-4">
       <h2 id="results-title" class="text-3xl font-bold text-blue-600 mb-4">Чудовий результат!</h2>
       <p class="text-lg mb-2">Ти відповів правильно на</p>
@@ -261,13 +263,13 @@
       </div>
       <div id="guest-prompt" class="hidden mt-6 bg-blue-50 p-6 rounded-lg">
         <p class="font-semibold mb-3">Хочеш зберегти цей результат?</p>
-        <p class="text-sm text-gray-600 mb-4">Створи акаунт або увійди, щоб відстежувати свій прогрес!</p>
+        <p class="text-base text-gray-700 mb-4">Створи акаунт або увійди, щоб відстежувати свій прогрес!</p>
         <button id="save-progress-btn" class="btn w-full bg-green-500 text-white font-bold py-3 px-4 rounded-lg">Увійти та зберегти</button>
       </div>
     </div>
   </div>
 
-  <div id="review-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="review-title" tabindex="-1">
+  <div id="review-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="review-title" tabindex="-1" aria-hidden="true">
     <div class="modal-content bg-white p-6 sm:p-8 rounded-2xl shadow-xl w-full max-w-2xl text-left mx-4 max-h-[90vh] flex flex-col">
       <div class="flex justify-between items-center mb-4">
         <h2 id="review-title" class="text-2xl font-bold text-blue-600">Перегляд відповідей</h2>
@@ -277,7 +279,7 @@
     </div>
   </div>
 
-  <div id="confirmation-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmation-title" tabindex="-1">
+  <div id="confirmation-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmation-title" tabindex="-1" aria-hidden="true">
     <div class="modal-content bg-white p-8 rounded-2xl shadow-xl w-full max-w-md text-center mx-4">
       <h2 id="confirmation-title" class="text-2xl font-bold text-gray-800 mb-4">Ви впевнені?</h2>
       <p id="confirmation-text" class="text-gray-600 mb-8">Весь прогрес у поточному тесті буде втрачено.</p>
@@ -288,7 +290,7 @@
     </div>
   </div>
 
-  <div id="info-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="info-title" tabindex="-1">
+  <div id="info-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="info-title" tabindex="-1" aria-hidden="true">
     <div class="modal-content bg-white p-8 rounded-2xl shadow-xl w-full max-w-md text-center mx-4">
       <h2 id="info-title" class="text-2xl font-bold text-blue-600 mb-4">Повідомлення</h2>
       <p id="info-text" class="text-gray-600 mb-8">Текст повідомлення тут.</p>
@@ -296,20 +298,20 @@
     </div>
   </div>
 
-  <div id="grade-selection-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="grade-selection-title">
+  <div id="grade-selection-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="grade-selection-title" aria-hidden="true">
     <div class="modal-content bg-white p-8 rounded-2xl shadow-xl w-full max-w-2xl text-left mx-4">
       <h2 id="grade-selection-title" class="text-2xl font-bold text-blue-600 mb-6 text-center">Налаштування тесту</h2>
       
         <div class="grid sm:grid-cols-2 gap-8">
           <div>
             <h3 class="font-semibold text-lg mb-4 text-center">1. Обери клас</h3>
-            <div id="grade-buttons-container" class="grid grid-cols-3 gap-3">
+            <div id="grade-buttons-container" class="grid grid-cols-3 gap-3" role="group" aria-label="Оберіть клас">
               </div>
           </div>
           
           <div>
             <h3 class="font-semibold text-lg mb-4 text-center">2. Обери складність</h3>
-            <div id="difficulty-buttons-container" class="flex justify-center">
+            <div id="difficulty-buttons-container" class="flex justify-center" role="group" aria-label="Оберіть складність">
               </div>
           </div>
         </div>
@@ -318,7 +320,7 @@
         <button id="start-test-from-modal-btn" class="btn w-full sm:w-auto bg-blue-500 text-white font-bold py-3 px-12 rounded-lg" disabled>
           Почати тест
         </button>
-        <button id="cancel-grade-selection-btn" class="mt-4 text-gray-500 hover:underline text-sm">
+        <button id="cancel-grade-selection-btn" class="mt-4 text-gray-600 hover:underline text-base">
           Повернутись на головну
         </button>
       </div>
