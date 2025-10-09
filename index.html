@@ -39,14 +39,17 @@
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8">
-          <button data-subject="math" class="start-test-btn btn flex flex-col items-center justify-center h-40 sm:h-48 bg-gradient-to-br from-green-400 to-blue-500 text-white p-4 rounded-xl text-xl font-bold shadow-lg">
-            <i class="fas fa-calculator text-4xl sm:text-5xl mb-2" aria-hidden="true"></i><span>Математика</span>
+          <button data-subject="math" class="start-test-btn btn tile-card flex flex-col items-center justify-center h-40 sm:h-48">
+            <span class="tile-icon" aria-hidden="true"><i class="fas fa-calculator"></i></span>
+            <span class="tile-title">Математика</span>
           </button>
-          <button data-subject="ukrainian" class="start-test-btn btn flex flex-col items-center justify-center h-40 sm:h-48 bg-gradient-to-br from-yellow-400 to-orange-500 text-white p-4 rounded-xl text-xl font-bold shadow-lg">
-            <i class="fas fa-book text-4xl sm:text-5xl mb-2" aria-hidden="true"></i><span>Українська<br/>мова</span>
+          <button data-subject="ukrainian" class="start-test-btn btn tile-card flex flex-col items-center justify-center h-40 sm:h-48">
+            <span class="tile-icon" aria-hidden="true"><i class="fas fa-book"></i></span>
+            <span class="tile-title">Українська<br/>мова</span>
           </button>
-          <button data-subject="english" class="start-test-btn btn flex flex-col items-center justify-center h-40 sm:h-48 bg-gradient-to-br from-purple-400 to-pink-500 text-white p-4 rounded-xl text-xl font-bold shadow-lg">
-            <i class="fas fa-globe-americas text-4xl sm:text-5xl mb-2" aria-hidden="true"></i><span>Англійська</span>
+          <button data-subject="english" class="start-test-btn btn tile-card flex flex-col items-center justify-center h-40 sm:h-48">
+            <span class="tile-icon" aria-hidden="true"><i class="fas fa-globe-americas"></i></span>
+            <span class="tile-title">Англійська</span>
           </button>
         </div>
 
@@ -148,38 +151,52 @@
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-              <button data-subject="math" class="start-test-btn btn flex flex-col items-center justify-center h-40 sm:h-48 bg-gradient-to-br from-green-400 to-blue-500 text-white p-4 rounded-xl text-xl font-bold shadow-lg">
-                <i class="fas fa-calculator text-4xl sm:text-5xl mb-2" aria-hidden="true"></i><span>Математика</span>
+              <button data-subject="math" class="start-test-btn btn tile-card flex flex-col items-center justify-center h-40 sm:h-48">
+                <span class="tile-icon" aria-hidden="true"><i class="fas fa-calculator"></i></span>
+                <span class="tile-title">Математика</span>
               </button>
-              <button data-subject="ukrainian" class="start-test-btn btn flex flex-col items-center justify-center h-40 sm:h-48 bg-gradient-to-br from-yellow-400 to-orange-500 text-white p-4 rounded-xl text-xl font-bold shadow-lg">
-                <i class="fas fa-book text-4xl sm:text-5xl mb-2" aria-hidden="true"></i><span>Українська<br/>мова</span>
+              <button data-subject="ukrainian" class="start-test-btn btn tile-card flex flex-col items-center justify-center h-40 sm:h-48">
+                <span class="tile-icon" aria-hidden="true"><i class="fas fa-book"></i></span>
+                <span class="tile-title">Українська<br/>мова</span>
               </button>
-              <button data-subject="english" class="start-test-btn btn flex flex-col items-center justify-center h-40 sm:h-48 bg-gradient-to-br from-purple-400 to-pink-500 text-white p-4 rounded-xl text-xl font-bold shadow-lg">
-                <i class="fas fa-globe-americas text-4xl sm:text-5xl mb-2" aria-hidden="true"></i><span>Англійська</span>
+              <button data-subject="english" class="start-test-btn btn tile-card flex flex-col items-center justify-center h-40 sm:h-48">
+                <span class="tile-icon" aria-hidden="true"><i class="fas fa-globe-americas"></i></span>
+                <span class="tile-title">Англійська</span>
               </button>
             </div>
           </div>
 
-          <div class="md:col-span-1 bg-gray-50 p-6 rounded-2xl">
-            <h2 class="text-2xl font-semibold mb-6 text-center">Твій прогрес</h2>
-            <div class="bg-blue-100 p-6 rounded-xl text-center mb-6">
-              <p class="text-lg font-semibold text-blue-800">Загальний Рахунок</p>
-              <p id="total-score" class="text-5xl font-bold text-blue-600 my-2">0</p>
-              <p class="text-blue-500">балів</p>
-            </div>
-            <div class="mb-6">
-              <label for="user-grade-selector" class="block text-sm font-semibold text-gray-600 mb-2 text-left">
-                Активний клас
-              </label>
-              <select id="user-grade-selector"
-                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-              </select>
-            </div>
-            <div class="bg-yellow-100 p-6 rounded-xl text-center">
-              <p class="text-lg font-semibold text-yellow-800 mb-4">Твої Нагороди</p>
-              <div id="badges-container" class="flex flex-wrap justify-center items-center gap-x-5 gap-y-4 min-h-[40px]"></div>
-            </div>
-            <div id="progress-details-container" class="mt-6 space-y-4"></div>
+          <div class="md:col-span-1 space-y-6">
+            <section class="panel-card panel-card--badges">
+              <div class="flex items-start justify-between gap-3 mb-5">
+                <div>
+                  <h2 class="text-xl font-semibold text-slate-900">Твої нагороди</h2>
+                  <p class="text-sm text-slate-600">Відкривай значки за предмети та загальний прогрес</p>
+                </div>
+                <span class="badge-spark" aria-hidden="true">
+                  <i class="fas fa-trophy"></i>
+                </span>
+              </div>
+              <div id="badges-container" class="badge-grid"></div>
+            </section>
+
+            <section class="panel-card">
+              <h2 class="text-xl font-semibold text-gray-800 mb-6">Твій прогрес</h2>
+              <div class="score-card" aria-live="polite">
+                <p class="score-label">Загальний рахунок</p>
+                <p id="total-score" class="score-value">0</p>
+                <p class="score-hint">балів</p>
+              </div>
+              <div class="mt-6">
+                <label for="user-grade-selector" class="block text-sm font-semibold text-gray-600 mb-2">
+                  Активний клас
+                </label>
+                <select id="user-grade-selector"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </select>
+              </div>
+              <div id="progress-details-container" class="mt-6"></div>
+            </section>
           </div>
         </div>
       </div>

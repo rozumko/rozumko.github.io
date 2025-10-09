@@ -220,8 +220,8 @@ function updateDashboard() {
     const progressContainer = document.getElementById('progress-details-container');
     if (progressContainer) {
         progressContainer.innerHTML = '';
-        const heading = document.createElement('h3');
-        heading.className = 'font-semibold text-center text-lg';
+        const heading = document.createElement('p');
+        heading.className = 'text-xs font-semibold uppercase text-gray-500 tracking-wider';
         heading.textContent = `Прогрес за ${userGrade} клас`;
         progressContainer.appendChild(heading);
 
@@ -230,14 +230,15 @@ function updateDashboard() {
         Object.entries(subjects).forEach(([subjectId, subjectName]) => {
             const gradeScore = currentUserData.progress?.[subjectId]?.[`grade${userGrade}`] || 0;
             const progressItem = document.createElement('div');
-            progressItem.className = 'text-sm';
+            const progressValue = Math.min(100, (gradeScore / 200) * 100);
+            progressItem.className = 'progress-card';
             progressItem.innerHTML = `
-                <div class="flex justify-between items-center mb-1">
-                    <span class="font-semibold">${subjectName}</span>
-                    <span class="text-blue-600 font-bold">${gradeScore} балів</span>
+                <div class="progress-meta">
+                    <span>${subjectName}</span>
+                    <span>${gradeScore} балів</span>
                 </div>
-                <div class="w-full bg-gray-200 rounded-full h-2.5">
-                    <div class="bg-green-500 h-2.5 rounded-full" style="width: ${Math.min(100, (gradeScore / 200) * 100)}%"></div>
+                <div class="w-full bg-slate-100 rounded-full h-2.5" aria-hidden="true">
+                    <div class="bg-blue-500 h-2.5 rounded-full" style="width: ${progressValue}%"></div>
                 </div>
             `;
             progressContainer.appendChild(progressItem);
@@ -247,19 +248,38 @@ function updateDashboard() {
     const badgesContainer = document.getElementById('badges-container');
     if (badgesContainer) {
         badgesContainer.innerHTML = '';
+        badgesContainer.setAttribute('role', 'list');
+        const badgeSubjectLabels = {
+            math: 'Математика',
+            ukrainian: 'Українська мова',
+            english: 'Англійська',
+            total: 'Усі предмети'
+        };
+
         if (currentUserData.badges && currentUserData.badges.length > 0) {
             currentUserData.badges.forEach(badgeId => {
                 const badge = badges[badgeId];
                 if (badge) {
-                    const el = document.createElement('div');
-                    el.className = 'badge text-4xl cursor-pointer text-yellow-500';
-                    el.title = badge.name;
-                    el.innerHTML = `<i class="${badge.icon}" aria-hidden="true"></i>`;
+                    const el = document.createElement('article');
+                    el.className = 'badge-card';
+                    el.dataset.subject = badge.subject;
+                    el.setAttribute('role', 'listitem');
+                    el.innerHTML = `
+                        <div class="badge-icon" aria-hidden="true"><i class="${badge.icon}"></i></div>
+                        <div class="badge-meta">
+                            <p class="badge-title">${badge.name}</p>
+                            <p class="badge-label">${badgeSubjectLabels[badge.subject] || 'Нагорода'}</p>
+                        </div>
+                        <span class="badge-score">${badge.score} балів</span>
+                    `;
                     badgesContainer.appendChild(el);
                 }
             });
         } else {
-            badgesContainer.innerHTML = '<p class="text-gray-500">Поки що немає нагород.</p>';
+            const emptyState = document.createElement('p');
+            emptyState.className = 'badge-empty';
+            emptyState.textContent = 'Поки що немає нагород. Продовжуй тренуватися, щоб отримати перші значки.';
+            badgesContainer.appendChild(emptyState);
         }
     }
 }
