@@ -37,7 +37,7 @@ const SUBJECT_GRADE_MAP = {
 const SUPPORTED_GRADES = Array.from(new Set(Object.values(SUBJECT_GRADE_MAP).flat())).sort((a, b) => a - b);
 
 const RECAPTCHA_SITE_KEY = '6LfrF-MrAAAAAJhW8g0-BwvB_3k0gTGM0mI4zcCa';
-const RECAPTCHA_ENABLED = false;
+const RECAPTCHA_ENABLED = true;
 const recaptchaService = RECAPTCHA_ENABLED ? new RecaptchaService(RECAPTCHA_SITE_KEY) : null;
 if (recaptchaService) {
   recaptchaService.load().catch(error => console.error('Не вдалося завантажити reCAPTCHA:', error));
@@ -56,6 +56,7 @@ import { createTimer } from './features/timer.js';
 import { displayQuestion as renderQuestion, updateProgressUI as renderProgress, showReview as renderReview } from './features/quiz.js';
 let timerApi = null;
 const TEST_LENGTH = 5;
+const MAX_OFFLINE_SCORES = 100;
 let activeTestSessionId = null;
 let isLockdownWarningActive = false;
 let penalizedQuestions = new Set();
@@ -149,7 +150,7 @@ function listenToUserData(userId){
 
 // ✅ ОНОВЛЕНА ФУНКЦІЯ ЗБЕРЕЖЕННЯ РАХУНКУ
 async function saveScore(score, subject, grade) {
-    if (!currentUser || !isFirebaseActive || score === 0) return;
+    if (!currentUser || !isFirebaseActive) return;
     const userDocRef = doc(db, 'users', currentUser.uid);
 
     const updates = {
@@ -169,6 +170,9 @@ async function saveScore(score, subject, grade) {
 function saveScoreOffline(score, subject, grade){
   const offlineScores = JSON.parse(localStorage.getItem('offlineScores')||'[]');
   offlineScores.push({ score, subject, grade, timestamp: Date.now() });
+  if (offlineScores.length > MAX_OFFLINE_SCORES) {
+    offlineScores.splice(0, offlineScores.length - MAX_OFFLINE_SCORES);
+  }
   localStorage.setItem('offlineScores',JSON.stringify(offlineScores));
 }
 
@@ -310,59 +314,63 @@ async function loadQuestions(subject, grade) {
   }
 }
 
-async function startTest(subject, grade, difficulty) {
-    const testSessionId = Date.now();
-    activeTestSessionId = testSessionId;
+async function startTest(subject, grade, difficulty, triggerButton) {
+    const newTestSessionId = Date.now();
     penalizedQuestions.clear();
 
-    const mainStartBtn = document.querySelector(`.start-test-btn[data-subject="${subject}"]`);
-    setLoadingState(mainStartBtn, true);
+    const loadingButton = triggerButton ?? document.querySelector(`.start-test-btn[data-subject="${subject}"]`);
+    setLoadingState(loadingButton, true);
 
-    const questionsForTest = await loadQuestions(subject, grade);
+    try {
+        const questionsForTest = await loadQuestions(subject, grade);
 
-    if (!questionsForTest) {
-        setLoadingState(mainStartBtn, false);
-        return;
-    }
-    
-    const filteredQuestions = questionsForTest.filter(q => q.difficulty === difficulty);
-    
-    if (filteredQuestions.length < TEST_LENGTH) {
-        showToast(`На жаль, для рівня "${difficulty}" недостатньо питань.`, 'info');
-        setLoadingState(mainStartBtn, false);
-        return;
-    }
+        if (!questionsForTest) {
+            return false;
+        }
 
-    currentTest.subject = subject;
-    currentTest.grade = grade; 
-    currentTest.difficulty = difficulty;
-    currentTest.questions = shuffleArray([...filteredQuestions]).slice(0, TEST_LENGTH);
-    currentTest.currentIndex = 0;
-    currentTest.score = 0;
-    currentTest.reviewData = [];
+        const filteredQuestions = questionsForTest.filter(q => q.difficulty === difficulty);
 
-    document.getElementById('test-title').textContent = { math: 'Математика', ukrainian: 'Українська мова', english: 'Англійська' }[subject];
-    document.getElementById('total-questions-num').textContent = currentTest.questions.length;
-    document.getElementById('current-question-num').textContent = 0;
-    document.getElementById('progress-bar').style.width = '0%';
+        if (filteredQuestions.length < TEST_LENGTH) {
+            showToast(`На жаль, для рівня "${difficulty}" недостатньо питань.`, 'info');
+            return false;
+        }
 
-    const modeIndicator = document.getElementById('test-mode-indicator');
-    modeIndicator.textContent = currentTest.mode === 'exam' ? 'Іспит' : 'Навчання';
-    modeIndicator.className = `text-xs sm:text-sm font-semibold px-3 py-1 rounded-full ml-3 ${currentTest.mode === 'exam' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`;
+        currentTest.subject = subject;
+        currentTest.grade = grade;
+        currentTest.difficulty = difficulty;
+        currentTest.questions = shuffleArray([...filteredQuestions]).slice(0, TEST_LENGTH);
+        currentTest.currentIndex = 0;
+        currentTest.score = 0;
+        currentTest.reviewData = [];
 
-    setLoadingState(mainStartBtn, false);
-    showScreen('test');
-    displayQuestion();
+        document.getElementById('test-title').textContent = { math: 'Математика', ukrainian: 'Українська мова', english: 'Англійська' }[subject];
+        document.getElementById('total-questions-num').textContent = currentTest.questions.length;
+        document.getElementById('current-question-num').textContent = 0;
+        document.getElementById('progress-bar').style.width = '0%';
 
-    if (currentTest.mode === 'exam') {
-        if (timerApi) timerApi.start();
-        enterExamLockdown();
-    } else {
-        document.getElementById('timer-display').classList.add('hidden');
+        const modeIndicator = document.getElementById('test-mode-indicator');
+        modeIndicator.textContent = currentTest.mode === 'exam' ? 'Іспит' : 'Навчання';
+        modeIndicator.className = `text-xs sm:text-sm font-semibold px-3 py-1 rounded-full ml-3 ${currentTest.mode === 'exam' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`;
+
+        showScreen('test');
+        displayQuestion();
+
+        activeTestSessionId = newTestSessionId;
+
+        if (currentTest.mode === 'exam') {
+            if (timerApi) timerApi.start();
+            enterExamLockdown();
+        } else {
+            document.getElementById('timer-display').classList.add('hidden');
+        }
+
+        return true;
+    } finally {
+        setLoadingState(loadingButton, false);
     }
 }
 
-function showGradeSelector(subject) {
+function showGradeSelector(subject, triggerButton) {
   const modal = document.getElementById('grade-selection-modal');
   const gradeContainer = document.getElementById('grade-buttons-container');
   const difficultyContainer = document.getElementById('difficulty-buttons-container');
@@ -437,10 +445,17 @@ function showGradeSelector(subject) {
   difficultyContainer.innerHTML = '';
   difficultyContainer.appendChild(buttonGroup);
 
-  startBtn.onclick = () => {
-    if (selectedGrade && selectedDifficulty) {
-      hideModal(modal);
-      startTest(subject, Number(selectedGrade), selectedDifficulty);
+  startBtn.onclick = async () => {
+    if (!(selectedGrade && selectedDifficulty)) return;
+
+    setLoadingState(startBtn, true);
+    try {
+      const started = await startTest(subject, Number(selectedGrade), selectedDifficulty, triggerButton);
+      if (started) {
+        hideModal(modal);
+      }
+    } finally {
+      setLoadingState(startBtn, false);
     }
   };
   
@@ -775,7 +790,9 @@ function setupEventListeners(){
 
     const feedbackIcon = document.createElement('span');
     feedbackIcon.className = 'feedback-icon ml-auto text-2xl';
-    feedbackIcon.innerHTML = isCorrect ? '✓' : '✗';
+    feedbackIcon.innerHTML = isCorrect
+      ? '✓ <span class="sr-only">Правильна відповідь</span>'
+      : '✗ <span class="sr-only">Неправильна відповідь</span>';
     button.classList.add(isCorrect ? 'correct' : 'incorrect');
     button.appendChild(feedbackIcon);
 
@@ -784,7 +801,7 @@ function setupEventListeners(){
         if (rightButton) {
             const correctIcon = document.createElement('span');
             correctIcon.className = 'feedback-icon ml-auto text-2xl';
-            correctIcon.innerHTML = '✓';
+            correctIcon.innerHTML = '✓ <span class="sr-only">Це правильна відповідь</span>';
             rightButton.classList.add('correct');
             rightButton.appendChild(correctIcon);
         }
@@ -802,7 +819,7 @@ function setupEventListeners(){
   });
 
   document.querySelectorAll('.start-test-btn').forEach(btn=>{
-    btn.addEventListener('click',()=>showGradeSelector(btn.dataset.subject));
+    btn.addEventListener('click',(event)=>showGradeSelector(btn.dataset.subject, event.currentTarget));
   });
 
   document.querySelectorAll('.mode-btn[data-mode]').forEach(btn=>{
@@ -922,7 +939,7 @@ function setupEventListeners(){
     document.querySelectorAll('#show-login-btn, #google-signin-btn, #login-form, #register-form, #toggle-auth, #save-progress-btn, #logout-btn').forEach(el=>{
       el.style.opacity='.5'; el.style.pointerEvents='none'; if(el.tagName==='BUTTON') el.setAttribute('disabled',true);
     });
-    const authText = document.querySelector('a#show-login-btn')?.parentElement;
+    const authText = document.querySelector('#show-login-btn')?.parentElement;
     if(authText) authText.innerHTML = 'Збереження прогресу недоступне.';
     showScreen('welcome');
   }
