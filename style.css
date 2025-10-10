@@ -8,6 +8,18 @@
     font-family:'Montserrat',sans-serif;
     background:linear-gradient(180deg,#f1f5ff 0%,#f8fafc 60%,#f1f5ff 100%);
   }
+  .sr-only{
+    position:absolute;
+    width:1px;
+    height:1px;
+    padding:0;
+    margin:-1px;
+    overflow:hidden;
+    clip:rect(0,0,0,0);
+    clip-path:inset(50%);
+    border:0;
+    white-space:nowrap;
+  }
   .skip-link{
     position:absolute;
     top:1rem;
