@@ -1,4 +1,4 @@
-// Firebase config previously inlined in index.html
+﻿// Firebase config previously inlined in index.html
 const firebaseConfig = {
   apiKey: "AIzaSyBgyNmD9ixU_vHOo-MM4_UARiHU35hlt6k",
   authDomain: "tests4-2a91a.firebaseapp.com",
@@ -29,11 +29,7 @@ import {
 } from './utils/validation.js';
 
 // Налаштування підтримуваних класів і reCAPTCHA
-const SUBJECT_GRADE_MAP = {
-  math: [2, 3, 4, 5, 6, 7, 8],
-  ukrainian: [2, 3, 4, 5, 6, 7, 8],
-  english: [2, 3, 4, 5, 6, 7, 8]
-};
+const SUBJECT_GRADE_MAP = { informatics: [1, 2, 3, 4] };
 const SUPPORTED_GRADES = Array.from(new Set(Object.values(SUBJECT_GRADE_MAP).flat())).sort((a, b) => a - b);
 
 const RECAPTCHA_SITE_KEY = '6LfrF-MrAAAAAJhW8g0-BwvB_3k0gTGM0mI4zcCa';
@@ -62,12 +58,8 @@ let isLockdownWarningActive = false;
 let penalizedQuestions = new Set();
 
 const badges = {
-  math_rookie:{ icon:'fas fa-calculator', name:'Математик-початківець', subject:'math', score:10 },
-  math_adept:{ icon:'fas fa-ruler-combined', name:'Знавець формул', subject:'math', score:50 },
-  ukrainian_rookie:{ icon:'fas fa-pen-nib', name:'Мовознавець-початківець', subject:'ukrainian', score:10 },
-  ukrainian_adept:{ icon:'fas fa-book-reader', name:'Хранитель мови', subject:'ukrainian', score:50 },
-  english_rookie:{ icon:'fas fa-language', name:'English Starter', subject:'english', score:10 },
-  english_adept:{ icon:'fas fa-graduation-cap', name:'English Speaker', subject:'english', score:50 },
+  informatics_rookie:{ icon:'fas fa-laptop', name:'Юний програміср', subject:'informatics', score:10 },
+  informatics_adept:{ icon:'fas fa-code', name:'Хакер', subject:'informatics', score:50 },
   genius:{ icon:'fas fa-brain', name:'Юний геній', subject:'total', score:100 },
   mastermind:{ icon:'fas fa-trophy', name:'Володар знань', subject:'total', score:200 }
 };
@@ -230,7 +222,7 @@ function updateDashboard() {
         heading.textContent = `Прогрес за ${userGrade} клас`;
         progressContainer.appendChild(heading);
 
-        const subjects = { math: 'Математика', ukrainian: 'Українська мова', english: 'Англійська' };
+        const subjects = { informatics: 'Інформатика' };
 
         Object.entries(subjects).forEach(([subjectId, subjectName]) => {
             const gradeScore = currentUserData.progress?.[subjectId]?.[`grade${userGrade}`] || 0;
@@ -255,10 +247,8 @@ function updateDashboard() {
         badgesContainer.innerHTML = '';
         badgesContainer.setAttribute('role', 'list');
         const badgeSubjectLabels = {
-            math: 'Математика',
-            ukrainian: 'Українська мова',
-            english: 'Англійська',
-            total: 'Усі предмети'
+            informatics: 'Інформатика',
+            total: 'Уси предмети'
         };
 
         if (currentUserData.badges && currentUserData.badges.length > 0) {
@@ -343,7 +333,7 @@ async function startTest(subject, grade, difficulty, triggerButton) {
         currentTest.score = 0;
         currentTest.reviewData = [];
 
-        document.getElementById('test-title').textContent = { math: 'Математика', ukrainian: 'Українська мова', english: 'Англійська' }[subject];
+        document.getElementById('test-title').textContent = { informatics: 'Інформатика' }[subject] || 'Інформатика';
         document.getElementById('total-questions-num').textContent = currentTest.questions.length;
         document.getElementById('current-question-num').textContent = 0;
         document.getElementById('progress-bar').style.width = '0%';
@@ -370,106 +360,87 @@ async function startTest(subject, grade, difficulty, triggerButton) {
     }
 }
 
-function showGradeSelector(subject, triggerButton) {
-  const modal = document.getElementById('grade-selection-modal');
-  const gradeContainer = document.getElementById('grade-buttons-container');
-  const difficultyContainer = document.getElementById('difficulty-buttons-container');
-  const startBtn = document.getElementById('start-test-from-modal-btn');
+let selectedSetup = {
+  welcome: { grade: null, difficulty: null },
+  dashboard: { grade: null, difficulty: null }
+};
 
-  let selectedGrade = null;
-  let selectedDifficulty = null;
-
+function initSelectors(prefix) {
+  const gradeContainer = document.getElementById(`${prefix}-grade-buttons-container`);
+  const difficultyContainer = document.getElementById(`${prefix}-difficulty-buttons-container`);
+  const startBtn = document.getElementById(`${prefix}-start-test-btn`);
+  
+  if (!gradeContainer || !difficultyContainer || !startBtn) return;
+  
   function checkSelections() {
-    const isDisabled = !(selectedGrade && selectedDifficulty);
+    const isDisabled = !(selectedSetup[prefix].grade && selectedSetup[prefix].difficulty);
     startBtn.disabled = isDisabled;
     startBtn.setAttribute('aria-disabled', isDisabled ? 'true' : 'false');
   }
-
+  
   gradeContainer.innerHTML = '';
-  const availableGrades = SUBJECT_GRADE_MAP[subject] || SUPPORTED_GRADES;
-
-  availableGrades.forEach(grade => {
+  SUPPORTED_GRADES.forEach(grade => {
     const button = document.createElement('button');
-    button.className = 'mode-btn btn text-blue-700 font-semibold py-3 px-4 rounded-lg transition w-full';
-    button.textContent = `${grade} клас`;
+    button.className = 'mode-btn btn text-blue-700 font-semibold py-3 px-4 border border-blue-200 rounded-lg transition w-full';
+    button.textContent = `${grade} klas`;
     button.dataset.grade = grade;
     button.type = 'button';
     button.setAttribute('aria-pressed','false');
-
+    
     button.onclick = () => {
-      selectedGrade = grade;
+      selectedSetup[prefix].grade = grade;
       gradeContainer.querySelectorAll('.mode-btn').forEach(btn => {
-        btn.classList.remove('is-active');
+        btn.classList.remove('is-active', 'bg-blue-500', 'text-white');
+        btn.classList.add('text-blue-700');
         btn.setAttribute('aria-pressed','false');
       });
-      button.classList.add('is-active');
+      button.classList.add('is-active', 'bg-blue-500', 'text-white');
+      button.classList.remove('text-blue-700');
       button.setAttribute('aria-pressed','true');
       checkSelections();
     };
     gradeContainer.appendChild(button);
   });
-
+  
   const difficulties = [
-      { id: 'easy', name: 'Легкий' },
-      { id: 'medium', name: 'Середній' },
-      { id: 'hard', name: 'Складний' }
+      { id: 'easy', name: 'Legkyi' },
+      { id: 'medium', name: 'Serednii' },
+      { id: 'hard', name: 'Skladnyi' }
   ];
-
-  const buttonGroup = document.createElement('div');
-  buttonGroup.className = 'flex rounded-lg border border-gray-300 p-1';
-
-  difficulties.forEach((diff, index) => {
+  
+  difficultyContainer.innerHTML = '';
+  
+  difficulties.forEach((diff) => {
     const button = document.createElement('button');
-    button.className = 'mode-btn btn text-blue-700 font-semibold py-2 px-4 transition w-full';
+    button.className = 'mode-btn btn text-blue-700 font-semibold py-3 px-4 border border-blue-200 rounded-lg transition w-full';
     button.type = 'button';
     button.setAttribute('aria-pressed','false');
-
-    if (index === 0) button.classList.add('rounded-l-md');
-    if (index === difficulties.length - 1) button.classList.add('rounded-r-md');
-
     button.textContent = diff.name;
-
+    
     button.onclick = () => {
-      selectedDifficulty = diff.id;
-      buttonGroup.querySelectorAll('.mode-btn').forEach(btn => {
-        btn.classList.remove('is-active');
+      selectedSetup[prefix].difficulty = diff.id;
+      difficultyContainer.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.remove('is-active', 'bg-blue-500', 'text-white');
+        btn.classList.add('text-blue-700');
         btn.setAttribute('aria-pressed','false');
       });
-      button.classList.add('is-active');
+      button.classList.add('is-active', 'bg-blue-500', 'text-white');
+      button.classList.remove('text-blue-700');
       button.setAttribute('aria-pressed','true');
       checkSelections();
     };
-    buttonGroup.appendChild(button);
+    difficultyContainer.appendChild(button);
   });
   
-  difficultyContainer.innerHTML = '';
-  difficultyContainer.appendChild(buttonGroup);
-
   startBtn.onclick = async () => {
-    if (!(selectedGrade && selectedDifficulty)) return;
-
+    if (!(selectedSetup[prefix].grade && selectedSetup[prefix].difficulty)) return;
     setLoadingState(startBtn, true);
     try {
-      const started = await startTest(subject, Number(selectedGrade), selectedDifficulty, triggerButton);
-      if (started) {
-        hideModal(modal);
-      }
+      await startTest('informatics', Number(selectedSetup[prefix].grade), selectedSetup[prefix].difficulty, startBtn);
     } finally {
       setLoadingState(startBtn, false);
     }
   };
-  
-  checkSelections();
-  gradeContainer.querySelectorAll('.mode-btn').forEach(btn => {
-    btn.classList.remove('is-active');
-    btn.setAttribute('aria-pressed','false');
-  });
-  buttonGroup.querySelectorAll('.mode-btn').forEach(btn => {
-    btn.classList.remove('is-active');
-    btn.setAttribute('aria-pressed','false');
-  });
-  
-  showModal(modal);
 }
 
 function displayQuestion(){ renderQuestion(currentTest, optionsContainer, radioKeyHandler); }
@@ -818,9 +789,7 @@ function setupEventListeners(){
     optionsContainer.removeEventListener('keydown', radioKeyHandler);
   });
 
-  document.querySelectorAll('.start-test-btn').forEach(btn=>{
-    btn.addEventListener('click',(event)=>showGradeSelector(btn.dataset.subject, event.currentTarget));
-  });
+
 
   document.querySelectorAll('.mode-btn[data-mode]').forEach(btn=>{
     btn.addEventListener('click',()=>setMode(btn.dataset.mode));
@@ -885,9 +854,8 @@ function setupEventListeners(){
     infoOkBtn.addEventListener('click', () => hideModal(infoModal));
   }
   
-  document.getElementById('cancel-grade-selection-btn').addEventListener('click', () => {
-    hideModal(document.getElementById('grade-selection-modal'));
-  });
+  initSelectors('welcome');
+  initSelectors('dashboard');
 
   // ✅ НОВИЙ СЛУХАЧ ДЛЯ ЗМІНИ КЛАСУ В КАБІНЕТІ
   const userGradeSelector = document.getElementById('user-grade-selector');

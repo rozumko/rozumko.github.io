@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Розумко | Онлайн тестування</title>
+  <title>Олімпіада з інформатики Розумко</title>
   
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
@@ -26,8 +26,8 @@
 
     <div id="welcome-container" class="w-full max-w-2xl text-center" role="region" aria-labelledby="welcome-title" aria-hidden="false">
       <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-xl">
-        <h1 id="welcome-title" class="text-3xl sm:text-4xl font-bold text-blue-600 mb-2">Перевір свої знання!</h1>
-        <p class="text-gray-500 mb-8">Обери предмет, щоб почати тестування</p>
+        <h1 id="welcome-title" class="text-3xl sm:text-4xl font-bold text-blue-600 mb-2">Олімпіада з інформатики "Розумко"</h1>
+        <p class="text-gray-500 mb-8">Обери клас та рівень складності, щоб почати</p>
 
         <div class="bg-blue-50 p-4 rounded-lg mb-6 max-w-md mx-auto">
           <p class="text-center font-semibold mb-3">Обери режим:</p>
@@ -41,23 +41,28 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8">
-          <button data-subject="math" class="start-test-btn btn tile-card flex flex-col items-center justify-center h-40 sm:h-48">
-            <span class="tile-icon" aria-hidden="true"><i class="fas fa-calculator"></i></span>
-            <span class="tile-title">Математика</span>
-          </button>
-          <button data-subject="ukrainian" class="start-test-btn btn tile-card flex flex-col items-center justify-center h-40 sm:h-48">
-            <span class="tile-icon" aria-hidden="true"><i class="fas fa-book"></i></span>
-            <span class="tile-title">Українська<br/>мова</span>
-          </button>
-          <button data-subject="english" class="start-test-btn btn tile-card flex flex-col items-center justify-center h-40 sm:h-48">
-            <span class="tile-icon" aria-hidden="true"><i class="fas fa-globe-americas"></i></span>
-            <span class="tile-title">Англійська</span>
+        <div class="grid sm:grid-cols-2 gap-8 mb-8 text-left">
+          <div>
+            <h3 class="font-semibold text-lg mb-4 text-center text-gray-700">1. Обери клас</h3>
+            <div id="welcome-grade-buttons-container" class="grid grid-cols-2 gap-3" role="group" aria-label="Оберіть клас">
+            </div>
+          </div>
+          
+          <div>
+            <h3 class="font-semibold text-lg mb-4 text-center text-gray-700">2. Обери складність</h3>
+            <div id="welcome-difficulty-buttons-container" class="flex flex-col gap-3" role="group" aria-label="Оберіть складність">
+            </div>
+          </div>
+        </div>
+
+        <div class="text-center mb-8">
+          <button id="welcome-start-test-btn" class="btn bg-blue-500 text-white font-bold py-3 px-12 rounded-lg w-full sm:w-auto text-lg shadow-lg" disabled>
+            Почати олімпіаду
           </button>
         </div>
 
-        <div class="mt-6">
-            <button id="show-login-btn" class="btn bg-blue-500 text-white font-bold py-3 px-6 rounded-lg">
+        <div class="mt-6 border-t pt-6">
+            <button id="show-login-btn" class="btn bg-white border border-gray-300 text-gray-700 font-bold py-3 px-6 rounded-lg w-full sm:w-auto">
                 Увійти, щоб зберегти прогрес
             </button>
         </div>
@@ -153,18 +158,23 @@
               </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-              <button data-subject="math" class="start-test-btn btn tile-card flex flex-col items-center justify-center h-40 sm:h-48">
-                <span class="tile-icon" aria-hidden="true"><i class="fas fa-calculator"></i></span>
-                <span class="tile-title">Математика</span>
-              </button>
-              <button data-subject="ukrainian" class="start-test-btn btn tile-card flex flex-col items-center justify-center h-40 sm:h-48">
-                <span class="tile-icon" aria-hidden="true"><i class="fas fa-book"></i></span>
-                <span class="tile-title">Українська<br/>мова</span>
-              </button>
-              <button data-subject="english" class="start-test-btn btn tile-card flex flex-col items-center justify-center h-40 sm:h-48">
-                <span class="tile-icon" aria-hidden="true"><i class="fas fa-globe-americas"></i></span>
-                <span class="tile-title">Англійська</span>
+            <div class="grid sm:grid-cols-2 gap-8 mb-8 text-left">
+              <div>
+                <h3 class="font-semibold text-lg mb-4 text-center text-gray-700">1. Обери клас</h3>
+                <div id="dashboard-grade-buttons-container" class="grid grid-cols-2 gap-3" role="group" aria-label="Оберіть клас">
+                </div>
+              </div>
+              
+              <div>
+                <h3 class="font-semibold text-lg mb-4 text-center text-gray-700">2. Обери складність</h3>
+                <div id="dashboard-difficulty-buttons-container" class="flex flex-col gap-3" role="group" aria-label="Оберіть складність">
+                </div>
+              </div>
+            </div>
+
+            <div class="text-center mb-8">
+              <button id="dashboard-start-test-btn" class="btn bg-blue-500 text-white font-bold py-3 px-12 rounded-lg w-full sm:w-auto text-lg shadow-lg" disabled>
+                Почати олімпіаду
               </button>
             </div>
           </div>
@@ -299,34 +309,7 @@
     </div>
   </div>
 
-  <div id="grade-selection-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="grade-selection-title" aria-hidden="true">
-    <div class="modal-content bg-white p-8 rounded-2xl shadow-xl w-full max-w-2xl text-left mx-4">
-      <h2 id="grade-selection-title" class="text-2xl font-bold text-blue-600 mb-6 text-center">Налаштування тесту</h2>
-      
-        <div class="grid sm:grid-cols-2 gap-8">
-          <div>
-            <h3 class="font-semibold text-lg mb-4 text-center">1. Обери клас</h3>
-            <div id="grade-buttons-container" class="grid grid-cols-3 gap-3" role="group" aria-label="Оберіть клас">
-              </div>
-          </div>
-          
-          <div>
-            <h3 class="font-semibold text-lg mb-4 text-center">2. Обери складність</h3>
-            <div id="difficulty-buttons-container" class="flex justify-center" role="group" aria-label="Оберіть складність">
-              </div>
-          </div>
-        </div>
-
-      <div class="mt-8 pt-6 border-t text-center">
-        <button id="start-test-from-modal-btn" class="btn w-full sm:w-auto bg-blue-500 text-white font-bold py-3 px-12 rounded-lg" disabled>
-          Почати тест
-        </button>
-        <button id="cancel-grade-selection-btn" class="mt-4 text-gray-600 hover:underline text-base">
-          Повернутись на головну
-        </button>
-      </div>
-    </div>
-  </div>
+  <div id="grade-selection-modal" class="modal hidden" aria-hidden="true"></div>
 
   <div id="toast-notification" role="status" aria-live="polite"></div>
 
