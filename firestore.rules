@@ -1,0 +1,88 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function isTeacher() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && userDoc().data.role == 'teacher';
+    }
+
+    function ownsTeacherScopedDoc(data) {
+      return signedIn() && data.teacherUid == request.auth.uid;
+    }
+
+    function ownsStudentAttempt(data) {
+      return signedIn() && data.uid == request.auth.uid;
+    }
+
+    match /users/{userId} {
+      allow get, update, delete: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow list: if false;
+    }
+
+    match /students/{studentCode} {
+      allow get: if signedIn();
+      allow list: if isTeacher();
+      allow create: if isTeacher()
+        && request.resource.data.code == studentCode
+        && request.resource.data.teacherUid == request.auth.uid;
+      allow update, delete: if isTeacher() && ownsTeacherScopedDoc(resource.data);
+    }
+
+    match /olympiad_sessions/{sessionId} {
+      allow get: if isTeacher() && ownsTeacherScopedDoc(resource.data)
+        || ownsStudentAttempt(resource.data);
+
+      allow list: if isTeacher();
+
+      allow create: if signedIn()
+        && request.resource.data.participantKey == sessionId
+        && ownsStudentAttempt(request.resource.data);
+
+      allow update: if isTeacher() && ownsTeacherScopedDoc(resource.data)
+        || (
+          ownsStudentAttempt(resource.data)
+          && request.resource.data.uid == resource.data.uid
+          && request.resource.data.participantKey == resource.data.participantKey
+        );
+
+      allow delete: if isTeacher() && ownsTeacherScopedDoc(resource.data);
+    }
+
+    match /olympiad_results/{resultId} {
+      allow get: if isTeacher() && ownsTeacherScopedDoc(resource.data)
+        || ownsStudentAttempt(resource.data);
+
+      allow list: if isTeacher();
+
+      allow create: if signedIn()
+        && request.resource.data.participantKey == resultId
+        && ownsStudentAttempt(request.resource.data)
+        && exists(/databases/$(database)/documents/olympiad_sessions/$(resultId))
+        && get(/databases/$(database)/documents/olympiad_sessions/$(resultId)).data.uid == request.auth.uid;
+
+      allow update: if isTeacher() && ownsTeacherScopedDoc(resource.data)
+        || (
+          ownsStudentAttempt(resource.data)
+          && request.resource.data.uid == resource.data.uid
+          && request.resource.data.participantKey == resource.data.participantKey
+        );
+
+      allow delete: if isTeacher() && ownsTeacherScopedDoc(resource.data);
+    }
+  }
+}

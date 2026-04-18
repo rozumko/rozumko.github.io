@@ -3,6 +3,7 @@ export function createTimer({ onTimeout, getActiveTestSessionId, getMode }){
   let timer = null;
   let timerDeadline;
   let timeLeftWhenPaused;
+  let durationMinutes = 5;
 
   function stop(){ clearInterval(timer); timer=null; }
 
@@ -28,7 +29,7 @@ export function createTimer({ onTimeout, getActiveTestSessionId, getMode }){
 
   function start(){
     stop();
-    timerDeadline = Date.now() + 300*1000;
+    timerDeadline = Date.now() + durationMinutes * 60 * 1000;
     const timerDisplay = document.getElementById('timer-display');
     if(timerDisplay){ timerDisplay.classList.remove('hidden'); timerDisplay.classList.add('flex'); }
     updateDisplay();
@@ -38,11 +39,17 @@ export function createTimer({ onTimeout, getActiveTestSessionId, getMode }){
   function pause(){ if(!timer) return; stop(); timeLeftWhenPaused = timerDeadline - Date.now(); }
 
   function resume(){
-    if(getMode()!=='exam' || !getActiveTestSessionId() || timer) return;
+    if(!getActiveTestSessionId() || timer) return;
+    const mode = getMode();
+    if(mode !== 'exam' && mode !== 'olympiad') return;
     timerDeadline = Date.now() + timeLeftWhenPaused;
     updateDisplay();
     timer = setInterval(updateDisplay,1000);
   }
 
-  return { start, stop, pause, resume, updateDisplay };
+  function setDuration(minutes){
+    durationMinutes = minutes;
+  }
+
+  return { start, stop, pause, resume, updateDisplay, setDuration };
 }

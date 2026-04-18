@@ -7,7 +7,8 @@ import {
   sendEmailVerification
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import {
-  getFirestore, doc, getDoc, setDoc, updateDoc, increment, onSnapshot
+  getFirestore, doc, getDoc, setDoc, updateDoc, increment, onSnapshot,
+  collection, getDocs, query, where
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 let app, auth, db;
@@ -35,5 +36,6 @@ export {
   GoogleAuthProvider, signInWithPopup, signInWithCustomToken, signInAnonymously,
   sendEmailVerification,
   // firestore exports
-  doc, getDoc, setDoc, updateDoc, increment, onSnapshot
+  doc, getDoc, setDoc, updateDoc, increment, onSnapshot,
+  collection, getDocs, query, where
 };
