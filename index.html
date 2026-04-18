@@ -24,12 +24,59 @@
 
   <main id="main-content" class="app-container min-h-screen flex items-start justify-center p-4 pt-10 sm:pt-16" tabindex="-1">
 
-    <div id="welcome-container" class="w-full max-w-2xl text-center" role="region" aria-labelledby="welcome-title" aria-hidden="false">
-      <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-xl">
+    <div id="welcome-container" class="w-full max-w-6xl text-center" role="region" aria-labelledby="welcome-title" aria-hidden="false">
+      <div class="bg-white/95 p-4 sm:p-6 lg:p-8 rounded-[2rem] shadow-2xl border border-white/70">
+        <section class="rounded-[1.75rem] bg-gradient-to-br from-sky-100 via-white to-amber-100 p-6 sm:p-8 lg:p-10 text-left mb-8">
+          <div class="grid lg:grid-cols-[1.25fr_0.75fr] gap-6 items-start">
+            <div>
+              <span class="inline-flex items-center gap-2 bg-white text-sky-700 text-sm font-semibold px-4 py-2 rounded-full shadow-sm mb-4">
+                <i class="fas fa-star" aria-hidden="true"></i>
+                Онлайн-олімпіада для 1-4 класів
+              </span>
+              <h1 class="text-3xl sm:text-5xl font-bold text-slate-900 leading-tight mb-4">Олімпіада з інформатики «Розумко»</h1>
+              <p class="text-lg sm:text-xl text-slate-700 mb-5">На цій сторінці все просто: якщо маєш код — проходиш олімпіаду, якщо хочеш підготуватися — обираєш тренування, якщо ти вчитель — переходиш у свій кабінет.</p>
+              <div class="grid sm:grid-cols-3 gap-3 text-sm">
+                <div class="bg-white/80 rounded-2xl px-4 py-3 border border-sky-100">
+                  <p class="font-semibold text-slate-900 mb-1">1. Код учня</p>
+                  <p class="text-slate-600">Введи код і далі обери демо-версію або основну олімпіаду.</p>
+                </div>
+                <div class="bg-white/80 rounded-2xl px-4 py-3 border border-sky-100">
+                  <p class="font-semibold text-slate-900 mb-1">2. Тренування</p>
+                  <p class="text-slate-600">Нижче є окремий блок для підготовки без коду.</p>
+                </div>
+                <div class="bg-white/80 rounded-2xl px-4 py-3 border border-sky-100">
+                  <p class="font-semibold text-slate-900 mb-1">3. Для вчителя</p>
+                  <p class="text-slate-600">Увійди в кабінет, створи коди і перевіряй результати.</p>
+                </div>
+              </div>
+            </div>
+            <div class="bg-slate-950 text-white rounded-[1.5rem] p-5 sm:p-6 shadow-xl">
+              <form id="student-code-form-hero" class="space-y-3 mb-4" aria-describedby="student-code-status-hero student-code-summary-hero">
+                <label for="student-code-input-hero" class="sr-only">Код учня</label>
+                <input id="student-code-input-hero" type="text" inputmode="text" autocomplete="off" placeholder="Наприклад, ОРЕЛ-47" class="w-full px-4 py-4 rounded-2xl bg-white text-slate-900 border border-white/60 focus:outline-none focus:ring-4 focus:ring-sky-300 text-xl uppercase tracking-[0.18em]"/>
+                <div class="flex flex-col sm:flex-row gap-3">
+                  <button id="student-code-submit-btn-hero" type="submit" class="btn flex-1 bg-emerald-400 text-slate-950 font-bold py-4 px-5 rounded-2xl">Підтвердити код</button>
+                  <button id="student-code-clear-btn-hero" type="button" class="btn bg-white/10 text-white font-semibold py-4 px-5 rounded-2xl hidden whitespace-nowrap">Змінити код</button>
+                </div>
+              </form>
+              <p id="student-code-status-hero" class="text-rose-300 text-sm mt-3"></p>
+              <p id="student-code-summary-hero" class="text-emerald-300 text-sm mt-2 hidden"></p>
+              <p class="text-sm uppercase tracking-[0.2em] text-sky-200 mb-3">Швидкий старт</p>
+              <h2 class="text-2xl font-bold mb-3">Вхід учня за кодом</h2>
+              <p class="text-slate-300 text-sm mb-4">Введи код, який дав учитель. Після підтвердження можна буде перейти до демо-версії або основної олімпіади.</p>
+              <p class="text-sm text-slate-300 mb-3">Форма входу одразу нижче на сторінці.</p>
+              <button id="show-login-hero-btn" class="btn w-full bg-white text-slate-900 font-bold py-4 px-5 rounded-2xl">Для вчителя</button>
+            </div>
+          </div>
+        </section>
         <h1 id="welcome-title" class="text-3xl sm:text-4xl font-bold text-blue-600 mb-2">Олімпіада з інформатики "Розумко"</h1>
         <p id="welcome-mode-description" class="text-gray-500 mb-8">Обери клас та рівень складності, щоб почати</p>
 
-        <div class="bg-blue-50 p-4 rounded-lg mb-6 max-w-md mx-auto">
+        <section class="grid xl:grid-cols-[0.92fr_1.08fr] gap-6 items-start">
+        <div class="bg-sky-50 border border-sky-200 rounded-[1.75rem] p-6 sm:p-8 text-left">
+          <p class="text-sm font-semibold uppercase tracking-[0.2em] text-sky-600 mb-2">Олімпіада</p>
+          <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-3">Обери формат проходження</h2>
+          <p class="text-slate-600 mb-6">Демо-версія допомагає спробувати формат, а основна олімпіада зберігає офіційний результат.</p>
           <p class="text-center font-semibold mb-3">Обери режим:</p>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <button data-mode="practice" class="mode-btn btn text-blue-700 font-semibold py-3 px-4 rounded-lg transition" aria-label="Обрати режим Навчання" aria-pressed="false">
@@ -43,6 +90,10 @@
             </button>
           </div>
         </div>
+        <div class="bg-amber-50 border border-amber-200 rounded-[1.75rem] p-6 sm:p-8 text-left">
+        <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-600 mb-2">Тренування</p>
+        <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-3">Підготовка перед олімпіадою</h2>
+        <p class="text-slate-600 mb-6">Обери клас і складність, щоб розв’язати тренувальні завдання без офіційної спроби.</p>
 
         <div class="grid sm:grid-cols-2 gap-8 mb-8 text-left">
           <div>
@@ -58,13 +109,15 @@
           </div>
         </div>
 
-        <div class="text-center mb-8">
-          <button id="welcome-start-test-btn" class="btn bg-blue-500 text-white font-bold py-3 px-12 rounded-lg w-full sm:w-auto text-lg shadow-lg" disabled>
+        <div class="text-center mb-0">
+          <button id="welcome-start-test-btn" class="btn bg-amber-500 text-slate-950 font-bold py-4 px-8 rounded-2xl w-full sm:w-auto text-lg shadow-lg" disabled>
             Почати олімпіаду
           </button>
         </div>
 
-        <section class="mt-6 border-t pt-6">
+        </div>
+        </section>
+        <section class="hidden mt-6 border-t pt-6">
             <h2 class="text-xl font-semibold text-slate-900 mb-3">Вхід учня за кодом</h2>
             <p class="text-sm text-gray-600 mb-4">Введи код, який видав учитель, щоб закріпити спробу за собою.</p>
             <form id="student-code-form" class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center" aria-describedby="student-code-status student-code-summary">
@@ -77,7 +130,7 @@
             <p id="student-code-summary" class="text-sm text-emerald-700 mt-2 hidden" aria-live="polite"></p>
         </section>
 
-        <div class="mt-6 border-t pt-6">
+        <div class="hidden mt-6 border-t pt-6">
             <p class="text-sm text-gray-600 mb-3">Вчителю або організатору:</p>
             <button id="show-login-btn" class="btn bg-white border border-gray-300 text-gray-700 font-bold py-3 px-6 rounded-lg w-full sm:w-auto">
                 Увійти, щоб зберегти прогрес
@@ -246,21 +299,27 @@
 
               <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6">
                 <h3 class="text-base font-semibold text-slate-900 mb-3">Генерація кодів</h3>
-                <form id="teacher-code-generator-form" class="flex flex-col gap-3" aria-describedby="teacher-code-generator-status">
+                <p class="text-sm text-slate-600 mb-4">Мінімум даних: додавай лише безпечні позначки учнів або місця в класі, без ПІБ, email чи телефонів.</p>
+                <form id="teacher-code-generator-form" class="flex flex-col gap-3" aria-describedby="teacher-code-generator-status teacher-registration-hint">
                   <label for="teacher-code-grade" class="text-sm font-medium text-slate-700">Клас</label>
                   <select id="teacher-code-grade" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
                   <label for="teacher-code-class-select" class="text-sm font-medium text-slate-700">Збережений клас</label>
                   <select id="teacher-code-class-select" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
                   <label for="teacher-code-class-name" class="text-sm font-medium text-slate-700">Нова назва класу або групи</label>
                   <input id="teacher-code-class-name" type="text" placeholder="Наприклад, 4-А" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-                  <label for="teacher-code-count" class="text-sm font-medium text-slate-700">Кількість кодів</label>
+                  <label for="teacher-student-bulk-input" class="text-sm font-medium text-slate-700">Учні списком, по одному в рядок</label>
+                  <textarea id="teacher-student-bulk-input" rows="6" placeholder="Місце 1&#10;Місце 2&#10;АБ-01" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                  <label for="teacher-quick-count" class="text-sm font-medium text-slate-700">Або швидко створити порожні записи</label>
+                  <input id="teacher-quick-count" type="number" min="0" max="40" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                  <label for="teacher-code-count" class="text-sm font-medium text-slate-700">Резервна кількість, якщо список порожній</label>
                   <select id="teacher-code-count" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="1">1 код</option>
                     <option value="5">5 кодів</option>
                     <option value="10">10 кодів</option>
                   </select>
-                  <button id="teacher-code-generate-btn" type="submit" class="btn bg-emerald-500 text-white font-bold py-3 px-4 rounded-lg">Згенерувати коди</button>
+                  <button id="teacher-code-generate-btn" type="submit" class="btn bg-emerald-500 text-white font-bold py-3 px-4 rounded-lg">Додати учнів</button>
                 </form>
+                <p id="teacher-registration-hint" class="text-xs text-slate-500 mt-3">Кожному запису буде створено код доступу й окреме платіжне посилання з випадковим токеном без персональних даних.</p>
                 <p id="teacher-code-generator-status" class="text-sm mt-3" aria-live="polite"></p>
               </div>
 

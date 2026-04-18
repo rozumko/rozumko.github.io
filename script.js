@@ -56,22 +56,23 @@ import { displayQuestion as renderQuestion, updateProgressUI as renderProgress, 
 let timerApi = null;
 const MODE_CONFIG = {
   practice: {
-    label: 'Навчання',
+    label: 'Тренування',
     startButtonLabel: 'Почати тренування',
     questionsCount: 5,
     timeMinutes: null,
     requiresFullscreen: false
   },
   exam: {
-    label: 'Іспит',
-    startButtonLabel: 'Почати іспит',
+    label: 'Демо-версія',
+    startButtonLabel: 'Почати демо-олімпіаду',
     questionsCount: 5,
-    timeMinutes: 5,
-    requiresFullscreen: true
+    timeMinutes: 10,
+    requiresFullscreen: true,
+    difficulty: 'hard'
   },
   olympiad: {
-    label: 'Олімпіада',
-    startButtonLabel: 'Почати олімпіаду',
+    label: 'Основна олімпіада',
+    startButtonLabel: 'Почати основну олімпіаду',
     questionsCount: 10,
     timeMinutes: 15,
     requiresFullscreen: true,
@@ -88,6 +89,7 @@ const STUDENT_CODE_WORDS = ['ОРЕЛ', 'СОВА', 'ЛОСЬ', 'ЗІРКА', '�
 const STUDENT_SESSION_KEY = 'studentCode';
 const NEW_CLASS_OPTION_VALUE = '__new__';
 const ALL_CLASSES_FILTER_VALUE = 'all';
+const PAYMENT_LINK_PATH = '/pay';
 const MAX_OFFLINE_SCORES = 100;
 let activeTestSessionId = null;
 let isLockdownWarningActive = false;
@@ -111,6 +113,38 @@ function setMode(mode){
     btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
   });
   updateModeDependentUI();
+}
+
+function hydrateModeButtons() {
+  const modePresentation = {
+    practice: {
+      icon: 'fas fa-book-open',
+      title: 'Тренування',
+      description: 'Обери клас і складність для підготовки.'
+    },
+    exam: {
+      icon: 'fas fa-rocket',
+      title: 'Демо-версія',
+      description: 'Спробуй формат олімпіади перед основним проходженням.'
+    },
+    olympiad: {
+      icon: 'fas fa-medal',
+      title: 'Основна олімпіада',
+      description: 'Офіційний прохід за кодом учня.'
+    }
+  };
+
+  document.querySelectorAll('.mode-btn[data-mode]').forEach(btn => {
+    const data = modePresentation[btn.dataset.mode];
+    if (!data) return;
+    btn.innerHTML = `
+      <span class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-100 text-blue-600 text-lg mb-3">
+        <i class="${data.icon}" aria-hidden="true"></i>
+      </span>
+      <span class="block text-lg font-bold">${data.title}</span>
+      <span class="block text-sm font-normal mt-1">${data.description}</span>
+    `;
+  });
 }
 
 function getModeConfig(mode = currentTest.mode) {
@@ -463,25 +497,39 @@ function syncStudentGradeSelection() {
 }
 
 function renderStudentAccessState() {
-  const statusEl = document.getElementById('student-code-status');
-  const summaryEl = document.getElementById('student-code-summary');
-  const clearBtn = document.getElementById('student-code-clear-btn');
-  const input = document.getElementById('student-code-input');
+  const statusEls = ['student-code-status', 'student-code-status-hero']
+    .map(id => document.getElementById(id))
+    .filter(Boolean);
+  const summaryEls = ['student-code-summary', 'student-code-summary-hero']
+    .map(id => document.getElementById(id))
+    .filter(Boolean);
+  const clearButtons = ['student-code-clear-btn', 'student-code-clear-btn-hero']
+    .map(id => document.getElementById(id))
+    .filter(Boolean);
+  const inputs = ['student-code-input', 'student-code-input-hero']
+    .map(id => document.getElementById(id))
+    .filter(Boolean);
 
-  if (!statusEl || !summaryEl || !clearBtn || !input) return;
+  if (!statusEls.length && !summaryEls.length && !clearButtons.length && !inputs.length) return;
 
   if (currentStudentProfile) {
-    statusEl.textContent = '';
-    summaryEl.textContent = `Код ${currentStudentProfile.code} активовано. Клас: ${currentStudentProfile.grade}.`;
-    summaryEl.classList.remove('hidden');
-    clearBtn.classList.remove('hidden');
-    input.value = currentStudentProfile.code;
-    input.setAttribute('aria-invalid', 'false');
+    statusEls.forEach(el => { el.textContent = ''; });
+    summaryEls.forEach(el => {
+      el.textContent = `Код ${currentStudentProfile.code} активовано. Клас: ${currentStudentProfile.grade}.`;
+      el.classList.remove('hidden');
+    });
+    clearButtons.forEach(btn => btn.classList.remove('hidden'));
+    inputs.forEach(input => {
+      input.value = currentStudentProfile.code;
+      input.setAttribute('aria-invalid', 'false');
+    });
   } else {
-    summaryEl.textContent = '';
-    summaryEl.classList.add('hidden');
-    clearBtn.classList.add('hidden');
-    input.value = '';
+    summaryEls.forEach(el => {
+      el.textContent = '';
+      el.classList.add('hidden');
+    });
+    clearButtons.forEach(btn => btn.classList.add('hidden'));
+    inputs.forEach(input => { input.value = ''; });
   }
 
   syncStudentGradeSelection();
@@ -532,6 +580,86 @@ function generateStudentCode() {
   return `${word}-${num}`;
 }
 
+function generateOpaqueToken(length = 24) {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+  const cryptoApi = globalThis.crypto;
+
+  if (cryptoApi?.getRandomValues) {
+    const bytes = new Uint8Array(length);
+    cryptoApi.getRandomValues(bytes);
+    return Array.from(bytes, byte => alphabet[byte % alphabet.length]).join('');
+  }
+
+  return Array.from({ length }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join('');
+}
+
+function sanitizeStudentLabel(value) {
+  return String(value || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .slice(0, 40);
+}
+
+function createStudentEntriesFromInput(rawText, quickCount = 0) {
+  const labels = String(rawText || '')
+    .split(/\r?\n/)
+    .map(item => sanitizeStudentLabel(item))
+    .filter(Boolean);
+
+  if (labels.length) {
+    return labels.map(label => ({ label }));
+  }
+
+  const safeCount = Math.max(0, Math.min(40, Number(quickCount || 0)));
+  return Array.from({ length: safeCount }, (_, index) => ({
+    label: `Учасник ${index + 1}`
+  }));
+}
+
+function buildStudentPaymentLink(student) {
+  if (!student?.paymentToken) return '';
+
+  const origin = window.location.origin || '';
+  const url = new URL(PAYMENT_LINK_PATH, origin);
+  url.searchParams.set('token', student.paymentToken);
+  return url.toString();
+}
+
+async function copyTextToClipboard(text) {
+  if (!text) {
+    throw new Error('Nothing to copy.');
+  }
+
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'absolute';
+  textarea.style.left = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand('copy');
+  textarea.remove();
+}
+
+async function ensureStudentPaymentToken(student) {
+  if (student?.paymentToken) return student.paymentToken;
+  if (!student?.code) throw new Error('Student code is required.');
+
+  const paymentToken = generateOpaqueToken();
+  await updateDoc(doc(db, 'students', student.code), {
+    paymentToken,
+    paymentStatus: student.paymentStatus || 'pending',
+    updatedAt: new Date().toISOString()
+  });
+  student.paymentToken = paymentToken;
+  return paymentToken;
+}
+
 async function createUniqueStudentCode() {
   for (let attempt = 0; attempt < 20; attempt += 1) {
     const candidate = generateStudentCode();
@@ -545,23 +673,30 @@ async function createUniqueStudentCode() {
   throw new Error('Не вдалося згенерувати унікальний код. Спробуйте ще раз.');
 }
 
-async function createStudentRecords(grade, count = 1, classRecord = null) {
+async function createStudentRecords(grade, entries = [], classRecord = null) {
   if (!currentUser || currentUserData?.role !== 'teacher') {
     throw new Error('Генерація кодів доступна лише вчителю.');
   }
 
   const resolvedClass = classRecord || buildTeacherClassRecord(grade, '');
+  const normalizedEntries = Array.isArray(entries) && entries.length
+    ? entries
+    : [{ label: 'Учасник 1' }];
   const createdCodes = [];
-  for (let i = 0; i < count; i += 1) {
+  for (let i = 0; i < normalizedEntries.length; i += 1) {
+    const studentLabel = sanitizeStudentLabel(normalizedEntries[i]?.label) || `Учасник ${i + 1}`;
     const code = await createUniqueStudentCode();
     await setDoc(doc(db, 'students', code), {
       code,
       grade,
       classId: resolvedClass.id,
       className: resolvedClass.name,
+      studentLabel,
       teacherUid: currentUser.uid,
       isActive: true,
       retryAllowed: false,
+      paymentToken: generateOpaqueToken(),
+      paymentStatus: 'pending',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });
@@ -643,12 +778,14 @@ function getTeacherDashboardViewModel() {
   const activeResults = results.filter(result => result.invalidated !== true);
   const completedCodes = new Set(activeResults.map(result => result.studentCode).filter(Boolean));
   const pendingStudents = students.filter(student => student.isActive !== false && !completedCodes.has(student.code));
+  const unpaidStudents = students.filter(student => (student.paymentStatus || 'pending') === 'pending');
 
   return {
     classId,
     students,
     results,
-    pendingStudents
+    pendingStudents,
+    unpaidStudents
   };
 }
 
@@ -660,7 +797,7 @@ function renderTeacherDashboardLists() {
     : getTeacherClassLabel(viewModel.classId);
 
   if (summaryEl) {
-    summaryEl.textContent = `Показано для ${classLabel}: кодів ${viewModel.students.length}, результатів ${viewModel.results.length}, ще не проходили ${viewModel.pendingStudents.length}.`;
+    summaryEl.textContent = `Показано для ${classLabel}: записів ${viewModel.students.length}, результатів ${viewModel.results.length}, ще не проходили ${viewModel.pendingStudents.length}, оплата очікується ${viewModel.unpaidStudents.length}.`;
   }
 
   renderTeacherStudents(viewModel.students, viewModel.pendingStudents.length);
@@ -677,6 +814,10 @@ async function loadTeacherStudents() {
     .sort((a, b) => {
       const gradeDelta = Number(a.grade || 0) - Number(b.grade || 0);
       if (gradeDelta !== 0) return gradeDelta;
+      const classDelta = String(a.className || '').localeCompare(String(b.className || ''), 'uk');
+      if (classDelta !== 0) return classDelta;
+      const labelDelta = String(a.studentLabel || '').localeCompare(String(b.studentLabel || ''), 'uk');
+      if (labelDelta !== 0) return labelDelta;
       return String(a.code || '').localeCompare(String(b.code || ''));
     });
 }
@@ -696,8 +837,9 @@ function renderTeacherStudents(students, pendingCount = 0) {
   const metaEl = document.getElementById('teacher-student-codes-meta');
   if (!listEl || !metaEl) return;
 
+  const paymentPendingCount = students.filter(student => (student.paymentStatus || 'pending') === 'pending').length;
   metaEl.textContent = students.length
-    ? `Згенеровано кодів: ${students.length}. Ще не проходили: ${pendingCount}`
+    ? `Записів: ${students.length}. Ще не проходили: ${pendingCount}. Очікують оплату: ${paymentPendingCount}`
     : 'Поки що кодів немає.';
 
   if (!students.length) {
@@ -709,12 +851,29 @@ function renderTeacherStudents(students, pendingCount = 0) {
     <article class="border border-slate-200 rounded-lg px-4 py-3 bg-slate-50">
       <div class="flex items-center justify-between gap-3">
         <div>
+          <p class="text-sm font-semibold text-slate-700">${student.studentLabel || 'Без позначки'}</p>
           <p class="font-semibold text-slate-900">${student.code}</p>
-          <p class="text-xs text-slate-500 mt-1">${student.isActive === false ? 'Неактивний код' : 'Активний код'} · ${student.className || getTeacherClassLabel(student.classId, student.grade)}</p>
+          <p class="text-xs text-slate-500 mt-1">${student.isActive === false ? 'Неактивний код' : 'Активний код'} · ${student.className || getTeacherClassLabel(student.classId, student.grade)} · Оплата: ${student.paymentStatus === 'paid' ? 'підтверджено' : 'очікується'}</p>
         </div>
         <span class="text-sm text-slate-500">${student.grade} клас</span>
       </div>
-      <div class="flex justify-end mt-3">
+      <div class="flex flex-wrap justify-end gap-2 mt-3">
+        <button
+          type="button"
+          class="btn text-sm font-semibold py-2 px-3 rounded-lg bg-white text-slate-700 border border-slate-200"
+          data-teacher-action="copy-code"
+          data-student-code="${student.code}"
+        >
+          Копіювати код
+        </button>
+        <button
+          type="button"
+          class="btn text-sm font-semibold py-2 px-3 rounded-lg bg-sky-100 text-sky-800"
+          data-teacher-action="copy-payment-link"
+          data-student-code="${student.code}"
+        >
+          Посилання на оплату
+        </button>
         <button
           type="button"
           class="btn text-sm font-semibold py-2 px-3 rounded-lg ${student.isActive === false ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-700'}"
@@ -783,7 +942,12 @@ async function refreshTeacherDashboardData() {
   renderTeacherDashboardLists();
 }
 
+function findTeacherStudentByCode(code) {
+  return teacherDashboardCache.students.find(student => student.code === code) || null;
+}
+
 function updateModeDependentUI() {
+  hydrateModeButtons();
   ['welcome', 'dashboard'].forEach(prefix => {
     const modeConfig = getModeConfig();
     const difficultyContainer = document.getElementById(`${prefix}-difficulty-buttons-container`);
@@ -793,7 +957,7 @@ function updateModeDependentUI() {
     const modeButtons = document.querySelectorAll(`#${prefix}-container .mode-btn[data-mode]`);
 
     modeButtons.forEach(btn => {
-      const shouldDisable = Boolean(currentStudentProfile) && btn.dataset.mode !== 'olympiad';
+      const shouldDisable = Boolean(currentStudentProfile) && btn.dataset.mode === 'practice';
       btn.disabled = shouldDisable;
       btn.setAttribute('aria-disabled', shouldDisable ? 'true' : 'false');
     });
@@ -832,9 +996,13 @@ function updateModeDependentUI() {
     }
 
     if (subtitle) {
-      subtitle.textContent = modeConfig.difficulty
-        ? 'Для олімпіади автоматично використовується складний рівень. Повторна спроба для активної події блокується.'
-        : 'Оберіть клас та рівень складності, щоб почати.';
+      if (currentTest.mode === 'practice') {
+        subtitle.textContent = 'Обери клас та рівень складності, щоб почати тренування.';
+      } else if (currentTest.mode === 'exam') {
+        subtitle.textContent = 'Демо-версія використовує складний рівень і допомагає спокійно спробувати формат олімпіади.';
+      } else {
+        subtitle.textContent = 'Основна олімпіада використовує складний рівень і зберігає офіційний результат. Повторна спроба для активної події блокується.';
+      }
     }
   });
 }
@@ -1143,12 +1311,16 @@ async function startTest(subject, grade, difficulty, triggerButton) {
     setLoadingState(loadingButton, true);
 
     try {
-        if (currentTest.mode === 'olympiad') {
-            if (!currentStudentProfile && (!currentUser || currentUser.isAnonymous || !isFirebaseActive)) {
+        const isOlympiadFlow = ['exam', 'olympiad'].includes(currentTest.mode);
+
+        if (isOlympiadFlow) {
+            if (!currentStudentProfile) {
                 showInfoModal('Потрібен код учня', 'Для участі в олімпіаді введіть код доступу, який видав учитель.');
                 return false;
             }
+        }
 
+        if (currentTest.mode === 'olympiad') {
             const olympiadSession = await getOlympiadSession(resolvedGrade);
             const hasResult = await hasOlympiadAttempt(resolvedGrade);
             const sessionLocked = Boolean(olympiadSession && ['started', 'completed'].includes(olympiadSession.data?.status));
@@ -1482,8 +1654,14 @@ function setupEventListeners(){
   const studentCodeInput = document.getElementById('student-code-input');
   const studentCodeClearBtn = document.getElementById('student-code-clear-btn');
   const studentCodeStatus = document.getElementById('student-code-status');
+  const studentCodeHeroForm = document.getElementById('student-code-form-hero');
+  const studentCodeHeroInput = document.getElementById('student-code-input-hero');
+  const studentCodeHeroClearBtn = document.getElementById('student-code-clear-btn-hero');
+  const studentCodeHeroStatus = document.getElementById('student-code-status-hero');
   const teacherCodeGeneratorForm = document.getElementById('teacher-code-generator-form');
   const teacherCodeGeneratorStatus = document.getElementById('teacher-code-generator-status');
+  const teacherStudentBulkInput = document.getElementById('teacher-student-bulk-input');
+  const teacherQuickCountInput = document.getElementById('teacher-quick-count');
   const teacherCodeGradeSelect = document.getElementById('teacher-code-grade');
   const teacherCodeClassSelect = document.getElementById('teacher-code-class-select');
   const teacherCodeClassNameInput = document.getElementById('teacher-code-class-name');
@@ -1496,6 +1674,7 @@ function setupEventListeners(){
   const saveProgressBtn = document.getElementById('save-progress-btn');
   const toggleAuthLink = document.getElementById('toggle-auth');
   const showLoginBtn = document.getElementById('show-login-btn');
+  const showLoginHeroBtn = document.getElementById('show-login-hero-btn');
   const backToWelcomeBtn = document.getElementById('back-to-welcome-btn');
   const nextQuestionBtn = document.getElementById('next-question-btn');
   const quitTestBtn = document.getElementById('quit-test-btn');
@@ -1520,46 +1699,53 @@ function setupEventListeners(){
     });
   }
 
-  if (studentCodeForm && studentCodeInput && studentCodeStatus) {
-    studentCodeForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      studentCodeStatus.textContent = '';
-      studentCodeInput.setAttribute('aria-invalid', 'false');
+  const attachStudentCodeSubmit = (form, input, statusEl, submitButtonId) => {
+    if (!form || !input || !statusEl) return;
 
-      const rawCode = studentCodeInput.value;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      statusEl.textContent = '';
+      input.setAttribute('aria-invalid', 'false');
+
+      const rawCode = input.value;
       if (!rawCode.trim()) {
-        studentCodeStatus.textContent = 'Введіть код учня.';
-        studentCodeInput.setAttribute('aria-invalid', 'true');
+        statusEl.textContent = 'Введіть код учня.';
+        input.setAttribute('aria-invalid', 'true');
         return;
       }
 
-      const submitButton = document.getElementById('student-code-submit-btn');
+      const submitButton = document.getElementById(submitButtonId);
       setLoadingState(submitButton, true);
       try {
         await activateStudentSession(rawCode);
       } catch (error) {
         console.error('Student code sign-in failed:', error);
-        studentCodeStatus.textContent = error.message || 'Не вдалося активувати код.';
-        studentCodeInput.setAttribute('aria-invalid', 'true');
+        statusEl.textContent = error.message || 'Не вдалося активувати код.';
+        input.setAttribute('aria-invalid', 'true');
       } finally {
         setLoadingState(submitButton, false);
       }
     });
-  }
+  };
 
-  if (studentCodeClearBtn) {
-    studentCodeClearBtn.addEventListener('click', () => {
+  const attachStudentCodeClear = (button, input, statusEl) => {
+    if (!button) return;
+
+    button.addEventListener('click', () => {
       clearStudentSession();
-      const input = document.getElementById('student-code-input');
-      const status = document.getElementById('student-code-status');
-      if (status) status.textContent = '';
+      if (statusEl) statusEl.textContent = '';
       if (input) {
         input.focus();
         input.setAttribute('aria-invalid', 'false');
       }
       setMode('practice');
     });
-  }
+  };
+
+  attachStudentCodeSubmit(studentCodeForm, studentCodeInput, studentCodeStatus, 'student-code-submit-btn');
+  attachStudentCodeSubmit(studentCodeHeroForm, studentCodeHeroInput, studentCodeHeroStatus, 'student-code-submit-btn-hero');
+  attachStudentCodeClear(studentCodeClearBtn, studentCodeInput, studentCodeStatus);
+  attachStudentCodeClear(studentCodeHeroClearBtn, studentCodeHeroInput, studentCodeHeroStatus);
 
   if (teacherCodeGeneratorForm && teacherCodeGeneratorStatus) {
     teacherCodeGeneratorForm.addEventListener('submit', async (e) => {
@@ -1567,9 +1753,11 @@ function setupEventListeners(){
       teacherCodeGeneratorStatus.textContent = '';
 
       const grade = Number(teacherCodeGradeSelect?.value || 0);
-      const count = Number(document.getElementById('teacher-code-count')?.value || 1);
+      const fallbackCount = Number(document.getElementById('teacher-code-count')?.value || 1);
+      const quickCount = Number(teacherQuickCountInput?.value || 0) || fallbackCount;
       const selectedClassId = teacherCodeClassSelect?.value || NEW_CLASS_OPTION_VALUE;
       const rawClassName = teacherCodeClassNameInput?.value || '';
+      const entries = createStudentEntriesFromInput(teacherStudentBulkInput?.value || '', quickCount);
       const submitButton = document.getElementById('teacher-code-generate-btn');
 
       if (!grade) {
@@ -1577,15 +1765,26 @@ function setupEventListeners(){
         return;
       }
 
+      if (!entries.length) {
+        teacherCodeGeneratorStatus.textContent = 'Додайте хоча б один запис учня або вкажіть кількість порожніх записів.';
+        return;
+      }
+
       setLoadingState(submitButton, true);
       try {
         const selectedClass = selectedClassId !== NEW_CLASS_OPTION_VALUE ? getTeacherClassById(selectedClassId) : null;
         const classRecord = selectedClass || await ensureTeacherClass(grade, rawClassName);
-        const codes = await createStudentRecords(grade, count, classRecord);
-        teacherCodeGeneratorStatus.textContent = `Створено ${codes.length} код(ів) для ${classRecord.name}: ${codes.join(', ')}`;
+        const codes = await createStudentRecords(grade, entries, classRecord);
+        teacherCodeGeneratorStatus.textContent = `Створено ${codes.length} запис(ів) для ${classRecord.name}: ${codes.join(', ')}`;
         teacherCodeGeneratorStatus.className = 'text-sm mt-3 text-emerald-700';
         if (teacherCodeClassNameInput) {
           teacherCodeClassNameInput.value = '';
+        }
+        if (teacherStudentBulkInput) {
+          teacherStudentBulkInput.value = '';
+        }
+        if (teacherQuickCountInput) {
+          teacherQuickCountInput.value = '0';
         }
         populateTeacherClassControls(grade);
         await refreshTeacherDashboardData();
@@ -1622,21 +1821,54 @@ function setupEventListeners(){
 
   if (teacherStudentsList) {
     teacherStudentsList.addEventListener('click', async (e) => {
-      const actionBtn = e.target.closest('[data-teacher-action="toggle-student"]');
+      const actionBtn = e.target.closest('[data-teacher-action]');
       if (!actionBtn) return;
 
+      const action = actionBtn.dataset.teacherAction;
       const code = actionBtn.dataset.studentCode;
-      const isCurrentlyActive = actionBtn.dataset.studentActive === 'true';
-      setLoadingState(actionBtn, true);
-      try {
-        await updateStudentCodeState(code, !isCurrentlyActive);
-        showToast(isCurrentlyActive ? 'Код деактивовано.' : 'Код знову активний.', 'success');
-        await refreshTeacherDashboardData();
-      } catch (error) {
-        console.error('Failed to toggle student code state:', error);
-        showToast('Не вдалося оновити стан коду.', 'error');
-      } finally {
-        setLoadingState(actionBtn, false);
+
+      if (action === 'copy-code') {
+        try {
+          await copyTextToClipboard(code);
+          showToast(`Код ${code} скопійовано.`, 'success');
+        } catch (error) {
+          console.error('Failed to copy student code:', error);
+          showToast('Не вдалося скопіювати код.', 'error');
+        }
+        return;
+      }
+
+      if (action === 'copy-payment-link') {
+        setLoadingState(actionBtn, true);
+        try {
+          const student = findTeacherStudentByCode(code);
+          const paymentToken = await ensureStudentPaymentToken(student || { code });
+          const paymentLink = buildStudentPaymentLink({ ...(student || {}), code, paymentToken });
+          await copyTextToClipboard(paymentLink);
+          showToast('Платіжне посилання скопійовано.', 'success');
+          await refreshTeacherDashboardData();
+        } catch (error) {
+          console.error('Failed to copy payment link:', error);
+          showToast('Не вдалося підготувати платіжне посилання.', 'error');
+        } finally {
+          setLoadingState(actionBtn, false);
+        }
+        return;
+      }
+
+      if (action === 'toggle-student') {
+        const isCurrentlyActive = actionBtn.dataset.studentActive === 'true';
+        setLoadingState(actionBtn, true);
+        try {
+          await updateStudentCodeState(code, !isCurrentlyActive);
+          showToast(isCurrentlyActive ? 'Код деактивовано.' : 'Код знову активний.', 'success');
+          await refreshTeacherDashboardData();
+        } catch (error) {
+          console.error('Failed to toggle student code state:', error);
+          showToast('Не вдалося оновити стан коду.', 'error');
+        } finally {
+          setLoadingState(actionBtn, false);
+        }
       }
     });
   }
@@ -1866,7 +2098,12 @@ function setupEventListeners(){
     document.getElementById('auth-error').textContent = '';
   });
 
-  document.getElementById('show-login-btn').addEventListener('click',(e)=>{ e.preventDefault(); showScreen('auth'); });
+  if (showLoginBtn) {
+    showLoginBtn.addEventListener('click',(e)=>{ e.preventDefault(); showScreen('auth'); });
+  }
+  if (showLoginHeroBtn) {
+    showLoginHeroBtn.addEventListener('click',(e)=>{ e.preventDefault(); showScreen('auth'); });
+  }
   document.getElementById('back-to-welcome-btn').addEventListener('click',()=>showScreen('welcome'));
   document.getElementById('next-question-btn').addEventListener('click',nextQuestion);
 
@@ -1908,6 +2145,14 @@ function setupEventListeners(){
   
   initSelectors('welcome');
   initSelectors('dashboard');
+  const legacyWelcomeTitle = document.getElementById('welcome-title');
+  if (legacyWelcomeTitle) {
+    legacyWelcomeTitle.classList.add('sr-only');
+  }
+  const legacyWelcomeSubtitle = document.getElementById('welcome-mode-description');
+  if (legacyWelcomeSubtitle) {
+    legacyWelcomeSubtitle.classList.add('sr-only');
+  }
   updateModeDependentUI();
   renderStudentAccessState();
 
@@ -1958,7 +2203,7 @@ function setupEventListeners(){
     }
     await trySyncOfflineScores();
   }else{
-    document.querySelectorAll('#show-login-btn, #google-signin-btn, #login-form, #register-form, #toggle-auth, #save-progress-btn, #logout-btn, #student-code-input, #student-code-submit-btn, #student-code-clear-btn').forEach(el=>{
+    document.querySelectorAll('#show-login-btn, #show-login-hero-btn, #google-signin-btn, #login-form, #register-form, #toggle-auth, #save-progress-btn, #logout-btn, #student-code-input, #student-code-submit-btn, #student-code-clear-btn, #student-code-input-hero, #student-code-submit-btn-hero, #student-code-clear-btn-hero').forEach(el=>{
       el.style.opacity='.5'; el.style.pointerEvents='none'; if(el.tagName==='BUTTON') el.setAttribute('disabled',true);
     });
     const authText = document.querySelector('#show-login-btn')?.parentElement;
