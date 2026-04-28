@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /admin.js
+Disallow: /data/
+Disallow: /utils/
+Disallow: /services/
+Disallow: /ui/
+Disallow: /features/
+Disallow: /.git/
+Disallow: /.claude/
+Disallow: /tmp_replace.*
+Disallow: /robust_replace.ps1
+Disallow: /safe_replace.ps1
+Disallow: /server.ps1
+Disallow: /script_base64.txt
+
+Sitemap: https://rozumko.github.io/sitemap.xml

@@ -1,32 +1,68 @@
 <!DOCTYPE html>
 <html lang="uk">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Розумко — Учень</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Розумко — Кабінет учня</title>
+  <meta name="description"
+    content="Вхід для учнів на олімпіаду Розумко. Введіть код отриманий від вчителя, щоб почати олімпіаду або спробувати тренувальні завдання." />
+  <meta name="keywords" content="Розумко, олімпіада з інформатики, вхід для учня, тренування з інформатики" />
+  <link rel="canonical" href="https://rozumko.github.io/student.html" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://rozumko.github.io/student.html" />
+  <meta property="og:title" content="Розумко — Кабінет учня" />
+  <meta property="og:description"
+    content="Почни олімпіаду або тренування з інформатики прямо зараз. Вхід за кодом від вчителя." />
+  <meta property="og:image" content="https://rozumko.github.io/android-chrome-512x512.png" />
+
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
   <meta name="theme-color" content="#7c3aed">
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
-  <link rel="stylesheet" href="style.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
   <style>
-    body { font-family: 'Montserrat', sans-serif; background: linear-gradient(135deg, #4c1d95 0%, #1e40af 100%); min-height: 100vh; }
-    .kid-input { font-size: 2rem; letter-spacing: 0.15em; text-align: center; text-transform: uppercase; }
-    .action-card { transition: transform 0.1s, box-shadow 0.1s; }
-    .action-card:hover { transform: translateY(-2px); }
-    .action-card:active { transform: translateY(0); }
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: linear-gradient(135deg, #4c1d95 0%, #1e40af 100%);
+      min-height: 100vh;
+    }
+
+    .kid-input {
+      font-size: 2rem;
+      letter-spacing: 0.15em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .action-card {
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    .action-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .action-card:active {
+      transform: translateY(0);
+    }
   </style>
 </head>
+
 <body>
 
   <!-- ===== ЕКРАН 1: ВХІД ЗА КОДОМ ===== -->
   <div id="screen-entry" class="min-h-screen flex flex-col items-center justify-center p-5">
 
-    <a href="index.html" class="absolute top-4 left-4 text-white/50 hover:text-white/80 text-sm flex items-center gap-1">
+    <a href="index.html"
+      class="absolute top-4 left-4 text-white/50 hover:text-white/80 text-sm flex items-center gap-1">
       <i class="fas fa-arrow-left"></i> На головну
     </a>
 
@@ -41,17 +77,13 @@
     <div class="w-full max-w-sm bg-white rounded-3xl shadow-2xl p-7">
       <p class="text-center text-slate-500 font-semibold mb-5 text-base">Введи код від учителя</p>
       <form id="student-code-form" novalidate>
-        <input
-          id="student-code-input"
-          type="text"
-          inputmode="text"
-          autocomplete="off"
-          placeholder="КІТ247"
+        <input id="student-code-input" type="text" inputmode="text" autocomplete="off" placeholder="КІТ247"
           maxlength="20"
-          class="kid-input w-full px-4 py-4 rounded-2xl border-2 border-slate-200 focus:outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 mb-3 font-extrabold text-slate-800"
-        />
-        <p id="code-status" class="text-rose-600 text-sm mb-3 min-h-[1.25rem] text-center" role="alert" aria-live="assertive"></p>
-        <p id="code-success" class="text-emerald-600 text-sm mb-3 min-h-[1.25rem] text-center hidden" aria-live="polite"></p>
+          class="kid-input w-full px-4 py-4 rounded-2xl border-2 border-slate-200 focus:outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 mb-3 font-extrabold text-slate-800" />
+        <p id="code-status" class="text-rose-600 text-sm mb-3 min-h-[1.25rem] text-center" role="alert"
+          aria-live="assertive"></p>
+        <p id="code-success" class="text-emerald-600 text-sm mb-3 min-h-[1.25rem] text-center hidden"
+          aria-live="polite"></p>
         <button id="code-submit-btn" type="submit"
           class="w-full bg-violet-600 hover:bg-violet-700 text-white font-extrabold py-5 rounded-2xl text-xl transition-colors">
           Увійти →
@@ -73,15 +105,29 @@
       <div id="practice-section" class="hidden bg-white/10 backdrop-blur rounded-2xl p-5 mt-2">
         <p class="text-white font-bold text-center mb-4">Обери клас і складність</p>
         <div id="practice-grade-buttons" class="grid grid-cols-4 gap-2 mb-4" role="group" aria-label="Клас">
-          <button data-grade="1" class="grade-btn bg-white/20 hover:bg-white/40 text-white font-extrabold py-4 rounded-xl text-xl transition-colors" aria-pressed="false">1</button>
-          <button data-grade="2" class="grade-btn bg-white/20 hover:bg-white/40 text-white font-extrabold py-4 rounded-xl text-xl transition-colors" aria-pressed="false">2</button>
-          <button data-grade="3" class="grade-btn bg-white/20 hover:bg-white/40 text-white font-extrabold py-4 rounded-xl text-xl transition-colors" aria-pressed="false">3</button>
-          <button data-grade="4" class="grade-btn bg-white/20 hover:bg-white/40 text-white font-extrabold py-4 rounded-xl text-xl transition-colors" aria-pressed="false">4</button>
+          <button data-grade="1"
+            class="grade-btn bg-white/20 hover:bg-white/40 text-white font-extrabold py-4 rounded-xl text-xl transition-colors"
+            aria-pressed="false">1</button>
+          <button data-grade="2"
+            class="grade-btn bg-white/20 hover:bg-white/40 text-white font-extrabold py-4 rounded-xl text-xl transition-colors"
+            aria-pressed="false">2</button>
+          <button data-grade="3"
+            class="grade-btn bg-white/20 hover:bg-white/40 text-white font-extrabold py-4 rounded-xl text-xl transition-colors"
+            aria-pressed="false">3</button>
+          <button data-grade="4"
+            class="grade-btn bg-white/20 hover:bg-white/40 text-white font-extrabold py-4 rounded-xl text-xl transition-colors"
+            aria-pressed="false">4</button>
         </div>
         <div id="practice-difficulty-buttons" class="grid grid-cols-3 gap-2 mb-4" role="group" aria-label="Складність">
-          <button data-difficulty="easy" class="diff-btn bg-white/20 hover:bg-white/40 text-white font-bold py-3 rounded-xl text-sm transition-colors" aria-pressed="false">😊 Легкий</button>
-          <button data-difficulty="medium" class="diff-btn bg-white/20 hover:bg-white/40 text-white font-bold py-3 rounded-xl text-sm transition-colors" aria-pressed="false">🔥 Середній</button>
-          <button data-difficulty="hard" class="diff-btn bg-white/20 hover:bg-white/40 text-white font-bold py-3 rounded-xl text-sm transition-colors" aria-pressed="false">⚡ Важкий</button>
+          <button data-difficulty="easy"
+            class="diff-btn bg-white/20 hover:bg-white/40 text-white font-bold py-3 rounded-xl text-sm transition-colors"
+            aria-pressed="false">😊 Легкий</button>
+          <button data-difficulty="medium"
+            class="diff-btn bg-white/20 hover:bg-white/40 text-white font-bold py-3 rounded-xl text-sm transition-colors"
+            aria-pressed="false">🔥 Середній</button>
+          <button data-difficulty="hard"
+            class="diff-btn bg-white/20 hover:bg-white/40 text-white font-bold py-3 rounded-xl text-sm transition-colors"
+            aria-pressed="false">⚡ Важкий</button>
         </div>
         <button id="start-practice-btn"
           class="w-full bg-amber-400 disabled:bg-white/20 disabled:text-white/40 text-slate-900 font-extrabold py-4 rounded-2xl text-base transition-colors"
@@ -91,6 +137,13 @@
       </div>
     </div>
 
+    <footer class="mt-auto py-6 text-center text-white/40 text-xs">
+      <div class="flex flex-wrap justify-center gap-4 mb-2">
+        <a href="privacy.html" class="hover:text-white/60 transition-colors">Політика конфіденційності</a>
+        <a href="terms.html" class="hover:text-white/60 transition-colors">Правила та умови</a>
+      </div>
+      <p>&copy; 2026 Розумко</p>
+    </footer>
   </div>
 
   <!-- ===== ЕКРАН 2: ВИБІР ДІЇ (після введення коду) ===== -->
@@ -138,10 +191,13 @@
         <span id="quiz-progress-text" class="text-sm font-bold text-slate-600"></span>
       </div>
       <div class="flex items-center gap-3">
-        <div id="quiz-timer" class="hidden items-center gap-1.5 bg-orange-100 text-orange-700 font-bold px-3 py-1.5 rounded-xl text-base" role="timer" aria-live="off">
+        <div id="quiz-timer"
+          class="hidden items-center gap-1.5 bg-orange-100 text-orange-700 font-bold px-3 py-1.5 rounded-xl text-base"
+          role="timer" aria-live="off">
           🔥 <span id="quiz-timer-display">15:00</span>
         </div>
-        <button id="quiz-quit-btn" class="btn bg-slate-100 text-slate-600 text-sm font-bold py-2 px-4 rounded-xl">Вийти</button>
+        <button id="quiz-quit-btn"
+          class="btn bg-slate-100 text-slate-600 text-sm font-bold py-2 px-4 rounded-xl">Вийти</button>
       </div>
     </div>
 
@@ -153,15 +209,20 @@
     <!-- Питання -->
     <div class="flex-1 overflow-y-auto p-5 flex flex-col items-center pt-8">
       <div class="w-full max-w-lg">
-        <div class="bg-white rounded-3xl shadow-md border border-slate-100 p-7 mb-6 min-h-[120px] flex items-center justify-center">
+        <div
+          class="bg-white rounded-3xl shadow-md border border-slate-100 p-7 mb-6 min-h-[120px] flex items-center justify-center">
           <p id="quiz-question-text" class="text-xl sm:text-2xl font-bold text-slate-900 text-center leading-snug"></p>
         </div>
-        <pre id="quiz-code-block" class="hidden bg-slate-900 text-emerald-300 rounded-2xl px-5 py-4 mb-5 text-sm font-mono leading-relaxed overflow-x-auto whitespace-pre-wrap"></pre>
-        <div id="quiz-options" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6" role="radiogroup" aria-labelledby="quiz-question-text"></div>
+        <pre id="quiz-code-block"
+          class="hidden bg-slate-900 text-emerald-300 rounded-2xl px-5 py-4 mb-5 text-sm font-mono leading-relaxed overflow-x-auto whitespace-pre-wrap"></pre>
+        <div id="quiz-options" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6" role="radiogroup"
+          aria-labelledby="quiz-question-text"></div>
         <div class="text-center min-h-[3.5rem]">
           <p id="quiz-feedback" class="font-bold text-lg mb-2" aria-live="polite"></p>
           <p id="quiz-explanation" class="text-sm text-slate-500 hidden"></p>
-          <button id="quiz-next-btn" class="btn bg-violet-600 text-white font-extrabold py-4 px-10 rounded-2xl hidden mt-2 text-lg">Далі →</button>
+          <button id="quiz-next-btn"
+            class="btn bg-violet-600 text-white font-extrabold py-4 px-10 rounded-2xl hidden mt-2 text-lg">Далі
+            →</button>
         </div>
       </div>
     </div>
@@ -169,7 +230,8 @@
   </div>
 
   <!-- ===== РЕЗУЛЬТАТ OVERLAY ===== -->
-  <div id="result-overlay" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(76,29,149,0.85)">
+  <div id="result-overlay" class="fixed inset-0 z-50 hidden items-center justify-center p-4"
+    style="background:rgba(76,29,149,0.85)">
     <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-md p-8 text-center">
       <div class="text-6xl mb-3">🎉</div>
       <p id="result-mode-label" class="text-xs uppercase tracking-widest text-slate-400 mb-1"></p>
@@ -181,23 +243,28 @@
         <span id="result-total" class="text-slate-400 text-4xl font-bold"></span>
       </p>
       <p id="result-time" class="text-sm text-slate-400 mb-6"></p>
-      <div id="result-saved-msg" class="hidden bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-xl px-4 py-3 mb-5">
+      <div id="result-saved-msg"
+        class="hidden bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-xl px-4 py-3 mb-5">
         ✅ Результат збережено
       </div>
-      <div id="result-error-msg" class="hidden bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-xl px-4 py-3 mb-5"></div>
-      <button id="result-close-btn" class="btn w-full bg-violet-600 text-white font-extrabold py-5 rounded-2xl text-lg">На головну сторінку</button>
+      <div id="result-error-msg"
+        class="hidden bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-xl px-4 py-3 mb-5"></div>
+      <button id="result-close-btn"
+        class="btn w-full bg-violet-600 text-white font-extrabold py-5 rounded-2xl text-lg">На головну сторінку</button>
     </div>
   </div>
 
   <!-- Діалог підтвердження виходу -->
-  <div id="quit-confirm" class="fixed inset-0 z-[60] hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.6)">
+  <div id="quit-confirm" class="fixed inset-0 z-[60] hidden items-center justify-center p-4"
+    style="background:rgba(0,0,0,0.6)">
     <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center">
       <div class="text-5xl mb-3">🚪</div>
       <h3 class="text-xl font-extrabold text-slate-900 mb-3">Вийти з тесту?</h3>
       <p class="text-slate-500 text-sm mb-6">Прогрес не збережеться.</p>
       <div class="grid grid-cols-2 gap-3">
         <button id="quit-confirm-yes" class="btn bg-rose-500 text-white font-bold py-4 rounded-2xl">Так, вийти</button>
-        <button id="quit-confirm-no" class="btn bg-slate-100 text-slate-700 font-bold py-4 rounded-2xl">Продовжити</button>
+        <button id="quit-confirm-no"
+          class="btn bg-slate-100 text-slate-700 font-bold py-4 rounded-2xl">Продовжити</button>
       </div>
     </div>
   </div>
@@ -205,13 +272,16 @@
   <div id="toast-notification" role="status" aria-live="polite"></div>
 
   <!-- Модальне вікно -->
-  <div id="app-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true">
+  <div id="app-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog"
+    aria-modal="true">
     <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-7 text-center">
       <p id="modal-message" class="text-slate-800 text-base font-semibold mb-6 leading-relaxed"></p>
-      <button id="modal-ok-btn" class="btn bg-violet-600 text-white font-bold py-4 px-10 rounded-2xl text-lg">OK</button>
+      <button id="modal-ok-btn"
+        class="btn bg-violet-600 text-white font-bold py-4 px-10 rounded-2xl text-lg">OK</button>
     </div>
   </div>
 
   <script type="module" src="student.js"></script>
 </body>
+
 </html>
