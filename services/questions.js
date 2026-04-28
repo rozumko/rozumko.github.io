@@ -1,19 +1,21 @@
 import {
   db,
   collection, doc, getDocs, addDoc, updateDoc, deleteDoc,
-  query, where, orderBy, serverTimestamp
+  query, where, serverTimestamp
 } from './firebase.js';
 
 const COL = 'olympiad_questions';
 
 // Всі питання з фільтрами
 export async function getQuestions({ grade, isOlympiad, difficulty } = {}) {
-  const constraints = [orderBy('grade'), orderBy('createdAt', 'desc')];
-  if (grade)                      constraints.unshift(where('grade', '==', grade));
-  if (isOlympiad !== undefined)   constraints.unshift(where('isOlympiad', '==', isOlympiad));
-  if (difficulty)                 constraints.unshift(where('difficulty', '==', difficulty));
+  const constraints = [];
+  if (grade !== undefined)        constraints.push(where('grade', '==', grade));
+  if (isOlympiad !== undefined)   constraints.push(where('isOlympiad', '==', isOlympiad));
+  if (difficulty)                 constraints.push(where('difficulty', '==', difficulty));
   const snap = await getDocs(query(collection(db, COL), ...constraints));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  // Сортуємо на клієнті — без потреби у складеному індексі
+  return docs.sort((a, b) => (a.grade - b.grade) || (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
 }
 
 // Питання для квізу (grade + режим)
