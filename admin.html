@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Розумко — Адмін</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <meta name="theme-color" content="#1e293b">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body class="text-gray-800" style="background: linear-gradient(180deg,#0f172a 0%,#1e293b 100%); min-height:100vh;">
+  <a href="#main-content" class="skip-link">Перейти до основного контенту</a>
+
+  <!-- Форма входу -->
+  <div id="auth-section" class="min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-sm">
+      <div class="text-center mb-8">
+        <span class="inline-block bg-slate-800 text-slate-300 text-xs font-semibold px-3 py-1 rounded-full mb-4 tracking-widest uppercase">Адміністратор</span>
+        <h1 class="text-2xl font-bold text-white">Розумко</h1>
+      </div>
+      <div class="bg-white/5 backdrop-blur border border-white/10 rounded-[2rem] p-8">
+        <form id="admin-login-form" novalidate aria-describedby="admin-login-error">
+          <div class="space-y-4 mb-6">
+            <div>
+              <label for="admin-email" class="block text-sm font-semibold text-slate-300 mb-2">Email</label>
+              <input id="admin-email" type="email" autocomplete="email" placeholder="admin@rozumko.ua" required
+                class="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-600 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 text-base"/>
+            </div>
+            <div>
+              <label for="admin-password" class="block text-sm font-semibold text-slate-300 mb-2">Пароль</label>
+              <input id="admin-password" type="password" autocomplete="current-password" placeholder="••••••••" required
+                class="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-600 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 text-base"/>
+            </div>
+          </div>
+          <p id="admin-login-error" class="text-rose-400 text-sm mb-4 min-h-[1.25rem]" role="alert" aria-live="assertive"></p>
+          <button type="submit" id="admin-login-btn" class="btn w-full bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 rounded-xl">
+            Увійти
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Адмін-панель -->
+  <div id="admin-panel" class="hidden min-h-screen" id="main-content">
+
+    <!-- Шапка -->
+    <header class="bg-slate-900 border-b border-slate-700 px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="text-white font-bold text-lg">Розумко</span>
+        <span class="bg-sky-600 text-white text-xs font-semibold px-2 py-0.5 rounded-full">Admin</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <span id="admin-email-display" class="text-slate-400 text-sm hidden sm:block"></span>
+        <button id="admin-logout-btn" class="btn bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-semibold py-2 px-4 rounded-lg flex items-center gap-2">
+          <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
+          Вийти
+        </button>
+      </div>
+    </header>
+
+    <!-- Навігація вкладок -->
+    <nav class="bg-slate-800 border-b border-slate-700 px-6 overflow-x-auto">
+      <div class="flex gap-0 min-w-max">
+        <button data-tab="overview" class="admin-tab tab-active text-sm font-semibold py-4 px-5 border-b-2 whitespace-nowrap">
+          <i class="fas fa-chart-bar mr-2" aria-hidden="true"></i>Огляд
+        </button>
+        <button data-tab="events" class="admin-tab text-sm font-semibold py-4 px-5 border-b-2 whitespace-nowrap">
+          <i class="fas fa-calendar-alt mr-2" aria-hidden="true"></i>Олімпіади
+        </button>
+        <button data-tab="teachers" class="admin-tab text-sm font-semibold py-4 px-5 border-b-2 whitespace-nowrap">
+          <i class="fas fa-chalkboard-teacher mr-2" aria-hidden="true"></i>Вчителі
+        </button>
+        <button data-tab="results" class="admin-tab text-sm font-semibold py-4 px-5 border-b-2 whitespace-nowrap">
+          <i class="fas fa-poll mr-2" aria-hidden="true"></i>Результати
+        </button>
+      </div>
+    </nav>
+
+    <main id="main-content" class="p-6 max-w-6xl mx-auto">
+
+      <!-- Вкладка: Огляд -->
+      <section id="tab-overview" class="tab-panel">
+        <h2 class="text-white text-xl font-bold mb-6">Загальна статистика</h2>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5">
+            <p class="text-slate-400 text-sm mb-1">Вчителів</p>
+            <p id="stat-teachers" class="text-3xl font-bold text-white">—</p>
+          </div>
+          <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5">
+            <p class="text-slate-400 text-sm mb-1">Учнів (кодів)</p>
+            <p id="stat-students" class="text-3xl font-bold text-white">—</p>
+          </div>
+          <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5">
+            <p class="text-slate-400 text-sm mb-1">Результатів</p>
+            <p id="stat-results" class="text-3xl font-bold text-white">—</p>
+          </div>
+          <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5">
+            <p class="text-slate-400 text-sm mb-1">Активних олімпіад</p>
+            <p id="stat-events" class="text-3xl font-bold text-white">—</p>
+          </div>
+        </div>
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 flex items-center justify-center py-16 text-slate-500">
+          <div class="text-center">
+            <i class="fas fa-chart-line text-4xl mb-3 block" aria-hidden="true"></i>
+            <p class="font-semibold">Графіки активності — у розробці</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Вкладка: Олімпіади -->
+      <section id="tab-events" class="tab-panel hidden">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+          <h2 class="text-white text-xl font-bold">Олімпіадні події</h2>
+          <button id="create-event-btn" class="btn bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2 px-5 rounded-xl text-sm flex items-center gap-2">
+            <i class="fas fa-plus" aria-hidden="true"></i>
+            Нова олімпіада
+          </button>
+        </div>
+
+        <!-- Форма створення події (прихована) -->
+        <div id="event-form-section" class="hidden bg-slate-800 border border-slate-700 rounded-2xl p-6 mb-6">
+          <h3 class="text-white font-bold mb-5">Нова олімпіадна подія</h3>
+          <form id="event-form" novalidate class="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-slate-300 mb-2">Назва</label>
+              <input id="event-title" type="text" placeholder="Весняна олімпіада 2026"
+                class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-600 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"/>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-slate-300 mb-2">Предмет</label>
+              <select id="event-subject" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-sky-500">
+                <option value="informatics">Інформатика</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-slate-300 mb-2">Початок</label>
+              <input id="event-from" type="datetime-local"
+                class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-sky-500"/>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-slate-300 mb-2">Кінець</label>
+              <input id="event-to" type="datetime-local"
+                class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-sky-500"/>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-slate-300 mb-2">Кількість питань</label>
+              <input id="event-questions" type="number" value="10" min="1" max="50"
+                class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-sky-500"/>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-slate-300 mb-2">Час (хвилин)</label>
+              <input id="event-time" type="number" value="15" min="1" max="120"
+                class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-sky-500"/>
+            </div>
+            <div class="sm:col-span-2 flex items-center gap-3">
+              <input id="event-allow-retry" type="checkbox" class="w-4 h-4 rounded"/>
+              <label for="event-allow-retry" class="text-sm text-slate-300">Дозволити повторний запуск</label>
+            </div>
+            <div class="sm:col-span-2 flex gap-3">
+              <button type="submit" class="btn bg-emerald-500 text-white font-bold py-3 px-6 rounded-xl">
+                Зберегти
+              </button>
+              <button type="button" id="cancel-event-btn" class="btn bg-slate-700 text-slate-200 font-semibold py-3 px-6 rounded-xl">
+                Скасувати
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Список подій -->
+        <div id="events-list" class="space-y-3">
+          <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 flex items-center justify-center py-16 text-slate-500">
+            <div class="text-center">
+              <i class="fas fa-calendar-times text-4xl mb-3 block" aria-hidden="true"></i>
+              <p class="font-semibold">Олімпіадних подій ще немає</p>
+              <p class="text-sm mt-1">Натисни «Нова олімпіада», щоб створити першу.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Вкладка: Вчителі -->
+      <section id="tab-teachers" class="tab-panel hidden">
+        <h2 class="text-white text-xl font-bold mb-6">Зареєстровані вчителі</h2>
+        <div id="teachers-list" class="space-y-3">
+          <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 flex items-center justify-center py-16 text-slate-500">
+            <div class="text-center">
+              <i class="fas fa-users text-4xl mb-3 block" aria-hidden="true"></i>
+              <p class="font-semibold">Список вчителів завантажується з Firestore</p>
+              <p class="text-sm mt-1">Підключення Firebase — у розробці.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Вкладка: Результати -->
+      <section id="tab-results" class="tab-panel hidden">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+          <h2 class="text-white text-xl font-bold">Всі результати олімпіади</h2>
+          <button id="export-results-btn" class="btn bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold py-2 px-5 rounded-xl text-sm flex items-center gap-2" disabled>
+            <i class="fas fa-download" aria-hidden="true"></i>
+            Експорт CSV
+          </button>
+        </div>
+        <div id="results-list" class="space-y-3">
+          <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 flex items-center justify-center py-16 text-slate-500">
+            <div class="text-center">
+              <i class="fas fa-poll text-4xl mb-3 block" aria-hidden="true"></i>
+              <p class="font-semibold">Результати завантажуються з Firestore</p>
+              <p class="text-sm mt-1">Підключення Firebase — у розробці.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <div id="toast-notification" role="status" aria-live="polite"></div>
+
+  <script type="module" src="features/auth/admin-auth.js"></script>
+  <script type="module" src="admin.js"></script>
+
+  <style>
+    .admin-tab { color: #94a3b8; border-color: transparent; }
+    .admin-tab:hover { color: #e2e8f0; }
+    .admin-tab.tab-active { color: #38bdf8; border-color: #38bdf8; }
+  </style>
+</body>
+</html>

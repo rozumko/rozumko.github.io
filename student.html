@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Розумко — Учень</title>
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+  <meta name="theme-color" content="#3b82f6">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body class="text-gray-800">
+  <a href="#main-content" class="skip-link">Перейти до основного контенту</a>
+
+  <main id="main-content" class="app-container min-h-screen flex items-start justify-center p-4 pt-8 sm:pt-16" tabindex="-1">
+    <div class="w-full max-w-xl">
+
+      <!-- Навігація -->
+      <div class="mb-6">
+        <a href="index.html" class="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 text-sm font-medium transition-colors">
+          <i class="fas fa-arrow-left" aria-hidden="true"></i>
+          На головну
+        </a>
+      </div>
+
+      <!-- Секція: вхід за кодом -->
+      <div id="code-section" class="bg-white/95 rounded-[2rem] shadow-2xl border border-white/70 overflow-hidden mb-4">
+        <div class="bg-slate-950 text-white p-6 sm:p-8">
+          <p class="text-sm uppercase tracking-[0.2em] text-sky-300 mb-2">Олімпіада</p>
+          <h1 class="text-2xl sm:text-3xl font-bold mb-2">Вхід за кодом</h1>
+          <p class="text-slate-300 text-sm">Введи код, який дав учитель, щоб отримати доступ до олімпіади.</p>
+        </div>
+        <div class="p-6 sm:p-8">
+          <form id="student-code-form" aria-describedby="code-status code-success" novalidate>
+            <label for="student-code-input" class="block text-sm font-semibold text-slate-700 mb-2">Код учня</label>
+            <input
+              id="student-code-input"
+              type="text"
+              inputmode="text"
+              autocomplete="off"
+              placeholder="Наприклад, ОРЕЛ-47"
+              maxlength="20"
+              class="w-full px-4 py-4 rounded-2xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-sky-300 text-xl uppercase tracking-[0.18em] mb-3"
+            />
+            <p id="code-status" class="text-rose-600 text-sm mb-3 min-h-[1.25rem]" role="alert" aria-live="assertive"></p>
+            <p id="code-success" class="text-emerald-600 text-sm mb-3 min-h-[1.25rem] hidden" aria-live="polite"></p>
+            <div class="flex flex-col sm:flex-row gap-3">
+              <button id="code-submit-btn" type="submit" class="btn flex-1 bg-emerald-500 text-white font-bold py-4 px-5 rounded-2xl">
+                Підтвердити код
+              </button>
+              <button id="code-clear-btn" type="button" class="btn bg-slate-100 text-slate-700 font-semibold py-4 px-5 rounded-2xl hidden">
+                Змінити код
+              </button>
+            </div>
+          </form>
+
+          <!-- Показується після успішного введення коду -->
+          <div id="olympiad-actions" class="hidden mt-6 pt-6 border-t border-slate-100">
+            <p class="text-sm font-semibold text-slate-700 mb-3">Що хочеш зробити?</p>
+            <div class="grid grid-cols-2 gap-3">
+              <button id="start-demo-btn" class="btn bg-amber-50 border-2 border-amber-200 text-amber-800 font-semibold py-4 px-4 rounded-2xl text-sm">
+                <i class="fas fa-play-circle block text-2xl mb-1" aria-hidden="true"></i>
+                Демо-версія
+              </button>
+              <button id="start-olympiad-btn" class="btn bg-sky-50 border-2 border-sky-200 text-sky-800 font-semibold py-4 px-4 rounded-2xl text-sm">
+                <i class="fas fa-trophy block text-2xl mb-1" aria-hidden="true"></i>
+                Основна олімпіада
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Роздільник -->
+      <div class="flex items-center gap-4 my-6">
+        <hr class="flex-1 border-slate-200"/>
+        <span class="text-slate-400 text-sm font-medium">або</span>
+        <hr class="flex-1 border-slate-200"/>
+      </div>
+
+      <!-- Секція: тренування (без коду) -->
+      <div class="bg-white/95 rounded-[2rem] shadow-xl border border-white/70 p-6 sm:p-8">
+        <p class="text-sm uppercase tracking-[0.2em] text-amber-600 font-semibold mb-2">Тренування</p>
+        <h2 class="text-xl sm:text-2xl font-bold text-slate-900 mb-2">Підготовка без коду</h2>
+        <p class="text-slate-500 text-sm mb-6">Обери клас і складність — результат не зберігається офіційно.</p>
+
+        <div class="space-y-5">
+          <div>
+            <h3 class="text-sm font-semibold text-slate-700 mb-3">1. Обери клас</h3>
+            <div id="practice-grade-buttons" class="grid grid-cols-4 gap-2" role="group" aria-label="Оберіть клас">
+              <button data-grade="1" class="grade-btn btn bg-slate-50 border border-slate-200 text-slate-700 font-bold py-3 rounded-xl" aria-pressed="false">1</button>
+              <button data-grade="2" class="grade-btn btn bg-slate-50 border border-slate-200 text-slate-700 font-bold py-3 rounded-xl" aria-pressed="false">2</button>
+              <button data-grade="3" class="grade-btn btn bg-slate-50 border border-slate-200 text-slate-700 font-bold py-3 rounded-xl" aria-pressed="false">3</button>
+              <button data-grade="4" class="grade-btn btn bg-slate-50 border border-slate-200 text-slate-700 font-bold py-3 rounded-xl" aria-pressed="false">4</button>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-semibold text-slate-700 mb-3">2. Обери складність</h3>
+            <div id="practice-difficulty-buttons" class="grid grid-cols-3 gap-2" role="group" aria-label="Оберіть складність">
+              <button data-difficulty="easy" class="diff-btn btn bg-slate-50 border border-slate-200 text-slate-700 font-semibold py-3 rounded-xl text-sm" aria-pressed="false">
+                <i class="fas fa-seedling block text-lg mb-1 text-emerald-500" aria-hidden="true"></i>
+                Легкий
+              </button>
+              <button data-difficulty="medium" class="diff-btn btn bg-slate-50 border border-slate-200 text-slate-700 font-semibold py-3 rounded-xl text-sm" aria-pressed="false">
+                <i class="fas fa-fire block text-lg mb-1 text-amber-500" aria-hidden="true"></i>
+                Середній
+              </button>
+              <button data-difficulty="hard" class="diff-btn btn bg-slate-50 border border-slate-200 text-slate-700 font-semibold py-3 rounded-xl text-sm" aria-pressed="false">
+                <i class="fas fa-bolt block text-lg mb-1 text-rose-500" aria-hidden="true"></i>
+                Важкий
+              </button>
+            </div>
+          </div>
+
+          <button id="start-practice-btn" class="btn w-full bg-amber-500 text-slate-950 font-bold py-4 rounded-2xl text-lg" disabled>
+            Почати тренування
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <div id="toast-notification" role="status" aria-live="polite"></div>
+
+  <script type="module" src="features/auth/student-code-auth.js"></script>
+  <script type="module" src="student.js"></script>
+</body>
+</html>

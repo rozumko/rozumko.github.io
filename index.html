@@ -3,13 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Олімпіада з інформатики Розумко</title>
-  
+  <title>Розумко — Олімпіада з інформатики</title>
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
   <meta name="theme-color" content="#3b82f6">
-
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -18,436 +16,64 @@
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body class="text-gray-800">
-
-  <!-- Скіплінк дозволяє користувачам клавіатури пропускати повторювану навігацію -->
   <a href="#main-content" class="skip-link">Перейти до основного контенту</a>
 
-  <main id="main-content" class="app-container min-h-screen flex items-start justify-center p-4 pt-10 sm:pt-16" tabindex="-1">
+  <main id="main-content" class="app-container min-h-screen flex items-center justify-center p-4" tabindex="-1">
+    <div class="w-full max-w-2xl">
+      <div class="bg-white/95 p-8 sm:p-12 rounded-[2rem] shadow-2xl border border-white/70 text-center">
 
-    <div id="welcome-container" class="w-full max-w-6xl text-center" role="region" aria-labelledby="welcome-title" aria-hidden="false">
-      <div class="bg-white/95 p-4 sm:p-6 lg:p-8 rounded-[2rem] shadow-2xl border border-white/70">
-        <section class="rounded-[1.75rem] bg-gradient-to-br from-sky-100 via-white to-amber-100 p-6 sm:p-8 lg:p-10 text-left mb-8">
-          <div class="grid lg:grid-cols-[1.25fr_0.75fr] gap-6 items-start">
-            <div>
-              <span class="inline-flex items-center gap-2 bg-white text-sky-700 text-sm font-semibold px-4 py-2 rounded-full shadow-sm mb-4">
-                <i class="fas fa-star" aria-hidden="true"></i>
-                Онлайн-олімпіада для 1-4 класів
-              </span>
-              <h1 class="text-3xl sm:text-5xl font-bold text-slate-900 leading-tight mb-4">Олімпіада з інформатики «Розумко»</h1>
-              <p class="text-lg sm:text-xl text-slate-700 mb-5">На цій сторінці все просто: якщо маєш код — проходиш олімпіаду, якщо хочеш підготуватися — обираєш тренування, якщо ти вчитель — переходиш у свій кабінет.</p>
-              <div class="grid sm:grid-cols-3 gap-3 text-sm">
-                <div class="bg-white/80 rounded-2xl px-4 py-3 border border-sky-100">
-                  <p class="font-semibold text-slate-900 mb-1">1. Код учня</p>
-                  <p class="text-slate-600">Введи код і далі обери демо-версію або основну олімпіаду.</p>
-                </div>
-                <div class="bg-white/80 rounded-2xl px-4 py-3 border border-sky-100">
-                  <p class="font-semibold text-slate-900 mb-1">2. Тренування</p>
-                  <p class="text-slate-600">Нижче є окремий блок для підготовки без коду.</p>
-                </div>
-                <div class="bg-white/80 rounded-2xl px-4 py-3 border border-sky-100">
-                  <p class="font-semibold text-slate-900 mb-1">3. Для вчителя</p>
-                  <p class="text-slate-600">Увійди в кабінет, створи коди і перевіряй результати.</p>
-                </div>
-              </div>
-            </div>
-            <div class="bg-slate-950 text-white rounded-[1.5rem] p-5 sm:p-6 shadow-xl">
-              <form id="student-code-form-hero" class="space-y-3 mb-4" aria-describedby="student-code-status-hero student-code-summary-hero">
-                <label for="student-code-input-hero" class="sr-only">Код учня</label>
-                <input id="student-code-input-hero" type="text" inputmode="text" autocomplete="off" placeholder="Наприклад, ОРЕЛ-47" class="w-full px-4 py-4 rounded-2xl bg-white text-slate-900 border border-white/60 focus:outline-none focus:ring-4 focus:ring-sky-300 text-xl uppercase tracking-[0.18em]"/>
-                <div class="flex flex-col sm:flex-row gap-3">
-                  <button id="student-code-submit-btn-hero" type="submit" class="btn flex-1 bg-emerald-400 text-slate-950 font-bold py-4 px-5 rounded-2xl">Підтвердити код</button>
-                  <button id="student-code-clear-btn-hero" type="button" class="btn bg-white/10 text-white font-semibold py-4 px-5 rounded-2xl hidden whitespace-nowrap">Змінити код</button>
-                </div>
-              </form>
-              <p id="student-code-status-hero" class="text-rose-300 text-sm mt-3"></p>
-              <p id="student-code-summary-hero" class="text-emerald-300 text-sm mt-2 hidden"></p>
-              <p class="text-sm uppercase tracking-[0.2em] text-sky-200 mb-3">Швидкий старт</p>
-              <h2 class="text-2xl font-bold mb-3">Вхід учня за кодом</h2>
-              <p class="text-slate-300 text-sm mb-4">Введи код, який дав учитель. Після підтвердження можна буде перейти до демо-версії або основної олімпіади.</p>
-              <p class="text-sm text-slate-300 mb-3">Форма входу одразу нижче на сторінці.</p>
-              <button id="show-login-hero-btn" class="btn w-full bg-white text-slate-900 font-bold py-4 px-5 rounded-2xl">Для вчителя</button>
-            </div>
-          </div>
-        </section>
-        <h1 id="welcome-title" class="text-3xl sm:text-4xl font-bold text-blue-600 mb-2">Олімпіада з інформатики "Розумко"</h1>
-        <p id="welcome-mode-description" class="text-gray-500 mb-8">Обери клас та рівень складності, щоб почати</p>
-
-        <section class="grid xl:grid-cols-[0.92fr_1.08fr] gap-6 items-start">
-        <div class="bg-sky-50 border border-sky-200 rounded-[1.75rem] p-6 sm:p-8 text-left">
-          <p class="text-sm font-semibold uppercase tracking-[0.2em] text-sky-600 mb-2">Олімпіада</p>
-          <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-3">Обери формат проходження</h2>
-          <p class="text-slate-600 mb-6">Демо-версія допомагає спробувати формат, а основна олімпіада зберігає офіційний результат.</p>
-          <p class="text-center font-semibold mb-3">Обери режим:</p>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <button data-mode="practice" class="mode-btn btn text-blue-700 font-semibold py-3 px-4 rounded-lg transition" aria-label="Обрати режим Навчання" aria-pressed="false">
-              <i class="fas fa-book-open mr-2" aria-hidden="true"></i>Навчання<br><span class="text-sm font-normal">З підказками</span>
-            </button>
-            <button data-mode="exam" class="mode-btn btn text-blue-700 font-semibold py-3 px-4 rounded-lg transition" aria-label="Обрати режим Іспит" aria-pressed="false">
-              <i class="fas fa-stopwatch mr-2" aria-hidden="true"></i>Іспит<br><span class="text-sm font-normal">З таймером</span>
-            </button>
-            <button data-mode="olympiad" class="mode-btn btn text-blue-700 font-semibold py-3 px-4 rounded-lg transition" aria-label="Обрати режим Олімпіада" aria-pressed="false">
-              <i class="fas fa-trophy mr-2" aria-hidden="true"></i>Олімпіада<br><span class="text-sm font-normal">Лише hard</span>
-            </button>
-          </div>
-        </div>
-        <div class="bg-amber-50 border border-amber-200 rounded-[1.75rem] p-6 sm:p-8 text-left">
-        <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-600 mb-2">Тренування</p>
-        <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-3">Підготовка перед олімпіадою</h2>
-        <p class="text-slate-600 mb-6">Обери клас і складність, щоб розв’язати тренувальні завдання без офіційної спроби.</p>
-
-        <div class="grid sm:grid-cols-2 gap-8 mb-8 text-left">
-          <div>
-            <h3 class="font-semibold text-lg mb-4 text-center text-gray-700">1. Обери клас</h3>
-            <div id="welcome-grade-buttons-container" class="grid grid-cols-2 gap-3" role="group" aria-label="Оберіть клас">
-            </div>
-          </div>
-          
-          <div>
-            <h3 class="font-semibold text-lg mb-4 text-center text-gray-700">2. Обери складність</h3>
-            <div id="welcome-difficulty-buttons-container" class="flex flex-col gap-3" role="group" aria-label="Оберіть складність">
-            </div>
-          </div>
+        <div class="mb-8">
+          <span class="inline-flex items-center gap-2 bg-sky-100 text-sky-700 text-sm font-semibold px-4 py-2 rounded-full mb-4">
+            <i class="fas fa-star" aria-hidden="true"></i>
+            Онлайн-олімпіада для 1–4 класів
+          </span>
+          <h1 class="text-4xl sm:text-5xl font-bold text-slate-900 leading-tight mb-4">
+            Олімпіада<br>«Розумко»
+          </h1>
+          <p class="text-lg text-slate-600">
+            Онлайн-олімпіада з інформатики для учнів початкових класів
+          </p>
         </div>
 
-        <div class="text-center mb-0">
-          <button id="welcome-start-test-btn" class="btn bg-amber-500 text-slate-950 font-bold py-4 px-8 rounded-2xl w-full sm:w-auto text-lg shadow-lg" disabled>
-            Почати олімпіаду
-          </button>
+        <div class="grid sm:grid-cols-2 gap-4 mb-8">
+          <a href="student.html" class="btn block bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-6 px-6 rounded-2xl text-center no-underline">
+            <i class="fas fa-user-graduate text-3xl mb-3 block" aria-hidden="true"></i>
+            <span class="text-xl block mb-1">Я учень</span>
+            <span class="text-sm font-normal opacity-90">Тренування або олімпіада за кодом</span>
+          </a>
+          <a href="teacher.html" class="btn block bg-sky-500 hover:bg-sky-600 text-white font-bold py-6 px-6 rounded-2xl text-center no-underline">
+            <i class="fas fa-chalkboard-teacher text-3xl mb-3 block" aria-hidden="true"></i>
+            <span class="text-xl block mb-1">Я вчитель</span>
+            <span class="text-sm font-normal opacity-90">Кабінет: класи, коди, результати</span>
+          </a>
         </div>
 
-        </div>
-        </section>
-        <section class="hidden mt-6 border-t pt-6">
-            <h2 class="text-xl font-semibold text-slate-900 mb-3">Вхід учня за кодом</h2>
-            <p class="text-sm text-gray-600 mb-4">Введи код, який видав учитель, щоб закріпити спробу за собою.</p>
-            <form id="student-code-form" class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center" aria-describedby="student-code-status student-code-summary">
-              <label for="student-code-input" class="sr-only">Код учня</label>
-              <input id="student-code-input" type="text" inputmode="text" autocomplete="off" placeholder="Наприклад, ОРЕЛ-47" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg uppercase tracking-wide"/>
-              <button id="student-code-submit-btn" type="submit" class="btn bg-emerald-500 text-white font-bold py-3 px-6 rounded-lg whitespace-nowrap">Увійти за кодом</button>
-              <button id="student-code-clear-btn" type="button" class="btn bg-gray-200 text-gray-700 font-semibold py-3 px-4 rounded-lg hidden whitespace-nowrap">Змінити код</button>
-            </form>
-            <p id="student-code-status" class="text-red-600 text-sm mt-3" role="alert" aria-live="assertive"></p>
-            <p id="student-code-summary" class="text-sm text-emerald-700 mt-2 hidden" aria-live="polite"></p>
-        </section>
-
-        <div class="hidden mt-6 border-t pt-6">
-            <p class="text-sm text-gray-600 mb-3">Вчителю або організатору:</p>
-            <button id="show-login-btn" class="btn bg-white border border-gray-300 text-gray-700 font-bold py-3 px-6 rounded-lg w-full sm:w-auto">
-                Увійти, щоб зберегти прогрес
-            </button>
-        </div>
-      </div>
-    </div>
-
-    <div id="auth-container" class="w-full max-w-md hidden" role="region" aria-labelledby="auth-title" aria-hidden="true">
-      <div class="bg-white p-8 rounded-2xl shadow-xl text-center">
-        <h1 id="auth-title" class="text-3xl font-bold text-blue-600 mb-6">Збереження прогресу</h1>
-        <button id="google-signin-btn" class="btn w-full bg-white border border-gray-300 text-gray-700 font-semibold py-3 px-4 rounded-lg hover:bg-gray-50 flex items-center justify-center space-x-2">
-          <img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" alt="Google" class="h-5"/>
-          <span>Увійти через Google</span>
-        </button>
-        <div class="my-4 flex items-center"><hr class="flex-grow"/><span class="px-2 text-gray-500 text-sm">або</span><hr class="flex-grow"/></div>
-        <form id="login-form" class="space-y-4" aria-describedby="login-validation-errors auth-error">
-          <input type="email" id="login-email" placeholder="Електронна пошта"
-                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                 required autocomplete="email"/>
-
-          <input type="password" id="login-password" placeholder="Пароль" 
-                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                 required autocomplete="current-password"/>
-          
-          <div id="login-validation-errors" aria-live="polite"></div>
-
-          <button type="submit" class="btn w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg">
-            Увійти
-          </button>
-        </form>
-        <form id="register-form" class="space-y-4 hidden" aria-describedby="register-validation-errors">
-          <input type="email" id="register-email" placeholder="Електронна пошта"
-                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                 required autocomplete="email"/>
-
-          <div>
-            <label for="register-grade" class="block text-left text-sm font-semibold text-gray-600 mb-2">
-              Оберіть ваш клас
-            </label>
-            <select id="register-grade"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                    required>
-              <option value="">Оберіть клас</option>
-            </select>
-            <p class="text-sm text-gray-600 mt-1">Клас можна змінити пізніше у профілі.</p>
-          </div>
-
-          <div>
-            <input type="password" id="register-password" placeholder="Пароль (мінімум 6 символів)"
-                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                   required autocomplete="new-password"/>
-            <div id="register-password-strength" class="hidden"></div>
-          </div>
-
-          <div id="register-validation-errors" aria-live="polite"></div>
-
-          <button type="submit" class="btn w-full bg-green-500 text-white font-bold py-2 px-4 rounded-lg">
-            Створити акаунт
-          </button>
-        </form>
-        <p class="mt-4">
-          <a href="#" id="toggle-auth" class="text-blue-600 hover:underline text-sm">Немає акаунта? Зареєструватися</a>
-        </p>
-        <p id="auth-error" class="text-red-500 mt-4 text-sm h-4" role="alert" aria-live="assertive"></p>
-        <button id="back-to-welcome-btn" class="mt-4 text-gray-600 hover:underline text-base">Повернутись на головну</button>
-      </div>
-    </div>
-
-    <div id="dashboard-container" class="w-full max-w-6xl hidden" role="region" aria-labelledby="dashboard-title" aria-hidden="true">
-      <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-xl w-full">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-          <div>
-            <h1 id="dashboard-title" class="text-2xl sm:text-3xl font-bold text-blue-600">Привіт, розумака!</h1>
-            <p class="text-gray-500 text-sm sm:text-base" id="user-email-display"></p>
-          </div>
-          <button id="logout-btn" class="btn bg-red-500 text-white font-bold py-2 px-4 rounded-lg text-sm flex items-center gap-2 self-end sm:self-center">
-            <i class="fas fa-sign-out-alt" aria-hidden="true"></i><span>Вийти</span>
-          </button>
-        </div>
-
-        <div class="grid md:grid-cols-3 gap-8">
-          <div class="md:col-span-2">
-            <h2 class="text-2xl font-semibold mb-4">Обери тренування</h2>
-
-            <div class="bg-blue-50 p-4 rounded-lg mb-6">
-              <p class="text-center font-semibold mb-3">Обери режим:</p>
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <button data-mode="practice" class="mode-btn btn text-blue-700 font-semibold py-3 px-4 rounded-lg transition" aria-pressed="false">
-                  <i class="fas fa-book-open mr-2" aria-hidden="true"></i>Навчання<br/><span class="text-sm font-normal">З підказками</span>
-                </button>
-                <button data-mode="exam" class="mode-btn btn text-blue-700 font-semibold py-3 px-4 rounded-lg transition" aria-pressed="false">
-                  <i class="fas fa-stopwatch mr-2" aria-hidden="true"></i>Іспит<br/><span class="text-sm font-normal">З таймером</span>
-                </button>
-                <button data-mode="olympiad" class="mode-btn btn text-blue-700 font-semibold py-3 px-4 rounded-lg transition" aria-pressed="false">
-                  <i class="fas fa-trophy mr-2" aria-hidden="true"></i>Олімпіада<br/><span class="text-sm font-normal">Лише hard</span>
-                </button>
-              </div>
-            </div>
-
-            <p id="dashboard-mode-description" class="text-gray-500 mb-6">Обери клас та рівень складності, щоб почати</p>
-
-            <div class="grid sm:grid-cols-2 gap-8 mb-8 text-left">
-              <div>
-                <h3 class="font-semibold text-lg mb-4 text-center text-gray-700">1. Обери клас</h3>
-                <div id="dashboard-grade-buttons-container" class="grid grid-cols-2 gap-3" role="group" aria-label="Оберіть клас">
-                </div>
-              </div>
-              
-              <div>
-                <h3 class="font-semibold text-lg mb-4 text-center text-gray-700">2. Обери складність</h3>
-                <div id="dashboard-difficulty-buttons-container" class="flex flex-col gap-3" role="group" aria-label="Оберіть складність">
-                </div>
-              </div>
-            </div>
-
-            <div class="text-center mb-8">
-              <button id="dashboard-start-test-btn" class="btn bg-blue-500 text-white font-bold py-3 px-12 rounded-lg w-full sm:w-auto text-lg shadow-lg" disabled>
-                Почати олімпіаду
-              </button>
-            </div>
-          </div>
-
-          <div class="md:col-span-1 space-y-6">
-            <section class="panel-card panel-card--badges">
-              <div class="flex items-start justify-between gap-3 mb-5">
-                <div>
-                  <h2 class="text-xl font-semibold text-slate-900">Твої нагороди</h2>
-                  <p class="text-sm text-slate-600">Відкривай значки за предмети та загальний прогрес</p>
-                </div>
-                <span class="badge-spark" aria-hidden="true">
-                  <i class="fas fa-trophy"></i>
-                </span>
-              </div>
-              <div id="badges-container" class="badge-grid"></div>
-            </section>
-
-            <section class="panel-card">
-              <h2 class="text-xl font-semibold text-gray-800 mb-6">Твій прогрес</h2>
-              <div class="score-card" aria-live="polite">
-                <p class="score-label">Загальний рахунок</p>
-                <p id="total-score" class="score-value">0</p>
-                <p class="score-hint">балів</p>
-              </div>
-              <div class="mt-6">
-                <label for="user-grade-selector" class="block text-sm font-semibold text-gray-600 mb-2">
-                  Активний клас
-                </label>
-                <select id="user-grade-selector"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </select>
-              </div>
-              <div id="progress-details-container" class="mt-6"></div>
-            </section>
-
-            <section id="teacher-tools-panel" class="panel-card hidden">
-              <div class="flex items-start justify-between gap-3 mb-5">
-                <div>
-                  <h2 class="text-xl font-semibold text-slate-900">Кабінет вчителя</h2>
-                  <p class="text-sm text-slate-600">Генеруй коди доступу та переглядай результати олімпіади.</p>
-                </div>
-                <span class="badge-spark" aria-hidden="true">
-                  <i class="fas fa-chalkboard-teacher"></i>
-                </span>
-              </div>
-
-              <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6">
-                <h3 class="text-base font-semibold text-slate-900 mb-3">Генерація кодів</h3>
-                <p class="text-sm text-slate-600 mb-4">Мінімум даних: додавай лише безпечні позначки учнів або місця в класі, без ПІБ, email чи телефонів.</p>
-                <form id="teacher-code-generator-form" class="flex flex-col gap-3" aria-describedby="teacher-code-generator-status teacher-registration-hint">
-                  <label for="teacher-code-grade" class="text-sm font-medium text-slate-700">Клас</label>
-                  <select id="teacher-code-grade" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
-                  <label for="teacher-code-class-select" class="text-sm font-medium text-slate-700">Збережений клас</label>
-                  <select id="teacher-code-class-select" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
-                  <label for="teacher-code-class-name" class="text-sm font-medium text-slate-700">Нова назва класу або групи</label>
-                  <input id="teacher-code-class-name" type="text" placeholder="Наприклад, 4-А" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-                  <label for="teacher-student-bulk-input" class="text-sm font-medium text-slate-700">Учні списком, по одному в рядок</label>
-                  <textarea id="teacher-student-bulk-input" rows="6" placeholder="Місце 1&#10;Місце 2&#10;АБ-01" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
-                  <label for="teacher-quick-count" class="text-sm font-medium text-slate-700">Або швидко створити порожні записи</label>
-                  <input id="teacher-quick-count" type="number" min="0" max="40" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-                  <label for="teacher-code-count" class="text-sm font-medium text-slate-700">Резервна кількість, якщо список порожній</label>
-                  <select id="teacher-code-count" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="1">1 код</option>
-                    <option value="5">5 кодів</option>
-                    <option value="10">10 кодів</option>
-                  </select>
-                  <button id="teacher-code-generate-btn" type="submit" class="btn bg-emerald-500 text-white font-bold py-3 px-4 rounded-lg">Додати учнів</button>
-                </form>
-                <p id="teacher-registration-hint" class="text-xs text-slate-500 mt-3">Кожному запису буде створено код доступу й окреме платіжне посилання з випадковим токеном без персональних даних.</p>
-                <p id="teacher-code-generator-status" class="text-sm mt-3" aria-live="polite"></p>
-              </div>
-
-              <div class="mb-6">
-                <div class="bg-white border border-slate-200 rounded-xl p-4 mb-4">
-                  <label for="teacher-dashboard-class-filter" class="text-sm font-medium text-slate-700 block mb-2">Фільтр за класом</label>
-                  <select id="teacher-dashboard-class-filter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
-                  <p id="teacher-dashboard-summary" class="text-xs text-slate-500 mt-2"></p>
-                </div>
-                <div class="flex items-center justify-between gap-3 mb-3">
-                  <h3 class="text-base font-semibold text-slate-900">Коди учнів</h3>
-                  <p id="teacher-student-codes-meta" class="text-xs text-slate-500"></p>
-                </div>
-                <div id="teacher-student-codes-list" class="space-y-3"></div>
-              </div>
-
-              <div>
-                <div class="flex items-center justify-between gap-3 mb-3">
-                  <h3 class="text-base font-semibold text-slate-900">Результати олімпіади</h3>
-                  <p id="teacher-olympiad-results-meta" class="text-xs text-slate-500"></p>
-                </div>
-                <div id="teacher-olympiad-results-list" class="space-y-3"></div>
-              </div>
-            </section>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div id="test-container" class="w-full max-w-2xl hidden" role="region" aria-labelledby="test-title" aria-hidden="true">
-      <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-xl">
-        <div class="flex flex-wrap justify-between items-center mb-4 gap-4">
-          <div class="flex items-center">
-            <h2 id="test-title" class="text-xl sm:text-2xl font-bold text-blue-600">Математика</h2>
-            <span id="test-mode-indicator" class="text-sm sm:text-base font-semibold bg-gray-200 text-gray-700 px-3 py-1 rounded-full ml-3"></span>
-          </div>
-          <div class="flex items-center gap-2 sm:gap-4">
-            <div id="timer-display" class="hidden text-base sm:text-lg font-bold bg-orange-100 text-orange-700 px-3 py-2 rounded-lg items-center" role="timer" aria-live="off">
-              <i class="fas fa-stopwatch mr-2" aria-hidden="true"></i>
-              <div><span id="timer-minutes">5</span>:<span id="timer-seconds">00</span></div>
-            </div>
-            <p class="text-base sm:text-lg font-semibold">
-              <span id="current-question-num">0</span> / <span id="total-questions-num">5</span>
+        <div class="grid sm:grid-cols-3 gap-3 text-sm text-left">
+          <div class="bg-slate-50 rounded-2xl px-4 py-3 border border-slate-100">
+            <p class="font-semibold text-slate-900 mb-1">
+              <i class="fas fa-shield-alt text-sky-500 mr-1" aria-hidden="true"></i>
+              Без реєстрації
             </p>
-            <button id="quit-test-btn" class="btn bg-gray-200 text-gray-600 text-sm sm:text-base font-bold py-2 px-3 rounded-lg hover:bg-gray-300" aria-label="Вийти з тесту">Вийти</button>
+            <p class="text-slate-500">Учень входить лише за кодом — без email і пароля</p>
+          </div>
+          <div class="bg-slate-50 rounded-2xl px-4 py-3 border border-slate-100">
+            <p class="font-semibold text-slate-900 mb-1">
+              <i class="fas fa-lock text-emerald-500 mr-1" aria-hidden="true"></i>
+              Захист даних
+            </p>
+            <p class="text-slate-500">Мінімум персональних даних — на рівні архітектури</p>
+          </div>
+          <div class="bg-slate-50 rounded-2xl px-4 py-3 border border-slate-100">
+            <p class="font-semibold text-slate-900 mb-1">
+              <i class="fas fa-book-open text-amber-500 mr-1" aria-hidden="true"></i>
+              Тренування
+            </p>
+            <p class="text-slate-500">Доступне будь-коли, без коду і реєстрації</p>
           </div>
         </div>
 
-        <div class="w-full bg-gray-200 rounded-full h-2.5 mb-6" aria-hidden="true">
-          <div id="progress-bar" class="bg-green-500 h-2.5 rounded-full transition-all duration-300" style="width:0%"></div>
-        </div>
-
-        <div class="bg-blue-50 p-6 rounded-lg mb-6 min-h-[100px] flex items-center justify-center">
-          <p id="question-text" class="text-lg sm:text-xl text-center font-medium">Завантаження питання...</p>
-        </div>
-
-        <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4" role="radiogroup" aria-labelledby="question-text"></div>
-
-        <div class="text-center mt-6 min-h-[80px]">
-          <p id="feedback-text" class="font-semibold h-6" role="status" aria-live="polite"></p>
-          <button id="next-question-btn" class="btn bg-blue-500 text-white font-bold py-2 px-6 rounded-lg hidden mt-2">Наступне питання</button>
-        </div>
-
-        <div id="explanation-container" class="hidden mt-6 bg-green-50 border-2 border-green-200 p-6 rounded-lg">
-          <p class="font-semibold text-green-800 mb-2"><i class="fas fa-lightbulb mr-2" aria-hidden="true"></i>Пояснення:</p>
-          <p id="explanation-text" class="text-gray-700"></p>
-        </div>
       </div>
     </div>
   </main>
-
-  <div id="results-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="results-title" tabindex="-1" aria-hidden="true">
-    <div class="modal-content bg-white p-8 rounded-2xl shadow-xl w-full max-w-lg text-center mx-4">
-      <h2 id="results-title" class="text-3xl font-bold text-blue-600 mb-4">Чудовий результат!</h2>
-      <p class="text-lg mb-2">Ти відповів правильно на</p>
-      <p class="text-6xl font-extrabold text-green-500 mb-4"><span id="results-score">0</span> з <span id="results-total">0</span></p>
-      <p id="time-up-message" class="hidden text-orange-600 font-semibold mb-4">Час вийшов!</p>
-      <div id="new-badge-container" class="hidden my-6">
-        <p class="text-lg font-semibold text-yellow-600 mb-2"><i class="fas fa-trophy mr-2" aria-hidden="true"></i>Нова нагорода! 🎉</p>
-        <div id="new-badge" class="inline-block text-5xl bg-yellow-100 p-4 rounded-full"></div>
-        <p id="new-badge-name" class="font-bold mt-2"></p>
-      </div>
-      <div class="flex flex-col sm:flex-row gap-4 mt-6">
-        <button id="review-answers-btn" class="btn w-full bg-yellow-500 text-white font-bold py-3 px-4 rounded-lg">Переглянути відповіді</button>
-        <button id="back-to-main-btn" class="btn w-full bg-blue-500 text-white font-bold py-3 px-4 rounded-lg">На головну</button>
-      </div>
-      <div id="guest-prompt" class="hidden mt-6 bg-blue-50 p-6 rounded-lg">
-        <p class="font-semibold mb-3">Хочеш зберегти цей результат?</p>
-        <p class="text-base text-gray-700 mb-4">Створи акаунт або увійди, щоб відстежувати свій прогрес!</p>
-        <button id="save-progress-btn" class="btn w-full bg-green-500 text-white font-bold py-3 px-4 rounded-lg">Увійти та зберегти</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="review-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="review-title" tabindex="-1" aria-hidden="true">
-    <div class="modal-content bg-white p-6 sm:p-8 rounded-2xl shadow-xl w-full max-w-2xl text-left mx-4 max-h-[90vh] flex flex-col">
-      <div class="flex justify-between items-center mb-4">
-        <h2 id="review-title" class="text-2xl font-bold text-blue-600">Перегляд відповідей</h2>
-        <button id="close-review-btn" class="text-gray-500 hover:text-gray-800 text-2xl" aria-label="Закрити вікно перегляду">&times;</button>
-      </div>
-      <div id="review-content" class="overflow-y-auto flex-grow pr-2"></div>
-    </div>
-  </div>
-
-  <div id="confirmation-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmation-title" tabindex="-1" aria-hidden="true">
-    <div class="modal-content bg-white p-8 rounded-2xl shadow-xl w-full max-w-md text-center mx-4">
-      <h2 id="confirmation-title" class="text-2xl font-bold text-gray-800 mb-4">Ви впевнені?</h2>
-      <p id="confirmation-text" class="text-gray-600 mb-8">Весь прогрес у поточному тесті буде втрачено.</p>
-      <div class="grid grid-cols-2 gap-4">
-        <button id="confirm-action-btn" class="btn w-full bg-red-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-600">Так, вийти</button>
-        <button id="cancel-action-btn" class="btn w-full bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-lg hover:bg-gray-300">Скасувати</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="info-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="info-title" tabindex="-1" aria-hidden="true">
-    <div class="modal-content bg-white p-8 rounded-2xl shadow-xl w-full max-w-md text-center mx-4">
-      <h2 id="info-title" class="text-2xl font-bold text-blue-600 mb-4">Повідомлення</h2>
-      <p id="info-text" class="text-gray-600 mb-8">Текст повідомлення тут.</p>
-      <button id="info-ok-btn" class="btn w-full bg-blue-500 text-white font-bold py-3 px-4 rounded-lg">OK</button>
-    </div>
-  </div>
-
-  <div id="grade-selection-modal" class="modal hidden" aria-hidden="true"></div>
-
-  <div id="toast-notification" role="status" aria-live="polite"></div>
-
-  <script type="module" src="script.js"></script>
-  
 </body>
 </html>

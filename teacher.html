@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Розумко — Кабінет вчителя</title>
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+  <meta name="theme-color" content="#3b82f6">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body class="text-gray-800">
+  <a href="#main-content" class="skip-link">Перейти до основного контенту</a>
+
+  <main id="main-content" class="app-container min-h-screen flex items-start justify-center p-4 pt-8 sm:pt-16" tabindex="-1">
+    <div class="w-full max-w-md" id="auth-section">
+
+      <!-- Навігація -->
+      <div class="mb-6">
+        <a href="index.html" class="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 text-sm font-medium transition-colors">
+          <i class="fas fa-arrow-left" aria-hidden="true"></i>
+          На головну
+        </a>
+      </div>
+
+      <!-- Форма входу -->
+      <div class="bg-white/95 rounded-[2rem] shadow-2xl border border-white/70 overflow-hidden">
+        <div class="bg-sky-600 text-white p-6 sm:p-8">
+          <p class="text-sm uppercase tracking-[0.2em] text-sky-200 mb-2">Кабінет</p>
+          <h1 class="text-2xl sm:text-3xl font-bold mb-2">Вхід для вчителя</h1>
+          <p class="text-sky-100 text-sm">Увійдіть, щоб керувати класами, кодами та результатами.</p>
+        </div>
+        <div class="p-6 sm:p-8">
+          <form id="teacher-login-form" novalidate aria-describedby="login-error">
+            <div class="space-y-4 mb-6">
+              <div>
+                <label for="login-email" class="block text-sm font-semibold text-slate-700 mb-2">Електронна пошта</label>
+                <input
+                  id="login-email"
+                  type="email"
+                  autocomplete="email"
+                  placeholder="teacher@school.ua"
+                  required
+                  class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-sky-300 text-base"
+                />
+              </div>
+              <div>
+                <label for="login-password" class="block text-sm font-semibold text-slate-700 mb-2">Пароль</label>
+                <input
+                  id="login-password"
+                  type="password"
+                  autocomplete="current-password"
+                  placeholder="••••••••"
+                  required
+                  class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-sky-300 text-base"
+                />
+              </div>
+            </div>
+            <p id="login-error" class="text-rose-600 text-sm mb-4 min-h-[1.25rem]" role="alert" aria-live="assertive"></p>
+            <button type="submit" id="login-submit-btn" class="btn w-full bg-sky-500 text-white font-bold py-4 rounded-2xl text-base">
+              Увійти
+            </button>
+          </form>
+
+          <div class="mt-6 pt-6 border-t border-slate-100 text-center">
+            <p class="text-sm text-slate-500 mb-3">Ще немає кабінету?</p>
+            <button id="show-register-btn" class="btn w-full bg-slate-100 text-slate-700 font-semibold py-3 rounded-xl text-sm">
+              Зареєструватись
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Форма реєстрації (прихована) -->
+      <div id="register-section" class="hidden bg-white/95 rounded-[2rem] shadow-2xl border border-white/70 overflow-hidden mt-4">
+        <div class="p-6 sm:p-8">
+          <h2 class="text-xl font-bold text-slate-900 mb-5">Реєстрація вчителя</h2>
+          <form id="teacher-register-form" novalidate aria-describedby="register-error">
+            <div class="space-y-4 mb-6">
+              <div>
+                <label for="reg-email" class="block text-sm font-semibold text-slate-700 mb-2">Електронна пошта</label>
+                <input
+                  id="reg-email"
+                  type="email"
+                  autocomplete="email"
+                  placeholder="teacher@school.ua"
+                  required
+                  class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-sky-300 text-base"
+                />
+              </div>
+              <div>
+                <label for="reg-school" class="block text-sm font-semibold text-slate-700 mb-2">Школа або заклад</label>
+                <input
+                  id="reg-school"
+                  type="text"
+                  autocomplete="organization"
+                  placeholder="Ліцей №1, м. Київ"
+                  class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-sky-300 text-base"
+                />
+              </div>
+              <div>
+                <label for="reg-password" class="block text-sm font-semibold text-slate-700 mb-2">Пароль (мінімум 8 символів)</label>
+                <input
+                  id="reg-password"
+                  type="password"
+                  autocomplete="new-password"
+                  placeholder="••••••••"
+                  minlength="8"
+                  required
+                  class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-sky-300 text-base"
+                />
+              </div>
+            </div>
+            <p class="text-xs text-slate-400 mb-4">
+              <i class="fas fa-shield-alt mr-1" aria-hidden="true"></i>
+              Ми зберігаємо лише email і назву закладу. Жодних зайвих персональних даних.
+            </p>
+            <p id="register-error" class="text-rose-600 text-sm mb-4 min-h-[1.25rem]" role="alert" aria-live="assertive"></p>
+            <button type="submit" id="register-submit-btn" class="btn w-full bg-emerald-500 text-white font-bold py-4 rounded-2xl text-base mb-3">
+              Створити кабінет
+            </button>
+            <button type="button" id="hide-register-btn" class="btn w-full bg-slate-100 text-slate-600 font-medium py-3 rounded-xl text-sm">
+              Назад до входу
+            </button>
+          </form>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Кабінет вчителя (показується після входу) -->
+    <div id="dashboard-section" class="w-full max-w-4xl hidden">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">Кабінет вчителя</h1>
+          <p id="teacher-email-display" class="text-slate-500 text-sm mt-1"></p>
+        </div>
+        <button id="logout-btn" class="btn bg-slate-100 text-slate-700 font-semibold py-2 px-5 rounded-xl text-sm flex items-center gap-2">
+          <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
+          Вийти
+        </button>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-white/95 rounded-2xl shadow-lg border border-white/70 p-5">
+          <p class="text-sm text-slate-500 mb-1">Класів</p>
+          <p id="stat-classes" class="text-3xl font-bold text-slate-900">—</p>
+        </div>
+        <div class="bg-white/95 rounded-2xl shadow-lg border border-white/70 p-5">
+          <p class="text-sm text-slate-500 mb-1">Учнів (кодів)</p>
+          <p id="stat-students" class="text-3xl font-bold text-slate-900">—</p>
+        </div>
+        <div class="bg-white/95 rounded-2xl shadow-lg border border-white/70 p-5">
+          <p class="text-sm text-slate-500 mb-1">Результатів</p>
+          <p id="stat-results" class="text-3xl font-bold text-slate-900">—</p>
+        </div>
+      </div>
+
+      <div class="bg-white/95 rounded-[2rem] shadow-xl border border-white/70 p-6 sm:p-8">
+        <div class="flex items-center justify-center flex-col text-center py-12 text-slate-400">
+          <i class="fas fa-tools text-5xl mb-4" aria-hidden="true"></i>
+          <p class="text-lg font-semibold text-slate-600 mb-2">Кабінет у розробці</p>
+          <p class="text-sm max-w-sm">Тут будуть: створення класів, генерація кодів учнів, перегляд результатів олімпіади.</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <div id="toast-notification" role="status" aria-live="polite"></div>
+
+  <script type="module" src="features/auth/teacher-auth.js"></script>
+  <script type="module" src="teacher.js"></script>
+</body>
+</html>
