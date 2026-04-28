@@ -278,6 +278,15 @@ function showQuestion() {
   quizProgressTxt.textContent = `${currentIdx + 1} / ${questions.length}`;
   quizProgressBar.style.width = `${(currentIdx / questions.length) * 100}%`;
   quizQuestionEl.textContent = q.q;
+
+  const codeBlock = document.getElementById('quiz-code-block');
+  if (q.code) {
+    codeBlock.textContent = q.code;
+    codeBlock.classList.remove('hidden');
+  } else {
+    codeBlock.classList.add('hidden');
+  }
+
   quizFeedback.textContent = '';
   quizExplanation.textContent = '';
   quizExplanation.classList.add('hidden');
