@@ -2,6 +2,7 @@ import { loginAdmin, logoutAdmin, onAdminAuthChanged } from './features/auth/adm
 import { loadAdminStats } from './services/stats.js';
 import { createEvent, getAllEvents, setEventStatus } from './services/events.js';
 import { getAllTeachers, getAllResults } from './services/admin-data.js';
+import { getQuestions, createQuestion, updateQuestion, deleteQuestion, duplicateQuestion, importFromJsFiles } from './services/questions.js';
 
 const appModal    = document.getElementById('app-modal');
 document.getElementById('modal-ok-btn').addEventListener('click', () => appModal.classList.add('hidden'));
@@ -69,6 +70,7 @@ document.querySelectorAll('.admin-tab').forEach(tab => {
     document.getElementById(`tab-${tab.dataset.tab}`).classList.remove('hidden');
     if (tab.dataset.tab === 'teachers') loadTeachers();
     if (tab.dataset.tab === 'results') loadResults();
+    if (tab.dataset.tab === 'questions') loadQuestionsTab();
   });
 });
 
@@ -296,6 +298,145 @@ function exportResultsCSV(results) {
   const a = document.createElement('a'); a.href = url; a.download = 'results.csv'; a.click();
   URL.revokeObjectURL(url);
 }
+
+// ─── Питання ────────────────────────────────────────────────────────────────
+
+let currentQuestions = [];
+
+async function loadQuestionsTab(filters = {}) {
+  const list = document.getElementById('questions-list');
+  list.innerHTML = `<p class="text-slate-400 text-sm p-4">Завантаження…</p>`;
+  try {
+    const grade      = filters.grade      ?? (document.getElementById('q-filter-grade').value      || undefined);
+    const isOlympiad = filters.isOlympiad ?? (document.getElementById('q-filter-type').value !== '' ? document.getElementById('q-filter-type').value === 'true' : undefined);
+    const difficulty = filters.difficulty ?? (document.getElementById('q-filter-difficulty').value || undefined);
+    currentQuestions = await getQuestions({ grade: grade ? Number(grade) : undefined, isOlympiad, difficulty });
+    document.getElementById('q-count').textContent = `${currentQuestions.length} питань`;
+    if (!currentQuestions.length) {
+      list.innerHTML = `<div class="bg-slate-800 border border-slate-700 rounded-2xl p-10 text-center text-slate-500"><i class="fas fa-question-circle text-4xl mb-3 block"></i><p class="font-semibold">Питань не знайдено</p></div>`;
+      return;
+    }
+    list.innerHTML = '';
+    currentQuestions.forEach(q => list.appendChild(buildQuestionCard(q)));
+  } catch (err) {
+    list.innerHTML = `<p class="text-rose-400 text-sm p-4">${err.message}</p>`;
+  }
+}
+
+function buildQuestionCard(q) {
+  const DIFF = { easy: { label: 'Легке', cls: 'bg-emerald-800 text-emerald-200' }, medium: { label: 'Середнє', cls: 'bg-amber-800 text-amber-200' }, hard: { label: 'Складне', cls: 'bg-rose-900 text-rose-200' } };
+  const d = DIFF[q.difficulty] ?? DIFF.medium;
+  const el = document.createElement('div');
+  el.className = 'bg-slate-800 border border-slate-700 rounded-2xl p-4';
+  el.innerHTML = `
+    <div class="flex items-start justify-between gap-3">
+      <div class="flex-1 min-w-0">
+        <div class="flex flex-wrap gap-2 mb-2">
+          <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-700 text-slate-300">${q.grade} клас</span>
+          <span class="text-xs font-bold px-2 py-0.5 rounded-full ${d.cls}">${d.label}</span>
+          ${q.isOlympiad ? '<span class="text-xs font-bold px-2 py-0.5 rounded-full bg-sky-800 text-sky-200">Олімпіада</span>' : '<span class="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-700 text-slate-400">Тренування</span>'}
+        </div>
+        <p class="text-white text-sm font-semibold leading-snug mb-1">${q.q}</p>
+        ${q.code ? '<p class="text-emerald-400 text-xs font-mono truncate mb-1">' + q.code.split('\n')[0] + '…</p>' : ''}
+        <p class="text-slate-400 text-xs">✓ ${q.a?.[q.correct] ?? '—'}</p>
+      </div>
+      <div class="flex gap-1 flex-shrink-0">
+        <button class="btn-q-edit btn text-xs py-1.5 px-3 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200" title="Редагувати"><i class="fas fa-pen"></i></button>
+        <button class="btn-q-dup btn text-xs py-1.5 px-3 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200" title="Дублювати"><i class="fas fa-copy"></i></button>
+        <button class="btn-q-del btn text-xs py-1.5 px-3 rounded-lg bg-rose-900 hover:bg-rose-800 text-rose-200" title="Видалити"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>`;
+  el.querySelector('.btn-q-edit').addEventListener('click', () => openQuestionModal(q));
+  el.querySelector('.btn-q-dup').addEventListener('click', async () => {
+    try { await duplicateQuestion(q); await loadQuestionsTab(); } catch (err) { showModal(err.message); }
+  });
+  el.querySelector('.btn-q-del').addEventListener('click', async () => {
+    if (!confirm('Видалити питання?')) return;
+    try { await deleteQuestion(q.id); await loadQuestionsTab(); } catch (err) { showModal(err.message); }
+  });
+  return el;
+}
+
+// ─── Модаль редагування питання ─────────────────────────────────────────────
+
+const questionModal = document.getElementById('question-modal');
+const questionForm  = document.getElementById('question-form');
+const qfError       = document.getElementById('qf-error');
+const qfSubmitBtn   = document.getElementById('qf-submit');
+
+document.getElementById('qf-cancel').addEventListener('click', () => questionModal.classList.add('hidden'));
+document.getElementById('add-question-btn').addEventListener('click', () => openQuestionModal(null));
+
+document.getElementById('q-filter-apply').addEventListener('click', () => loadQuestionsTab());
+
+document.getElementById('import-questions-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('import-questions-btn');
+  btn.disabled = true;
+  btn.textContent = 'Імпорт…';
+  try {
+    const total = await importFromJsFiles((n) => { btn.textContent = `Імпорт… ${n}`; });
+    showModal(`Імпортовано ${total} питань.`);
+    await loadQuestionsTab();
+  } catch (err) {
+    showModal(err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-file-import mr-2"></i>Імпорт з JS';
+  }
+});
+
+function openQuestionModal(q) {
+  document.getElementById('question-modal-title').textContent = q ? 'Редагувати питання' : 'Нове питання';
+  document.getElementById('qf-id').value          = q?.id ?? '';
+  document.getElementById('qf-grade').value       = q?.grade ?? '1';
+  document.getElementById('qf-difficulty').value  = q?.difficulty ?? 'medium';
+  document.getElementById('qf-olympiad').checked  = q?.isOlympiad ?? false;
+  document.getElementById('qf-q').value           = q?.q ?? '';
+  document.getElementById('qf-code').value        = q?.code ?? '';
+  document.getElementById('qf-explanation').value = q?.explanation ?? '';
+  document.querySelectorAll('.qf-opt').forEach((inp, i) => { inp.value = q?.a?.[i] ?? ''; });
+  const radio = document.querySelector(`input[name="qf-correct"][value="${q?.correct ?? 0}"]`);
+  if (radio) radio.checked = true;
+  qfError.textContent = '';
+  questionModal.classList.remove('hidden');
+}
+
+questionForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  qfError.textContent = '';
+  const id         = document.getElementById('qf-id').value;
+  const q          = document.getElementById('qf-q').value.trim();
+  const opts       = [...document.querySelectorAll('.qf-opt')].map(i => i.value.trim());
+  const correctEl  = document.querySelector('input[name="qf-correct"]:checked');
+  if (!q)                          { qfError.textContent = 'Введи текст питання.'; return; }
+  if (opts.some(o => !o))          { qfError.textContent = 'Заповни всі 4 варіанти.'; return; }
+  if (!correctEl)                  { qfError.textContent = 'Вибери правильну відповідь.'; return; }
+
+  const data = {
+    q,
+    code:        document.getElementById('qf-code').value.trim() || null,
+    a:           opts,
+    correct:     Number(correctEl.value),
+    explanation: document.getElementById('qf-explanation').value.trim(),
+    grade:       Number(document.getElementById('qf-grade').value),
+    difficulty:  document.getElementById('qf-difficulty').value,
+    isOlympiad:  document.getElementById('qf-olympiad').checked,
+  };
+
+  qfSubmitBtn.disabled = true;
+  qfSubmitBtn.textContent = 'Збереження…';
+  try {
+    if (id) await updateQuestion(id, data);
+    else    await createQuestion(data);
+    questionModal.classList.add('hidden');
+    await loadQuestionsTab();
+  } catch (err) {
+    qfError.textContent = err.message;
+  } finally {
+    qfSubmitBtn.disabled = false;
+    qfSubmitBtn.textContent = 'Зберегти';
+  }
+});
 
 function showModal(msg) {
   document.getElementById('modal-message').textContent = msg;

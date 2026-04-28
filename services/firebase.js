@@ -5,7 +5,7 @@ import {
   signInAnonymously
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import {
-  getFirestore, doc, getDoc, setDoc, updateDoc, addDoc,
+  getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc,
   collection, getDocs, query, where, orderBy, serverTimestamp, getCountFromServer
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
@@ -30,6 +30,6 @@ export {
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
   signOut, onAuthStateChanged, signInAnonymously,
   // firestore
-  doc, getDoc, setDoc, updateDoc, addDoc,
+  doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc,
   collection, getDocs, query, where, orderBy, serverTimestamp, getCountFromServer
 };

@@ -77,6 +77,13 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // --- olympiad_questions ---
+    // Авторизовані (включно анонімних учнів) читають. Пише тільки адмін.
+    match /olympiad_questions/{questionId} {
+      allow read:  if isSignedIn();
+      allow write: if isAdmin();
+    }
+
     // --- olympiad_results ---
     // Учень створює один раз — не може редагувати після запису.
     // score не може перевищувати totalQuestions.

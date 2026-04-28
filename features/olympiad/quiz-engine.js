@@ -1,7 +1,8 @@
-// Завантажує питання для класу та режиму, повертає перемішаний набір.
-// Тренування і демо → data/questions/informatics/gradeN.js
-// Олімпіада        → data/questions/informatics/gradeN-olympiad.js
-// Банки НЕ перетинаються — різний контент.
+// Завантажує питання для класу та режиму.
+// Основне джерело: Firestore (olympiad_questions).
+// Fallback: JS-модулі (якщо Firestore порожній для цього класу/режиму).
+
+import { getQuizQuestions } from '../../services/questions.js';
 
 const PRACTICE_MODULES = {
   1: () => import('../../data/questions/informatics/grade1.js'),
@@ -28,7 +29,18 @@ function shuffle(arr) {
 
 // mode: 'practice' | 'demo' | 'olympiad'
 export async function loadQuestions(grade, mode, count) {
-  const modules = mode === 'olympiad' ? OLYMPIAD_MODULES : PRACTICE_MODULES;
+  const isOlympiad = mode === 'olympiad';
+
+  // Спробуємо Firestore
+  try {
+    const qs = await getQuizQuestions(grade, isOlympiad);
+    if (qs.length > 0) {
+      return shuffle(qs).slice(0, Math.min(count, qs.length));
+    }
+  } catch { /* fallback */ }
+
+  // Fallback до JS-модулів
+  const modules = isOlympiad ? OLYMPIAD_MODULES : PRACTICE_MODULES;
   const loader  = modules[grade];
   if (!loader) throw new Error(`Питань для ${grade} класу не знайдено.`);
   const { questions } = await loader();
