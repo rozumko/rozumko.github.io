@@ -1,7 +1,10 @@
 import { loginAdmin, logoutAdmin, onAdminAuthChanged } from './features/auth/admin-auth.js';
 import { loadAdminStats } from './services/stats.js';
 import { createEvent, getAllEvents, setEventStatus } from './services/events.js';
-import { getAllTeachers } from './services/admin-data.js';
+import { getAllTeachers, getAllResults } from './services/admin-data.js';
+
+const appModal    = document.getElementById('app-modal');
+document.getElementById('modal-ok-btn').addEventListener('click', () => appModal.classList.add('hidden'));
 
 const authSection = document.getElementById('auth-section');
 const adminPanel = document.getElementById('admin-panel');
@@ -65,6 +68,7 @@ document.querySelectorAll('.admin-tab').forEach(tab => {
     tab.classList.add('tab-active');
     document.getElementById(`tab-${tab.dataset.tab}`).classList.remove('hidden');
     if (tab.dataset.tab === 'teachers') loadTeachers();
+    if (tab.dataset.tab === 'results') loadResults();
   });
 });
 
@@ -178,7 +182,7 @@ function buildEventCard(ev) {
       await loadEvents();
       await refreshStats();
     } catch (err) {
-      alert(err.message);
+      showModal(err.message);
       btn.disabled = false;
     }
   };
@@ -205,6 +209,7 @@ function showDashboard(email) {
   refreshStats();
   loadEvents();
   loadTeachers();
+  loadResults();
 }
 
 async function loadTeachers() {
@@ -237,6 +242,64 @@ async function loadTeachers() {
   } catch (err) {
     list.innerHTML = `<p class="text-rose-400 text-sm p-4">${err.message}</p>`;
   }
+}
+
+async function loadResults() {
+  const list = document.getElementById('results-list');
+  try {
+    const results = await getAllResults();
+    if (!results.length) {
+      list.innerHTML = `
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-10 text-center text-slate-500">
+          <i class="fas fa-poll text-4xl mb-3 block"></i>
+          <p class="font-semibold">Результатів ще немає</p>
+          <p class="text-sm mt-1">Тут з'являться результати після проведення олімпіади.</p>
+        </div>`;
+      return;
+    }
+    list.innerHTML = '';
+    const exportBtn = document.getElementById('export-results-btn');
+    exportBtn.disabled = false;
+    exportBtn.onclick = () => exportResultsCSV(results);
+
+    results.forEach(r => {
+      const el = document.createElement('div');
+      el.className = 'bg-slate-800 border border-slate-700 rounded-2xl p-4 flex items-center justify-between gap-4';
+      const date = r.completedAt?.toDate?.().toLocaleString('uk-UA', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) ?? '';
+      el.innerHTML = `
+        <div>
+          <p class="text-white font-bold">${r.studentCode}</p>
+          <p class="text-slate-400 text-sm">${r.grade} клас · ${r.eventId}</p>
+          <p class="text-slate-500 text-xs mt-0.5">${date}</p>
+        </div>
+        <div class="text-right">
+          <p class="text-2xl font-bold text-sky-400">${r.score}<span class="text-base text-slate-400">/${r.totalQuestions}</span></p>
+          <p class="text-xs text-slate-500">${r.timeSpentSeconds ? Math.round(r.timeSpentSeconds / 60) + ' хв' : ''}</p>
+        </div>`;
+      list.appendChild(el);
+    });
+  } catch (err) {
+    list.innerHTML = `<p class="text-rose-400 text-sm p-4">${err.message}</p>`;
+  }
+}
+
+function exportResultsCSV(results) {
+  const rows = [['Код', 'Клас', 'Подія', 'Бали', 'Всього', 'Час (хв)', 'Дата']];
+  results.forEach(r => {
+    const date = r.completedAt?.toDate?.().toLocaleString('uk-UA') ?? '';
+    const mins = r.timeSpentSeconds ? Math.round(r.timeSpentSeconds / 60) : '';
+    rows.push([r.studentCode, r.grade, r.eventId, r.score, r.totalQuestions, mins, date]);
+  });
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'results.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function showModal(msg) {
+  document.getElementById('modal-message').textContent = msg;
+  document.getElementById('app-modal').classList.remove('hidden');
 }
 
 function showAuth() {

@@ -227,6 +227,14 @@
 
   <div id="toast-notification" role="status" aria-live="polite"></div>
 
+  <!-- Модальне вікно -->
+  <div id="app-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center">
+      <p id="modal-message" class="text-white text-base mb-5"></p>
+      <button id="modal-ok-btn" class="btn bg-sky-500 text-white font-bold py-3 px-8 rounded-xl">OK</button>
+    </div>
+  </div>
+
   <!-- Шаблон картки олімпіадної події -->
   <template id="event-card-template">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5">

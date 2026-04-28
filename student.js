@@ -3,6 +3,14 @@ import { findActiveEvent, checkSession, startSession, finishSession } from './fe
 import { saveOlympiadResult } from './features/olympiad/results.js';
 import { loadQuestions, getModeConfig } from './features/olympiad/quiz-engine.js';
 
+// --- Модальне вікно ---
+const appModal = document.getElementById('app-modal');
+document.getElementById('modal-ok-btn').addEventListener('click', () => appModal.classList.add('hidden'));
+function showModal(msg) {
+  document.getElementById('modal-message').textContent = msg;
+  appModal.classList.remove('hidden');
+}
+
 // --- DOM: вхід за кодом ---
 const codeForm       = document.getElementById('student-code-form');
 const codeInput      = document.getElementById('student-code-input');
@@ -145,7 +153,7 @@ document.getElementById('start-olympiad-btn').addEventListener('click', () => la
 
 async function launchOlympiad(mode) {
   const code = getStoredStudentCode();
-  if (!code) { alert('Спочатку введи код учня.'); return; }
+  if (!code) { showModal('Спочатку введи код учня.'); return; }
 
   const btn = mode === 'olympiad'
     ? document.getElementById('start-olympiad-btn')
@@ -179,7 +187,7 @@ async function launchOlympiad(mode) {
     const qs  = await loadQuestions(grade, mode, cfg.count);
     startQuiz(qs, mode, cfg, { code, eventId, teacherUid, grade, event });
   } catch (err) {
-    alert(err.message);
+    showModal(err.message);
   } finally {
     btn.disabled = false;
     btn.textContent = mode === 'olympiad' ? 'Основна олімпіада' : 'Демо-версія';
@@ -225,7 +233,7 @@ startPracticeBtn.addEventListener('click', async () => {
     if (filtered.length === 0) throw new Error('Питань для цих налаштувань немає.');
     startQuiz(filtered, 'practice', cfg, { grade: selectedGrade });
   } catch (err) {
-    alert(err.message);
+    showModal(err.message);
   } finally {
     startPracticeBtn.disabled = false;
     startPracticeBtn.textContent = 'Почати тренування';
