@@ -346,21 +346,21 @@ function renderSequence(q) {
 
   // Показуємо задану послідовність над варіантами
   const seq = document.createElement('div');
-  seq.className = 'flex gap-2 flex-wrap mb-3';
+  seq.className = 'flex items-center gap-2 flex-wrap justify-center bg-slate-50 border border-slate-200 rounded-2xl px-4 py-4 mb-4';
   q.given.forEach(item => {
     const chip = document.createElement('span');
-    chip.className = 'px-3 py-1 bg-slate-100 rounded-xl text-slate-700 font-bold text-base';
+    chip.className = 'text-3xl';
     chip.textContent = item;
     seq.appendChild(chip);
     const arrow = document.createElement('span');
-    arrow.className = 'self-center text-slate-400 text-sm';
+    arrow.className = 'text-slate-400 font-bold text-lg';
     arrow.textContent = '→';
     seq.appendChild(arrow);
   });
-  const dots = document.createElement('span');
-  dots.className = 'px-3 py-1 bg-violet-100 rounded-xl text-violet-600 font-bold text-base';
-  dots.textContent = '?';
-  seq.appendChild(dots);
+  const qmark = document.createElement('span');
+  qmark.className = 'w-12 h-12 rounded-2xl bg-violet-100 border-2 border-violet-300 text-violet-600 font-extrabold text-2xl flex items-center justify-center';
+  qmark.textContent = '?';
+  seq.appendChild(qmark);
   quizOptionsEl.insertBefore(seq, quizOptionsEl.firstChild);
 }
 
@@ -373,27 +373,27 @@ function renderSort(q) {
 
     order.forEach((itemIdx, pos) => {
       const row = document.createElement('div');
-      row.className = 'flex items-center gap-2';
+      row.className = 'flex items-center gap-3';
 
       const num = document.createElement('span');
-      num.className = 'text-slate-400 text-xs font-bold w-5 text-right flex-shrink-0';
-      num.textContent = pos + 1;
+      num.className = 'text-slate-400 font-bold w-6 text-right flex-shrink-0 text-base';
+      num.textContent = pos + 1 + '.';
 
       const block = document.createElement('div');
-      block.className = 'flex-1 bg-white border-2 border-slate-200 rounded-2xl px-4 py-3 text-slate-800 font-semibold text-sm';
+      block.className = 'flex-1 bg-white border-2 border-slate-200 rounded-2xl px-5 py-4 text-slate-800 font-semibold text-base';
       block.textContent = q.items[itemIdx];
 
       const arrows = document.createElement('div');
       arrows.className = 'flex flex-col gap-1 flex-shrink-0';
 
       const up = document.createElement('button');
-      up.className = 'px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 text-xs font-bold';
+      up.className = 'w-10 h-10 rounded-xl bg-slate-100 hover:bg-violet-100 hover:text-violet-600 text-slate-500 font-bold text-lg flex items-center justify-center';
       up.textContent = '↑';
       if (pos === 0) up.classList.add('invisible');
       up.addEventListener('click', () => { [order[pos], order[pos-1]] = [order[pos-1], order[pos]]; rebuild(); });
 
       const dn = document.createElement('button');
-      dn.className = 'px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 text-xs font-bold';
+      dn.className = 'w-10 h-10 rounded-xl bg-slate-100 hover:bg-violet-100 hover:text-violet-600 text-slate-500 font-bold text-lg flex items-center justify-center';
       dn.textContent = '↓';
       if (pos === order.length - 1) dn.classList.add('invisible');
       dn.addEventListener('click', () => { [order[pos], order[pos+1]] = [order[pos+1], order[pos]]; rebuild(); });
@@ -422,16 +422,16 @@ function renderSort(q) {
       order.forEach((itemIdx, pos) => {
         const ok = q.correctOrder[pos] === itemIdx;
         const row = document.createElement('div');
-        row.className = 'flex items-center gap-2';
+        row.className = 'flex items-center gap-3';
         const num = document.createElement('span');
-        num.className = 'text-slate-400 text-xs font-bold w-5 text-right flex-shrink-0';
-        num.textContent = pos + 1;
+        num.className = 'text-slate-400 font-bold w-6 text-right flex-shrink-0 text-base';
+        num.textContent = pos + 1 + '.';
         const block = document.createElement('div');
-        block.className = `flex-1 border-2 rounded-2xl px-4 py-3 font-semibold text-sm ${ok ? 'bg-emerald-50 border-emerald-400 text-emerald-800' : 'bg-rose-50 border-rose-400 text-rose-800'}`;
+        block.className = `flex-1 border-2 rounded-2xl px-5 py-4 font-semibold text-base ${ok ? 'bg-emerald-50 border-emerald-400 text-emerald-800' : 'bg-rose-50 border-rose-400 text-rose-800'}`;
         block.textContent = q.items[itemIdx];
         const icon = document.createElement('span');
         icon.textContent = ok ? '✓' : '✗';
-        icon.className = 'text-lg flex-shrink-0';
+        icon.className = 'text-xl flex-shrink-0';
         row.appendChild(num);
         row.appendChild(block);
         row.appendChild(icon);
