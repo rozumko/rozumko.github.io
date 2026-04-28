@@ -1,6 +1,7 @@
 import { loginAdmin, logoutAdmin, onAdminAuthChanged } from './features/auth/admin-auth.js';
 import { loadAdminStats } from './services/stats.js';
 import { createEvent, getAllEvents, setEventStatus } from './services/events.js';
+import { getAllTeachers } from './services/admin-data.js';
 
 const authSection = document.getElementById('auth-section');
 const adminPanel = document.getElementById('admin-panel');
@@ -63,6 +64,7 @@ document.querySelectorAll('.admin-tab').forEach(tab => {
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
     tab.classList.add('tab-active');
     document.getElementById(`tab-${tab.dataset.tab}`).classList.remove('hidden');
+    if (tab.dataset.tab === 'teachers') loadTeachers();
   });
 });
 
@@ -202,6 +204,39 @@ function showDashboard(email) {
   emailDisplay.textContent = email;
   refreshStats();
   loadEvents();
+  loadTeachers();
+}
+
+async function loadTeachers() {
+  const list = document.getElementById('teachers-list');
+  try {
+    const teachers = await getAllTeachers();
+    if (!teachers.length) {
+      list.innerHTML = `
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-10 text-center text-slate-500">
+          <i class="fas fa-users text-4xl mb-3 block"></i>
+          <p class="font-semibold">Вчителів ще немає</p>
+        </div>`;
+      return;
+    }
+    list.innerHTML = '';
+    teachers.forEach(t => {
+      const el = document.createElement('div');
+      el.className = 'bg-slate-800 border border-slate-700 rounded-2xl p-5 flex items-center justify-between gap-4';
+      el.innerHTML = `
+        <div>
+          <p class="text-white font-semibold">${t.email}</p>
+          <p class="text-slate-400 text-sm">${t.school || 'Школу не вказано'}</p>
+        </div>
+        <div class="text-right">
+          <p class="text-slate-400 text-xs">${(t.classes || []).length} класів</p>
+          <p class="text-slate-500 text-xs mt-0.5">${t.createdAt?.toDate?.().toLocaleDateString('uk-UA') ?? ''}</p>
+        </div>`;
+      list.appendChild(el);
+    });
+  } catch (err) {
+    list.innerHTML = `<p class="text-rose-400 text-sm p-4">${err.message}</p>`;
+  }
 }
 
 function showAuth() {

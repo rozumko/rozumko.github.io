@@ -6,19 +6,23 @@ import {
 
 const SESSION_KEY = 'rozumko_student_code';
 
+// Спочатку підписуємось анонімно, потім читаємо код.
+// Rules вимагають request.auth != null — без цього читання заблоковане.
 export async function validateStudentCode(code) {
   const normalised = code.trim().toUpperCase();
+
+  if (!auth.currentUser) {
+    await signInAnonymously(auth);
+  }
+
   const snap = await getDoc(doc(db, 'students', normalised));
   if (!snap.exists()) throw new Error('Код не знайдено. Перевір і спробуй ще раз.');
+
   const data = snap.data();
   if (!data.isActive) throw new Error('Цей код деактивовано. Зверніться до вчителя.');
-  return data; // { code, grade, classId, teacherUid, isActive, retryAllowed }
-}
 
-export async function startAnonymousSession(studentCode) {
-  const { user } = await signInAnonymously(auth);
-  sessionStorage.setItem(SESSION_KEY, studentCode.trim().toUpperCase());
-  return user;
+  sessionStorage.setItem(SESSION_KEY, normalised);
+  return data; // { code, grade, classId, teacherUid, isActive, retryAllowed }
 }
 
 export function getStoredStudentCode() {

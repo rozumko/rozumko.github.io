@@ -1,4 +1,4 @@
-import { validateStudentCode, startAnonymousSession, getStoredStudentCode } from './features/auth/student-code-auth.js';
+import { validateStudentCode, getStoredStudentCode } from './features/auth/student-code-auth.js';
 import { findActiveEvent, checkSession, startSession, finishSession } from './features/olympiad/session.js';
 import { saveOlympiadResult } from './features/olympiad/results.js';
 import { loadQuestions, getModeConfig } from './features/olympiad/quiz-engine.js';
@@ -102,7 +102,6 @@ codeForm.addEventListener('submit', async (e) => {
 
   try {
     studentData = await validateStudentCode(code);
-    await startAnonymousSession(code);
 
     codeInput.disabled = true;
     codeSubmitBtn.classList.add('hidden');
