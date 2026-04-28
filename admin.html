@@ -318,7 +318,17 @@
       <form id="question-form" novalidate class="space-y-4">
         <input type="hidden" id="qf-id"/>
 
-        <div class="grid sm:grid-cols-3 gap-3">
+        <!-- Спільні поля -->
+        <div class="grid sm:grid-cols-4 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Тип</label>
+            <select id="qf-type" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+              <option value="choice">Вибір</option>
+              <option value="sort">Порядок</option>
+              <option value="sequence">Послідовність</option>
+              <option value="match">Пари</option>
+            </select>
+          </div>
           <div>
             <label class="block text-xs font-semibold text-slate-400 mb-1">Клас</label>
             <select id="qf-grade" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
@@ -333,7 +343,7 @@
           </div>
           <div class="flex items-end pb-2 gap-2">
             <input type="checkbox" id="qf-olympiad" class="w-4 h-4 rounded"/>
-            <label for="qf-olympiad" class="text-sm text-slate-300">Олімпіадне</label>
+            <label for="qf-olympiad" class="text-sm text-slate-300">Олімпіада</label>
           </div>
         </div>
 
@@ -341,18 +351,68 @@
           <label class="block text-xs font-semibold text-slate-400 mb-1">Питання</label>
           <textarea id="qf-q" rows="2" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 resize-y"></textarea>
         </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-1">Код (необов'язково)</label>
-          <textarea id="qf-code" rows="4" placeholder="процедура..." class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-emerald-300 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-sky-500 resize-y"></textarea>
+        <div id="qf-code-wrap">
+          <label class="block text-xs font-semibold text-slate-400 mb-1">Код Равлика (необов'язково)</label>
+          <textarea id="qf-code" rows="3" placeholder="процедура..." class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-emerald-300 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-sky-500 resize-y"></textarea>
         </div>
 
-        <div class="space-y-2">
-          <label class="block text-xs font-semibold text-slate-400 mb-1">Варіанти відповіді (відмічений — правильний)</label>
+        <!-- Секція: choice -->
+        <div id="qf-section-choice" class="space-y-2">
+          <label class="block text-xs font-semibold text-slate-400 mb-1">Варіанти (відмічений — правильний)</label>
           <div id="qf-options" class="space-y-2">
             <div class="flex items-center gap-2"><input type="radio" name="qf-correct" value="0" class="w-4 h-4"/><input type="text" data-idx="0" class="qf-opt flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Варіант 1"/></div>
             <div class="flex items-center gap-2"><input type="radio" name="qf-correct" value="1" class="w-4 h-4"/><input type="text" data-idx="1" class="qf-opt flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Варіант 2"/></div>
             <div class="flex items-center gap-2"><input type="radio" name="qf-correct" value="2" class="w-4 h-4"/><input type="text" data-idx="2" class="qf-opt flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Варіант 3"/></div>
             <div class="flex items-center gap-2"><input type="radio" name="qf-correct" value="3" class="w-4 h-4"/><input type="text" data-idx="3" class="qf-opt flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Варіант 4"/></div>
+          </div>
+        </div>
+
+        <!-- Секція: sort / algorithm -->
+        <div id="qf-section-sort" class="hidden space-y-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Елементи (кожен з нового рядка)</label>
+            <textarea id="qf-items" rows="4" placeholder="Іди вперед&#10;Повернись праворуч&#10;Повтори 4 рази&#10;Стоп" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-sky-500 resize-y"></textarea>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Правильний порядок — індекси через кому (0 = перший рядок)</label>
+            <input type="text" id="qf-correct-order" placeholder="2,0,1,3" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"/>
+            <p class="text-slate-500 text-xs mt-1">Наприклад: <code class="text-slate-400">2,0,1,3</code> означає що на 1-му місці елемент №3, на 2-му — №1, і т.д.</p>
+          </div>
+        </div>
+
+        <!-- Секція: sequence -->
+        <div id="qf-section-sequence" class="hidden space-y-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Задана послідовність — значення через кому</label>
+            <input type="text" id="qf-given" placeholder="🔴,🔵,🔴,🔵" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"/>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Варіанти відповіді (відмічений — правильний)</label>
+            <div class="space-y-2">
+              <div class="flex items-center gap-2"><input type="radio" name="qf-seq-correct" value="0" class="w-4 h-4"/><input type="text" data-sidx="0" class="qf-seq-opt flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Варіант 1"/></div>
+              <div class="flex items-center gap-2"><input type="radio" name="qf-seq-correct" value="1" class="w-4 h-4"/><input type="text" data-sidx="1" class="qf-seq-opt flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Варіант 2"/></div>
+              <div class="flex items-center gap-2"><input type="radio" name="qf-seq-correct" value="2" class="w-4 h-4"/><input type="text" data-sidx="2" class="qf-seq-opt flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Варіант 3"/></div>
+              <div class="flex items-center gap-2"><input type="radio" name="qf-seq-correct" value="3" class="w-4 h-4"/><input type="text" data-sidx="3" class="qf-seq-opt flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Варіант 4"/></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Секція: match -->
+        <div id="qf-section-match" class="hidden space-y-3">
+          <div class="grid sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">Лівий стовпець (кожен з нового рядка)</label>
+              <textarea id="qf-left" rows="4" placeholder="Клавіатура&#10;Принтер&#10;Монітор" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 resize-y"></textarea>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">Правий стовпець (кожен з нового рядка)</label>
+              <textarea id="qf-right" rows="4" placeholder="Виводить зображення&#10;Вводить текст&#10;Друкує на папері" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 resize-y"></textarea>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Пари — індекси правого стовпця для кожного лівого через кому</label>
+            <input type="text" id="qf-pairs" placeholder="1,2,0" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"/>
+            <p class="text-slate-500 text-xs mt-1">Наприклад: <code class="text-slate-400">1,2,0</code> — Клавіатура→правий[1], Принтер→правий[2], Монітор→правий[0]</p>
           </div>
         </div>
 

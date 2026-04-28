@@ -300,6 +300,9 @@ function showQuestion() {
   } else if (type === 'sequence') {
     quizOptionsEl.className = 'flex flex-col gap-3 mb-6';
     renderSequence(q);
+  } else if (type === 'match') {
+    quizOptionsEl.className = 'flex flex-col gap-3 mb-6';
+    renderMatch(q);
   } else {
     quizOptionsEl.className = 'grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6';
     renderChoice(q);
@@ -460,6 +463,68 @@ function renderSort(q) {
   };
 
   rebuild();
+}
+
+function renderMatch(q) {
+  // Перемішуємо правий стовпець для відображення
+  const shuffled = [...q.right].sort(() => Math.random() - 0.5);
+
+  q.left.forEach((leftItem) => {
+    const row = document.createElement('div');
+    row.className = 'flex items-center gap-3';
+
+    const leftEl = document.createElement('div');
+    leftEl.className = 'flex-1 bg-white border-2 border-slate-200 rounded-2xl px-4 py-3 font-semibold text-base text-slate-800';
+    leftEl.textContent = leftItem;
+
+    const arrow = document.createElement('span');
+    arrow.className = 'text-slate-400 font-bold text-xl flex-shrink-0';
+    arrow.textContent = '→';
+
+    const select = document.createElement('select');
+    select.className = 'flex-1 px-4 py-3 rounded-2xl border-2 border-slate-200 bg-white text-slate-800 font-semibold text-sm focus:outline-none focus:border-violet-400';
+
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Обери…';
+    select.appendChild(placeholder);
+    shuffled.forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item;
+      opt.textContent = item;
+      select.appendChild(opt);
+    });
+
+    row.appendChild(leftEl);
+    row.appendChild(arrow);
+    row.appendChild(select);
+    quizOptionsEl.appendChild(row);
+  });
+
+  const checkBtn = document.createElement('button');
+  checkBtn.className = 'btn w-full px-5 py-4 rounded-2xl bg-violet-500 hover:bg-violet-600 text-white font-bold text-base mt-2';
+  checkBtn.textContent = 'Перевірити';
+  checkBtn.addEventListener('click', () => {
+    if (answered) return;
+    const selects = [...quizOptionsEl.querySelectorAll('select')];
+    if (selects.some(s => !s.value)) { return; }
+    answered = true;
+
+    let allCorrect = true;
+    selects.forEach((sel, i) => {
+      const ok = sel.value === q.right[q.pairs[i]];
+      if (!ok) allCorrect = false;
+      sel.disabled = true;
+      const leftEl = sel.parentElement.querySelector('div');
+      leftEl.classList.remove('border-slate-200');
+      leftEl.classList.add(ok ? 'border-emerald-400' : 'border-rose-400');
+      sel.classList.remove('border-slate-200');
+      sel.classList.add(ok ? 'border-emerald-400' : 'border-rose-400');
+    });
+    if (allCorrect) score++;
+    showFeedback(allCorrect, q);
+  });
+  quizOptionsEl.appendChild(checkBtn);
 }
 
 // ── Спільний фідбек ────────────────────────────────────────────────────────

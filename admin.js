@@ -326,6 +326,7 @@ async function loadQuestionsTab(filters = {}) {
 }
 
 function buildQuestionCard(q) {
+  const TYPE = { choice: 'Вибір', sort: 'Порядок', algorithm: 'Алгоритм', sequence: 'Послідовність', match: 'Пари' };
   const DIFF = { easy: { label: 'Легке', cls: 'bg-emerald-800 text-emerald-200' }, medium: { label: 'Середнє', cls: 'bg-amber-800 text-amber-200' }, hard: { label: 'Складне', cls: 'bg-rose-900 text-rose-200' } };
   const d = DIFF[q.difficulty] ?? DIFF.medium;
   const el = document.createElement('div');
@@ -335,6 +336,7 @@ function buildQuestionCard(q) {
       <div class="flex-1 min-w-0">
         <div class="flex flex-wrap gap-2 mb-2">
           <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-700 text-slate-300">${q.grade} клас</span>
+          <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-900 text-indigo-200">${esc(TYPE[q.type ?? 'choice'] ?? q.type)}</span>
           <span class="text-xs font-bold px-2 py-0.5 rounded-full ${d.cls}">${d.label}</span>
           ${q.isOlympiad ? '<span class="text-xs font-bold px-2 py-0.5 rounded-full bg-sky-800 text-sky-200">Олімпіада</span>' : '<span class="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-700 text-slate-400">Тренування</span>'}
         </div>
@@ -369,6 +371,16 @@ const qfSubmitBtn   = document.getElementById('qf-submit');
 document.getElementById('qf-cancel').addEventListener('click', () => questionModal.classList.add('hidden'));
 document.getElementById('add-question-btn').addEventListener('click', () => openQuestionModal(null));
 
+const QF_SECTIONS = { choice: 'qf-section-choice', sort: 'qf-section-sort', sequence: 'qf-section-sequence', match: 'qf-section-match' };
+document.getElementById('qf-type').addEventListener('change', (e) => applyTypeUI(e.target.value));
+
+function applyTypeUI(type) {
+  Object.values(QF_SECTIONS).forEach(id => document.getElementById(id).classList.add('hidden'));
+  document.getElementById(QF_SECTIONS[type] ?? 'qf-section-choice').classList.remove('hidden');
+  // Код Равлика тільки для choice/sort — не потрібен для match/sequence
+  document.getElementById('qf-code-wrap').classList.toggle('hidden', type === 'match' || type === 'sequence');
+}
+
 document.getElementById('q-filter-apply').addEventListener('click', () => loadQuestionsTab());
 
 document.getElementById('import-questions-btn').addEventListener('click', async () => {
@@ -394,11 +406,33 @@ function openQuestionModal(q) {
   document.getElementById('qf-difficulty').value  = q?.difficulty ?? 'medium';
   document.getElementById('qf-olympiad').checked  = q?.isOlympiad ?? false;
   document.getElementById('qf-q').value           = q?.q ?? '';
-  document.getElementById('qf-code').value        = q?.code ?? '';
   document.getElementById('qf-explanation').value = q?.explanation ?? '';
+
+  const type = q?.type ?? 'choice';
+  document.getElementById('qf-type').value = type;
+  applyTypeUI(type);
+
+  // choice
+  document.getElementById('qf-code').value = q?.code ?? '';
   document.querySelectorAll('.qf-opt').forEach((inp, i) => { inp.value = q?.a?.[i] ?? ''; });
   const radio = document.querySelector(`input[name="qf-correct"][value="${q?.correct ?? 0}"]`);
   if (radio) radio.checked = true;
+
+  // sort
+  document.getElementById('qf-items').value        = (q?.items ?? []).join('\n');
+  document.getElementById('qf-correct-order').value= (q?.correctOrder ?? []).join(',');
+
+  // sequence
+  document.getElementById('qf-given').value = (q?.given ?? []).join(',');
+  document.querySelectorAll('.qf-seq-opt').forEach((inp, i) => { inp.value = q?.choices?.[i] ?? ''; });
+  const seqRadio = document.querySelector(`input[name="qf-seq-correct"][value="${q?.correct ?? 0}"]`);
+  if (seqRadio) seqRadio.checked = true;
+
+  // match
+  document.getElementById('qf-left').value  = (q?.left  ?? []).join('\n');
+  document.getElementById('qf-right').value = (q?.right ?? []).join('\n');
+  document.getElementById('qf-pairs').value = (q?.pairs ?? []).join(',');
+
   qfError.textContent = '';
   questionModal.classList.remove('hidden');
 }
@@ -406,24 +440,49 @@ function openQuestionModal(q) {
 questionForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   qfError.textContent = '';
-  const id         = document.getElementById('qf-id').value;
-  const q          = document.getElementById('qf-q').value.trim();
-  const opts       = [...document.querySelectorAll('.qf-opt')].map(i => i.value.trim());
-  const correctEl  = document.querySelector('input[name="qf-correct"]:checked');
-  if (!q)                          { qfError.textContent = 'Введи текст питання.'; return; }
-  if (opts.some(o => !o))          { qfError.textContent = 'Заповни всі 4 варіанти.'; return; }
-  if (!correctEl)                  { qfError.textContent = 'Вибери правильну відповідь.'; return; }
+  const id  = document.getElementById('qf-id').value;
+  const q   = document.getElementById('qf-q').value.trim();
+  const opts      = [...document.querySelectorAll('.qf-opt')].map(i => i.value.trim());
+  const correctEl = document.querySelector('input[name="qf-correct"]:checked');
+  if (!q) { qfError.textContent = 'Введи текст питання.'; return; }
+  // Валідація choice тут, інших типів — нижче після визначення type
+  if ((document.getElementById('qf-type').value === 'choice') && opts.some(o => !o)) { qfError.textContent = 'Заповни всі 4 варіанти.'; return; }
+  if ((document.getElementById('qf-type').value === 'choice') && !correctEl) { qfError.textContent = 'Вибери правильну відповідь.'; return; }
 
-  const data = {
+  const type = document.getElementById('qf-type').value;
+  const base = {
+    type,
     q,
-    code:        document.getElementById('qf-code').value.trim() || null,
-    a:           opts,
-    correct:     Number(correctEl.value),
     explanation: document.getElementById('qf-explanation').value.trim(),
     grade:       Number(document.getElementById('qf-grade').value),
     difficulty:  document.getElementById('qf-difficulty').value,
     isOlympiad:  document.getElementById('qf-olympiad').checked,
   };
+
+  let data;
+  if (type === 'sort' || type === 'algorithm') {
+    const items = document.getElementById('qf-items').value.split('\n').map(s => s.trim()).filter(Boolean);
+    const correctOrder = document.getElementById('qf-correct-order').value.split(',').map(s => Number(s.trim()));
+    if (items.length < 2) { qfError.textContent = 'Додай мінімум 2 елементи.'; qfSubmitBtn.disabled = false; qfSubmitBtn.textContent = 'Зберегти'; return; }
+    data = { ...base, items, correctOrder };
+  } else if (type === 'sequence') {
+    const given = document.getElementById('qf-given').value.split(',').map(s => s.trim()).filter(Boolean);
+    const choices = [...document.querySelectorAll('.qf-seq-opt')].map(i => i.value.trim());
+    const seqCorrect = document.querySelector('input[name="qf-seq-correct"]:checked');
+    if (given.length < 2) { qfError.textContent = 'Введи мінімум 2 елементи послідовності.'; qfSubmitBtn.disabled = false; qfSubmitBtn.textContent = 'Зберегти'; return; }
+    if (choices.some(c => !c)) { qfError.textContent = 'Заповни всі 4 варіанти.'; qfSubmitBtn.disabled = false; qfSubmitBtn.textContent = 'Зберегти'; return; }
+    if (!seqCorrect) { qfError.textContent = 'Вибери правильну відповідь.'; qfSubmitBtn.disabled = false; qfSubmitBtn.textContent = 'Зберегти'; return; }
+    data = { ...base, given, choices, correct: Number(seqCorrect.value) };
+  } else if (type === 'match') {
+    const left  = document.getElementById('qf-left').value.split('\n').map(s => s.trim()).filter(Boolean);
+    const right = document.getElementById('qf-right').value.split('\n').map(s => s.trim()).filter(Boolean);
+    const pairs = document.getElementById('qf-pairs').value.split(',').map(s => Number(s.trim()));
+    if (left.length < 2 || right.length < 2) { qfError.textContent = 'Мінімум 2 пари.'; qfSubmitBtn.disabled = false; qfSubmitBtn.textContent = 'Зберегти'; return; }
+    data = { ...base, left, right, pairs };
+  } else {
+    // choice (default)
+    data = { ...base, code: document.getElementById('qf-code').value.trim() || null, a: opts, correct: Number(correctEl.value) };
+  }
 
   qfSubmitBtn.disabled = true;
   qfSubmitBtn.textContent = 'Збереження…';
