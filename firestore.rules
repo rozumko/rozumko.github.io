@@ -62,9 +62,7 @@ service cloud.firestore {
     // Анонімний учень створює сесію. Оновлює тільки ту де lastAnonymousUid == uid.
     // Вчитель і адмін читають всі.
     match /olympiad_sessions/{sessionId} {
-      allow read: if isAdmin()
-                  || isTeacher()
-                  || (isAnon() && resource.data.lastAnonymousUid == request.auth.uid);
+      allow read: if isAdmin() || isTeacher() || isAnon();
       allow create: if isSignedIn()
                     && request.resource.data.keys().hasAll([
                          'eventId','studentCode','teacherUid','grade',
