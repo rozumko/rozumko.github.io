@@ -75,10 +75,16 @@ if (storedCode) {
   codeSuccess.classList.remove('hidden');
   olympiadActions.classList.remove('hidden');
 
+  // Блокуємо кнопки до завершення відновлення — studentData ще null
+  document.getElementById('start-olympiad-btn').disabled = true;
+  document.getElementById('start-demo-btn').disabled = true;
+
   // Відновлюємо studentData з Firestore щоб клас і teacherUid були правильними
   validateStudentCode(storedCode)
     .then(data => {
       studentData = data;
+      document.getElementById('start-olympiad-btn').disabled = false;
+      document.getElementById('start-demo-btn').disabled = false;
       showActiveEventInfo(data.grade);
     })
     .catch(() => {
@@ -148,10 +154,11 @@ async function launchOlympiad(mode) {
   btn.textContent = 'Завантаження…';
 
   try {
-    const grade      = studentData?.grade ?? 1;
-    const teacherUid = studentData?.teacherUid ?? '';
+    if (!studentData) throw new Error('Зачекай, дані завантажуються. Спробуй ще раз.');
+    const grade      = studentData.grade;
+    const teacherUid = studentData.teacherUid;
     // eventId береться з коду учня — не шукаємо окремо
-    const codeEventId = studentData?.eventId ?? null;
+    const codeEventId = studentData.eventId ?? null;
 
     // Знайти активну подію для параметрів (час, кількість питань)
     const event   = codeEventId
