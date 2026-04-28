@@ -232,12 +232,12 @@ async function loadTeachers() {
       el.className = 'bg-slate-800 border border-slate-700 rounded-2xl p-5 flex items-center justify-between gap-4';
       el.innerHTML = `
         <div>
-          <p class="text-white font-semibold">${t.email}</p>
-          <p class="text-slate-400 text-sm">${t.school || 'Школу не вказано'}</p>
+          <p class="text-white font-semibold">${esc(t.email)}</p>
+          <p class="text-slate-400 text-sm">${esc(t.school || 'Школу не вказано')}</p>
         </div>
         <div class="text-right">
           <p class="text-slate-400 text-xs">${(t.classes || []).length} класів</p>
-          <p class="text-slate-500 text-xs mt-0.5">${t.createdAt?.toDate?.().toLocaleDateString('uk-UA') ?? ''}</p>
+          <p class="text-slate-500 text-xs mt-0.5">${esc(t.createdAt?.toDate?.().toLocaleDateString('uk-UA') ?? '')}</p>
         </div>`;
       list.appendChild(el);
     });
@@ -249,7 +249,8 @@ async function loadTeachers() {
 async function loadResults() {
   const list = document.getElementById('results-list');
   try {
-    const results = await getAllResults();
+    const [results, events] = await Promise.all([getAllResults(), getAllEvents()]);
+    const eventNames = Object.fromEntries(events.map(e => [e.id, e.title]));
     if (!results.length) {
       list.innerHTML = `
         <div class="bg-slate-800 border border-slate-700 rounded-2xl p-10 text-center text-slate-500">
@@ -268,14 +269,15 @@ async function loadResults() {
       const el = document.createElement('div');
       el.className = 'bg-slate-800 border border-slate-700 rounded-2xl p-4 flex items-center justify-between gap-4';
       const date = r.completedAt?.toDate?.().toLocaleString('uk-UA', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) ?? '';
+      const eventLabel = eventNames[r.eventId] ?? r.eventId;
       el.innerHTML = `
         <div>
-          <p class="text-white font-bold">${r.studentCode}</p>
-          <p class="text-slate-400 text-sm">${r.grade} клас · ${r.eventId}</p>
-          <p class="text-slate-500 text-xs mt-0.5">${date}</p>
+          <p class="text-white font-bold">${esc(r.studentCode)}</p>
+          <p class="text-slate-400 text-sm">${esc(r.grade)} клас · ${esc(eventLabel)}</p>
+          <p class="text-slate-500 text-xs mt-0.5">${esc(date)}</p>
         </div>
         <div class="text-right">
-          <p class="text-2xl font-bold text-sky-400">${r.score}<span class="text-base text-slate-400">/${r.totalQuestions}</span></p>
+          <p class="text-2xl font-bold text-sky-400">${esc(r.score)}<span class="text-base text-slate-400">/${esc(r.totalQuestions)}</span></p>
           <p class="text-xs text-slate-500">${r.timeSpentSeconds ? Math.round(r.timeSpentSeconds / 60) + ' хв' : ''}</p>
         </div>`;
       list.appendChild(el);
@@ -336,9 +338,9 @@ function buildQuestionCard(q) {
           <span class="text-xs font-bold px-2 py-0.5 rounded-full ${d.cls}">${d.label}</span>
           ${q.isOlympiad ? '<span class="text-xs font-bold px-2 py-0.5 rounded-full bg-sky-800 text-sky-200">Олімпіада</span>' : '<span class="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-700 text-slate-400">Тренування</span>'}
         </div>
-        <p class="text-white text-sm font-semibold leading-snug mb-1">${q.q}</p>
-        ${q.code ? '<p class="text-emerald-400 text-xs font-mono truncate mb-1">' + q.code.split('\n')[0] + '…</p>' : ''}
-        <p class="text-slate-400 text-xs">✓ ${q.a?.[q.correct] ?? '—'}</p>
+        <p class="text-white text-sm font-semibold leading-snug mb-1">${esc(q.q)}</p>
+        ${q.code ? '<p class="text-emerald-400 text-xs font-mono truncate mb-1">' + esc(q.code.split('\n')[0]) + '…</p>' : ''}
+        <p class="text-slate-400 text-xs">✓ ${esc(q.a?.[q.correct] ?? '—')}</p>
       </div>
       <div class="flex gap-1 flex-shrink-0">
         <button class="btn-q-edit btn text-xs py-1.5 px-3 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200" title="Редагувати"><i class="fas fa-pen"></i></button>
@@ -437,6 +439,10 @@ questionForm.addEventListener('submit', async (e) => {
     qfSubmitBtn.textContent = 'Зберегти';
   }
 });
+
+function esc(str) {
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 
 function showModal(msg) {
   document.getElementById('modal-message').textContent = msg;

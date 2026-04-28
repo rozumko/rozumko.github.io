@@ -213,9 +213,15 @@
 
   <!-- Шаблон коду учня -->
   <template id="code-chip-template">
-    <div class="code-chip flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
-      <span class="code-value font-mono font-bold text-slate-800 text-sm tracking-wide"></span>
-      <span class="code-status text-xs font-semibold px-2 py-0.5 rounded-full"></span>
+    <div class="code-chip bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+      <div class="flex items-center justify-between gap-2">
+        <span class="code-value font-mono font-bold text-slate-800 text-sm tracking-wide"></span>
+        <div class="flex items-center gap-1.5">
+          <span class="code-status text-xs font-semibold px-2 py-0.5 rounded-full"></span>
+          <button class="code-toggle-btn text-xs px-2 py-0.5 rounded-lg font-semibold transition-colors"></button>
+        </div>
+      </div>
+      <input type="text" class="code-name-input mt-1.5 w-full px-2 py-1 text-xs rounded-lg border border-slate-200 text-slate-600 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-sky-400" placeholder="Ім'я учня (необов'язково)" maxlength="50"/>
     </div>
   </template>
 

@@ -1,5 +1,5 @@
 import { loginTeacher, registerTeacher, logoutTeacher, onTeacherAuthChanged } from './features/auth/teacher-auth.js';
-import { createClass, getTeacherProfile, generateStudentCodes, getStudentsByClass, getMyResults, getVisibleEvents } from './services/teacher-data.js';
+import { createClass, getTeacherProfile, generateStudentCodes, getStudentsByClass, getMyResults, getVisibleEvents, toggleStudentActive, updateStudentName } from './services/teacher-data.js';
 
 // --- DOM ---
 const authSection = document.getElementById('auth-section');
@@ -247,15 +247,47 @@ function renderCodes(container, students, copyAllBtn) {
   students.forEach(s => {
     const chip = template.content.cloneNode(true).querySelector('div');
     chip.querySelector('.code-value').textContent = s.code;
+
     const statusBadge = chip.querySelector('.code-status');
-    if (s.isActive) {
-      statusBadge.textContent = 'активний';
-      statusBadge.className = 'code-status text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700';
-    } else {
-      statusBadge.textContent = 'вимкнений';
-      statusBadge.className = 'code-status text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-500';
-      chip.classList.add('opacity-50');
+    const toggleBtn   = chip.querySelector('.code-toggle-btn');
+    const nameInput   = chip.querySelector('.code-name-input');
+
+    nameInput.value = s.studentName || '';
+    let nameTimer;
+    nameInput.addEventListener('input', () => {
+      clearTimeout(nameTimer);
+      nameTimer = setTimeout(() => updateStudentName(s.code, nameInput.value.trim()), 800);
+    });
+
+    function applyStatus(active) {
+      if (active) {
+        statusBadge.textContent  = 'активний';
+        statusBadge.className    = 'code-status text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700';
+        toggleBtn.textContent    = 'Вимкнути';
+        toggleBtn.className      = 'code-toggle-btn text-xs px-2 py-0.5 rounded-lg font-semibold bg-rose-100 text-rose-600 hover:bg-rose-200';
+        chip.classList.remove('opacity-50');
+      } else {
+        statusBadge.textContent  = 'вимкнений';
+        statusBadge.className    = 'code-status text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-500';
+        toggleBtn.textContent    = 'Увімкнути';
+        toggleBtn.className      = 'code-toggle-btn text-xs px-2 py-0.5 rounded-lg font-semibold bg-emerald-100 text-emerald-700 hover:bg-emerald-200';
+        chip.classList.add('opacity-50');
+      }
     }
+
+    applyStatus(s.isActive);
+
+    toggleBtn.addEventListener('click', async () => {
+      toggleBtn.disabled = true;
+      try {
+        await toggleStudentActive(s.code, !s.isActive);
+        s.isActive = !s.isActive;
+        applyStatus(s.isActive);
+      } finally {
+        toggleBtn.disabled = false;
+      }
+    });
+
     container.appendChild(chip);
   });
   copyAllBtn.classList.remove('hidden');
@@ -265,19 +297,21 @@ function renderCodes(container, students, copyAllBtn) {
 
 async function loadResults() {
   try {
-    const results = await getMyResults();
+    const [results, events] = await Promise.all([getMyResults(), getVisibleEvents()]);
+    const eventNames = Object.fromEntries(events.map(e => [e.id, e.title]));
     if (results.length === 0) return;
     resultsList.innerHTML = '';
     results.forEach(r => {
+      const eventLabel = eventNames[r.eventId] ?? r.eventId;
       const row = document.createElement('div');
       row.className = 'bg-white rounded-2xl border border-slate-200 p-4 flex items-center justify-between gap-4';
       row.innerHTML = `
         <div>
-          <p class="font-bold text-slate-900">${r.studentCode}</p>
-          <p class="text-sm text-slate-500">${r.grade} клас · ${r.eventId}</p>
+          <p class="font-bold text-slate-900">${esc(r.studentCode)}</p>
+          <p class="text-sm text-slate-500">${esc(r.grade)} клас · ${esc(eventLabel)}</p>
         </div>
         <div class="text-right">
-          <p class="text-2xl font-bold text-sky-600">${r.score}<span class="text-base text-slate-400">/${r.totalQuestions}</span></p>
+          <p class="text-2xl font-bold text-sky-600">${esc(r.score)}<span class="text-base text-slate-400">/${esc(r.totalQuestions)}</span></p>
           <p class="text-xs text-slate-400">${r.timeSpentSeconds ? Math.round(r.timeSpentSeconds / 60) + ' хв' : ''}</p>
         </div>`;
       resultsList.appendChild(row);
@@ -300,6 +334,10 @@ function showAuth() {
   authSection.classList.remove('hidden');
   loginSubmitBtn.disabled = false;
   loginSubmitBtn.textContent = 'Увійти';
+}
+
+function esc(str) {
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function friendlyError(msg) {

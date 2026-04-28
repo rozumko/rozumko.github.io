@@ -38,7 +38,9 @@ service cloud.firestore {
     // Будь-який авторизований читає (учень валідує код).
     // Оновлює тільки власний вчитель або адмін.
     match /students/{studentCode} {
-      allow read:   if isSignedIn();
+      // Вчитель читає свій клас (list), анонімний учень читає тільки конкретний документ (get)
+      allow get:    if isSignedIn();
+      allow list:   if isAdmin() || isTeacher();
       allow create: if isTeacher()
                     && request.resource.data.teacherUid == request.auth.uid
                     && request.resource.data.code == studentCode
@@ -99,7 +101,12 @@ service cloud.firestore {
                     && request.resource.data.mode == 'olympiad'
                     && request.resource.data.score is int
                     && request.resource.data.score >= 0
-                    && request.resource.data.score <= request.resource.data.totalQuestions;
+                    && request.resource.data.score <= request.resource.data.totalQuestions
+                    && request.resource.data.totalQuestions is int
+                    && request.resource.data.totalQuestions > 0
+                    && exists(/databases/$(database)/documents/olympiad_sessions/$(request.resource.data.sessionId))
+                    && get(/databases/$(database)/documents/olympiad_sessions/$(request.resource.data.sessionId)).data.status == 'completed'
+                    && get(/databases/$(database)/documents/olympiad_sessions/$(request.resource.data.sessionId)).data.studentCode == request.resource.data.studentCode;
       allow update, delete: if isAdmin();
     }
   }

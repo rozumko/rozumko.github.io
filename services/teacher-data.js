@@ -107,6 +107,10 @@ export async function toggleStudentActive(code, isActive) {
   await updateDoc(doc(db, 'students', code), { isActive, updatedAt: serverTimestamp() });
 }
 
+export async function updateStudentName(code, studentName) {
+  await updateDoc(doc(db, 'students', code), { studentName, updatedAt: serverTimestamp() });
+}
+
 // --- Результати ---
 
 export async function getMyResults() {
