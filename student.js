@@ -11,19 +11,28 @@ function showModal(msg) {
   appModal.classList.remove('hidden');
 }
 
+// --- DOM: екрани ---
+const screenEntry   = document.getElementById('screen-entry');
+const screenActions = document.getElementById('screen-actions');
+
 // --- DOM: вхід за кодом ---
-const codeForm       = document.getElementById('student-code-form');
-const codeInput      = document.getElementById('student-code-input');
-const codeStatus     = document.getElementById('code-status');
-const codeSuccess    = document.getElementById('code-success');
-const codeSubmitBtn  = document.getElementById('code-submit-btn');
-const codeClearBtn   = document.getElementById('code-clear-btn');
-const olympiadActions= document.getElementById('olympiad-actions');
+const codeForm      = document.getElementById('student-code-form');
+const codeInput     = document.getElementById('student-code-input');
+const codeStatus    = document.getElementById('code-status');
+const codeSuccess   = document.getElementById('code-success');
+const codeSubmitBtn = document.getElementById('code-submit-btn');
+const codeClearBtn  = document.getElementById('code-clear-btn');
 
 // --- DOM: тренування ---
 const gradeButtons      = document.querySelectorAll('.grade-btn');
 const diffButtons       = document.querySelectorAll('.diff-btn');
 const startPracticeBtn  = document.getElementById('start-practice-btn');
+
+// --- Тренування: показати/сховати ---
+document.getElementById('show-practice-btn').addEventListener('click', () => {
+  const s = document.getElementById('practice-section');
+  s.classList.toggle('hidden');
+});
 
 // --- DOM: quiz overlay ---
 const quizOverlay     = document.getElementById('quiz-overlay');
@@ -75,19 +84,11 @@ let currentSessionId = null;
 
 const storedCode = getStoredStudentCode();
 if (storedCode) {
-  codeInput.value = storedCode;
-  codeInput.disabled = true;
-  codeSubmitBtn.classList.add('hidden');
-  codeClearBtn.classList.remove('hidden');
-  codeSuccess.textContent = `Код підтверджено: ${storedCode}`;
-  codeSuccess.classList.remove('hidden');
-  olympiadActions.classList.remove('hidden');
-
+  showScreenActions(storedCode);
   // Блокуємо кнопки до завершення відновлення — studentData ще null
   document.getElementById('start-olympiad-btn').disabled = true;
   document.getElementById('start-demo-btn').disabled = true;
 
-  // Відновлюємо studentData з Firestore щоб клас і teacherUid були правильними
   validateStudentCode(storedCode)
     .then(data => {
       studentData = data;
@@ -96,10 +97,8 @@ if (storedCode) {
       showActiveEventInfo(data.grade);
     })
     .catch(() => {
-      // Код міг бути деактивований — показуємо попередження
-      codeSuccess.classList.add('hidden');
+      showScreenEntry();
       codeStatus.textContent = 'Код більше не активний. Зверніться до вчителя.';
-      olympiadActions.classList.add('hidden');
     });
 }
 
@@ -116,35 +115,29 @@ codeForm.addEventListener('submit', async (e) => {
 
   try {
     studentData = await validateStudentCode(code);
-
-    codeInput.disabled = true;
-    codeSubmitBtn.classList.add('hidden');
-    codeClearBtn.classList.remove('hidden');
-    codeSuccess.textContent = `Код підтверджено: ${code} (${studentData.grade} клас)`;
-    codeSuccess.classList.remove('hidden');
-    olympiadActions.classList.remove('hidden');
+    showScreenActions(code);
     showActiveEventInfo(studentData.grade);
   } catch (err) {
     codeStatus.textContent = err.message;
     codeSubmitBtn.disabled = false;
-    codeSubmitBtn.textContent = 'Підтвердити код';
+    codeSubmitBtn.textContent = 'Увійти →';
   }
 });
 
-codeClearBtn.addEventListener('click', () => {
+function clearCode() {
   codeInput.value = '';
   codeInput.disabled = false;
   codeStatus.textContent = '';
   codeSuccess.textContent = '';
-  codeSuccess.classList.add('hidden');
-  codeClearBtn.classList.add('hidden');
-  codeSubmitBtn.classList.remove('hidden');
   codeSubmitBtn.disabled = false;
-  codeSubmitBtn.textContent = 'Підтвердити код';
-  olympiadActions.classList.add('hidden');
+  codeSubmitBtn.textContent = 'Увійти →';
   studentData = null;
+  showScreenEntry();
   codeInput.focus();
-});
+}
+
+codeClearBtn.addEventListener('click', clearCode);
+document.getElementById('code-clear-btn-2').addEventListener('click', clearCode);
 
 // ===================== ЗАПУСК ОЛІМПІАДИ / ДЕМО =====================
 
@@ -293,7 +286,7 @@ function showQuestion() {
   quizOptionsEl.innerHTML = '';
   q.a.forEach((opt, i) => {
     const btn = document.createElement('button');
-    btn.className = 'btn w-full text-left px-4 py-3 rounded-2xl border-2 border-slate-200 bg-white text-slate-800 font-medium text-sm hover:border-sky-400 hover:bg-sky-50 transition-all';
+    btn.className = 'btn w-full text-left px-5 py-5 rounded-2xl border-2 border-slate-200 bg-white text-slate-800 font-semibold text-base hover:border-violet-400 hover:bg-violet-50 transition-all';
     btn.textContent = opt;
     btn.addEventListener('click', () => selectAnswer(i, q));
     quizOptionsEl.appendChild(btn);
@@ -310,8 +303,10 @@ function selectAnswer(idx, q) {
   const isCorrect = idx === q.correct;
   if (isCorrect) score++;
 
-  opts[idx].className = opts[idx].className.replace('border-slate-200 bg-white', isCorrect ? 'border-emerald-400 bg-emerald-50' : 'border-rose-400 bg-rose-50');
-  opts[q.correct].className = opts[q.correct].className.replace('border-slate-200 bg-white', 'border-emerald-400 bg-emerald-50');
+  opts[idx].classList.remove('border-slate-200', 'bg-white');
+  opts[idx].classList.add(...(isCorrect ? ['border-emerald-400','bg-emerald-50'] : ['border-rose-400','bg-rose-50']));
+  opts[q.correct].classList.remove('border-slate-200', 'bg-white');
+  opts[q.correct].classList.add('border-emerald-400', 'bg-emerald-50');
 
   quizFeedback.textContent = isCorrect ? '✓ Правильно!' : '✗ Неправильно';
   quizFeedback.className = `font-semibold text-base mb-2 ${isCorrect ? 'text-emerald-600' : 'text-rose-600'}`;
@@ -406,6 +401,19 @@ function updateTimerDisplay() {
 
 function showOverlay(el) { el.classList.remove('hidden'); el.classList.add('flex'); }
 function hideOverlay(el) { el.classList.add('hidden'); el.classList.remove('flex'); }
+
+function showScreenEntry() {
+  screenActions.classList.add('hidden');
+  screenEntry.classList.remove('hidden');
+}
+
+function showScreenActions(code) {
+  screenEntry.classList.add('hidden');
+  screenActions.classList.remove('hidden');
+  // Показуємо код в полі для контексту (якщо потрібно)
+  const successEl = document.getElementById('code-success');
+  if (successEl) { successEl.textContent = `Код: ${code}`; }
+}
 
 async function showActiveEventInfo(grade) {
   const infoBox   = document.getElementById('active-event-info');
