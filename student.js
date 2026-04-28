@@ -294,9 +294,16 @@ function showQuestion() {
   quizOptionsEl.innerHTML = '';
 
   const type = q.type ?? 'choice';
-  if (type === 'sort' || type === 'algorithm') renderSort(q);
-  else if (type === 'sequence') renderSequence(q);
-  else renderChoice(q);
+  if (type === 'sort' || type === 'algorithm') {
+    quizOptionsEl.className = 'flex flex-col gap-3 mb-6';
+    renderSort(q);
+  } else if (type === 'sequence') {
+    quizOptionsEl.className = 'flex flex-col gap-3 mb-6';
+    renderSequence(q);
+  } else {
+    quizOptionsEl.className = 'grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6';
+    renderChoice(q);
+  }
 }
 
 // ── Рендерери ─────────────────────────────────────────────────────────────
