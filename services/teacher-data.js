@@ -11,7 +11,7 @@ const CODE_WORDS = [
 
 function randomCode() {
   const word = CODE_WORDS[Math.floor(Math.random() * CODE_WORDS.length)];
-  const num = Math.floor(Math.random() * 900) + 100; // 100–999
+  const num  = Math.floor(Math.random() * 900) + 100;
   return `${word}${num}`;
 }
 
@@ -39,37 +39,58 @@ function teacherUid() {
 // --- Класи ---
 
 export async function createClass(name, grade) {
-  const uid = teacherUid();
+  const uid     = teacherUid();
   const classId = `${uid}_${Date.now()}`;
-  const profileRef = doc(db, 'users', uid);
-  const snap = await getDoc(profileRef);
+  const ref     = doc(db, 'users', uid);
+  const snap    = await getDoc(ref);
   const classes = snap.data().classes || [];
   classes.push({ id: classId, name, grade: Number(grade) });
-  await updateDoc(profileRef, { classes, updatedAt: serverTimestamp() });
+  await updateDoc(ref, { classes, updatedAt: serverTimestamp() });
   return classId;
 }
 
 export async function getTeacherProfile() {
   const snap = await getDoc(doc(db, 'users', teacherUid()));
-  return snap.data(); // { classes: [...], email, school }
+  return snap.data();
 }
 
-// --- Коди учнів ---
+// --- Події (для кабінету вчителя) ---
+// Вчитель бачить active і майбутні події (draft з датою в майбутньому)
 
-export async function generateStudentCodes(classId, grade, count) {
-  const uid = teacherUid();
+export async function getVisibleEvents() {
+  const snap = await getDocs(collection(db, 'olympiad_events'));
+  const now  = new Date();
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .filter(ev => {
+      if (ev.status === 'archived') return false;
+      const to = ev.activeTo?.toDate?.() ?? new Date(0);
+      return to > now; // не показуємо завершені
+    })
+    .sort((a, b) => {
+      const af = a.activeFrom?.toDate?.() ?? 0;
+      const bf = b.activeFrom?.toDate?.() ?? 0;
+      return af - bf;
+    });
+}
+
+// --- Коди учнів (прив'язані до події) ---
+
+export async function generateStudentCodes(classId, grade, count, eventId) {
+  const uid   = teacherUid();
   const codes = [];
   for (let i = 0; i < count; i++) {
     const code = await generateUniqueCode();
     await setDoc(doc(db, 'students', code), {
       code,
-      grade: Number(grade),
+      grade:      Number(grade),
       classId,
       teacherUid: uid,
-      isActive: true,
+      eventId,               // прив'язка до олімпіадної події
+      isActive:   true,
       retryAllowed: false,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
+      createdAt:  serverTimestamp(),
+      updatedAt:  serverTimestamp()
     });
     codes.push(code);
   }
@@ -77,7 +98,7 @@ export async function generateStudentCodes(classId, grade, count) {
 }
 
 export async function getStudentsByClass(classId) {
-  const q = query(collection(db, 'students'), where('classId', '==', classId));
+  const q    = query(collection(db, 'students'), where('classId', '==', classId));
   const snap = await getDocs(q);
   return snap.docs.map(d => d.data());
 }
@@ -89,7 +110,9 @@ export async function toggleStudentActive(code, isActive) {
 // --- Результати ---
 
 export async function getMyResults() {
-  const q = query(collection(db, 'olympiad_results'), where('teacherUid', '==', teacherUid()));
+  const q    = query(collection(db, 'olympiad_results'), where('teacherUid', '==', teacherUid()));
   const snap = await getDocs(q);
-  return snap.docs.map(d => d.data());
+  return snap.docs
+    .map(d => d.data())
+    .sort((a, b) => (b.completedAt?.seconds ?? 0) - (a.completedAt?.seconds ?? 0));
 }

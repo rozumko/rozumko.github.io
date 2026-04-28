@@ -1,5 +1,5 @@
 import { loginTeacher, registerTeacher, logoutTeacher, onTeacherAuthChanged } from './features/auth/teacher-auth.js';
-import { createClass, getTeacherProfile, generateStudentCodes, getStudentsByClass, getMyResults } from './services/teacher-data.js';
+import { createClass, getTeacherProfile, generateStudentCodes, getStudentsByClass, getMyResults, getVisibleEvents } from './services/teacher-data.js';
 
 // --- DOM ---
 const authSection = document.getElementById('auth-section');
@@ -138,8 +138,9 @@ classForm.addEventListener('submit', async (e) => {
 });
 
 async function loadClasses() {
-  const profile = await getTeacherProfile();
+  const [profile, events] = await Promise.all([getTeacherProfile(), getVisibleEvents()]);
   const classes = profile.classes || [];
+
   if (classes.length === 0) {
     classesList.innerHTML = `
       <div class="bg-white rounded-2xl border border-slate-200 p-10 text-center text-slate-400">
@@ -149,14 +150,15 @@ async function loadClasses() {
       </div>`;
     return;
   }
+
   classesList.innerHTML = '';
   for (const cls of classes) {
     const students = await getStudentsByClass(cls.id);
-    classesList.appendChild(buildClassCard(cls, students));
+    classesList.appendChild(buildClassCard(cls, students, events));
   }
 }
 
-function buildClassCard(cls, students) {
+function buildClassCard(cls, students, events = []) {
   const template = document.getElementById('class-card-template');
   const card = template.content.cloneNode(true);
   const el = card.querySelector('div');
@@ -180,24 +182,47 @@ function buildClassCard(cls, students) {
 
   renderCodes(codesList, students, copyAllBtn);
 
-  const generateBtn = el.querySelector('.generate-codes-btn');
-  const countInput = el.querySelector('.codes-count-input');
+  // --- Вибір події для генерації кодів ---
+  const generateBtn  = el.querySelector('.generate-codes-btn');
+  const countInput   = el.querySelector('.codes-count-input');
+  const eventSelect  = el.querySelector('.event-select');
+
+  if (!events.length) {
+    // Немає активних/майбутніх подій — блокуємо генерацію
+    generateBtn.disabled = true;
+    generateBtn.title = 'Адмін ще не створив жодної олімпіади';
+    eventSelect.innerHTML = '<option>Немає доступних олімпіад</option>';
+    eventSelect.disabled = true;
+    statusEl.textContent  = 'Коди можна генерувати тільки після створення олімпіади адміном.';
+    statusEl.className    = 'generate-status text-sm mb-3 text-slate-400';
+  } else {
+    events.forEach(ev => {
+      const opt    = document.createElement('option');
+      opt.value    = ev.id;
+      const from   = ev.activeFrom?.toDate?.().toLocaleDateString('uk-UA') ?? '';
+      opt.textContent = `${ev.title} (${from})`;
+      eventSelect.appendChild(opt);
+    });
+  }
 
   generateBtn.addEventListener('click', async () => {
-    const count = Math.min(40, Math.max(1, Number(countInput.value) || 1));
+    const count   = Math.min(40, Math.max(1, Number(countInput.value) || 1));
+    const eventId = eventSelect.value;
+    if (!eventId || eventId === 'Немає доступних олімпіад') return;
+
     generateBtn.disabled = true;
     generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Генерація…';
-    statusEl.textContent = '';
+    statusEl.textContent  = '';
     try {
-      const newCodes = await generateStudentCodes(cls.id, cls.grade, count);
-      const updated = await getStudentsByClass(cls.id);
+      const newCodes = await generateStudentCodes(cls.id, cls.grade, count, eventId);
+      const updated  = await getStudentsByClass(cls.id);
       el.querySelector('.class-card-count').textContent = `${updated.length} учнів`;
       renderCodes(codesList, updated, copyAllBtn);
       statusEl.textContent = `✓ Додано ${newCodes.length} кодів`;
-      statusEl.className = 'generate-status text-sm mb-3 text-emerald-600';
+      statusEl.className   = 'generate-status text-sm mb-3 text-emerald-600';
     } catch (err) {
       statusEl.textContent = err.message;
-      statusEl.className = 'generate-status text-sm mb-3 text-rose-600';
+      statusEl.className   = 'generate-status text-sm mb-3 text-rose-600';
     } finally {
       generateBtn.disabled = false;
       generateBtn.innerHTML = '<i class="fas fa-key mr-1"></i> Згенерувати коди';

@@ -148,16 +148,19 @@ async function launchOlympiad(mode) {
   btn.textContent = 'Завантаження…';
 
   try {
-    // Знайти активну подію
-    const event = await findActiveEvent(studentData?.grade ?? 1);
-    if (!event && mode === 'olympiad') throw new Error('Зараз немає активної олімпіади. Зверніться до вчителя.');
-
-    const eventId = event?.id ?? 'demo';
-    const grade   = studentData?.grade ?? 1;
+    const grade      = studentData?.grade ?? 1;
     const teacherUid = studentData?.teacherUid ?? '';
+    // eventId береться з коду учня — не шукаємо окремо
+    const codeEventId = studentData?.eventId ?? null;
 
-    // Перевірка сесії (тільки для справжньої олімпіади)
+    // Знайти активну подію для параметрів (час, кількість питань)
+    const event   = codeEventId
+      ? await findActiveEvent(grade)   // беремо параметри з будь-якої активної або null
+      : null;
+    const eventId = codeEventId ?? event?.id ?? 'demo';
+
     if (mode === 'olympiad') {
+      if (!codeEventId) throw new Error('Цей код не прив\'язаний до жодної олімпіади. Зверніться до вчителя.');
       const session = await checkSession(code, eventId);
       if (session?.status === 'completed' && !session?.retryAllowed) {
         throw new Error('Ти вже пройшов цю олімпіаду. Повторна спроба не дозволена.');
