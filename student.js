@@ -291,41 +291,180 @@ function showQuestion() {
   quizExplanation.textContent = '';
   quizExplanation.classList.add('hidden');
   quizNextBtn.classList.add('hidden');
-
   quizOptionsEl.innerHTML = '';
+
+  const type = q.type ?? 'choice';
+  if (type === 'sort' || type === 'algorithm') renderSort(q);
+  else if (type === 'sequence') renderSequence(q);
+  else renderChoice(q);
+}
+
+// ── Рендерери ─────────────────────────────────────────────────────────────
+
+function renderChoice(q) {
   q.a.forEach((opt, i) => {
     const btn = document.createElement('button');
     btn.className = 'btn w-full text-left px-5 py-5 rounded-2xl border-2 border-slate-200 bg-white text-slate-800 font-semibold text-base hover:border-violet-400 hover:bg-violet-50 transition-all';
     btn.textContent = opt;
-    btn.addEventListener('click', () => selectAnswer(i, q));
+    btn.addEventListener('click', () => {
+      if (answered) return;
+      answered = true;
+      if (i === q.correct) score++;
+      const opts = quizOptionsEl.querySelectorAll('button');
+      opts.forEach(b => b.disabled = true);
+      opts[i].classList.remove('border-slate-200','bg-white');
+      opts[i].classList.add(...(i === q.correct ? ['border-emerald-400','bg-emerald-50'] : ['border-rose-400','bg-rose-50']));
+      opts[q.correct].classList.remove('border-slate-200','bg-white');
+      opts[q.correct].classList.add('border-emerald-400','bg-emerald-50');
+      showFeedback(i === q.correct, q);
+    });
     quizOptionsEl.appendChild(btn);
   });
 }
 
-function selectAnswer(idx, q) {
-  if (answered) return;
-  answered = true;
+function renderSequence(q) {
+  // q.choices — масив варіантів, q.correct — індекс правильного
+  q.choices.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'btn w-full text-left px-5 py-5 rounded-2xl border-2 border-slate-200 bg-white text-slate-800 font-semibold text-base hover:border-violet-400 hover:bg-violet-50 transition-all';
+    btn.textContent = opt;
+    btn.addEventListener('click', () => {
+      if (answered) return;
+      answered = true;
+      const isCorrect = i === q.correct;
+      if (isCorrect) score++;
+      const opts = quizOptionsEl.querySelectorAll('button');
+      opts.forEach(b => b.disabled = true);
+      opts[i].classList.remove('border-slate-200','bg-white');
+      opts[i].classList.add(...(isCorrect ? ['border-emerald-400','bg-emerald-50'] : ['border-rose-400','bg-rose-50']));
+      opts[q.correct].classList.remove('border-slate-200','bg-white');
+      opts[q.correct].classList.add('border-emerald-400','bg-emerald-50');
+      showFeedback(isCorrect, q);
+    });
+    quizOptionsEl.appendChild(btn);
+  });
 
-  const opts = quizOptionsEl.querySelectorAll('button');
-  opts.forEach(b => b.disabled = true);
+  // Показуємо задану послідовність над варіантами
+  const seq = document.createElement('div');
+  seq.className = 'flex gap-2 flex-wrap mb-3';
+  q.given.forEach(item => {
+    const chip = document.createElement('span');
+    chip.className = 'px-3 py-1 bg-slate-100 rounded-xl text-slate-700 font-bold text-base';
+    chip.textContent = item;
+    seq.appendChild(chip);
+    const arrow = document.createElement('span');
+    arrow.className = 'self-center text-slate-400 text-sm';
+    arrow.textContent = '→';
+    seq.appendChild(arrow);
+  });
+  const dots = document.createElement('span');
+  dots.className = 'px-3 py-1 bg-violet-100 rounded-xl text-violet-600 font-bold text-base';
+  dots.textContent = '?';
+  seq.appendChild(dots);
+  quizOptionsEl.insertBefore(seq, quizOptionsEl.firstChild);
+}
 
-  const isCorrect = idx === q.correct;
-  if (isCorrect) score++;
+function renderSort(q) {
+  // order[pos] = індекс елемента q.items який зараз на позиції pos
+  const order = [...q.items.keys()].sort(() => Math.random() - 0.5);
 
-  opts[idx].classList.remove('border-slate-200', 'bg-white');
-  opts[idx].classList.add(...(isCorrect ? ['border-emerald-400','bg-emerald-50'] : ['border-rose-400','bg-rose-50']));
-  opts[q.correct].classList.remove('border-slate-200', 'bg-white');
-  opts[q.correct].classList.add('border-emerald-400', 'bg-emerald-50');
+  const rebuild = () => {
+    quizOptionsEl.innerHTML = '';
 
+    order.forEach((itemIdx, pos) => {
+      const row = document.createElement('div');
+      row.className = 'flex items-center gap-2';
+
+      const num = document.createElement('span');
+      num.className = 'text-slate-400 text-xs font-bold w-5 text-right flex-shrink-0';
+      num.textContent = pos + 1;
+
+      const block = document.createElement('div');
+      block.className = 'flex-1 bg-white border-2 border-slate-200 rounded-2xl px-4 py-3 text-slate-800 font-semibold text-sm';
+      block.textContent = q.items[itemIdx];
+
+      const arrows = document.createElement('div');
+      arrows.className = 'flex flex-col gap-1 flex-shrink-0';
+
+      const up = document.createElement('button');
+      up.className = 'px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 text-xs font-bold';
+      up.textContent = '↑';
+      if (pos === 0) up.classList.add('invisible');
+      up.addEventListener('click', () => { [order[pos], order[pos-1]] = [order[pos-1], order[pos]]; rebuild(); });
+
+      const dn = document.createElement('button');
+      dn.className = 'px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 text-xs font-bold';
+      dn.textContent = '↓';
+      if (pos === order.length - 1) dn.classList.add('invisible');
+      dn.addEventListener('click', () => { [order[pos], order[pos+1]] = [order[pos+1], order[pos]]; rebuild(); });
+
+      arrows.appendChild(up);
+      arrows.appendChild(dn);
+      row.appendChild(num);
+      row.appendChild(block);
+      row.appendChild(arrows);
+      quizOptionsEl.appendChild(row);
+    });
+
+    // Кнопка перевірки
+    const checkBtn = document.createElement('button');
+    checkBtn.className = 'btn w-full px-5 py-4 rounded-2xl bg-violet-500 hover:bg-violet-600 text-white font-bold text-base mt-2';
+    checkBtn.textContent = 'Перевірити';
+    checkBtn.addEventListener('click', () => {
+      if (answered) return;
+      answered = true;
+
+      const isCorrect = q.correctOrder.every((correctItemIdx, pos) => order[pos] === correctItemIdx);
+      if (isCorrect) score++;
+
+      // Перемальовуємо з підсвіткою
+      quizOptionsEl.innerHTML = '';
+      order.forEach((itemIdx, pos) => {
+        const ok = q.correctOrder[pos] === itemIdx;
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2';
+        const num = document.createElement('span');
+        num.className = 'text-slate-400 text-xs font-bold w-5 text-right flex-shrink-0';
+        num.textContent = pos + 1;
+        const block = document.createElement('div');
+        block.className = `flex-1 border-2 rounded-2xl px-4 py-3 font-semibold text-sm ${ok ? 'bg-emerald-50 border-emerald-400 text-emerald-800' : 'bg-rose-50 border-rose-400 text-rose-800'}`;
+        block.textContent = q.items[itemIdx];
+        const icon = document.createElement('span');
+        icon.textContent = ok ? '✓' : '✗';
+        icon.className = 'text-lg flex-shrink-0';
+        row.appendChild(num);
+        row.appendChild(block);
+        row.appendChild(icon);
+        quizOptionsEl.appendChild(row);
+      });
+
+      // Якщо неправильно — показуємо правильний порядок
+      if (!isCorrect) {
+        const correctRow = document.createElement('div');
+        correctRow.className = 'mt-2 p-3 bg-emerald-50 border border-emerald-200 rounded-2xl';
+        correctRow.innerHTML = '<p class="text-xs text-emerald-700 font-semibold mb-1">Правильний порядок:</p>' +
+          q.correctOrder.map((idx, pos) => `<span class="text-xs text-emerald-800">${pos+1}. ${q.items[idx]}</span>`).join('<br>');
+        quizOptionsEl.appendChild(correctRow);
+      }
+
+      showFeedback(isCorrect, q);
+    });
+    quizOptionsEl.appendChild(checkBtn);
+  };
+
+  rebuild();
+}
+
+// ── Спільний фідбек ────────────────────────────────────────────────────────
+
+function showFeedback(isCorrect, q) {
   quizFeedback.textContent = isCorrect ? '✓ Правильно!' : '✗ Неправильно';
   quizFeedback.className = `font-semibold text-base mb-2 ${isCorrect ? 'text-emerald-600' : 'text-rose-600'}`;
-
   const cfg = getModeConfig(currentMode);
   if (cfg.showExplanation && q.explanation) {
     quizExplanation.textContent = q.explanation;
     quizExplanation.classList.remove('hidden');
   }
-
   quizNextBtn.classList.remove('hidden');
   quizNextBtn.textContent = currentIdx + 1 < questions.length ? 'Далі' : 'Завершити';
 }
