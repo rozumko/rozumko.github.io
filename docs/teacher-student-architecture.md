@@ -1,90 +1,91 @@
-# Архітектура Teacher / Student / Olympiad
+# Архітектура Teacher / Student / Olympiad — РОЗУМКО
 
-## Інфраструктура та міграція
+_Останнє оновлення: 2026-04-28_
 
-**Поточна:** GitHub Pages + Firebase Auth + Firestore (для розробки і тестування).
+---
 
-**Цільова:** Cloudflare Pages + Cloudflare D1.
+## Інфраструктура
 
-Всі архітектурні рішення мають враховувати майбутню міграцію:
-- Firebase-звернення ізолювати в окремому шарі даних (`services/db.js`), щоб при міграції міняти лише цей модуль
-- Логіку сесій та автентифікації проєктувати як стандартні HTTP-операції (GET/POST), не як Firebase-специфіку
-- Структуру колекцій Firestore проєктувати сумісно з реляційними таблицями D1
-- Не використовувати Firebase Realtime Database або Firebase-специфічні підписки (onSnapshot) там, де можна обійтись одноразовим запитом
+| Зараз (розробка) | Ціль (продакшен) |
+|---|---|
+| GitHub Pages | Cloudflare Pages |
+| Firebase Auth + Firestore | Cloudflare D1 + власний auth або Firebase |
 
-## Мета
+**Принципи портабельності для майбутньої міграції:**
+- Firebase-звернення ізольовані в `services/` — при міграції міняється тільки цей шар
+- `onSnapshot` не використовується — тільки одноразові запити (GET-сумісно)
+- Структури колекцій Firestore проєктовані як плоскі таблиці (сумісно з D1)
+- Логіка auth і сесій не прив'язана до Firebase SDK у UI-коді
 
-Цей документ фіксує цільову структуру даних і потоки доступу для сайту онлайн-олімпіади РОЗУМКО.
-Принцип проєкту: система зберігає мінімум персональних даних про дітей і чітко розділяє ролі вчителя та учня.
+---
 
-## Основні принципи
+## Ролі та сторінки
 
-- Учень не створює персональний акаунт через email або Google.
-- Учень входить за коротким кодом доступу, який видає вчитель.
-- Вчитель працює через окремий кабінет з email/password.
-- Дані учня мають бути псевдонімізовані: код, клас, належність до вчителя або класу.
-- Олімпіада має окрему модель результатів і окрему політику повторного проходження.
+| Роль | Сторінка | Auth |
+|---|---|---|
+| Admin | `admin.html` | email/password + перевірка `role==='admin'` у Firestore |
+| Teacher | `teacher.html` | email/password + перевірка `role==='teacher'` |
+| Student | `student.html` | код доступу → `signInAnonymously()` |
+| Гість | `student.html` | без коду — тільки тренування |
+| — | `index.html` | лендінг, вибір ролі |
 
-## Ролі
+---
 
-### Admin (організатор олімпіади)
+## Структура файлів (реалізовано)
 
-- Автентифікація: Firebase Auth `email/password` + перевірка `role === 'admin'` у Firestore
-- Документ профілю: `users/{adminUid}` з `{ role: 'admin' }`
-- Сторінка: `admin.html` (посилання не публікується публічно)
-- Права:
-  - читати і писати все (`users`, `students`, `olympiad_events`, `olympiad_sessions`, `olympiad_results`)
-  - створювати і архівувати олімпіадні події
-  - завантажувати завдання до події
-  - переглядати всіх вчителів і всі результати
-  - експортувати результати в CSV
+```
+index.html                        ← лендінг
+student.html + student.js         ← учень: код, тренування, quiz
+teacher.html + teacher.js         ← вчитель: класи, коди, результати
+admin.html + admin.js             ← адмін: події, вчителі, статистика
 
-### Teacher
+services/
+  firebase.js                     ← ініціалізація Firebase, re-export
+  stats.js                        ← getCountFromServer по колекціях
+  events.js                       ← CRUD olympiad_events
+  teacher-data.js                 ← класи, генерація кодів, результати вчителя
 
-- Автентифікація: Firebase Auth `email/password`
-- Документ профілю: `users/{teacherUid}`
-- Права:
-  - бачити лише свої класи, свої коди, свої результати
-  - створювати і деактивувати учнівські коди
-  - скидати спробу або дозволяти повторний запуск
+features/
+  auth/
+    admin-auth.js                 ← loginAdmin, logoutAdmin, onAdminAuthChanged
+    teacher-auth.js               ← loginTeacher, registerTeacher, onTeacherAuthChanged
+    student-code-auth.js          ← validateStudentCode, startAnonymousSession
+  olympiad/
+    session.js                    ← findActiveEvent, checkSession, startSession, finishSession
+    results.js                    ← saveOlympiadResult
+    quiz-engine.js                ← loadQuestions, getModeConfig
 
-### Student
+data/questions/informatics/
+  grade1.js … grade4.js           ← { q, a[], correct, explanation, difficulty }
+```
 
-- Автентифікація: `signInAnonymously()`
-- Ідентифікатор сесії: анонімний Firebase `uid`
-- Код доступу: зберігається в `sessionStorage`
-- Права:
-  - прочитати власний запис за кодом
-  - записати лише власний результат олімпіади
-  - не мати доступу до чужих результатів або кабінету вчителя
+---
 
-## Колекції Firestore
+## Колекції Firestore (фінальна схема)
 
-### `users/{teacherUid}`
-
+### `users/{uid}`
 ```js
 {
-  role: 'teacher',
-  email: 'teacher@example.com',
-  school: 'Ліцей №1',
-  classes: [
-    { id: '4-a', grade: 4, name: '4-А' }
+  role: 'admin' | 'teacher',
+  email: string,
+  school: string,          // тільки для teacher
+  classes: [               // тільки для teacher
+    { id: string, grade: number, name: string }
   ],
   createdAt: Timestamp,
   updatedAt: Timestamp
 }
 ```
 
-### `students/{studentCode}`
-
-Ідентифікатор документа дорівнює коду доступу, наприклад `ОРЕЛ-47`.
-
+### `students/{code}`
+Ідентифікатор = код доступу, наприклад `КІТ247`.
+Без ПІБ, email або будь-яких персональних даних дитини.
 ```js
 {
-  code: 'ОРЕЛ-47',
-  grade: 4,
-  classId: '4-a',
-  teacherUid: 'teacherUid123',
+  code: 'КІТ247',
+  grade: 3,
+  classId: 'uid_1234567890',
+  teacherUid: 'uid...',
   isActive: true,
   retryAllowed: false,
   createdAt: Timestamp,
@@ -92,167 +93,84 @@
 }
 ```
 
-### `olympiad_sessions/{sessionId}`
-
-Окрема колекція для керування правом на один запуск.
-
-Рекомендований `sessionId`:
-
-```txt
-{studentCode}_{eventId}
-```
-
-Приклад:
-
-```js
-{
-  eventId: 'spring-2026',
-  studentCode: 'ОРЕЛ-47',
-  teacherUid: 'teacherUid123',
-  grade: 4,
-  startedAt: Timestamp,
-  finishedAt: Timestamp | null,
-  status: 'started' | 'completed' | 'blocked',
-  attemptCount: 1,
-  lastAnonymousUid: 'firebase-anon-uid'
-}
-```
-
-### `olympiad_results/{resultId}`
-
-Результат не повинен перезаписуватися випадково. Краще зберігати окремий результат і посилання на сесію.
-
-Рекомендований `resultId`:
-
-```txt
-{studentCode}_{eventId}_{timestamp}
-```
-
-```js
-{
-  eventId: 'spring-2026',
-  studentCode: 'ОРЕЛ-47',
-  teacherUid: 'teacherUid123',
-  grade: 4,
-  score: 8,
-  totalQuestions: 10,
-  timeSpentSeconds: 731,
-  penalizedCount: 1,
-  mode: 'olympiad',
-  completedAt: Timestamp,
-  sessionId: 'ОРЕЛ-47_spring-2026'
-}
-```
-
-## Події та конфігурація
-
-Щоб не зашивати параметри олімпіади в клієнтський код, бажано винести їх у Firestore.
-
 ### `olympiad_events/{eventId}`
-
 ```js
 {
   title: 'Весняна олімпіада 2026',
   subject: 'informatics',
-  difficulty: 'hard',
   questionsCount: 10,
   timeMinutes: 15,
   allowRetry: false,
   status: 'draft' | 'active' | 'archived',
   activeFrom: Timestamp,
-  activeTo: Timestamp
+  activeTo: Timestamp,
+  createdAt: Timestamp,
+  updatedAt: Timestamp
 }
 ```
 
-Тоді клієнт не вгадує правила, а читає активну подію.
-
-## Потоки користувача
-
-### Teacher flow
-
-1. Вчитель входить через email/password.
-2. Система читає `users/{teacherUid}` і перевіряє `role === 'teacher'`.
-3. Вчитель бачить список класів, коди доступу та результати.
-4. Вчитель створює нові записи в `students`.
-
-### Student flow
-
-1. Учень відкриває сторінку учнівського входу.
-2. Учень вводить код доступу.
-3. Клієнт знаходить `students/{studentCode}`.
-4. Система запускає `signInAnonymously()`.
-5. Код зберігається тільки в `sessionStorage`.
-6. Перед стартом олімпіади клієнт перевіряє `olympiad_sessions/{studentCode}_{eventId}`.
-7. Якщо статус уже `completed` і `allowRetry === false`, повторний запуск блокується.
-8. Після завершення записуються `olympiad_results` і `olympiad_sessions`.
-
-## Що має змінитися в клієнтській архітектурі
-
-### Поточна проблема
-
-Зараз один і той самий сценарій намагається обслуговувати:
-
-- гостьовий вхід
-- анонімний вхід
-- email/password
-- Google sign-in
-- тренування
-- іспит
-
-Для олімпіади це занадто змішано.
-
-### Цільовий поділ
-
-Потрібно виділити окремі модулі:
-
-- `features/auth/teacher-auth.js`
-- `features/auth/student-code-auth.js`
-- `features/olympiad/session.js`
-- `features/olympiad/results.js`
-- `features/teacher/dashboard.js`
-
-Також стан тесту краще перевести на декларативну конфігурацію:
-
+### `olympiad_sessions/{studentCode}_{eventId}`
 ```js
-const MODE_CONFIG = {
-  practice: {
-    difficulty: null,
-    questionsCount: 5,
-    timeMinutes: null,
-    requiresFullscreen: false
-  },
-  exam: {
-    difficulty: null,
-    questionsCount: 5,
-    timeMinutes: 5,
-    requiresFullscreen: true
-  },
-  olympiad: {
-    difficulty: 'hard',
-    questionsCount: 10,
-    timeMinutes: 15,
-    requiresFullscreen: true,
-    singleAttempt: true,
-    saveCollection: 'olympiad_results'
-  }
-};
+{
+  eventId: string,
+  studentCode: string,
+  teacherUid: string,
+  grade: number,
+  startedAt: Timestamp,
+  finishedAt: Timestamp | null,
+  status: 'started' | 'completed' | 'blocked',
+  attemptCount: number,
+  lastAnonymousUid: string
+}
 ```
 
-## Мінімальний набір Firestore rules
+### `olympiad_results/{studentCode}_{eventId}_{timestamp}`
+```js
+{
+  eventId: string,
+  studentCode: string,
+  teacherUid: string,
+  grade: number,
+  score: number,
+  totalQuestions: number,
+  timeSpentSeconds: number,
+  penalizedCount: number,
+  mode: 'olympiad',
+  completedAt: Timestamp,
+  sessionId: string
+}
+```
 
-Нижче не фінальні правила, а каркас, від якого варто відштовхуватися.
+---
 
-```txt
+## Поточні Firestore rules (тимчасові — НЕ для продакшену)
+
+```
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isTeacher() {
+      return request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
+    }
+
+    match /{document=**} {
+      allow read, write: if isAdmin();
+    }
+
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
     match /students/{studentCode} {
       allow read: if request.auth != null;
-      allow write: if false;
+      allow write: if isTeacher();
     }
 
     match /olympiad_sessions/{sessionId} {
@@ -262,32 +180,84 @@ service cloud.firestore {
     match /olympiad_results/{resultId} {
       allow read, write: if request.auth != null;
     }
+
+    match /olympiad_events/{eventId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
   }
 }
 ```
 
-Для продакшену ці правила треба деталізувати через:
+---
 
-- перевірку ролі вчителя
-- перевірку `teacherUid`
-- валідацію полів документа
-- обмеження на створення результату лише для дозволеного `studentCode`
+## Що реалізовано (станом на 2026-04-28)
 
-## Рекомендований порядок впровадження
+### ✅ Фаза 1 — структура сторінок
+- `index.html` — лендінг з вибором ролі
+- `student.html` — вхід за кодом + тренування
+- `teacher.html` — кабінет вчителя
+- `admin.html` — адмін-панель
+- Firebase підключено, конфіг в `services/firebase.js`
 
-1. Завершити Фазу 1 стабілізації.
-2. Додати `MODE_CONFIG` і третій режим `olympiad` без UI кабінету вчителя.
-3. Додати структуру `olympiad_events`, `olympiad_sessions`, `olympiad_results`.
-4. Реалізувати вхід учня за кодом.
-5. Додати кабінет вчителя для генерації кодів і перегляду результатів.
-6. Написати і перевірити `firestore.rules`.
+### ✅ Auth (всі три ролі)
+- Admin: вхід + перевірка ролі в Firestore
+- Teacher: вхід + реєстрація + запис профілю
+- Student: код → `validateStudentCode` → `signInAnonymously` → `sessionStorage`
 
-## Критерій готовності архітектури
+### ✅ Кабінет вчителя
+- Створення класів (назва + клас 1–4)
+- Генерація кодів учнів: формат `СЛОВО999` (22 українські тварини ≤4 букв, число 100–999)
+- Список кодів з бейджем активності, кнопка «Копіювати всі»
+- Перегляд результатів олімпіади по своїх учнях
 
-Архітектура вважається готовою до запуску, коли:
+### ✅ Фаза 2 — Олімпіадний режим
+- `quiz-engine.js`: завантаження питань з grade-файлів, перемішування, `getModeConfig`
+- `session.js`: пошук активної події, перевірка/створення/завершення сесії
+- `results.js`: збереження в `olympiad_results`
+- Quiz UI: прогрес-бар, таймер (червоніє на останній хвилині), підсвітка відповідей, пояснення в тренуванні
+- Захист від повторного запуску через `olympiad_sessions`
+- Три режими: `practice` (тренування), `demo` (без збереження), `olympiad` (з записом)
 
-- учень може пройти олімпіаду без email і пароля
-- вчитель бачить тільки свої результати
-- повторний запуск контролюється серверною моделлю, а не лише клієнтом
-- результат олімпіади зберігається окремо від тренувального прогресу
-- у системі немає ПІБ, email або інших зайвих даних про дитину
+### ✅ Адмін-панель
+- Статистика: 4 лічильники через `getCountFromServer` (не читає документи)
+- Олімпіадні події: створення форми, збереження в Firestore, статуси `draft → active → archived`
+- Вкладки: Огляд / Олімпіади / Вчителі / Результати
+
+---
+
+## Що залишилось (наступні фази)
+
+### 🔴 Критично (безпека)
+1. **Firestore rules — продакшен версія**
+   - Обмежити запис результату: тільки анонімний uid з активною сесією
+   - Обмежити читання результатів: вчитель бачить тільки `teacherUid == uid`
+   - Валідація полів при записі
+
+### 🟡 Важливо (функціонал)
+2. **Quiz параметри з Firestore**
+   - Зараз `getModeConfig()` повертає hardcoded значення
+   - Треба брати `questionsCount` і `timeMinutes` з активної `olympiad_events` події
+3. **Деактивація кодів у кабінеті вчителя**
+   - `toggleStudentActive()` є в сервісі — треба додати кнопку в UI чіпі коду
+4. **Адмін: вкладка Вчителі**
+   - Завантажити список з Firestore (`role === 'teacher'`), показати школу, кількість класів
+5. **Адмін: вкладка Результати**
+   - Таблиця всіх результатів з фільтром по події та класу
+   - Експорт CSV
+
+### 🟢 Бажано (UX та надійність)
+6. **Fullscreen для олімпіади** — `requestFullscreen()` при старті, вихід = попередження
+7. **Платіжні посилання** — генерація унікального токена на кожен код учня
+8. **Офлайн-стійкість** — показ зрозумілої помилки якщо Firebase недоступний
+9. **Підготовка до Cloudflare** — замінити `services/firebase.js` на `services/db.js` з абстрактним інтерфейсом
+
+---
+
+## Критерій готовності до першого запуску олімпіади
+
+- [ ] Firestore rules — продакшен версія
+- [ ] Quiz читає параметри з `olympiad_events`
+- [ ] Вчитель може деактивувати код
+- [ ] Адмін бачить всі результати
+- [ ] Протестований повний flow: вчитель → код → учень → результат → адмін бачить

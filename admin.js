@@ -1,4 +1,6 @@
 import { loginAdmin, logoutAdmin, onAdminAuthChanged } from './features/auth/admin-auth.js';
+import { loadAdminStats } from './services/stats.js';
+import { createEvent, getAllEvents, setEventStatus } from './services/events.js';
 
 const authSection = document.getElementById('auth-section');
 const adminPanel = document.getElementById('admin-panel');
@@ -14,6 +16,18 @@ onAdminAuthChanged((user) => {
   if (user) showDashboard(user.email);
   else showAuth();
 });
+
+async function refreshStats() {
+  try {
+    const { teachers, students, results, events } = await loadAdminStats();
+    document.getElementById('stat-teachers').textContent = teachers;
+    document.getElementById('stat-students').textContent = students;
+    document.getElementById('stat-results').textContent = results;
+    document.getElementById('stat-events').textContent = events;
+  } catch {
+    // Firestore може бути недоступний до повної ініціалізації — тихо ігноруємо
+  }
+}
 
 // --- Вхід ---
 
@@ -54,27 +68,131 @@ document.querySelectorAll('.admin-tab').forEach(tab => {
 
 // --- Форма олімпіадної події ---
 
-const createEventBtn = document.getElementById('create-event-btn');
-const cancelEventBtn = document.getElementById('cancel-event-btn');
+const createEventBtn   = document.getElementById('create-event-btn');
+const cancelEventBtn   = document.getElementById('cancel-event-btn');
 const eventFormSection = document.getElementById('event-form-section');
-const eventForm = document.getElementById('event-form');
+const eventForm        = document.getElementById('event-form');
+const eventFormError   = document.getElementById('event-form-error');
+const eventSubmitBtn   = document.getElementById('event-submit-btn');
+const eventsList       = document.getElementById('events-list');
 
 createEventBtn.addEventListener('click', () => {
   eventFormSection.classList.remove('hidden');
   createEventBtn.classList.add('hidden');
+  document.getElementById('event-title').focus();
 });
 
 cancelEventBtn.addEventListener('click', () => {
   eventFormSection.classList.add('hidden');
   createEventBtn.classList.remove('hidden');
   eventForm.reset();
+  eventFormError.textContent = '';
 });
 
 eventForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  // TODO Фаза 3: зберегти olympiad_events у Firestore
-  alert('Збереження олімпіадних подій — у розробці (Фаза 3)');
+  const title    = document.getElementById('event-title').value.trim();
+  const from     = document.getElementById('event-from').value;
+  const to       = document.getElementById('event-to').value;
+  const subject  = document.getElementById('event-subject').value;
+  const count    = document.getElementById('event-questions').value;
+  const time     = document.getElementById('event-time').value;
+  const retry    = document.getElementById('event-allow-retry').checked;
+
+  if (!title)       { eventFormError.textContent = 'Введи назву.'; return; }
+  if (!from || !to) { eventFormError.textContent = 'Вкажи дати початку і кінця.'; return; }
+  if (new Date(from) >= new Date(to)) { eventFormError.textContent = 'Дата початку має бути раніше кінця.'; return; }
+
+  eventFormError.textContent = '';
+  eventSubmitBtn.disabled = true;
+  eventSubmitBtn.textContent = 'Збереження…';
+
+  try {
+    await createEvent({ title, subject, activeFrom: from, activeTo: to, questionsCount: count, timeMinutes: time, allowRetry: retry });
+    eventFormSection.classList.add('hidden');
+    createEventBtn.classList.remove('hidden');
+    eventForm.reset();
+    await loadEvents();
+    await refreshStats();
+  } catch (err) {
+    eventFormError.textContent = err.message;
+  } finally {
+    eventSubmitBtn.disabled = false;
+    eventSubmitBtn.textContent = 'Зберегти';
+  }
 });
+
+async function loadEvents() {
+  const events = await getAllEvents();
+  if (events.length === 0) {
+    eventsList.innerHTML = `
+      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 flex items-center justify-center py-16 text-slate-500">
+        <div class="text-center">
+          <i class="fas fa-calendar-times text-4xl mb-3 block"></i>
+          <p class="font-semibold">Олімпіадних подій ще немає</p>
+          <p class="text-sm mt-1">Натисни «Нова олімпіада», щоб створити першу.</p>
+        </div>
+      </div>`;
+    return;
+  }
+  eventsList.innerHTML = '';
+  events.forEach(ev => eventsList.appendChild(buildEventCard(ev)));
+}
+
+function buildEventCard(ev) {
+  const tpl = document.getElementById('event-card-template');
+  const el  = tpl.content.cloneNode(true).querySelector('div');
+
+  el.querySelector('.event-title').textContent     = ev.title;
+  el.querySelector('.event-from').textContent      = formatDate(ev.activeFrom);
+  el.querySelector('.event-to').textContent        = formatDate(ev.activeTo);
+  el.querySelector('.event-questions').textContent = ev.questionsCount;
+  el.querySelector('.event-time').textContent      = ev.timeMinutes;
+  el.querySelector('.event-retry').textContent     = ev.allowRetry ? '↩ Повторний запуск дозволено' : '🔒 Один запуск';
+
+  const badge     = el.querySelector('.event-status-badge');
+  const btnActivate = el.querySelector('.btn-activate');
+  const btnArchive  = el.querySelector('.btn-archive');
+  const btnDraft    = el.querySelector('.btn-draft');
+
+  const STATUS = {
+    draft:    { label: 'Чернетка', cls: 'bg-slate-600 text-slate-200' },
+    active:   { label: 'Активна',  cls: 'bg-emerald-500 text-white'   },
+    archived: { label: 'Архів',    cls: 'bg-slate-700 text-slate-400' },
+  };
+  const s = STATUS[ev.status] ?? STATUS.draft;
+  badge.textContent  = s.label;
+  badge.className    = `event-status-badge text-xs font-bold px-2 py-0.5 rounded-full ${s.cls}`;
+
+  // Показуємо кнопки залежно від поточного статусу
+  if (ev.status === 'draft')    { btnActivate.classList.remove('hidden'); }
+  if (ev.status === 'active')   { btnArchive.classList.remove('hidden'); }
+  if (ev.status === 'archived') { btnDraft.classList.remove('hidden'); }
+
+  const changeStatus = async (btn, status) => {
+    btn.disabled = true;
+    try {
+      await setEventStatus(ev.id, status);
+      await loadEvents();
+      await refreshStats();
+    } catch (err) {
+      alert(err.message);
+      btn.disabled = false;
+    }
+  };
+
+  btnActivate.addEventListener('click', () => changeStatus(btnActivate, 'active'));
+  btnArchive.addEventListener('click',  () => changeStatus(btnArchive,  'archived'));
+  btnDraft.addEventListener('click',    () => changeStatus(btnDraft,    'draft'));
+
+  return el;
+}
+
+function formatDate(val) {
+  if (!val) return '—';
+  const d = val?.toDate ? val.toDate() : new Date(val);
+  return d.toLocaleString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
 
 // --- Утиліти ---
 
@@ -82,6 +200,8 @@ function showDashboard(email) {
   authSection.classList.add('hidden');
   adminPanel.classList.remove('hidden');
   emailDisplay.textContent = email;
+  refreshStats();
+  loadEvents();
 }
 
 function showAuth() {

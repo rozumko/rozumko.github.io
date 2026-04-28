@@ -6,7 +6,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, setDoc, updateDoc, addDoc,
-  collection, getDocs, query, where, serverTimestamp
+  collection, getDocs, query, where, serverTimestamp, getCountFromServer
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -31,5 +31,5 @@ export {
   signOut, onAuthStateChanged, signInAnonymously,
   // firestore
   doc, getDoc, setDoc, updateDoc, addDoc,
-  collection, getDocs, query, where, serverTimestamp
+  collection, getDocs, query, where, serverTimestamp, getCountFromServer
 };

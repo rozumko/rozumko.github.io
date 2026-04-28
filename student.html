@@ -62,6 +62,10 @@
 
           <!-- Показується після успішного введення коду -->
           <div id="olympiad-actions" class="hidden mt-6 pt-6 border-t border-slate-100">
+            <div id="active-event-info" class="hidden bg-sky-50 border border-sky-200 rounded-xl px-4 py-3 mb-4 text-sm">
+              <p class="font-semibold text-sky-800" id="active-event-title"></p>
+              <p class="text-sky-600 text-xs mt-0.5" id="active-event-meta"></p>
+            </div>
             <p class="text-sm font-semibold text-slate-700 mb-3">Що хочеш зробити?</p>
             <div class="grid grid-cols-2 gap-3">
               <button id="start-demo-btn" class="btn bg-amber-50 border-2 border-amber-200 text-amber-800 font-semibold py-4 px-4 rounded-2xl text-sm">
@@ -128,9 +132,80 @@
     </div>
   </main>
 
+  <!-- ===== QUIZ OVERLAY ===== -->
+  <div id="quiz-overlay" class="fixed inset-0 z-50 hidden flex-col" style="background:linear-gradient(180deg,#f1f5ff 0%,#f8fafc 100%)">
+
+    <!-- Шапка quiz -->
+    <div class="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm">
+      <div class="flex items-center gap-3">
+        <span id="quiz-mode-badge" class="text-xs font-bold px-3 py-1 rounded-full"></span>
+        <span id="quiz-progress-text" class="text-sm font-semibold text-slate-600"></span>
+      </div>
+      <div class="flex items-center gap-3">
+        <div id="quiz-timer" class="hidden items-center gap-1 bg-orange-100 text-orange-700 font-bold px-3 py-1 rounded-xl text-sm" role="timer" aria-live="off">
+          <i class="fas fa-stopwatch" aria-hidden="true"></i>
+          <span id="quiz-timer-display">15:00</span>
+        </div>
+        <button id="quiz-quit-btn" class="btn bg-slate-100 text-slate-600 text-sm font-semibold py-2 px-4 rounded-xl">Вийти</button>
+      </div>
+    </div>
+
+    <!-- Прогрес-бар -->
+    <div class="w-full bg-slate-200 h-1.5">
+      <div id="quiz-progress-bar" class="bg-emerald-500 h-1.5 transition-all duration-300" style="width:0%"></div>
+    </div>
+
+    <!-- Питання -->
+    <div class="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col items-center">
+      <div class="w-full max-w-xl">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-5 min-h-[100px] flex items-center justify-center">
+          <p id="quiz-question-text" class="text-lg sm:text-xl font-semibold text-slate-900 text-center leading-snug"></p>
+        </div>
+        <div id="quiz-options" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5" role="radiogroup" aria-labelledby="quiz-question-text"></div>
+        <div class="text-center min-h-[3rem]">
+          <p id="quiz-feedback" class="font-semibold text-base mb-2" aria-live="polite"></p>
+          <p id="quiz-explanation" class="text-sm text-slate-500 hidden"></p>
+          <button id="quiz-next-btn" class="btn bg-sky-500 text-white font-bold py-3 px-8 rounded-2xl hidden mt-2">Далі</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== РЕЗУЛЬТАТ OVERLAY ===== -->
+  <div id="result-overlay" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.5)">
+    <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-md p-8 text-center">
+      <p id="result-mode-label" class="text-sm uppercase tracking-widest text-slate-400 mb-2"></p>
+      <h2 id="result-title" class="text-2xl font-bold text-slate-900 mb-4"></h2>
+      <p class="text-slate-500 mb-2">Правильних відповідей</p>
+      <p class="text-6xl font-extrabold mb-1">
+        <span id="result-score" class="text-emerald-500"></span>
+        <span class="text-slate-300 text-4xl"> / </span>
+        <span id="result-total" class="text-slate-400 text-4xl"></span>
+      </p>
+      <p id="result-time" class="text-sm text-slate-400 mb-8"></p>
+      <div id="result-saved-msg" class="hidden bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-xl px-4 py-3 mb-6">
+        <i class="fas fa-check-circle mr-1"></i> Результат збережено
+      </div>
+      <div id="result-error-msg" class="hidden bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-xl px-4 py-3 mb-6"></div>
+      <button id="result-close-btn" class="btn w-full bg-sky-500 text-white font-bold py-4 rounded-2xl">На головну сторінку</button>
+    </div>
+  </div>
+
+  <!-- Діалог підтвердження виходу -->
+  <div id="quit-confirm" class="fixed inset-0 z-[60] hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.5)">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center">
+      <h3 class="text-xl font-bold text-slate-900 mb-3">Вийти з тесту?</h3>
+      <p class="text-slate-500 text-sm mb-6">Прогрес не збережеться.</p>
+      <div class="grid grid-cols-2 gap-3">
+        <button id="quit-confirm-yes" class="btn bg-rose-500 text-white font-bold py-3 rounded-xl">Так, вийти</button>
+        <button id="quit-confirm-no" class="btn bg-slate-100 text-slate-700 font-bold py-3 rounded-xl">Продовжити</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast-notification" role="status" aria-live="polite"></div>
 
-  <script type="module" src="features/auth/student-code-auth.js"></script>
   <script type="module" src="student.js"></script>
 </body>
 </html>

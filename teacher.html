@@ -6,7 +6,6 @@
   <title>Розумко — Кабінет вчителя</title>
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
   <meta name="theme-color" content="#3b82f6">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -18,18 +17,14 @@
 <body class="text-gray-800">
   <a href="#main-content" class="skip-link">Перейти до основного контенту</a>
 
-  <main id="main-content" class="app-container min-h-screen flex items-start justify-center p-4 pt-8 sm:pt-16" tabindex="-1">
-    <div class="w-full max-w-md" id="auth-section">
-
-      <!-- Навігація -->
+  <!-- ===== ФОРМА ВХОДУ ===== -->
+  <div id="auth-section" class="app-container min-h-screen flex items-start justify-center p-4 pt-8 sm:pt-16">
+    <div class="w-full max-w-md">
       <div class="mb-6">
         <a href="index.html" class="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 text-sm font-medium transition-colors">
-          <i class="fas fa-arrow-left" aria-hidden="true"></i>
-          На головну
+          <i class="fas fa-arrow-left" aria-hidden="true"></i> На головну
         </a>
       </div>
-
-      <!-- Форма входу -->
       <div class="bg-white/95 rounded-[2rem] shadow-2xl border border-white/70 overflow-hidden">
         <div class="bg-sky-600 text-white p-6 sm:p-8">
           <p class="text-sm uppercase tracking-[0.2em] text-sky-200 mb-2">Кабінет</p>
@@ -41,141 +36,195 @@
             <div class="space-y-4 mb-6">
               <div>
                 <label for="login-email" class="block text-sm font-semibold text-slate-700 mb-2">Електронна пошта</label>
-                <input
-                  id="login-email"
-                  type="email"
-                  autocomplete="email"
-                  placeholder="teacher@school.ua"
-                  required
-                  class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-sky-300 text-base"
-                />
+                <input id="login-email" type="email" autocomplete="email" placeholder="teacher@school.ua" required
+                  class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-sky-300 text-base"/>
               </div>
               <div>
                 <label for="login-password" class="block text-sm font-semibold text-slate-700 mb-2">Пароль</label>
-                <input
-                  id="login-password"
-                  type="password"
-                  autocomplete="current-password"
-                  placeholder="••••••••"
-                  required
-                  class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-sky-300 text-base"
-                />
+                <input id="login-password" type="password" autocomplete="current-password" placeholder="••••••••" required
+                  class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-sky-300 text-base"/>
               </div>
             </div>
             <p id="login-error" class="text-rose-600 text-sm mb-4 min-h-[1.25rem]" role="alert" aria-live="assertive"></p>
-            <button type="submit" id="login-submit-btn" class="btn w-full bg-sky-500 text-white font-bold py-4 rounded-2xl text-base">
-              Увійти
-            </button>
+            <button type="submit" id="login-submit-btn" class="btn w-full bg-sky-500 text-white font-bold py-4 rounded-2xl text-base">Увійти</button>
           </form>
-
           <div class="mt-6 pt-6 border-t border-slate-100 text-center">
             <p class="text-sm text-slate-500 mb-3">Ще немає кабінету?</p>
-            <button id="show-register-btn" class="btn w-full bg-slate-100 text-slate-700 font-semibold py-3 rounded-xl text-sm">
-              Зареєструватись
-            </button>
+            <button id="show-register-btn" class="btn w-full bg-slate-100 text-slate-700 font-semibold py-3 rounded-xl text-sm">Зареєструватись</button>
           </div>
         </div>
       </div>
-
-      <!-- Форма реєстрації (прихована) -->
       <div id="register-section" class="hidden bg-white/95 rounded-[2rem] shadow-2xl border border-white/70 overflow-hidden mt-4">
         <div class="p-6 sm:p-8">
           <h2 class="text-xl font-bold text-slate-900 mb-5">Реєстрація вчителя</h2>
           <form id="teacher-register-form" novalidate aria-describedby="register-error">
-            <div class="space-y-4 mb-6">
+            <div class="space-y-4 mb-4">
               <div>
                 <label for="reg-email" class="block text-sm font-semibold text-slate-700 mb-2">Електронна пошта</label>
-                <input
-                  id="reg-email"
-                  type="email"
-                  autocomplete="email"
-                  placeholder="teacher@school.ua"
-                  required
-                  class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-sky-300 text-base"
-                />
+                <input id="reg-email" type="email" autocomplete="email" placeholder="teacher@school.ua" required
+                  class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-sky-300 text-base"/>
               </div>
               <div>
                 <label for="reg-school" class="block text-sm font-semibold text-slate-700 mb-2">Школа або заклад</label>
-                <input
-                  id="reg-school"
-                  type="text"
-                  autocomplete="organization"
-                  placeholder="Ліцей №1, м. Київ"
-                  class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-sky-300 text-base"
-                />
+                <input id="reg-school" type="text" autocomplete="organization" placeholder="Ліцей №1, м. Київ"
+                  class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-sky-300 text-base"/>
               </div>
               <div>
                 <label for="reg-password" class="block text-sm font-semibold text-slate-700 mb-2">Пароль (мінімум 8 символів)</label>
-                <input
-                  id="reg-password"
-                  type="password"
-                  autocomplete="new-password"
-                  placeholder="••••••••"
-                  minlength="8"
-                  required
-                  class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-sky-300 text-base"
-                />
+                <input id="reg-password" type="password" autocomplete="new-password" placeholder="••••••••" minlength="8" required
+                  class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-sky-300 text-base"/>
               </div>
             </div>
-            <p class="text-xs text-slate-400 mb-4">
-              <i class="fas fa-shield-alt mr-1" aria-hidden="true"></i>
-              Ми зберігаємо лише email і назву закладу. Жодних зайвих персональних даних.
-            </p>
+            <p class="text-xs text-slate-400 mb-4"><i class="fas fa-shield-alt mr-1"></i> Зберігаємо лише email і назву закладу.</p>
             <p id="register-error" class="text-rose-600 text-sm mb-4 min-h-[1.25rem]" role="alert" aria-live="assertive"></p>
-            <button type="submit" id="register-submit-btn" class="btn w-full bg-emerald-500 text-white font-bold py-4 rounded-2xl text-base mb-3">
-              Створити кабінет
-            </button>
-            <button type="button" id="hide-register-btn" class="btn w-full bg-slate-100 text-slate-600 font-medium py-3 rounded-xl text-sm">
-              Назад до входу
-            </button>
+            <button type="submit" id="register-submit-btn" class="btn w-full bg-emerald-500 text-white font-bold py-4 rounded-2xl text-base mb-3">Створити кабінет</button>
+            <button type="button" id="hide-register-btn" class="btn w-full bg-slate-100 text-slate-600 font-medium py-3 rounded-xl text-sm">Назад до входу</button>
           </form>
         </div>
       </div>
-
     </div>
+  </div>
 
-    <!-- Кабінет вчителя (показується після входу) -->
-    <div id="dashboard-section" class="w-full max-w-4xl hidden">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <div>
-          <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">Кабінет вчителя</h1>
-          <p id="teacher-email-display" class="text-slate-500 text-sm mt-1"></p>
-        </div>
-        <button id="logout-btn" class="btn bg-slate-100 text-slate-700 font-semibold py-2 px-5 rounded-xl text-sm flex items-center gap-2">
-          <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
-          Вийти
+  <!-- ===== КАБІНЕТ ВЧИТЕЛЯ ===== -->
+  <div id="dashboard-section" class="hidden min-h-screen" id="main-content">
+
+    <!-- Шапка -->
+    <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm">
+      <div class="flex items-center gap-3">
+        <a href="index.html" class="text-slate-400 hover:text-slate-700 text-sm mr-1"><i class="fas fa-home"></i></a>
+        <span class="text-slate-900 font-bold text-lg">Розумко</span>
+        <span class="bg-sky-100 text-sky-700 text-xs font-semibold px-2 py-0.5 rounded-full">Вчитель</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <span id="teacher-email-display" class="text-slate-400 text-sm hidden sm:block"></span>
+        <button id="logout-btn" class="btn bg-slate-100 text-slate-700 font-semibold py-2 px-4 rounded-xl text-sm flex items-center gap-2">
+          <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Вийти
         </button>
       </div>
+    </header>
 
-      <div class="grid md:grid-cols-3 gap-4 mb-6">
-        <div class="bg-white/95 rounded-2xl shadow-lg border border-white/70 p-5">
-          <p class="text-sm text-slate-500 mb-1">Класів</p>
-          <p id="stat-classes" class="text-3xl font-bold text-slate-900">—</p>
+    <!-- Вкладки -->
+    <nav class="bg-white border-b border-slate-200 px-6">
+      <div class="flex gap-0">
+        <button data-tab="classes" class="teacher-tab tab-active text-sm font-semibold py-4 px-5 border-b-2">
+          <i class="fas fa-users mr-2"></i>Класи та коди
+        </button>
+        <button data-tab="results" class="teacher-tab text-sm font-semibold py-4 px-5 border-b-2">
+          <i class="fas fa-poll mr-2"></i>Результати
+        </button>
+      </div>
+    </nav>
+
+    <main class="p-4 sm:p-6 max-w-4xl mx-auto">
+
+      <!-- Вкладка: Класи та коди -->
+      <section id="tab-classes" class="tab-panel">
+
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+          <h2 class="text-xl font-bold text-slate-900">Мої класи</h2>
+          <button id="create-class-btn" class="btn bg-sky-500 text-white font-semibold py-2 px-5 rounded-xl text-sm flex items-center gap-2">
+            <i class="fas fa-plus"></i> Новий клас
+          </button>
         </div>
-        <div class="bg-white/95 rounded-2xl shadow-lg border border-white/70 p-5">
-          <p class="text-sm text-slate-500 mb-1">Учнів (кодів)</p>
-          <p id="stat-students" class="text-3xl font-bold text-slate-900">—</p>
+
+        <!-- Форма нового класу -->
+        <div id="class-form-section" class="hidden bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-5">
+          <h3 class="font-bold text-slate-900 mb-4">Новий клас</h3>
+          <form id="class-form" class="flex flex-col sm:flex-row gap-3" novalidate>
+            <div class="flex-1">
+              <label for="class-name-input" class="block text-xs font-semibold text-slate-500 mb-1">Назва класу</label>
+              <input id="class-name-input" type="text" placeholder="Наприклад, 3-А" maxlength="20"
+                class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-400 text-base"/>
+            </div>
+            <div>
+              <label for="class-grade-input" class="block text-xs font-semibold text-slate-500 mb-1">Клас</label>
+              <select id="class-grade-input" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-400 text-base">
+                <option value="1">1 клас</option>
+                <option value="2">2 клас</option>
+                <option value="3">3 клас</option>
+                <option value="4">4 клас</option>
+              </select>
+            </div>
+            <div class="flex items-end gap-2">
+              <button type="submit" class="btn bg-emerald-500 text-white font-bold py-3 px-5 rounded-xl">Створити</button>
+              <button type="button" id="cancel-class-btn" class="btn bg-slate-100 text-slate-600 font-medium py-3 px-4 rounded-xl">✕</button>
+            </div>
+          </form>
+          <p id="class-form-error" class="text-rose-600 text-sm mt-3 min-h-[1.25rem]" role="alert"></p>
         </div>
-        <div class="bg-white/95 rounded-2xl shadow-lg border border-white/70 p-5">
-          <p class="text-sm text-slate-500 mb-1">Результатів</p>
-          <p id="stat-results" class="text-3xl font-bold text-slate-900">—</p>
+
+        <!-- Список класів -->
+        <div id="classes-list" class="space-y-4">
+          <div class="bg-white rounded-2xl border border-slate-200 p-10 text-center text-slate-400">
+            <i class="fas fa-users text-4xl mb-3 block"></i>
+            <p class="font-semibold">Класів ще немає</p>
+            <p class="text-sm mt-1">Натисни «Новий клас», щоб почати.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Вкладка: Результати -->
+      <section id="tab-results" class="tab-panel hidden">
+        <h2 class="text-xl font-bold text-slate-900 mb-6">Результати олімпіади</h2>
+        <div id="results-list" class="space-y-3">
+          <div class="bg-white rounded-2xl border border-slate-200 p-10 text-center text-slate-400">
+            <i class="fas fa-poll text-4xl mb-3 block"></i>
+            <p class="font-semibold">Результатів ще немає</p>
+            <p class="text-sm mt-1">Тут з'являться результати після проведення олімпіади.</p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Шаблон картки класу (клонується в JS) -->
+  <template id="class-card-template">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="flex items-center justify-between p-5 cursor-pointer select-none class-card-header">
+        <div>
+          <span class="class-card-name font-bold text-slate-900 text-base"></span>
+          <span class="class-card-grade text-sm text-slate-400 ml-2"></span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="class-card-count text-sm text-slate-500"></span>
+          <i class="fas fa-chevron-down text-slate-400 class-card-chevron transition-transform"></i>
         </div>
       </div>
-
-      <div class="bg-white/95 rounded-[2rem] shadow-xl border border-white/70 p-6 sm:p-8">
-        <div class="flex items-center justify-center flex-col text-center py-12 text-slate-400">
-          <i class="fas fa-tools text-5xl mb-4" aria-hidden="true"></i>
-          <p class="text-lg font-semibold text-slate-600 mb-2">Кабінет у розробці</p>
-          <p class="text-sm max-w-sm">Тут будуть: створення класів, генерація кодів учнів, перегляд результатів олімпіади.</p>
+      <div class="class-card-body hidden border-t border-slate-100 p-5">
+        <div class="flex flex-col sm:flex-row gap-3 mb-4">
+          <input type="number" min="1" max="40" value="5" class="codes-count-input w-24 px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-400 text-center font-bold text-lg"/>
+          <label class="self-center text-sm text-slate-500">учнів</label>
+          <button class="generate-codes-btn btn bg-emerald-500 text-white font-semibold py-2 px-5 rounded-xl text-sm flex items-center gap-2">
+            <i class="fas fa-key"></i> Згенерувати коди
+          </button>
+          <button class="copy-all-btn btn bg-slate-100 text-slate-600 font-medium py-2 px-4 rounded-xl text-sm hidden">
+            <i class="fas fa-copy mr-1"></i> Копіювати всі
+          </button>
         </div>
+        <p class="generate-status text-sm mb-3 min-h-[1.25rem]"></p>
+        <div class="codes-list grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2"></div>
       </div>
     </div>
+  </template>
 
-  </main>
+  <!-- Шаблон коду учня -->
+  <template id="code-chip-template">
+    <div class="code-chip flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+      <span class="code-value font-mono font-bold text-slate-800 text-sm tracking-wide"></span>
+      <span class="code-status text-xs font-semibold px-2 py-0.5 rounded-full"></span>
+    </div>
+  </template>
 
   <div id="toast-notification" role="status" aria-live="polite"></div>
 
   <script type="module" src="features/auth/teacher-auth.js"></script>
   <script type="module" src="teacher.js"></script>
+
+  <style>
+    .teacher-tab { color: #94a3b8; border-color: transparent; }
+    .teacher-tab:hover { color: #334155; }
+    .teacher-tab.tab-active { color: #0284c7; border-color: #0284c7; }
+  </style>
 </body>
 </html>
