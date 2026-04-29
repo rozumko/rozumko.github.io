@@ -1097,11 +1097,11 @@ button {
   padding: var(--sp-3) var(--sp-10);
   border-radius: var(--r-xl);
   margin-top: var(--sp-2);
-  display: none;
+  display: inline-block;
   transition: background-color var(--transition-base);
 }
 .btn-next:hover { background: var(--clr-violet-dark); }
-.btn-next.visible { display: inline-block; }
+.btn-next.hidden { display: none !important; }
 
 /* ── Варіанти відповідей (з question-renderer.js) ───────────── */
 
