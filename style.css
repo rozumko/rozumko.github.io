@@ -114,6 +114,9 @@ img {
   display: block;
 }
 
+/* Утилітний клас прихованості — замінює Tailwind .hidden */
+.hidden { display: none !important; }
+
 button {
   font-family: inherit;
   cursor: pointer;
@@ -1040,6 +1043,27 @@ button {
 /* Зона варіантів відповідей */
 .quiz-options {
   margin-bottom: var(--sp-4);
+}
+/* 2-колонки (choice) */
+.quiz-options--grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-3);
+}
+@media (min-width: 640px) {
+  .quiz-options--grid { grid-template-columns: 1fr 1fr; }
+}
+/* 2 рівні колонки (truefalse) */
+.quiz-options--two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-4);
+}
+/* Стек (sort, match, sequence, input) */
+.quiz-options--stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
 }
 
 /* Зона фідбеку */

@@ -311,8 +311,8 @@ async function launchOlympiad(mode) {
 
 gradeButtons.forEach(btn => {
   btn.addEventListener('click', () => {
-    gradeButtons.forEach(b => { b.classList.remove('bg-amber-100', 'border-amber-400'); b.setAttribute('aria-pressed', 'false'); });
-    btn.classList.add('bg-amber-100', 'border-amber-400');
+    // Стан вибору керується через aria-pressed + CSS [aria-pressed="true"] в style.css
+    gradeButtons.forEach(b => b.setAttribute('aria-pressed', 'false'));
     btn.setAttribute('aria-pressed', 'true');
     selectedGrade = Number(btn.dataset.grade);
     updateStartBtn();
@@ -321,8 +321,7 @@ gradeButtons.forEach(btn => {
 
 diffButtons.forEach(btn => {
   btn.addEventListener('click', () => {
-    diffButtons.forEach(b => { b.classList.remove('bg-amber-100', 'border-amber-400'); b.setAttribute('aria-pressed', 'false'); });
-    btn.classList.add('bg-amber-100', 'border-amber-400');
+    diffButtons.forEach(b => b.setAttribute('aria-pressed', 'false'));
     btn.setAttribute('aria-pressed', 'true');
     selectedDiff = btn.dataset.difficulty;
     updateStartBtn();
@@ -426,11 +425,10 @@ function showQuestion() {
   quizOptionsEl.innerHTML = '';
 
   const type = q.type ?? 'choice';
-  quizOptionsEl.className = (type === 'choice')
-    ? 'grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4'
-    : type === 'truefalse'
-      ? 'grid grid-cols-2 gap-4 mb-4'
-      : 'flex flex-col gap-3 mb-4';
+  // Семантичні CSS-класи з style.css замість Tailwind-утиліт
+  quizOptionsEl.className = (type === 'choice')    ? 'quiz-options quiz-options--grid'
+    : type === 'truefalse'                         ? 'quiz-options quiz-options--two'
+    : 'quiz-options quiz-options--stack';
 
   renderQuestion(q, quizOptionsEl, {
     onAnswer: (isCorrect) => {
@@ -506,7 +504,7 @@ async function finishQuiz(timeUp) {
       resultErrorMsg.innerHTML =
         `⚠️ Немає зв'язку — результат не збережено автоматично.<br>
          <strong>Скажи вчителю:</strong> код <strong>${meta.code}</strong>, результат <strong>${score}/${questions.length}</strong>.<br>
-         <span class="text-xs opacity-70">Коли з'явиться інтернет — оновлення сторінки може відновити збереження.</span>`;
+         <span style="font-size:0.8em;opacity:0.7">Коли з'явиться інтернет — оновлення сторінки може відновити збереження.</span>`;
       resultErrorMsg.classList.remove('hidden');
     }
     currentSessionId = null;
