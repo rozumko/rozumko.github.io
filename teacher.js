@@ -249,7 +249,7 @@ function renderCodes(container, students, copyAllBtn) {
     const chip = template.content.cloneNode(true).querySelector('div');
     chip.querySelector('.code-value').textContent = s.code;
 
-    const statusBadge = chip.querySelector('.code-status');
+    const statusBadge = chip.querySelector('.code-status-badge');
     const toggleBtn   = chip.querySelector('.code-toggle-btn');
     const nameInput   = chip.querySelector('.code-name-input');
 
