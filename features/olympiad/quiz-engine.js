@@ -56,7 +56,7 @@ export async function loadQuestions(grade, mode, count) {
 // для режимів 'olympiad' і 'demo'.
 export function getModeConfig(mode, event = null) {
   const defaults = {
-    practice: { count: 5,  timeMinutes: null, showExplanation: true,  saveResult: false },
+    practice: { count: 10, timeMinutes: null, showExplanation: true,  saveResult: false },
     demo:     { count: 5,  timeMinutes: 10,   showExplanation: false, saveResult: false },
     olympiad: { count: 10, timeMinutes: 15,   showExplanation: false, saveResult: true  },
   };

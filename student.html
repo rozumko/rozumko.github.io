@@ -42,6 +42,13 @@
       text-align: center;
       text-transform: uppercase;
     }
+    .kid-input::placeholder {
+      font-size: 1rem;
+      font-weight: 400;
+      letter-spacing: 0.02em;
+      text-transform: none;
+      color: #94a3b8;
+    }
 
     .action-card {
       transition: transform 0.1s, box-shadow 0.1s;
@@ -53,6 +60,14 @@
 
     .action-card:active {
       transform: translateY(0);
+    }
+
+    /* Вибрані кнопки класу/складності — перекрити hover Tailwind */
+    .grade-btn[aria-pressed="true"],
+    .diff-btn[aria-pressed="true"] {
+      background: #fbbf24 !important;
+      color: #1e293b !important;
+      border-color: #f59e0b !important;
     }
   </style>
 </head>
@@ -75,10 +90,10 @@
     </div>
 
     <!-- Картка вводу коду -->
-    <div class="w-full max-w-sm bg-white rounded-3xl shadow-2xl p-7">
+    <div id="code-card" class="w-full max-w-sm bg-white rounded-3xl shadow-2xl p-7">
       <p class="text-center text-slate-500 font-semibold mb-5 text-base">Введи код від учителя</p>
       <form id="student-code-form" novalidate>
-        <input id="student-code-input" type="text" inputmode="text" autocomplete="off" placeholder="КІТ247"
+        <input id="student-code-input" type="text" inputmode="text" autocomplete="off" placeholder="Наприклад: КІТ247"
           maxlength="20"
           class="kid-input w-full px-4 py-4 rounded-2xl border-2 border-slate-200 focus:outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 mb-3 font-extrabold text-slate-800" />
         <p id="code-status" class="text-rose-600 text-sm mb-3 min-h-[1.25rem] text-center" role="alert"
@@ -96,42 +111,34 @@
       </form>
     </div>
 
-    <!-- Тренування (вторинне) -->
+    <!-- Тренування -->
     <div class="w-full max-w-sm mt-4">
       <button id="show-practice-btn"
-        class="w-full text-white/60 hover:text-white/90 text-sm font-semibold py-3 transition-colors flex items-center justify-center gap-2">
-        <i class="fas fa-dumbbell"></i> Тренування
+        class="w-full bg-white/20 hover:bg-white/30 text-white font-bold py-4 rounded-2xl text-base transition-colors flex items-center justify-center gap-2 border border-white/30">
+        <i class="fas fa-dumbbell"></i> Тренування без коду
       </button>
 
-      <div id="practice-section" class="hidden bg-white/10 backdrop-blur rounded-2xl p-5 mt-2">
-        <p class="text-white font-bold text-center mb-4">Обери клас і складність</p>
-        <div id="practice-grade-buttons" class="grid grid-cols-4 gap-2 mb-4" role="group" aria-label="Клас">
-          <button data-grade="1"
-            class="grade-btn bg-white/20 hover:bg-white/40 text-white font-extrabold py-4 rounded-xl text-xl transition-colors"
-            aria-pressed="false">1</button>
-          <button data-grade="2"
-            class="grade-btn bg-white/20 hover:bg-white/40 text-white font-extrabold py-4 rounded-xl text-xl transition-colors"
-            aria-pressed="false">2</button>
-          <button data-grade="3"
-            class="grade-btn bg-white/20 hover:bg-white/40 text-white font-extrabold py-4 rounded-xl text-xl transition-colors"
-            aria-pressed="false">3</button>
-          <button data-grade="4"
-            class="grade-btn bg-white/20 hover:bg-white/40 text-white font-extrabold py-4 rounded-xl text-xl transition-colors"
-            aria-pressed="false">4</button>
+      <!-- Панель вибору — замінює код-картку -->
+      <div id="practice-section" class="hidden w-full max-w-sm bg-white rounded-3xl shadow-2xl p-7 mt-0">
+        <div class="flex items-center justify-between mb-5">
+          <p class="text-slate-800 font-bold text-base">Обери клас і складність</p>
+          <button id="hide-practice-btn" class="text-slate-400 hover:text-slate-600 text-sm flex items-center gap-1 transition-colors">
+            <i class="fas fa-times"></i>
+          </button>
         </div>
-        <div id="practice-difficulty-buttons" class="grid grid-cols-3 gap-2 mb-4" role="group" aria-label="Складність">
-          <button data-difficulty="easy"
-            class="diff-btn bg-white/20 hover:bg-white/40 text-white font-bold py-3 rounded-xl text-sm transition-colors"
-            aria-pressed="false">😊 Легкий</button>
-          <button data-difficulty="medium"
-            class="diff-btn bg-white/20 hover:bg-white/40 text-white font-bold py-3 rounded-xl text-sm transition-colors"
-            aria-pressed="false">🔥 Середній</button>
-          <button data-difficulty="hard"
-            class="diff-btn bg-white/20 hover:bg-white/40 text-white font-bold py-3 rounded-xl text-sm transition-colors"
-            aria-pressed="false">⚡ Важкий</button>
+        <div id="practice-grade-buttons" class="grid grid-cols-4 gap-2 mb-4" role="group" aria-label="Клас">
+          <button data-grade="1" class="grade-btn bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold py-4 rounded-xl text-xl transition-colors" aria-pressed="false">1</button>
+          <button data-grade="2" class="grade-btn bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold py-4 rounded-xl text-xl transition-colors" aria-pressed="false">2</button>
+          <button data-grade="3" class="grade-btn bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold py-4 rounded-xl text-xl transition-colors" aria-pressed="false">3</button>
+          <button data-grade="4" class="grade-btn bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold py-4 rounded-xl text-xl transition-colors" aria-pressed="false">4</button>
+        </div>
+        <div id="practice-difficulty-buttons" class="grid grid-cols-3 gap-2 mb-5" role="group" aria-label="Складність">
+          <button data-difficulty="easy"   class="diff-btn bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl text-sm transition-colors" aria-pressed="false">😊 Легкий</button>
+          <button data-difficulty="medium" class="diff-btn bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl text-sm transition-colors" aria-pressed="false">🔥 Середній</button>
+          <button data-difficulty="hard"   class="diff-btn bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl text-sm transition-colors" aria-pressed="false">⚡ Важкий</button>
         </div>
         <button id="start-practice-btn"
-          class="w-full bg-amber-400 disabled:bg-white/20 disabled:text-white/40 text-slate-900 font-extrabold py-4 rounded-2xl text-base transition-colors"
+          class="w-full bg-amber-400 disabled:opacity-40 text-slate-900 font-extrabold py-4 rounded-2xl text-base transition-colors"
           disabled>
           Почати тренування
         </button>

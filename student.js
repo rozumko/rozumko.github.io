@@ -43,8 +43,12 @@ const startPracticeBtn  = document.getElementById('start-practice-btn');
 
 // --- Тренування: показати/сховати ---
 document.getElementById('show-practice-btn').addEventListener('click', () => {
-  const s = document.getElementById('practice-section');
-  s.classList.toggle('hidden');
+  document.getElementById('code-card').classList.add('hidden');
+  document.getElementById('practice-section').classList.remove('hidden');
+});
+document.getElementById('hide-practice-btn').addEventListener('click', () => {
+  document.getElementById('practice-section').classList.add('hidden');
+  document.getElementById('code-card').classList.remove('hidden');
 });
 
 // --- DOM: quiz overlay ---

@@ -184,7 +184,7 @@ ID генерується Firestore через `addDoc` (немає колізі
 - `olympiad_questions`: читання — `isSignedIn()`; запис — тільки адмін
 
 **App Check:** увімкнено (reCAPTCHA v3, site key зберігається в `services/firebase.js`).  
-⚠️ Enforce тимчасово вимкнено — діагностика 400-помилки при логіні вчителя в прогресі.
+✅ Enforce активний — Secret Key зареєстровано в Firebase App Check.
 
 ---
 
@@ -197,7 +197,7 @@ ID генерується Firestore через `addDoc` (немає колізі
 | ID collision результатів | `addDoc` (Firestore auto-ID) |
 | Code enumeration | Firestore rule: список кодів тільки для свого teacherUid |
 | Підробка score | Firestore rule: результат приймається тільки якщо сесія `completed` |
-| App Check | reCAPTCHA v3 Enforce (тимчасово вимкнено) |
+| App Check | reCAPTCHA v3 Enforce ✅ |
 
 ---
 
@@ -278,7 +278,7 @@ Backup валідний 3 години. При успішному збереже
 ## Що залишилось / Технічний борг
 
 ### 🔴 Безпека
-- App Check Enforce вимкнено — розібратись з 400-помилкою (reCAPTCHA домен?)
+- ✅ App Check Enforce активний
 
 ### 🟡 Функціонал
 - `offline.html` — сторінка помилки при відсутності інтернету
