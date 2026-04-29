@@ -39,9 +39,9 @@ onTeacherAuthChanged(async (user) => {
 
 document.querySelectorAll('.teacher-tab').forEach(tab => {
   tab.addEventListener('click', () => {
-    document.querySelectorAll('.teacher-tab').forEach(t => t.classList.remove('tab-active'));
+    document.querySelectorAll('.teacher-tab').forEach(t => t.classList.remove('teacher-tab--active'));
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
-    tab.classList.add('tab-active');
+    tab.classList.add('teacher-tab--active');
     document.getElementById(`tab-${tab.dataset.tab}`).classList.remove('hidden');
   });
 });
@@ -144,10 +144,10 @@ async function loadClasses() {
 
   if (classes.length === 0) {
     classesList.innerHTML = `
-      <div class="bg-white rounded-2xl border border-slate-200 p-10 text-center text-slate-400">
-        <i class="fas fa-users text-4xl mb-3 block"></i>
-        <p class="font-semibold">Класів ще немає</p>
-        <p class="text-sm mt-1">Натисни «Новий клас», щоб почати.</p>
+      <div class="empty-state">
+        <i class="fas fa-users empty-state__icon"></i>
+        <p class="empty-state__title">Класів ще немає</p>
+        <p class="empty-state__sub">Натисни «Новий клас», щоб почати.</p>
       </div>`;
     return;
   }
@@ -195,7 +195,7 @@ function buildClassCard(cls, students, events = []) {
     eventSelect.innerHTML = '<option>Немає доступних олімпіад</option>';
     eventSelect.disabled = true;
     statusEl.textContent  = 'Коди можна генерувати тільки після створення олімпіади адміном.';
-    statusEl.className    = 'generate-status text-sm mb-3 text-slate-400';
+    statusEl.className    = 'generate-status generate-status--neutral';
   } else {
     events.forEach(ev => {
       const opt    = document.createElement('option');
@@ -220,10 +220,10 @@ function buildClassCard(cls, students, events = []) {
       el.querySelector('.class-card-count').textContent = `${updated.length} учнів`;
       renderCodes(codesList, updated, copyAllBtn);
       statusEl.textContent = `✓ Додано ${newCodes.length} кодів`;
-      statusEl.className   = 'generate-status text-sm mb-3 text-emerald-600';
+      statusEl.className   = 'generate-status generate-status--ok';
     } catch (err) {
       statusEl.textContent = err.message;
-      statusEl.className   = 'generate-status text-sm mb-3 text-rose-600';
+      statusEl.className   = 'generate-status generate-status--err';
     } finally {
       generateBtn.disabled = false;
       generateBtn.innerHTML = '<i class="fas fa-key mr-1"></i> Згенерувати коди';
@@ -262,17 +262,17 @@ function renderCodes(container, students, copyAllBtn) {
 
     function applyStatus(active) {
       if (active) {
-        statusBadge.textContent  = 'активний';
-        statusBadge.className    = 'code-status text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700';
-        toggleBtn.textContent    = 'Вимкнути';
-        toggleBtn.className      = 'code-toggle-btn text-xs px-2 py-0.5 rounded-lg font-semibold bg-rose-100 text-rose-600 hover:bg-rose-200';
-        chip.classList.remove('opacity-50');
+        statusBadge.textContent = 'активний';
+        statusBadge.className   = 'code-status-badge code-status-badge--active';
+        toggleBtn.textContent   = 'Вимкнути';
+        toggleBtn.className     = 'code-toggle-btn code-toggle-btn--deactivate';
+        chip.classList.remove('code-chip--inactive');
       } else {
-        statusBadge.textContent  = 'вимкнений';
-        statusBadge.className    = 'code-status text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-500';
-        toggleBtn.textContent    = 'Увімкнути';
-        toggleBtn.className      = 'code-toggle-btn text-xs px-2 py-0.5 rounded-lg font-semibold bg-emerald-100 text-emerald-700 hover:bg-emerald-200';
-        chip.classList.add('opacity-50');
+        statusBadge.textContent = 'вимкнений';
+        statusBadge.className   = 'code-status-badge code-status-badge--inactive';
+        toggleBtn.textContent   = 'Увімкнути';
+        toggleBtn.className     = 'code-toggle-btn code-toggle-btn--activate';
+        chip.classList.add('code-chip--inactive');
       }
     }
 
@@ -305,15 +305,15 @@ async function loadResults() {
     results.forEach(r => {
       const eventLabel = eventNames[r.eventId] ?? r.eventId;
       const row = document.createElement('div');
-      row.className = 'bg-white rounded-2xl border border-slate-200 p-4 flex items-center justify-between gap-4';
+      row.className = 'result-row';
       row.innerHTML = `
         <div>
-          <p class="font-bold text-slate-900">${esc(r.studentCode)}</p>
-          <p class="text-sm text-slate-500">${esc(r.grade)} клас · ${esc(eventLabel)}</p>
+          <p class="result-row__code">${esc(r.studentCode)}</p>
+          <p class="result-row__meta">${esc(r.grade)} клас · ${esc(eventLabel)}</p>
         </div>
-        <div class="text-right">
-          <p class="text-2xl font-bold text-sky-600">${esc(r.score)}<span class="text-base text-slate-400">/${esc(r.totalQuestions)}</span></p>
-          <p class="text-xs text-slate-400">${r.timeSpentSeconds ? Math.round(r.timeSpentSeconds / 60) + ' хв' : ''}</p>
+        <div class="result-row__score-wrap">
+          <p class="result-row__score">${esc(r.score)}<span class="result-row__total">/${esc(r.totalQuestions)}</span></p>
+          <p class="result-row__time">${r.timeSpentSeconds ? Math.round(r.timeSpentSeconds / 60) + ' хв' : ''}</p>
         </div>`;
       resultsList.appendChild(row);
     });
@@ -328,6 +328,7 @@ function showDashboard(email) {
   authSection.classList.add('hidden');
   dashboardSection.classList.remove('hidden');
   teacherEmailDisplay.textContent = email;
+  teacherEmailDisplay.classList.remove('hidden');
 }
 
 function showAuth() {

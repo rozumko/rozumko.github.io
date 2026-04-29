@@ -8,254 +8,284 @@
   <meta name="keywords" content="Розумко, кабінет вчителя, олімпіада з інформатики, результати олімпіади" />
   <link rel="canonical" href="https://rozumko.github.io/teacher.html" />
 
-  <!-- Open Graph / Facebook -->
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://rozumko.github.io/teacher.html" />
-  <meta property="og:title" content="Розумко — Кабінет вчителя" />
+  <!-- Open Graph -->
+  <meta property="og:type"        content="website" />
+  <meta property="og:url"         content="https://rozumko.github.io/teacher.html" />
+  <meta property="og:title"       content="Розумко — Кабінет вчителя" />
   <meta property="og:description" content="Керуйте класами та результатами олімпіади Розумко у зручному кабінеті вчителя." />
-  <meta property="og:image" content="https://rozumko.github.io/android-chrome-512x512.png" />
+  <meta property="og:image"       content="https://rozumko.github.io/android-chrome-512x512.png" />
 
+  <!-- Іконки та PWA -->
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+  <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#3b82f6">
-  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Шрифти -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet"/>
+
+  <!-- Іконки -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
+
+  <!-- Стилі проєкту -->
   <link rel="stylesheet" href="style.css"/>
 </head>
-<body class="text-gray-800">
+<body class="teacher-auth-page">
   <a href="#main-content" class="skip-link">Перейти до основного контенту</a>
 
   <!-- ===== ФОРМА ВХОДУ ===== -->
-  <div id="auth-section" class="app-container min-h-screen flex flex-col items-center justify-start p-4 pt-8 sm:pt-16">
-    <div class="w-full max-w-md">
-      <div class="mb-6">
-        <a href="index.html" class="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 text-sm font-medium transition-colors">
+  <div id="auth-section" class="auth-page-wrap">
+    <div class="auth-page-inner">
+
+      <div class="auth-back-row">
+        <a href="index.html" class="auth-back-link">
           <i class="fas fa-arrow-left" aria-hidden="true"></i> На головну
         </a>
       </div>
-      <div class="bg-white/95 rounded-[2rem] shadow-2xl border border-white/70 overflow-hidden">
-        <div class="bg-sky-600 text-white p-6 sm:p-8">
-          <p class="text-sm uppercase tracking-[0.2em] text-sky-200 mb-2">Кабінет</p>
-          <h1 class="text-2xl sm:text-3xl font-bold mb-2">Вхід для вчителя</h1>
-          <p class="text-sky-100 text-sm">Увійдіть, щоб керувати класами, кодами та результатами.</p>
+
+      <!-- Картка входу -->
+      <div class="auth-card">
+        <div class="auth-card__header">
+          <p class="auth-card__eyebrow">Кабінет</p>
+          <h1 class="auth-card__title">Вхід для вчителя</h1>
+          <p class="auth-card__sub">Увійдіть, щоб керувати класами, кодами та результатами.</p>
         </div>
-        <div class="p-6 sm:p-8">
+        <div class="auth-card__body">
           <form id="teacher-login-form" novalidate aria-describedby="login-error">
-            <div class="space-y-4 mb-6">
-              <div>
-                <label for="login-email" class="block text-sm font-semibold text-slate-700 mb-2">Електронна пошта</label>
-                <input id="login-email" type="email" autocomplete="email" placeholder="teacher@school.ua" required
-                  class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-sky-300 text-base"/>
+            <div class="form-fields">
+              <div class="form-group">
+                <label for="login-email" class="form-label">Електронна пошта</label>
+                <input id="login-email" type="email" autocomplete="email"
+                  placeholder="teacher@school.ua" required class="form-input"/>
               </div>
-              <div>
-                <label for="login-password" class="block text-sm font-semibold text-slate-700 mb-2">Пароль</label>
-                <input id="login-password" type="password" autocomplete="current-password" placeholder="••••••••" required
-                  class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-sky-300 text-base"/>
+              <div class="form-group">
+                <label for="login-password" class="form-label">Пароль</label>
+                <input id="login-password" type="password" autocomplete="current-password"
+                  placeholder="••••••••" required class="form-input"/>
               </div>
             </div>
-            <p id="login-error" class="text-rose-600 text-sm mb-4 min-h-[1.25rem]" role="alert" aria-live="assertive"></p>
-            <button type="submit" id="login-submit-btn" class="btn w-full bg-sky-500 text-white font-bold py-4 rounded-2xl text-base">Увійти</button>
+            <p id="login-error" class="form-error" role="alert" aria-live="assertive"></p>
+            <button type="submit" id="login-submit-btn" class="btn btn-sky btn--full">Увійти</button>
           </form>
-          <div class="mt-6 pt-6 border-t border-slate-100 text-center">
-            <p class="text-sm text-slate-500 mb-3">Ще немає кабінету?</p>
-            <button id="show-register-btn" class="btn w-full bg-slate-100 text-slate-700 font-semibold py-3 rounded-xl text-sm">Зареєструватись</button>
+          <div class="auth-divider">
+            <p class="auth-divider__text">Ще немає кабінету?</p>
+            <button id="show-register-btn" class="btn btn-secondary btn--full">Зареєструватись</button>
           </div>
         </div>
       </div>
-      <div id="register-section" class="hidden bg-white/95 rounded-[2rem] shadow-2xl border border-white/70 overflow-hidden mt-4">
-        <div class="p-6 sm:p-8">
-          <h2 class="text-xl font-bold text-slate-900 mb-5">Реєстрація вчителя</h2>
+
+      <!-- Картка реєстрації -->
+      <div id="register-section" class="auth-card hidden" style="margin-top: var(--sp-4);">
+        <div class="auth-card__body">
+          <h2 class="auth-register__title">Реєстрація вчителя</h2>
           <form id="teacher-register-form" novalidate aria-describedby="register-error">
-            <div class="space-y-4 mb-4">
-              <div>
-                <label for="reg-email" class="block text-sm font-semibold text-slate-700 mb-2">Електронна пошта</label>
-                <input id="reg-email" type="email" autocomplete="email" placeholder="teacher@school.ua" required
-                  class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-sky-300 text-base"/>
+            <div class="form-fields">
+              <div class="form-group">
+                <label for="reg-email" class="form-label">Електронна пошта</label>
+                <input id="reg-email" type="email" autocomplete="email"
+                  placeholder="teacher@school.ua" required class="form-input"/>
               </div>
-              <div>
-                <label for="reg-school" class="block text-sm font-semibold text-slate-700 mb-2">Школа або заклад</label>
-                <input id="reg-school" type="text" autocomplete="organization" placeholder="Ліцей №1, м. Київ"
-                  class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-sky-300 text-base"/>
+              <div class="form-group">
+                <label for="reg-school" class="form-label">Школа або заклад</label>
+                <input id="reg-school" type="text" autocomplete="organization"
+                  placeholder="Ліцей №1, м. Київ" class="form-input"/>
               </div>
-              <div>
-                <label for="reg-password" class="block text-sm font-semibold text-slate-700 mb-2">Пароль (мінімум 8 символів)</label>
-                <input id="reg-password" type="password" autocomplete="new-password" placeholder="••••••••" minlength="8" required
-                  class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-sky-300 text-base"/>
+              <div class="form-group">
+                <label for="reg-password" class="form-label">Пароль (мінімум 8 символів)</label>
+                <input id="reg-password" type="password" autocomplete="new-password"
+                  placeholder="••••••••" minlength="8" required class="form-input"/>
               </div>
             </div>
-            <p class="text-xs text-slate-400 mb-4"><i class="fas fa-shield-alt mr-1"></i> Зберігаємо лише email і назву закладу.</p>
-            <p id="register-error" class="text-rose-600 text-sm mb-4 min-h-[1.25rem]" role="alert" aria-live="assertive"></p>
-            <button type="submit" id="register-submit-btn" class="btn w-full bg-emerald-500 text-white font-bold py-4 rounded-2xl text-base mb-3">Створити кабінет</button>
-            <button type="button" id="hide-register-btn" class="btn w-full bg-slate-100 text-slate-600 font-medium py-3 rounded-xl text-sm">Назад до входу</button>
+            <p class="form-privacy-note">
+              <i class="fas fa-shield-alt" aria-hidden="true"></i>
+              Зберігаємо лише email і назву закладу.
+            </p>
+            <p id="register-error" class="form-error" role="alert" aria-live="assertive"></p>
+            <button type="submit" id="register-submit-btn" class="btn btn-emerald btn--full">Створити кабінет</button>
+            <button type="button" id="hide-register-btn" class="btn btn-secondary btn--full" style="margin-top: var(--sp-2);">Назад до входу</button>
           </form>
         </div>
       </div>
-    </div>
 
-    <footer class="mt-8 py-6 text-center text-slate-400 text-xs">
-      <div class="flex flex-wrap justify-center gap-3 sm:gap-5 mb-2">
-        <a href="for-teachers.html" class="hover:text-slate-600 transition-colors">Для вчителів</a>
-        <a href="for-parents.html"  class="hover:text-slate-600 transition-colors">Для батьків</a>
-        <a href="privacy.html"      class="hover:text-slate-600 transition-colors">Конфіденційність</a>
-        <a href="terms.html"        class="hover:text-slate-600 transition-colors">Правила</a>
-      </div>
+    </div><!-- /auth-page-inner -->
+
+    <footer class="teacher-auth-footer">
+      <nav class="teacher-auth-footer__links" aria-label="Корисні посилання">
+        <a href="for-teachers.html">Для вчителів</a>
+        <a href="for-parents.html">Для батьків</a>
+        <a href="privacy.html">Конфіденційність</a>
+        <a href="terms.html">Правила</a>
+      </nav>
       <p>&copy; 2024–2026 Розумко</p>
     </footer>
-  </div>
+  </div><!-- /auth-section -->
+
 
   <!-- ===== КАБІНЕТ ВЧИТЕЛЯ ===== -->
-  <div id="dashboard-section" class="hidden min-h-screen" id="main-content">
+  <div id="dashboard-section" class="teacher-dashboard hidden" id="main-content">
 
     <!-- Шапка -->
-    <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm">
-      <div class="flex items-center gap-3">
-        <a href="index.html" class="text-slate-400 hover:text-slate-700 text-sm mr-1"><i class="fas fa-home"></i></a>
-        <span class="text-slate-900 font-bold text-lg">Розумко</span>
-        <span class="bg-sky-100 text-sky-700 text-xs font-semibold px-2 py-0.5 rounded-full">Вчитель</span>
+    <header class="dashboard-header">
+      <div class="dashboard-header__left">
+        <a href="index.html" class="dashboard-home-link" aria-label="На головну">
+          <i class="fas fa-home" aria-hidden="true"></i>
+        </a>
+        <span class="dashboard-brand">Розумко</span>
+        <span class="dashboard-role-badge">Вчитель</span>
       </div>
-      <div class="flex items-center gap-4">
-        <span id="teacher-email-display" class="text-slate-400 text-sm hidden sm:block"></span>
-        <button id="logout-btn" class="btn bg-slate-100 text-slate-700 font-semibold py-2 px-4 rounded-xl text-sm flex items-center gap-2">
+      <div class="dashboard-header__right">
+        <span id="teacher-email-display" class="dashboard-email" style="display:none"></span>
+        <button id="logout-btn" class="btn btn-secondary">
           <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Вийти
         </button>
       </div>
     </header>
 
     <!-- Вкладки -->
-    <nav class="bg-white border-b border-slate-200 px-6">
-      <div class="flex gap-0">
-        <button data-tab="classes" class="teacher-tab tab-active text-sm font-semibold py-4 px-5 border-b-2">
-          <i class="fas fa-users mr-2"></i>Класи та коди
-        </button>
-        <button data-tab="results" class="teacher-tab text-sm font-semibold py-4 px-5 border-b-2">
-          <i class="fas fa-poll mr-2"></i>Результати
-        </button>
-      </div>
+    <nav class="dashboard-tabs" aria-label="Розділи кабінету">
+      <button data-tab="classes" class="teacher-tab teacher-tab--active">
+        <i class="fas fa-users" aria-hidden="true"></i> Класи та коди
+      </button>
+      <button data-tab="results" class="teacher-tab">
+        <i class="fas fa-poll" aria-hidden="true"></i> Результати
+      </button>
     </nav>
 
-    <main class="p-4 sm:p-6 max-w-4xl mx-auto">
+    <main class="dashboard-main" tabindex="-1">
 
       <!-- Вкладка: Класи та коди -->
       <section id="tab-classes" class="tab-panel">
 
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-          <h2 class="text-xl font-bold text-slate-900">Мої класи</h2>
-          <button id="create-class-btn" class="btn bg-sky-500 text-white font-semibold py-2 px-5 rounded-xl text-sm flex items-center gap-2">
-            <i class="fas fa-plus"></i> Новий клас
+        <div class="tab-panel__top">
+          <h2 class="tab-panel__heading">Мої класи</h2>
+          <button id="create-class-btn" class="btn btn-sky">
+            <i class="fas fa-plus" aria-hidden="true"></i> Новий клас
           </button>
         </div>
 
         <!-- Форма нового класу -->
-        <div id="class-form-section" class="hidden bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-5">
-          <h3 class="font-bold text-slate-900 mb-4">Новий клас</h3>
-          <form id="class-form" class="flex flex-col sm:flex-row gap-3" novalidate>
-            <div class="flex-1">
-              <label for="class-name-input" class="block text-xs font-semibold text-slate-500 mb-1">Назва класу</label>
-              <input id="class-name-input" type="text" placeholder="Наприклад, 3-А" maxlength="20"
-                class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-400 text-base"/>
+        <div id="class-form-section" class="class-form-card hidden">
+          <h3 class="class-form-card__title">Новий клас</h3>
+          <form id="class-form" class="class-form__row" novalidate>
+            <div class="class-form__field">
+              <label for="class-name-input" class="form-label">Назва класу</label>
+              <input id="class-name-input" type="text" placeholder="Наприклад, 3-А"
+                maxlength="20" class="form-input"/>
             </div>
-            <div>
-              <label for="class-grade-input" class="block text-xs font-semibold text-slate-500 mb-1">Клас</label>
-              <select id="class-grade-input" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-400 text-base">
+            <div class="class-form__grade">
+              <label for="class-grade-input" class="form-label">Клас</label>
+              <select id="class-grade-input" class="form-input">
                 <option value="1">1 клас</option>
                 <option value="2">2 клас</option>
                 <option value="3">3 клас</option>
                 <option value="4">4 клас</option>
               </select>
             </div>
-            <div class="flex items-end gap-2">
-              <button type="submit" class="btn bg-emerald-500 text-white font-bold py-3 px-5 rounded-xl">Створити</button>
-              <button type="button" id="cancel-class-btn" class="btn bg-slate-100 text-slate-600 font-medium py-3 px-4 rounded-xl">✕</button>
+            <div class="class-form__actions">
+              <button type="submit" class="btn btn-emerald">Створити</button>
+              <button type="button" id="cancel-class-btn" class="btn btn-secondary">✕</button>
             </div>
           </form>
-          <p id="class-form-error" class="text-rose-600 text-sm mt-3 min-h-[1.25rem]" role="alert"></p>
+          <p id="class-form-error" class="form-error" role="alert"></p>
         </div>
 
         <!-- Список класів -->
-        <div id="classes-list" class="space-y-4">
-          <div class="bg-white rounded-2xl border border-slate-200 p-10 text-center text-slate-400">
-            <i class="fas fa-users text-4xl mb-3 block"></i>
-            <p class="font-semibold">Класів ще немає</p>
-            <p class="text-sm mt-1">Натисни «Новий клас», щоб почати.</p>
+        <div id="classes-list" class="classes-list">
+          <div class="empty-state">
+            <i class="fas fa-users empty-state__icon" aria-hidden="true"></i>
+            <p class="empty-state__title">Класів ще немає</p>
+            <p class="empty-state__sub">Натисни «Новий клас», щоб почати.</p>
           </div>
         </div>
       </section>
 
       <!-- Вкладка: Результати -->
       <section id="tab-results" class="tab-panel hidden">
-        <h2 class="text-xl font-bold text-slate-900 mb-6">Результати олімпіади</h2>
-        <div id="results-list" class="space-y-3">
-          <div class="bg-white rounded-2xl border border-slate-200 p-10 text-center text-slate-400">
-            <i class="fas fa-poll text-4xl mb-3 block"></i>
-            <p class="font-semibold">Результатів ще немає</p>
-            <p class="text-sm mt-1">Тут з'являться результати після проведення олімпіади.</p>
+        <h2 class="tab-panel__heading" style="margin-bottom: var(--sp-6);">Результати олімпіади</h2>
+        <div id="results-list" class="results-list">
+          <div class="empty-state">
+            <i class="fas fa-poll empty-state__icon" aria-hidden="true"></i>
+            <p class="empty-state__title">Результатів ще немає</p>
+            <p class="empty-state__sub">Тут з'являться результати після проведення олімпіади.</p>
           </div>
         </div>
       </section>
 
     </main>
-  </div>
+  </div><!-- /dashboard-section -->
 
-  <!-- Шаблон картки класу (клонується в JS) -->
+
+  <!-- Шаблон картки класу -->
   <template id="class-card-template">
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      <div class="flex items-center justify-between p-5 cursor-pointer select-none class-card-header">
+    <div class="class-card">
+      <div class="class-card__header">
         <div>
-          <span class="class-card-name font-bold text-slate-900 text-base"></span>
-          <span class="class-card-grade text-sm text-slate-400 ml-2"></span>
+          <span class="class-card-name class-card__name"></span>
+          <span class="class-card-grade class-card__grade"></span>
         </div>
-        <div class="flex items-center gap-3">
-          <span class="class-card-count text-sm text-slate-500"></span>
-          <i class="fas fa-chevron-down text-slate-400 class-card-chevron transition-transform"></i>
+        <div class="class-card__meta">
+          <span class="class-card-count class-card__count"></span>
+          <i class="fas fa-chevron-down class-card__chevron" aria-hidden="true"></i>
         </div>
       </div>
-      <div class="class-card-body hidden border-t border-slate-100 p-5">
-        <div class="flex flex-col gap-3 mb-4">
-          <select class="event-select w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-400 text-sm text-slate-700"></select>
-          <div class="flex gap-3">
-            <input type="number" min="1" max="40" value="5" class="codes-count-input w-24 px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-400 text-center font-bold text-lg"/>
-            <label class="self-center text-sm text-slate-500">учнів</label>
-            <button class="generate-codes-btn btn bg-emerald-500 text-white font-semibold py-2 px-5 rounded-xl text-sm flex items-center gap-2">
-              <i class="fas fa-key"></i> Згенерувати коди
+      <div class="class-card-body class-card__body hidden">
+        <div class="class-card__controls">
+          <select class="event-select form-input form-input--sm"></select>
+          <div class="class-card__generate-row">
+            <input type="number" min="1" max="40" value="5"
+              class="codes-count-input form-input form-input--count"/>
+            <label class="codes-count-label">учнів</label>
+            <button class="generate-codes-btn btn btn-emerald">
+              <i class="fas fa-key" aria-hidden="true"></i> Згенерувати коди
             </button>
           </div>
-          <button class="copy-all-btn btn bg-slate-100 text-slate-600 font-medium py-2 px-4 rounded-xl text-sm hidden">
-            <i class="fas fa-copy mr-1"></i> Копіювати всі
+          <button class="copy-all-btn btn btn-secondary hidden">
+            <i class="fas fa-copy" aria-hidden="true"></i> Копіювати всі
           </button>
         </div>
-        <p class="generate-status text-sm mb-3 min-h-[1.25rem]"></p>
-        <div class="codes-list flex flex-col gap-2"></div>
+        <p class="generate-status"></p>
+        <div class="codes-list"></div>
       </div>
     </div>
   </template>
 
   <!-- Шаблон коду учня -->
   <template id="code-chip-template">
-    <div class="code-chip bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
-      <div class="flex items-center justify-between gap-2">
-        <span class="code-value font-mono font-bold text-slate-800 text-sm tracking-wide"></span>
-        <div class="flex items-center gap-1.5">
-          <span class="code-status text-xs font-semibold px-2 py-0.5 rounded-full"></span>
-          <button class="code-toggle-btn text-xs px-2 py-0.5 rounded-lg font-semibold transition-colors"></button>
+    <div class="code-chip">
+      <div class="code-chip__row">
+        <span class="code-value code-chip__value"></span>
+        <div class="code-chip__actions">
+          <span class="code-status-badge"></span>
+          <button class="code-toggle-btn"></button>
         </div>
       </div>
-      <input type="text" class="code-name-input mt-1.5 w-full px-2 py-1 text-xs rounded-lg border border-slate-200 text-slate-600 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-sky-400" placeholder="Ім'я учня (необов'язково)" maxlength="50"/>
+      <input type="text" class="code-name-input"
+        placeholder="Ім'я учня (необов'язково)" maxlength="50"/>
     </div>
   </template>
 
+  <!-- Тост -->
   <div id="toast-notification" role="status" aria-live="polite"></div>
+
+  <!-- APP MODAL -->
+  <div id="app-modal" class="app-modal-overlay hidden"
+       role="dialog" aria-modal="true" aria-labelledby="modal-message">
+    <div class="app-modal-card">
+      <p id="modal-message" class="app-modal-msg"></p>
+      <button id="modal-ok-btn" class="btn-modal-ok">OK</button>
+    </div>
+  </div>
 
   <script type="module" src="features/auth/teacher-auth.js"></script>
   <script type="module" src="teacher.js"></script>
 
-  <style>
-    .teacher-tab { color: #94a3b8; border-color: transparent; }
-    .teacher-tab:hover { color: #334155; }
-    .teacher-tab.tab-active { color: #0284c7; border-color: #0284c7; }
-  </style>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+  </script>
 </body>
 </html>

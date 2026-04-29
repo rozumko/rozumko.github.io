@@ -20,17 +20,23 @@ import { createFocusTrap } from './focus-trap.js';
 
 // Кожна сторінка має один #app-modal і #modal-ok-btn у розмітці.
 // Ці елементи ініціалізуються при першому імпорті модуля.
-const appModal = document.getElementById('app-modal');
-
-/** Функція для зняття focus trap поточної модалі */
+let _appModal   = null;
 let _trapRemove = null;
 
-// Закриття модалі по кнопці OK — підвішується один раз при завантаженні
-document.getElementById('modal-ok-btn').addEventListener('click', () => {
-  _trapRemove?.();
-  _trapRemove = null;
-  appModal.classList.add('hidden');
-});
+function getModal() {
+  if (!_appModal) {
+    _appModal = document.getElementById('app-modal');
+    const okBtn = document.getElementById('modal-ok-btn');
+    if (okBtn) {
+      okBtn.addEventListener('click', () => {
+        _trapRemove?.();
+        _trapRemove = null;
+        _appModal?.classList.add('hidden');
+      });
+    }
+  }
+  return _appModal;
+}
 
 /**
  * Показати інформаційну модаль з текстовим повідомленням.
@@ -42,15 +48,16 @@ document.getElementById('modal-ok-btn').addEventListener('click', () => {
  * @param {string} msg — текст повідомлення для користувача
  */
 export function showModal(msg) {
+  const modal = getModal();
+  if (!modal) { alert(msg); return; }
   document.getElementById('modal-message').textContent = msg;
-  appModal.classList.remove('hidden');
+  modal.classList.remove('hidden');
 
-  // Замінюємо попередній trap (якщо модаль вже була відкрита)
   _trapRemove?.();
-  _trapRemove = createFocusTrap(appModal, () => {
+  _trapRemove = createFocusTrap(modal, () => {
     _trapRemove?.();
     _trapRemove = null;
-    appModal.classList.add('hidden');
+    modal.classList.add('hidden');
   });
 }
 
