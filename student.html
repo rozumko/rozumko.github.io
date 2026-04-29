@@ -307,6 +307,43 @@
   </div>
 
   <script type="module" src="student.js"></script>
+
+  <!-- Error boundary overlay — показується при критичному збої JS під час квізу -->
+  <div id="error-boundary"
+    class="hidden fixed inset-0 z-[300] flex items-center justify-center p-4"
+    style="background: linear-gradient(135deg, #4c1d95 0%, #1e40af 100%);"
+    role="alertdialog" aria-modal="true" aria-labelledby="error-boundary-title">
+    <div class="w-full max-w-sm bg-white/10 border border-white/20 rounded-3xl p-8 text-center backdrop-blur-sm">
+      <div class="text-5xl mb-4" role="img" aria-label="Помилка">⚠️</div>
+      <h2 id="error-boundary-title" class="text-white text-xl font-bold mb-2">Щось пішло не так</h2>
+      <p class="text-white/70 text-sm mb-6 leading-relaxed" id="error-boundary-msg">
+        Виникла неочікувана помилка. Перезавантаж сторінку.
+      </p>
+      <!-- Блок з даними для вчителя — показується якщо є backup олімпіади -->
+      <div id="error-boundary-backup" class="hidden bg-white/10 rounded-2xl p-4 mb-5 text-left">
+        <p class="text-amber-300 font-bold text-sm mb-1">📋 Скажи вчителю:</p>
+        <p class="text-white text-sm" id="error-boundary-backup-text"></p>
+      </div>
+      <button onclick="window.location.reload()"
+        class="w-full bg-white text-violet-700 font-bold py-3 px-6 rounded-2xl hover:bg-white/90 transition-all mb-3">
+        Перезавантажити
+      </button>
+      <button onclick="document.getElementById('error-boundary').classList.add('hidden')"
+        class="text-white/50 text-sm hover:text-white/80 transition-colors">
+        Закрити і спробувати продовжити
+      </button>
+    </div>
+  </div>
+
+  <!-- Реєстрація Service Worker — кешує статику і обробляє offline -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(err => {
+        // SW не критичний для роботи — тихо логуємо якщо не вдалось
+        console.warn('[SW] Реєстрація не вдалась:', err);
+      });
+    }
+  </script>
 </body>
 
 </html>

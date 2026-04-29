@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Немає з'єднання — Розумко</title>
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+  <meta name="theme-color" content="#7c3aed">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: linear-gradient(135deg, #4c1d95 0%, #1e40af 100%);
+      min-height: 100vh;
+    }
+  </style>
+</head>
+
+<body class="flex items-center justify-center p-4">
+  <div class="w-full max-w-sm text-center">
+
+    <!-- Іконка -->
+    <div class="text-7xl mb-6" role="img" aria-label="Немає з'єднання">📡</div>
+
+    <!-- Заголовок -->
+    <h1 class="text-white text-2xl font-bold mb-2">Немає інтернету</h1>
+    <p class="text-white/70 text-sm mb-8 leading-relaxed">
+      Перевір підключення до мережі<br>і спробуй ще раз.
+    </p>
+
+    <!-- Якщо учень був на олімпіаді — нагадуємо про backup -->
+    <div id="backup-hint" class="hidden bg-white/10 border border-white/20 rounded-2xl p-4 mb-6 text-left">
+      <p class="text-white font-semibold text-sm mb-1">⚠️ Ти проходив олімпіаду?</p>
+      <p class="text-white/70 text-xs leading-relaxed">
+        Твій прогрес збережено локально. Повернись на сторінку учня —
+        коли з'явиться інтернет, результат відновиться автоматично.
+      </p>
+    </div>
+
+    <!-- Кнопка «Спробувати знову» -->
+    <button
+      onclick="tryReload()"
+      class="w-full bg-white text-violet-700 font-bold py-4 px-6 rounded-2xl text-base hover:bg-white/90 active:scale-95 transition-all mb-3">
+      Спробувати знову
+    </button>
+
+    <!-- Посилання на головну (якщо вона закешована) -->
+    <a href="/"
+      class="block text-white/50 text-sm hover:text-white/80 transition-colors">
+      ← На головну
+    </a>
+
+  </div>
+
+  <script>
+    // Перевіряємо чи є збережений backup олімпіади — якщо є, показуємо підказку
+    (function checkBackup() {
+      try {
+        const raw = localStorage.getItem('rozumko_quiz_backup');
+        if (!raw) return;
+        const backup = JSON.parse(raw);
+        // Backup вважається актуальним якщо йому менше 3 годин
+        if (backup?.startedAt && Date.now() - backup.startedAt < 3 * 60 * 60 * 1000) {
+          document.getElementById('backup-hint').classList.remove('hidden');
+        }
+      } catch { /* ігноруємо помилки localStorage */ }
+    })();
+
+    // Перезавантажуємо поточну сторінку — браузер сам вирішить чи є мережа
+    function tryReload() {
+      window.location.reload();
+    }
+  </script>
+</body>
+
+</html>

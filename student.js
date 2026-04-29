@@ -2,27 +2,8 @@ import { validateStudentCode, getStoredStudentCode } from './features/auth/stude
 import { findActiveEvent, checkSession, startSession, finishSession } from './features/olympiad/session.js';
 import { saveOlympiadResult } from './features/olympiad/results.js';
 import { loadQuestions, getModeConfig } from './features/olympiad/quiz-engine.js';
-import { createFocusTrap } from './utils/focus-trap.js';
-import { renderQuestion }  from './utils/question-renderer.js';
-
-// --- Модальне вікно ---
-const appModal = document.getElementById('app-modal');
-let _modalTrapRemove = null;
-document.getElementById('modal-ok-btn').addEventListener('click', () => {
-  _modalTrapRemove?.();
-  _modalTrapRemove = null;
-  appModal.classList.add('hidden');
-});
-function showModal(msg) {
-  document.getElementById('modal-message').textContent = msg;
-  appModal.classList.remove('hidden');
-  _modalTrapRemove?.();
-  _modalTrapRemove = createFocusTrap(appModal, () => {
-    _modalTrapRemove?.();
-    _modalTrapRemove = null;
-    appModal.classList.add('hidden');
-  });
-}
+import { renderQuestion } from './utils/question-renderer.js';
+import { showModal }      from './utils/ui.js';
 
 // --- DOM: екрани ---
 const screenEntry   = document.getElementById('screen-entry');
@@ -102,6 +83,71 @@ const resultCloseBtn  = document.getElementById('result-close-btn');
 const quitConfirm    = document.getElementById('quit-confirm');
 const quitConfirmYes = document.getElementById('quit-confirm-yes');
 const quitConfirmNo  = document.getElementById('quit-confirm-no');
+
+// ===================== ERROR BOUNDARY =====================
+// Глобальний перехоплювач критичних помилок.
+// Захищає учня від білого екрану при несподіваних збоях під час квізу.
+
+/**
+ * Показати error boundary overlay з повідомленням.
+ * Якщо є активний backup олімпіади — виводить дані для вчителя.
+ *
+ * @param {string} [msg] — опціональне технічне повідомлення (для логування)
+ */
+function showErrorBoundary(msg = '') {
+  try {
+    const overlay = document.getElementById('error-boundary');
+    if (!overlay) return; // якщо DOM ще не готовий — нічого не робимо
+
+    // Перевіряємо чи є backup олімпіади — якщо так, показуємо дані для вчителя
+    const backupDiv  = document.getElementById('error-boundary-backup');
+    const backupText = document.getElementById('error-boundary-backup-text');
+    try {
+      const raw = localStorage.getItem('rozumko_quiz_backup');
+      if (raw) {
+        const b = JSON.parse(raw);
+        // Показуємо backup тільки якщо він актуальний (менше 3 годин)
+        const fresh = b?.startedAt && Date.now() - b.startedAt < 3 * 60 * 60 * 1000;
+        if (fresh && b.meta?.code) {
+          backupText.textContent =
+            `Код: ${b.meta.code} · Результат на момент збою: ${b.score ?? '?'}/${b.meta?.totalQuestions ?? '?'}`;
+          backupDiv.classList.remove('hidden');
+        }
+      }
+    } catch { /* ігноруємо помилки localStorage */ }
+
+    overlay.classList.remove('hidden');
+    // Зупиняємо таймер квізу якщо він іде — щоб час не спливав поки учень бачить помилку
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+
+    console.error('[Розумко] Критична помилка:', msg);
+  } catch { /* якщо навіть error boundary зламався — мовчимо */ }
+}
+
+// Ловимо необроблені Promise-помилки (async functions без try/catch)
+window.addEventListener('unhandledrejection', (event) => {
+  // Ігноруємо помилки від Firebase App Check та зовнішніх скриптів
+  const msg = event.reason?.message ?? String(event.reason ?? '');
+  if (msg.includes('AppCheck') || msg.includes('recaptcha') || msg.includes('net::')) return;
+
+  // Показуємо boundary тільки якщо квіз активний (є timerInterval або currentMode)
+  // Для звичайних помилок входу/завантаження — є свої try/catch блоки
+  if (currentMode && currentIdx > 0) {
+    showErrorBoundary(msg);
+    event.preventDefault(); // не логуємо в консоль двічі
+  }
+});
+
+// Ловимо синхронні помилки JS (ReferenceError, TypeError тощо)
+window.addEventListener('error', (event) => {
+  const msg = `${event.message} (${event.filename}:${event.lineno})`;
+  if (currentMode && currentIdx > 0) {
+    showErrorBoundary(msg);
+  }
+});
 
 // --- Стан ---
 let studentData   = null; // { code, grade, classId, teacherUid }

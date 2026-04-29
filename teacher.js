@@ -1,5 +1,6 @@
 import { loginTeacher, registerTeacher, logoutTeacher, onTeacherAuthChanged } from './features/auth/teacher-auth.js';
 import { createClass, getTeacherProfile, generateStudentCodes, getStudentsByClass, getMyResults, getVisibleEvents, toggleStudentActive, updateStudentName } from './services/teacher-data.js';
+import { esc, friendlyError } from './utils/ui.js';
 
 // --- DOM ---
 const authSection = document.getElementById('auth-section');
@@ -336,14 +337,4 @@ function showAuth() {
   loginSubmitBtn.textContent = 'Увійти';
 }
 
-function esc(str) {
-  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function friendlyError(msg) {
-  if (msg.includes('invalid-credential') || msg.includes('wrong-password')) return 'Невірний email або пароль.';
-  if (msg.includes('email-already-in-use')) return 'Цей email вже зареєстровано.';
-  if (msg.includes('too-many-requests')) return 'Забагато спроб. Спробуй пізніше.';
-  if (msg.includes('Акаунт вчителя')) return msg;
-  return 'Помилка. Перевір дані і спробуй знову.';
-}
+// esc і friendlyError імпортовані з utils/ui.js

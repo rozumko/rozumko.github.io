@@ -35,6 +35,7 @@ index.html                        ← лендінг
 student.html + student.js         ← учень: код, тренування, quiz
 teacher.html + teacher.js         ← вчитель: класи, коди, результати
 admin.html + admin.js             ← адмін: події, питання, вчителі, результати
+offline.html                      ← сторінка при відсутності інтернету
 
 services/
   firebase.js                     ← ініціалізація Firebase + App Check (reCAPTCHA v3)
@@ -54,10 +55,17 @@ features/
                                      (race condition захищений через runTransaction)
     results.js                    ← saveOlympiadResult (addDoc → унікальний ID)
     quiz-engine.js                ← loadQuestions (Firestore → JS fallback), getModeConfig
+  admin/
+    ui.js                         ← re-export utils/ui.js + formatDate
+    events-tab.js                 ← loadEvents, buildEventCard, форма події
+    teachers-tab.js               ← loadTeachers
+    results-tab.js                ← loadResults, exportResultsCSV
+    questions-tab.js              ← CRUD питань, форма, preview
 
 utils/
   focus-trap.js                   ← createFocusTrap(el, onClose) → removeTrap
   question-renderer.js            ← renderQuestion(q, container, { onAnswer, preview })
+  ui.js                           ← showModal, esc, friendlyError (спільне для всіх сторінок)
 
 data/questions/informatics/
   grade1.js … grade4.js           ← тренувальний банк (fallback)
@@ -68,7 +76,8 @@ docs/
   task-format.md                  ← схеми всіх типів питань
 
 manifest.json                     ← PWA manifest
-style.css                         ← глобальні стилі (Tailwind + кастомні)
+sw.js                             ← Service Worker: precache, offline fallback
+style.css                         ← глобальні стилі (Tailwind CDN + кастомні)
 ```
 
 ---
@@ -216,7 +225,7 @@ ID генерується Firestore через `addDoc` (немає колізі
 
 - `manifest.json` підключено на `index.html` і `student.html`
 - `theme_color`, іконки (192×192, 512×512)
-- Service Worker: не реалізований (статичний хостинг, GitHub Pages кешує)
+- Service Worker: `sw.js` — precache shell, network-first навігація, offline.html fallback
 
 ---
 
@@ -281,7 +290,9 @@ Backup валідний 3 години. При успішному збереже
 - ✅ App Check Enforce активний
 
 ### 🟡 Функціонал
-- `offline.html` — сторінка помилки при відсутності інтернету
+- ✅ `offline.html` — сторінка при відсутності інтернету
+- ✅ Service Worker (`sw.js`) — кешує статику, network-first для HTML, cache-first для ресурсів
+- ✅ Error boundary в `student.js` — `unhandledrejection` + `error` → overlay з даними для вчителя
 - Fullscreen для олімпіади (`requestFullscreen` при старті)
 - Firebase Storage для зображень (зараз тільки URL)
 
