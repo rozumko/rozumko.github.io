@@ -146,7 +146,7 @@ export function initQuestionsTab() {
  */
 export async function loadQuestionsTab(filters = {}) {
   const list = document.getElementById('questions-list');
-  list.innerHTML = `<p class="text-slate-400 text-sm p-4">Завантаження…</p>`;
+  list.innerHTML = `<p class="admin-loading-text">Завантаження…</p>`;
 
   try {
     // Читаємо фільтри з DOM або використовуємо передані значення
@@ -192,31 +192,28 @@ export async function loadQuestionsTab(filters = {}) {
 function buildQuestionCard(q) {
   const d  = DIFF_STYLES[q.difficulty] ?? DIFF_STYLES.medium;
   const el = document.createElement('div');
-  el.className = 'bg-slate-800 border border-slate-700 rounded-2xl p-4';
+  el.className = 'question-item';
 
-  // Правильна відповідь для підказки в картці (тільки для choice)
   const correctHint = q.a?.[q.correct] ?? '—';
 
   el.innerHTML = `
-    <div class="flex items-start justify-between gap-3">
-      <div class="flex-1 min-w-0">
-        <div class="flex flex-wrap gap-2 mb-2">
-          <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-700 text-slate-300">${q.grade} клас</span>
-          <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-900 text-indigo-200">${esc(TYPE_LABELS[q.type ?? 'choice'] ?? q.type)}</span>
-          <span class="text-xs font-bold px-2 py-0.5 rounded-full ${d.cls}">${d.label}</span>
-          ${q.isOlympiad
-            ? '<span class="text-xs font-bold px-2 py-0.5 rounded-full bg-sky-800 text-sky-200">Олімпіада</span>'
-            : '<span class="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-700 text-slate-400">Тренування</span>'}
-        </div>
-        <p class="text-white text-sm font-semibold leading-snug mb-1">${esc(q.q)}</p>
-        ${q.code ? `<p class="text-emerald-400 text-xs font-mono truncate mb-1">${esc(q.code.split('\n')[0])}…</p>` : ''}
-        <p class="text-slate-400 text-xs">✓ ${esc(correctHint)}</p>
+    <div class="question-item__left">
+      <div style="display:flex; flex-wrap:wrap; gap:var(--sp-2); margin-bottom:var(--sp-2);">
+        <span class="qi-badge qi-badge--grade">${q.grade} клас</span>
+        <span class="qi-badge qi-badge--type">${esc(TYPE_LABELS[q.type ?? 'choice'] ?? q.type)}</span>
+        <span class="qi-badge qi-badge--${q.difficulty ?? 'medium'}">${d.label}</span>
+        ${q.isOlympiad
+          ? '<span class="qi-badge qi-badge--olympiad">Олімпіада</span>'
+          : '<span class="qi-badge qi-badge--practice">Тренування</span>'}
       </div>
-      <div class="flex gap-1 flex-shrink-0">
-        <button class="btn-q-edit btn text-xs py-1.5 px-3 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200" title="Редагувати"><i class="fas fa-pen"></i></button>
-        <button class="btn-q-dup  btn text-xs py-1.5 px-3 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200" title="Дублювати"><i class="fas fa-copy"></i></button>
-        <button class="btn-q-del  btn text-xs py-1.5 px-3 rounded-lg bg-rose-900 hover:bg-rose-800 text-rose-200"  title="Видалити"><i class="fas fa-trash"></i></button>
-      </div>
+      <p class="question-item__text">${esc(q.q)}</p>
+      ${q.code ? `<p class="question-item__code">${esc(q.code.split('\n')[0])}…</p>` : ''}
+      <p class="question-item__meta">✓ ${esc(correctHint)}</p>
+    </div>
+    <div class="question-item__actions">
+      <button class="btn-q-edit btn-adm-slate btn-icon" title="Редагувати"><i class="fas fa-pen"></i></button>
+      <button class="btn-q-dup  btn-adm-slate btn-icon" title="Дублювати"><i class="fas fa-copy"></i></button>
+      <button class="btn-q-del  btn-adm-danger btn-icon" title="Видалити"><i class="fas fa-trash"></i></button>
     </div>`;
 
   // Кнопки дій — кожна окремо для ясності
@@ -471,9 +468,9 @@ function handlePreviewClick() {
   // Варіанти відповідей — через спільний рендерер з прапором preview
   // preview: true → підсвічує правильну відповідь, не дозволяє кліки
   const pvOpts = document.getElementById('pv-options');
-  pvOpts.className = type === 'choice'    ? 'grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4'
-    : type === 'truefalse' ? 'grid grid-cols-2 gap-3 mb-4'
-    : 'flex flex-col gap-3 mb-4';
+  pvOpts.className = type === 'choice'    ? 'pv-options pv-options--grid'
+    : type === 'truefalse'               ? 'pv-options pv-options--two'
+    : 'pv-options';
   renderQuestion(q, pvOpts, { preview: true });
 
   // Пояснення

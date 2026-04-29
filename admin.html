@@ -6,187 +6,156 @@
   <title>Розумко — Адмін</title>
   <meta name="robots" content="noindex, nofollow" />
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-  <meta name="theme-color" content="#1e293b">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="theme-color" content="#0f172a">
+
+  <!-- Шрифти -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet"/>
+
+  <!-- Іконки -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
+
+  <!-- Стилі проєкту -->
   <link rel="stylesheet" href="style.css"/>
 </head>
-<body class="text-gray-800" style="background: linear-gradient(180deg,#0f172a 0%,#1e293b 100%); min-height:100vh;">
+<body class="admin-page">
   <a href="#main-content" class="skip-link">Перейти до основного контенту</a>
 
-  <!-- Форма входу -->
-  <div id="auth-section" class="min-h-screen flex items-center justify-center p-4">
-    <div class="w-full max-w-sm">
-      <div class="text-center mb-8">
-        <span class="inline-block bg-slate-800 text-slate-300 text-xs font-semibold px-3 py-1 rounded-full mb-4 tracking-widest uppercase">Адміністратор</span>
-        <h1 class="text-2xl font-bold text-white">Розумко</h1>
+  <!-- ===== ФОРМА ВХОДУ ===== -->
+  <div id="auth-section" class="admin-auth-wrap">
+    <div class="admin-auth-inner">
+      <div style="text-align:center; margin-bottom: var(--sp-8);">
+        <span class="admin-auth-eyebrow">Адміністратор</span>
+        <h1 class="admin-auth-title">Розумко</h1>
       </div>
-      <div class="bg-white/5 backdrop-blur border border-white/10 rounded-[2rem] p-8">
+      <div class="admin-auth-card">
         <form id="admin-login-form" novalidate aria-describedby="admin-login-error">
-          <div class="space-y-4 mb-6">
-            <div>
-              <label for="admin-email" class="block text-sm font-semibold text-slate-300 mb-2">Email</label>
-              <input id="admin-email" type="email" autocomplete="email" placeholder="admin@rozumko.ua" required
-                class="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-600 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 text-base"/>
+          <div class="form-fields">
+            <div class="form-group">
+              <label for="admin-email" class="adm-label">Email</label>
+              <input id="admin-email" type="email" autocomplete="email"
+                placeholder="admin@rozumko.ua" required class="adm-input"/>
             </div>
-            <div>
-              <label for="admin-password" class="block text-sm font-semibold text-slate-300 mb-2">Пароль</label>
-              <input id="admin-password" type="password" autocomplete="current-password" placeholder="••••••••" required
-                class="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-600 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 text-base"/>
+            <div class="form-group">
+              <label for="admin-password" class="adm-label">Пароль</label>
+              <input id="admin-password" type="password" autocomplete="current-password"
+                placeholder="••••••••" required class="adm-input"/>
             </div>
           </div>
-          <p id="admin-login-error" class="text-rose-400 text-sm mb-4 min-h-[1.25rem]" role="alert" aria-live="assertive"></p>
-          <button type="submit" id="admin-login-btn" class="btn w-full bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 rounded-xl">
-            Увійти
-          </button>
+          <p id="admin-login-error" class="adm-form-error" role="alert" aria-live="assertive"></p>
+          <button type="submit" id="admin-login-btn" class="btn-adm-sky btn--full">Увійти</button>
         </form>
       </div>
     </div>
   </div>
 
-  <!-- Адмін-панель -->
-  <div id="admin-panel" class="hidden min-h-screen" id="main-content">
+
+  <!-- ===== АДМІН-ПАНЕЛЬ ===== -->
+  <div id="admin-panel" class="admin-panel hidden" id="main-content">
 
     <!-- Шапка -->
-    <header class="bg-slate-900 border-b border-slate-700 px-6 py-4 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <span class="text-white font-bold text-lg">Розумко</span>
-        <span class="bg-sky-600 text-white text-xs font-semibold px-2 py-0.5 rounded-full">Admin</span>
+    <header class="admin-header">
+      <div class="admin-header__left">
+        <span class="admin-brand">Розумко</span>
+        <span class="admin-role-badge">Admin</span>
       </div>
-      <div class="flex items-center gap-4">
-        <span id="admin-email-display" class="text-slate-400 text-sm hidden sm:block"></span>
-        <button id="admin-logout-btn" class="btn bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-semibold py-2 px-4 rounded-lg flex items-center gap-2">
-          <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
-          Вийти
+      <div class="admin-header__right">
+        <span id="admin-email-display" class="admin-email-display"></span>
+        <button id="admin-logout-btn" class="btn-adm-slate">
+          <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Вийти
         </button>
       </div>
     </header>
 
-    <!-- Навігація вкладок -->
-    <nav class="bg-slate-800 border-b border-slate-700 px-6 overflow-x-auto">
-      <div class="flex gap-0 min-w-max">
-        <button data-tab="overview" class="admin-tab tab-active text-sm font-semibold py-4 px-5 border-b-2 whitespace-nowrap">
-          <i class="fas fa-chart-bar mr-2" aria-hidden="true"></i>Огляд
-        </button>
-        <button data-tab="events" class="admin-tab text-sm font-semibold py-4 px-5 border-b-2 whitespace-nowrap">
-          <i class="fas fa-calendar-alt mr-2" aria-hidden="true"></i>Олімпіади
-        </button>
-        <button data-tab="teachers" class="admin-tab text-sm font-semibold py-4 px-5 border-b-2 whitespace-nowrap">
-          <i class="fas fa-chalkboard-teacher mr-2" aria-hidden="true"></i>Вчителі
-        </button>
-        <button data-tab="results" class="admin-tab text-sm font-semibold py-4 px-5 border-b-2 whitespace-nowrap">
-          <i class="fas fa-poll mr-2" aria-hidden="true"></i>Результати
-        </button>
-        <button data-tab="questions" class="admin-tab text-sm font-semibold py-4 px-5 border-b-2 whitespace-nowrap">
-          <i class="fas fa-question mr-2" aria-hidden="true"></i>Питання
-        </button>
-      </div>
+    <!-- Вкладки -->
+    <nav class="admin-tabs" aria-label="Розділи адмін-панелі">
+      <button data-tab="overview"   class="admin-tab tab-active"><i class="fas fa-chart-bar" aria-hidden="true"></i> Огляд</button>
+      <button data-tab="events"     class="admin-tab"><i class="fas fa-calendar-alt" aria-hidden="true"></i> Олімпіади</button>
+      <button data-tab="teachers"   class="admin-tab"><i class="fas fa-chalkboard-teacher" aria-hidden="true"></i> Вчителі</button>
+      <button data-tab="results"    class="admin-tab"><i class="fas fa-poll" aria-hidden="true"></i> Результати</button>
+      <button data-tab="questions"  class="admin-tab"><i class="fas fa-question" aria-hidden="true"></i> Питання</button>
     </nav>
 
-    <main id="main-content" class="p-6 max-w-6xl mx-auto">
+    <main id="main-content" class="admin-main">
 
       <!-- Вкладка: Огляд -->
       <section id="tab-overview" class="tab-panel">
-        <h2 class="text-white text-xl font-bold mb-6">Загальна статистика</h2>
-        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5">
-            <p class="text-slate-400 text-sm mb-1">Вчителів</p>
-            <p id="stat-teachers" class="text-3xl font-bold text-white">—</p>
-          </div>
-          <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5">
-            <p class="text-slate-400 text-sm mb-1">Учнів (кодів)</p>
-            <p id="stat-students" class="text-3xl font-bold text-white">—</p>
-          </div>
-          <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5">
-            <p class="text-slate-400 text-sm mb-1">Результатів</p>
-            <p id="stat-results" class="text-3xl font-bold text-white">—</p>
-          </div>
-          <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5">
-            <p class="text-slate-400 text-sm mb-1">Активних олімпіад</p>
-            <p id="stat-events" class="text-3xl font-bold text-white">—</p>
-          </div>
+        <h2 class="admin-section-title" style="margin-bottom: var(--sp-6);">Загальна статистика</h2>
+        <div class="stats-grid">
+          <div class="stat-card"><p class="stat-card__label">Вчителів</p><p id="stat-teachers" class="stat-card__value">—</p></div>
+          <div class="stat-card"><p class="stat-card__label">Учнів (кодів)</p><p id="stat-students" class="stat-card__value">—</p></div>
+          <div class="stat-card"><p class="stat-card__label">Результатів</p><p id="stat-results" class="stat-card__value">—</p></div>
+          <div class="stat-card"><p class="stat-card__label">Активних олімпіад</p><p id="stat-events" class="stat-card__value">—</p></div>
         </div>
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 flex items-center justify-center py-16 text-slate-500">
-          <div class="text-center">
-            <i class="fas fa-chart-line text-4xl mb-3 block" aria-hidden="true"></i>
-            <p class="font-semibold">Графіки активності — у розробці</p>
+        <div class="admin-empty-state">
+          <div>
+            <i class="fas fa-chart-line admin-empty-state__icon" aria-hidden="true"></i>
+            <p class="admin-empty-state__title">Графіки активності — у розробці</p>
           </div>
         </div>
       </section>
 
       <!-- Вкладка: Олімпіади -->
       <section id="tab-events" class="tab-panel hidden">
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-          <h2 class="text-white text-xl font-bold">Олімпіадні події</h2>
-          <button id="create-event-btn" class="btn bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2 px-5 rounded-xl text-sm flex items-center gap-2">
-            <i class="fas fa-plus" aria-hidden="true"></i>
-            Нова олімпіада
+        <div class="admin-section-header">
+          <h2 class="admin-section-title">Олімпіадні події</h2>
+          <button id="create-event-btn" class="btn-adm-emerald">
+            <i class="fas fa-plus" aria-hidden="true"></i> Нова олімпіада
           </button>
         </div>
 
-        <!-- Форма створення події (прихована) -->
-        <div id="event-form-section" class="hidden bg-slate-800 border border-slate-700 rounded-2xl p-6 mb-6">
-          <h3 class="text-white font-bold mb-5">Нова олімпіадна подія</h3>
-          <form id="event-form" novalidate class="grid sm:grid-cols-2 gap-4">
+        <!-- Форма створення події -->
+        <div id="event-form-section" class="admin-form-card hidden">
+          <h3 class="admin-form-card__title">Нова олімпіадна подія</h3>
+          <form id="event-form" novalidate class="adm-form-grid">
             <div>
-              <label class="block text-sm font-semibold text-slate-300 mb-2">Назва</label>
-              <input id="event-title" type="text" placeholder="Весняна олімпіада 2026"
-                class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-600 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"/>
+              <label class="adm-label">Назва</label>
+              <input id="event-title" type="text" placeholder="Весняна олімпіада 2026" class="adm-input"/>
             </div>
             <div>
-              <label class="block text-sm font-semibold text-slate-300 mb-2">Предмет</label>
-              <select id="event-subject" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-sky-500">
+              <label class="adm-label">Предмет</label>
+              <select id="event-subject" class="adm-input">
                 <option value="informatics">Інформатика</option>
               </select>
             </div>
             <div>
-              <label class="block text-sm font-semibold text-slate-300 mb-2">Початок</label>
-              <input id="event-from" type="datetime-local"
-                class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-sky-500"/>
+              <label class="adm-label">Початок</label>
+              <input id="event-from" type="datetime-local" class="adm-input"/>
             </div>
             <div>
-              <label class="block text-sm font-semibold text-slate-300 mb-2">Кінець</label>
-              <input id="event-to" type="datetime-local"
-                class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-sky-500"/>
+              <label class="adm-label">Кінець</label>
+              <input id="event-to" type="datetime-local" class="adm-input"/>
             </div>
             <div>
-              <label class="block text-sm font-semibold text-slate-300 mb-2">Кількість питань</label>
-              <input id="event-questions" type="number" value="10" min="1" max="50"
-                class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-sky-500"/>
+              <label class="adm-label">Кількість питань</label>
+              <input id="event-questions" type="number" value="10" min="1" max="50" class="adm-input"/>
             </div>
             <div>
-              <label class="block text-sm font-semibold text-slate-300 mb-2">Час (хвилин)</label>
-              <input id="event-time" type="number" value="15" min="1" max="120"
-                class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-sky-500"/>
+              <label class="adm-label">Час (хвилин)</label>
+              <input id="event-time" type="number" value="15" min="1" max="120" class="adm-input"/>
             </div>
-            <div class="sm:col-span-2 flex items-center gap-3">
-              <input id="event-allow-retry" type="checkbox" class="w-4 h-4 rounded"/>
-              <label for="event-allow-retry" class="text-sm text-slate-300">Дозволити повторний запуск</label>
+            <div class="adm-col-span-2 adm-checkbox-row">
+              <input id="event-allow-retry" type="checkbox"/>
+              <label for="event-allow-retry">Дозволити повторний запуск</label>
             </div>
-            <div class="sm:col-span-2">
-              <p id="event-form-error" class="text-rose-400 text-sm mb-3 min-h-[1.25rem]" role="alert"></p>
-              <div class="flex gap-3">
-                <button type="submit" id="event-submit-btn" class="btn bg-emerald-500 text-white font-bold py-3 px-6 rounded-xl">
-                  Зберегти
-                </button>
-                <button type="button" id="cancel-event-btn" class="btn bg-slate-700 text-slate-200 font-semibold py-3 px-6 rounded-xl">
-                  Скасувати
-                </button>
+            <div class="adm-col-span-2">
+              <p id="event-form-error" class="adm-form-error" role="alert"></p>
+              <div class="adm-form-actions">
+                <button type="submit" id="event-submit-btn" class="btn-adm-emerald">Зберегти</button>
+                <button type="button" id="cancel-event-btn" class="btn-adm-slate">Скасувати</button>
               </div>
             </div>
           </form>
         </div>
 
         <!-- Список подій -->
-        <div id="events-list" class="space-y-3">
-          <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 flex items-center justify-center py-16 text-slate-500">
-            <div class="text-center">
-              <i class="fas fa-calendar-times text-4xl mb-3 block" aria-hidden="true"></i>
-              <p class="font-semibold">Олімпіадних подій ще немає</p>
-              <p class="text-sm mt-1">Натисни «Нова олімпіада», щоб створити першу.</p>
+        <div id="events-list" class="admin-list">
+          <div class="admin-empty-state">
+            <div>
+              <i class="fas fa-calendar-times admin-empty-state__icon" aria-hidden="true"></i>
+              <p class="admin-empty-state__title">Олімпіадних подій ще немає</p>
+              <p class="admin-empty-state__sub">Натисни «Нова олімпіада», щоб створити першу.</p>
             </div>
           </div>
         </div>
@@ -194,13 +163,13 @@
 
       <!-- Вкладка: Вчителі -->
       <section id="tab-teachers" class="tab-panel hidden">
-        <h2 class="text-white text-xl font-bold mb-6">Зареєстровані вчителі</h2>
-        <div id="teachers-list" class="space-y-3">
-          <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 flex items-center justify-center py-16 text-slate-500">
-            <div class="text-center">
-              <i class="fas fa-users text-4xl mb-3 block" aria-hidden="true"></i>
-              <p class="font-semibold">Список вчителів завантажується з Firestore</p>
-              <p class="text-sm mt-1">Підключення Firebase — у розробці.</p>
+        <h2 class="admin-section-title" style="margin-bottom: var(--sp-6);">Зареєстровані вчителі</h2>
+        <div id="teachers-list" class="admin-list">
+          <div class="admin-empty-state">
+            <div>
+              <i class="fas fa-users admin-empty-state__icon" aria-hidden="true"></i>
+              <p class="admin-empty-state__title">Список вчителів</p>
+              <p class="admin-empty-state__sub">Завантажується після входу.</p>
             </div>
           </div>
         </div>
@@ -208,19 +177,18 @@
 
       <!-- Вкладка: Результати -->
       <section id="tab-results" class="tab-panel hidden">
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-          <h2 class="text-white text-xl font-bold">Всі результати олімпіади</h2>
-          <button id="export-results-btn" class="btn bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold py-2 px-5 rounded-xl text-sm flex items-center gap-2" disabled>
-            <i class="fas fa-download" aria-hidden="true"></i>
-            Експорт CSV
+        <div class="admin-section-header">
+          <h2 class="admin-section-title">Всі результати олімпіади</h2>
+          <button id="export-results-btn" class="btn-adm-slate" disabled>
+            <i class="fas fa-download" aria-hidden="true"></i> Експорт CSV
           </button>
         </div>
-        <div id="results-list" class="space-y-3">
-          <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 flex items-center justify-center py-16 text-slate-500">
-            <div class="text-center">
-              <i class="fas fa-poll text-4xl mb-3 block" aria-hidden="true"></i>
-              <p class="font-semibold">Результати завантажуються з Firestore</p>
-              <p class="text-sm mt-1">Підключення Firebase — у розробці.</p>
+        <div id="results-list" class="admin-list">
+          <div class="admin-empty-state">
+            <div>
+              <i class="fas fa-poll admin-empty-state__icon" aria-hidden="true"></i>
+              <p class="admin-empty-state__title">Результатів ще немає</p>
+              <p class="admin-empty-state__sub">З'являться після проведення олімпіади.</p>
             </div>
           </div>
         </div>
@@ -228,127 +196,122 @@
 
       <!-- Вкладка: Питання -->
       <section id="tab-questions" class="tab-panel hidden">
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-          <h2 class="text-white text-xl font-bold">Банк питань</h2>
-          <div class="flex gap-2 flex-wrap">
-            <button id="import-questions-btn" class="btn bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold py-2 px-4 rounded-xl text-sm flex items-center gap-2">
-              <i class="fas fa-file-import" aria-hidden="true"></i>Імпорт з JS
+        <div class="admin-section-header">
+          <h2 class="admin-section-title">Банк питань</h2>
+          <div class="admin-section-actions">
+            <button id="import-questions-btn" class="btn-adm-slate">
+              <i class="fas fa-file-import" aria-hidden="true"></i> Імпорт з JS
             </button>
-            <button id="add-question-btn" class="btn bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2 px-4 rounded-xl text-sm flex items-center gap-2">
-              <i class="fas fa-plus" aria-hidden="true"></i>Додати питання
+            <button id="add-question-btn" class="btn-adm-emerald">
+              <i class="fas fa-plus" aria-hidden="true"></i> Додати питання
             </button>
           </div>
         </div>
 
         <!-- Фільтри -->
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 mb-4 flex flex-wrap gap-3 items-center">
-          <select id="q-filter-grade" class="px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+        <div class="admin-filter-bar">
+          <select id="q-filter-grade" class="adm-input adm-input--sm" style="width:auto">
             <option value="">Всі класи</option>
             <option value="1">1 клас</option>
             <option value="2">2 клас</option>
             <option value="3">3 клас</option>
             <option value="4">4 клас</option>
           </select>
-          <select id="q-filter-type" class="px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+          <select id="q-filter-type" class="adm-input adm-input--sm" style="width:auto">
             <option value="">Всі типи</option>
             <option value="false">Тренування</option>
             <option value="true">Олімпіада</option>
           </select>
-          <select id="q-filter-difficulty" class="px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+          <select id="q-filter-difficulty" class="adm-input adm-input--sm" style="width:auto">
             <option value="">Всі рівні</option>
             <option value="easy">Легкі</option>
             <option value="medium">Середні</option>
             <option value="hard">Складні</option>
           </select>
-          <button id="q-filter-apply" class="btn bg-sky-600 hover:bg-sky-500 text-white font-semibold py-2 px-4 rounded-xl text-sm">Фільтрувати</button>
-          <span id="q-count" class="text-slate-400 text-sm ml-auto"></span>
+          <button id="q-filter-apply" class="btn-adm-sky" style="padding: var(--sp-2) var(--sp-4); font-size: var(--font-size-sm);">Фільтрувати</button>
+          <span id="q-count" class="admin-filter-count"></span>
         </div>
 
         <!-- Список питань -->
-        <div id="questions-list" class="space-y-2"></div>
+        <div id="questions-list" class="admin-list admin-list--sm"></div>
       </section>
 
     </main>
-  </div>
+  </div><!-- /admin-panel -->
 
+
+  <!-- Тост -->
   <div id="toast-notification" role="status" aria-live="polite"></div>
 
-  <!-- Модальне вікно -->
-  <div id="app-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center">
-      <p id="modal-message" class="text-white text-base mb-5"></p>
-      <button id="modal-ok-btn" class="btn bg-sky-500 text-white font-bold py-3 px-8 rounded-xl">OK</button>
+  <!-- APP MODAL (dark) -->
+  <div id="app-modal" class="admin-modal-overlay hidden"
+       role="dialog" aria-modal="true" aria-labelledby="modal-message">
+    <div class="admin-modal-card">
+      <p id="modal-message" class="admin-modal-msg"></p>
+      <button id="modal-ok-btn" class="btn-adm-sky" style="width:100%">OK</button>
     </div>
   </div>
 
   <!-- Preview питання -->
-  <div id="preview-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-4" role="dialog" aria-modal="true" aria-label="Прев'ю питання">
-    <div class="bg-slate-50 rounded-3xl shadow-2xl w-full max-w-lg p-6 relative">
-      <button id="preview-close" class="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 text-lg transition-colors" aria-label="Закрити прев'ю">
-        <i class="fas fa-times"></i>
+  <div id="preview-modal" class="preview-modal-overlay hidden"
+       role="dialog" aria-modal="true" aria-label="Прев'ю питання">
+    <div class="preview-modal-card">
+      <button id="preview-close" class="preview-modal-close" aria-label="Закрити прев'ю">
+        <i class="fas fa-times" aria-hidden="true"></i>
       </button>
-      <p class="text-xs font-bold uppercase tracking-widest text-violet-500 mb-3">Прев'ю — як бачить учень</p>
+      <p class="preview-modal-label">Прев'ю — як бачить учень</p>
 
-      <!-- Картка питання -->
-      <div id="pv-question-card" class="bg-white rounded-3xl shadow-md border border-slate-100 p-5 mb-4 flex items-center gap-4">
-        <p id="pv-question-text" class="flex-1 text-xl font-bold text-slate-900 leading-snug"></p>
-        <img id="pv-image" src="" alt="" class="hidden w-36 flex-shrink-0 rounded-2xl object-contain border border-slate-100 shadow-sm"/>
+      <div id="pv-question-card" class="pv-question-card">
+        <p id="pv-question-text" class="pv-question-text"></p>
+        <img id="pv-image" src="" alt="" class="pv-image hidden"/>
       </div>
-      <pre id="pv-code" class="hidden bg-slate-900 text-emerald-300 rounded-2xl px-4 py-3 mb-3 text-sm font-mono leading-relaxed overflow-x-auto whitespace-pre-wrap"></pre>
-
-      <!-- Варіанти -->
-      <div id="pv-options" class="grid grid-cols-1 gap-3 mb-4"></div>
-
-      <!-- Пояснення -->
-      <div id="pv-explanation-wrap" class="hidden bg-slate-100 rounded-2xl px-4 py-3 text-sm text-slate-600">
-        <span class="font-semibold text-slate-700">Пояснення: </span><span id="pv-explanation"></span>
+      <pre id="pv-code" class="pv-code hidden"></pre>
+      <div id="pv-options" class="pv-options"></div>
+      <div id="pv-explanation-wrap" class="pv-explanation-wrap hidden">
+        <span style="font-weight:600; color:#334155;">Пояснення: </span>
+        <span id="pv-explanation"></span>
       </div>
     </div>
   </div>
 
   <!-- Шаблон картки олімпіадної події -->
   <template id="event-card-template">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5">
-      <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-        <div class="flex-1">
-          <div class="flex items-center gap-3 mb-2 flex-wrap">
-            <h3 class="event-title text-white font-bold text-base"></h3>
-            <span class="event-status-badge text-xs font-bold px-2 py-0.5 rounded-full"></span>
+    <div class="event-card">
+      <div class="event-card__inner">
+        <div class="event-card__info">
+          <div class="event-card__head">
+            <h3 class="event-title event-card__title"></h3>
+            <span class="event-status-badge"></span>
           </div>
-          <div class="grid sm:grid-cols-3 gap-2 text-sm text-slate-400">
-            <span><i class="fas fa-calendar mr-1"></i><span class="event-from"></span></span>
-            <span><i class="fas fa-calendar-check mr-1"></i><span class="event-to"></span></span>
-            <span><i class="fas fa-question-circle mr-1"></i><span class="event-questions"></span> питань · <span class="event-time"></span> хв</span>
+          <div class="event-card__meta">
+            <span><i class="fas fa-calendar" aria-hidden="true"></i> <span class="event-from"></span></span>
+            <span><i class="fas fa-calendar-check" aria-hidden="true"></i> <span class="event-to"></span></span>
+            <span><i class="fas fa-question-circle" aria-hidden="true"></i> <span class="event-questions"></span> питань · <span class="event-time"></span> хв</span>
           </div>
-          <p class="event-retry text-xs text-slate-500 mt-2"></p>
+          <p class="event-retry event-card__retry"></p>
         </div>
-        <div class="flex gap-2 flex-wrap">
-          <button class="btn-activate btn text-xs font-semibold py-2 px-4 rounded-xl hidden bg-emerald-600 hover:bg-emerald-500 text-white">
-            <i class="fas fa-play mr-1"></i>Активувати
-          </button>
-          <button class="btn-archive btn text-xs font-semibold py-2 px-4 rounded-xl hidden bg-slate-600 hover:bg-slate-500 text-slate-200">
-            <i class="fas fa-archive mr-1"></i>Архів
-          </button>
-          <button class="btn-draft btn text-xs font-semibold py-2 px-4 rounded-xl hidden bg-slate-700 hover:bg-slate-600 text-slate-300">
-            <i class="fas fa-undo mr-1"></i>Чернетка
-          </button>
+        <div class="event-card__actions">
+          <button class="btn-activate btn-event-activate hidden"><i class="fas fa-play" aria-hidden="true"></i> Активувати</button>
+          <button class="btn-archive  btn-event-archive  hidden"><i class="fas fa-archive" aria-hidden="true"></i> Архів</button>
+          <button class="btn-draft    btn-event-draft    hidden"><i class="fas fa-undo" aria-hidden="true"></i> Чернетка</button>
         </div>
       </div>
     </div>
   </template>
 
   <!-- Модальне вікно редагування питання -->
-  <div id="question-modal" class="hidden fixed inset-0 z-50 flex items-start justify-center bg-black/70 p-4 overflow-y-auto" role="dialog" aria-modal="true">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-2xl my-6 p-6">
-      <h3 id="question-modal-title" class="text-white font-bold text-lg mb-5">Редагувати питання</h3>
-      <form id="question-form" novalidate class="space-y-4">
+  <div id="question-modal" class="question-modal-overlay hidden"
+       role="dialog" aria-modal="true">
+    <div class="question-modal-card">
+      <h3 id="question-modal-title" class="question-modal-title">Редагувати питання</h3>
+      <form id="question-form" novalidate class="qf-space">
         <input type="hidden" id="qf-id"/>
 
-        <!-- Спільні поля -->
-        <div class="grid sm:grid-cols-4 gap-3">
+        <!-- Мета-поля -->
+        <div class="adm-form-grid adm-form-grid--4">
           <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Тип</label>
-            <select id="qf-type" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+            <label class="adm-label">Тип</label>
+            <select id="qf-type" class="adm-input adm-input--sm">
               <option value="choice">Вибір</option>
               <option value="truefalse">Так/Ні</option>
               <option value="input">Введення</option>
@@ -358,120 +321,165 @@
             </select>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Клас</label>
-            <select id="qf-grade" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
-              <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+            <label class="adm-label">Клас</label>
+            <select id="qf-grade" class="adm-input adm-input--sm">
+              <option value="1">1</option><option value="2">2</option>
+              <option value="3">3</option><option value="4">4</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Складність</label>
-            <select id="qf-difficulty" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
-              <option value="easy">Легка</option><option value="medium">Середня</option><option value="hard">Складна</option>
+            <label class="adm-label">Складність</label>
+            <select id="qf-difficulty" class="adm-input adm-input--sm">
+              <option value="easy">Легка</option>
+              <option value="medium">Середня</option>
+              <option value="hard">Складна</option>
             </select>
           </div>
-          <div class="flex items-end pb-2 gap-2">
-            <input type="checkbox" id="qf-olympiad" class="w-4 h-4 rounded"/>
-            <label for="qf-olympiad" class="text-sm text-slate-300">Олімпіада</label>
+          <div class="adm-checkbox-row" style="align-items: flex-end; padding-bottom: var(--sp-2);">
+            <input type="checkbox" id="qf-olympiad"/>
+            <label for="qf-olympiad">Олімпіада</label>
           </div>
         </div>
 
+        <!-- Текст питання -->
         <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-1">Питання</label>
-          <textarea id="qf-q" rows="2" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 resize-y"></textarea>
+          <label class="adm-label">Питання</label>
+          <textarea id="qf-q" rows="2" class="adm-input" style="resize:vertical"></textarea>
         </div>
+
+        <!-- Зображення -->
         <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-1">Зображення — URL (необов'язково)</label>
-          <input type="url" id="qf-img" placeholder="https://..." class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"/>
-          <img id="qf-img-preview" src="" alt="preview" class="hidden mt-2 max-h-28 rounded-xl object-contain border border-slate-600"/>
+          <label class="adm-label">Зображення — URL (необов'язково)</label>
+          <input type="url" id="qf-img" placeholder="https://..." class="adm-input adm-input--sm"/>
+          <img id="qf-img-preview" src="" alt="preview"
+            class="hidden" style="margin-top:var(--sp-2); max-height:7rem; border-radius:var(--r-lg); object-fit:contain; border:1px solid var(--adm-border);"/>
         </div>
+
+        <!-- Код Равлика -->
         <div id="qf-code-wrap">
-          <label class="block text-xs font-semibold text-slate-400 mb-1">Код Равлика (необов'язково)</label>
-          <textarea id="qf-code" rows="3" placeholder="процедура..." class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-emerald-300 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-sky-500 resize-y"></textarea>
+          <label class="adm-label">Код Равлика (необов'язково)</label>
+          <textarea id="qf-code" rows="3" placeholder="процедура…"
+            class="adm-input adm-input--sm adm-input--code" style="resize:vertical"></textarea>
         </div>
 
         <!-- Секція: choice -->
-        <div id="qf-section-choice" class="space-y-2">
-          <label class="block text-xs font-semibold text-slate-400 mb-1">Варіанти (відмічений — правильний)</label>
-          <div id="qf-options" class="space-y-2">
-            <div class="flex items-center gap-2"><input type="radio" name="qf-correct" value="0" class="w-4 h-4"/><input type="text" data-idx="0" class="qf-opt flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Варіант 1"/></div>
-            <div class="flex items-center gap-2"><input type="radio" name="qf-correct" value="1" class="w-4 h-4"/><input type="text" data-idx="1" class="qf-opt flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Варіант 2"/></div>
-            <div class="flex items-center gap-2"><input type="radio" name="qf-correct" value="2" class="w-4 h-4"/><input type="text" data-idx="2" class="qf-opt flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Варіант 3"/></div>
-            <div class="flex items-center gap-2"><input type="radio" name="qf-correct" value="3" class="w-4 h-4"/><input type="text" data-idx="3" class="qf-opt flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Варіант 4"/></div>
+        <div id="qf-section-choice" class="qf-section">
+          <label class="adm-label">Варіанти (відмічений — правильний)</label>
+          <div id="qf-options" class="qf-section">
+            <div style="display:flex; align-items:center; gap:var(--sp-2);">
+              <input type="radio" name="qf-correct" value="0" style="width:1rem;height:1rem;cursor:pointer"/>
+              <input type="text" data-idx="0" class="qf-opt adm-input adm-input--sm" style="flex:1" placeholder="Варіант 1"/>
+            </div>
+            <div style="display:flex; align-items:center; gap:var(--sp-2);">
+              <input type="radio" name="qf-correct" value="1" style="width:1rem;height:1rem;cursor:pointer"/>
+              <input type="text" data-idx="1" class="qf-opt adm-input adm-input--sm" style="flex:1" placeholder="Варіант 2"/>
+            </div>
+            <div style="display:flex; align-items:center; gap:var(--sp-2);">
+              <input type="radio" name="qf-correct" value="2" style="width:1rem;height:1rem;cursor:pointer"/>
+              <input type="text" data-idx="2" class="qf-opt adm-input adm-input--sm" style="flex:1" placeholder="Варіант 3"/>
+            </div>
+            <div style="display:flex; align-items:center; gap:var(--sp-2);">
+              <input type="radio" name="qf-correct" value="3" style="width:1rem;height:1rem;cursor:pointer"/>
+              <input type="text" data-idx="3" class="qf-opt adm-input adm-input--sm" style="flex:1" placeholder="Варіант 4"/>
+            </div>
           </div>
         </div>
 
-        <!-- Секція: sort / algorithm -->
-        <div id="qf-section-sort" class="hidden space-y-3">
+        <!-- Секція: sort -->
+        <div id="qf-section-sort" class="qf-section hidden">
           <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Елементи (кожен з нового рядка)</label>
-            <textarea id="qf-items" rows="4" placeholder="Іди вперед&#10;Повернись праворуч&#10;Повтори 4 рази&#10;Стоп" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-sky-500 resize-y"></textarea>
+            <label class="adm-label">Елементи (кожен з нового рядка)</label>
+            <textarea id="qf-items" rows="4"
+              placeholder="Іди вперед&#10;Повернись праворуч&#10;Повтори 4 рази&#10;Стоп"
+              class="adm-input adm-input--sm adm-input--code" style="resize:vertical"></textarea>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Правильний порядок — індекси через кому (0 = перший рядок)</label>
-            <input type="text" id="qf-correct-order" placeholder="2,0,1,3" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"/>
-            <p class="text-slate-500 text-xs mt-1">Наприклад: <code class="text-slate-400">2,0,1,3</code> означає що на 1-му місці елемент №3, на 2-му — №1, і т.д.</p>
+            <label class="adm-label">Правильний порядок — індекси через кому (0 = перший рядок)</label>
+            <input type="text" id="qf-correct-order" placeholder="2,0,1,3" class="adm-input adm-input--sm"/>
+            <p style="font-size:var(--font-size-xs); color:var(--adm-text-faint); margin-top:var(--sp-1);">
+              Наприклад: <code style="color:var(--adm-text-muted)">2,0,1,3</code> — порядок за індексами рядків.
+            </p>
           </div>
         </div>
 
         <!-- Секція: sequence -->
-        <div id="qf-section-sequence" class="hidden space-y-3">
+        <div id="qf-section-sequence" class="qf-section hidden">
           <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Задана послідовність — значення через кому</label>
-            <input type="text" id="qf-given" placeholder="🔴,🔵,🔴,🔵" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"/>
+            <label class="adm-label">Задана послідовність — значення через кому</label>
+            <input type="text" id="qf-given" placeholder="🔴,🔵,🔴,🔵" class="adm-input adm-input--sm"/>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Варіанти відповіді (відмічений — правильний)</label>
-            <div class="space-y-2">
-              <div class="flex items-center gap-2"><input type="radio" name="qf-seq-correct" value="0" class="w-4 h-4"/><input type="text" data-sidx="0" class="qf-seq-opt flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Варіант 1"/></div>
-              <div class="flex items-center gap-2"><input type="radio" name="qf-seq-correct" value="1" class="w-4 h-4"/><input type="text" data-sidx="1" class="qf-seq-opt flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Варіант 2"/></div>
-              <div class="flex items-center gap-2"><input type="radio" name="qf-seq-correct" value="2" class="w-4 h-4"/><input type="text" data-sidx="2" class="qf-seq-opt flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Варіант 3"/></div>
-              <div class="flex items-center gap-2"><input type="radio" name="qf-seq-correct" value="3" class="w-4 h-4"/><input type="text" data-sidx="3" class="qf-seq-opt flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Варіант 4"/></div>
+            <label class="adm-label">Варіанти відповіді (відмічений — правильний)</label>
+            <div class="qf-section">
+              <div style="display:flex; align-items:center; gap:var(--sp-2);">
+                <input type="radio" name="qf-seq-correct" value="0" style="width:1rem;height:1rem;cursor:pointer"/>
+                <input type="text" data-sidx="0" class="qf-seq-opt adm-input adm-input--sm" style="flex:1" placeholder="Варіант 1"/>
+              </div>
+              <div style="display:flex; align-items:center; gap:var(--sp-2);">
+                <input type="radio" name="qf-seq-correct" value="1" style="width:1rem;height:1rem;cursor:pointer"/>
+                <input type="text" data-sidx="1" class="qf-seq-opt adm-input adm-input--sm" style="flex:1" placeholder="Варіант 2"/>
+              </div>
+              <div style="display:flex; align-items:center; gap:var(--sp-2);">
+                <input type="radio" name="qf-seq-correct" value="2" style="width:1rem;height:1rem;cursor:pointer"/>
+                <input type="text" data-sidx="2" class="qf-seq-opt adm-input adm-input--sm" style="flex:1" placeholder="Варіант 3"/>
+              </div>
+              <div style="display:flex; align-items:center; gap:var(--sp-2);">
+                <input type="radio" name="qf-seq-correct" value="3" style="width:1rem;height:1rem;cursor:pointer"/>
+                <input type="text" data-sidx="3" class="qf-seq-opt adm-input adm-input--sm" style="flex:1" placeholder="Варіант 4"/>
+              </div>
             </div>
           </div>
         </div>
 
         <!-- Секція: match -->
-        <div id="qf-section-match" class="hidden space-y-3">
-          <div class="grid sm:grid-cols-2 gap-3">
+        <div id="qf-section-match" class="qf-section hidden">
+          <div class="adm-form-grid">
             <div>
-              <label class="block text-xs font-semibold text-slate-400 mb-1">Лівий стовпець (кожен з нового рядка)</label>
-              <textarea id="qf-left" rows="4" placeholder="Клавіатура&#10;Принтер&#10;Монітор" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 resize-y"></textarea>
+              <label class="adm-label">Лівий стовпець (кожен з нового рядка)</label>
+              <textarea id="qf-left" rows="4"
+                placeholder="Клавіатура&#10;Принтер&#10;Монітор"
+                class="adm-input adm-input--sm" style="resize:vertical"></textarea>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-400 mb-1">Правий стовпець (кожен з нового рядка)</label>
-              <textarea id="qf-right" rows="4" placeholder="Виводить зображення&#10;Вводить текст&#10;Друкує на папері" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 resize-y"></textarea>
+              <label class="adm-label">Правий стовпець (кожен з нового рядка)</label>
+              <textarea id="qf-right" rows="4"
+                placeholder="Виводить зображення&#10;Вводить текст&#10;Друкує на папері"
+                class="adm-input adm-input--sm" style="resize:vertical"></textarea>
             </div>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Пари — індекси правого стовпця для кожного лівого через кому</label>
-            <input type="text" id="qf-pairs" placeholder="1,2,0" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"/>
-            <p class="text-slate-500 text-xs mt-1">Наприклад: <code class="text-slate-400">1,2,0</code> — Клавіатура→правий[1], Принтер→правий[2], Монітор→правий[0]</p>
+            <label class="adm-label">Пари — індекси правого стовпця для кожного лівого через кому</label>
+            <input type="text" id="qf-pairs" placeholder="1,2,0" class="adm-input adm-input--sm"/>
+            <p style="font-size:var(--font-size-xs); color:var(--adm-text-faint); margin-top:var(--sp-1);">
+              Наприклад: <code style="color:var(--adm-text-muted)">1,2,0</code> — Клавіатура→правий[1], Принтер→правий[2]…
+            </p>
           </div>
         </div>
 
         <!-- Секція: truefalse -->
-        <div id="qf-section-truefalse" class="hidden space-y-3">
-          <label class="block text-xs font-semibold text-slate-400 mb-1">Правильна відповідь</label>
-          <div class="flex gap-4">
-            <label class="flex items-center gap-2 cursor-pointer text-white text-sm">
-              <input type="radio" name="qf-tf-correct" value="true" class="w-4 h-4"/> ✅ Так
+        <div id="qf-section-truefalse" class="qf-section hidden">
+          <label class="adm-label">Правильна відповідь</label>
+          <div style="display:flex; gap:var(--sp-4);">
+            <label style="display:flex; align-items:center; gap:var(--sp-2); cursor:pointer; color:var(--adm-text); font-size:var(--font-size-sm);">
+              <input type="radio" name="qf-tf-correct" value="true" style="width:1rem;height:1rem;cursor:pointer"/> ✅ Так
             </label>
-            <label class="flex items-center gap-2 cursor-pointer text-white text-sm">
-              <input type="radio" name="qf-tf-correct" value="false" class="w-4 h-4"/> ❌ Ні
+            <label style="display:flex; align-items:center; gap:var(--sp-2); cursor:pointer; color:var(--adm-text); font-size:var(--font-size-sm);">
+              <input type="radio" name="qf-tf-correct" value="false" style="width:1rem;height:1rem;cursor:pointer"/> ❌ Ні
             </label>
           </div>
         </div>
 
         <!-- Секція: input -->
-        <div id="qf-section-input" class="hidden space-y-3">
-          <div class="grid sm:grid-cols-2 gap-3">
+        <div id="qf-section-input" class="qf-section hidden">
+          <div class="adm-form-grid">
             <div>
-              <label class="block text-xs font-semibold text-slate-400 mb-1">Правильна відповідь</label>
-              <input type="text" id="qf-input-correct" placeholder="наприклад: 42 або Клавіатура" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"/>
+              <label class="adm-label">Правильна відповідь</label>
+              <input type="text" id="qf-input-correct"
+                placeholder="наприклад: 42 або Клавіатура" class="adm-input adm-input--sm"/>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-400 mb-1">Тип поля</label>
-              <select id="qf-input-type" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+              <label class="adm-label">Тип поля</label>
+              <select id="qf-input-type" class="adm-input adm-input--sm">
                 <option value="text">Текст</option>
                 <option value="number">Число</option>
               </select>
@@ -479,27 +487,24 @@
           </div>
         </div>
 
+        <!-- Пояснення -->
         <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-1">Пояснення</label>
-          <textarea id="qf-explanation" rows="2" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 resize-y"></textarea>
+          <label class="adm-label">Пояснення</label>
+          <textarea id="qf-explanation" rows="2" class="adm-input adm-input--sm" style="resize:vertical"></textarea>
         </div>
 
-        <p id="qf-error" class="text-rose-400 text-sm min-h-[1.25rem]" role="alert"></p>
-        <div class="flex flex-wrap gap-3">
-          <button type="submit" id="qf-submit" class="btn bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-6 rounded-xl">Зберегти</button>
-          <button type="button" id="qf-preview" class="btn bg-violet-600 hover:bg-violet-700 text-white font-semibold py-3 px-6 rounded-xl"><i class="fas fa-eye mr-2"></i>Переглянути</button>
-          <button type="button" id="qf-cancel" class="btn bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold py-3 px-6 rounded-xl">Скасувати</button>
+        <p id="qf-error" class="adm-form-error" role="alert"></p>
+        <div class="adm-form-actions">
+          <button type="submit" id="qf-submit" class="btn-adm-emerald">Зберегти</button>
+          <button type="button" id="qf-preview" class="btn-adm-violet">
+            <i class="fas fa-eye" aria-hidden="true"></i> Переглянути
+          </button>
+          <button type="button" id="qf-cancel" class="btn-adm-slate">Скасувати</button>
         </div>
       </form>
     </div>
   </div>
 
   <script type="module" src="admin.js"></script>
-
-  <style>
-    .admin-tab { color: #94a3b8; border-color: transparent; }
-    .admin-tab:hover { color: #e2e8f0; }
-    .admin-tab.tab-active { color: #38bdf8; border-color: #38bdf8; }
-  </style>
 </body>
 </html>

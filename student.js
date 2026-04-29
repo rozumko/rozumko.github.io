@@ -272,7 +272,7 @@ async function launchOlympiad(mode) {
     ? document.getElementById('start-olympiad-btn')
     : document.getElementById('start-demo-btn');
   btn.disabled = true;
-  btn.textContent = 'Завантаження…';
+  showLoading();
 
   try {
     if (!studentData) throw new Error('Зачекай, дані завантажуються. Спробуй ще раз.');
@@ -300,10 +300,10 @@ async function launchOlympiad(mode) {
     const qs  = await loadQuestions(grade, mode, cfg.count);
     startQuiz(qs, mode, cfg, { code, eventId, teacherUid, grade, event });
   } catch (err) {
+    hideLoading();
     showModal(err.message);
   } finally {
     btn.disabled = false;
-    btn.textContent = mode === 'olympiad' ? 'Основна олімпіада' : 'Демо-версія';
   }
 }
 
@@ -334,7 +334,7 @@ function updateStartBtn() {
 
 startPracticeBtn.addEventListener('click', async () => {
   startPracticeBtn.disabled = true;
-  startPracticeBtn.textContent = 'Завантаження…';
+  showLoading();
   try {
     const cfg = getModeConfig('practice');
     const qs  = await loadQuestions(selectedGrade, 'practice', cfg.count);
@@ -345,10 +345,10 @@ startPracticeBtn.addEventListener('click', async () => {
     if (filtered.length === 0) throw new Error('Питань для цих налаштувань немає.');
     startQuiz(filtered, 'practice', cfg, { grade: selectedGrade });
   } catch (err) {
+    hideLoading();
     showModal(err.message);
   } finally {
     startPracticeBtn.disabled = false;
-    startPracticeBtn.textContent = 'Почати тренування';
   }
 });
 
@@ -387,6 +387,7 @@ function startQuiz(qs, mode, cfg, meta) {
     quizTimer.classList.remove('visible');
   }
 
+  hideLoading();
   showOverlay(quizOverlay);
   showQuestion();
 }
@@ -443,7 +444,7 @@ function showQuestion() {
 
 function showFeedback(isCorrect, q) {
   quizFeedback.textContent = isCorrect ? '✓ Правильно!' : '✗ Неправильно';
-  quizFeedback.className = `font-semibold text-base mb-2 ${isCorrect ? 'text-emerald-600' : 'text-rose-600'}`;
+  quizFeedback.className = isCorrect ? 'quiz-feedback quiz-feedback--correct' : 'quiz-feedback quiz-feedback--incorrect';
   const cfg = getModeConfig(currentMode);
   if (cfg.showExplanation && q.explanation) {
     quizExplanation.textContent = q.explanation;
@@ -542,6 +543,10 @@ function updateTimerDisplay() {
 function showOverlay(el) { el.classList.add('active'); }
 function hideOverlay(el) { el.classList.remove('active'); }
 
+const quizLoadingOverlay = document.getElementById('quiz-loading-overlay');
+function showLoading() { quizLoadingOverlay.classList.add('active'); }
+function hideLoading() { quizLoadingOverlay.classList.remove('active'); }
+
 function showScreenEntry() {
   screenActions.classList.add('hidden');
   screenEntry.classList.remove('hidden');
@@ -567,10 +572,10 @@ async function showActiveEventInfo(grade) {
       titleEl.textContent = `🏆 ${event.title}`;
       metaEl.textContent  = `${event.questionsCount} питань · ${event.timeMinutes} хв`;
       infoBox.classList.remove('hidden');
-      olympiadBtn.classList.remove('opacity-40');
+      olympiadBtn.classList.remove('btn-disabled');
     } else {
       // Немає активної події — деактивуємо кнопку олімпіади
-      olympiadBtn.classList.add('opacity-40');
+      olympiadBtn.classList.add('btn-disabled');
       olympiadBtn.title = 'Зараз немає активної олімпіади';
     }
   } catch {

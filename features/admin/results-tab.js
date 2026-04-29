@@ -54,26 +54,24 @@ export async function loadResults() {
 
     results.forEach(r => {
       const el = document.createElement('div');
-      el.className = 'bg-slate-800 border border-slate-700 rounded-2xl p-4 flex items-center justify-between gap-4';
+      el.className = 'admin-result-row';
 
-      // Форматуємо дату завершення
       const date = r.completedAt?.toDate?.().toLocaleString('uk-UA', {
         day: '2-digit', month: '2-digit', year: 'numeric',
         hour: '2-digit', minute: '2-digit',
       }) ?? '';
 
-      // Назва події — якщо не знайдена, показуємо eventId як запасний варіант
       const eventLabel = eventNames[r.eventId] ?? r.eventId;
 
       el.innerHTML = `
-        <div>
-          <p class="text-white font-bold">${esc(r.studentCode)}</p>
-          <p class="text-slate-400 text-sm">${esc(r.grade)} клас · ${esc(eventLabel)}</p>
-          <p class="text-slate-500 text-xs mt-0.5">${esc(date)}</p>
+        <div class="admin-row__main">
+          <p class="admin-row__title">${esc(r.studentCode)}</p>
+          <p class="admin-row__meta">${esc(r.grade)} клас · ${esc(eventLabel)}</p>
+          <p class="admin-row__meta" style="font-size:var(--font-size-xs); margin-top:2px;">${esc(date)}</p>
         </div>
-        <div class="text-right">
-          <p class="text-2xl font-bold text-sky-400">${esc(r.score)}<span class="text-base text-slate-400">/${esc(r.totalQuestions)}</span></p>
-          <p class="text-xs text-slate-500">${r.timeSpentSeconds ? Math.round(r.timeSpentSeconds / 60) + ' хв' : ''}</p>
+        <div style="text-align:right">
+          <p class="admin-row__score">${esc(r.score)}<span>/${esc(r.totalQuestions)}</span></p>
+          <p class="admin-row__meta" style="font-size:var(--font-size-xs);">${r.timeSpentSeconds ? Math.round(r.timeSpentSeconds / 60) + ' хв' : ''}</p>
         </div>`;
 
       list.appendChild(el);

@@ -131,14 +131,14 @@ function buildEventCard(ev) {
 
   // Бейдж статусу — колір та текст залежать від поточного статусу
   const STATUS = {
-    draft:    { label: 'Чернетка', cls: 'bg-slate-600 text-slate-200' },
-    active:   { label: 'Активна',  cls: 'bg-emerald-500 text-white'   },
-    archived: { label: 'Архів',    cls: 'bg-slate-700 text-slate-400' },
+    draft:    { label: 'Чернетка', mod: 'draft'    },
+    active:   { label: 'Активна',  mod: 'active'   },
+    archived: { label: 'Архів',    mod: 'archived' },
   };
   const badge = el.querySelector('.event-status-badge');
   const s = STATUS[ev.status] ?? STATUS.draft;
   badge.textContent = s.label;
-  badge.className   = `event-status-badge text-xs font-bold px-2 py-0.5 rounded-full ${s.cls}`;
+  badge.className   = `event-status-badge event-status-badge--${s.mod}`;
 
   // Показуємо тільки релевантні кнопки для поточного статусу
   const btnActivate = el.querySelector('.btn-activate');

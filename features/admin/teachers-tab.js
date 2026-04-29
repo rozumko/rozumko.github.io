@@ -42,19 +42,18 @@ export async function loadTeachers() {
     list.innerHTML = '';
     teachers.forEach(t => {
       const el = document.createElement('div');
-      el.className = 'bg-slate-800 border border-slate-700 rounded-2xl p-5 flex items-center justify-between gap-4';
+      el.className = 'admin-teacher-row';
 
-      // Дата реєстрації — форматуємо тільки якщо поле є
       const createdDate = t.createdAt?.toDate?.().toLocaleDateString('uk-UA') ?? '';
 
       el.innerHTML = `
-        <div>
-          <p class="text-white font-semibold">${esc(t.email)}</p>
-          <p class="text-slate-400 text-sm">${esc(t.school || 'Школу не вказано')}</p>
+        <div class="admin-row__main">
+          <p class="admin-row__title">${esc(t.email)}</p>
+          <p class="admin-row__meta">${esc(t.school || 'Школу не вказано')}</p>
         </div>
-        <div class="text-right">
-          <p class="text-slate-400 text-xs">${(t.classes || []).length} класів</p>
-          <p class="text-slate-500 text-xs mt-0.5">${esc(createdDate)}</p>
+        <div style="text-align:right">
+          <p class="admin-row__meta">${(t.classes || []).length} класів</p>
+          <p class="admin-row__meta" style="font-size:var(--font-size-xs); margin-top:2px;">${esc(createdDate)}</p>
         </div>`;
 
       list.appendChild(el);
