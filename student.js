@@ -18,8 +18,8 @@ const codeSubmitBtn = document.getElementById('code-submit-btn');
 const codeClearBtn  = document.getElementById('code-clear-btn');
 
 // --- DOM: тренування ---
-const gradeButtons      = document.querySelectorAll('.grade-btn');
-const diffButtons       = document.querySelectorAll('.diff-btn');
+const gradeButtons      = document.querySelectorAll('[data-grade]');
+const diffButtons       = document.querySelectorAll('[data-difficulty]');
 const startPracticeBtn  = document.getElementById('start-practice-btn');
 
 // --- Тренування: показати/сховати ---

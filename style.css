@@ -568,6 +568,12 @@ button {
 }
 .student-back:hover { color: rgba(255,255,255,0.85); }
 
+/* На teacher-сторінці (світлий фон) — темний текст */
+.teacher-auth-page .student-back {
+  color: var(--clr-text-muted);
+}
+.teacher-auth-page .student-back:hover { color: var(--clr-text); }
+
 /* ── Логотип (трофей + назва) ───────────────────────────────── */
 
 .entry-logo {
@@ -1738,9 +1744,17 @@ button {
 
 /* ── Dashboard ──────────────────────────────────────────────── */
 
+/* Коли дашборд активний — скасовуємо flex-центрування auth-page на body */
+body.teacher-dashboard-active {
+  display: block !important;
+  padding: 0 !important;
+  background: var(--clr-surface-muted) !important;
+}
+
 .teacher-dashboard {
   min-height: 100vh;
   background: var(--clr-surface-muted);
+  width: 100%;
 }
 
 /* Шапка дашборду */

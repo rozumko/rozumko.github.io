@@ -329,11 +329,15 @@ function showDashboard(email) {
   dashboardSection.classList.remove('hidden');
   teacherEmailDisplay.textContent = email;
   teacherEmailDisplay.classList.remove('hidden');
+  document.body.classList.add('teacher-dashboard-active');
+  document.getElementById('auth-back-link')?.classList.add('hidden');
 }
 
 function showAuth() {
   dashboardSection.classList.add('hidden');
   authSection.classList.remove('hidden');
+  document.body.classList.remove('teacher-dashboard-active');
+  document.getElementById('auth-back-link')?.classList.remove('hidden');
   loginSubmitBtn.disabled = false;
   loginSubmitBtn.textContent = 'Увійти';
 }
