@@ -2,13 +2,26 @@ import { validateStudentCode, getStoredStudentCode } from './features/auth/stude
 import { findActiveEvent, checkSession, startSession, finishSession } from './features/olympiad/session.js';
 import { saveOlympiadResult } from './features/olympiad/results.js';
 import { loadQuestions, getModeConfig } from './features/olympiad/quiz-engine.js';
+import { createFocusTrap } from './utils/focus-trap.js';
+import { renderQuestion }  from './utils/question-renderer.js';
 
 // --- Модальне вікно ---
 const appModal = document.getElementById('app-modal');
-document.getElementById('modal-ok-btn').addEventListener('click', () => appModal.classList.add('hidden'));
+let _modalTrapRemove = null;
+document.getElementById('modal-ok-btn').addEventListener('click', () => {
+  _modalTrapRemove?.();
+  _modalTrapRemove = null;
+  appModal.classList.add('hidden');
+});
 function showModal(msg) {
   document.getElementById('modal-message').textContent = msg;
   appModal.classList.remove('hidden');
+  _modalTrapRemove?.();
+  _modalTrapRemove = createFocusTrap(appModal, () => {
+    _modalTrapRemove?.();
+    _modalTrapRemove = null;
+    appModal.classList.add('hidden');
+  });
 }
 
 // --- DOM: екрани ---
@@ -48,6 +61,28 @@ const quizExplanation = document.getElementById('quiz-explanation');
 const quizNextBtn     = document.getElementById('quiz-next-btn');
 const quizQuitBtn     = document.getElementById('quiz-quit-btn');
 
+// --- Lightbox ---
+const quizImage    = document.getElementById('quiz-image');
+const imgLightbox  = document.getElementById('img-lightbox');
+const imgLightboxImg = document.getElementById('img-lightbox-img');
+
+function openLightbox(src, alt) {
+  imgLightboxImg.src = src;
+  imgLightboxImg.alt = alt || '';
+  imgLightbox.classList.remove('hidden');
+  imgLightbox.focus();
+}
+function closeLightbox() {
+  imgLightbox.classList.add('hidden');
+  imgLightboxImg.src = '';
+}
+imgLightbox.addEventListener('click', (e) => {
+  if (e.target === imgLightbox || e.target === document.getElementById('img-lightbox-close') || e.target.closest('#img-lightbox-close')) closeLightbox();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !imgLightbox.classList.contains('hidden')) closeLightbox();
+});
+
 // --- DOM: result overlay ---
 const resultOverlay   = document.getElementById('result-overlay');
 const resultTitle     = document.getElementById('result-title');
@@ -79,6 +114,41 @@ let secondsLeft  = 0;
 let startedAt    = null;
 let currentMode  = null;
 let currentSessionId = null;
+
+// ===================== LOCALSTORAGE BACKUP =====================
+
+const QUIZ_BACKUP_KEY = 'rozumko_quiz_backup';
+
+function saveQuizBackup() {
+  if (currentMode !== 'olympiad' || !currentSessionId) return;
+  try {
+    localStorage.setItem(QUIZ_BACKUP_KEY, JSON.stringify({
+      sessionId:   currentSessionId,
+      mode:        currentMode,
+      currentIdx,
+      score,
+      secondsLeft,
+      startedAt,
+      meta:        startQuiz.meta,
+      savedAt:     Date.now()
+    }));
+  } catch { /* localStorage недоступний */ }
+}
+
+function clearQuizBackup() {
+  try { localStorage.removeItem(QUIZ_BACKUP_KEY); } catch { /* ігноруємо */ }
+}
+
+function getQuizBackup() {
+  try {
+    const raw = localStorage.getItem(QUIZ_BACKUP_KEY);
+    if (!raw) return null;
+    const b = JSON.parse(raw);
+    // Ігноруємо бекап старший за 3 години
+    if (Date.now() - b.savedAt > 3 * 60 * 60 * 1000) { clearQuizBackup(); return null; }
+    return b;
+  } catch { return null; }
+}
 
 // ===================== ВІДНОВЛЕННЯ СЕСІЇ =====================
 
@@ -279,6 +349,17 @@ function showQuestion() {
   quizProgressBar.style.width = `${(currentIdx / questions.length) * 100}%`;
   quizQuestionEl.textContent = q.q;
 
+  // Зображення
+  if (q.img) {
+    quizImage.src = q.img;
+    quizImage.classList.remove('hidden');
+    quizImage.onclick = () => openLightbox(q.img, q.q);
+  } else {
+    quizImage.classList.add('hidden');
+    quizImage.src = '';
+    quizImage.onclick = null;
+  }
+
   const codeBlock = document.getElementById('quiz-code-block');
   if (q.code) {
     codeBlock.textContent = q.code;
@@ -294,237 +375,19 @@ function showQuestion() {
   quizOptionsEl.innerHTML = '';
 
   const type = q.type ?? 'choice';
-  if (type === 'sort' || type === 'algorithm') {
-    quizOptionsEl.className = 'flex flex-col gap-3 mb-6';
-    renderSort(q);
-  } else if (type === 'sequence') {
-    quizOptionsEl.className = 'flex flex-col gap-3 mb-6';
-    renderSequence(q);
-  } else if (type === 'match') {
-    quizOptionsEl.className = 'flex flex-col gap-3 mb-6';
-    renderMatch(q);
-  } else {
-    quizOptionsEl.className = 'grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6';
-    renderChoice(q);
-  }
-}
+  quizOptionsEl.className = (type === 'choice')
+    ? 'grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4'
+    : type === 'truefalse'
+      ? 'grid grid-cols-2 gap-4 mb-4'
+      : 'flex flex-col gap-3 mb-4';
 
-// ── Рендерери ─────────────────────────────────────────────────────────────
-
-function renderChoice(q) {
-  q.a.forEach((opt, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'btn w-full text-left px-5 py-5 rounded-2xl border-2 border-slate-200 bg-white text-slate-800 font-semibold text-base hover:border-violet-400 hover:bg-violet-50 transition-all';
-    btn.textContent = opt;
-    btn.addEventListener('click', () => {
-      if (answered) return;
+  renderQuestion(q, quizOptionsEl, {
+    onAnswer: (isCorrect) => {
       answered = true;
-      if (i === q.correct) score++;
-      const opts = quizOptionsEl.querySelectorAll('button');
-      opts.forEach(b => b.disabled = true);
-      opts[i].classList.remove('border-slate-200','bg-white');
-      opts[i].classList.add(...(i === q.correct ? ['border-emerald-400','bg-emerald-50'] : ['border-rose-400','bg-rose-50']));
-      opts[q.correct].classList.remove('border-slate-200','bg-white');
-      opts[q.correct].classList.add('border-emerald-400','bg-emerald-50');
-      showFeedback(i === q.correct, q);
-    });
-    quizOptionsEl.appendChild(btn);
-  });
-}
-
-function renderSequence(q) {
-  // q.choices — масив варіантів, q.correct — індекс правильного
-  q.choices.forEach((opt, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'btn w-full text-left px-5 py-5 rounded-2xl border-2 border-slate-200 bg-white text-slate-800 font-semibold text-base hover:border-violet-400 hover:bg-violet-50 transition-all';
-    btn.textContent = opt;
-    btn.addEventListener('click', () => {
-      if (answered) return;
-      answered = true;
-      const isCorrect = i === q.correct;
       if (isCorrect) score++;
-      const opts = quizOptionsEl.querySelectorAll('button');
-      opts.forEach(b => b.disabled = true);
-      opts[i].classList.remove('border-slate-200','bg-white');
-      opts[i].classList.add(...(isCorrect ? ['border-emerald-400','bg-emerald-50'] : ['border-rose-400','bg-rose-50']));
-      opts[q.correct].classList.remove('border-slate-200','bg-white');
-      opts[q.correct].classList.add('border-emerald-400','bg-emerald-50');
       showFeedback(isCorrect, q);
-    });
-    quizOptionsEl.appendChild(btn);
+    },
   });
-
-  // Показуємо задану послідовність над варіантами
-  const seq = document.createElement('div');
-  seq.className = 'flex items-center gap-2 flex-wrap justify-center bg-slate-50 border border-slate-200 rounded-2xl px-4 py-4 mb-4';
-  q.given.forEach(item => {
-    const chip = document.createElement('span');
-    chip.className = 'text-3xl';
-    chip.textContent = item;
-    seq.appendChild(chip);
-    const arrow = document.createElement('span');
-    arrow.className = 'text-slate-400 font-bold text-lg';
-    arrow.textContent = '→';
-    seq.appendChild(arrow);
-  });
-  const qmark = document.createElement('span');
-  qmark.className = 'w-12 h-12 rounded-2xl bg-violet-100 border-2 border-violet-300 text-violet-600 font-extrabold text-2xl flex items-center justify-center';
-  qmark.textContent = '?';
-  seq.appendChild(qmark);
-  quizOptionsEl.insertBefore(seq, quizOptionsEl.firstChild);
-}
-
-function renderSort(q) {
-  // order[pos] = індекс елемента q.items який зараз на позиції pos
-  const order = [...q.items.keys()].sort(() => Math.random() - 0.5);
-
-  const rebuild = () => {
-    quizOptionsEl.innerHTML = '';
-
-    order.forEach((itemIdx, pos) => {
-      const row = document.createElement('div');
-      row.className = 'flex items-center gap-3';
-
-      const num = document.createElement('span');
-      num.className = 'text-slate-400 font-bold w-6 text-right flex-shrink-0 text-base';
-      num.textContent = pos + 1 + '.';
-
-      const block = document.createElement('div');
-      block.className = 'flex-1 bg-white border-2 border-slate-200 rounded-2xl px-5 py-4 text-slate-800 font-semibold text-base';
-      block.textContent = q.items[itemIdx];
-
-      const arrows = document.createElement('div');
-      arrows.className = 'flex flex-col gap-1 flex-shrink-0';
-
-      const up = document.createElement('button');
-      up.className = 'w-10 h-10 rounded-xl bg-slate-100 hover:bg-violet-100 hover:text-violet-600 text-slate-500 font-bold text-lg flex items-center justify-center';
-      up.textContent = '↑';
-      if (pos === 0) up.classList.add('invisible');
-      up.addEventListener('click', () => { [order[pos], order[pos-1]] = [order[pos-1], order[pos]]; rebuild(); });
-
-      const dn = document.createElement('button');
-      dn.className = 'w-10 h-10 rounded-xl bg-slate-100 hover:bg-violet-100 hover:text-violet-600 text-slate-500 font-bold text-lg flex items-center justify-center';
-      dn.textContent = '↓';
-      if (pos === order.length - 1) dn.classList.add('invisible');
-      dn.addEventListener('click', () => { [order[pos], order[pos+1]] = [order[pos+1], order[pos]]; rebuild(); });
-
-      arrows.appendChild(up);
-      arrows.appendChild(dn);
-      row.appendChild(num);
-      row.appendChild(block);
-      row.appendChild(arrows);
-      quizOptionsEl.appendChild(row);
-    });
-
-    // Кнопка перевірки
-    const checkBtn = document.createElement('button');
-    checkBtn.className = 'btn w-full px-5 py-4 rounded-2xl bg-violet-500 hover:bg-violet-600 text-white font-bold text-base mt-2';
-    checkBtn.textContent = 'Перевірити';
-    checkBtn.addEventListener('click', () => {
-      if (answered) return;
-      answered = true;
-
-      const isCorrect = q.correctOrder.every((correctItemIdx, pos) => order[pos] === correctItemIdx);
-      if (isCorrect) score++;
-
-      // Перемальовуємо з підсвіткою
-      quizOptionsEl.innerHTML = '';
-      order.forEach((itemIdx, pos) => {
-        const ok = q.correctOrder[pos] === itemIdx;
-        const row = document.createElement('div');
-        row.className = 'flex items-center gap-3';
-        const num = document.createElement('span');
-        num.className = 'text-slate-400 font-bold w-6 text-right flex-shrink-0 text-base';
-        num.textContent = pos + 1 + '.';
-        const block = document.createElement('div');
-        block.className = `flex-1 border-2 rounded-2xl px-5 py-4 font-semibold text-base ${ok ? 'bg-emerald-50 border-emerald-400 text-emerald-800' : 'bg-rose-50 border-rose-400 text-rose-800'}`;
-        block.textContent = q.items[itemIdx];
-        const icon = document.createElement('span');
-        icon.textContent = ok ? '✓' : '✗';
-        icon.className = 'text-xl flex-shrink-0';
-        row.appendChild(num);
-        row.appendChild(block);
-        row.appendChild(icon);
-        quizOptionsEl.appendChild(row);
-      });
-
-      // Якщо неправильно — показуємо правильний порядок
-      if (!isCorrect) {
-        const correctRow = document.createElement('div');
-        correctRow.className = 'mt-2 p-3 bg-emerald-50 border border-emerald-200 rounded-2xl';
-        correctRow.innerHTML = '<p class="text-xs text-emerald-700 font-semibold mb-1">Правильний порядок:</p>' +
-          q.correctOrder.map((idx, pos) => `<span class="text-xs text-emerald-800">${pos+1}. ${q.items[idx]}</span>`).join('<br>');
-        quizOptionsEl.appendChild(correctRow);
-      }
-
-      showFeedback(isCorrect, q);
-    });
-    quizOptionsEl.appendChild(checkBtn);
-  };
-
-  rebuild();
-}
-
-function renderMatch(q) {
-  // Перемішуємо правий стовпець для відображення
-  const shuffled = [...q.right].sort(() => Math.random() - 0.5);
-
-  q.left.forEach((leftItem) => {
-    const row = document.createElement('div');
-    row.className = 'flex items-center gap-3';
-
-    const leftEl = document.createElement('div');
-    leftEl.className = 'flex-1 bg-white border-2 border-slate-200 rounded-2xl px-4 py-3 font-semibold text-base text-slate-800';
-    leftEl.textContent = leftItem;
-
-    const arrow = document.createElement('span');
-    arrow.className = 'text-slate-400 font-bold text-xl flex-shrink-0';
-    arrow.textContent = '→';
-
-    const select = document.createElement('select');
-    select.className = 'flex-1 px-4 py-3 rounded-2xl border-2 border-slate-200 bg-white text-slate-800 font-semibold text-sm focus:outline-none focus:border-violet-400';
-
-    const placeholder = document.createElement('option');
-    placeholder.value = '';
-    placeholder.textContent = 'Обери…';
-    select.appendChild(placeholder);
-    shuffled.forEach(item => {
-      const opt = document.createElement('option');
-      opt.value = item;
-      opt.textContent = item;
-      select.appendChild(opt);
-    });
-
-    row.appendChild(leftEl);
-    row.appendChild(arrow);
-    row.appendChild(select);
-    quizOptionsEl.appendChild(row);
-  });
-
-  const checkBtn = document.createElement('button');
-  checkBtn.className = 'btn w-full px-5 py-4 rounded-2xl bg-violet-500 hover:bg-violet-600 text-white font-bold text-base mt-2';
-  checkBtn.textContent = 'Перевірити';
-  checkBtn.addEventListener('click', () => {
-    if (answered) return;
-    const selects = [...quizOptionsEl.querySelectorAll('select')];
-    if (selects.some(s => !s.value)) { return; }
-    answered = true;
-
-    let allCorrect = true;
-    selects.forEach((sel, i) => {
-      const ok = sel.value === q.right[q.pairs[i]];
-      if (!ok) allCorrect = false;
-      sel.disabled = true;
-      const leftEl = sel.parentElement.querySelector('div');
-      leftEl.classList.remove('border-slate-200');
-      leftEl.classList.add(ok ? 'border-emerald-400' : 'border-rose-400');
-      sel.classList.remove('border-slate-200');
-      sel.classList.add(ok ? 'border-emerald-400' : 'border-rose-400');
-    });
-    if (allCorrect) score++;
-    showFeedback(allCorrect, q);
-  });
-  quizOptionsEl.appendChild(checkBtn);
 }
 
 // ── Спільний фідбек ────────────────────────────────────────────────────────
@@ -539,6 +402,7 @@ function showFeedback(isCorrect, q) {
   }
   quizNextBtn.classList.remove('hidden');
   quizNextBtn.textContent = currentIdx + 1 < questions.length ? 'Далі' : 'Завершити';
+  saveQuizBackup();
 }
 
 quizNextBtn.addEventListener('click', () => {
@@ -582,9 +446,16 @@ async function finishQuiz(timeUp) {
         sessionId: currentSessionId
       });
       await finishSession(currentSessionId);
+      clearQuizBackup();
       resultSavedMsg.classList.remove('hidden');
     } catch (err) {
-      resultErrorMsg.textContent = `Помилка збереження: ${err.message}`;
+      // Результат не вдалось зберегти — повідомляємо учня що робити
+      const backup = { score, total: questions.length, code: meta.code };
+      try { localStorage.setItem(QUIZ_BACKUP_KEY + '_failed', JSON.stringify(backup)); } catch { /* ігноруємо */ }
+      resultErrorMsg.innerHTML =
+        `⚠️ Немає зв'язку — результат не збережено автоматично.<br>
+         <strong>Скажи вчителю:</strong> код <strong>${meta.code}</strong>, результат <strong>${score}/${questions.length}</strong>.<br>
+         <span class="text-xs opacity-70">Коли з'явиться інтернет — оновлення сторінки може відновити збереження.</span>`;
       resultErrorMsg.classList.remove('hidden');
     }
     currentSessionId = null;

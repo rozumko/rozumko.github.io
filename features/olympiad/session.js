@@ -1,7 +1,7 @@
 import {
   db, auth,
   doc, getDoc, setDoc, updateDoc, serverTimestamp,
-  collection, query, where, getDocs
+  collection, query, where, getDocs, runTransaction
 } from '../../services/firebase.js';
 
 // Знайти активну олімпіадну подію для класу учня
@@ -26,31 +26,37 @@ export async function checkSession(studentCode, eventId) {
   return snap.data(); // { status: 'started'|'completed'|'blocked', ... }
 }
 
-// Створити або поновити сесію (тільки якщо немає або дозволено retry)
+// Створити або поновити сесію атомарно через транзакцію
 export async function startSession(studentCode, eventId, teacherUid, grade) {
   const sessionId = `${studentCode}_${eventId}`;
-  const existing = await checkSession(studentCode, eventId);
+  const sessionRef = doc(db, 'olympiad_sessions', sessionId);
+  const uid = auth.currentUser?.uid ?? null;
 
-  if (existing?.status === 'completed' && !existing?.retryAllowed) {
-    throw new Error('Ти вже пройшов цю олімпіаду. Повторна спроба не дозволена.');
-  }
-  if (existing?.status === 'blocked') {
-    throw new Error('Доступ до олімпіади заблоковано. Зверніться до вчителя.');
-  }
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(sessionRef);
+    const existing = snap.exists() ? snap.data() : null;
 
-  const data = {
-    eventId,
-    studentCode,
-    teacherUid,
-    grade,
-    startedAt: serverTimestamp(),
-    finishedAt: null,
-    status: 'started',
-    attemptCount: (existing?.attemptCount ?? 0) + 1,
-    lastAnonymousUid: auth.currentUser?.uid ?? null
-  };
+    if (existing?.status === 'completed' && !existing?.retryAllowed) {
+      throw new Error('Ти вже пройшов цю олімпіаду. Повторна спроба не дозволена.');
+    }
+    if (existing?.status === 'blocked') {
+      throw new Error('Доступ до олімпіади заблоковано. Зверніться до вчителя.');
+    }
 
-  await setDoc(doc(db, 'olympiad_sessions', sessionId), data);
+    tx.set(sessionRef, {
+      eventId,
+      studentCode,
+      teacherUid,
+      grade,
+      startedAt: serverTimestamp(),
+      finishedAt: null,
+      status: 'started',
+      attemptCount: (existing?.attemptCount ?? 0) + 1,
+      lastAnonymousUid: uid,
+      retryAllowed: existing?.retryAllowed ?? false
+    });
+  });
+
   return sessionId;
 }
 

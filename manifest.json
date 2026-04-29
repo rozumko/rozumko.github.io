@@ -1,0 +1,14 @@
+{
+  "name": "Розумко — Олімпіада з інформатики",
+  "short_name": "Розумко",
+  "description": "Онлайн-олімпіада з інформатики для учнів 1–4 класів",
+  "start_url": "/student.html",
+  "display": "standalone",
+  "background_color": "#4c1d95",
+  "theme_color": "#7c3aed",
+  "lang": "uk",
+  "icons": [
+    { "src": "/favicon-32x32.png", "sizes": "32x32", "type": "image/png" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

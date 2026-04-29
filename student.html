@@ -20,6 +20,7 @@
 
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="manifest" href="/manifest.json">
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
   <meta name="theme-color" content="#7c3aed">
   <script src="https://cdn.tailwindcss.com"></script>
@@ -207,22 +208,23 @@
     </div>
 
     <!-- Питання -->
-    <div class="flex-1 overflow-y-auto p-5 flex flex-col items-center pt-8">
+    <div class="flex-1 overflow-y-auto p-4 flex flex-col items-center pt-4">
       <div class="w-full max-w-lg">
-        <div
-          class="bg-white rounded-3xl shadow-md border border-slate-100 p-7 mb-6 min-h-[120px] flex items-center justify-center">
-          <p id="quiz-question-text" class="text-xl sm:text-2xl font-bold text-slate-900 text-center leading-snug"></p>
+        <div id="quiz-question-card"
+          class="bg-white rounded-3xl shadow-md border border-slate-100 p-5 mb-4 flex items-center gap-4">
+          <p id="quiz-question-text" class="flex-1 text-xl sm:text-2xl font-bold text-slate-900 leading-snug"></p>
+          <img id="quiz-image" src="" alt="Зображення до питання"
+            class="hidden w-36 sm:w-44 flex-shrink-0 rounded-2xl object-contain cursor-zoom-in border border-slate-100 shadow-sm hover:opacity-90 transition-opacity self-center"/>
         </div>
         <pre id="quiz-code-block"
-          class="hidden bg-slate-900 text-emerald-300 rounded-2xl px-5 py-4 mb-5 text-sm font-mono leading-relaxed overflow-x-auto whitespace-pre-wrap"></pre>
-        <div id="quiz-options" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6" role="radiogroup"
+          class="hidden bg-slate-900 text-emerald-300 rounded-2xl px-4 py-3 mb-3 text-sm font-mono leading-relaxed overflow-x-auto whitespace-pre-wrap"></pre>
+        <div id="quiz-options" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4" role="radiogroup"
           aria-labelledby="quiz-question-text"></div>
-        <div class="text-center min-h-[3.5rem]">
-          <p id="quiz-feedback" class="font-bold text-lg mb-2" aria-live="polite"></p>
+        <div class="text-center min-h-[3rem]">
+          <p id="quiz-feedback" class="font-bold text-lg mb-1" aria-live="polite"></p>
           <p id="quiz-explanation" class="text-sm text-slate-500 hidden"></p>
           <button id="quiz-next-btn"
-            class="btn bg-violet-600 text-white font-extrabold py-4 px-10 rounded-2xl hidden mt-2 text-lg">Далі
-            →</button>
+            class="btn bg-violet-600 text-white font-extrabold py-3 px-10 rounded-2xl hidden mt-2 text-lg">Далі →</button>
         </div>
       </div>
     </div>
@@ -279,6 +281,15 @@
       <button id="modal-ok-btn"
         class="btn bg-violet-600 text-white font-bold py-4 px-10 rounded-2xl text-lg">OK</button>
     </div>
+  </div>
+
+  <!-- Lightbox -->
+  <div id="img-lightbox" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/85 p-4 cursor-zoom-out"
+    role="dialog" aria-modal="true" aria-label="Збільшене зображення">
+    <img id="img-lightbox-img" src="" alt="" class="max-w-full max-h-full rounded-2xl shadow-2xl object-contain select-none"/>
+    <button id="img-lightbox-close" class="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/35 text-white text-xl transition-colors" aria-label="Закрити зображення">
+      <i class="fas fa-times"></i>
+    </button>
   </div>
 
   <script type="module" src="student.js"></script>

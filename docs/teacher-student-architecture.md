@@ -1,6 +1,6 @@
 # Архітектура Teacher / Student / Olympiad — РОЗУМКО
 
-_Останнє оновлення: 2026-04-28_
+_Останнє оновлення: 2026-04-29_
 
 ---
 
@@ -51,12 +51,24 @@ features/
     student-code-auth.js          ← validateStudentCode, startAnonymousSession
   olympiad/
     session.js                    ← findActiveEvent, checkSession, startSession, finishSession
-    results.js                    ← saveOlympiadResult
+                                     (race condition захищений через runTransaction)
+    results.js                    ← saveOlympiadResult (addDoc → унікальний ID)
     quiz-engine.js                ← loadQuestions (Firestore → JS fallback), getModeConfig
+
+utils/
+  focus-trap.js                   ← createFocusTrap(el, onClose) → removeTrap
+  question-renderer.js            ← renderQuestion(q, container, { onAnswer, preview })
 
 data/questions/informatics/
   grade1.js … grade4.js           ← тренувальний банк (fallback)
   grade1-olympiad.js … grade4-olympiad.js  ← олімпіадний банк (fallback)
+
+docs/
+  teacher-student-architecture.md ← цей файл
+  task-format.md                  ← схеми всіх типів питань
+
+manifest.json                     ← PWA manifest
+style.css                         ← глобальні стилі (Tailwind + кастомні)
 ```
 
 ---
@@ -117,12 +129,15 @@ data/questions/informatics/
   startedAt: Timestamp,
   finishedAt: Timestamp | null,
   status: 'started' | 'completed' | 'blocked',
+  retryAllowed: boolean,
   attemptCount: number,
   lastAnonymousUid: string
 }
 ```
+Запис захищений `runTransaction` — race condition неможливий.
 
-### `olympiad_results/{studentCode}_{eventId}_{timestamp}`
+### `olympiad_results/{autoId}`
+ID генерується Firestore через `addDoc` (немає колізій).
 ```js
 {
   eventId: string,
@@ -138,19 +153,20 @@ data/questions/informatics/
 }
 ```
 
-### `olympiad_questions/{id}`
-Основне джерело питань (керується адміном). JS-файли — fallback.
+### `olympiad_questions/{autoId}`
+Основне джерело питань. JS-файли — fallback.
 ```js
 {
+  type: 'choice' | 'truefalse' | 'input' | 'sort' | 'sequence' | 'match',
   q: string,
-  code: string | null,       // псевдокод Равлика
-  a: string[],               // 4 варіанти
-  correct: number,           // індекс правильного
+  img: string,               // URL зображення (поле відсутнє якщо немає)
+  code: string,              // псевдокод Равлика (поле відсутнє якщо немає)
   explanation: string,
   grade: number,             // 1–4
   difficulty: 'easy' | 'medium' | 'hard',
   isOlympiad: boolean,
   subject: 'informatics',
+  // Поля залежно від type — див. docs/task-format.md
   createdAt: Timestamp,
   updatedAt: Timestamp
 }
@@ -158,7 +174,7 @@ data/questions/informatics/
 
 ---
 
-## Firestore Security Rules (продакшен)
+## Firestore Security Rules
 
 - `users`: кожен читає/пише тільки свій профіль; адмін читає всі
 - `students`: `get` — будь-який `isSignedIn()`; `list` — тільки вчитель/адмін
@@ -167,7 +183,53 @@ data/questions/informatics/
 - `olympiad_results`: читання — адмін або вчитель свої; запис — перевіряється сесія зі статусом `completed` та збіг `studentCode`
 - `olympiad_questions`: читання — `isSignedIn()`; запис — тільки адмін
 
-**App Check:** увімкнено Enforce для Firestore через reCAPTCHA v3.
+**App Check:** увімкнено (reCAPTCHA v3, site key зберігається в `services/firebase.js`).  
+⚠️ Enforce тимчасово вимкнено — діагностика 400-помилки при логіні вчителя в прогресі.
+
+---
+
+## Безпека
+
+| Загроза | Захист |
+|---|---|
+| XSS | `esc()` хелпер скрізь де user data → `innerHTML` |
+| Race condition (подвійний старт сесії) | `runTransaction` в `session.js` |
+| ID collision результатів | `addDoc` (Firestore auto-ID) |
+| Code enumeration | Firestore rule: список кодів тільки для свого teacherUid |
+| Підробка score | Firestore rule: результат приймається тільки якщо сесія `completed` |
+| App Check | reCAPTCHA v3 Enforce (тимчасово вимкнено) |
+
+---
+
+## Доступність (WCAG 2.2)
+
+- `skip-link` на всіх сторінках
+- Focus trap у всіх модальних вікнах (`utils/focus-trap.js`)
+- `aria-label` на інтерактивних елементах без видимого тексту (↑/↓, select у match)
+- `prefers-reduced-motion` — анімації вимкнені
+- `role="dialog" aria-modal="true"` на всіх модалях
+- `aria-live="polite"` на feedback після відповіді
+
+---
+
+## PWA
+
+- `manifest.json` підключено на `index.html` і `student.html`
+- `theme_color`, іконки (192×192, 512×512)
+- Service Worker: не реалізований (статичний хостинг, GitHub Pages кешує)
+
+---
+
+## localStorage — Резервна копія квізу
+
+Під час олімпіади після кожної відповіді зберігається:
+```js
+localStorage['rozumko_quiz_backup'] = {
+  sessionId, mode, currentIdx, score, secondsLeft, startedAt, meta
+}
+```
+Backup валідний 3 години. При успішному збереженні результату — видаляється.  
+При невдачі збереження — учень бачить повідомлення з кодом і результатом для вчителя.
 
 ---
 
@@ -179,7 +241,7 @@ data/questions/informatics/
 ### Кабінет вчителя
 - Створення класів, генерація кодів (`СЛОВО999`, 22 тварини)
 - Деактивація/активація кодів кнопкою (toggle)
-- Поле імені учня на чипі (автозбереження, для сертифікатів)
+- Поле імені учня на чипі (автозбереження 800ms debounce)
 - Результати з назвою події (не eventId)
 
 ### Адмін-панель
@@ -188,32 +250,42 @@ data/questions/informatics/
 - Вчителі: список з email, школою, кількістю класів
 - Результати: всі результати, CSV-експорт, назва події
 - **Питання**: повний CRUD, фільтри (клас/тип/складність), дублювання, імпорт з JS-файлів
+- **Preview питання**: кнопка «Переглянути» у формі → рендер через `question-renderer.js`
 
-### Quiz
+### Quiz — типи питань
+- `choice` — 4 варіанти, підсвітка правильного/неправильного
+- `truefalse` — кнопки «Так» / «Ні»
+- `input` — текстове/числове поле, Enter для підтвердження
+- `sort` — блоки з кнопками ↑/↓, перевірка повного порядку
+- `sequence` — послідовність з «?» + 4 варіанти
+- `match` — ліво→select (перемішаний правий стовпець)
+
+### Quiz — загальне
 - Три режими: `practice`, `demo`, `olympiad`
 - Питання: Firestore (primary) → JS-модулі (fallback)
+- Поле `img` — зображення праворуч від тексту, клік → lightbox
 - Поле `code` — псевдокод Равлика в `<pre>` блоці
 - Прогрес-бар, таймер, підсвітка відповідей, пояснення
+- localStorage backup при олімпіаді
 
 ### Банк питань
 - 15 питань × 4 класи (тренування) = 60
 - 12 питань × 4 класи (олімпіада) = 48
 - Всі 108 імпортовані у Firestore
 
-### Безпека
-- XSS: `esc()` хелпер скрізь де user data → `innerHTML`
-- Firestore rules: валідація запису результату через сесію
-- App Check (reCAPTCHA v3): Enforced
-
 ---
 
-## Що залишилось
+## Що залишилось / Технічний борг
+
+### 🔴 Безпека
+- App Check Enforce вимкнено — розібратись з 400-помилкою (reCAPTCHA домен?)
 
 ### 🟡 Функціонал
+- `offline.html` — сторінка помилки при відсутності інтернету
 - Fullscreen для олімпіади (`requestFullscreen` при старті)
-- Нові типи питань: `sort`, `sequence`, `match` (рендерери + оцінювання)
-- Офлайн-помилка якщо Firebase недоступний
+- Firebase Storage для зображень (зараз тільки URL)
 
 ### 🟢 Майбутнє
 - Cloudflare Pages + D1 міграція
 - Сертифікати (PDF або друк)
+- Голосовий ввід для типу `input`

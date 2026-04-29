@@ -1,11 +1,10 @@
 import {
   db,
-  doc, setDoc, serverTimestamp
+  collection, addDoc, serverTimestamp
 } from '../../services/firebase.js';
 
 export async function saveOlympiadResult({ eventId, studentCode, teacherUid, grade, score, totalQuestions, timeSpentSeconds, penalizedCount, sessionId }) {
-  const resultId = `${studentCode}_${eventId}_${Date.now()}`;
-  await setDoc(doc(db, 'olympiad_results', resultId), {
+  const ref = await addDoc(collection(db, 'olympiad_results'), {
     eventId,
     studentCode,
     teacherUid,
@@ -18,5 +17,5 @@ export async function saveOlympiadResult({ eventId, studentCode, teacherUid, gra
     completedAt: serverTimestamp(),
     sessionId
   });
-  return resultId;
+  return ref.id;
 }

@@ -7,7 +7,8 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc,
-  collection, getDocs, query, where, orderBy, serverTimestamp, getCountFromServer
+  collection, getDocs, query, where, orderBy, serverTimestamp, getCountFromServer,
+  runTransaction
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -38,5 +39,6 @@ export {
   signOut, onAuthStateChanged, signInAnonymously,
   // firestore
   doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc,
-  collection, getDocs, query, where, orderBy, serverTimestamp, getCountFromServer
+  collection, getDocs, query, where, orderBy, serverTimestamp, getCountFromServer,
+  runTransaction
 };

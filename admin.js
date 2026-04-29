@@ -3,9 +3,15 @@ import { loadAdminStats } from './services/stats.js';
 import { createEvent, getAllEvents, setEventStatus } from './services/events.js';
 import { getAllTeachers, getAllResults } from './services/admin-data.js';
 import { getQuestions, createQuestion, updateQuestion, deleteQuestion, duplicateQuestion, importFromJsFiles } from './services/questions.js';
+import { createFocusTrap }  from './utils/focus-trap.js';
+import { renderQuestion }   from './utils/question-renderer.js';
 
 const appModal    = document.getElementById('app-modal');
-document.getElementById('modal-ok-btn').addEventListener('click', () => appModal.classList.add('hidden'));
+let _appTrapRemove = null;
+document.getElementById('modal-ok-btn').addEventListener('click', () => {
+  _appTrapRemove?.(); _appTrapRemove = null;
+  appModal.classList.add('hidden');
+});
 
 const authSection = document.getElementById('auth-section');
 const adminPanel = document.getElementById('admin-panel');
@@ -326,7 +332,7 @@ async function loadQuestionsTab(filters = {}) {
 }
 
 function buildQuestionCard(q) {
-  const TYPE = { choice: 'Вибір', sort: 'Порядок', algorithm: 'Алгоритм', sequence: 'Послідовність', match: 'Пари' };
+  const TYPE = { choice: 'Вибір', sort: 'Порядок', algorithm: 'Алгоритм', sequence: 'Послідовність', match: 'Пари', truefalse: 'Так/Ні', input: 'Введення' };
   const DIFF = { easy: { label: 'Легке', cls: 'bg-emerald-800 text-emerald-200' }, medium: { label: 'Середнє', cls: 'bg-amber-800 text-amber-200' }, hard: { label: 'Складне', cls: 'bg-rose-900 text-rose-200' } };
   const d = DIFF[q.difficulty] ?? DIFF.medium;
   const el = document.createElement('div');
@@ -368,17 +374,116 @@ const questionForm  = document.getElementById('question-form');
 const qfError       = document.getElementById('qf-error');
 const qfSubmitBtn   = document.getElementById('qf-submit');
 
-document.getElementById('qf-cancel').addEventListener('click', () => questionModal.classList.add('hidden'));
+let _qModalTrapRemove = null;
+function closeQuestionModal() {
+  _qModalTrapRemove?.(); _qModalTrapRemove = null;
+  questionModal.classList.add('hidden');
+}
+document.getElementById('qf-cancel').addEventListener('click', closeQuestionModal);
 document.getElementById('add-question-btn').addEventListener('click', () => openQuestionModal(null));
 
-const QF_SECTIONS = { choice: 'qf-section-choice', sort: 'qf-section-sort', sequence: 'qf-section-sequence', match: 'qf-section-match' };
+const QF_SECTIONS = {
+  choice: 'qf-section-choice', sort: 'qf-section-sort',
+  sequence: 'qf-section-sequence', match: 'qf-section-match',
+  truefalse: 'qf-section-truefalse', input: 'qf-section-input',
+};
 document.getElementById('qf-type').addEventListener('change', (e) => applyTypeUI(e.target.value));
+
+// ── Preview питання ────────────────────────────────────────────────────────
+const previewModal = document.getElementById('preview-modal');
+let _pvTrapRemove = null;
+
+function closePreview() { _pvTrapRemove?.(); _pvTrapRemove = null; previewModal.classList.add('hidden'); }
+document.getElementById('preview-close').addEventListener('click', closePreview);
+previewModal.addEventListener('click', (e) => { if (e.target === previewModal) closePreview(); });
+
+document.getElementById('qf-preview').addEventListener('click', () => {
+  const type = document.getElementById('qf-type').value;
+  const q = _buildQuestionFromForm();
+  if (!q) return;
+
+  // Картка питання
+  document.getElementById('pv-question-text').textContent = q.q || '(текст питання)';
+  const pvImg = document.getElementById('pv-image');
+  if (q.img) { pvImg.src = q.img; pvImg.classList.remove('hidden'); } else { pvImg.classList.add('hidden'); pvImg.src = ''; }
+
+  // Код
+  const pvCode = document.getElementById('pv-code');
+  if (q.code) { pvCode.textContent = q.code; pvCode.classList.remove('hidden'); } else { pvCode.classList.add('hidden'); }
+
+  // Варіанти — через спільний рендерер
+  const pvOpts = document.getElementById('pv-options');
+  pvOpts.className = type === 'choice' ? 'grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4'
+    : type === 'truefalse' ? 'grid grid-cols-2 gap-3 mb-4'
+    : 'flex flex-col gap-3 mb-4';
+  renderQuestion(q, pvOpts, { preview: true });
+
+  // Пояснення
+  const explWrap = document.getElementById('pv-explanation-wrap');
+  if (q.explanation) { document.getElementById('pv-explanation').textContent = q.explanation; explWrap.classList.remove('hidden'); }
+  else { explWrap.classList.add('hidden'); }
+
+  previewModal.classList.remove('hidden');
+  _pvTrapRemove?.();
+  _pvTrapRemove = createFocusTrap(previewModal, closePreview);
+});
+
+/** Збирає об'єкт питання з поточного стану форми (без валідації, для preview) */
+function _buildQuestionFromForm() {
+  const type = document.getElementById('qf-type').value;
+  const base = {
+    type,
+    q:           document.getElementById('qf-q').value.trim() || '(текст питання)',
+    img:         document.getElementById('qf-img').value.trim() || null,
+    explanation: document.getElementById('qf-explanation').value.trim(),
+    code:        document.getElementById('qf-code').value.trim() || null,
+  };
+  if (type === 'choice') {
+    const correctEl = document.querySelector('input[name="qf-correct"]:checked');
+    return { ...base, a: [...document.querySelectorAll('.qf-opt')].map(i => i.value.trim() || '…'), correct: correctEl ? Number(correctEl.value) : 0 };
+  }
+  if (type === 'truefalse') {
+    const tfEl = document.querySelector('input[name="qf-tf-correct"]:checked');
+    return { ...base, correct: tfEl ? tfEl.value === 'true' : true };
+  }
+  if (type === 'input') {
+    const correctVal = document.getElementById('qf-input-correct').value.trim();
+    const inputType  = document.getElementById('qf-input-type').value;
+    return { ...base, correct: inputType === 'number' ? Number(correctVal) || 0 : correctVal, inputType };
+  }
+  if (type === 'sort' || type === 'algorithm') {
+    const items = document.getElementById('qf-items').value.split('\n').map(s => s.trim()).filter(Boolean);
+    const correctOrder = document.getElementById('qf-correct-order').value.split(',').map(s => Number(s.trim())).filter(n => !isNaN(n));
+    return { ...base, items: items.length ? items : ['Елемент 1', 'Елемент 2'], correctOrder: correctOrder.length ? correctOrder : [0, 1] };
+  }
+  if (type === 'sequence') {
+    const given = document.getElementById('qf-given').value.split(',').map(s => s.trim()).filter(Boolean);
+    const choices = [...document.querySelectorAll('.qf-seq-opt')].map(i => i.value.trim() || '…');
+    const seqEl = document.querySelector('input[name="qf-seq-correct"]:checked');
+    return { ...base, given: given.length ? given : ['?'], choices, correct: seqEl ? Number(seqEl.value) : 0 };
+  }
+  if (type === 'match') {
+    const left  = document.getElementById('qf-left').value.split('\n').map(s => s.trim()).filter(Boolean);
+    const right = document.getElementById('qf-right').value.split('\n').map(s => s.trim()).filter(Boolean);
+    const pairs = document.getElementById('qf-pairs').value.split(',').map(s => Number(s.trim())).filter(n => !isNaN(n));
+    return { ...base, left: left.length ? left : ['Ліво'], right: right.length ? right : ['Право'], pairs: pairs.length ? pairs : [0] };
+  }
+  return base;
+}
+
+// img preview
+document.getElementById('qf-img').addEventListener('input', (e) => {
+  const prev = document.getElementById('qf-img-preview');
+  const url = e.target.value.trim();
+  if (url) { prev.src = url; prev.classList.remove('hidden'); }
+  else { prev.classList.add('hidden'); prev.src = ''; }
+});
 
 function applyTypeUI(type) {
   Object.values(QF_SECTIONS).forEach(id => document.getElementById(id).classList.add('hidden'));
   document.getElementById(QF_SECTIONS[type] ?? 'qf-section-choice').classList.remove('hidden');
-  // Код Равлика тільки для choice/sort — не потрібен для match/sequence
-  document.getElementById('qf-code-wrap').classList.toggle('hidden', type === 'match' || type === 'sequence');
+  // Код Равлика тільки для choice/sort
+  document.getElementById('qf-code-wrap').classList.toggle('hidden', !['choice','sort','algorithm'].includes(type));
 }
 
 document.getElementById('q-filter-apply').addEventListener('click', () => loadQuestionsTab());
@@ -433,8 +538,26 @@ function openQuestionModal(q) {
   document.getElementById('qf-right').value = (q?.right ?? []).join('\n');
   document.getElementById('qf-pairs').value = (q?.pairs ?? []).join(',');
 
+  // truefalse
+  const tfVal = String(q?.correct ?? 'true');
+  const tfRadio = document.querySelector(`input[name="qf-tf-correct"][value="${tfVal}"]`);
+  if (tfRadio) tfRadio.checked = true;
+
+  // input
+  document.getElementById('qf-input-correct').value = q?.correct ?? '';
+  document.getElementById('qf-input-type').value    = q?.inputType ?? 'text';
+
+  // img
+  const imgUrl = q?.img ?? '';
+  document.getElementById('qf-img').value = imgUrl;
+  const prev = document.getElementById('qf-img-preview');
+  if (imgUrl) { prev.src = imgUrl; prev.classList.remove('hidden'); }
+  else { prev.classList.add('hidden'); prev.src = ''; }
+
   qfError.textContent = '';
   questionModal.classList.remove('hidden');
+  _qModalTrapRemove?.();
+  _qModalTrapRemove = createFocusTrap(questionModal, closeQuestionModal);
 }
 
 questionForm.addEventListener('submit', async (e) => {
@@ -444,15 +567,13 @@ questionForm.addEventListener('submit', async (e) => {
   const q   = document.getElementById('qf-q').value.trim();
   const opts      = [...document.querySelectorAll('.qf-opt')].map(i => i.value.trim());
   const correctEl = document.querySelector('input[name="qf-correct"]:checked');
-  if (!q) { qfError.textContent = 'Введи текст питання.'; return; }
-  // Валідація choice тут, інших типів — нижче після визначення type
-  if ((document.getElementById('qf-type').value === 'choice') && opts.some(o => !o)) { qfError.textContent = 'Заповни всі 4 варіанти.'; return; }
-  if ((document.getElementById('qf-type').value === 'choice') && !correctEl) { qfError.textContent = 'Вибери правильну відповідь.'; return; }
-
   const type = document.getElementById('qf-type').value;
+  if (!q) { qfError.textContent = 'Введи текст питання.'; return; }
+  const imgUrl = document.getElementById('qf-img').value.trim() || null;
   const base = {
     type,
     q,
+    ...(imgUrl ? { img: imgUrl } : {}),
     explanation: document.getElementById('qf-explanation').value.trim(),
     grade:       Number(document.getElementById('qf-grade').value),
     difficulty:  document.getElementById('qf-difficulty').value,
@@ -479,9 +600,21 @@ questionForm.addEventListener('submit', async (e) => {
     const pairs = document.getElementById('qf-pairs').value.split(',').map(s => Number(s.trim()));
     if (left.length < 2 || right.length < 2) { qfError.textContent = 'Мінімум 2 пари.'; qfSubmitBtn.disabled = false; qfSubmitBtn.textContent = 'Зберегти'; return; }
     data = { ...base, left, right, pairs };
+  } else if (type === 'truefalse') {
+    const tfEl = document.querySelector('input[name="qf-tf-correct"]:checked');
+    if (!tfEl) { qfError.textContent = 'Вибери правильну відповідь.'; qfSubmitBtn.disabled = false; qfSubmitBtn.textContent = 'Зберегти'; return; }
+    data = { ...base, correct: tfEl.value === 'true' };
+  } else if (type === 'input') {
+    const correctVal = document.getElementById('qf-input-correct').value.trim();
+    const inputType  = document.getElementById('qf-input-type').value;
+    if (!correctVal) { qfError.textContent = 'Введи правильну відповідь.'; qfSubmitBtn.disabled = false; qfSubmitBtn.textContent = 'Зберегти'; return; }
+    data = { ...base, correct: inputType === 'number' ? Number(correctVal) : correctVal, inputType };
   } else {
     // choice (default)
-    data = { ...base, code: document.getElementById('qf-code').value.trim() || null, a: opts, correct: Number(correctEl.value) };
+    if (opts.some(o => !o)) { qfError.textContent = 'Заповни всі 4 варіанти.'; qfSubmitBtn.disabled = false; qfSubmitBtn.textContent = 'Зберегти'; return; }
+    if (!correctEl) { qfError.textContent = 'Вибери правильну відповідь.'; qfSubmitBtn.disabled = false; qfSubmitBtn.textContent = 'Зберегти'; return; }
+    const code = document.getElementById('qf-code').value.trim() || null;
+    data = { ...base, ...(code ? { code } : {}), a: opts, correct: Number(correctEl.value) };
   }
 
   qfSubmitBtn.disabled = true;
@@ -489,7 +622,7 @@ questionForm.addEventListener('submit', async (e) => {
   try {
     if (id) await updateQuestion(id, data);
     else    await createQuestion(data);
-    questionModal.classList.add('hidden');
+    closeQuestionModal();
     await loadQuestionsTab();
   } catch (err) {
     qfError.textContent = err.message;
@@ -505,7 +638,12 @@ function esc(str) {
 
 function showModal(msg) {
   document.getElementById('modal-message').textContent = msg;
-  document.getElementById('app-modal').classList.remove('hidden');
+  appModal.classList.remove('hidden');
+  _appTrapRemove?.();
+  _appTrapRemove = createFocusTrap(appModal, () => {
+    _appTrapRemove?.(); _appTrapRemove = null;
+    appModal.classList.add('hidden');
+  });
 }
 
 function showAuth() {

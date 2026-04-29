@@ -37,7 +37,9 @@ export async function loadQuestions(grade, mode, count) {
     if (qs.length > 0) {
       return shuffle(qs).slice(0, Math.min(count, qs.length));
     }
-  } catch { /* fallback */ }
+  } catch (err) {
+    console.warn('[quiz-engine] Firestore недоступний, fallback до JS-модулів:', err?.message ?? err);
+  }
 
   // Fallback до JS-модулів
   const modules = isOlympiad ? OLYMPIAD_MODULES : PRACTICE_MODULES;
