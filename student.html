@@ -10,336 +10,297 @@
   <meta name="keywords" content="Розумко, олімпіада з інформатики, вхід для учня, тренування з інформатики" />
   <link rel="canonical" href="https://rozumko.github.io/student.html" />
 
-  <!-- Open Graph / Facebook -->
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://rozumko.github.io/student.html" />
-  <meta property="og:title" content="Розумко — Кабінет учня" />
-  <meta property="og:description"
-    content="Почни олімпіаду або тренування з інформатики прямо зараз. Вхід за кодом від вчителя." />
-  <meta property="og:image" content="https://rozumko.github.io/android-chrome-512x512.png" />
+  <!-- Open Graph -->
+  <meta property="og:type"        content="website" />
+  <meta property="og:url"         content="https://rozumko.github.io/student.html" />
+  <meta property="og:title"       content="Розумко — Кабінет учня" />
+  <meta property="og:description" content="Почни олімпіаду або тренування з інформатики прямо зараз. Вхід за кодом від вчителя." />
+  <meta property="og:image"       content="https://rozumko.github.io/android-chrome-512x512.png" />
 
+  <!-- Іконки та PWA -->
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-  <link rel="manifest" href="/manifest.json">
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+  <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#7c3aed">
-  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Шрифти -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Іконки -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+
+  <!-- Стилі проєкту (без Tailwind) -->
   <link rel="stylesheet" href="style.css" />
-  <style>
-    body {
-      font-family: 'Montserrat', sans-serif;
-      background: linear-gradient(135deg, #4c1d95 0%, #1e40af 100%);
-      min-height: 100vh;
-    }
-
-    .kid-input {
-      font-size: 2rem;
-      letter-spacing: 0.15em;
-      text-align: center;
-      text-transform: uppercase;
-    }
-    .kid-input::placeholder {
-      font-size: 1rem;
-      font-weight: 400;
-      letter-spacing: 0.02em;
-      text-transform: none;
-      color: #94a3b8;
-    }
-
-    .action-card {
-      transition: transform 0.1s, box-shadow 0.1s;
-    }
-
-    .action-card:hover {
-      transform: translateY(-2px);
-    }
-
-    .action-card:active {
-      transform: translateY(0);
-    }
-
-    /* Вибрані кнопки класу/складності — перекрити hover Tailwind */
-    .grade-btn[aria-pressed="true"],
-    .diff-btn[aria-pressed="true"] {
-      background: #fbbf24 !important;
-      color: #1e293b !important;
-      border-color: #f59e0b !important;
-    }
-  </style>
 </head>
 
-<body>
+<body class="student-page">
 
-  <!-- ===== ЕКРАН 1: ВХІД ЗА КОДОМ ===== -->
-  <div id="screen-entry" class="min-h-screen flex flex-col items-center justify-center p-5">
+  <!-- ═══════════════════════════════════════════════════════════
+       ЕКРАН 1: ВХІД ЗА КОДОМ
+       ═══════════════════════════════════════════════════════════ -->
+  <div id="screen-entry" class="student-screen">
 
-    <a href="index.html"
-      class="absolute top-4 left-4 text-white/50 hover:text-white/80 text-sm flex items-center gap-1">
-      <i class="fas fa-arrow-left"></i> На головну
+    <a href="index.html" class="student-back">
+      <i class="fas fa-arrow-left" aria-hidden="true"></i> На головну
     </a>
 
     <!-- Логотип -->
-    <div class="text-center mb-8">
-      <div class="text-7xl mb-3">🏆</div>
-      <h1 class="text-4xl font-extrabold text-white tracking-tight">Розумко</h1>
-      <p class="text-white/60 text-sm mt-2">Олімпіада з інформатики</p>
+    <div class="entry-logo">
+      <span class="entry-logo__icon" aria-hidden="true">🏆</span>
+      <h1 class="entry-logo__title">Розумко</h1>
+      <p class="entry-logo__sub">Олімпіада з інформатики</p>
     </div>
 
     <!-- Картка вводу коду -->
-    <div id="code-card" class="w-full max-w-sm bg-white rounded-3xl shadow-2xl p-7">
-      <p class="text-center text-slate-500 font-semibold mb-5 text-base">Введи код від учителя</p>
+    <div id="code-card" class="student-card">
+      <p class="card-label">Введи код від учителя</p>
       <form id="student-code-form" novalidate>
-        <input id="student-code-input" type="text" inputmode="text" autocomplete="off" placeholder="Наприклад: КІТ247"
-          maxlength="20"
-          class="kid-input w-full px-4 py-4 rounded-2xl border-2 border-slate-200 focus:outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 mb-3 font-extrabold text-slate-800" />
-        <p id="code-status" class="text-rose-600 text-sm mb-3 min-h-[1.25rem] text-center" role="alert"
-          aria-live="assertive"></p>
-        <p id="code-success" class="text-emerald-600 text-sm mb-3 min-h-[1.25rem] text-center hidden"
-          aria-live="polite"></p>
-        <button id="code-submit-btn" type="submit"
-          class="w-full bg-violet-600 hover:bg-violet-700 text-white font-extrabold py-5 rounded-2xl text-xl transition-colors">
-          Увійти →
-        </button>
-        <button id="code-clear-btn" type="button"
-          class="w-full mt-3 bg-slate-100 text-slate-600 font-semibold py-3 rounded-2xl text-sm hidden">
-          Змінити код
-        </button>
+        <input id="student-code-input"
+          type="text" inputmode="text" autocomplete="off"
+          placeholder="Наприклад: КІТ247" maxlength="20"
+          class="code-input" />
+        <p id="code-status"   class="code-status"  role="alert" aria-live="assertive"></p>
+        <p id="code-success"  class="code-success hidden" aria-live="polite"></p>
+        <button id="code-submit-btn" type="submit" class="btn btn-violet">Увійти →</button>
+        <button id="code-clear-btn"  type="button" class="btn btn-slate hidden">Змінити код</button>
       </form>
     </div>
 
-    <!-- Тренування -->
-    <div class="w-full max-w-sm mt-4">
-      <button id="show-practice-btn"
-        class="w-full bg-white/20 hover:bg-white/30 text-white font-bold py-4 rounded-2xl text-base transition-colors flex items-center justify-center gap-2 border border-white/30">
-        <i class="fas fa-dumbbell"></i> Тренування без коду
-      </button>
+    <!-- Кнопка «Тренування без коду» -->
+    <button id="show-practice-btn" class="btn-practice-toggle">
+      <i class="fas fa-dumbbell" aria-hidden="true"></i> Тренування без коду
+    </button>
 
-      <!-- Панель вибору — замінює код-картку -->
-      <div id="practice-section" class="hidden w-full max-w-sm bg-white rounded-3xl shadow-2xl p-7 mt-0">
-        <div class="flex items-center justify-between mb-5">
-          <p class="text-slate-800 font-bold text-base">Обери клас і складність</p>
-          <button id="hide-practice-btn" class="text-slate-400 hover:text-slate-600 text-sm flex items-center gap-1 transition-colors">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div id="practice-grade-buttons" class="grid grid-cols-4 gap-2 mb-4" role="group" aria-label="Клас">
-          <button data-grade="1" class="grade-btn bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold py-4 rounded-xl text-xl transition-colors" aria-pressed="false">1</button>
-          <button data-grade="2" class="grade-btn bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold py-4 rounded-xl text-xl transition-colors" aria-pressed="false">2</button>
-          <button data-grade="3" class="grade-btn bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold py-4 rounded-xl text-xl transition-colors" aria-pressed="false">3</button>
-          <button data-grade="4" class="grade-btn bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold py-4 rounded-xl text-xl transition-colors" aria-pressed="false">4</button>
-        </div>
-        <div id="practice-difficulty-buttons" class="grid grid-cols-3 gap-2 mb-5" role="group" aria-label="Складність">
-          <button data-difficulty="easy"   class="diff-btn bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl text-sm transition-colors" aria-pressed="false">😊 Легкий</button>
-          <button data-difficulty="medium" class="diff-btn bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl text-sm transition-colors" aria-pressed="false">🔥 Середній</button>
-          <button data-difficulty="hard"   class="diff-btn bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl text-sm transition-colors" aria-pressed="false">⚡ Важкий</button>
-        </div>
-        <button id="start-practice-btn"
-          class="w-full bg-amber-400 disabled:opacity-40 text-slate-900 font-extrabold py-4 rounded-2xl text-base transition-colors"
-          disabled>
-          Почати тренування
+    <!-- Панель тренування — підміняє код-картку -->
+    <div id="practice-section" class="student-card hidden" style="margin-top: 0;">
+      <div class="practice-header">
+        <p class="practice-header__title">Обери клас і складність</p>
+        <button id="hide-practice-btn" class="practice-header__close" aria-label="Закрити тренування">
+          <i class="fas fa-times" aria-hidden="true"></i>
         </button>
       </div>
+
+      <!-- Вибір класу -->
+      <div id="practice-grade-buttons" class="selector-grid selector-grid--grade"
+           role="group" aria-label="Клас">
+        <button data-grade="1" class="selector-btn" aria-pressed="false">1</button>
+        <button data-grade="2" class="selector-btn" aria-pressed="false">2</button>
+        <button data-grade="3" class="selector-btn" aria-pressed="false">3</button>
+        <button data-grade="4" class="selector-btn" aria-pressed="false">4</button>
+      </div>
+
+      <!-- Вибір складності -->
+      <div id="practice-difficulty-buttons" class="selector-grid selector-grid--diff"
+           role="group" aria-label="Складність">
+        <button data-difficulty="easy"   class="selector-btn selector-btn--diff" aria-pressed="false">😊 Легкий</button>
+        <button data-difficulty="medium" class="selector-btn selector-btn--diff" aria-pressed="false">🔥 Середній</button>
+        <button data-difficulty="hard"   class="selector-btn selector-btn--diff" aria-pressed="false">⚡ Важкий</button>
+      </div>
+
+      <button id="start-practice-btn" class="btn btn-start" disabled>
+        Почати тренування
+      </button>
     </div>
 
-    <footer class="mt-auto py-6 text-center text-white/40 text-xs">
-      <div class="flex flex-wrap justify-center gap-3 sm:gap-5 mb-2">
-        <a href="for-students.html" class="hover:text-white/60 transition-colors">Для учнів</a>
-        <a href="for-parents.html" class="hover:text-white/60 transition-colors">Для батьків</a>
-        <a href="privacy.html" class="hover:text-white/60 transition-colors">Конфіденційність</a>
-        <a href="terms.html" class="hover:text-white/60 transition-colors">Правила</a>
-      </div>
+    <!-- Футер -->
+    <footer class="student-footer">
+      <nav class="student-footer__links" aria-label="Корисні посилання">
+        <a href="for-students.html">Для учнів</a>
+        <a href="for-parents.html">Для батьків</a>
+        <a href="privacy.html">Конфіденційність</a>
+        <a href="terms.html">Правила</a>
+      </nav>
       <p>&copy; 2024–2026 Розумко</p>
     </footer>
-  </div>
 
-  <!-- ===== ЕКРАН 2: ВИБІР ДІЇ (після введення коду) ===== -->
-  <div id="screen-actions" class="hidden min-h-screen flex flex-col items-center justify-center p-5">
+  </div><!-- /screen-entry -->
 
-    <!-- Інфо про подію -->
-    <div id="active-event-info" class="hidden w-full max-w-md bg-white/15 rounded-2xl px-5 py-4 mb-6 text-center">
-      <p class="font-extrabold text-white text-lg" id="active-event-title"></p>
-      <p class="text-white/70 text-sm mt-1" id="active-event-meta"></p>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       ЕКРАН 2: ВИБІР ДІЇ (після введення коду)
+       ═══════════════════════════════════════════════════════════ -->
+  <div id="screen-actions" class="student-screen hidden">
+
+    <!-- Інформація про активну подію -->
+    <div id="active-event-info" class="event-info-card hidden">
+      <p id="active-event-title" class="event-info-card__title"></p>
+      <p id="active-event-meta"  class="event-info-card__meta"></p>
     </div>
 
-    <!-- Кнопки вибору -->
-    <div id="olympiad-actions" class="w-full max-w-md space-y-4">
-      <p class="text-white/80 text-center font-semibold text-base mb-2">Що хочеш зробити?</p>
-
-      <button id="start-demo-btn"
-        class="action-card w-full bg-amber-400 text-slate-900 font-extrabold py-7 rounded-3xl text-xl shadow-lg flex flex-col items-center gap-2">
-        <span class="text-4xl">🎯</span>
+    <!-- Кнопки вибору режиму -->
+    <p class="actions-prompt">Що хочеш зробити?</p>
+    <div id="olympiad-actions" class="action-list">
+      <button id="start-demo-btn" class="action-card action-card--demo">
+        <span class="action-card__icon" aria-hidden="true">🎯</span>
         Демо-версія
-        <span class="text-sm font-semibold text-slate-700 opacity-70">спробуй перед олімпіадою</span>
+        <span class="action-card__sub">спробуй перед олімпіадою</span>
       </button>
-
-      <button id="start-olympiad-btn"
-        class="action-card w-full bg-white text-violet-700 font-extrabold py-7 rounded-3xl text-xl shadow-lg flex flex-col items-center gap-2">
-        <span class="text-4xl">🏆</span>
+      <button id="start-olympiad-btn" class="action-card action-card--olympiad">
+        <span class="action-card__icon" aria-hidden="true">🏆</span>
         Основна олімпіада
-        <span class="text-sm font-semibold text-violet-400">офіційний результат</span>
+        <span class="action-card__sub">офіційний результат</span>
       </button>
     </div>
 
-    <button id="code-clear-btn-2"
-      class="mt-8 text-white/50 hover:text-white/80 text-sm font-semibold transition-colors flex items-center gap-2">
-      <i class="fas fa-sign-out-alt"></i> Змінити код
+    <button id="code-clear-btn-2" class="btn-text">
+      <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Змінити код
     </button>
 
-  </div>
+  </div><!-- /screen-actions -->
 
-  <!-- ===== QUIZ OVERLAY ===== -->
-  <div id="quiz-overlay" class="fixed inset-0 z-50 hidden flex-col bg-slate-50">
+
+  <!-- ═══════════════════════════════════════════════════════════
+       QUIZ OVERLAY
+       ═══════════════════════════════════════════════════════════ -->
+  <div id="quiz-overlay" class="quiz-overlay" role="main" aria-label="Квіз">
 
     <!-- Шапка -->
-    <div class="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm">
-      <div class="flex items-center gap-3">
-        <span id="quiz-mode-badge" class="text-xs font-bold px-3 py-1.5 rounded-full"></span>
-        <span id="quiz-progress-text" class="text-sm font-bold text-slate-600"></span>
+    <header class="quiz-header">
+      <div class="quiz-header__left">
+        <span id="quiz-mode-badge"     class="quiz-badge"></span>
+        <span id="quiz-progress-text"  class="quiz-progress-text"></span>
       </div>
-      <div class="flex items-center gap-3">
-        <div id="quiz-timer"
-          class="hidden items-center gap-1.5 bg-orange-100 text-orange-700 font-bold px-3 py-1.5 rounded-xl text-base"
-          role="timer" aria-live="off">
+      <div class="quiz-header__right">
+        <div id="quiz-timer" class="quiz-timer" role="timer" aria-live="off">
           🔥 <span id="quiz-timer-display">15:00</span>
         </div>
-        <button id="quiz-quit-btn"
-          class="btn bg-slate-100 text-slate-600 text-sm font-bold py-2 px-4 rounded-xl">Вийти</button>
+        <button id="quiz-quit-btn" class="btn btn-quiz-quit">Вийти</button>
       </div>
-    </div>
+    </header>
 
     <!-- Прогрес-бар -->
-    <div class="w-full bg-slate-200 h-2">
-      <div id="quiz-progress-bar" class="bg-violet-500 h-2 transition-all duration-300" style="width:0%"></div>
+    <div class="quiz-progress-bar-wrap" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+      <div id="quiz-progress-bar" class="quiz-progress-bar" style="width:0%"></div>
     </div>
 
-    <!-- Питання -->
-    <div class="flex-1 overflow-y-auto p-4 flex flex-col items-center pt-4">
-      <div class="w-full max-w-lg">
-        <div id="quiz-question-card"
-          class="bg-white rounded-3xl shadow-md border border-slate-100 p-5 mb-4 flex items-center gap-4">
-          <p id="quiz-question-text" class="flex-1 text-xl sm:text-2xl font-bold text-slate-900 leading-snug"></p>
+    <!-- Тіло квізу -->
+    <div class="quiz-body">
+      <div class="quiz-inner">
+
+        <!-- Картка питання -->
+        <div id="quiz-question-card" class="quiz-question-card">
+          <p id="quiz-question-text" class="quiz-question-text"></p>
           <img id="quiz-image" src="" alt="Зображення до питання"
-            class="hidden w-36 sm:w-44 flex-shrink-0 rounded-2xl object-contain cursor-zoom-in border border-slate-100 shadow-sm hover:opacity-90 transition-opacity self-center" />
+            class="quiz-image hidden" />
         </div>
-        <pre id="quiz-code-block"
-          class="hidden bg-slate-900 text-emerald-300 rounded-2xl px-4 py-3 mb-3 text-sm font-mono leading-relaxed overflow-x-auto whitespace-pre-wrap"></pre>
-        <div id="quiz-options" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4" role="radiogroup"
-          aria-labelledby="quiz-question-text"></div>
-        <div class="text-center min-h-[3rem]">
-          <p id="quiz-feedback" class="font-bold text-lg mb-1" aria-live="polite"></p>
-          <p id="quiz-explanation" class="text-sm text-slate-500 hidden"></p>
-          <button id="quiz-next-btn"
-            class="btn bg-violet-600 text-white font-extrabold py-3 px-10 rounded-2xl hidden mt-2 text-lg">Далі
-            →</button>
+
+        <!-- Псевдокод Равлика -->
+        <pre id="quiz-code-block" class="quiz-code hidden"></pre>
+
+        <!-- Варіанти відповідей (заповнює question-renderer.js) -->
+        <div id="quiz-options" class="quiz-options"
+          role="radiogroup" aria-labelledby="quiz-question-text"></div>
+
+        <!-- Фідбек -->
+        <div class="quiz-feedback-wrap">
+          <p id="quiz-feedback"    class="quiz-feedback"    aria-live="polite"></p>
+          <p id="quiz-explanation" class="quiz-explanation hidden"></p>
+          <button id="quiz-next-btn" class="btn-next">Далі →</button>
         </div>
+
       </div>
     </div>
 
-  </div>
+  </div><!-- /quiz-overlay -->
 
-  <!-- ===== РЕЗУЛЬТАТ OVERLAY ===== -->
-  <div id="result-overlay" class="fixed inset-0 z-50 hidden items-center justify-center p-4"
-    style="background:rgba(76,29,149,0.85)">
-    <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-md p-8 text-center">
-      <div class="text-6xl mb-3">🎉</div>
-      <p id="result-mode-label" class="text-xs uppercase tracking-widest text-slate-400 mb-1"></p>
-      <h2 id="result-title" class="text-2xl font-extrabold text-slate-900 mb-5"></h2>
-      <p class="text-slate-500 mb-2 font-semibold">Правильних відповідей</p>
-      <p class="mb-2">
-        <span id="result-score" class="text-7xl font-extrabold text-violet-600"></span>
-        <span class="text-slate-300 text-4xl"> / </span>
-        <span id="result-total" class="text-slate-400 text-4xl font-bold"></span>
-      </p>
-      <p id="result-time" class="text-sm text-slate-400 mb-6"></p>
-      <div id="result-saved-msg"
-        class="hidden bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-xl px-4 py-3 mb-5">
-        ✅ Результат збережено
+
+  <!-- ═══════════════════════════════════════════════════════════
+       РЕЗУЛЬТАТ OVERLAY
+       ═══════════════════════════════════════════════════════════ -->
+  <div id="result-overlay" class="result-overlay" role="dialog" aria-modal="true" aria-label="Результат">
+    <div class="result-card">
+      <span class="result-emoji" aria-hidden="true">🎉</span>
+      <p  id="result-mode-label" class="result-mode-label"></p>
+      <h2 id="result-title"      class="result-title"></h2>
+      <p class="result-score-label">Правильних відповідей</p>
+      <div class="result-score-wrap">
+        <span id="result-score" class="result-score"></span>
+        <span class="result-divider"> / </span>
+        <span id="result-total" class="result-total"></span>
       </div>
-      <div id="result-error-msg"
-        class="hidden bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-xl px-4 py-3 mb-5"></div>
-      <button id="result-close-btn"
-        class="btn w-full bg-violet-600 text-white font-extrabold py-5 rounded-2xl text-lg">На головну сторінку</button>
+      <p id="result-time" class="result-time"></p>
+      <div id="result-saved-msg" class="result-saved hidden">✅ Результат збережено</div>
+      <div id="result-error-msg" class="result-error hidden"></div>
+      <button id="result-close-btn" class="btn btn-violet">На головну сторінку</button>
     </div>
   </div>
 
-  <!-- Діалог підтвердження виходу -->
-  <div id="quit-confirm" class="fixed inset-0 z-[60] hidden items-center justify-center p-4"
-    style="background:rgba(0,0,0,0.6)">
-    <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center">
-      <div class="text-5xl mb-3">🚪</div>
-      <h3 class="text-xl font-extrabold text-slate-900 mb-3">Вийти з тесту?</h3>
-      <p class="text-slate-500 text-sm mb-6">Прогрес не збережеться.</p>
-      <div class="grid grid-cols-2 gap-3">
-        <button id="quit-confirm-yes" class="btn bg-rose-500 text-white font-bold py-4 rounded-2xl">Так, вийти</button>
-        <button id="quit-confirm-no"
-          class="btn bg-slate-100 text-slate-700 font-bold py-4 rounded-2xl">Продовжити</button>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       QUIT CONFIRM
+       ═══════════════════════════════════════════════════════════ -->
+  <div id="quit-confirm" class="quit-overlay" role="alertdialog" aria-modal="true" aria-labelledby="quit-title">
+    <div class="quit-card">
+      <span class="quit-card__icon" aria-hidden="true">🚪</span>
+      <h3 id="quit-title" class="quit-card__title">Вийти з тесту?</h3>
+      <p class="quit-card__text">Прогрес не збережеться.</p>
+      <div class="quit-card__actions">
+        <button id="quit-confirm-yes" class="btn-quit-yes">Так, вийти</button>
+        <button id="quit-confirm-no"  class="btn-quit-no">Продовжити</button>
       </div>
     </div>
   </div>
 
-  <div id="toast-notification" role="status" aria-live="polite"></div>
 
-  <!-- Модальне вікно -->
-  <div id="app-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog"
-    aria-modal="true">
-    <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-7 text-center">
-      <p id="modal-message" class="text-slate-800 text-base font-semibold mb-6 leading-relaxed"></p>
-      <button id="modal-ok-btn"
-        class="btn bg-violet-600 text-white font-bold py-4 px-10 rounded-2xl text-lg">OK</button>
+  <!-- ═══════════════════════════════════════════════════════════
+       APP MODAL (загальний діалог)
+       ═══════════════════════════════════════════════════════════ -->
+  <div id="app-modal" class="app-modal-overlay hidden"
+       role="dialog" aria-modal="true" aria-labelledby="modal-message">
+    <div class="app-modal-card">
+      <p id="modal-message" class="app-modal-msg"></p>
+      <button id="modal-ok-btn" class="btn-modal-ok">OK</button>
     </div>
   </div>
 
-  <!-- Lightbox -->
-  <div id="img-lightbox"
-    class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/85 p-4 cursor-zoom-out" role="dialog"
-    aria-modal="true" aria-label="Збільшене зображення">
-    <img id="img-lightbox-img" src="" alt=""
-      class="max-w-full max-h-full rounded-2xl shadow-2xl object-contain select-none" />
-    <button id="img-lightbox-close"
-      class="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/35 text-white text-xl transition-colors"
-      aria-label="Закрити зображення">
-      <i class="fas fa-times"></i>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       LIGHTBOX
+       ═══════════════════════════════════════════════════════════ -->
+  <div id="img-lightbox" class="lightbox hidden"
+       role="dialog" aria-modal="true" aria-label="Збільшене зображення">
+    <img id="img-lightbox-img" src="" alt="" class="lightbox__img" />
+    <button id="img-lightbox-close" class="lightbox__close" aria-label="Закрити зображення">
+      <i class="fas fa-times" aria-hidden="true"></i>
     </button>
   </div>
 
-  <script type="module" src="student.js"></script>
 
-  <!-- Error boundary overlay — показується при критичному збої JS під час квізу -->
-  <div id="error-boundary"
-    class="hidden fixed inset-0 z-[300] flex items-center justify-center p-4"
-    style="background: linear-gradient(135deg, #4c1d95 0%, #1e40af 100%);"
-    role="alertdialog" aria-modal="true" aria-labelledby="error-boundary-title">
-    <div class="w-full max-w-sm bg-white/10 border border-white/20 rounded-3xl p-8 text-center backdrop-blur-sm">
-      <div class="text-5xl mb-4" role="img" aria-label="Помилка">⚠️</div>
-      <h2 id="error-boundary-title" class="text-white text-xl font-bold mb-2">Щось пішло не так</h2>
-      <p class="text-white/70 text-sm mb-6 leading-relaxed" id="error-boundary-msg">
+  <!-- ═══════════════════════════════════════════════════════════
+       ERROR BOUNDARY
+       ═══════════════════════════════════════════════════════════ -->
+  <div id="error-boundary" class="error-boundary hidden"
+       role="alertdialog" aria-modal="true" aria-labelledby="error-boundary-title">
+    <div class="error-boundary__card">
+      <span class="error-boundary__icon" aria-hidden="true">⚠️</span>
+      <h2 id="error-boundary-title" class="error-boundary__title">Щось пішло не так</h2>
+      <p id="error-boundary-msg" class="error-boundary__msg">
         Виникла неочікувана помилка. Перезавантаж сторінку.
       </p>
-      <!-- Блок з даними для вчителя — показується якщо є backup олімпіади -->
-      <div id="error-boundary-backup" class="hidden bg-white/10 rounded-2xl p-4 mb-5 text-left">
-        <p class="text-amber-300 font-bold text-sm mb-1">📋 Скажи вчителю:</p>
-        <p class="text-white text-sm" id="error-boundary-backup-text"></p>
+      <div id="error-boundary-backup" class="error-boundary__backup hidden">
+        <p class="error-boundary__backup-label">📋 Скажи вчителю:</p>
+        <p id="error-boundary-backup-text" class="error-boundary__backup-text"></p>
       </div>
-      <button onclick="window.location.reload()"
-        class="w-full bg-white text-violet-700 font-bold py-3 px-6 rounded-2xl hover:bg-white/90 transition-all mb-3">
-        Перезавантажити
-      </button>
-      <button onclick="document.getElementById('error-boundary').classList.add('hidden')"
-        class="text-white/50 text-sm hover:text-white/80 transition-colors">
+      <button class="btn-reload" onclick="window.location.reload()">Перезавантажити</button>
+      <button class="btn-boundary-dismiss"
+        onclick="document.getElementById('error-boundary').classList.add('hidden')">
         Закрити і спробувати продовжити
       </button>
     </div>
   </div>
 
-  <!-- Реєстрація Service Worker — кешує статику і обробляє offline -->
+
+  <!-- Тост (aria live region) -->
+  <div id="toast-notification" role="status" aria-live="polite"></div>
+
+  <script type="module" src="student.js"></script>
+
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(err => {
-        // SW не критичний для роботи — тихо логуємо якщо не вдалось
         console.warn('[SW] Реєстрація не вдалась:', err);
       });
     }

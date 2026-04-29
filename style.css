@@ -1,359 +1,1439 @@
-:root{
-    --color-primary:#3b82f6; --color-primary-dark:#2563eb; --color-secondary:#22c55e;
-    --color-danger:#ef4444; --color-warning:#f59e0b; --color-text-light:#fff;
-    --color-text-dark:#374151; --border-radius:.75rem;
-    --shadow-xl:0 20px 25px -5px rgb(0 0 0 / .1),0 8px 10px -6px rgb(0 0 0 / .1);
-  }
-  body{
-    font-family:'Montserrat',sans-serif;
-    background:linear-gradient(180deg,#f1f5ff 0%,#f8fafc 60%,#f1f5ff 100%);
-  }
-  .sr-only{
-    position:absolute;
-    width:1px;
-    height:1px;
-    padding:0;
-    margin:-1px;
-    overflow:hidden;
-    clip:rect(0,0,0,0);
-    clip-path:inset(50%);
-    border:0;
-    white-space:nowrap;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-      scroll-behavior: auto !important;
-    }
-  }
+/* ═══════════════════════════════════════════════════════════════
+   style.css — Розумко
+   Структура:
+     1. Design Tokens  (:root)
+     2. Reset / Base
+     3. Доступність    (skip-link, sr-only, focus, reduced-motion)
+     4. Shared UI      (.btn, .modal, анімації)
+     5. Index page     (.hero-card, .role-btn, .feature-chip, footer)
+     6. [Далі будуть секції: student, teacher, admin]
+   ═══════════════════════════════════════════════════════════════ */
 
-  .skip-link{
-    position:absolute;
-    top:1rem;
-    left:1rem;
-    background:#1d4ed8;
-    color:#fff;
-    padding:0.75rem 1rem;
-    border-radius:0.5rem;
-    font-weight:600;
-    z-index:10000;
-    transition:top .2s ease;
-    clip:rect(1px,1px,1px,1px);
-    clip-path:inset(50%);
-    width:1px;
-    height:1px;
-    overflow:hidden;
-    white-space:nowrap;
-  }
-  .skip-link:focus-visible{
-    top:1rem;
-    clip:auto;
-    clip-path:none;
-    width:auto;
-    height:auto;
-    overflow:visible;
-  }
-  .app-container{transition:background-color .3s ease}
-  .btn{transition:background-color .2s ease,color .2s ease,border-color .2s ease,box-shadow .2s ease}
-  .btn:focus-visible{outline:3px solid rgba(59,130,246,.65);outline-offset:2px}
-  .btn:hover:not(:disabled){box-shadow:0 8px 24px rgba(15,23,42,.08)}
-  .btn:disabled{cursor:not-allowed;opacity:.7}
-    .mode-btn {
-      background: #fff;
-      /* Робимо рамку ЗАВЖДИ товщиною 2px, але світло-сірою за замовчуванням */
-      border: 2px solid #e5e7eb; 
-    }
-    .mode-btn:hover {
-      background: #eff6ff;
-      /* При наведенні робимо рамку трохи помітнішою (блакитною) */
-      border-color: #93c5fd; 
-    }
-    .mode-btn.is-active {
-      background: #dbeafe;
-      /* В активному стані тепер змінюється ЛИШЕ колір рамки, а не її товщина */
-      border-color: #3b82f6; 
-    }
-  .option-btn{transition:background-color .2s ease,color .2s ease,border-color .2s ease}
-  .option-btn.correct{background:var(--color-secondary)!important;color:var(--color-text-light)!important;border-color:#16a34a}
-  .option-btn.incorrect{background:var(--color-danger)!important;color:var(--color-text-light)!important;border-color:#dc2626}
-  .option-btn:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(59,130,246,.6)}
-  .modal{
-    display:none;position:fixed;z-index:100;inset:0;width:100%;height:100%;
-    overflow:auto;background:rgba(0,0,0,.5);animation:fadeIn .3s;align-items:center;justify-content:center
-  }
-  .modal-content{animation:slideIn .3s;margin:auto}
-  #toast-notification{
-    position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
-    padding:12px 24px;border-radius:9999px;color:#fff;font-weight:600;z-index:9999;
-    opacity:0;visibility:hidden;transition:opacity .3s,visibility .3s,transform .3s
-  }
-  #toast-notification.show{opacity:1;visibility:visible;transform:translate(-50%,-10px)}
-  #toast-notification.error{background:var(--color-danger)}
-  #toast-notification.success{background:var(--color-secondary)}
-  #toast-notification.info{background:var(--color-primary)}
-  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-  @keyframes slideIn{from{transform:translateY(-30px);opacity:0}to{transform:translateY(0);opacity:1}}
 
-#img-lightbox:not(.hidden){animation:fadeIn .2s ease}
-#img-lightbox img{animation:slideIn .25s ease;max-width:min(90vw,900px)}
-  
-  .option-btn {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-  }
-  .feedback-icon {
-      font-weight: bold;
+/* ───────────────────────────────────────────────────────────────
+   1. DESIGN TOKENS
+   Єдине місце де живуть всі кольори, відступи, тіні.
+   Зміна теми або брендингу = правки тільки тут.
+   ─────────────────────────────────────────────────────────────── */
+:root {
+  /* — Бренд — */
+  --clr-brand:          #3b82f6;   /* синій, головний акцент */
+  --clr-brand-dark:     #2563eb;
 
-  }
+  /* — Ролі (кнопки входу) — */
+  --clr-student:        #10b981;   /* смарагдовий — учень */
+  --clr-student-dark:   #059669;
+  --clr-teacher:        #0ea5e9;   /* блакитний — вчитель */
+  --clr-teacher-dark:   #0284c7;
 
-  .tile-card{
-    position:relative;
-    isolation:isolate;
-    overflow:hidden;
-    width:100%;
-    border-radius:1.25rem;
-    padding:1.75rem 1.5rem;
-    text-align:center;
-    border:none;
-    color:var(--tile-text,#0f172a);
-    background:linear-gradient(135deg,var(--tile-start,#e0f2fe),var(--tile-end,#bfdbfe));
-    box-shadow:0 18px 38px -28px var(--tile-shadow,rgba(37,99,235,.45));
-    transition:transform .25s ease,box-shadow .25s ease;
-  }
-  .tile-card::after{
-    content:"";
-    position:absolute;
-    inset:0;
-    border-radius:inherit;
-    background:radial-gradient(circle at top right,rgba(255,255,255,.55)0%,rgba(255,255,255,0)55%);
-    opacity:.8;
-    pointer-events:none;
-  }
-  .tile-card:hover{
-    transform:translateY(-6px);
-    box-shadow:0 26px 45px -30px var(--tile-shadow,rgba(37,99,235,.55));
-  }
-  .tile-card:focus-visible{
-    outline:3px solid rgba(15,23,42,.35);
-    outline-offset:4px;
-  }
-  .tile-icon{
-    position:relative;
-    z-index:1;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    width:3.5rem;
-    height:3.5rem;
-    border-radius:9999px;
-    background:rgba(255,255,255,.25);
-    color:var(--tile-icon-color,#1e3a8a);
-    font-size:1.75rem;
-    margin-bottom:1rem;
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,.3);
-  }
-  .tile-title{
-    position:relative;
-    z-index:1;
-    font-weight:600;
-    font-size:1.1rem;
-    color:inherit;
-    line-height:1.3;
-    text-shadow:0 1px 0 rgba(15,23,42,.18);
-  }
+  /* — Статуси — */
+  --clr-success:        #22c55e;
+  --clr-danger:         #ef4444;
+  --clr-warning:        #f59e0b;
 
-  .tile-card[data-subject="math"]{
-    --tile-start:#1d4ed8;
-    --tile-end:#1e3a8a;
-    --tile-shadow:rgba(29,78,216,.65);
-    --tile-text:#f8fafc;
-    --tile-icon-color:#f8fafc;
-  }
-  .tile-card[data-subject="ukrainian"]{
-    --tile-start:#be185d;
-    --tile-end:#9d174d;
-    --tile-shadow:rgba(190,24,93,.55);
-    --tile-text:#fdf2f8;
-    --tile-icon-color:#fdf2f8;
-  }
-  .tile-card[data-subject="english"]{
-    --tile-start:#047857;
-    --tile-end:#0f766e;
-    --tile-shadow:rgba(15,118,110,.5);
-    --tile-text:#ecfdf5;
-    --tile-icon-color:#ecfdf5;
-  }
+  /* — Нейтральна палітра — */
+  --clr-surface:        #ffffff;
+  --clr-surface-muted:  #f8fafc;
+  --clr-surface-subtle: #f1f5f9;
+  --clr-border:         #e2e8f0;
+  --clr-border-light:   rgba(226,232,240,0.6);
 
-  .panel-card{
-    background:#fff;
-    border:1px solid rgba(226,232,240,.8);
-    border-radius:1.25rem;
-    padding:1.75rem;
-    box-shadow:0 18px 40px -32px rgba(15,23,42,.35);
-    transition:box-shadow .2s ease,border-color .2s ease;
-  }
-  .panel-card--badges{
-    background:linear-gradient(140deg,#fff7ed 0%,#fef3c7 55%,#fdf6b2 100%);
-    border-color:rgba(250,204,21,.4);
-  }
-  .panel-card--badges .badge-spark{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    width:2.75rem;
-    height:2.75rem;
-    border-radius:9999px;
-    background:#fbbf24;
-    color:#fff;
-    font-size:1.25rem;
-    box-shadow:0 10px 25px -15px rgba(251,191,36,.85);
-  }
+  /* — Текст — */
+  --clr-text:           #0f172a;
+  --clr-text-muted:     #64748b;
+  --clr-text-faint:     #94a3b8;
+  --clr-text-inverse:   #ffffff;
 
-  .score-card{
-    background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);
-    border-radius:1rem;
-    padding:1.5rem;
-    text-align:center;
-    border:1px solid rgba(96,165,250,.25);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.45);
-  }
-  .score-label{
-    font-size:.9rem;
-    font-weight:600;
-    color:#475569;
-    text-transform:uppercase;
-    letter-spacing:.08em;
-  }
-  .score-value{
-    font-size:3rem;
-    font-weight:700;
-    color:var(--color-primary);
-    line-height:1.1;
-  }
-  .score-hint{
-    font-size:.85rem;
-    color:#64748b;
-  }
+  /* — Spacing scale — */
+  --sp-1:   0.25rem;   /*  4px */
+  --sp-2:   0.5rem;    /*  8px */
+  --sp-3:   0.75rem;   /* 12px */
+  --sp-4:   1rem;      /* 16px */
+  --sp-5:   1.25rem;   /* 20px */
+  --sp-6:   1.5rem;    /* 24px */
+  --sp-8:   2rem;      /* 32px */
+  --sp-10:  2.5rem;    /* 40px */
+  --sp-12:  3rem;      /* 48px */
 
-  #progress-details-container{
-    display:flex;
-    flex-direction:column;
-    gap:1rem;
-  }
-  .progress-card{
-    border:1px solid rgba(226,232,240,.9);
-    border-radius:1rem;
-    padding:1rem 1.25rem;
-    background:#fff;
-    box-shadow:0 12px 30px -28px rgba(15,23,42,.4);
-  }
-  .progress-card .progress-meta{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:.5rem;
-  }
-  .progress-card .progress-meta span{
-    font-size:.95rem;
-    font-weight:600;
-    color:#1f2937;
-  }
-  .progress-card .progress-meta span:last-child{
-    color:var(--color-primary);
-  }
+  /* — Border radius — */
+  --r-sm:   0.5rem;    /*  8px */
+  --r-md:   0.75rem;   /* 12px */
+  --r-lg:   1rem;      /* 16px */
+  --r-xl:   1.5rem;    /* 24px */
+  --r-2xl:  2rem;      /* 32px */
+  --r-full: 9999px;
 
-  .badge-grid{
-    display:grid;
-    gap:0.85rem;
-  }
-  .badge-card{
-    position:relative;
-    display:flex;
-    align-items:center;
-    gap:1rem;
-    padding:1rem 1.25rem;
-    border-radius:1rem;
-    background:rgba(255,255,255,.9);
-    border:1px solid rgba(255,255,255,.6);
-    box-shadow:0 14px 34px -28px rgba(120,53,15,.35);
-    backdrop-filter:blur(2px);
-  }
-  .badge-card::after{
-    content:"";
-    position:absolute;
-    inset:0;
-    border-radius:inherit;
-    border:1px solid rgba(255,255,255,.35);
-    pointer-events:none;
-  }
-  .badge-card .badge-icon{
-    width:3rem;
-    height:3rem;
-    border-radius:9999px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:var(--badge-accent-soft,rgba(251,191,36,.2));
-    color:var(--badge-accent,#f59e0b);
-    font-size:1.5rem;
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,.45);
-  }
-  .badge-meta{
-    flex:1;
-  }
-  .badge-meta .badge-title{
-    font-weight:600;
-    color:#1f2937;
-    margin-bottom:.15rem;
-  }
-  .badge-meta .badge-label{
-    font-size:.85rem;
-    color:#64748b;
-  }
-  .badge-card .badge-score{
-    font-size:.85rem;
-    font-weight:600;
-    color:var(--badge-accent,#b45309);
-  }
+  /* — Тіні — */
+  --shadow-card: 0 20px 60px -15px rgba(15,23,42,0.15),
+                 0 4px 16px -4px rgba(15,23,42,0.06);
+  --shadow-btn:  0 8px 24px rgba(15,23,42,0.10);
+  --shadow-sm:   0 1px 4px rgba(15,23,42,0.06);
 
-  .badge-empty{
-    font-size:.9rem;
-    color:#92400e;
-    background:rgba(255,255,255,.9);
-    border:1px dashed rgba(251,191,36,.55);
-    border-radius:.9rem;
-    padding:.85rem 1rem;
-    text-align:center;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.5);
-  }
+  /* — Transitions — */
+  --transition-fast:    150ms ease;
+  --transition-base:    200ms ease;
+  --transition-slow:    300ms ease;
 
-  .badge-card[data-subject="math"]{
-    --badge-accent:#2563eb;
-    --badge-accent-soft:rgba(96,165,250,.18);
-  }
-  .badge-card[data-subject="ukrainian"]{
-    --badge-accent:#db2777;
-    --badge-accent-soft:rgba(236,72,153,.18);
-  }
-  .badge-card[data-subject="english"]{
-    --badge-accent:#059669;
-    --badge-accent-soft:rgba(45,212,191,.2);
-  }
-  .badge-card[data-subject="total"]{
-    --badge-accent:#7c3aed;
-    --badge-accent-soft:rgba(196,181,253,.24);
-  }
+  /* — Typography — */
+  --font-family:        'Montserrat', sans-serif;
+  --font-size-xs:       0.75rem;
+  --font-size-sm:       0.875rem;
+  --font-size-base:     1rem;
+  --font-size-lg:       1.125rem;
+  --font-size-xl:       1.25rem;
+  --font-size-2xl:      1.5rem;
+  --font-size-3xl:      1.875rem;
+  --font-size-4xl:      2.25rem;
+  --font-size-5xl:      3rem;
+}
 
-  @media (min-width: 640px) {
-    .badge-grid{
-      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-    }
-  }
 
-  @media (max-width: 640px) {
-    .tile-card{padding:1.25rem}
-    .tile-icon{width:3rem;height:3rem;font-size:1.5rem;margin-bottom:.75rem}
+/* ───────────────────────────────────────────────────────────────
+   2. RESET / BASE
+   ─────────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  color: var(--clr-text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+
+/* ───────────────────────────────────────────────────────────────
+   3. ДОСТУПНІСТЬ
+   ─────────────────────────────────────────────────────────────── */
+
+/* Прихований текст для скрін-рідерів */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  clip-path: inset(50%);
+  border: 0;
+  white-space: nowrap;
+}
+
+/* Кнопка «Перейти до основного контенту» — видима тільки при фокусі */
+.skip-link {
+  position: absolute;
+  top: var(--sp-4);
+  left: var(--sp-4);
+  z-index: 10000;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--clr-brand-dark);
+  color: var(--clr-text-inverse);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  border-radius: var(--r-sm);
+  /* Приховано поки немає фокусу */
+  clip: rect(1px,1px,1px,1px);
+  clip-path: inset(50%);
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: clip-path var(--transition-fast);
+}
+.skip-link:focus-visible {
+  clip: auto;
+  clip-path: none;
+  width: auto;
+  height: auto;
+  overflow: visible;
+}
+
+/* Скорочення анімацій для prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
+}
+
+/* Базовий focus-visible для всіх інтерактивних елементів */
+:focus-visible {
+  outline: 3px solid var(--clr-brand);
+  outline-offset: 2px;
+}
+
+
+/* ───────────────────────────────────────────────────────────────
+   4. SHARED UI — компоненти що використовуються на всіх сторінках
+   ─────────────────────────────────────────────────────────────── */
+
+/* Базова кнопка */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  font-family: var(--font-family);
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition:
+    background-color var(--transition-base),
+    color            var(--transition-base),
+    border-color     var(--transition-base),
+    box-shadow       var(--transition-base),
+    transform        var(--transition-fast);
+}
+.btn:hover:not(:disabled) {
+  box-shadow: var(--shadow-btn);
+}
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.btn:focus-visible {
+  outline: 3px solid rgba(59,130,246,0.65);
+  outline-offset: 2px;
+}
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+/* Модальний діалог (спільний для всіх сторінок) */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0,0,0,0.5);
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn var(--transition-slow);
+}
+.modal-overlay:not(.hidden) {
+  display: flex;
+}
+.modal-content {
+  animation: slideUp var(--transition-slow);
+}
+
+/* Анімації */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+
+/* ───────────────────────────────────────────────────────────────
+   5. INDEX PAGE
+   Сторінка: index.html (лендінг)
+   ─────────────────────────────────────────────────────────────── */
+
+/* Фон сторінки */
+.index-page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f1f5ff 0%, #f8fafc 60%, #f1f5ff 100%);
+}
+
+/* Центруючий контейнер */
+.index-main {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-4);
+}
+
+/* Обмежувач ширини */
+.index-inner {
+  width: 100%;
+  max-width: 42rem; /* ~672px */
+}
+
+/* Головна біла картка */
+.hero-card {
+  background: rgba(255,255,255,0.97);
+  padding: var(--sp-8) var(--sp-8);
+  border-radius: var(--r-2xl);
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(255,255,255,0.7);
+  text-align: center;
+}
+@media (min-width: 640px) {
+  .hero-card {
+    padding: var(--sp-12);
+  }
+}
+
+/* Пілюля-бейдж «Онлайн-олімпіада» */
+.badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-full);
+  margin-bottom: var(--sp-4);
+}
+
+/* Блок заголовка */
+.hero-header {
+  margin-bottom: var(--sp-8);
+}
+
+/* Головний заголовок */
+.hero-title {
+  font-size: var(--font-size-4xl);
+  font-weight: 700;
+  color: var(--clr-text);
+  line-height: 1.15;
+  margin-bottom: var(--sp-4);
+}
+@media (min-width: 640px) {
+  .hero-title {
+    font-size: var(--font-size-5xl);
+  }
+}
+
+/* Сітка кнопок вибору ролі */
+.role-grid {
+  display: grid;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-8);
+}
+@media (min-width: 640px) {
+  .role-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Кнопка вибору ролі — базові стилі */
+.role-btn {
+  display: block;
+  padding: var(--sp-6);
+  border-radius: var(--r-xl);
+  text-align: center;
+  text-decoration: none;
+  color: var(--clr-text-inverse);
+  font-weight: 700;
+  transition:
+    background-color var(--transition-base),
+    box-shadow       var(--transition-base),
+    transform        var(--transition-fast);
+}
+.role-btn:hover {
+  box-shadow: var(--shadow-btn);
+  transform: translateY(-2px);
+}
+.role-btn:active {
+  transform: translateY(0);
+}
+.role-btn:focus-visible {
+  outline: 3px solid var(--clr-brand);
+  outline-offset: 3px;
+}
+
+/* Варіант — учень */
+.role-btn--student {
+  background: var(--clr-student);
+}
+.role-btn--student:hover {
+  background: var(--clr-student-dark);
+}
+
+/* Варіант — вчитель */
+.role-btn--teacher {
+  background: var(--clr-teacher);
+}
+.role-btn--teacher:hover {
+  background: var(--clr-teacher-dark);
+}
+
+/* Іконка всередині role-btn */
+.role-btn__icon {
+  font-size: 1.875rem; /* ~30px */
+  margin-bottom: var(--sp-3);
+  display: block;
+}
+
+/* Заголовок ролі */
+.role-btn__title {
+  font-size: var(--font-size-xl);
+  display: block;
+  margin-bottom: var(--sp-1);
+}
+
+/* Підпис під заголовком */
+.role-btn__desc {
+  font-size: var(--font-size-sm);
+  font-weight: 400;
+  opacity: 0.9;
+  display: block;
+}
+
+/* Сітка фіч (3 колонки) */
+.features-grid {
+  display: grid;
+  gap: var(--sp-3);
+  text-align: left;
+}
+@media (min-width: 640px) {
+  .features-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Картка однієї фічі */
+.feature-chip {
+  background: var(--clr-surface-muted);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-xl);
+  padding: var(--sp-3) var(--sp-4);
+}
+
+/* Заголовок фічі */
+.feature-chip__title {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  color: var(--clr-text);
+  margin-bottom: var(--sp-1);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+/* Текст фічі */
+.feature-chip__desc {
+  font-size: var(--font-size-sm);
+  color: var(--clr-text-muted);
+}
+
+/* Акцентні кольори іконок фіч */
+.feature-chip__icon--brand   { color: #0ea5e9; }
+.feature-chip__icon--success { color: #10b981; }
+.feature-chip__icon--warning { color: #f59e0b; }
+
+/* ── Футер index.html ───────────────────────────────────────── */
+
+.site-footer {
+  padding: var(--sp-8) var(--sp-4);
+  color: var(--clr-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.site-footer__inner {
+  max-width: 42rem;
+  margin: 0 auto;
+}
+
+.site-footer__nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-6);
+  margin-bottom: var(--sp-6);
+  text-align: center;
+}
+@media (min-width: 640px) {
+  .site-footer__nav {
+    grid-template-columns: repeat(3, 1fr);
+    text-align: left;
+  }
+}
+
+/* Колонка навігації */
+.footer-col__heading {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--clr-text-muted);
+  margin-bottom: var(--sp-2);
+}
+
+.footer-col__list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.footer-col__list a {
+  color: var(--clr-text-muted);
+  font-size: var(--font-size-sm);
+  transition: color var(--transition-fast);
+}
+.footer-col__list a:hover {
+  color: var(--clr-text);
+}
+
+/* Розтягнута колонка (span 2 на mobile) */
+.footer-col--wide {
+  grid-column: span 2;
+  text-align: center;
+}
+@media (min-width: 640px) {
+  .footer-col--wide {
+    grid-column: span 1;
+  }
+}
+
+/* Розділювач і копірайт */
+.site-footer__copy {
+  border-top: 1px solid var(--clr-border);
+  padding-top: var(--sp-4);
+  text-align: center;
+  font-size: var(--font-size-xs);
+  color: var(--clr-text-faint);
+}
+
+
+/* ───────────────────────────────────────────────────────────────
+   6. STUDENT PAGE  (student.html)
+   ─────────────────────────────────────────────────────────────── */
+
+/* Токени специфічні для сторінки учня */
+:root {
+  --student-bg-from:  #4c1d95;
+  --student-bg-to:    #1e40af;
+  --clr-violet:       #7c3aed;
+  --clr-violet-dark:  #6d28d9;
+  --clr-violet-light: #ede9fe;
+  --clr-amber:        #fbbf24;
+  --clr-amber-dark:   #f59e0b;
+}
+
+/* ── Загальний фон і екрани ─────────────────────────────────── */
+
+.student-page {
+  background: linear-gradient(135deg, var(--student-bg-from) 0%, var(--student-bg-to) 100%);
+  min-height: 100vh;
+}
+
+/* Контейнер-екран: центрує вміст вертикально */
+.student-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-5);
+  position: relative;
+}
+
+/* Кнопка «← На головну» */
+.student-back {
+  position: absolute;
+  top: var(--sp-4);
+  left: var(--sp-4);
+  color: rgba(255,255,255,0.5);
+  font-size: var(--font-size-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  transition: color var(--transition-fast);
+  text-decoration: none;
+}
+.student-back:hover { color: rgba(255,255,255,0.85); }
+
+/* ── Логотип (трофей + назва) ───────────────────────────────── */
+
+.entry-logo {
+  text-align: center;
+  margin-bottom: var(--sp-8);
+}
+.entry-logo__icon {
+  font-size: 4.5rem;
+  margin-bottom: var(--sp-3);
+  display: block;
+  line-height: 1;
+}
+.entry-logo__title {
+  font-size: var(--font-size-4xl);
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+.entry-logo__sub {
+  color: rgba(255,255,255,0.6);
+  font-size: var(--font-size-sm);
+  margin-top: var(--sp-2);
+}
+
+/* ── Біла картка (код-форма і панель тренування) ────────────── */
+
+.student-card {
+  width: 100%;
+  max-width: 24rem;       /* ~384px */
+  background: #fff;
+  border-radius: var(--r-2xl);
+  box-shadow: 0 25px 60px -15px rgba(0,0,0,0.35);
+  padding: var(--sp-8) var(--sp-6);
+}
+
+.card-label {
+  text-align: center;
+  color: var(--clr-text-muted);
+  font-weight: 600;
+  font-size: var(--font-size-base);
+  margin-bottom: var(--sp-5);
+}
+
+/* ── Поле вводу коду ────────────────────────────────────────── */
+
+.code-input {
+  width: 100%;
+  padding: var(--sp-4);
+  border-radius: var(--r-xl);
+  border: 2px solid var(--clr-border);
+  font-family: var(--font-family);
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--clr-text);
+  margin-bottom: var(--sp-3);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+.code-input::placeholder {
+  font-size: var(--font-size-base);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--clr-text-faint);
+}
+.code-input:focus {
+  outline: none;
+  border-color: var(--clr-violet);
+  box-shadow: 0 0 0 4px var(--clr-violet-light);
+}
+
+.code-status {
+  color: #e11d48;
+  font-size: var(--font-size-sm);
+  text-align: center;
+  min-height: 1.25rem;
+  margin-bottom: var(--sp-3);
+}
+.code-success {
+  color: #059669;
+  font-size: var(--font-size-sm);
+  text-align: center;
+  min-height: 1.25rem;
+  margin-bottom: var(--sp-3);
+}
+
+/* ── Кнопки студент-сторінки ────────────────────────────────── */
+
+/* Фіолетова primary */
+.btn-violet {
+  width: 100%;
+  padding: var(--sp-5) var(--sp-4);
+  border-radius: var(--r-xl);
+  background: var(--clr-violet);
+  color: #fff;
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  transition: background-color var(--transition-base);
+}
+.btn-violet:hover:not(:disabled) { background: var(--clr-violet-dark); }
+
+/* Сіра допоміжна */
+.btn-slate {
+  width: 100%;
+  margin-top: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-xl);
+  background: var(--clr-surface-subtle);
+  color: var(--clr-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  transition: background-color var(--transition-fast);
+}
+.btn-slate:hover { background: var(--clr-border); }
+
+/* Напівпрозора кнопка «Тренування без коду» */
+.btn-practice-toggle {
+  width: 100%;
+  max-width: 24rem;
+  margin-top: var(--sp-4);
+  padding: var(--sp-4);
+  border-radius: var(--r-xl);
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.28);
+  color: #fff;
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  transition: background-color var(--transition-fast);
+}
+.btn-practice-toggle:hover { background: rgba(255,255,255,0.28); }
+
+/* ── Панель тренування ──────────────────────────────────────── */
+
+.practice-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-5);
+}
+.practice-header__title {
+  font-weight: 700;
+  font-size: var(--font-size-base);
+  color: var(--clr-text);
+}
+.practice-header__close {
+  color: var(--clr-text-faint);
+  font-size: var(--font-size-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  transition: color var(--transition-fast);
+  padding: var(--sp-1);
+}
+.practice-header__close:hover { color: var(--clr-text-muted); }
+
+/* Сітка вибору класу (4 кнопки) */
+.selector-grid {
+  display: grid;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+}
+.selector-grid--grade { grid-template-columns: repeat(4, 1fr); }
+.selector-grid--diff  { grid-template-columns: repeat(3, 1fr); }
+
+/* Кнопка вибору (клас / складність) */
+.selector-btn {
+  padding: var(--sp-4) var(--sp-2);
+  border-radius: var(--r-lg);
+  background: var(--clr-surface-subtle);
+  color: var(--clr-text-muted);
+  font-family: var(--font-family);
+  font-weight: 800;
+  font-size: var(--font-size-xl);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+.selector-btn--diff {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  padding: var(--sp-3) var(--sp-2);
+}
+.selector-btn:hover { background: var(--clr-border); }
+/* Вибраний стан — amber, перекриває hover */
+.selector-btn[aria-pressed="true"] {
+  background: var(--clr-amber) !important;
+  color: #1e293b !important;
+  border-color: var(--clr-amber-dark) !important;
+}
+
+/* Кнопка «Почати тренування» */
+.btn-start {
+  width: 100%;
+  padding: var(--sp-4);
+  border-radius: var(--r-xl);
+  background: var(--clr-amber);
+  color: #1e293b;
+  font-size: var(--font-size-base);
+  font-weight: 800;
+  transition: background-color var(--transition-base);
+}
+.btn-start:hover:not(:disabled) { background: var(--clr-amber-dark); }
+.btn-start:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Футер сторінки учня ────────────────────────────────────── */
+
+.student-footer {
+  margin-top: auto;
+  padding: var(--sp-6) 0;
+  text-align: center;
+  color: rgba(255,255,255,0.4);
+  font-size: var(--font-size-xs);
+}
+.student-footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-2);
+}
+.student-footer__links a {
+  color: rgba(255,255,255,0.4);
+  transition: color var(--transition-fast);
+}
+.student-footer__links a:hover { color: rgba(255,255,255,0.7); }
+
+/* ── Екран вибору дії (після введення коду) ─────────────────── */
+
+.event-info-card {
+  width: 100%;
+  max-width: 28rem;
+  background: rgba(255,255,255,0.13);
+  border-radius: var(--r-xl);
+  padding: var(--sp-4) var(--sp-5);
+  margin-bottom: var(--sp-6);
+  text-align: center;
+}
+.event-info-card__title {
+  font-weight: 800;
+  color: #fff;
+  font-size: var(--font-size-lg);
+}
+.event-info-card__meta {
+  color: rgba(255,255,255,0.7);
+  font-size: var(--font-size-sm);
+  margin-top: var(--sp-1);
+}
+
+.actions-prompt {
+  color: rgba(255,255,255,0.8);
+  font-weight: 600;
+  text-align: center;
+  font-size: var(--font-size-base);
+  margin-bottom: var(--sp-2);
+}
+
+.action-list {
+  width: 100%;
+  max-width: 28rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+/* Велика кнопка дії */
+.action-card {
+  width: 100%;
+  padding: var(--sp-8) var(--sp-6);
+  border-radius: var(--r-2xl);
+  font-family: var(--font-family);
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  cursor: pointer;
+  border: none;
+  transition: transform var(--transition-fast), box-shadow var(--transition-base);
+}
+.action-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 40px rgba(0,0,0,0.2);
+}
+.action-card:active { transform: translateY(0); }
+.action-card__icon { font-size: 2.5rem; }
+.action-card__sub {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  opacity: 0.7;
+}
+.action-card--demo {
+  background: var(--clr-amber);
+  color: #1e293b;
+}
+.action-card--demo .action-card__sub { color: #44403c; }
+.action-card--olympiad {
+  background: #fff;
+  color: var(--clr-violet);
+}
+.action-card--olympiad .action-card__sub { color: #a78bfa; opacity: 1; }
+
+/* Текстова кнопка «Змінити код» */
+.btn-text {
+  margin-top: var(--sp-8);
+  color: rgba(255,255,255,0.5);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  transition: color var(--transition-fast);
+}
+.btn-text:hover { color: rgba(255,255,255,0.85); }
+
+/* ── Quiz overlay ───────────────────────────────────────────── */
+
+.quiz-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: none;
+  flex-direction: column;
+  background: var(--clr-surface-muted);
+}
+.quiz-overlay.active {
+  display: flex;
+}
+
+.quiz-header {
+  background: #fff;
+  border-bottom: 1px solid var(--clr-border);
+  padding: var(--sp-3) var(--sp-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+}
+.quiz-header__left,
+.quiz-header__right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.quiz-badge {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--r-full);
+}
+.quiz-progress-text {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--clr-text-muted);
+}
+
+.quiz-timer {
+  display: none;
+  align-items: center;
+  gap: var(--sp-2);
+  background: #ffedd5;
+  color: #c2410c;
+  font-weight: 700;
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--r-lg);
+  font-size: var(--font-size-base);
+}
+.quiz-timer.visible { display: flex; }
+.quiz-timer.urgent {
+  background: #ffe4e6;
+  color: #be123c;
+}
+
+.btn-quiz-quit {
+  background: var(--clr-surface-subtle);
+  color: var(--clr-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-lg);
+  transition: background-color var(--transition-fast);
+}
+.btn-quiz-quit:hover { background: var(--clr-border); }
+
+/* Прогрес-бар */
+.quiz-progress-bar-wrap {
+  width: 100%;
+  height: 0.5rem;
+  background: #e2e8f0;
+}
+.quiz-progress-bar {
+  height: 100%;
+  background: var(--clr-violet);
+  transition: width 300ms ease;
+}
+
+/* Тіло квізу */
+.quiz-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: var(--sp-4);
+}
+.quiz-inner {
+  width: 100%;
+  max-width: 32rem;
+}
+
+/* Картка питання */
+.quiz-question-card {
+  background: #fff;
+  border-radius: var(--r-2xl);
+  box-shadow: 0 4px 16px rgba(15,23,42,0.08);
+  border: 1px solid var(--clr-border);
+  padding: var(--sp-5);
+  margin-bottom: var(--sp-4);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+.quiz-question-text {
+  flex: 1;
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--clr-text);
+  line-height: 1.4;
+}
+@media (min-width: 640px) {
+  .quiz-question-text { font-size: var(--font-size-2xl); }
+}
+
+/* Зображення до питання (праворуч) */
+.quiz-image {
+  width: 9rem;
+  flex-shrink: 0;
+  border-radius: var(--r-xl);
+  object-fit: contain;
+  cursor: zoom-in;
+  border: 1px solid var(--clr-border);
+  box-shadow: var(--shadow-sm);
+  transition: opacity var(--transition-fast);
+}
+.quiz-image:hover { opacity: 0.88; }
+@media (min-width: 640px) {
+  .quiz-image { width: 11rem; }
+}
+
+/* Блок псевдокоду */
+.quiz-code {
+  background: #0f172a;
+  color: #6ee7b7;
+  border-radius: var(--r-xl);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-3);
+  font-size: var(--font-size-sm);
+  font-family: 'Courier New', Courier, monospace;
+  line-height: 1.6;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+/* Зона варіантів відповідей */
+.quiz-options {
+  margin-bottom: var(--sp-4);
+}
+
+/* Зона фідбеку */
+.quiz-feedback-wrap {
+  text-align: center;
+  min-height: 3rem;
+}
+.quiz-feedback {
+  font-weight: 700;
+  font-size: var(--font-size-lg);
+  margin-bottom: var(--sp-1);
+}
+.quiz-explanation {
+  font-size: var(--font-size-sm);
+  color: var(--clr-text-muted);
+}
+.btn-next {
+  background: var(--clr-violet);
+  color: #fff;
+  font-weight: 800;
+  font-size: var(--font-size-lg);
+  padding: var(--sp-3) var(--sp-10);
+  border-radius: var(--r-xl);
+  margin-top: var(--sp-2);
+  display: none;
+  transition: background-color var(--transition-base);
+}
+.btn-next:hover { background: var(--clr-violet-dark); }
+.btn-next.visible { display: inline-block; }
+
+/* ── Варіанти відповідей (з question-renderer.js) ───────────── */
+
+/* Кнопка варіанту (choice, sequence, sort, match) */
+.quiz-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  text-align: left;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-xl);
+  border: 2px solid var(--clr-border);
+  background: #fff;
+  color: var(--clr-text);
+  font-family: var(--font-family);
+  font-weight: 600;
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    background-color var(--transition-fast),
+    color var(--transition-fast);
+}
+.quiz-option:hover:not(:disabled) {
+  border-color: #a78bfa;
+  background: #f5f3ff;
+}
+.quiz-option:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.4);
+}
+/* Стани після відповіді */
+.quiz-option--correct {
+  border-color: #34d399 !important;
+  background: #ecfdf5 !important;
+  color: #065f46 !important;
+}
+.quiz-option--incorrect {
+  border-color: #f87171 !important;
+  background: #fff1f2 !important;
+  color: #9f1239 !important;
+}
+
+/* Кнопка «Перевірити» (input, sort, match) */
+.quiz-check {
+  width: 100%;
+  padding: var(--sp-4) var(--sp-5);
+  border-radius: var(--r-xl);
+  background: #7c3aed;
+  color: #fff;
+  font-family: var(--font-family);
+  font-weight: 700;
+  font-size: var(--font-size-base);
+  margin-top: var(--sp-2);
+  transition: background-color var(--transition-base);
+  cursor: pointer;
+  border: none;
+}
+.quiz-check:hover:not(:disabled) { background: var(--clr-violet-dark); }
+.quiz-check:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ── Результат overlay ──────────────────────────────────────── */
+
+.result-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-4);
+  background: rgba(76,29,149,0.85);
+}
+.result-overlay.active { display: flex; }
+
+.result-card {
+  background: #fff;
+  border-radius: var(--r-2xl);
+  box-shadow: 0 30px 80px rgba(0,0,0,0.3);
+  width: 100%;
+  max-width: 28rem;
+  padding: var(--sp-8);
+  text-align: center;
+}
+.result-emoji { font-size: 3.75rem; margin-bottom: var(--sp-3); display: block; }
+.result-mode-label {
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--clr-text-faint);
+  margin-bottom: var(--sp-1);
+}
+.result-title {
+  font-size: var(--font-size-2xl);
+  font-weight: 800;
+  color: var(--clr-text);
+  margin-bottom: var(--sp-5);
+}
+.result-score-label {
+  color: var(--clr-text-muted);
+  font-weight: 600;
+  margin-bottom: var(--sp-2);
+}
+.result-score-wrap { margin-bottom: var(--sp-2); }
+.result-score {
+  font-size: var(--font-size-5xl);
+  font-weight: 800;
+  color: var(--clr-violet);
+  line-height: 1;
+}
+.result-total {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--clr-border);
+}
+.result-divider { color: var(--clr-border); font-size: 2.5rem; }
+.result-time {
+  font-size: var(--font-size-sm);
+  color: var(--clr-text-faint);
+  margin-bottom: var(--sp-6);
+}
+.result-saved {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+  font-size: var(--font-size-sm);
+  border-radius: var(--r-lg);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+.result-error {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  color: #be123c;
+  font-size: var(--font-size-sm);
+  border-radius: var(--r-lg);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+
+/* ── Quit confirm overlay ───────────────────────────────────── */
+
+.quit-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-4);
+  background: rgba(0,0,0,0.6);
+}
+.quit-overlay.active { display: flex; }
+
+.quit-card {
+  background: #fff;
+  border-radius: var(--r-2xl);
+  box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+  padding: var(--sp-8);
+  max-width: 20rem;
+  width: 100%;
+  text-align: center;
+}
+.quit-card__icon { font-size: 3rem; margin-bottom: var(--sp-3); display: block; }
+.quit-card__title {
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  color: var(--clr-text);
+  margin-bottom: var(--sp-3);
+}
+.quit-card__text {
+  color: var(--clr-text-muted);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--sp-6);
+}
+.quit-card__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+}
+.btn-quit-yes {
+  padding: var(--sp-4);
+  border-radius: var(--r-xl);
+  background: #ef4444;
+  color: #fff;
+  font-weight: 700;
+  font-family: var(--font-family);
+  cursor: pointer;
+  border: none;
+  transition: background-color var(--transition-fast);
+}
+.btn-quit-yes:hover { background: #dc2626; }
+.btn-quit-no {
+  padding: var(--sp-4);
+  border-radius: var(--r-xl);
+  background: var(--clr-surface-subtle);
+  color: var(--clr-text-muted);
+  font-weight: 700;
+  font-family: var(--font-family);
+  cursor: pointer;
+  border: none;
+  transition: background-color var(--transition-fast);
+}
+.btn-quit-no:hover { background: var(--clr-border); }
+
+/* ── App modal (student) ────────────────────────────────────── */
+
+.app-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.6);
+  padding: var(--sp-4);
+}
+.app-modal-overlay:not(.hidden) { display: flex; }
+
+.app-modal-card {
+  background: #fff;
+  border-radius: var(--r-2xl);
+  box-shadow: 0 25px 60px rgba(0,0,0,0.25);
+  max-width: 20rem;
+  width: 100%;
+  padding: var(--sp-8) var(--sp-6);
+  text-align: center;
+}
+.app-modal-msg {
+  color: var(--clr-text);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  margin-bottom: var(--sp-6);
+  line-height: 1.6;
+}
+.btn-modal-ok {
+  background: var(--clr-violet);
+  color: #fff;
+  font-weight: 700;
+  font-size: var(--font-size-lg);
+  padding: var(--sp-4) var(--sp-10);
+  border-radius: var(--r-xl);
+  font-family: var(--font-family);
+  cursor: pointer;
+  border: none;
+  transition: background-color var(--transition-base);
+}
+.btn-modal-ok:hover { background: var(--clr-violet-dark); }
+
+/* ── Lightbox ───────────────────────────────────────────────── */
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.85);
+  padding: var(--sp-4);
+  cursor: zoom-out;
+  animation: fadeIn 0.2s ease;
+}
+.lightbox:not(.hidden) { display: flex; }
+.lightbox__img {
+  max-width: min(90vw, 900px);
+  max-height: 90vh;
+  border-radius: var(--r-xl);
+  box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+  object-fit: contain;
+  user-select: none;
+  animation: slideUp 0.25s ease;
+}
+.lightbox__close {
+  position: absolute;
+  top: var(--sp-4);
+  right: var(--sp-4);
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--r-full);
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  font-size: var(--font-size-xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color var(--transition-fast);
+}
+.lightbox__close:hover { background: rgba(255,255,255,0.35); }
+
+/* ── Error boundary overlay ─────────────────────────────────── */
+
+.error-boundary {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-4);
+  background: linear-gradient(135deg, var(--student-bg-from) 0%, var(--student-bg-to) 100%);
+}
+.error-boundary:not(.hidden) { display: flex; }
+.error-boundary__card {
+  width: 100%;
+  max-width: 20rem;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: var(--r-2xl);
+  padding: var(--sp-8);
+  text-align: center;
+  backdrop-filter: blur(8px);
+}
+.error-boundary__icon { font-size: 3rem; margin-bottom: var(--sp-4); display: block; }
+.error-boundary__title {
+  color: #fff;
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  margin-bottom: var(--sp-2);
+}
+.error-boundary__msg {
+  color: rgba(255,255,255,0.7);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--sp-6);
+  line-height: 1.6;
+}
+.error-boundary__backup {
+  background: rgba(255,255,255,0.1);
+  border-radius: var(--r-xl);
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-5);
+  text-align: left;
+}
+.error-boundary__backup-label {
+  color: #fcd34d;
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--sp-1);
+}
+.error-boundary__backup-text {
+  color: #fff;
+  font-size: var(--font-size-sm);
+}
+.btn-reload {
+  width: 100%;
+  background: #fff;
+  color: var(--clr-violet);
+  font-weight: 700;
+  padding: var(--sp-3) var(--sp-6);
+  border-radius: var(--r-xl);
+  font-family: var(--font-family);
+  cursor: pointer;
+  border: none;
+  margin-bottom: var(--sp-3);
+  transition: background-color var(--transition-fast);
+}
+.btn-reload:hover { background: rgba(255,255,255,0.9); }
+.btn-boundary-dismiss {
+  color: rgba(255,255,255,0.5);
+  font-size: var(--font-size-sm);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-family);
+  transition: color var(--transition-fast);
+}
+.btn-boundary-dismiss:hover { color: rgba(255,255,255,0.85); }

@@ -22,16 +22,17 @@ export function renderQuestion(q, container, { onAnswer = null, preview = false 
 
 // ── CSS-константи ──────────────────────────────────────────────────────────
 
+// Семантичні класи з style.css — без Tailwind утиліт
 const CLS = {
-  optionBtn:  'btn w-full text-left px-4 py-3.5 rounded-2xl border-2 border-slate-200 bg-white text-slate-800 font-semibold text-base hover:border-violet-400 hover:bg-violet-50 transition-all',
-  checkBtn:   'btn w-full px-5 py-4 rounded-2xl bg-violet-500 hover:bg-violet-600 text-white font-bold text-base mt-2',
-  correct:    ['border-emerald-400', 'bg-emerald-50', 'text-emerald-800'],
-  incorrect:  ['border-rose-400',    'bg-rose-50',    'text-rose-800'],
-  neutral:    ['border-slate-200',   'bg-white'],
+  optionBtn:  'quiz-option',
+  checkBtn:   'quiz-check',
+  correct:    ['quiz-option--correct'],
+  incorrect:  ['quiz-option--incorrect'],
+  neutral:    ['quiz-option'],   // базовий клас (для reset при знятті стану)
 };
 
-function markCorrect(el)   { el.classList.remove(...CLS.neutral); el.classList.add(...CLS.correct); }
-function markIncorrect(el) { el.classList.remove(...CLS.neutral); el.classList.add(...CLS.incorrect); }
+function markCorrect(el)   { el.classList.add('quiz-option--correct'); }
+function markIncorrect(el) { el.classList.add('quiz-option--incorrect'); }
 
 // ── choice ─────────────────────────────────────────────────────────────────
 

@@ -364,18 +364,20 @@ function startQuiz(qs, mode, cfg, meta) {
   startedAt    = Date.now();
   Object.assign(startQuiz, { meta }); // зберігаємо мета для збереження результату
 
-  // Бейдж режиму
-  const labels = { practice: 'Тренування', demo: 'Демо', olympiad: 'Олімпіада' };
-  const colors  = { practice: 'bg-amber-100 text-amber-700', demo: 'bg-sky-100 text-sky-700', olympiad: 'bg-rose-100 text-rose-700' };
+  // Бейдж режиму — CSS-клас замість Tailwind-утиліт
+  const labels     = { practice: 'Тренування', demo: 'Демо', olympiad: 'Олімпіада' };
+  const badgeColor = { practice: '#fef3c7', demo: '#e0f2fe', olympiad: '#ffe4e6' };
+  const badgeText  = { practice: '#92400e', demo: '#0369a1', olympiad: '#9f1239' };
   quizModeBadge.textContent = labels[mode];
-  quizModeBadge.className = `text-xs font-bold px-3 py-1 rounded-full ${colors[mode]}`;
+  quizModeBadge.className   = 'quiz-badge';
+  quizModeBadge.style.background = badgeColor[mode] ?? '#f1f5f9';
+  quizModeBadge.style.color      = badgeText[mode]  ?? '#334155';
 
   // Таймер
   clearInterval(timerInterval);
   if (cfg.timeMinutes) {
     secondsLeft = cfg.timeMinutes * 60;
-    quizTimer.classList.remove('hidden');
-    quizTimer.classList.add('flex');
+    quizTimer.classList.add('visible');
     updateTimerDisplay();
     timerInterval = setInterval(() => {
       secondsLeft--;
@@ -383,8 +385,7 @@ function startQuiz(qs, mode, cfg, meta) {
       if (secondsLeft <= 0) finishQuiz(true);
     }, 1000);
   } else {
-    quizTimer.classList.add('hidden');
-    quizTimer.classList.remove('flex');
+    quizTimer.classList.remove('visible');
   }
 
   showOverlay(quizOverlay);
@@ -534,14 +535,14 @@ function updateTimerDisplay() {
   const m = Math.floor(secondsLeft / 60);
   const s = secondsLeft % 60;
   quizTimerDisplay.textContent = `${m}:${String(s).padStart(2, '0')}`;
-  if (secondsLeft <= 60) {
-    quizTimer.classList.remove('bg-orange-100', 'text-orange-700');
-    quizTimer.classList.add('bg-rose-100', 'text-rose-700');
-  }
+  // Останні 60 секунд — переходимо в «urgent» режим (червоний фон)
+  if (secondsLeft <= 60) quizTimer.classList.add('urgent');
 }
 
-function showOverlay(el) { el.classList.remove('hidden'); el.classList.add('flex'); }
-function hideOverlay(el) { el.classList.add('hidden'); el.classList.remove('flex'); }
+// Показ/приховання overlay-елементів через CSS-клас .active
+// (quiz-overlay, result-overlay, quit-overlay використовують display через .active)
+function showOverlay(el) { el.classList.add('active'); }
+function hideOverlay(el) { el.classList.remove('active'); }
 
 function showScreenEntry() {
   screenActions.classList.add('hidden');
