@@ -1,0 +1,109 @@
+/* ═══════════════════════════════════════════════════════════════
+   tokens.css — Розумко
+   Єдине місце де живуть всі CSS custom properties.
+   Зміна теми або брендингу = правки тільки тут.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+
+  /* ── Бренд ─────────────────────────────────────────────────── */
+  --clr-brand:          #3b82f6;
+  --clr-brand-dark:     #2563eb;
+
+  /* ── Ролі (кнопки входу на index.html) ─────────────────────── */
+  --clr-student:        #10b981;   /* смарагдовий — учень */
+  --clr-student-dark:   #059669;
+  --clr-teacher:        #0ea5e9;   /* блакитний — вчитель */
+  --clr-teacher-dark:   #0284c7;
+
+  /* ── Статуси ────────────────────────────────────────────────── */
+  --clr-success:        #22c55e;
+  --clr-danger:         #ef4444;
+  --clr-warning:        #f59e0b;
+
+  /* ── Нейтральна палітра ─────────────────────────────────────── */
+  --clr-surface:        #ffffff;
+  --clr-surface-muted:  #f8fafc;
+  --clr-surface-subtle: #f1f5f9;
+  --clr-border:         #e2e8f0;
+  --clr-border-light:   rgba(226,232,240,0.6);
+
+  /* ── Текст ──────────────────────────────────────────────────── */
+  --clr-text:           #0f172a;
+  --clr-text-muted:     #64748b;
+  --clr-text-faint:     #94a3b8;
+  --clr-text-inverse:   #ffffff;
+
+  /* ── Spacing scale ──────────────────────────────────────────── */
+  --sp-1:   0.25rem;   /*  4px */
+  --sp-2:   0.5rem;    /*  8px */
+  --sp-3:   0.75rem;   /* 12px */
+  --sp-4:   1rem;      /* 16px */
+  --sp-5:   1.25rem;   /* 20px */
+  --sp-6:   1.5rem;    /* 24px */
+  --sp-8:   2rem;      /* 32px */
+  --sp-10:  2.5rem;    /* 40px */
+  --sp-12:  3rem;      /* 48px */
+
+  /* ── Border radius ──────────────────────────────────────────── */
+  --r-sm:   0.5rem;    /*  8px */
+  --r-md:   0.75rem;   /* 12px */
+  --r-lg:   1rem;      /* 16px */
+  --r-xl:   1.5rem;    /* 24px */
+  --r-2xl:  2rem;      /* 32px */
+  --r-full: 9999px;
+
+  /* ── Тіні ───────────────────────────────────────────────────── */
+  --shadow-card: 0 20px 60px -15px rgba(15,23,42,0.15),
+                 0 4px 16px -4px  rgba(15,23,42,0.06);
+  --shadow-btn:  0 8px 24px rgba(15,23,42,0.10);
+  --shadow-sm:   0 1px 4px  rgba(15,23,42,0.06);
+
+  /* ── Transitions ────────────────────────────────────────────── */
+  --transition-fast:    150ms ease;
+  --transition-base:    200ms ease;
+  --transition-slow:    300ms ease;
+
+  /* ── Typography ─────────────────────────────────────────────── */
+  --font-family:        'Montserrat', sans-serif;
+  --font-size-xs:       0.75rem;
+  --font-size-sm:       0.875rem;
+  --font-size-base:     1rem;
+  --font-size-lg:       1.125rem;
+  --font-size-xl:       1.25rem;
+  --font-size-2xl:      1.5rem;
+  --font-size-3xl:      1.875rem;
+  --font-size-4xl:      2.25rem;
+  --font-size-5xl:      3rem;
+
+  /* ── Акценти: сторінка учня (student.html) ──────────────────── */
+  --student-bg-from:    #4c1d95;
+  --student-bg-to:      #1e40af;
+  --clr-violet:         #7c3aed;
+  --clr-violet-dark:    #6d28d9;
+  --clr-violet-light:   #ede9fe;
+  --clr-amber:          #fbbf24;
+  --clr-amber-dark:     #f59e0b;
+
+  /* ── Акценти: сторінка вчителя (teacher.html) ──────────────── */
+  --clr-sky:            #0ea5e9;
+  --clr-sky-dark:       #0284c7;
+  --clr-sky-light:      #e0f2fe;
+  --clr-emerald:        #10b981;
+  --clr-emerald-dark:   #059669;
+  --clr-emerald-light:  #d1fae5;
+
+  /* ── Акценти: адмін-панель (admin.html) — dark theme ────────── */
+  --adm-bg:             #0f172a;
+  --adm-surface:        #1e293b;
+  --adm-surface-2:      #0f172a;
+  --adm-border:         #334155;
+  --adm-text:           #f1f5f9;
+  --adm-text-muted:     #94a3b8;
+  --adm-text-faint:     #64748b;
+  --adm-sky:            #38bdf8;
+  --adm-sky-hover:      #0ea5e9;
+  --adm-emerald:        #10b981;
+  --adm-emerald-hover:  #059669;
+  --adm-rose:           #f43f5e;
+}

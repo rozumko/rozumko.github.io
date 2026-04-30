@@ -1,22 +1,6 @@
-// Завантажує питання для класу та режиму.
-// Основне джерело: Firestore (olympiad_questions).
-// Fallback: JS-модулі (якщо Firestore порожній для цього класу/режиму).
+// Завантажує питання для класу та режиму з Firestore (olympiad_questions).
 
 import { getQuizQuestions } from '../../services/questions.js';
-
-const PRACTICE_MODULES = {
-  1: () => import('../../data/questions/informatics/grade1.js'),
-  2: () => import('../../data/questions/informatics/grade2.js'),
-  3: () => import('../../data/questions/informatics/grade3.js'),
-  4: () => import('../../data/questions/informatics/grade4.js'),
-};
-
-const OLYMPIAD_MODULES = {
-  1: () => import('../../data/questions/informatics/grade1-olympiad.js'),
-  2: () => import('../../data/questions/informatics/grade2-olympiad.js'),
-  3: () => import('../../data/questions/informatics/grade3-olympiad.js'),
-  4: () => import('../../data/questions/informatics/grade4-olympiad.js'),
-};
 
 function shuffle(arr) {
   const a = [...arr];
@@ -30,24 +14,9 @@ function shuffle(arr) {
 // mode: 'practice' | 'demo' | 'olympiad'
 export async function loadQuestions(grade, mode, count) {
   const isOlympiad = mode === 'olympiad';
-
-  // Спробуємо Firestore
-  try {
-    const qs = await getQuizQuestions(grade, isOlympiad);
-    if (qs.length > 0) {
-      return shuffle(qs).slice(0, Math.min(count, qs.length));
-    }
-  } catch (err) {
-    console.warn('[quiz-engine] Firestore недоступний, fallback до JS-модулів:', err?.message ?? err);
-  }
-
-  // Fallback до JS-модулів
-  const modules = isOlympiad ? OLYMPIAD_MODULES : PRACTICE_MODULES;
-  const loader  = modules[grade];
-  if (!loader) throw new Error(`Питань для ${grade} класу не знайдено.`);
-  const { questions } = await loader();
-  if (!questions?.length) throw new Error('Банк питань порожній.');
-  return shuffle(questions).slice(0, Math.min(count, questions.length));
+  const qs = await getQuizQuestions(grade, isOlympiad);
+  if (!qs.length) throw new Error(`Питань для ${grade} класу ще немає. Зверніться до вчителя.`);
+  return shuffle(qs).slice(0, Math.min(count, qs.length));
 }
 
 // Повертає конфіг режиму.

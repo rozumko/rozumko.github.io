@@ -14,7 +14,7 @@
  * ─────────────────────────────────────────────────────────────
  */
 
-import { getQuestions, createQuestion, updateQuestion, deleteQuestion, duplicateQuestion, importFromJsFiles } from '../../services/questions.js';
+import { getQuestions, createQuestion, updateQuestion, deleteQuestion, duplicateQuestion } from '../../services/questions.js';
 import { createFocusTrap } from '../../utils/focus-trap.js';
 import { renderQuestion }  from '../../utils/question-renderer.js';
 import { esc, showModal }  from './ui.js';
@@ -111,23 +111,6 @@ export function initQuestionsTab() {
     else     { prev.classList.add('hidden'); prev.src = ''; }
   });
 
-  // Імпорт питань з JS-файлів (fallback банк)
-  document.getElementById('import-questions-btn').addEventListener('click', async () => {
-    const btn = document.getElementById('import-questions-btn');
-    btn.disabled = true;
-    btn.textContent = 'Імпорт…';
-    try {
-      // Callback оновлює текст кнопки щоб показати прогрес
-      const total = await importFromJsFiles((n) => { btn.textContent = `Імпорт… ${n}`; });
-      showModal(`Імпортовано ${total} питань.`);
-      await loadQuestionsTab();
-    } catch (err) {
-      showModal(err.message);
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fas fa-file-import mr-2"></i>Імпорт з JS';
-    }
-  });
 
   // Збереження форми питання (submit)
   questionForm.addEventListener('submit', handleQuestionFormSubmit);

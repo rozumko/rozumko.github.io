@@ -57,34 +57,3 @@ export async function duplicateQuestion(q) {
   return createQuestion({ ...data, q: data.q + ' (копія)' });
 }
 
-// Імпорт з JS-модулів (одноразово)
-const JS_MODULES = {
-  practice: {
-    1: () => import('../data/questions/informatics/grade1.js'),
-    2: () => import('../data/questions/informatics/grade2.js'),
-    3: () => import('../data/questions/informatics/grade3.js'),
-    4: () => import('../data/questions/informatics/grade4.js'),
-  },
-  olympiad: {
-    1: () => import('../data/questions/informatics/grade1-olympiad.js'),
-    2: () => import('../data/questions/informatics/grade2-olympiad.js'),
-    3: () => import('../data/questions/informatics/grade3-olympiad.js'),
-    4: () => import('../data/questions/informatics/grade4-olympiad.js'),
-  }
-};
-
-export async function importFromJsFiles(onProgress) {
-  let total = 0;
-  for (const [mode, grades] of Object.entries(JS_MODULES)) {
-    const isOlympiad = mode === 'olympiad';
-    for (const [grade, loader] of Object.entries(grades)) {
-      const { questions } = await loader();
-      for (const q of questions) {
-        await createQuestion({ ...q, grade: Number(grade), isOlympiad });
-        total++;
-        onProgress?.(total);
-      }
-    }
-  }
-  return total;
-}

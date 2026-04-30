@@ -1,6 +1,6 @@
 # Архітектура Розумко — Повна технічна документація
 
-_Останнє оновлення: 2026-04-29_
+_Останнє оновлення: 2026-04-30_
 
 ---
 
@@ -9,20 +9,27 @@ _Останнє оновлення: 2026-04-29_
 ### Контекст проєкту
 Розумко — онлайн-олімпіада з інформатики для учнів 1–4 класів. Статичний сайт: HTML + CSS + vanilla JS + Firebase. **Без фреймворків навмисно** — аудиторія молодші школярі, потрібна максимальна простота і швидкість.
 
-### Що щойно було зроблено (великий рефакторинг)
+### Що щойно було зроблено (великий рефакторинг + аудит CSS)
 1. **Видалено Tailwind CDN** з усіх 4 сторінок (`index.html`, `student.html`, `teacher.html`, `admin.html`)
-2. **Введено CSS design tokens** у `style.css` через CSS custom properties (`:root { --clr-*, --sp-*, --r-*, ... }`)
+2. **CSS design tokens** винесено в окремий `tokens.css` — єдине місце для всіх `--clr-*`, `--sp-*`, `--r-*`, `--adm-*`
 3. **Усі Tailwind utility-рядки у JS** замінені на семантичні BEM-класи
 4. **`utils/ui.js`** — централізований `showModal`, `esc`, `friendlyError`
-5. **`admin.js` (661 рядок) → 5 feature-модулів** у `features/admin/`
+5. **`admin.js` → 5 feature-модулів** у `features/admin/`
 6. **Error boundary** в `student.js` + **offline.html** + **sw.js** Service Worker
 7. **Loading overlay** при старті квізу (`#quiz-loading-overlay`)
+8. **CSS аудит:** видалено aliases-блок (~110 рядків), мертвий код (~120 рядків), дубліти — style.css: 2800 → 2368 рядків
+9. **Уніфіковано картки:** `.class-form-card`, `.class-card`, `.empty-state`, `.result-row` — спільна база; аналогічно для dark-карток admin
+10. **Видалено JS fallback** у `quiz-engine.js` і папку `data/questions/informatics/` (8 файлів — старі типи `choice`/`truefalse`, несумісні з новими типами Firestore)
+11. **Видалено кнопку "Імпорт з JS"** в адмін-панелі (небезпечно — дублювало б Firestore дані)
+12. **Fullscreen** при старті олімпіади (`requestFullscreen` + `exitFullscreen`)
+13. **Захист від повторного проходження** — localStorage `rozumko_done_{code}_{eventId}` + Firestore session check як другий рубіж
 
 ### Критичні правила роботи з цим проєктом
 - **НЕ додавай Tailwind** — він видалений навмисно
-- **НЕ розбивай style.css на окремі файли** поки не зроблено аудит (заплановано після повного переходу)
+- **НЕ додавай `:root {}` в `style.css`** — всі токени живуть виключно в `tokens.css`
 - **НЕ використовуй фреймворки** — React, Vue тощо тут надлишок
 - **Зміни CSS через токени** — не хардкодь кольори/відступи, використовуй `var(--clr-*)`, `var(--sp-*)`
+- **НЕ повертай JS fallback** у `quiz-engine.js` — він видалений навмисно (JS файли мали старі типи, несумісні з Firestore-питаннями)
 - **Читай тільки файли, які потрібні для задачі** — проєкт має обмеження по токенах
 
 ### Патерни, які використовуються скрізь
@@ -45,9 +52,11 @@ hideLoading();   // ховає overlay
 2. **`utils/ui.js` — lazy init** `showModal` використовує `getModal()` замість прямого `document.getElementById` бо модуль може завантажуватись на сторінках без `#app-modal`
 3. **teacher.html + teacher.js:** при показі дашборду JS додає `teacher-dashboard-active` на `body` — це скасовує flex-центрування auth-сторінки. Якщо дашборд виглядає стиснутим — шукай тут
 4. **Шаблони в teacher.html:** querySelector в JS використовує **обидва** класи — старий (`class-card-header`) і BEM (`class-card__header`). В шаблоні мають бути обидва. Якщо класи не рендеряться — перевір що querySelector знаходить елемент
-5. **`btn-next` в квізі:** `display: none` в CSS, показується через `.hidden` патерн (видалення класу `hidden`). НЕ через `.visible` — цей клас видалений
+5. **`btn-next` в квізі:** базово `display: inline-block`, ховається через `.hidden`. НЕ через `.visible` — цей клас видалений
 6. **Селектори grade/diff кнопок:** `[data-grade]` і `[data-difficulty]` (НЕ `.grade-btn` / `.diff-btn` — такі класи не існують)
 7. **`quizFeedback.className`** — встановлюється як `'quiz-feedback quiz-feedback--correct'` або `'quiz-feedback quiz-feedback--incorrect'`. НЕ Tailwind-рядки
+8. **Fullscreen:** `enterFullscreen()` / `exitFullscreen()` в `student.js` — викликаються тільки для режиму `olympiad`. Браузер може відхилити запит якщо не було user gesture — це не критично, `try/catch` є
+9. **Захист від повтору:** ключ localStorage `rozumko_done_{code}_{eventId}` встановлюється після `finishSession` + `clearQuizBackup`. Якщо збереження в Firestore не вдалось — ключ НЕ встановлюється (щоб учень міг спробувати ще раз коли з'явиться мережа)
 
 ---
 
@@ -84,8 +93,15 @@ teacher.html + teacher.js         ← вчитель: класи, коди, ре
 admin.html + admin.js             ← адмін: події, питання, вчителі, результати (Tailwind видалено ✅)
 offline.html                      ← сторінка при відсутності інтернету ✅
 
-style.css                         ← ~2600 рядків, БЕЗ Tailwind, 8 секцій:
-                                     1. Design tokens (:root)
+tokens.css                        ← ВСІ CSS custom properties (єдине місце!)
+                                     - Спільні: --clr-*, --sp-*, --r-*, --shadow-*, --transition-*, --font-*
+                                     - Student: --student-bg-from/to, --clr-violet-*, --clr-amber-*
+                                     - Teacher: --clr-sky-*, --clr-emerald-*
+                                     - Admin: --adm-* (dark theme)
+                                     Підключається ПЕРЕД style.css у всіх 9 HTML файлах
+
+style.css                         ← ~2368 рядків, БЕЗ Tailwind, БЕЗ :root блоків, 8 секцій:
+                                     1. (посилання на tokens.css)
                                      2. Reset/Base (.hidden, scroll)
                                      3. Accessibility (skip-link, sr-only, prefers-reduced-motion)
                                      4. Shared UI (.btn, .app-modal-overlay, @keyframes)
@@ -93,7 +109,9 @@ style.css                         ← ~2600 рядків, БЕЗ Tailwind, 8 с�
                                      6. Student page (quiz, overlays, loading)
                                      7. Teacher page (auth, dashboard, class cards, codes)
                                      8. Admin page (dark theme, stats, question form)
-                                     + Aliases/missing block (тимчасово, до аудиту)
+                                     Групові базові селектори для карток:
+                                       .class-form-card,.class-card,.empty-state,.result-row { спільна база }
+                                       .event-card,.question-item,.admin-result-row,.admin-teacher-row { спільна база }
 
 services/
   firebase.js                     ← ініціалізація Firebase + App Check (reCAPTCHA v3)
@@ -112,7 +130,7 @@ features/
     session.js                    ← findActiveEvent, checkSession, startSession, finishSession
                                      (race condition захищений через runTransaction)
     results.js                    ← saveOlympiadResult (addDoc → унікальний ID)
-    quiz-engine.js                ← loadQuestions (Firestore → JS fallback), getModeConfig
+    quiz-engine.js                ← loadQuestions (тільки Firestore, БЕЗ fallback), getModeConfig
   admin/
     ui.js                         ← re-export utils/ui.js + formatDate (специфічна для адміна)
     events-tab.js                 ← loadEvents, buildEventCard, форма події
@@ -126,53 +144,48 @@ utils/
                                      CLS: quiz-option, quiz-option--correct/--incorrect
   ui.js                           ← showModal (lazy init!), esc, friendlyError
 
-data/questions/informatics/
-  grade1.js … grade4.js           ← тренувальний банк (JS fallback)
-  grade1-olympiad.js … grade4-olympiad.js  ← олімпіадний банк (JS fallback)
-
 sw.js                             ← Service Worker: precache, network-first nav, offline fallback
 manifest.json                     ← PWA manifest
 ```
 
 ---
 
-## CSS Design Tokens (style.css Section 1)
+## CSS Design Tokens (`tokens.css`)
+
+Всі токени — в одному файлі `tokens.css`, підключається першим у всіх HTML.  
+**Щоб змінити колір або відступ — правь тільки `tokens.css`.**
 
 ```css
 :root {
-  /* Кольори */
-  --clr-violet: #7c3aed;
-  --clr-violet-dark: #6d28d9;
-  --clr-amber: #fef3c7;
-  --clr-border: #e2e8f0;
-  --clr-text: #1e293b;
-  --clr-text-muted: #64748b;
-  --clr-text-faint: #94a3b8;
-  --clr-surface-muted: #f8fafc;
-  --clr-surface-subtle: #f1f5f9;
+  /* Бренд і ролі */
+  --clr-brand: #3b82f6;
+  --clr-student: #10b981;  --clr-teacher: #0ea5e9;
 
-  /* Відступи (кратні 4px) */
-  --sp-1: 0.25rem; --sp-2: 0.5rem; --sp-3: 0.75rem;
-  --sp-4: 1rem; --sp-5: 1.25rem; --sp-6: 1.5rem;
-  --sp-8: 2rem; --sp-10: 2.5rem; --sp-12: 3rem; --sp-16: 4rem;
+  /* Нейтральна палітра */
+  --clr-surface: #fff; --clr-surface-muted: #f8fafc; --clr-surface-subtle: #f1f5f9;
+  --clr-border: #e2e8f0; --clr-text: #0f172a;
+  --clr-text-muted: #64748b; --clr-text-faint: #94a3b8;
 
-  /* Радіуси */
-  --r-sm: 0.375rem; --r-md: 0.5rem; --r-lg: 0.75rem;
-  --r-xl: 1rem; --r-2xl: 1.5rem; --r-full: 9999px;
+  /* Статуси */
+  --clr-success: #22c55e; --clr-danger: #ef4444; --clr-warning: #f59e0b;
 
-  /* Тіні, переходи, типографіка */
-  --shadow-sm / --shadow-card / --shadow-lg
-  --transition-fast: 150ms ease; --transition-base: 250ms ease;
-  --font-size-xs … --font-size-3xl; --font-family: 'Montserrat', sans-serif;
+  /* Spacing: --sp-1 … --sp-12 (4px–48px) */
+  /* Radius:  --r-sm … --r-2xl, --r-full */
+  /* Тіні:   --shadow-sm, --shadow-btn, --shadow-card */
+  /* Типографіка: --font-size-xs … --font-size-5xl, --font-family */
+  /* Transitions: --transition-fast(150ms), --transition-base(200ms), --transition-slow(300ms) */
 
-  /* Teacher page */
+  /* Акценти student.html */
+  --student-bg-from: #4c1d95; --student-bg-to: #1e40af;
+  --clr-violet: #7c3aed; --clr-amber: #fbbf24;
+
+  /* Акценти teacher.html */
   --clr-sky: #0ea5e9; --clr-sky-dark: #0284c7; --clr-sky-light: #e0f2fe;
   --clr-emerald: #10b981; --clr-emerald-dark: #059669; --clr-emerald-light: #d1fae5;
 
   /* Admin dark theme */
   --adm-bg: #0f172a; --adm-surface: #1e293b; --adm-border: #334155;
   --adm-text: #f1f5f9; --adm-text-muted: #94a3b8; --adm-sky: #38bdf8;
-  --adm-emerald: #10b981;
 }
 ```
 
@@ -304,19 +317,20 @@ olympiad:  { count: event.questionsCount, timeMinutes: event.timeMinutes, ... }
 - offline.html + Service Worker
 - Loading overlay при старті квізу
 - Повна міграція з Tailwind на CSS design tokens (всі 4 сторінки)
+- **CSS аудит:** tokens.css виокремлено, aliases-блок видалено, мертвий код вичищено (2800→2368 рядків)
+- **Fullscreen** при старті олімпіади (`requestFullscreen` / `exitFullscreen`)
+- **Захист від повтору:** localStorage `rozumko_done_{code}_{eventId}` + Firestore session як резерв
+- **Уніфікація карток:** спільний базовий селектор для light і dark карток
+- **Видалено JS fallback** і `data/questions/informatics/` (8 файлів)
 
 ### Незавершено / Технічний борг
 
-**🟡 CSS (наступний крок — аудит style.css):**
-- style.css ~2600 рядків. В кінці файлу є блок "aliases & missing" (~100 рядків) для teacher page — тимчасові аліаси через те що CSS писався до HTML. Після стабілізації треба:
-  1. Видалити дубльовані класи (є старі `.btn-sky`, `.btn-emerald` і нові `.btn-adm-*`)
-  2. Вичистити teacher-section від класів що не використовуються
-  3. Можливо розбити на `style-base.css` + `style-student.css` + `style-teacher.css` + `style-admin.css`
+**🔴 Критично для запуску:**
+- Наповнення банку питань (зараз ~3–5 на клас/складність → потрібно 15+)
+  Додавати через адмін-панель → вкладка "Питання"
 
 **🟡 Функціонал:**
-- Fullscreen при старті олімпіади (`requestFullscreen`)
 - Firebase Storage для зображень (зараз тільки зовнішній URL)
-- Наповнення банку питань (зараз ~3–5 питань на клас/складність → треба 15+)
 
 **🟢 Майбутнє:**
 - Cloudflare Pages + D1 міграція (всі сервіси ізольовані в `services/`)
@@ -333,8 +347,14 @@ olympiad:  { count: event.questionsCount, timeMinutes: event.timeMinutes, ... }
 ### Чому Tailwind видалено
 CDN-версія Tailwind (play CDN) генерує стилі в runtime через JS — це 98KB JS + затримка рендеру. Крім того, `className = 'bg-slate-800 border...'` у JS-рядках — це нечитабельно і ламається при рефакторингу. CSS design tokens дають те саме (консистентність через змінні) без залежності від CDN.
 
-### Чому style.css один файл
-Статичний сайт без збірника не може `@import` без HTTP-запиту. Один файл = один запит, кешується цілком. Розбиття має сенс тільки якщо секція > 500 рядків і не використовується на більшості сторінок — поки що передчасно.
+### Чому tokens.css окремо від style.css
+Токени — єдина частина CSS яку потрібно змінювати при rebrand або зміні теми. Виокремлення в `tokens.css` дає: (1) одне місце для правок, (2) легко підключити кілька тем, (3) style.css не містить жодного `:root` — завжди чисто. Два HTTP-запити замість одного — прийнятно, обидва файли кешуються.
+
+### Чому видалено JS fallback у quiz-engine.js
+JS-файли `data/questions/informatics/*.js` містили лише старі типи `choice` і `truefalse`. Нові типи (`sort`, `sequence`, `match`, `input`) існують тільки в Firestore. Fallback тихо показував неправильні типи питань — це гірше за чесне повідомлення "питань немає, зверніться до вчителя".
+
+### Чому localStorage + Firestore для захисту від повтору
+localStorage — миттєва перевірка без мережевого запиту (UX). Firestore session — надійний захист навіть якщо учень очистив localStorage або зайшов з іншого браузера. Два рубежі, різна вартість — разом покривають 99% сценаріїв.
 
 ### Чому `.active` замість `.hidden`/`.flex` для overlays
 Tailwind-підхід: `classList.remove('hidden'); classList.add('flex')` — два класи, два рядки, легко десинхронізуватись. CSS `.active { display: flex }` — один клас, одна операція, CSS повністю контролює display-тип.

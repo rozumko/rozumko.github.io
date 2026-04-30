@@ -165,9 +165,28 @@ let startedAt    = null;
 let currentMode  = null;
 let currentSessionId = null;
 
+// ===================== FULLSCREEN =====================
+
+function enterFullscreen() {
+  const el = document.documentElement;
+  try {
+    if (el.requestFullscreen)            el.requestFullscreen();
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  } catch { /* браузер може відхилити — не критично */ }
+}
+function exitFullscreen() {
+  try {
+    if (document.exitFullscreen && document.fullscreenElement)
+      document.exitFullscreen();
+    else if (document.webkitExitFullscreen && document.webkitFullscreenElement)
+      document.webkitExitFullscreen();
+  } catch { /* ігноруємо */ }
+}
+
 // ===================== LOCALSTORAGE BACKUP =====================
 
-const QUIZ_BACKUP_KEY = 'rozumko_quiz_backup';
+const QUIZ_BACKUP_KEY  = 'rozumko_quiz_backup';
+const DONE_KEY = (code, eventId) => `rozumko_done_${code}_${eventId}`;
 
 function saveQuizBackup() {
   if (currentMode !== 'olympiad' || !currentSessionId) return;
@@ -289,6 +308,10 @@ async function launchOlympiad(mode) {
 
     if (mode === 'olympiad') {
       if (!codeEventId) throw new Error('Цей код не прив\'язаний до жодної олімпіади. Зверніться до вчителя.');
+      // Швидка перевірка localStorage (без запиту до Firestore)
+      if (localStorage.getItem(DONE_KEY(code, eventId))) {
+        throw new Error('Ти вже пройшов цю олімпіаду. Повторна спроба не дозволена.');
+      }
       const session = await checkSession(code, eventId);
       if (session?.status === 'completed' && !session?.retryAllowed) {
         throw new Error('Ти вже пройшов цю олімпіаду. Повторна спроба не дозволена.');
@@ -389,6 +412,7 @@ function startQuiz(qs, mode, cfg, meta) {
 
   hideLoading();
   showOverlay(quizOverlay);
+  if (mode === 'olympiad') enterFullscreen();
   showQuestion();
 }
 
@@ -468,6 +492,7 @@ async function finishQuiz(timeUp) {
   clearInterval(timerInterval);
   const elapsed = Math.round((Date.now() - startedAt) / 1000);
   hideOverlay(quizOverlay);
+  if (currentMode === 'olympiad') exitFullscreen();
 
   // Показуємо результат
   const labels = { practice: 'Тренування', demo: 'Демо-версія', olympiad: 'Олімпіада' };
@@ -497,6 +522,7 @@ async function finishQuiz(timeUp) {
       });
       await finishSession(currentSessionId);
       clearQuizBackup();
+      try { localStorage.setItem(DONE_KEY(meta.code, meta.eventId), '1'); } catch { /* ігноруємо */ }
       resultSavedMsg.classList.remove('hidden');
     } catch (err) {
       // Результат не вдалось зберегти — повідомляємо учня що робити
@@ -520,6 +546,7 @@ quitConfirmYes.addEventListener('click', () => {
   clearInterval(timerInterval);
   hideOverlay(quitConfirm);
   hideOverlay(quizOverlay);
+  if (currentMode === 'olympiad') exitFullscreen();
   if (currentSessionId) finishSession(currentSessionId).catch(() => {});
   currentSessionId = null;
 });
