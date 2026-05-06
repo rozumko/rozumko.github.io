@@ -1061,6 +1061,11 @@ button {
   color: #9f1239 !important;
 }
 
+.quiz-option--selected {
+  border-color: #7c3aed !important;
+  background: #f5f3ff !important;
+  color: #4c1d95 !important;
+}
 /* Кнопка «Перевірити» (input, sort, match) */
 .quiz-check {
   width: 100%;
