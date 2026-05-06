@@ -1,6 +1,3 @@
-import { validateStudentCode, getStoredStudentCode } from './features/auth/student-code-auth.js';
-import { findActiveEvent, checkSession, startSession, finishSession } from './features/olympiad/session.js';
-import { saveOlympiadResult } from './features/olympiad/results.js';
 import { loadQuestions, getModeConfig } from './features/olympiad/quiz-engine.js';
 import { exchangeCode, saveAnswer, finishAttempt } from './features/api/client.js';
 import { renderQuestion } from './utils/question-renderer.js';
@@ -194,10 +191,10 @@ const QUIZ_BACKUP_KEY  = 'rozumko_quiz_backup';
 const DONE_KEY = (code, eventId) => `rozumko_done_${code}_${eventId}`;
 
 function saveQuizBackup() {
-  if (currentMode !== 'olympiad' || !currentSessionId) return;
+  if (currentMode !== 'olympiad' || !currentAttemptId) return;
   try {
     localStorage.setItem(QUIZ_BACKUP_KEY, JSON.stringify({
-      sessionId:   currentSessionId,
+      attemptId:   currentAttemptId,
       mode:        currentMode,
       currentIdx,
       score,
@@ -225,26 +222,8 @@ function getQuizBackup() {
 }
 
 // ===================== ВІДНОВЛЕННЯ СЕСІЇ =====================
-
-const storedCode = getStoredStudentCode();
-if (storedCode) {
-  showScreenActions(storedCode);
-  // Блокуємо кнопки до завершення відновлення — studentData ще null
-  document.getElementById('start-olympiad-btn').disabled = true;
-  document.getElementById('start-demo-btn').disabled = true;
-
-  validateStudentCode(storedCode)
-    .then(data => {
-      studentData = data;
-      document.getElementById('start-olympiad-btn').disabled = false;
-      document.getElementById('start-demo-btn').disabled = false;
-      showActiveEventInfo(data.grade);
-    })
-    .catch(() => {
-      showScreenEntry();
-      codeStatus.textContent = 'Код більше не активний. Зверніться до вчителя.';
-    });
-}
+// В новій архітектурі сесія не зберігається між перезавантаженнями.
+// Учень вводить код щоразу — attempt створюється через exchangeCode.
 
 // ===================== ВХІД ЗА КОДОМ =====================
 
@@ -294,7 +273,7 @@ document.getElementById('start-demo-btn').addEventListener('click', () => launch
 document.getElementById('start-olympiad-btn').addEventListener('click', () => launchOlympiad('olympiad'));
 
 async function launchOlympiad(mode) {
-  const code = studentData?.code ?? getStoredStudentCode();
+  const code = studentData?.code;
   if (!code) { showModal('Спочатку введи код учня.'); return; }
 
   const btn = mode === 'olympiad'
@@ -304,28 +283,18 @@ async function launchOlympiad(mode) {
   showLoading();
 
   try {
-    if (!studentData) throw new Error('Зачекай, дані завантажуються. Спробуй ще раз.');
-    const grade      = studentData.grade;
-    const teacherUid = studentData.teacherUid;
-    // eventId береться з коду учня — не шукаємо окремо
-    const codeEventId = studentData.eventId ?? null;
-
-    // Знайти активну подію для параметрів (час, кількість питань)
-    const event   = codeEventId
-      ? await findActiveEvent(grade)   // беремо параметри з будь-якої активної або null
-      : null;
-    const eventId = codeEventId ?? event?.id ?? 'demo';
+    const grade = studentData.grade;
 
     if (mode === 'olympiad') {
       if (!olympiadQuestions) throw new Error('Спочатку введи код від вчителя.');
-      const cfg = getModeConfig(mode, event);
+      const cfg = getModeConfig(mode, null);
       startQuiz(olympiadQuestions, mode, cfg, { code, grade });
       return;
     }
 
-    const cfg = getModeConfig(mode, event);
+    const cfg = getModeConfig(mode, null);
     const qs  = await loadQuestions(grade, mode, cfg.count);
-    startQuiz(qs, mode, cfg, { code, eventId, teacherUid, grade, event });
+    startQuiz(qs, mode, cfg, { code, grade });
   } catch (err) {
     hideLoading();
     showModal(err.message);
@@ -549,8 +518,8 @@ quitConfirmYes.addEventListener('click', () => {
   hideOverlay(quitConfirm);
   hideOverlay(quizOverlay);
   if (currentMode === 'olympiad') exitFullscreen();
-  if (currentSessionId) finishSession(currentSessionId).catch(() => {});
-  currentSessionId = null;
+  currentAttemptId  = null;
+  olympiadQuestions = null;
 });
 
 resultCloseBtn.addEventListener('click', () => {
@@ -589,25 +558,14 @@ function showScreenActions(code) {
   if (successEl) { successEl.textContent = `Код: ${code}`; }
 }
 
-async function showActiveEventInfo(grade) {
-  const infoBox   = document.getElementById('active-event-info');
-  const titleEl   = document.getElementById('active-event-title');
-  const metaEl    = document.getElementById('active-event-meta');
+function showActiveEventInfo(_grade) {
   const olympiadBtn = document.getElementById('start-olympiad-btn');
-
-  try {
-    const event = await findActiveEvent(grade);
-    if (event) {
-      titleEl.textContent = `🏆 ${event.title}`;
-      metaEl.textContent  = `${event.questionsCount} питань · ${event.timeMinutes} хв`;
-      infoBox.classList.remove('hidden');
-      olympiadBtn.classList.remove('btn-disabled');
-    } else {
-      // Немає активної події — деактивуємо кнопку олімпіади
-      olympiadBtn.classList.add('btn-disabled');
-      olympiadBtn.title = 'Зараз немає активної олімпіади';
-    }
-  } catch {
-    // Firestore недоступний — не показуємо нічого зайвого
-  }
+  const infoBox     = document.getElementById('active-event-info');
+  const titleEl     = document.getElementById('active-event-title');
+  const metaEl      = document.getElementById('active-event-meta');
+  olympiadBtn.classList.remove('btn-disabled');
+  olympiadBtn.title = '';
+  titleEl.textContent = '🏆 Олімпіада з інформатики';
+  metaEl.textContent  = '10 питань · 15 хв';
+  infoBox.classList.remove('hidden');
 }
