@@ -15,7 +15,7 @@ but no critical logic depends on Supabase-specific APIs.
 | Database    | PostgreSQL (via Supabase)         | Can be replaced with any PostgreSQL        |
 | ORM         | Drizzle ORM                       | Schema as source of truth, plain SQL migrations |
 | Auth        | Supabase Auth                     | Teacher and admin only                     |
-| Deployment  | Railway (start) → Docker/VPS      | See deployment section                     |
+| Deployment  | GitHub Pages (frontend) + Render (backend) | GitHub Actions CI/CD             |
 
 ## Data flow
 
@@ -27,9 +27,9 @@ student.html
 Fastify backend
   ↓  validates code, creates attempt row
 Supabase PostgreSQL
-  ↓  returns attempt_token (short-lived JWT or signed ID)
+  ↓  returns attemptId (opaque UUID)
 student.html
-  ↓  all subsequent requests carry attempt_token
+  ↓  all subsequent requests carry attemptId in URL path
   ↓  POST /api/attempt/:id/answer
   ↓  POST /api/attempt/:id/finish
 Fastify backend   ← scores, validates, writes result
@@ -92,14 +92,13 @@ Always call `GET /api/me` and use the response.
 ## Student access codes
 
 - A teacher generates a batch of codes for a specific olympiad session.
-- Codes are stored in the `access_codes` table with: `code`, `olympiad_id`,
-  `class_id`, `max_uses`, `used_count`, `expires_at`.
+- Codes are stored in the `access_codes` table with: `code`, `grade`,
+  `max_uses`, `used_count`, `expires_at`.
 - `POST /api/student/exchange-code` validates the code and creates an `attempt`
-  row. The backend returns an `attempt_token`.
-- The `attempt_token` is a signed value (HMAC or short-lived JWT) that
-  identifies the attempt. It is not a Supabase Auth token.
-- The student carries `attempt_token` in memory only (not localStorage) to
-  avoid cross-session reuse.
+  row. The backend returns `{ attemptId, grade, questions }`.
+- Questions are sent to the frontend (without `correct` field).
+- The student carries `attemptId` in memory (+ localStorage backup for crash recovery).
+- No Supabase Auth involved for students at all.
 
 ## Answer key and scoring
 

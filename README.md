@@ -12,82 +12,96 @@
 **Це комерційний проєкт з закритою ліцензією.**  
 Публічний репозиторій розміщений виключно для прозорості та не надає жодних прав на використання коду.
 
-> Копіювання, модифікація або використання коду без письмового дозволу автора **заборонені**.  
-> Детально — у файлі [LICENSE](./LICENSE).
-
 ---
 
 ## Про проєкт
 
 **Розумко** — освітня платформа для проведення онлайн-олімпіад і тренувань з інформатики для учнів початкової школи.
 
-### Для кого
-
 | Роль | Можливості |
 |---|---|
-| 👨‍🏫 **Вчитель** | Кабінет: класи, генерація кодів доступу, перегляд результатів |
+| 👨‍🏫 **Вчитель** | Кабінет: генерація кодів доступу по класах, перегляд результатів |
 | 🧒 **Учень** | Вхід за кодом без реєстрації, тренування або олімпіада |
-| 🔧 **Адмін** | Управління подіями, банком питань, вчителями, результатами |
+| 🔧 **Адмін** | Банк питань (CRUD), результати всіх олімпіад, список вчителів |
 
 ### Ключові особливості
 
 - **Без реєстрації для учнів** — вхід тільки за кодом (`КІТ247`)
-- **6 типів питань** — вибір, так/ні, введення, порядок, послідовність, пари
-- **Зображення до питань** — з lightbox-переглядом
+- **Безпека** — відповіді та оцінювання тільки на сервері, ключі відповідей ніколи не надходять у браузер
+- **3 режими** — тренування (з поясненнями), демо, олімпіада (таймер, fullscreen)
 - **Захист від збоїв** — localStorage-бекап під час олімпіади
-- **Безпека** — Firebase App Check, Firestore rules, захист від XSS
 - **Доступність** — WCAG 2.2, focus trap, prefers-reduced-motion
 
 ---
 
-## Стек технологій
+## Стек
 
-| Категорія | Технологія |
+| Шар | Технологія |
 |---|---|
-| Frontend | Vanilla HTML + CSS + JavaScript (ES Modules) |
-| Стилі | Tailwind CSS (CDN) + кастомний `style.css` |
-| Auth | Firebase Authentication (email/password + anonymous) |
-| База даних | Cloud Firestore |
-| Безпека | Firebase App Check (reCAPTCHA v3) |
-| Хостинг | GitHub Pages |
+| Frontend | Vite + TypeScript (allowJs) + Vanilla JS + CSS tokens |
+| Backend | Node.js + Fastify v5 + TypeScript |
+| База даних | PostgreSQL (Supabase, портабельний) + Drizzle ORM |
+| Auth | Supabase Auth (тільки вчитель/адмін) + JWKS верифікація |
+| Хостинг Frontend | GitHub Pages (деплой через GitHub Actions) |
+| Хостинг Backend | Render (free tier) |
 
 ---
 
 ## Структура проєкту
 
 ```
-├── index.html          ← лендінг
-├── student.html/js     ← інтерфейс учня
-├── teacher.html/js     ← кабінет вчителя
-├── admin.html/js       ← адмін-панель
-├── style.css           ← глобальні стилі
+├── index.html / student.html / teacher.html / admin.html
+├── student.js / teacher.js / admin.js   ← точки входу
+├── style.css / tokens.css               ← стилі (без фреймворків)
+├── vite.config.ts / tsconfig.json
 │
-├── services/           ← Firebase: auth, Firestore, stats
-├── features/           ← auth flows, quiz engine, session, results
-├── utils/              ← focus-trap, question-renderer
-├── data/questions/     ← JS-банк питань (fallback)
+├── features/
+│   ├── api/client.ts     ← всі запити до backend (типізовані)
+│   ├── admin/            ← вкладки адмін-панелі
+│   └── olympiad/         ← quiz-engine, getModeConfig
 │
-├── docs/               ← технічна документація
-│   ├── teacher-student-architecture.md
-│   └── task-format.md
+├── utils/
+│   ├── question-renderer.js
+│   ├── focus-trap.js
+│   └── ui.js
 │
-├── manifest.json       ← PWA manifest
-├── firestore.rules     ← правила безпеки Firestore
-└── LICENSE             ← умови використання
+├── backend/              ← окремий Node.js + Fastify сервер
+│   ├── src/
+│   │   ├── routes/       ← student, attempt, teacher, admin, questions
+│   │   ├── lib/auth.ts   ← JWT middleware (JWKS)
+│   │   └── db/           ← Drizzle schema + migrations
+│   └── render.yaml
+│
+├── public/               ← статичні assets (sw.js, manifest, favicon)
+├── docs/                 ← технічна документація
+└── .github/workflows/deploy.yml
 ```
 
 ---
 
 ## Документація
 
-- [Архітектура проєкту](./docs/teacher-student-architecture.md)
+- [Архітектура](./docs/architecture.md)
+- [Модель безпеки](./docs/security-model.md)
+- [Міграції БД](./docs/migrations.md)
 - [Формат питань](./docs/task-format.md)
 
 ---
 
-## Контакти
+## Локальний запуск
 
-З питань співпраці, дозволу на використання або повідомлень про помилки — через [GitHub Issues](../../issues).
+```bash
+# Frontend (dev server)
+npm install
+npm run dev
+
+# Backend
+cd backend
+npm install
+npm run dev
+```
+
+Backend потребує `.env` з `DATABASE_URL`, `SUPABASE_URL`, `PORT`.
 
 ---
 
