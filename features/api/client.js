@@ -35,6 +35,21 @@ export async function saveAnswer(attemptId, questionId, answer) {
 }
 
 /**
+ * Завантажити питання для practice/demo.
+ * @param {{ grade, isOlympiad, count, difficulty }} params
+ */
+export async function loadQuestions({ grade, isOlympiad, count, difficulty } = {}) {
+  const params = new URLSearchParams()
+  if (grade      != null) params.set('grade',      grade)
+  if (isOlympiad != null) params.set('isOlympiad', isOlympiad)
+  if (count      != null) params.set('count',      count)
+  if (difficulty)         params.set('difficulty', difficulty)
+  const data = await request(`/api/questions?${params}`)
+  // Нормалізуємо options → a для question-renderer
+  return data.questions.map(q => ({ ...q, a: q.options }))
+}
+
+/**
  * Завершити спробу. Повертає: { score, total, results }
  */
 export async function finishAttempt(attemptId) {

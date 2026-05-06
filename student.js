@@ -364,13 +364,9 @@ startPracticeBtn.addEventListener('click', async () => {
   showLoading();
   try {
     const cfg = getModeConfig('practice');
-    const qs  = await loadQuestions(selectedGrade, 'practice', cfg.count);
-    // Для тренування фільтруємо ще й по складності якщо вибрано
-    const filtered = selectedDiff
-      ? qs.filter(q => q.difficulty === selectedDiff).slice(0, cfg.count)
-      : qs;
-    if (filtered.length === 0) throw new Error('Питань для цих налаштувань немає.');
-    startQuiz(filtered, 'practice', cfg, { grade: selectedGrade });
+    const qs  = await loadQuestions(selectedGrade, 'practice', cfg.count, selectedDiff);
+    if (qs.length === 0) throw new Error('Питань для цих налаштувань немає.');
+    startQuiz(qs, 'practice', cfg, { grade: selectedGrade });
   } catch (err) {
     hideLoading();
     showModal(err.message);
