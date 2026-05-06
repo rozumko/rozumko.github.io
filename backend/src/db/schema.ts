@@ -45,3 +45,15 @@ export const attempts = pgTable('attempts', {
 })
 
 export type Attempt = typeof attempts.$inferSelect
+
+export const appUsers = pgTable('app_users', {
+  id:         uuid('id').primaryKey().defaultRandom(),
+  authUserId: text('auth_user_id').notNull().unique(), // Supabase auth.users id
+  email:      text('email').notNull(),
+  name:       text('name'),
+  role:       text('role').notNull().default('teacher'), // teacher | admin
+  status:     text('status').notNull().default('active'), // active | blocked
+  createdAt:  timestamp('created_at', { withTimezone: true }).defaultNow(),
+})
+
+export type AppUser = typeof appUsers.$inferSelect
