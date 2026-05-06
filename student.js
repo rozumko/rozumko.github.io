@@ -294,7 +294,7 @@ document.getElementById('start-demo-btn').addEventListener('click', () => launch
 document.getElementById('start-olympiad-btn').addEventListener('click', () => launchOlympiad('olympiad'));
 
 async function launchOlympiad(mode) {
-  const code = getStoredStudentCode();
+  const code = studentData?.code ?? getStoredStudentCode();
   if (!code) { showModal('Спочатку введи код учня.'); return; }
 
   const btn = mode === 'olympiad'
