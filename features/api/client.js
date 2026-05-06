@@ -20,7 +20,7 @@ export async function exchangeCode(code) {
     body: JSON.stringify({ code }),
   })
   // Нормалізуємо поле options → a щоб question-renderer.js працював без змін
-  data.questions = data.questions.map(q => ({ ...q, a: q.options, correct: Number(q.correct) }))
+  data.questions = data.questions.map(q => ({ ...q, a: q.options }))
   return data
 }
 

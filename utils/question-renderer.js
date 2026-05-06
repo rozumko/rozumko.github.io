@@ -38,25 +38,28 @@ function markIncorrect(el) { el.classList.add('quiz-option--incorrect'); }
 
 function renderChoice(q, container, onAnswer, preview) {
   let answered = false;
+  const correct = Number(q.correct);
+  const opts = q.options ?? q.a ?? [];
+  const btns = [];
 
-  q.a.forEach((opt, i) => {
+  opts.forEach((opt, i) => {
     const btn = document.createElement('button');
     btn.className = CLS.optionBtn;
     btn.textContent = opt;
+    btns.push(btn);
 
     if (preview) {
       btn.disabled = true;
       btn.style.cursor = 'default';
-      if (i === q.correct) { markCorrect(btn); btn.title = '✓ Правильна відповідь'; }
+      if (i === correct) { markCorrect(btn); btn.title = '✓ Правильна відповідь'; }
     } else {
       btn.addEventListener('click', () => {
         if (answered) return;
         answered = true;
-        const isCorrect = i === q.correct;
-        const btns = container.querySelectorAll('button');
+        const isCorrect = i === correct;
         btns.forEach(b => b.disabled = true);
         isCorrect ? markCorrect(btn) : markIncorrect(btn);
-        if (!isCorrect) markCorrect(btns[q.correct]);
+        if (!isCorrect) markCorrect(btns[correct]);
         onAnswer?.(isCorrect);
       });
     }
@@ -288,24 +291,26 @@ function renderSequence(q, container, onAnswer, preview) {
 
   // Варіанти
   let answered = false;
+  const seqCorrect = Number(q.correct);
+  const seqBtns = [];
   q.choices.forEach((opt, i) => {
     const btn = document.createElement('button');
     btn.className = CLS.optionBtn;
     btn.textContent = opt;
+    seqBtns.push(btn);
 
     if (preview) {
       btn.disabled = true;
       btn.style.cursor = 'default';
-      if (i === q.correct) markCorrect(btn);
+      if (i === seqCorrect) markCorrect(btn);
     } else {
       btn.addEventListener('click', () => {
         if (answered) return;
         answered = true;
-        const isCorrect = i === q.correct;
-        const btns = container.querySelectorAll('button');
-        btns.forEach(b => b.disabled = true);
+        const isCorrect = i === seqCorrect;
+        seqBtns.forEach(b => b.disabled = true);
         isCorrect ? markCorrect(btn) : markIncorrect(btn);
-        if (!isCorrect) markCorrect(btns[q.correct]);
+        if (!isCorrect) markCorrect(seqBtns[seqCorrect]);
         onAnswer?.(isCorrect);
       });
     }
