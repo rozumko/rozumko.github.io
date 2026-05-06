@@ -3,9 +3,10 @@ const SUPABASE_URL = 'https://ivcufigpmamgkfxwulzl.supabase.co'
 const SUPABASE_ANON_KEY = 'sb_publishable_thaWciLcFJKxX3rcGbnGmg_2kLtAzNn'
 
 async function request(path, options = {}) {
+  const { headers: extraHeaders, ...rest } = options
   const res = await fetch(`${API_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
-    ...options,
+    headers: { 'Content-Type': 'application/json', ...extraHeaders },
+    ...rest,
   })
   const data = await res.json()
   if (!res.ok) throw new Error(data.error ?? `Помилка ${res.status}`)
