@@ -460,15 +460,29 @@ function showQuestion() {
     : 'quiz-options quiz-options--stack';
 
   renderQuestion(q, quizOptionsEl, {
-    onAnswer: (isCorrect) => {
+    onAnswer: (result) => {
       answered = true;
-      if (isCorrect) score++;
-      showFeedback(isCorrect, q);
+      if (currentMode === 'olympiad' && currentAttemptId && typeof result === 'number') {
+        // Олімпіадний режим: correct невідомий — зберігаємо індекс, показуємо нейтральний фідбек
+        saveAnswer(currentAttemptId, q.id, result).catch(() => {});
+        showFeedbackOlympiad();
+      } else {
+        if (result === true) score++;
+        showFeedback(result, q);
+      }
     },
   });
 }
 
 // ── Спільний фідбек ────────────────────────────────────────────────────────
+
+function showFeedbackOlympiad() {
+  quizFeedback.textContent = '✓ Відповідь збережено';
+  quizFeedback.className = 'quiz-feedback';
+  quizExplanation.classList.add('hidden');
+  quizNextBtn.classList.remove('hidden');
+  quizNextBtn.textContent = currentIdx + 1 < questions.length ? 'Далі' : 'Завершити';
+}
 
 function showFeedback(isCorrect, q) {
   quizFeedback.textContent = isCorrect ? '✓ Правильно!' : '✗ Неправильно';

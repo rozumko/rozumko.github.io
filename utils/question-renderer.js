@@ -38,8 +38,10 @@ function markIncorrect(el) { el.classList.add('quiz-option--incorrect'); }
 
 function renderChoice(q, container, onAnswer, preview) {
   let answered = false;
-  const correct = Number(q.correct);
   const opts = q.options ?? q.a ?? [];
+  // correct може бути відсутнім (олімпіадний режим — сервер перевіряє)
+  const hasCorrect = q.correct != null && !Number.isNaN(Number(q.correct));
+  const correct = hasCorrect ? Number(q.correct) : -1;
   const btns = [];
 
   opts.forEach((opt, i) => {
@@ -56,11 +58,17 @@ function renderChoice(q, container, onAnswer, preview) {
       btn.addEventListener('click', () => {
         if (answered) return;
         answered = true;
-        const isCorrect = i === correct;
         btns.forEach(b => b.disabled = true);
-        isCorrect ? markCorrect(btn) : markIncorrect(btn);
-        if (!isCorrect) markCorrect(btns[correct]);
-        onAnswer?.(isCorrect);
+        if (hasCorrect) {
+          const isCorrect = i === correct;
+          isCorrect ? markCorrect(btn) : markIncorrect(btn);
+          if (!isCorrect) markCorrect(btns[correct]);
+          onAnswer?.(isCorrect);
+        } else {
+          // Олімпіадний режим: відповідь зберігається, правильність перевіряє сервер
+          btn.classList.add('quiz-option--selected');
+          onAnswer?.(i); // передаємо індекс замість boolean
+        }
       });
     }
 
