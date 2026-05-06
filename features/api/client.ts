@@ -1,0 +1,196 @@
+const API_URL = 'https://rozumko-github-io.onrender.com'
+const SUPABASE_URL = 'https://ivcufigpmamgkfxwulzl.supabase.co'
+const SUPABASE_ANON_KEY = 'sb_publishable_thaWciLcFJKxX3rcGbnGmg_2kLtAzNn'
+
+// ─── Types ─────────────────────────────────────────────────────────────────
+
+export interface Question {
+  id: string
+  q: string
+  code?: string | null
+  options: string[]
+  correct: number
+  explanation?: string | null
+  difficulty?: string
+  grade?: number
+  isOlympiad?: boolean
+  a?: string[] // normalized alias for question-renderer
+}
+
+export interface Attempt {
+  id: string
+  grade: number
+  score: number | null
+  totalQ: number | null
+  status: string
+  startedAt: string
+  finishedAt: string | null
+  code?: string
+}
+
+export interface TeacherSession {
+  accessToken: string
+  refreshToken: string
+  email: string
+}
+
+export interface AccessCode {
+  id: string
+  code: string
+  grade: number
+  maxUses: number
+  usedCount: number
+  expiresAt: string | null
+  createdAt: string
+}
+
+// ─── Core request ──────────────────────────────────────────────────────────
+
+async function request(path: string, options: RequestInit = {}): Promise<any> {
+  const { headers: extraHeaders, ...rest } = options as any
+  const res = await fetch(`${API_URL}${path}`, {
+    headers: { 'Content-Type': 'application/json', ...extraHeaders },
+    ...rest,
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error ?? `Помилка ${res.status}`)
+  return data
+}
+
+// ─── Student API ───────────────────────────────────────────────────────────
+
+export async function exchangeCode(code: string): Promise<{ attemptId: string; grade: number; questions: Question[] }> {
+  const data = await request('/api/student/exchange-code', {
+    method: 'POST',
+    body: JSON.stringify({ code }),
+  })
+  data.questions = data.questions.map((q: Question) => ({ ...q, a: q.options }))
+  return data
+}
+
+export async function saveAnswer(attemptId: string, questionId: string, answer: number): Promise<void> {
+  return request(`/api/attempt/${attemptId}/answer`, {
+    method: 'POST',
+    body: JSON.stringify({ questionId, answer }),
+  })
+}
+
+export async function loadQuestions({
+  grade, isOlympiad, count, difficulty,
+}: { grade?: number; isOlympiad?: boolean; count?: number; difficulty?: string } = {}): Promise<Question[]> {
+  const params = new URLSearchParams()
+  if (grade      != null) params.set('grade',      String(grade))
+  if (isOlympiad != null) params.set('isOlympiad', String(isOlympiad))
+  if (count      != null) params.set('count',      String(count))
+  if (difficulty)         params.set('difficulty', difficulty)
+  const data = await request(`/api/questions?${params}`)
+  return data.questions.map((q: Question) => ({ ...q, a: q.options }))
+}
+
+export async function finishAttempt(attemptId: string): Promise<{ score: number; total: number; results: any[] }> {
+  return request(`/api/attempt/${attemptId}/finish`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  })
+}
+
+// ─── Teacher Auth (Supabase) ───────────────────────────────────────────────
+
+export async function loginTeacher(email: string, password: string): Promise<any> {
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+    body: JSON.stringify({ email, password }),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error_description ?? data.msg ?? 'Помилка входу')
+  localStorage.setItem('teacher_session', JSON.stringify({
+    accessToken: data.access_token,
+    refreshToken: data.refresh_token,
+    email: data.user?.email,
+  }))
+  return data
+}
+
+export function getTeacherSession(): TeacherSession | null {
+  try { return JSON.parse(localStorage.getItem('teacher_session') ?? 'null') } catch { return null }
+}
+
+export async function logoutTeacher(): Promise<void> {
+  const session = getTeacherSession()
+  localStorage.removeItem('teacher_session')
+  if (session?.accessToken) {
+    await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${session.accessToken}`, 'apikey': SUPABASE_ANON_KEY },
+    }).catch(() => {})
+  }
+}
+
+function authRequest(path: string, options: RequestInit = {}): Promise<any> {
+  const session = getTeacherSession()
+  if (!session?.accessToken) throw new Error('Не авторизовано')
+  return request(path, {
+    ...options,
+    headers: { 'Authorization': `Bearer ${session.accessToken}`, ...(options as any).headers },
+  })
+}
+
+export function getTeacherMe(): Promise<{ id: string; authUserId: string; role: string; name: string }> {
+  return authRequest('/api/teacher/me')
+}
+
+export function generateCodes({ grade, count, maxUses = 1 }: { grade: number; count: number; maxUses?: number }): Promise<{ codes: Pick<AccessCode, 'id' | 'code'>[] }> {
+  return authRequest('/api/teacher/codes/generate', {
+    method: 'POST',
+    body: JSON.stringify({ grade, count, maxUses }),
+  })
+}
+
+export function getTeacherCodes(): Promise<{ codes: AccessCode[] }> {
+  return authRequest('/api/teacher/codes')
+}
+
+export function getTeacherResults(): Promise<{ results: Attempt[] }> {
+  return authRequest('/api/teacher/results')
+}
+
+// ─── Admin API ─────────────────────────────────────────────────────────────
+
+export function getAdminStats(): Promise<{ teachers: number; codes: number; results: number }> {
+  return authRequest('/api/admin/stats')
+}
+
+export function getAdminTeachers(): Promise<{ teachers: { id: string; email: string; name: string | null; status: string; createdAt: string }[] }> {
+  return authRequest('/api/admin/teachers')
+}
+
+export function getAdminResults(): Promise<{ results: Attempt[] }> {
+  return authRequest('/api/admin/results')
+}
+
+export function createQuestion(data: Omit<Question, 'id' | 'a'>): Promise<{ id: string }> {
+  return authRequest('/api/admin/questions', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export function updateQuestion(id: string, data: Partial<Omit<Question, 'id' | 'a'>>): Promise<{ id: string }> {
+  return authRequest(`/api/admin/questions/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
+export function deleteQuestion(id: string): Promise<void> {
+  return authRequest(`/api/admin/questions/${id}`, { method: 'DELETE' })
+}
+
+export function getAdminQuestions(params: { grade?: number | string; isOlympiad?: boolean | string; difficulty?: string } = {}): Promise<{ questions: Question[] }> {
+  const p = new URLSearchParams()
+  if (params.grade      != null) p.set('grade',      String(params.grade))
+  if (params.isOlympiad != null) p.set('isOlympiad', String(params.isOlympiad))
+  if (params.difficulty)         p.set('difficulty', params.difficulty)
+  return authRequest(`/api/admin/questions?${p}`)
+}
