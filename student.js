@@ -2,6 +2,7 @@ import { validateStudentCode, getStoredStudentCode } from './features/auth/stude
 import { findActiveEvent, checkSession, startSession, finishSession } from './features/olympiad/session.js';
 import { saveOlympiadResult } from './features/olympiad/results.js';
 import { loadQuestions, getModeConfig } from './features/olympiad/quiz-engine.js';
+import { exchangeCode, saveAnswer, finishAttempt } from './features/api/client.js';
 import { renderQuestion } from './utils/question-renderer.js';
 import { showModal }      from './utils/ui.js';
 
@@ -155,15 +156,19 @@ let selectedGrade = null;
 let selectedDiff  = null;
 
 // Quiz state
-let questions    = [];
-let currentIdx   = 0;
-let score        = 0;
-let answered     = false;
-let timerInterval= null;
-let secondsLeft  = 0;
-let startedAt    = null;
-let currentMode  = null;
+let questions        = [];
+let currentIdx       = 0;
+let score            = 0;
+let answered         = false;
+let timerInterval    = null;
+let secondsLeft      = 0;
+let startedAt        = null;
+let currentMode      = null;
 let currentSessionId = null;
+
+// Новий API стан
+let currentAttemptId    = null; // UUID спроби від нового backend
+let olympiadQuestions   = null; // питання отримані через exchange-code
 
 // ===================== FULLSCREEN =====================
 
@@ -253,9 +258,12 @@ codeForm.addEventListener('submit', async (e) => {
   codeSubmitBtn.textContent = 'Перевірка…';
 
   try {
-    studentData = await validateStudentCode(code);
+    const result = await exchangeCode(code);
+    currentAttemptId  = result.attemptId;
+    olympiadQuestions = result.questions;
+    studentData = { grade: result.grade, code };
     showScreenActions(code);
-    showActiveEventInfo(studentData.grade);
+    showActiveEventInfo(result.grade);
   } catch (err) {
     codeStatus.textContent = err.message;
     codeSubmitBtn.disabled = false;
@@ -270,7 +278,9 @@ function clearCode() {
   codeSuccess.textContent = '';
   codeSubmitBtn.disabled = false;
   codeSubmitBtn.textContent = 'Увійти →';
-  studentData = null;
+  studentData       = null;
+  currentAttemptId  = null;
+  olympiadQuestions = null;
   showScreenEntry();
   codeInput.focus();
 }
@@ -307,16 +317,10 @@ async function launchOlympiad(mode) {
     const eventId = codeEventId ?? event?.id ?? 'demo';
 
     if (mode === 'olympiad') {
-      if (!codeEventId) throw new Error('Цей код не прив\'язаний до жодної олімпіади. Зверніться до вчителя.');
-      // Швидка перевірка localStorage (без запиту до Firestore)
-      if (localStorage.getItem(DONE_KEY(code, eventId))) {
-        throw new Error('Ти вже пройшов цю олімпіаду. Повторна спроба не дозволена.');
-      }
-      const session = await checkSession(code, eventId);
-      if (session?.status === 'completed' && !session?.retryAllowed) {
-        throw new Error('Ти вже пройшов цю олімпіаду. Повторна спроба не дозволена.');
-      }
-      currentSessionId = await startSession(code, eventId, teacherUid, grade);
+      if (!olympiadQuestions) throw new Error('Спочатку введи код від вчителя.');
+      const cfg = getModeConfig(mode, event);
+      startQuiz(olympiadQuestions, mode, cfg, { code, grade });
+      return;
     }
 
     const cfg = getModeConfig(mode, event);
@@ -506,26 +510,13 @@ async function finishQuiz(timeUp) {
   showOverlay(resultOverlay);
 
   // Зберігаємо результат якщо олімпіада
-  if (currentMode === 'olympiad' && currentSessionId) {
+  if (currentMode === 'olympiad' && currentAttemptId) {
     const meta = startQuiz.meta;
     try {
-      await saveOlympiadResult({
-        eventId: meta.eventId,
-        studentCode: meta.code,
-        teacherUid: meta.teacherUid,
-        grade: meta.grade,
-        score,
-        totalQuestions: questions.length,
-        timeSpentSeconds: elapsed,
-        penalizedCount: 0,
-        sessionId: currentSessionId
-      });
-      await finishSession(currentSessionId);
+      await finishAttempt(currentAttemptId);
       clearQuizBackup();
-      try { localStorage.setItem(DONE_KEY(meta.code, meta.eventId), '1'); } catch { /* ігноруємо */ }
       resultSavedMsg.classList.remove('hidden');
     } catch (err) {
-      // Результат не вдалось зберегти — повідомляємо учня що робити
       const backup = { score, total: questions.length, code: meta.code };
       try { localStorage.setItem(QUIZ_BACKUP_KEY + '_failed', JSON.stringify(backup)); } catch { /* ігноруємо */ }
       resultErrorMsg.innerHTML =
@@ -534,7 +525,8 @@ async function finishQuiz(timeUp) {
          <span style="font-size:0.8em;opacity:0.7">Коли з'явиться інтернет — оновлення сторінки може відновити збереження.</span>`;
       resultErrorMsg.classList.remove('hidden');
     }
-    currentSessionId = null;
+    currentAttemptId  = null;
+    olympiadQuestions = null;
   }
 }
 
