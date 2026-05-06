@@ -15,10 +15,13 @@ async function request(path, options = {}) {
  * Повертає: { attemptId, grade, questions }
  */
 export async function exchangeCode(code) {
-  return request('/api/student/exchange-code', {
+  const data = await request('/api/student/exchange-code', {
     method: 'POST',
     body: JSON.stringify({ code }),
   })
+  // Нормалізуємо поле options → a щоб question-renderer.js працював без змін
+  data.questions = data.questions.map(q => ({ ...q, a: q.options }))
+  return data
 }
 
 /**
