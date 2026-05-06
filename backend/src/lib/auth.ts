@@ -48,6 +48,14 @@ export async function requireAuth(req: FastifyRequest, reply: FastifyReply) {
   req.user = { id: user.id, authUserId, role: user.role, name: user.name }
 }
 
+export async function requireAdmin(req: FastifyRequest, reply: FastifyReply) {
+  await requireAuth(req, reply)
+  if (reply.sent) return
+  if (req.user?.role !== 'admin') {
+    return reply.code(403).send({ error: 'Потрібні права адміна' })
+  }
+}
+
 export async function requireRole(role: 'teacher' | 'admin') {
   return async (req: FastifyRequest, reply: FastifyReply) => {
     await requireAuth(req, reply)

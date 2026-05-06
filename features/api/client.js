@@ -122,3 +122,43 @@ export function getTeacherCodes() {
 export function getTeacherResults() {
   return authRequest('/api/teacher/results')
 }
+
+// ─── Admin API ─────────────────────────────────────────────────────────────
+
+export function getAdminStats() {
+  return authRequest('/api/admin/stats')
+}
+
+export function getAdminTeachers() {
+  return authRequest('/api/admin/teachers')
+}
+
+export function getAdminResults() {
+  return authRequest('/api/admin/results')
+}
+
+export function createQuestion(data) {
+  return authRequest('/api/admin/questions', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export function updateQuestion(id, data) {
+  return authRequest(`/api/admin/questions/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
+export function deleteQuestion(id) {
+  return authRequest(`/api/admin/questions/${id}`, { method: 'DELETE' })
+}
+
+export function getAdminQuestions(params = {}) {
+  const p = new URLSearchParams()
+  if (params.grade      != null) p.set('grade',      params.grade)
+  if (params.isOlympiad != null) p.set('isOlympiad', params.isOlympiad)
+  if (params.difficulty)         p.set('difficulty', params.difficulty)
+  return authRequest(`/api/admin/questions?${p}`)
+}
