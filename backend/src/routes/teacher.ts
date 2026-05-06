@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify'
-import { eq, desc } from 'drizzle-orm'
+import { eq, desc, inArray } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { accessCodes, attempts, appUsers } from '../db/schema.js'
 import { requireAuth } from '../lib/auth.js'
@@ -82,11 +82,7 @@ export async function teacherRoutes(app: FastifyInstance) {
     const allAttempts = await db
       .select()
       .from(attempts)
-      .where(
-        codeIds.length === 1
-          ? eq(attempts.codeId, codeIds[0])
-          : eq(attempts.codeId, codeIds[0]) // розширимо нижче
-      )
+      .where(inArray(attempts.codeId, codeIds))
       .orderBy(desc(attempts.startedAt))
 
     // Приєднуємо інфо про код

@@ -1,4 +1,6 @@
 const API_URL = 'https://rozumko-github-io.onrender.com'
+const SUPABASE_URL = 'https://ivcufigpmamgkfxwulzl.supabase.co'
+const SUPABASE_ANON_KEY = 'sb_publishable_thaWciLcFJKxX3rcGbnGmg_2kLtAzNn'
 
 async function request(path, options = {}) {
   const res = await fetch(`${API_URL}${path}`, {
@@ -57,4 +59,65 @@ export async function finishAttempt(attemptId) {
     method: 'POST',
     body: JSON.stringify({}),
   })
+}
+
+// ─── Teacher Auth (Supabase) ───────────────────────────────────────────────
+
+export async function loginTeacher(email, password) {
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+    body: JSON.stringify({ email, password }),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error_description ?? data.msg ?? 'Помилка входу')
+  localStorage.setItem('teacher_session', JSON.stringify({
+    accessToken: data.access_token,
+    refreshToken: data.refresh_token,
+    email: data.user?.email,
+  }))
+  return data
+}
+
+export function getTeacherSession() {
+  try { return JSON.parse(localStorage.getItem('teacher_session')) } catch { return null }
+}
+
+export async function logoutTeacher() {
+  const session = getTeacherSession()
+  localStorage.removeItem('teacher_session')
+  if (session?.accessToken) {
+    await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${session.accessToken}`, 'apikey': SUPABASE_ANON_KEY },
+    }).catch(() => {})
+  }
+}
+
+function authRequest(path, options = {}) {
+  const session = getTeacherSession()
+  if (!session?.accessToken) throw new Error('Не авторизовано')
+  return request(path, {
+    ...options,
+    headers: { 'Authorization': `Bearer ${session.accessToken}`, ...options.headers },
+  })
+}
+
+export function getTeacherMe() {
+  return authRequest('/api/teacher/me')
+}
+
+export function generateCodes({ grade, count, maxUses = 1 }) {
+  return authRequest('/api/teacher/codes/generate', {
+    method: 'POST',
+    body: JSON.stringify({ grade, count, maxUses }),
+  })
+}
+
+export function getTeacherCodes() {
+  return authRequest('/api/teacher/codes')
+}
+
+export function getTeacherResults() {
+  return authRequest('/api/teacher/results')
 }

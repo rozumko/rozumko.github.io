@@ -146,8 +146,8 @@
 
     <!-- Вкладки -->
     <nav class="dashboard-tabs" aria-label="Розділи кабінету">
-      <button data-tab="classes" class="teacher-tab teacher-tab--active">
-        <i class="fas fa-users" aria-hidden="true"></i> Класи та коди
+      <button data-tab="codes" class="teacher-tab teacher-tab--active">
+        <i class="fas fa-key" aria-hidden="true"></i> Коди учнів
       </button>
       <button data-tab="results" class="teacher-tab">
         <i class="fas fa-poll" aria-hidden="true"></i> Результати
@@ -156,49 +156,42 @@
 
     <main class="dashboard-main" tabindex="-1">
 
-      <!-- Вкладка: Класи та коди -->
-      <section id="tab-classes" class="tab-panel">
+      <!-- Вкладка: Коди учнів -->
+      <section id="tab-codes" class="tab-panel">
 
-        <div class="tab-panel__top">
-          <h2 class="tab-panel__heading">Мої класи</h2>
-          <button id="create-class-btn" class="btn btn-sky">
-            <i class="fas fa-plus" aria-hidden="true"></i> Новий клас
-          </button>
-        </div>
-
-        <!-- Форма нового класу -->
-        <div id="class-form-section" class="class-form-card hidden">
-          <h3 class="class-form-card__title">Новий клас</h3>
-          <form id="class-form" class="class-form__row" novalidate>
-            <div class="class-form__field">
-              <label for="class-name-input" class="form-label">Назва класу</label>
-              <input id="class-name-input" type="text" placeholder="Наприклад, 3-А"
-                maxlength="20" class="form-input"/>
-            </div>
+        <div class="class-form-card">
+          <h2 class="tab-panel__heading" style="margin-bottom:var(--sp-4)">Генерація кодів</h2>
+          <div class="class-form__row">
             <div class="class-form__grade">
-              <label for="class-grade-input" class="form-label">Клас</label>
-              <select id="class-grade-input" class="form-input">
+              <label for="generate-grade" class="form-label">Клас</label>
+              <select id="generate-grade" class="form-input">
                 <option value="1">1 клас</option>
                 <option value="2">2 клас</option>
                 <option value="3">3 клас</option>
                 <option value="4">4 клас</option>
               </select>
             </div>
-            <div class="class-form__actions">
-              <button type="submit" class="btn btn-emerald">Створити</button>
-              <button type="button" id="cancel-class-btn" class="btn btn-secondary">✕</button>
+            <div class="class-form__field">
+              <label for="generate-count" class="form-label">Кількість кодів</label>
+              <input id="generate-count" type="number" min="1" max="40" value="5" class="form-input form-input--count"/>
             </div>
-          </form>
-          <p id="class-form-error" class="form-error" role="alert"></p>
+            <div class="class-form__actions">
+              <button id="generate-btn" class="btn btn-emerald">
+                <i class="fas fa-key" aria-hidden="true"></i> Згенерувати коди
+              </button>
+            </div>
+          </div>
+          <p id="generate-status" class="generate-status"></p>
         </div>
 
-        <!-- Список класів -->
-        <div id="classes-list" class="classes-list">
-          <div class="empty-state">
-            <i class="fas fa-users empty-state__icon" aria-hidden="true"></i>
-            <p class="empty-state__title">Класів ще немає</p>
-            <p class="empty-state__sub">Натисни «Новий клас», щоб почати.</p>
-          </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin:var(--sp-4) 0 var(--sp-2)">
+          <h3 style="margin:0;font-size:1rem;font-weight:600">Коди учнів</h3>
+          <button id="copy-all-btn" class="btn btn-secondary hidden">
+            <i class="fas fa-copy" aria-hidden="true"></i> Копіювати всі
+          </button>
+        </div>
+        <div id="codes-list" class="codes-list">
+          <p class="empty-state__sub" style="text-align:center;padding:var(--sp-4)">Кодів ще немає. Згенеруй перші коди.</p>
         </div>
       </section>
 
@@ -279,7 +272,6 @@
     </div>
   </div>
 
-  <script type="module" src="features/auth/teacher-auth.js"></script>
   <script type="module" src="teacher.js"></script>
 
   <script>
