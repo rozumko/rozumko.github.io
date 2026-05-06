@@ -231,6 +231,8 @@ codeForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const code = codeInput.value.trim().toUpperCase();
   if (!code) { codeStatus.textContent = 'Введи код учня.'; return; }
+  const CODE_RE = /^([А-ЯҐЄІЇ]{2,5}\d{3}|\d{3}[А-ЯҐЄІЇ]{2,5})$/u;
+  if (!CODE_RE.test(code)) { codeStatus.textContent = 'Невірний формат. Приклад: КІТ247'; return; }
 
   codeStatus.textContent = '';
   codeSubmitBtn.disabled = true;

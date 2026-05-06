@@ -4,9 +4,15 @@ import { db } from '../db/index.js'
 import { accessCodes, attempts, appUsers } from '../db/schema.js'
 import { requireAuth } from '../lib/auth.js'
 
-function generateCode(length = 6): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-  return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+const CODE_WORDS = [
+  'КІТ','ПЕС','ЛИС','РАК','ВУЖ','ЖУК','БИК','ЛЕВ','КИТ','ВІЛ',
+  'ВОВК','ОРЕЛ','КОЗА','КІНЬ','ГУСЬ','КРОТ','ТИГР','РИСЬ','ЛОСЬ','ЗУБР',
+]
+
+function generateCode(): string {
+  const word = CODE_WORDS[Math.floor(Math.random() * CODE_WORDS.length)]
+  const digits = String(Math.floor(Math.random() * 1000)).padStart(3, '0')
+  return `${word}${digits}`
 }
 
 export async function teacherRoutes(app: FastifyInstance) {

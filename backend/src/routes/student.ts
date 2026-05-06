@@ -13,18 +13,25 @@ export async function studentRoutes(app: FastifyInstance) {
         type: 'object',
         required: ['code'],
         properties: {
-          code: { type: 'string', minLength: 1, maxLength: 20 },
+          code: { type: 'string', minLength: 4, maxLength: 10 },
         },
       },
     },
   }, async (req, reply) => {
     const { code } = req.body
+    const normalized = code.trim().toUpperCase()
+
+    // Перевірити формат: СЛОВО(2-5 укр. літер)+3 цифри або навпаки
+    const CODE_RE = /^([А-ЯҐЄІЇ]{2,5}\d{3}|\d{3}[А-ЯҐЄІЇ]{2,5})$/u
+    if (!CODE_RE.test(normalized)) {
+      return reply.code(400).send({ error: 'Невірний формат коду. Приклад: КІТ247' })
+    }
 
     // 1. Знайти код
     const [accessCode] = await db
       .select()
       .from(accessCodes)
-      .where(eq(accessCodes.code, code.trim().toUpperCase()))
+      .where(eq(accessCodes.code, normalized))
       .limit(1)
 
     if (!accessCode) {

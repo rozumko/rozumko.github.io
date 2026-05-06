@@ -18,7 +18,7 @@
 
 | Actor     | Access method              | Trust level        |
 |-----------|----------------------------|--------------------|
-| Student   | Access code → attempt_token | Zero (anonymous)  |
+| Student   | Access code → attemptId    | Zero (anonymous)   |
 | Teacher   | Supabase Auth JWT + /api/me | Low (verified ID) |
 | Admin     | Supabase Auth JWT + /api/me | Medium (verified) |
 | Anonymous | None                       | Zero               |
@@ -30,9 +30,9 @@ validated against current role/status in the database.
 
 | Surface                        | Mitigation                                          |
 |--------------------------------|-----------------------------------------------------|
-| Student guessing codes         | Short window, rate limiting, max_uses per code      |
-| Student replaying attempt_token| Token tied to attempt_id, server checks attempt state |
-| Student submitting after time  | Backend checks `started_at + time_limit` on finish  |
+| Student guessing codes         | Ukrainian-word format, max_uses per code (rate limiting — TODO) |
+| Student replaying attemptId    | attemptId tied to attempt row, server checks status |
+| Student submitting after time  | Backend checks attempt status on finish             |
 | Teacher accessing another class| Backend checks `teacher_id` ownership on every request |
 | JWT with stale role            | Role re-fetched from DB on every authenticated request |
 | Direct Supabase table access   | RLS enabled on all tables; anon key has no write access |
@@ -59,18 +59,15 @@ validated against current role/status in the database.
 ### Student
 
 1. Teacher generates access codes for an olympiad session.
-2. Student enters a short alphanumeric code on `student.html`.
+2. Student enters a code on `student.html` (format: `КІТ247` — Ukrainian word + 3 digits).
 3. `POST /api/student/exchange-code` validates:
-   - code exists and is not expired
+   - format matches `/^([А-ЯҐЄІЇ]{2,5}\d{3}|\d{3}[А-ЯҐЄІЇ]{2,5})$/u`
+   - code exists and is not expired (`expires_at`)
    - `used_count < max_uses`
-   - olympiad is currently active
-4. Backend creates an `attempt` row with `status = 'in_progress'`.
-5. Backend returns an `attempt_token` (HMAC-signed `attempt_id`).
-6. Student uses `attempt_token` for all subsequent requests.
-7. Backend verifies `attempt_token` on every request:
-   - signature valid
-   - attempt `status = 'in_progress'`
-   - `started_at + time_limit > now()`
+4. Backend increments `used_count`, creates an `attempt` row.
+5. Backend returns `{ attemptId, grade, questions }` (no answer keys).
+6. Student uses `attemptId` in URL path for subsequent requests.
+7. Frontend keeps `attemptId` in memory + localStorage backup (crash recovery).
 
 ---
 
@@ -119,9 +116,9 @@ ALTER TABLE answers ENABLE ROW LEVEL SECURITY;
 
 | Data              | Where stored         | Sent to frontend?      |
 |-------------------|----------------------|------------------------|
-| Answer key        | `answers` table      | Never                  |
-| Final score       | `attempts` table     | Only after finish      |
-| Student name      | `attempts.metadata`  | Only to teacher/admin  |
+| Answer key        | `questions.correct` (DB) | Never                |
+| Final score       | `attempts.score`     | Only after finish      |
+| Student name      | not stored           | —                      |
 | Teacher password  | Supabase Auth        | Never (Supabase manages) |
 | `service_role` key| Server env var only  | Never                  |
 | `anon` key        | Frontend env var     | Yes (public, read-only scope) |
@@ -144,4 +141,4 @@ ALTER TABLE answers ENABLE ROW LEVEL SECURITY;
 - `service_role` key in any frontend file or committed to the repo.
 - Answer validation logic in frontend JavaScript.
 - Score calculation in frontend JavaScript.
-- `attempt_token` stored in `localStorage` (use memory only).
+- `attemptId` used to identify attempts — but it's an opaque UUID, no sensitive data.
