@@ -119,9 +119,46 @@ ALTER TABLE answers ENABLE ROW LEVEL SECURITY;
 | Answer key        | `questions.correct` (DB) | Never                |
 | Final score       | `attempts.score`     | Only after finish      |
 | Student name      | not stored           | —                      |
+| Certificate name  | browser memory only  | Not sent to backend    |
 | Teacher password  | Supabase Auth        | Never (Supabase manages) |
 | `service_role` key| Server env var only  | Never                  |
 | `anon` key        | Frontend env var     | Yes (public, read-only scope) |
+
+---
+
+## Certificates and diplomas
+
+Certificates and diplomas must not require storing student first names or last
+names on the server.
+
+Target flow:
+
+1. Teacher opens a result row in their cabinet.
+2. Teacher chooses "Certificate" or "Diploma".
+3. Teacher enters the student's name locally before print/PDF export.
+4. The document is generated in the browser.
+5. The name is not sent to the backend and is not saved in the database.
+
+This keeps official participation data useful while avoiding a stored list of
+children's personal names. If a teacher needs to regenerate a certificate later,
+they enter the name again.
+
+---
+
+## Backup and recovery
+
+Local quiz backup in the browser protects against short-term crashes during an
+active attempt, but it is not a database backup.
+
+Production data requires a separate backup process:
+
+- scheduled PostgreSQL export (`pg_dump` or provider equivalent);
+- encrypted backup storage;
+- retention policy;
+- documented restore procedure;
+- periodic restore test on a non-production database.
+
+A backup is considered valid only after a successful restore test.
 
 ---
 
@@ -142,3 +179,4 @@ ALTER TABLE answers ENABLE ROW LEVEL SECURITY;
 - Answer validation logic in frontend JavaScript.
 - Score calculation in frontend JavaScript.
 - `attemptId` used to identify attempts — but it's an opaque UUID, no sensitive data.
+- Student first names or last names stored for certificates/diplomas.

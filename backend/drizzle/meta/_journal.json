@@ -29,6 +29,13 @@
       "when": 1778055288528,
       "tag": "0003_cheerful_boomerang",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1778173200000,
+      "tag": "0004_add_olympiad_events",
+      "breakpoints": true
     }
   ]
 }

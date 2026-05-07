@@ -100,6 +100,38 @@ Always call `GET /api/me` and use the response.
 - The student carries `attemptId` in memory (+ localStorage backup for crash recovery).
 - No Supabase Auth involved for students at all.
 
+## Target olympiad event model
+
+The current MVP has access codes and attempts, but the target product model is
+event-based. An admin creates an olympiad event with start/end dates and a fixed
+question set per grade.
+
+Planned tables:
+
+- `olympiad_events`: event metadata, dates, status, public/admin settings.
+- `event_questions`: explicit question selection per event and grade.
+- `attempt_questions`: immutable list of questions assigned to one attempt.
+- `teacher_classes`: classes owned by a teacher.
+- `event_registrations`: teacher/class/participant registration for an event,
+  without storing student names.
+
+Important rule: an official attempt must be reproducible after it starts. Even
+if an admin edits the question bank later, the attempt keeps its original
+question list through `attempt_questions`.
+
+## Demo olympiad
+
+Demo olympiad is a separate public scenario, not a sub-step after entering an
+official access code.
+
+- Practice: no code, class + difficulty, explanations allowed.
+- Demo olympiad: no code, hard questions for the selected grade, no official result.
+- Official olympiad: access code required, server-side scoring, official result.
+
+If demo mode imitates olympiad behavior, the backend must not include answer
+keys in the response. Use a dedicated demo endpoint or a demo attempt flow
+instead of reusing public practice responses with answer keys.
+
 ## Answer key and scoring
 
 - Answer keys are stored in the database, never sent to the frontend.

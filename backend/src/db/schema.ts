@@ -19,8 +19,24 @@ export const questions = pgTable('questions', {
 export type Question = typeof questions.$inferSelect
 export type NewQuestion = typeof questions.$inferInsert
 
+export const olympiadEvents = pgTable('olympiad_events', {
+  id:          uuid('id').primaryKey().defaultRandom(),
+  title:       text('title').notNull(),
+  description: text('description'),
+  startsAt:    timestamp('starts_at', { withTimezone: true }).notNull(),
+  endsAt:      timestamp('ends_at', { withTimezone: true }).notNull(),
+  status:      text('status').notNull().default('draft'), // draft | published | active | finished | archived
+  createdBy:   text('created_by').notNull(),
+  createdAt:   timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt:   timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
+export type OlympiadEvent = typeof olympiadEvents.$inferSelect
+export type NewOlympiadEvent = typeof olympiadEvents.$inferInsert
+
 export const accessCodes = pgTable('access_codes', {
   id:         uuid('id').primaryKey().defaultRandom(),
+  eventId:    uuid('event_id').references(() => olympiadEvents.id),
   code:       text('code').notNull().unique(),
   grade:      integer('grade').notNull(),
   maxUses:    integer('max_uses').notNull().default(1),

@@ -1,8 +1,9 @@
 import type { FastifyInstance } from 'fastify'
 import { eq, desc, count, and } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { questions, accessCodes, attempts, appUsers } from '../db/schema.js'
+import { questions, accessCodes, attempts, appUsers, olympiadEvents } from '../db/schema.js'
 import { requireAdmin } from '../lib/auth.js'
+import { EVENT_STATUSES, normalizeEventInput, normalizeEventPatch } from './event-validation.js'
 
 export async function adminRoutes(app: FastifyInstance) {
 
@@ -24,6 +25,90 @@ export async function adminRoutes(app: FastifyInstance) {
       .where(eq(appUsers.role, 'teacher'))
       .orderBy(desc(appUsers.createdAt))
     return reply.send({ teachers: list })
+  })
+
+  // GET /api/admin/events
+  app.get('/events', { preHandler: requireAdmin }, async (_req, reply) => {
+    const list = await db
+      .select()
+      .from(olympiadEvents)
+      .orderBy(desc(olympiadEvents.startsAt))
+    return reply.send({ events: list })
+  })
+
+  // POST /api/admin/events
+  app.post<{
+    Body: { title: string; description?: string | null; startsAt: string; endsAt: string; status?: string }
+  }>('/events', {
+    preHandler: requireAdmin,
+    schema: {
+      body: {
+        type: 'object',
+        required: ['title', 'startsAt', 'endsAt'],
+        properties: {
+          title:       { type: 'string', minLength: 1, maxLength: 160 },
+          description: { type: 'string' },
+          startsAt:    { type: 'string' },
+          endsAt:      { type: 'string' },
+          status:      { type: 'string', enum: EVENT_STATUSES },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    let eventData
+    try {
+      eventData = normalizeEventInput(req.body)
+    } catch (err) {
+      return reply.code(400).send({ error: (err as Error).message })
+    }
+
+    const [inserted] = await db
+      .insert(olympiadEvents)
+      .values({ ...eventData, createdBy: req.user!.id })
+      .returning()
+
+    return reply.code(201).send({ event: inserted })
+  })
+
+  // PUT /api/admin/events/:id
+  app.put<{
+    Params: { id: string }
+    Body: { title?: string; description?: string | null; startsAt?: string; endsAt?: string; status?: string }
+  }>('/events/:id', {
+    preHandler: requireAdmin,
+    schema: {
+      params: {
+        type: 'object',
+        required: ['id'],
+        properties: { id: { type: 'string', format: 'uuid' } },
+      },
+      body: {
+        type: 'object',
+        properties: {
+          title:       { type: 'string', minLength: 1, maxLength: 160 },
+          description: { type: 'string' },
+          startsAt:    { type: 'string' },
+          endsAt:      { type: 'string' },
+          status:      { type: 'string', enum: EVENT_STATUSES },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    let updates
+    try {
+      updates = normalizeEventPatch(req.body)
+    } catch (err) {
+      return reply.code(400).send({ error: (err as Error).message })
+    }
+
+    const [updated] = await db
+      .update(olympiadEvents)
+      .set(updates)
+      .where(eq(olympiadEvents.id, req.params.id))
+      .returning()
+
+    if (!updated) return reply.code(404).send({ error: 'Подію не знайдено' })
+    return reply.send({ event: updated })
   })
 
   // GET /api/admin/results

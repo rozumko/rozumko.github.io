@@ -81,6 +81,7 @@
 
 ## Документація
 
+- [Продуктовий план](./docs/product-roadmap.md)
 - [Архітектура](./docs/architecture.md)
 - [Модель безпеки](./docs/security-model.md)
 - [Міграції БД](./docs/migrations.md)
