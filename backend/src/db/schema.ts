@@ -74,6 +74,17 @@ export const attempts = pgTable('attempts', {
 
 export type Attempt = typeof attempts.$inferSelect
 
+export const attemptQuestions = pgTable('attempt_questions', {
+  id:         uuid('id').primaryKey().defaultRandom(),
+  attemptId:  uuid('attempt_id').notNull().references(() => attempts.id),
+  questionId: uuid('question_id').notNull().references(() => questions.id),
+  position:   integer('position').notNull(),
+  createdAt:  timestamp('created_at', { withTimezone: true }).defaultNow(),
+})
+
+export type AttemptQuestion = typeof attemptQuestions.$inferSelect
+export type NewAttemptQuestion = typeof attemptQuestions.$inferInsert
+
 export const appUsers = pgTable('app_users', {
   id:         uuid('id').primaryKey().defaultRandom(),
   authUserId: text('auth_user_id').notNull().unique(), // Supabase auth.users id
@@ -85,3 +96,31 @@ export const appUsers = pgTable('app_users', {
 })
 
 export type AppUser = typeof appUsers.$inferSelect
+
+export const teacherClasses = pgTable('teacher_classes', {
+  id:        uuid('id').primaryKey().defaultRandom(),
+  teacherId: uuid('teacher_id').notNull().references(() => appUsers.id),
+  name:      text('name').notNull(),
+  grade:     integer('grade').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
+export type TeacherClass = typeof teacherClasses.$inferSelect
+export type NewTeacherClass = typeof teacherClasses.$inferInsert
+
+export const eventRegistrations = pgTable('event_registrations', {
+  id:                uuid('id').primaryKey().defaultRandom(),
+  eventId:           uuid('event_id').notNull().references(() => olympiadEvents.id),
+  classId:           uuid('class_id').notNull().references(() => teacherClasses.id),
+  teacherId:         uuid('teacher_id').notNull().references(() => appUsers.id),
+  grade:             integer('grade').notNull(),
+  participantsCount: integer('participants_count').notNull(),
+  paymentStatus:     text('payment_status').notNull().default('not_required'), // not_required | pending | paid | failed | refunded
+  status:            text('status').notNull().default('registered'), // registered | cancelled
+  createdAt:         timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt:         timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
+export type EventRegistration = typeof eventRegistrations.$inferSelect
+export type NewEventRegistration = typeof eventRegistrations.$inferInsert

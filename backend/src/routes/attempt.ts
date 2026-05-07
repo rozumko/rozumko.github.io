@@ -1,7 +1,8 @@
 import type { FastifyInstance } from 'fastify'
-import { eq, inArray } from 'drizzle-orm'
+import { asc, eq } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { attempts, questions } from '../db/schema.js'
+import { attemptQuestions, attempts, questions } from '../db/schema.js'
+import { isQuestionInAttempt, scoreAttempt } from './attempt-validation.js'
 
 export async function attemptRoutes(app: FastifyInstance) {
   // POST /api/attempt/:id/answer
@@ -42,6 +43,15 @@ export async function attemptRoutes(app: FastifyInstance) {
       return reply.code(409).send({ error: 'Спроба вже завершена' })
     }
 
+    const issuedQuestions = await db
+      .select({ questionId: attemptQuestions.questionId })
+      .from(attemptQuestions)
+      .where(eq(attemptQuestions.attemptId, id))
+
+    if (!isQuestionInAttempt(questionId, issuedQuestions.map(q => q.questionId))) {
+      return reply.code(400).send({ error: 'Питання не належить цій спробі' })
+    }
+
     const currentAnswers = (attempt.answers as Record<string, number>) ?? {}
     const updatedAnswers = { ...currentAnswers, [questionId]: answer }
 
@@ -80,30 +90,16 @@ export async function attemptRoutes(app: FastifyInstance) {
     }
 
     const studentAnswers = (attempt.answers as Record<string, number>) ?? {}
-    const questionIds = Object.keys(studentAnswers)
 
-    // Завантажити питання з ключами відповідей
-    const qs = questionIds.length > 0
-      ? await db
-          .select({ id: questions.id, correct: questions.correct, explanation: questions.explanation })
-          .from(questions)
-          .where(inArray(questions.id, questionIds))
-      : []
+    // Завантажити саме питання, видані цій спробі, з ключами відповідей
+    const qs = await db
+      .select({ id: questions.id, correct: questions.correct, explanation: questions.explanation })
+      .from(attemptQuestions)
+      .innerJoin(questions, eq(attemptQuestions.questionId, questions.id))
+      .where(eq(attemptQuestions.attemptId, id))
+      .orderBy(asc(attemptQuestions.position))
 
-    // Підрахувати score
-    let score = 0
-    const results: Record<string, { correct: number; explanation: string | null; isCorrect: boolean }> = {}
-
-    for (const q of qs) {
-      const given = studentAnswers[q.id]
-      const isCorrect = given === q.correct
-      if (isCorrect) score++
-      results[q.id] = {
-        correct:     q.correct,
-        explanation: q.explanation,
-        isCorrect,
-      }
-    }
+    const { score, results } = scoreAttempt(qs, studentAnswers)
 
     const total = attempt.totalQ ?? qs.length
 

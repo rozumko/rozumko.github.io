@@ -72,6 +72,28 @@ export type EventQuestion = Pick<Question, 'id' | 'q' | 'difficulty' | 'grade'> 
 
 export type TeacherEvent = Pick<OlympiadEvent, 'id' | 'title' | 'startsAt' | 'endsAt' | 'status'>
 
+export interface TeacherClass {
+  id: string
+  teacherId: string
+  name: string
+  grade: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface EventRegistration {
+  id: string
+  eventId: string
+  classId: string
+  grade: number
+  participantsCount: number
+  paymentStatus: 'not_required' | 'pending' | 'paid' | 'failed' | 'refunded'
+  status: 'registered' | 'cancelled'
+  createdAt: string
+  eventTitle?: string
+  className?: string
+}
+
 // ─── Core request ──────────────────────────────────────────────────────────
 
 async function request(path: string, options: RequestInit = {}): Promise<any> {
@@ -170,6 +192,33 @@ export function getTeacherMe(): Promise<{ id: string; authUserId: string; role: 
 
 export function getTeacherEvents(): Promise<{ events: TeacherEvent[] }> {
   return authRequest('/api/teacher/events')
+}
+
+export function getTeacherClasses(): Promise<{ classes: TeacherClass[] }> {
+  return authRequest('/api/teacher/classes')
+}
+
+export function createTeacherClass(data: { name: string; grade: number }): Promise<{ class: TeacherClass }> {
+  return authRequest('/api/teacher/classes', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export function getTeacherRegistrations(): Promise<{ registrations: EventRegistration[] }> {
+  return authRequest('/api/teacher/registrations')
+}
+
+export function createTeacherRegistration(data: {
+  eventId: string
+  classId: string
+  participantsCount: number
+  paymentStatus?: EventRegistration['paymentStatus']
+}): Promise<{ registration: EventRegistration }> {
+  return authRequest('/api/teacher/registrations', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
 }
 
 export function generateCodes({ eventId, grade, count, maxUses = 1 }: { eventId: string; grade: number; count: number; maxUses?: number }): Promise<{ codes: Pick<AccessCode, 'id' | 'code'>[] }> {

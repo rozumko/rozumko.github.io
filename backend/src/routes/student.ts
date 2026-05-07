@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { and, asc, eq, sql } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { accessCodes, attempts, eventQuestions, olympiadEvents, questions } from '../db/schema.js'
+import { accessCodes, attemptQuestions, attempts, eventQuestions, olympiadEvents, questions } from '../db/schema.js'
 import { assertEventCanIssueCodes } from './teacher-events-validation.js'
 
 export async function studentRoutes(app: FastifyInstance) {
@@ -100,15 +100,25 @@ export async function studentRoutes(app: FastifyInstance) {
       .set({ usedCount: sql`${accessCodes.usedCount} + 1` })
       .where(eq(accessCodes.id, accessCode.id))
 
-    // 6. Створити спробу
-    const [attempt] = await db
-      .insert(attempts)
-      .values({
-        codeId:  accessCode.id,
-        grade:   accessCode.grade,
-        totalQ:  qs.length,
-      })
-      .returning({ id: attempts.id })
+    // 6. Створити спробу і зафіксувати виданий набір питань
+    const [attempt] = await db.transaction(async tx => {
+      const [createdAttempt] = await tx
+        .insert(attempts)
+        .values({
+          codeId:  accessCode.id,
+          grade:   accessCode.grade,
+          totalQ:  qs.length,
+        })
+        .returning({ id: attempts.id })
+
+      await tx.insert(attemptQuestions).values(qs.map((question, position) => ({
+        attemptId: createdAttempt.id,
+        questionId: question.id,
+        position,
+      })))
+
+      return [createdAttempt]
+    })
 
     return reply.code(201).send({
       attemptId: attempt.id,

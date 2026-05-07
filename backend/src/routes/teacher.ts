@@ -1,8 +1,9 @@
 import type { FastifyInstance } from 'fastify'
 import { and, count, desc, eq, gte, inArray, lte } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { accessCodes, attempts, eventQuestions, olympiadEvents } from '../db/schema.js'
+import { accessCodes, attempts, eventQuestions, eventRegistrations, olympiadEvents, teacherClasses } from '../db/schema.js'
 import { requireAuth } from '../lib/auth.js'
+import { assertEventCanAcceptRegistrations, normalizeRegistrationInput, normalizeTeacherClassInput } from './registration-validation.js'
 import { assertEventCanIssueCodes } from './teacher-events-validation.js'
 
 const CODE_WORDS = [
@@ -43,6 +44,139 @@ export async function teacherRoutes(app: FastifyInstance) {
       .orderBy(desc(olympiadEvents.startsAt))
 
     return reply.send({ events })
+  })
+
+  // GET /api/teacher/classes
+  app.get('/classes', { preHandler: requireAuth }, async (req, reply) => {
+    const classes = await db
+      .select()
+      .from(teacherClasses)
+      .where(eq(teacherClasses.teacherId, req.user!.id))
+      .orderBy(desc(teacherClasses.createdAt))
+
+    return reply.send({ classes })
+  })
+
+  // POST /api/teacher/classes
+  app.post<{
+    Body: { name: string; grade: number }
+  }>('/classes', {
+    preHandler: requireAuth,
+    schema: {
+      body: {
+        type: 'object',
+        required: ['name', 'grade'],
+        properties: {
+          name:  { type: 'string', minLength: 1, maxLength: 80 },
+          grade: { type: 'integer', minimum: 1, maximum: 4 },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    let classData
+    try {
+      classData = normalizeTeacherClassInput(req.body)
+    } catch (err) {
+      return reply.code(400).send({ error: (err as Error).message })
+    }
+
+    const [created] = await db
+      .insert(teacherClasses)
+      .values({ ...classData, teacherId: req.user!.id })
+      .returning()
+
+    return reply.code(201).send({ class: created })
+  })
+
+  // GET /api/teacher/registrations
+  app.get('/registrations', { preHandler: requireAuth }, async (req, reply) => {
+    const registrations = await db
+      .select({
+        id: eventRegistrations.id,
+        eventId: eventRegistrations.eventId,
+        classId: eventRegistrations.classId,
+        grade: eventRegistrations.grade,
+        participantsCount: eventRegistrations.participantsCount,
+        paymentStatus: eventRegistrations.paymentStatus,
+        status: eventRegistrations.status,
+        createdAt: eventRegistrations.createdAt,
+        eventTitle: olympiadEvents.title,
+        className: teacherClasses.name,
+      })
+      .from(eventRegistrations)
+      .innerJoin(olympiadEvents, eq(eventRegistrations.eventId, olympiadEvents.id))
+      .innerJoin(teacherClasses, eq(eventRegistrations.classId, teacherClasses.id))
+      .where(eq(eventRegistrations.teacherId, req.user!.id))
+      .orderBy(desc(eventRegistrations.createdAt))
+
+    return reply.send({ registrations })
+  })
+
+  // POST /api/teacher/registrations
+  // Реєстрація без ПІБ дітей: тільки клас, подія і кількість учасників.
+  app.post<{
+    Body: { eventId: string; classId: string; participantsCount: number; paymentStatus?: string }
+  }>('/registrations', {
+    preHandler: requireAuth,
+    schema: {
+      body: {
+        type: 'object',
+        required: ['eventId', 'classId', 'participantsCount'],
+        properties: {
+          eventId:           { type: 'string', format: 'uuid' },
+          classId:           { type: 'string', format: 'uuid' },
+          participantsCount: { type: 'integer', minimum: 1, maximum: 100 },
+          paymentStatus:     { type: 'string' },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    let registrationData
+    try {
+      registrationData = normalizeRegistrationInput(req.body)
+    } catch (err) {
+      return reply.code(400).send({ error: (err as Error).message })
+    }
+
+    const [ownedClass] = await db
+      .select()
+      .from(teacherClasses)
+      .where(and(eq(teacherClasses.id, registrationData.classId), eq(teacherClasses.teacherId, req.user!.id)))
+      .limit(1)
+
+    if (!ownedClass) {
+      return reply.code(404).send({ error: 'Клас не знайдено' })
+    }
+
+    const [event] = await db
+      .select({ id: olympiadEvents.id, status: olympiadEvents.status, endsAt: olympiadEvents.endsAt })
+      .from(olympiadEvents)
+      .where(eq(olympiadEvents.id, registrationData.eventId))
+      .limit(1)
+
+    if (!event) {
+      return reply.code(404).send({ error: 'Олімпіаду не знайдено' })
+    }
+
+    try {
+      assertEventCanAcceptRegistrations(event)
+    } catch (err) {
+      return reply.code(409).send({ error: (err as Error).message })
+    }
+
+    const [created] = await db
+      .insert(eventRegistrations)
+      .values({
+        eventId: registrationData.eventId,
+        classId: registrationData.classId,
+        teacherId: req.user!.id,
+        grade: ownedClass.grade,
+        participantsCount: registrationData.participantsCount,
+        paymentStatus: registrationData.paymentStatus,
+      })
+      .returning()
+
+    return reply.code(201).send({ registration: created })
   })
 
   // POST /api/teacher/codes/generate
