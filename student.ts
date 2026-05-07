@@ -1,3 +1,5 @@
+// TODO: додати типи HTMLInputElement/HTMLButtonElement до DOM-запитів при наступному рефакторингу
+// @ts-nocheck
 import { loadQuestions, getModeConfig } from './features/olympiad/quiz-engine.js';
 import { exchangeCode, saveAnswer, finishAttempt } from './features/api/client.js';
 import { renderQuestion } from './utils/question-renderer.js';

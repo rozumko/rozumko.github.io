@@ -8,6 +8,9 @@ export async function studentRoutes(app: FastifyInstance) {
   // Body: { code: string }
   // Returns: { attemptId, grade, questions: [...] }
   app.post<{ Body: { code: string } }>('/exchange-code', {
+    config: {
+      rateLimit: { max: 10, timeWindow: '1 minute' },
+    },
     schema: {
       body: {
         type: 'object',

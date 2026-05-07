@@ -1,14 +1,38 @@
+/** Мінімальний тип питання для рендерера. Конкретні поля залежать від type. */
+export interface RenderableQuestion {
+  type?: string
+  options?: string[]
+  a?: string[]
+  correct?: number | boolean | string
+  explanation?: string | null
+  // sort / algorithm
+  items?: string[]
+  correctOrder?: number[]
+  // sequence
+  given?: string[]
+  choices?: string[]
+  // match
+  left?: string[]
+  right?: string[]
+  pairs?: number[]
+  // input
+  inputType?: string
+  [key: string]: unknown
+}
+
 /**
- * question-renderer.js
  * Рендерить питання будь-якого типу в DOM-контейнер.
  *
- * @param {object}   q          — об'єкт питання
- * @param {Element}  container  — куди рендерити (очищується перед рендером)
- * @param {object}   [opts]
- * @param {Function} [opts.onAnswer]  — onAnswer(isCorrect) — викликається після відповіді
- * @param {boolean}  [opts.preview]  — true → статичний режим, правильна відповідь підсвічена
+ * @param q         — об'єкт питання
+ * @param container — куди рендерити (очищується перед рендером)
+ * @param opts.onAnswer — onAnswer(isCorrect | answerIndex) — викликається після відповіді
+ * @param opts.preview  — true → статичний режим, правильна відповідь підсвічена
  */
-export function renderQuestion(q, container, { onAnswer = null, preview = false } = {}) {
+export function renderQuestion(
+  q: RenderableQuestion,
+  container: HTMLElement,
+  { onAnswer = null as ((result: boolean | number) => void) | null, preview = false } = {}
+) {
   container.innerHTML = '';
   const type = q.type ?? 'choice';
 

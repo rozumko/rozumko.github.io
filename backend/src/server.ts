@@ -1,10 +1,32 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
+import rateLimit from '@fastify/rate-limit'
 import 'dotenv/config'
 
 const app = Fastify({ logger: true })
 
-await app.register(cors, { origin: true })
+// CORS — дозволяємо тільки GitHub Pages та localhost для розробки
+const allowedOrigins = [
+  'https://rozumko.github.io',
+  'http://localhost:5173',
+  'http://localhost:4173',
+]
+await app.register(cors, {
+  origin: (origin, cb) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      cb(null, true)
+    } else {
+      const err = Object.assign(new Error('Not allowed by CORS'), { statusCode: 403 })
+      cb(err as Error, false)
+    }
+  },
+})
+
+// Rate limiting — глобально: 100 запитів / хвилину з однієї IP
+await app.register(rateLimit, {
+  max: 100,
+  timeWindow: '1 minute',
+})
 
 app.get('/health', async () => ({ status: 'ok' }))
 

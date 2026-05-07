@@ -10,8 +10,8 @@ but no critical logic depends on Supabase-specific APIs.
 
 | Layer       | Technology                        | Notes                                      |
 |-------------|-----------------------------------|--------------------------------------------|
-| Frontend    | Vite + TypeScript + CSS           | No framework, plain TS components          |
-| Backend     | Node.js + Fastify                 | All business logic lives here              |
+| Frontend    | Vite 6 + TypeScript + CSS         | No framework; всі файли .ts (entry points мають @ts-nocheck — TODO) |
+| Backend     | Node.js + Fastify v5 + TypeScript | All business logic lives here              |
 | Database    | PostgreSQL (via Supabase)         | Can be replaced with any PostgreSQL        |
 | ORM         | Drizzle ORM                       | Schema as source of truth, plain SQL migrations |
 | Auth        | Supabase Auth                     | Teacher and admin only                     |

@@ -1,10 +1,10 @@
-import { getAdminResults } from '../../features/api/client.js'
+import { getAdminResults, type Attempt } from '../../features/api/client.js'
 import { esc } from './ui.js'
 
 export function initResultsTab() {}
 
 export async function loadResults() {
-  const list = document.getElementById('results-list')
+  const list = document.getElementById('results-list')!
   try {
     const { results } = await getAdminResults()
 
@@ -18,7 +18,7 @@ export async function loadResults() {
       return
     }
 
-    const exportBtn = document.getElementById('export-results-btn')
+    const exportBtn = document.getElementById('export-results-btn') as HTMLButtonElement
     exportBtn.disabled = false
     exportBtn.onclick = () => exportCSV(results)
 
@@ -32,7 +32,7 @@ export async function loadResults() {
       }) : ''
       el.innerHTML = `
         <div class="admin-row__main">
-          <p class="admin-row__title">${esc(r.code ?? r.codeId)}</p>
+          <p class="admin-row__title">${esc(r.code ?? r.id)}</p>
           <p class="admin-row__meta">${esc(String(r.grade))} клас</p>
           <p class="admin-row__meta" style="font-size:var(--font-size-xs);margin-top:2px">${esc(date)}</p>
         </div>
@@ -42,15 +42,15 @@ export async function loadResults() {
       list.appendChild(el)
     })
   } catch (err) {
-    list.innerHTML = `<p style="color:var(--clr-danger);padding:var(--sp-4)">${err.message}</p>`
+    list.innerHTML = `<p style="color:var(--clr-danger);padding:var(--sp-4)">${(err as Error).message}</p>`
   }
 }
 
-function exportCSV(results) {
-  const rows = [['Код', 'Клас', 'Бали', 'Всього', 'Дата']]
+function exportCSV(results: Attempt[]) {
+  const rows: (string | number)[][] = [['Код', 'Клас', 'Бали', 'Всього', 'Дата']]
   results.forEach(r => {
     const date = r.finishedAt ? new Date(r.finishedAt).toLocaleString('uk-UA') : ''
-    rows.push([r.code ?? r.codeId, r.grade, r.score ?? '', r.totalQ ?? '', date])
+    rows.push([r.code ?? r.id, r.grade, r.score ?? '', r.totalQ ?? '', date])
   })
   const csv  = rows.map(r => r.join(',')).join('\n')
   const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })

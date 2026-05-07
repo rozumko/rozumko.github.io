@@ -30,7 +30,7 @@ validated against current role/status in the database.
 
 | Surface                        | Mitigation                                          |
 |--------------------------------|-----------------------------------------------------|
-| Student guessing codes         | Ukrainian-word format, max_uses per code (rate limiting — TODO) |
+| Student guessing codes         | Ukrainian-word format, max_uses per code, rate limit 10 req/min per IP |
 | Student replaying attemptId    | attemptId tied to attempt row, server checks status |
 | Student submitting after time  | Backend checks attempt status on finish             |
 | Teacher accessing another class| Backend checks `teacher_id` ownership on every request |
@@ -127,10 +127,10 @@ ALTER TABLE answers ENABLE ROW LEVEL SECURITY;
 
 ## Rate limiting and abuse prevention
 
-- `POST /api/student/exchange-code`: limit by IP, max 10 attempts per minute.
-- `POST /api/attempt/:id/answer`: limit per `attempt_id`, not per IP.
+- Глобально: 100 запитів / хвилину з однієї IP (`@fastify/rate-limit`).
+- `POST /api/student/exchange-code`: окремий ліміт — 10 запитів / хвилину з однієї IP. При перевищенні — `429 Too Many Requests`.
 - Access codes: configurable `max_uses` per code, hard expiry via `expires_at`.
-- Backend rejects any attempt to submit answers after `started_at + time_limit`.
+- CORS: дозволено лише `https://rozumko.github.io`, `localhost:5173`, `localhost:4173`.
 
 ---
 
