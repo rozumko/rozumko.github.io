@@ -3,18 +3,19 @@ import { eq, desc, count, and } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { questions, accessCodes, attempts, appUsers, olympiadEvents } from '../db/schema.js'
 import { requireAdmin } from '../lib/auth.js'
-import { EVENT_STATUSES, normalizeEventInput, normalizeEventPatch } from './event-validation.js'
+import { EVENT_STATUSES, assertEventDateOrder, normalizeEventInput, normalizeEventPatch } from './event-validation.js'
 
 export async function adminRoutes(app: FastifyInstance) {
 
   // GET /api/admin/stats
   app.get('/stats', { preHandler: requireAdmin }, async (_req, reply) => {
-    const [[{ teachers }], [{ codes }], [{ results }]] = await Promise.all([
+    const [[{ teachers }], [{ codes }], [{ results }], [{ events }]] = await Promise.all([
       db.select({ teachers: count() }).from(appUsers).where(eq(appUsers.role, 'teacher')),
       db.select({ codes:    count() }).from(accessCodes),
       db.select({ results:  count() }).from(attempts).where(eq(attempts.status, 'finished')),
+      db.select({ events:   count() }).from(olympiadEvents).where(eq(olympiadEvents.status, 'active')),
     ])
-    return reply.send({ teachers, codes, results })
+    return reply.send({ teachers, codes, results, events })
   })
 
   // GET /api/admin/teachers
@@ -101,13 +102,26 @@ export async function adminRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: (err as Error).message })
     }
 
+    const [current] = await db
+      .select({ startsAt: olympiadEvents.startsAt, endsAt: olympiadEvents.endsAt })
+      .from(olympiadEvents)
+      .where(eq(olympiadEvents.id, req.params.id))
+      .limit(1)
+
+    if (!current) return reply.code(404).send({ error: 'Подію не знайдено' })
+
+    try {
+      assertEventDateOrder(updates.startsAt ?? current.startsAt, updates.endsAt ?? current.endsAt)
+    } catch (err) {
+      return reply.code(400).send({ error: (err as Error).message })
+    }
+
     const [updated] = await db
       .update(olympiadEvents)
       .set(updates)
       .where(eq(olympiadEvents.id, req.params.id))
       .returning()
 
-    if (!updated) return reply.code(404).send({ error: 'Подію не знайдено' })
     return reply.send({ event: updated })
   })
 

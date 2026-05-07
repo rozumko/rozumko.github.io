@@ -82,3 +82,9 @@ export function normalizeEventPatch(input: EventPatchInput): NormalizedEventPatc
 
   return patch
 }
+
+export function assertEventDateOrder(startsAt: Date, endsAt: Date): void {
+  if (startsAt >= endsAt) {
+    throw new Error('Дата завершення має бути пізніше дати початку')
+  }
+}

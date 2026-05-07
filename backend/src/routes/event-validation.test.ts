@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { normalizeEventInput, normalizeEventPatch } from './event-validation.js'
+import { assertEventDateOrder, normalizeEventInput, normalizeEventPatch } from './event-validation.js'
 
 test('normalizeEventInput accepts a valid draft event', () => {
   const event = normalizeEventInput({
@@ -59,4 +59,14 @@ test('normalizeEventPatch returns only changed fields plus updatedAt', () => {
   assert.equal(patch.status, 'published')
   assert.ok(patch.updatedAt instanceof Date)
   assert.equal('startsAt' in patch, false)
+})
+
+test('assertEventDateOrder rejects merged invalid dates', () => {
+  assert.throws(
+    () => assertEventDateOrder(
+      new Date('2026-05-10T10:00:00.000Z'),
+      new Date('2026-05-10T09:00:00.000Z')
+    ),
+    /Дата завершення/
+  )
 })

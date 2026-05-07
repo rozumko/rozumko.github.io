@@ -36,12 +36,33 @@ export interface TeacherSession {
 
 export interface AccessCode {
   id: string
+  eventId?: string | null
   code: string
   grade: number
   maxUses: number
   usedCount: number
   expiresAt: string | null
   createdAt: string
+}
+
+export interface OlympiadEvent {
+  id: string
+  title: string
+  description: string | null
+  startsAt: string
+  endsAt: string
+  status: 'draft' | 'published' | 'active' | 'finished' | 'archived'
+  createdBy: string
+  createdAt: string
+  updatedAt: string
+}
+
+export type OlympiadEventInput = {
+  title: string
+  description?: string | null
+  startsAt: string
+  endsAt: string
+  status?: OlympiadEvent['status']
 }
 
 // ─── Core request ──────────────────────────────────────────────────────────
@@ -157,7 +178,7 @@ export function getTeacherResults(): Promise<{ results: Attempt[] }> {
 
 // ─── Admin API ─────────────────────────────────────────────────────────────
 
-export function getAdminStats(): Promise<{ teachers: number; codes: number; results: number }> {
+export function getAdminStats(): Promise<{ teachers: number; codes: number; results: number; events?: number }> {
   return authRequest('/api/admin/stats')
 }
 
@@ -167,6 +188,24 @@ export function getAdminTeachers(): Promise<{ teachers: { id: string; email: str
 
 export function getAdminResults(): Promise<{ results: Attempt[] }> {
   return authRequest('/api/admin/results')
+}
+
+export function getAdminEvents(): Promise<{ events: OlympiadEvent[] }> {
+  return authRequest('/api/admin/events')
+}
+
+export function createEvent(data: OlympiadEventInput): Promise<{ event: OlympiadEvent }> {
+  return authRequest('/api/admin/events', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export function updateEvent(id: string, data: Partial<OlympiadEventInput>): Promise<{ event: OlympiadEvent }> {
+  return authRequest(`/api/admin/events/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
 }
 
 export function createQuestion(data: Omit<Question, 'id' | 'a'>): Promise<{ id: string }> {
