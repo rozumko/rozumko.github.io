@@ -93,6 +93,7 @@ export interface EventRegistration {
   createdAt: string
   eventTitle?: string
   className?: string
+  codesCreatedCount?: number
 }
 
 // ─── Core request ──────────────────────────────────────────────────────────

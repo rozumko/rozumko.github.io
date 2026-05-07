@@ -167,7 +167,7 @@ generateBtn.addEventListener('click', async () => {
     const { codes } = await generateCodes({ registrationId, maxUses: 1 })
     generateStatus.textContent = `✓ Додано ${codes.length} кодів`
     generateStatus.className   = 'generate-status generate-status--ok'
-    await loadCodes()
+    await Promise.all([loadCodes(), loadRegistrations()])
   } catch (err) {
     generateStatus.textContent = err.message
     generateStatus.className   = 'generate-status generate-status--err'
@@ -213,7 +213,9 @@ async function loadRegistrations() {
 function renderGenerateRegistrationOptions() {
   registrationGenerateSelect.innerHTML = ''
   const eligible = teacherRegistrations.filter(reg =>
-    reg.status === 'registered' && ['not_required', 'paid'].includes(reg.paymentStatus)
+    reg.status === 'registered' &&
+    ['not_required', 'paid'].includes(reg.paymentStatus) &&
+    Number(reg.codesCreatedCount ?? 0) < Number(reg.participantsCount)
   )
   if (!eligible.length) {
     registrationGenerateSelect.innerHTML = '<option value="">Немає реєстрацій для кодів</option>'
@@ -227,7 +229,7 @@ function renderGenerateRegistrationOptions() {
   eligible.forEach(reg => {
     const opt = document.createElement('option')
     opt.value = reg.id
-    opt.textContent = `${reg.className ?? 'Клас'} · ${reg.eventTitle ?? 'Подія'} · ${reg.participantsCount} учасників`
+    opt.textContent = `${reg.className ?? 'Клас'} · ${reg.eventTitle ?? 'Подія'} · ${reg.codesCreatedCount ?? 0}/${reg.participantsCount} кодів`
     registrationGenerateSelect.appendChild(opt)
   })
   registrationGenerateSelect.disabled = false
@@ -312,12 +314,18 @@ function renderRegistrations(registrations) {
   registrations.forEach(reg => {
     const row = document.createElement('div')
     row.className = 'teacher-info-card'
+    const codesCreatedCount = Number(reg.codesCreatedCount ?? 0)
+    const participantsCount = Number(reg.participantsCount)
+    const codeStatus = codesCreatedCount >= participantsCount
+      ? 'коди створено'
+      : `кодів ${codesCreatedCount}/${participantsCount}`
     row.innerHTML = `
       <div>
         <p class="teacher-info-card__title">${esc(reg.className ?? 'Клас')} · ${esc(reg.eventTitle ?? 'Подія')}</p>
         <p class="teacher-info-card__meta">${esc(String(reg.grade))} клас · ${esc(String(reg.participantsCount))} учасників · ${paymentLabel(reg.paymentStatus)}</p>
       </div>
       <span class="teacher-info-card__badge">${esc(reg.status)}</span>`
+    row.querySelector('.teacher-info-card__meta')?.insertAdjacentText('beforeend', ` · ${codeStatus}`)
     registrationsList.appendChild(row)
   })
 }

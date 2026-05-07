@@ -131,7 +131,35 @@ export async function teacherRoutes(app: FastifyInstance) {
       .where(eq(eventRegistrations.teacherId, req.user!.id))
       .orderBy(desc(eventRegistrations.createdAt))
 
-    return reply.send({ registrations })
+    if (registrations.length === 0) {
+      return reply.send({ registrations: [] })
+    }
+
+    const registrationIds = registrations.map(registration => registration.id)
+    const codeRows = await db
+      .select({
+        registrationId: accessCodes.registrationId,
+        codesCreatedCount: count(),
+      })
+      .from(accessCodes)
+      .where(and(
+        eq(accessCodes.createdBy, req.user!.id),
+        inArray(accessCodes.registrationId, registrationIds),
+      ))
+      .groupBy(accessCodes.registrationId)
+
+    const codesByRegistration = new Map(
+      codeRows
+        .filter(row => row.registrationId)
+        .map(row => [row.registrationId!, row.codesCreatedCount]),
+    )
+
+    return reply.send({
+      registrations: registrations.map(registration => ({
+        ...registration,
+        codesCreatedCount: codesByRegistration.get(registration.id) ?? 0,
+      })),
+    })
   })
 
   // POST /api/teacher/registrations
