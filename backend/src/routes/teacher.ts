@@ -1,8 +1,9 @@
 import type { FastifyInstance } from 'fastify'
-import { eq, desc, inArray } from 'drizzle-orm'
+import { and, count, desc, eq, gte, inArray, lte } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { accessCodes, attempts, appUsers } from '../db/schema.js'
+import { accessCodes, attempts, eventQuestions, olympiadEvents } from '../db/schema.js'
 import { requireAuth } from '../lib/auth.js'
+import { assertEventCanIssueCodes } from './teacher-events-validation.js'
 
 const CODE_WORDS = [
   'КІТ','ПЕС','ЛИС','РАК','ВУЖ','ЖУК','БИК','ЛЕВ','КИТ','ВІЛ',
@@ -21,17 +22,41 @@ export async function teacherRoutes(app: FastifyInstance) {
     return reply.send(req.user)
   })
 
+  // GET /api/teacher/events
+  // Повертає поточні активні події, для яких вчитель може генерувати коди.
+  app.get('/events', { preHandler: requireAuth }, async (_req, reply) => {
+    const now = new Date()
+    const events = await db
+      .select({
+        id: olympiadEvents.id,
+        title: olympiadEvents.title,
+        startsAt: olympiadEvents.startsAt,
+        endsAt: olympiadEvents.endsAt,
+        status: olympiadEvents.status,
+      })
+      .from(olympiadEvents)
+      .where(and(
+        eq(olympiadEvents.status, 'active'),
+        lte(olympiadEvents.startsAt, now),
+        gte(olympiadEvents.endsAt, now),
+      ))
+      .orderBy(desc(olympiadEvents.startsAt))
+
+    return reply.send({ events })
+  })
+
   // POST /api/teacher/codes/generate
-  // Body: { grade, count, maxUses, expiresAt? }
+  // Body: { eventId, grade, count, maxUses, expiresAt? }
   app.post<{
-    Body: { grade: number; count: number; maxUses: number; expiresAt?: string }
+    Body: { eventId: string; grade: number; count: number; maxUses: number; expiresAt?: string }
   }>('/codes/generate', {
     preHandler: requireAuth,
     schema: {
       body: {
         type: 'object',
-        required: ['grade', 'count', 'maxUses'],
+        required: ['eventId', 'grade', 'count', 'maxUses'],
         properties: {
+          eventId:   { type: 'string', format: 'uuid' },
           grade:     { type: 'integer', minimum: 1, maximum: 4 },
           count:     { type: 'integer', minimum: 1, maximum: 50 },
           maxUses:   { type: 'integer', minimum: 1, maximum: 100 },
@@ -40,9 +65,42 @@ export async function teacherRoutes(app: FastifyInstance) {
       },
     },
   }, async (req, reply) => {
-    const { grade, count, maxUses, expiresAt } = req.body
+    const { eventId, grade, count: codesCount, maxUses, expiresAt } = req.body
 
-    const codes = Array.from({ length: count }, () => ({
+    const [event] = await db
+      .select({
+        id: olympiadEvents.id,
+        status: olympiadEvents.status,
+        startsAt: olympiadEvents.startsAt,
+        endsAt: olympiadEvents.endsAt,
+      })
+      .from(olympiadEvents)
+      .where(eq(olympiadEvents.id, eventId))
+      .limit(1)
+
+    if (!event) {
+      return reply.code(404).send({ error: 'Олімпіаду не знайдено' })
+    }
+
+    try {
+      assertEventCanIssueCodes(event)
+    } catch (err) {
+      return reply.code(409).send({ error: (err as Error).message })
+    }
+
+    const [[{ questionsCount }]] = await Promise.all([
+      db
+        .select({ questionsCount: count() })
+        .from(eventQuestions)
+        .where(and(eq(eventQuestions.eventId, eventId), eq(eventQuestions.grade, grade))),
+    ])
+
+    if (questionsCount === 0) {
+      return reply.code(409).send({ error: 'Для цього класу ще не обрано питання в події' })
+    }
+
+    const codes = Array.from({ length: codesCount }, () => ({
+      eventId,
       code:      generateCode(),
       grade,
       maxUses,
@@ -62,8 +120,19 @@ export async function teacherRoutes(app: FastifyInstance) {
   // Повертає всі коди вчителя
   app.get('/codes', { preHandler: requireAuth }, async (req, reply) => {
     const list = await db
-      .select()
+      .select({
+        id: accessCodes.id,
+        eventId: accessCodes.eventId,
+        code: accessCodes.code,
+        grade: accessCodes.grade,
+        maxUses: accessCodes.maxUses,
+        usedCount: accessCodes.usedCount,
+        expiresAt: accessCodes.expiresAt,
+        createdAt: accessCodes.createdAt,
+        eventTitle: olympiadEvents.title,
+      })
       .from(accessCodes)
+      .leftJoin(olympiadEvents, eq(accessCodes.eventId, olympiadEvents.id))
       .where(eq(accessCodes.createdBy, req.user!.id))
       .orderBy(desc(accessCodes.createdAt))
 
@@ -74,8 +143,9 @@ export async function teacherRoutes(app: FastifyInstance) {
   // Повертає всі спроби по кодах вчителя
   app.get('/results', { preHandler: requireAuth }, async (req, reply) => {
     const teacherCodes = await db
-      .select({ id: accessCodes.id, code: accessCodes.code, grade: accessCodes.grade })
+      .select({ id: accessCodes.id, code: accessCodes.code, grade: accessCodes.grade, eventTitle: olympiadEvents.title })
       .from(accessCodes)
+      .leftJoin(olympiadEvents, eq(accessCodes.eventId, olympiadEvents.id))
       .where(eq(accessCodes.createdBy, req.user!.id))
 
     if (teacherCodes.length === 0) {

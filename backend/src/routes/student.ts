@@ -1,7 +1,8 @@
 import type { FastifyInstance } from 'fastify'
-import { eq, sql } from 'drizzle-orm'
+import { and, asc, eq, sql } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { accessCodes, attempts, questions } from '../db/schema.js'
+import { accessCodes, attempts, eventQuestions, olympiadEvents, questions } from '../db/schema.js'
+import { assertEventCanIssueCodes } from './teacher-events-validation.js'
 
 export async function studentRoutes(app: FastifyInstance) {
   // POST /api/student/exchange-code
@@ -51,13 +52,32 @@ export async function studentRoutes(app: FastifyInstance) {
       return reply.code(409).send({ error: 'Код вже використано' })
     }
 
-    // 4. Збільшити лічильник використань
-    await db
-      .update(accessCodes)
-      .set({ usedCount: sql`${accessCodes.usedCount} + 1` })
-      .where(eq(accessCodes.id, accessCode.id))
+    if (!accessCode.eventId) {
+      return reply.code(409).send({ error: 'Код не привʼязаний до олімпіадної події' })
+    }
 
-    // 5. Вибрати питання для цього класу (перемішані, макс 10)
+    const [event] = await db
+      .select({
+        id: olympiadEvents.id,
+        status: olympiadEvents.status,
+        startsAt: olympiadEvents.startsAt,
+        endsAt: olympiadEvents.endsAt,
+      })
+      .from(olympiadEvents)
+      .where(eq(olympiadEvents.id, accessCode.eventId))
+      .limit(1)
+
+    if (!event) {
+      return reply.code(404).send({ error: 'Олімпіаду не знайдено' })
+    }
+
+    try {
+      assertEventCanIssueCodes(event)
+    } catch (err) {
+      return reply.code(409).send({ error: (err as Error).message })
+    }
+
+    // 4. Вибрати питання з набору події для цього класу
     const qs = await db
       .select({
         id: questions.id,
@@ -65,14 +85,20 @@ export async function studentRoutes(app: FastifyInstance) {
         code: questions.code,
         options: questions.options,
       })
-      .from(questions)
-      .where(eq(questions.grade, accessCode.grade))
-      .orderBy(sql`random()`)
-      .limit(10)
+      .from(eventQuestions)
+      .innerJoin(questions, eq(eventQuestions.questionId, questions.id))
+      .where(and(eq(eventQuestions.eventId, accessCode.eventId), eq(eventQuestions.grade, accessCode.grade)))
+      .orderBy(asc(eventQuestions.position))
 
     if (qs.length === 0) {
-      return reply.code(422).send({ error: 'Немає питань для цього класу' })
+      return reply.code(422).send({ error: 'Для цього класу ще не обрано питання в події' })
     }
+
+    // 5. Збільшити лічильник використань після успішної перевірки події та питань
+    await db
+      .update(accessCodes)
+      .set({ usedCount: sql`${accessCodes.usedCount} + 1` })
+      .where(eq(accessCodes.id, accessCode.id))
 
     // 6. Створити спробу
     const [attempt] = await db

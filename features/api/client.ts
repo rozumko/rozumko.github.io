@@ -43,6 +43,7 @@ export interface AccessCode {
   usedCount: number
   expiresAt: string | null
   createdAt: string
+  eventTitle?: string | null
 }
 
 export interface OlympiadEvent {
@@ -68,6 +69,8 @@ export type OlympiadEventInput = {
 export type EventQuestion = Pick<Question, 'id' | 'q' | 'difficulty' | 'grade'> & {
   position: number
 }
+
+export type TeacherEvent = Pick<OlympiadEvent, 'id' | 'title' | 'startsAt' | 'endsAt' | 'status'>
 
 // ─── Core request ──────────────────────────────────────────────────────────
 
@@ -165,10 +168,14 @@ export function getTeacherMe(): Promise<{ id: string; authUserId: string; role: 
   return authRequest('/api/teacher/me')
 }
 
-export function generateCodes({ grade, count, maxUses = 1 }: { grade: number; count: number; maxUses?: number }): Promise<{ codes: Pick<AccessCode, 'id' | 'code'>[] }> {
+export function getTeacherEvents(): Promise<{ events: TeacherEvent[] }> {
+  return authRequest('/api/teacher/events')
+}
+
+export function generateCodes({ eventId, grade, count, maxUses = 1 }: { eventId: string; grade: number; count: number; maxUses?: number }): Promise<{ codes: Pick<AccessCode, 'id' | 'code'>[] }> {
   return authRequest('/api/teacher/codes/generate', {
     method: 'POST',
-    body: JSON.stringify({ grade, count, maxUses }),
+    body: JSON.stringify({ eventId, grade, count, maxUses }),
   })
 }
 

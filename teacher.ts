@@ -2,7 +2,7 @@
 // @ts-nocheck
 import {
   loginTeacher, logoutTeacher, getTeacherSession,
-  getTeacherMe, generateCodes, getTeacherCodes, getTeacherResults,
+  getTeacherMe, generateCodes, getTeacherCodes, getTeacherEvents, getTeacherResults,
 } from './features/api/client.js'
 import { esc, friendlyError } from './utils/ui.js'
 
@@ -15,6 +15,7 @@ const loginSubmitBtn   = document.getElementById('login-submit-btn')
 const logoutBtn        = document.getElementById('logout-btn')
 const teacherEmailDisplay = document.getElementById('teacher-email-display')
 const codesList        = document.getElementById('codes-list')
+const eventSelect      = document.getElementById('generate-event')
 const gradeSelect      = document.getElementById('generate-grade')
 const countInput       = document.getElementById('generate-count')
 const generateBtn      = document.getElementById('generate-btn')
@@ -31,7 +32,7 @@ async function init() {
     try {
       const me = await getTeacherMe()
       showDashboard(me.name || session.email)
-      await Promise.all([loadCodes(), loadResults()])
+      await Promise.all([loadEvents(), loadCodes(), loadResults()])
     } catch {
       showAuth()
     }
@@ -62,7 +63,7 @@ loginForm.addEventListener('submit', async (e) => {
     await loginTeacher(email, password)
     const me = await getTeacherMe()
     showDashboard(me.name || email)
-    await Promise.all([loadCodes(), loadResults()])
+    await Promise.all([loadEvents(), loadCodes(), loadResults()])
   } catch (err) {
     loginError.textContent  = friendlyError(err.message)
     loginSubmitBtn.disabled = false
@@ -78,13 +79,19 @@ logoutBtn.addEventListener('click', async () => {
 
 // --- Generate codes ---
 generateBtn.addEventListener('click', async () => {
+  const eventId = eventSelect.value
   const grade = Number(gradeSelect.value)
   const count = Math.min(40, Math.max(1, Number(countInput.value) || 1))
+  if (!eventId) {
+    generateStatus.textContent = 'Оберіть поточну олімпіаду.'
+    generateStatus.className = 'generate-status generate-status--err'
+    return
+  }
   generateBtn.disabled  = true
   generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Генерація…'
   generateStatus.textContent = ''
   try {
-    const { codes } = await generateCodes({ grade, count, maxUses: 1 })
+    const { codes } = await generateCodes({ eventId, grade, count, maxUses: 1 })
     generateStatus.textContent = `✓ Додано ${codes.length} кодів`
     generateStatus.className   = 'generate-status generate-status--ok'
     await loadCodes()
@@ -96,6 +103,38 @@ generateBtn.addEventListener('click', async () => {
     generateBtn.innerHTML = '<i class="fas fa-key"></i> Згенерувати коди'
   }
 })
+
+// --- Load active events ---
+async function loadEvents() {
+  try {
+    const { events } = await getTeacherEvents()
+    eventSelect.innerHTML = ''
+    if (!events.length) {
+      eventSelect.innerHTML = '<option value="">Немає поточної олімпіади</option>'
+      eventSelect.disabled = true
+      generateBtn.disabled = true
+      generateStatus.textContent = 'Коди можна створити після того, як адмін активує поточну олімпіаду.'
+      generateStatus.className = 'generate-status generate-status--err'
+      return
+    }
+
+    events.forEach(event => {
+      const opt = document.createElement('option')
+      opt.value = event.id
+      opt.textContent = event.title
+      eventSelect.appendChild(opt)
+    })
+    eventSelect.disabled = false
+    generateBtn.disabled = false
+    generateStatus.textContent = ''
+  } catch (err) {
+    eventSelect.innerHTML = '<option value="">Не вдалося завантажити події</option>'
+    eventSelect.disabled = true
+    generateBtn.disabled = true
+    generateStatus.textContent = err.message
+    generateStatus.className = 'generate-status generate-status--err'
+  }
+}
 
 // --- Copy all ---
 copyAllBtn.addEventListener('click', () => {
@@ -121,7 +160,7 @@ async function loadCodes() {
     chip.innerHTML = `
       <div class="code-chip__row">
         <span class="code-value code-chip__value">${esc(c.code)}</span>
-        <span class="code-chip__meta">${esc(String(c.grade))} клас · використано ${esc(String(c.usedCount))}/${esc(String(c.maxUses))}</span>
+        <span class="code-chip__meta">${esc(c.eventTitle ?? 'Олімпіада')} · ${esc(String(c.grade))} клас · використано ${esc(String(c.usedCount))}/${esc(String(c.maxUses))}</span>
       </div>`
     codesList.appendChild(chip)
   })
