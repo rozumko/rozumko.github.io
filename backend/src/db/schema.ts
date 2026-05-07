@@ -49,6 +49,7 @@ export type NewEventQuestion = typeof eventQuestions.$inferInsert
 export const accessCodes = pgTable('access_codes', {
   id:         uuid('id').primaryKey().defaultRandom(),
   eventId:    uuid('event_id').references(() => olympiadEvents.id),
+  registrationId: uuid('registration_id').references(() => eventRegistrations.id),
   code:       text('code').notNull().unique(),
   grade:      integer('grade').notNull(),
   maxUses:    integer('max_uses').notNull().default(1),

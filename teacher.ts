@@ -3,7 +3,7 @@
 import {
   loginTeacher, logoutTeacher, getTeacherSession,
   createTeacherClass, createTeacherRegistration,
-  getTeacherMe, generateCodes, getTeacherClasses, getTeacherCodes, getTeacherEvents,
+  getTeacherMe, generateCodes, getTeacherClasses, getTeacherCodes,
   getTeacherRegistrationEvents, getTeacherRegistrations, getTeacherResults,
 } from './features/api/client.js'
 import { esc, friendlyError } from './utils/ui.js'
@@ -17,9 +17,7 @@ const loginSubmitBtn   = document.getElementById('login-submit-btn')
 const logoutBtn        = document.getElementById('logout-btn')
 const teacherEmailDisplay = document.getElementById('teacher-email-display')
 const codesList        = document.getElementById('codes-list')
-const eventSelect      = document.getElementById('generate-event')
-const gradeSelect      = document.getElementById('generate-grade')
-const countInput       = document.getElementById('generate-count')
+const registrationGenerateSelect = document.getElementById('generate-registration')
 const generateBtn      = document.getElementById('generate-btn')
 const generateStatus   = document.getElementById('generate-status')
 const copyAllBtn       = document.getElementById('copy-all-btn')
@@ -40,6 +38,7 @@ const registrationsList = document.getElementById('registrations-list')
 
 let teacherClasses = []
 let registrationEvents = []
+let teacherRegistrations = []
 
 // --- Init ---
 init()
@@ -50,7 +49,7 @@ async function init() {
     try {
       const me = await getTeacherMe()
       showDashboard(me.name || session.email)
-      await Promise.all([loadEvents(), loadRegistrationEvents(), loadClasses(), loadRegistrations(), loadCodes(), loadResults()])
+      await Promise.all([loadRegistrationEvents(), loadClasses(), loadRegistrations(), loadCodes(), loadResults()])
     } catch {
       showAuth()
     }
@@ -81,7 +80,7 @@ loginForm.addEventListener('submit', async (e) => {
     await loginTeacher(email, password)
     const me = await getTeacherMe()
     showDashboard(me.name || email)
-    await Promise.all([loadEvents(), loadRegistrationEvents(), loadClasses(), loadRegistrations(), loadCodes(), loadResults()])
+    await Promise.all([loadRegistrationEvents(), loadClasses(), loadRegistrations(), loadCodes(), loadResults()])
   } catch (err) {
     loginError.textContent  = friendlyError(err.message)
     loginSubmitBtn.disabled = false
@@ -155,11 +154,9 @@ logoutBtn.addEventListener('click', async () => {
 
 // --- Generate codes ---
 generateBtn.addEventListener('click', async () => {
-  const eventId = eventSelect.value
-  const grade = Number(gradeSelect.value)
-  const count = Math.min(40, Math.max(1, Number(countInput.value) || 1))
-  if (!eventId) {
-    generateStatus.textContent = 'Оберіть поточну олімпіаду.'
+  const registrationId = registrationGenerateSelect.value
+  if (!registrationId) {
+    generateStatus.textContent = 'Оберіть реєстрацію класу.'
     generateStatus.className = 'generate-status generate-status--err'
     return
   }
@@ -167,7 +164,7 @@ generateBtn.addEventListener('click', async () => {
   generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Генерація…'
   generateStatus.textContent = ''
   try {
-    const { codes } = await generateCodes({ eventId, grade, count, maxUses: 1 })
+    const { codes } = await generateCodes({ registrationId, maxUses: 1 })
     generateStatus.textContent = `✓ Додано ${codes.length} кодів`
     generateStatus.className   = 'generate-status generate-status--ok'
     await loadCodes()
@@ -179,38 +176,6 @@ generateBtn.addEventListener('click', async () => {
     generateBtn.innerHTML = '<i class="fas fa-key"></i> Згенерувати коди'
   }
 })
-
-// --- Load active events ---
-async function loadEvents() {
-  try {
-    const { events } = await getTeacherEvents()
-    eventSelect.innerHTML = ''
-    if (!events.length) {
-      eventSelect.innerHTML = '<option value="">Немає поточної олімпіади</option>'
-      eventSelect.disabled = true
-      generateBtn.disabled = true
-      generateStatus.textContent = 'Коди можна створити після того, як адмін активує поточну олімпіаду.'
-      generateStatus.className = 'generate-status generate-status--err'
-      return
-    }
-
-    events.forEach(event => {
-      const opt = document.createElement('option')
-      opt.value = event.id
-      opt.textContent = event.title
-      eventSelect.appendChild(opt)
-    })
-    eventSelect.disabled = false
-    generateBtn.disabled = false
-    generateStatus.textContent = ''
-  } catch (err) {
-    eventSelect.innerHTML = '<option value="">Не вдалося завантажити події</option>'
-    eventSelect.disabled = true
-    generateBtn.disabled = true
-    generateStatus.textContent = err.message
-    generateStatus.className = 'generate-status generate-status--err'
-  }
-}
 
 async function loadRegistrationEvents() {
   try {
@@ -237,10 +202,37 @@ async function loadClasses() {
 async function loadRegistrations() {
   try {
     const { registrations } = await getTeacherRegistrations()
+    teacherRegistrations = registrations
     renderRegistrations(registrations)
+    renderGenerateRegistrationOptions()
   } catch (err) {
     registrationsList.innerHTML = `<p class="empty-state__sub" style="text-align:center;padding:var(--sp-4)">${esc(err.message)}</p>`
   }
+}
+
+function renderGenerateRegistrationOptions() {
+  registrationGenerateSelect.innerHTML = ''
+  const eligible = teacherRegistrations.filter(reg =>
+    reg.status === 'registered' && ['not_required', 'paid'].includes(reg.paymentStatus)
+  )
+  if (!eligible.length) {
+    registrationGenerateSelect.innerHTML = '<option value="">Немає реєстрацій для кодів</option>'
+    registrationGenerateSelect.disabled = true
+    generateBtn.disabled = true
+    generateStatus.textContent = 'Спочатку зареєструйте клас на поточну подію.'
+    generateStatus.className = 'generate-status generate-status--err'
+    return
+  }
+
+  eligible.forEach(reg => {
+    const opt = document.createElement('option')
+    opt.value = reg.id
+    opt.textContent = `${reg.className ?? 'Клас'} · ${reg.eventTitle ?? 'Подія'} · ${reg.participantsCount} учасників`
+    registrationGenerateSelect.appendChild(opt)
+  })
+  registrationGenerateSelect.disabled = false
+  generateBtn.disabled = false
+  generateStatus.textContent = ''
 }
 
 function renderRegistrationClassOptions() {

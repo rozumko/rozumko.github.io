@@ -37,6 +37,7 @@ export interface TeacherSession {
 export interface AccessCode {
   id: string
   eventId?: string | null
+  registrationId?: string | null
   code: string
   grade: number
   maxUses: number
@@ -225,10 +226,10 @@ export function createTeacherRegistration(data: {
   })
 }
 
-export function generateCodes({ eventId, grade, count, maxUses = 1 }: { eventId: string; grade: number; count: number; maxUses?: number }): Promise<{ codes: Pick<AccessCode, 'id' | 'code'>[] }> {
+export function generateCodes({ registrationId, maxUses = 1 }: { registrationId: string; maxUses?: number }): Promise<{ codes: Pick<AccessCode, 'id' | 'code'>[] }> {
   return authRequest('/api/teacher/codes/generate', {
     method: 'POST',
-    body: JSON.stringify({ eventId, grade, count, maxUses }),
+    body: JSON.stringify({ registrationId, maxUses }),
   })
 }
 

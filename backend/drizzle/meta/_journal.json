@@ -57,6 +57,13 @@
       "when": 1778184000000,
       "tag": "0007_add_teacher_classes_registrations",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1778187600000,
+      "tag": "0008_add_access_codes_registration_id",
+      "breakpoints": true
     }
   ]
 }

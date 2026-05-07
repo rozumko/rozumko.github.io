@@ -202,26 +202,47 @@ export async function teacherRoutes(app: FastifyInstance) {
   })
 
   // POST /api/teacher/codes/generate
-  // Body: { eventId, grade, count, maxUses, expiresAt? }
+  // Body: { registrationId, maxUses, expiresAt? }
   app.post<{
-    Body: { eventId: string; grade: number; count: number; maxUses: number; expiresAt?: string }
+    Body: { registrationId: string; maxUses: number; expiresAt?: string }
   }>('/codes/generate', {
     preHandler: requireAuth,
     schema: {
       body: {
         type: 'object',
-        required: ['eventId', 'grade', 'count', 'maxUses'],
+        required: ['registrationId', 'maxUses'],
         properties: {
-          eventId:   { type: 'string', format: 'uuid' },
-          grade:     { type: 'integer', minimum: 1, maximum: 4 },
-          count:     { type: 'integer', minimum: 1, maximum: 50 },
-          maxUses:   { type: 'integer', minimum: 1, maximum: 100 },
-          expiresAt: { type: 'string' },
+          registrationId: { type: 'string', format: 'uuid' },
+          maxUses:        { type: 'integer', minimum: 1, maximum: 100 },
+          expiresAt:      { type: 'string' },
         },
       },
     },
   }, async (req, reply) => {
-    const { eventId, grade, count: codesCount, maxUses, expiresAt } = req.body
+    const { registrationId, maxUses, expiresAt } = req.body
+
+    const [registration] = await db
+      .select({
+        id: eventRegistrations.id,
+        eventId: eventRegistrations.eventId,
+        grade: eventRegistrations.grade,
+        participantsCount: eventRegistrations.participantsCount,
+        paymentStatus: eventRegistrations.paymentStatus,
+        status: eventRegistrations.status,
+      })
+      .from(eventRegistrations)
+      .where(and(eq(eventRegistrations.id, registrationId), eq(eventRegistrations.teacherId, req.user!.id)))
+      .limit(1)
+
+    if (!registration) {
+      return reply.code(404).send({ error: 'Реєстрацію не знайдено' })
+    }
+    if (registration.status !== 'registered') {
+      return reply.code(409).send({ error: 'Реєстрація не активна' })
+    }
+    if (!['not_required', 'paid'].includes(registration.paymentStatus)) {
+      return reply.code(402).send({ error: 'Коди можна створити після оплати рахунку' })
+    }
 
     const [event] = await db
       .select({
@@ -231,7 +252,7 @@ export async function teacherRoutes(app: FastifyInstance) {
         endsAt: olympiadEvents.endsAt,
       })
       .from(olympiadEvents)
-      .where(eq(olympiadEvents.id, eventId))
+      .where(eq(olympiadEvents.id, registration.eventId))
       .limit(1)
 
     if (!event) {
@@ -248,17 +269,32 @@ export async function teacherRoutes(app: FastifyInstance) {
       db
         .select({ questionsCount: count() })
         .from(eventQuestions)
-        .where(and(eq(eventQuestions.eventId, eventId), eq(eventQuestions.grade, grade))),
+        .where(and(eq(eventQuestions.eventId, registration.eventId), eq(eventQuestions.grade, registration.grade))),
     ])
 
     if (questionsCount === 0) {
       return reply.code(409).send({ error: 'Для цього класу ще не обрано питання в події' })
     }
 
-    const codes = Array.from({ length: codesCount }, () => ({
-      eventId,
+    const existingCodes = await db
+      .select({ id: accessCodes.id })
+      .from(accessCodes)
+      .where(and(
+        eq(accessCodes.createdBy, req.user!.id),
+        eq(accessCodes.registrationId, registration.id),
+      ))
+
+    if (existingCodes.length >= registration.participantsCount) {
+      return reply.code(409).send({ error: 'Коди для цієї реєстрації вже створено' })
+    }
+
+    const codesToCreate = registration.participantsCount - existingCodes.length
+
+    const codes = Array.from({ length: codesToCreate }, () => ({
+      eventId: registration.eventId,
+      registrationId: registration.id,
       code:      generateCode(),
-      grade,
+      grade:     registration.grade,
       maxUses,
       createdBy: req.user!.id,
       expiresAt: expiresAt ? new Date(expiresAt) : null,
@@ -279,6 +315,7 @@ export async function teacherRoutes(app: FastifyInstance) {
       .select({
         id: accessCodes.id,
         eventId: accessCodes.eventId,
+        registrationId: accessCodes.registrationId,
         code: accessCodes.code,
         grade: accessCodes.grade,
         maxUses: accessCodes.maxUses,
