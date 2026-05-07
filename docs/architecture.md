@@ -91,22 +91,22 @@ Always call `GET /api/me` and use the response.
 
 ## Student access codes
 
-- A teacher generates a batch of codes for a specific olympiad session.
-- Codes are stored in the `access_codes` table with: `code`, `grade`,
-  `max_uses`, `used_count`, `expires_at`.
+- A teacher creates a class, registers it for an active olympiad event, and then
+  generates participation codes for that specific registration.
+- Codes are stored in the `access_codes` table with: `event_id`,
+  `registration_id`, `code`, `grade`, `max_uses`, `used_count`, `expires_at`.
 - `POST /api/student/exchange-code` validates the code and creates an `attempt`
   row. The backend returns `{ attemptId, grade, questions }`.
 - Questions are sent to the frontend (without `correct` field).
 - The student carries `attemptId` in memory (+ localStorage backup for crash recovery).
 - No Supabase Auth involved for students at all.
 
-## Target olympiad event model
+## Current olympiad event model
 
-The current MVP has access codes and attempts, but the target product model is
-event-based. An admin creates an olympiad event with start/end dates and a fixed
-question set per grade.
+The olympiad flow is event-based. An admin creates an olympiad event with
+start/end dates and a fixed question set per grade.
 
-Planned tables:
+Core tables:
 
 - `olympiad_events`: event metadata, dates, status, public/admin settings.
 - `event_questions`: explicit question selection per event and grade.
@@ -114,10 +114,21 @@ Planned tables:
 - `teacher_classes`: classes owned by a teacher.
 - `event_registrations`: teacher/class/participant registration for an event,
   without storing student names.
+- `access_codes.registration_id`: links generated codes back to the registration
+  that produced them.
 
 Important rule: an official attempt must be reproducible after it starts. Even
 if an admin edits the question bank later, the attempt keeps its original
 question list through `attempt_questions`.
+
+Teacher code generation is intentionally registration-based:
+
+1. Admin creates and activates an event.
+2. Admin selects event questions for each grade.
+3. Teacher creates a class.
+4. Teacher registers the class for the event with a participant count.
+5. Codes are generated only for active, paid or payment-free registrations.
+6. The UI shows how many codes already exist for each registration.
 
 ## Demo olympiad
 

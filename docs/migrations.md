@@ -25,9 +25,15 @@ src/
     index.ts         ← db client (drizzle(pool))
 
 drizzle/
-  0000_initial_schema.sql
-  0001_add_attempt_status.sql
-  0002_access_codes_expires_at.sql
+  0000_cuddly_magma.sql
+  0001_sudden_magneto.sql
+  0002_concerned_randall_flagg.sql
+  0003_cheerful_boomerang.sql
+  0004_add_olympiad_events.sql
+  0005_add_event_questions.sql
+  0006_add_attempt_questions.sql
+  0007_add_teacher_classes_registrations.sql
+  0008_add_access_codes_registration_id.sql
   meta/
     _journal.json    ← drizzle migration journal (do not edit manually)
 
@@ -98,6 +104,18 @@ export async function runMigrations() {
 - **Column renames** require two migrations: add new column, backfill, drop old.
   Never rename a column in a single migration on a live database.
 - **Every migration must be reviewed** before merging to main, even if small.
+
+## Current application tables
+
+- `questions`
+- `olympiad_events`
+- `event_questions`
+- `access_codes`
+- `attempts`
+- `attempt_questions`
+- `app_users`
+- `teacher_classes`
+- `event_registrations`
 
 ## Portability checklist
 

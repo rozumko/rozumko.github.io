@@ -58,16 +58,21 @@ validated against current role/status in the database.
 
 ### Student
 
-1. Teacher generates access codes for an olympiad session.
-2. Student enters a code on `student.html` (format: `КІТ247` — Ukrainian word + 3 digits).
-3. `POST /api/student/exchange-code` validates:
+1. Teacher creates a class and registers it for an active olympiad event.
+2. Teacher generates access codes for that registration.
+3. Student enters a code on `student.html` (format: `КІТ247` — Ukrainian word + 3 digits).
+4. `POST /api/student/exchange-code` validates:
    - format matches `/^([А-ЯҐЄІЇ]{2,5}\d{3}|\d{3}[А-ЯҐЄІЇ]{2,5})$/u`
    - code exists and is not expired (`expires_at`)
    - `used_count < max_uses`
-4. Backend increments `used_count`, creates an `attempt` row.
-5. Backend returns `{ attemptId, grade, questions }` (no answer keys).
-6. Student uses `attemptId` in URL path for subsequent requests.
-7. Frontend keeps `attemptId` in memory + localStorage backup (crash recovery).
+   - code has an active current `event_id`
+   - the event has selected questions for the code grade
+5. Backend creates an `attempt` row and records its immutable question list in
+   `attempt_questions`.
+6. Backend increments `used_count` only after event and question validation.
+7. Backend returns `{ attemptId, grade, questions }` (no answer keys).
+8. Student uses `attemptId` in URL path for subsequent requests.
+9. Frontend keeps `attemptId` in memory + localStorage backup (crash recovery).
 
 ---
 
@@ -82,7 +87,11 @@ validated against current role/status in the database.
 | POST /api/attempt/:id/finish      | ✓ (own) | —       | —     |
 | GET  /api/me                      | —       | ✓       | ✓     |
 | GET  /api/teacher/olympiads       | —       | ✓ (own) | ✓     |
-| POST /api/teacher/codes/generate  | —       | ✓ (own) | ✓     |
+| GET  /api/teacher/classes         | —       | ✓ (own) | ✓     |
+| POST /api/teacher/classes         | —       | ✓ (own) | ✓     |
+| GET  /api/teacher/registrations   | —       | ✓ (own) | ✓     |
+| POST /api/teacher/registrations   | —       | ✓ (own) | ✓     |
+| POST /api/teacher/codes/generate  | —       | ✓ (own registration) | ✓ |
 | GET  /api/teacher/results/:id     | —       | ✓ (own) | ✓     |
 | GET  /api/admin/users             | —       | —       | ✓     |
 | POST /api/admin/olympiad          | —       | —       | ✓     |
