@@ -1673,6 +1673,42 @@ body.teacher-dashboard-active {
 /* Списки */
 .classes-list { display: flex; flex-direction: column; gap: var(--sp-4); }
 .results-list { display: flex; flex-direction: column; gap: var(--sp-3); }
+.teacher-card-list { display: flex; flex-direction: column; gap: var(--sp-3); }
+.teacher-list-heading {
+  display: flex; justify-content: space-between; align-items: center;
+  margin: var(--sp-5) 0 var(--sp-2);
+}
+.teacher-info-card {
+  background: #fff;
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-xl);
+  padding: var(--sp-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  box-shadow: var(--shadow-sm);
+}
+.teacher-info-card__title {
+  color: var(--clr-text);
+  font-weight: 700;
+  font-size: var(--font-size-base);
+}
+.teacher-info-card__meta {
+  color: var(--clr-text-muted);
+  font-size: var(--font-size-sm);
+  margin-top: 0.15rem;
+}
+.teacher-info-card__badge {
+  color: var(--clr-text-muted);
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-full);
+  padding: 0.2rem var(--sp-2);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  white-space: nowrap;
+}
 
 /* Порожній стан списку */
 .empty-state {

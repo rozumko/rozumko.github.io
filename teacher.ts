@@ -2,7 +2,9 @@
 // @ts-nocheck
 import {
   loginTeacher, logoutTeacher, getTeacherSession,
-  getTeacherMe, generateCodes, getTeacherCodes, getTeacherEvents, getTeacherResults,
+  createTeacherClass, createTeacherRegistration,
+  getTeacherMe, generateCodes, getTeacherClasses, getTeacherCodes, getTeacherEvents,
+  getTeacherRegistrationEvents, getTeacherRegistrations, getTeacherResults,
 } from './features/api/client.js'
 import { esc, friendlyError } from './utils/ui.js'
 
@@ -22,6 +24,22 @@ const generateBtn      = document.getElementById('generate-btn')
 const generateStatus   = document.getElementById('generate-status')
 const copyAllBtn       = document.getElementById('copy-all-btn')
 const resultsList      = document.getElementById('results-list')
+const classForm        = document.getElementById('teacher-class-form')
+const classNameInput   = document.getElementById('class-name')
+const classGradeSelect = document.getElementById('class-grade')
+const classSubmitBtn   = document.getElementById('class-submit-btn')
+const classStatus      = document.getElementById('class-form-status')
+const registrationForm = document.getElementById('registration-form')
+const registrationClassSelect = document.getElementById('registration-class')
+const registrationEventSelect = document.getElementById('registration-event')
+const registrationCountInput  = document.getElementById('registration-count')
+const registrationSubmitBtn   = document.getElementById('registration-submit-btn')
+const registrationStatus      = document.getElementById('registration-form-status')
+const classesList      = document.getElementById('classes-list')
+const registrationsList = document.getElementById('registrations-list')
+
+let teacherClasses = []
+let registrationEvents = []
 
 // --- Init ---
 init()
@@ -32,7 +50,7 @@ async function init() {
     try {
       const me = await getTeacherMe()
       showDashboard(me.name || session.email)
-      await Promise.all([loadEvents(), loadCodes(), loadResults()])
+      await Promise.all([loadEvents(), loadRegistrationEvents(), loadClasses(), loadRegistrations(), loadCodes(), loadResults()])
     } catch {
       showAuth()
     }
@@ -63,11 +81,69 @@ loginForm.addEventListener('submit', async (e) => {
     await loginTeacher(email, password)
     const me = await getTeacherMe()
     showDashboard(me.name || email)
-    await Promise.all([loadEvents(), loadCodes(), loadResults()])
+    await Promise.all([loadEvents(), loadRegistrationEvents(), loadClasses(), loadRegistrations(), loadCodes(), loadResults()])
   } catch (err) {
     loginError.textContent  = friendlyError(err.message)
     loginSubmitBtn.disabled = false
     loginSubmitBtn.textContent = 'Увійти'
+  }
+})
+
+// --- Create class ---
+classForm.addEventListener('submit', async (e) => {
+  e.preventDefault()
+  const name = classNameInput.value.trim()
+  const grade = Number(classGradeSelect.value)
+  if (!name) {
+    classStatus.textContent = 'Введіть назву класу.'
+    classStatus.className = 'generate-status generate-status--err'
+    return
+  }
+
+  classSubmitBtn.disabled = true
+  classSubmitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Збереження…'
+  classStatus.textContent = ''
+  try {
+    await createTeacherClass({ name, grade })
+    classNameInput.value = ''
+    classStatus.textContent = '✓ Клас додано'
+    classStatus.className = 'generate-status generate-status--ok'
+    await loadClasses()
+  } catch (err) {
+    classStatus.textContent = err.message
+    classStatus.className = 'generate-status generate-status--err'
+  } finally {
+    classSubmitBtn.disabled = false
+    classSubmitBtn.innerHTML = '<i class="fas fa-plus"></i> Додати клас'
+  }
+})
+
+// --- Register class for event ---
+registrationForm.addEventListener('submit', async (e) => {
+  e.preventDefault()
+  const classId = registrationClassSelect.value
+  const eventId = registrationEventSelect.value
+  const participantsCount = Math.min(100, Math.max(1, Number(registrationCountInput.value) || 1))
+  if (!classId || !eventId) {
+    registrationStatus.textContent = 'Оберіть клас і подію.'
+    registrationStatus.className = 'generate-status generate-status--err'
+    return
+  }
+
+  registrationSubmitBtn.disabled = true
+  registrationSubmitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Реєстрація…'
+  registrationStatus.textContent = ''
+  try {
+    await createTeacherRegistration({ classId, eventId, participantsCount })
+    registrationStatus.textContent = '✓ Клас зареєстровано'
+    registrationStatus.className = 'generate-status generate-status--ok'
+    await loadRegistrations()
+  } catch (err) {
+    registrationStatus.textContent = err.message
+    registrationStatus.className = 'generate-status generate-status--err'
+  } finally {
+    registrationSubmitBtn.disabled = false
+    registrationSubmitBtn.innerHTML = '<i class="fas fa-clipboard-check"></i> Зареєструвати'
   }
 })
 
@@ -134,6 +210,135 @@ async function loadEvents() {
     generateStatus.textContent = err.message
     generateStatus.className = 'generate-status generate-status--err'
   }
+}
+
+async function loadRegistrationEvents() {
+  try {
+    const { events } = await getTeacherRegistrationEvents()
+    registrationEvents = events
+    renderRegistrationEventOptions()
+  } catch {
+    registrationEvents = []
+    renderRegistrationEventOptions()
+  }
+}
+
+async function loadClasses() {
+  try {
+    const { classes } = await getTeacherClasses()
+    teacherClasses = classes
+    renderClasses()
+    renderRegistrationClassOptions()
+  } catch (err) {
+    classesList.innerHTML = `<p class="empty-state__sub" style="text-align:center;padding:var(--sp-4)">${esc(err.message)}</p>`
+  }
+}
+
+async function loadRegistrations() {
+  try {
+    const { registrations } = await getTeacherRegistrations()
+    renderRegistrations(registrations)
+  } catch (err) {
+    registrationsList.innerHTML = `<p class="empty-state__sub" style="text-align:center;padding:var(--sp-4)">${esc(err.message)}</p>`
+  }
+}
+
+function renderRegistrationClassOptions() {
+  registrationClassSelect.innerHTML = ''
+  if (!teacherClasses.length) {
+    registrationClassSelect.innerHTML = '<option value="">Створіть клас</option>'
+    registrationClassSelect.disabled = true
+    registrationSubmitBtn.disabled = true
+    return
+  }
+
+  teacherClasses.forEach(cls => {
+    const opt = document.createElement('option')
+    opt.value = cls.id
+    opt.textContent = `${cls.name} · ${cls.grade} клас`
+    registrationClassSelect.appendChild(opt)
+  })
+  registrationClassSelect.disabled = false
+  registrationSubmitBtn.disabled = !registrationEvents.length
+}
+
+function renderRegistrationEventOptions() {
+  registrationEventSelect.innerHTML = ''
+  if (!registrationEvents.length) {
+    registrationEventSelect.innerHTML = '<option value="">Немає подій для реєстрації</option>'
+    registrationEventSelect.disabled = true
+    registrationSubmitBtn.disabled = true
+    return
+  }
+
+  registrationEvents.forEach(event => {
+    const opt = document.createElement('option')
+    opt.value = event.id
+    opt.textContent = event.title
+    registrationEventSelect.appendChild(opt)
+  })
+  registrationEventSelect.disabled = false
+  registrationSubmitBtn.disabled = !teacherClasses.length
+}
+
+function renderClasses() {
+  if (!teacherClasses.length) {
+    classesList.innerHTML = `
+      <div class="empty-state">
+        <i class="fas fa-users empty-state__icon" aria-hidden="true"></i>
+        <p class="empty-state__title">Класів ще немає</p>
+        <p class="empty-state__sub">Додайте клас, щоб реєструвати учасників на події.</p>
+      </div>`
+    return
+  }
+
+  classesList.innerHTML = ''
+  teacherClasses.forEach(cls => {
+    const card = document.createElement('div')
+    card.className = 'teacher-info-card'
+    card.innerHTML = `
+      <div>
+        <p class="teacher-info-card__title">${esc(cls.name)}</p>
+        <p class="teacher-info-card__meta">${esc(String(cls.grade))} клас</p>
+      </div>`
+    classesList.appendChild(card)
+  })
+}
+
+function renderRegistrations(registrations) {
+  if (!registrations.length) {
+    registrationsList.innerHTML = `
+      <div class="empty-state">
+        <i class="fas fa-clipboard-list empty-state__icon" aria-hidden="true"></i>
+        <p class="empty-state__title">Реєстрацій ще немає</p>
+        <p class="empty-state__sub">Після реєстрації класу подія з'явиться тут.</p>
+      </div>`
+    return
+  }
+
+  registrationsList.innerHTML = ''
+  registrations.forEach(reg => {
+    const row = document.createElement('div')
+    row.className = 'teacher-info-card'
+    row.innerHTML = `
+      <div>
+        <p class="teacher-info-card__title">${esc(reg.className ?? 'Клас')} · ${esc(reg.eventTitle ?? 'Подія')}</p>
+        <p class="teacher-info-card__meta">${esc(String(reg.grade))} клас · ${esc(String(reg.participantsCount))} учасників · ${paymentLabel(reg.paymentStatus)}</p>
+      </div>
+      <span class="teacher-info-card__badge">${esc(reg.status)}</span>`
+    registrationsList.appendChild(row)
+  })
+}
+
+function paymentLabel(status) {
+  const labels = {
+    not_required: 'оплата не потрібна',
+    pending: 'очікує оплату',
+    paid: 'оплачено',
+    failed: 'помилка оплати',
+    refunded: 'повернено',
+  }
+  return labels[status] ?? status
 }
 
 // --- Copy all ---

@@ -194,6 +194,10 @@ export function getTeacherEvents(): Promise<{ events: TeacherEvent[] }> {
   return authRequest('/api/teacher/events')
 }
 
+export function getTeacherRegistrationEvents(): Promise<{ events: TeacherEvent[] }> {
+  return authRequest('/api/teacher/registration-events')
+}
+
 export function getTeacherClasses(): Promise<{ classes: TeacherClass[] }> {
   return authRequest('/api/teacher/classes')
 }

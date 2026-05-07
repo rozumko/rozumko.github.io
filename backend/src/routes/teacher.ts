@@ -46,6 +46,28 @@ export async function teacherRoutes(app: FastifyInstance) {
     return reply.send({ events })
   })
 
+  // GET /api/teacher/registration-events
+  // Події, на які можна реєструвати класи до або під час проведення.
+  app.get('/registration-events', { preHandler: requireAuth }, async (_req, reply) => {
+    const now = new Date()
+    const events = await db
+      .select({
+        id: olympiadEvents.id,
+        title: olympiadEvents.title,
+        startsAt: olympiadEvents.startsAt,
+        endsAt: olympiadEvents.endsAt,
+        status: olympiadEvents.status,
+      })
+      .from(olympiadEvents)
+      .where(and(
+        inArray(olympiadEvents.status, ['published', 'active']),
+        gte(olympiadEvents.endsAt, now),
+      ))
+      .orderBy(desc(olympiadEvents.startsAt))
+
+    return reply.send({ events })
+  })
+
   // GET /api/teacher/classes
   app.get('/classes', { preHandler: requireAuth }, async (req, reply) => {
     const classes = await db
