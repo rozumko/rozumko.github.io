@@ -1,8 +1,9 @@
 import type { FastifyInstance } from 'fastify'
-import { eq, desc, count, and } from 'drizzle-orm'
+import { eq, desc, count, and, asc, inArray } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { questions, accessCodes, attempts, appUsers, olympiadEvents } from '../db/schema.js'
+import { questions, accessCodes, attempts, appUsers, olympiadEvents, eventQuestions } from '../db/schema.js'
 import { requireAdmin } from '../lib/auth.js'
+import { assertQuestionsBelongToGrade, normalizeEventQuestionSelection } from './event-questions-validation.js'
 import { EVENT_STATUSES, assertEventDateOrder, normalizeEventInput, normalizeEventPatch } from './event-validation.js'
 
 export async function adminRoutes(app: FastifyInstance) {
@@ -123,6 +124,122 @@ export async function adminRoutes(app: FastifyInstance) {
       .returning()
 
     return reply.send({ event: updated })
+  })
+
+  // GET /api/admin/events/:id/questions?grade=1
+  app.get<{
+    Params: { id: string }
+    Querystring: { grade?: string }
+  }>('/events/:id/questions', {
+    preHandler: requireAdmin,
+    schema: {
+      params: {
+        type: 'object',
+        required: ['id'],
+        properties: { id: { type: 'string', format: 'uuid' } },
+      },
+      querystring: {
+        type: 'object',
+        required: ['grade'],
+        properties: { grade: { type: 'string' } },
+      },
+    },
+  }, async (req, reply) => {
+    const grade = Number(req.query.grade)
+    if (!Number.isInteger(grade) || grade < 1 || grade > 4) {
+      return reply.code(400).send({ error: 'Клас має бути числом від 1 до 4' })
+    }
+
+    const [event] = await db
+      .select({ id: olympiadEvents.id })
+      .from(olympiadEvents)
+      .where(eq(olympiadEvents.id, req.params.id))
+      .limit(1)
+
+    if (!event) return reply.code(404).send({ error: 'Подію не знайдено' })
+
+    const selected = await db
+      .select({
+        id:         questions.id,
+        q:          questions.q,
+        difficulty: questions.difficulty,
+        grade:      questions.grade,
+        position:   eventQuestions.position,
+      })
+      .from(eventQuestions)
+      .innerJoin(questions, eq(eventQuestions.questionId, questions.id))
+      .where(and(eq(eventQuestions.eventId, req.params.id), eq(eventQuestions.grade, grade)))
+      .orderBy(asc(eventQuestions.position))
+
+    return reply.send({ questions: selected })
+  })
+
+  // PUT /api/admin/events/:id/questions
+  app.put<{
+    Params: { id: string }
+    Body: { grade: number; questionIds: string[] }
+  }>('/events/:id/questions', {
+    preHandler: requireAdmin,
+    schema: {
+      params: {
+        type: 'object',
+        required: ['id'],
+        properties: { id: { type: 'string', format: 'uuid' } },
+      },
+      body: {
+        type: 'object',
+        required: ['grade', 'questionIds'],
+        properties: {
+          grade:       { type: 'integer', minimum: 1, maximum: 4 },
+          questionIds: { type: 'array', items: { type: 'string', format: 'uuid' }, maxItems: 100 },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    let selection
+    try {
+      selection = normalizeEventQuestionSelection(req.body)
+    } catch (err) {
+      return reply.code(400).send({ error: (err as Error).message })
+    }
+
+    const [event] = await db
+      .select({ id: olympiadEvents.id })
+      .from(olympiadEvents)
+      .where(eq(olympiadEvents.id, req.params.id))
+      .limit(1)
+
+    if (!event) return reply.code(404).send({ error: 'Подію не знайдено' })
+
+    const found = selection.questionIds.length
+      ? await db
+          .select({ id: questions.id, grade: questions.grade })
+          .from(questions)
+          .where(inArray(questions.id, selection.questionIds))
+      : []
+
+    try {
+      assertQuestionsBelongToGrade(selection.questionIds, found, selection.grade)
+    } catch (err) {
+      return reply.code(400).send({ error: (err as Error).message })
+    }
+
+    await db.transaction(async tx => {
+      await tx
+        .delete(eventQuestions)
+        .where(and(eq(eventQuestions.eventId, req.params.id), eq(eventQuestions.grade, selection.grade)))
+
+      if (selection.questionIds.length) {
+        await tx.insert(eventQuestions).values(selection.questionIds.map((questionId, position) => ({
+          eventId: req.params.id,
+          questionId,
+          grade: selection.grade,
+          position,
+        })))
+      }
+    })
+
+    return reply.send({ saved: true, count: selection.questionIds.length })
   })
 
   // GET /api/admin/results

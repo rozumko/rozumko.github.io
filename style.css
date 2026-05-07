@@ -2247,6 +2247,57 @@ body.teacher-dashboard-active {
   font-family: var(--font-family); cursor: pointer; border: none;
   transition: background-color var(--transition-fast);
 }
+.btn-event-questions {
+  background: var(--adm-violet); color: #fff;
+  font-size: var(--font-size-xs); font-weight: 600;
+  padding: var(--sp-2) var(--sp-4); border-radius: var(--r-lg);
+  font-family: var(--font-family); cursor: pointer; border: none;
+}
+.btn-event-questions:hover { filter: brightness(1.08); }
+
+.event-question-picker {
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--r-xl);
+  padding: var(--sp-5);
+  margin-bottom: var(--sp-5);
+  box-shadow: var(--shadow-lg);
+}
+.event-question-picker__head {
+  display: flex; flex-direction: column; gap: var(--sp-3); margin-bottom: var(--sp-4);
+}
+@media (min-width: 640px) {
+  .event-question-picker__head { flex-direction: row; justify-content: space-between; align-items: flex-start; }
+}
+.event-question-picker__label {
+  color: var(--adm-text-faint); font-size: var(--font-size-xs); font-weight: 700; text-transform: uppercase;
+}
+.event-question-picker__title {
+  color: var(--adm-text); font-size: var(--font-size-lg); font-weight: 800; margin-top: var(--sp-1);
+}
+.event-question-picker__toolbar {
+  display: flex; flex-direction: column; gap: var(--sp-3); margin-bottom: var(--sp-3);
+}
+@media (min-width: 640px) {
+  .event-question-picker__toolbar { flex-direction: row; align-items: center; justify-content: space-between; }
+}
+.event-question-picker__status {
+  color: var(--adm-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--sp-3);
+}
+.event-question-list {
+  display: grid; gap: var(--sp-2); max-height: 28rem; overflow: auto; padding-right: var(--sp-1);
+}
+.event-question-row {
+  display: flex; align-items: flex-start; gap: var(--sp-3); padding: var(--sp-3);
+  border: 1px solid var(--adm-border); border-radius: var(--r-lg);
+  background: rgba(15, 23, 42, 0.34);
+  cursor: pointer;
+}
+.event-question-row:hover { border-color: rgba(125, 211, 252, 0.45); }
+.event-question-row input { width: 1rem; height: 1rem; margin-top: 0.2rem; flex: 0 0 auto; }
+.event-question-row__main { display: grid; gap: 0.25rem; min-width: 0; }
+.event-question-row__title { color: var(--adm-text); font-size: var(--font-size-sm); line-height: 1.35; }
+.event-question-row__meta { color: var(--adm-text-faint); font-size: var(--font-size-xs); }
 
 /* ── Question list item ──────────────────────────────────────── */
 .question-item {

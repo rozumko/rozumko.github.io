@@ -44,3 +44,7 @@ export function formatEventDate(value) {
 export function countActiveEvents(events) {
   return events.filter(event => event.status === 'active').length
 }
+
+export function countSelectedQuestions(questionIds) {
+  return new Set(questionIds).size
+}

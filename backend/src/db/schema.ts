@@ -34,6 +34,18 @@ export const olympiadEvents = pgTable('olympiad_events', {
 export type OlympiadEvent = typeof olympiadEvents.$inferSelect
 export type NewOlympiadEvent = typeof olympiadEvents.$inferInsert
 
+export const eventQuestions = pgTable('event_questions', {
+  id:         uuid('id').primaryKey().defaultRandom(),
+  eventId:    uuid('event_id').notNull().references(() => olympiadEvents.id),
+  questionId: uuid('question_id').notNull().references(() => questions.id),
+  grade:      integer('grade').notNull(),
+  position:   integer('position').notNull(),
+  createdAt:  timestamp('created_at', { withTimezone: true }).defaultNow(),
+})
+
+export type EventQuestion = typeof eventQuestions.$inferSelect
+export type NewEventQuestion = typeof eventQuestions.$inferInsert
+
 export const accessCodes = pgTable('access_codes', {
   id:         uuid('id').primaryKey().defaultRandom(),
   eventId:    uuid('event_id').references(() => olympiadEvents.id),

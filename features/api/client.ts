@@ -65,6 +65,10 @@ export type OlympiadEventInput = {
   status?: OlympiadEvent['status']
 }
 
+export type EventQuestion = Pick<Question, 'id' | 'q' | 'difficulty' | 'grade'> & {
+  position: number
+}
+
 // ─── Core request ──────────────────────────────────────────────────────────
 
 async function request(path: string, options: RequestInit = {}): Promise<any> {
@@ -203,6 +207,17 @@ export function createEvent(data: OlympiadEventInput): Promise<{ event: Olympiad
 
 export function updateEvent(id: string, data: Partial<OlympiadEventInput>): Promise<{ event: OlympiadEvent }> {
   return authRequest(`/api/admin/events/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
+export function getEventQuestions(eventId: string, grade: number): Promise<{ questions: EventQuestion[] }> {
+  return authRequest(`/api/admin/events/${eventId}/questions?grade=${grade}`)
+}
+
+export function setEventQuestions(eventId: string, data: { grade: number; questionIds: string[] }): Promise<{ saved: boolean; count: number }> {
+  return authRequest(`/api/admin/events/${eventId}/questions`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })

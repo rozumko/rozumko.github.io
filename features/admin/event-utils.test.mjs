@@ -6,6 +6,7 @@ process.env.TZ = 'UTC'
 const {
   buildEventPayload,
   countActiveEvents,
+  countSelectedQuestions,
   toDateTimeLocalValue,
 } = await import('./event-utils.mjs')
 
@@ -33,4 +34,8 @@ test('countActiveEvents counts only active events', () => {
     { status: 'archived' },
     { status: 'active' },
   ]), 2)
+})
+
+test('countSelectedQuestions counts unique question ids', () => {
+  assert.equal(countSelectedQuestions(['a', 'b', 'a']), 2)
 })
