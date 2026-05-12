@@ -34,14 +34,13 @@ export async function questionsRoutes(app: FastifyInstance) {
 
     const qs = await db
       .select({
-        id:          questions.id,
-        q:           questions.q,
-        code:        questions.code,
-        options:     questions.options,
-        correct:     questions.correct,
-        explanation: questions.explanation,
-        difficulty:  questions.difficulty,
-        grade:       questions.grade,
+        id:         questions.id,
+        q:          questions.q,
+        code:       questions.code,
+        options:    questions.options,
+        // correct і explanation — ніколи не повертаємо у публічний endpoint
+        difficulty: questions.difficulty,
+        grade:      questions.grade,
       })
       .from(questions)
       .where(filters.length ? and(...filters) : undefined)

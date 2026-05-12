@@ -19,7 +19,8 @@ export async function requireAuth(req: FastifyRequest, reply: FastifyReply) {
   let payload: { sub?: string }
   try {
     const result = await jwtVerify(token, JWKS, {
-      issuer: `${process.env.SUPABASE_URL}/auth/v1`,
+      issuer:     `${process.env.SUPABASE_URL}/auth/v1`,
+      algorithms: ['ES256'],  // явно забороняємо alg:none та HMAC downgrade
     })
     payload = result.payload as { sub?: string }
   } catch {

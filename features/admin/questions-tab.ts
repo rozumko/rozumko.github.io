@@ -1,24 +1,21 @@
-// TODO: замінити DOM-кастинги (HTMLElement → HTMLInputElement/HTMLSelectElement) під час рефакторингу форми питань
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
-import { getAdminQuestions, createQuestion, updateQuestion, deleteQuestion } from '../../features/api/client.js'
+import { getAdminQuestions, createQuestion, updateQuestion, deleteQuestion, type Question } from '../../features/api/client.js'
 import { createFocusTrap } from '../../utils/focus-trap.js'
 import { renderQuestion }  from '../../utils/question-renderer.js'
 import { esc, showModal }  from './ui.js'
+import { $, $maybe } from '../../utils/dom.js'
 
-let currentQuestions = []
+let currentQuestions: Question[] = []
 
-const questionModal = document.getElementById('question-modal')
-const questionForm  = document.getElementById('question-form')
-const qfError       = document.getElementById('qf-error')
-const qfSubmitBtn   = document.getElementById('qf-submit')
+const questionModal = $<HTMLElement>('question-modal')
+const questionForm  = $<HTMLFormElement>('question-form')
+const qfError       = $('qf-error')
+const qfSubmitBtn   = $<HTMLButtonElement>('qf-submit')
+const previewModal  = $<HTMLElement>('preview-modal')
 
-let _qModalTrapRemove = null
-let _pvTrapRemove     = null
+let _qModalTrapRemove: (() => void) | null = null
+let _pvTrapRemove:     (() => void) | null = null
 
-const previewModal = document.getElementById('preview-modal')
-
-const QF_SECTIONS = {
+const QF_SECTIONS: Record<string, string> = {
   choice:    'qf-section-choice',
   sort:      'qf-section-sort',
   sequence:  'qf-section-sequence',
@@ -27,42 +24,44 @@ const QF_SECTIONS = {
   input:     'qf-section-input',
 }
 
-const DIFF_LABELS = { easy: 'Легке', medium: 'Середнє', hard: 'Складне' }
+const DIFF_LABELS: Record<string, string> = { easy: 'Легке', medium: 'Середнє', hard: 'Складне' }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
 export function initQuestionsTab() {
-  document.getElementById('add-question-btn').addEventListener('click', () => openQuestionModal(null))
-  document.getElementById('qf-cancel').addEventListener('click', closeQuestionModal)
-  document.getElementById('preview-close').addEventListener('click', closePreview)
+  $<HTMLButtonElement>('add-question-btn').addEventListener('click', () => openQuestionModal(null))
+  $<HTMLButtonElement>('qf-cancel').addEventListener('click', closeQuestionModal)
+  $<HTMLButtonElement>('preview-close').addEventListener('click', closePreview)
   previewModal.addEventListener('click', (e) => { if (e.target === previewModal) closePreview() })
-  document.getElementById('qf-type').addEventListener('change', (e) => applyTypeUI(e.target.value))
-  document.getElementById('q-filter-apply').addEventListener('click', () => loadQuestionsTab())
-  document.getElementById('qf-img').addEventListener('input', (e) => {
-    const prev = document.getElementById('qf-img-preview')
-    const url  = e.target.value.trim()
-    if (url) { prev.src = url; prev.classList.remove('hidden') }
-    else     { prev.classList.add('hidden'); prev.src = '' }
+  $<HTMLSelectElement>('qf-type').addEventListener('change', (e) => {
+    applyTypeUI((e.target as HTMLSelectElement).value)
+  })
+  $<HTMLButtonElement>('q-filter-apply').addEventListener('click', () => loadQuestionsTab())
+  $<HTMLInputElement>('qf-img').addEventListener('input', (e) => {
+    const prev = $maybe<HTMLImageElement>('qf-img-preview')
+    const url  = (e.target as HTMLInputElement).value.trim()
+    if (url && prev) { prev.src = url; prev.classList.remove('hidden') }
+    else if (prev)   { prev.classList.add('hidden'); prev.src = '' }
   })
   questionForm.addEventListener('submit', handleSubmit)
-  document.getElementById('qf-preview').addEventListener('click', handlePreviewClick)
+  $<HTMLButtonElement>('qf-preview').addEventListener('click', handlePreviewClick)
 }
 
 // ─── List ──────────────────────────────────────────────────────────────────────
 
 export async function loadQuestionsTab() {
-  const list = document.getElementById('questions-list')
+  const list = $('questions-list')
   list.innerHTML = '<p class="admin-loading-text">Завантаження…</p>'
   try {
-    const grade      = document.getElementById('q-filter-grade').value || undefined
-    const typeRaw    = document.getElementById('q-filter-type').value
+    const grade      = $<HTMLSelectElement>('q-filter-grade').value || undefined
+    const typeRaw    = $<HTMLSelectElement>('q-filter-type').value
     const isOlympiad = typeRaw !== '' ? typeRaw === 'true' : undefined
-    const difficulty = document.getElementById('q-filter-difficulty').value || undefined
+    const difficulty = $<HTMLSelectElement>('q-filter-difficulty').value || undefined
 
     const { questions } = await getAdminQuestions({ grade, isOlympiad, difficulty })
     currentQuestions = questions
 
-    document.getElementById('q-count').textContent = `${questions.length} питань`
+    $('q-count').textContent = `${questions.length} питань`
 
     if (!questions.length) {
       list.innerHTML = `
@@ -76,14 +75,14 @@ export async function loadQuestionsTab() {
     list.innerHTML = ''
     questions.forEach(q => list.appendChild(buildQuestionCard(q)))
   } catch (err) {
-    list.innerHTML = `<p style="color:var(--clr-danger);padding:var(--sp-4)">${err.message}</p>`
+    list.innerHTML = `<p style="color:var(--clr-danger);padding:var(--sp-4)">${(err as Error).message}</p>`
   }
 }
 
 // ─── Card ─────────────────────────────────────────────────────────────────────
 
-function buildQuestionCard(q) {
-  const diffLabel = DIFF_LABELS[q.difficulty] ?? q.difficulty ?? '—'
+function buildQuestionCard(q: Question): HTMLElement {
+  const diffLabel  = DIFF_LABELS[q.difficulty ?? ''] ?? q.difficulty ?? '—'
   const correctHint = q.options?.[q.correct] ?? '—'
   const el = document.createElement('div')
   el.className = 'question-item'
@@ -106,14 +105,14 @@ function buildQuestionCard(q) {
       <button class="btn-q-del  btn-adm-danger btn-icon" title="Видалити"><i class="fas fa-trash"></i></button>
     </div>`
 
-  el.querySelector('.btn-q-edit').addEventListener('click', () => openQuestionModal(q))
-  el.querySelector('.btn-q-del').addEventListener('click', async () => {
+  el.querySelector<HTMLButtonElement>('.btn-q-edit')!.addEventListener('click', () => openQuestionModal(q))
+  el.querySelector<HTMLButtonElement>('.btn-q-del')!.addEventListener('click', async () => {
     if (!confirm('Видалити питання?')) return
     try {
       await deleteQuestion(q.id)
       await loadQuestionsTab()
     } catch (err) {
-      showModal(err.message)
+      showModal((err as Error).message)
     }
   })
 
@@ -122,31 +121,30 @@ function buildQuestionCard(q) {
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
 
-export function openQuestionModal(q) {
-  document.getElementById('question-modal-title').textContent = q ? 'Редагувати питання' : 'Нове питання'
-  document.getElementById('qf-id').value          = q?.id ?? ''
-  document.getElementById('qf-grade').value       = q?.grade ?? '1'
-  document.getElementById('qf-difficulty').value  = q?.difficulty ?? 'medium'
-  document.getElementById('qf-olympiad').checked  = q?.isOlympiad ?? false
-  document.getElementById('qf-q').value           = q?.q ?? ''
-  document.getElementById('qf-explanation').value = q?.explanation ?? ''
-  document.getElementById('qf-code').value        = q?.code ?? ''
+export function openQuestionModal(q: Question | null) {
+  $('question-modal-title').textContent                 = q ? 'Редагувати питання' : 'Нове питання'
+  $<HTMLInputElement>('qf-id').value                    = q?.id ?? ''
+  $<HTMLSelectElement>('qf-grade').value                = String(q?.grade ?? '1')
+  $<HTMLSelectElement>('qf-difficulty').value           = q?.difficulty ?? 'medium'
+  ;($<HTMLInputElement>('qf-olympiad')).checked         = q?.isOlympiad ?? false
+  $<HTMLTextAreaElement>('qf-q').value                  = q?.q ?? ''
+  $<HTMLTextAreaElement>('qf-explanation').value        = q?.explanation ?? ''
+  $<HTMLTextAreaElement>('qf-code').value               = q?.code ?? ''
 
-  // choice type — map options→opts for display
   const opts = q?.options ?? []
-  document.querySelectorAll('.qf-opt').forEach((inp, i) => { inp.value = opts[i] ?? '' })
-  const radio = document.querySelector(`input[name="qf-correct"][value="${q?.correct ?? 0}"]`)
+  document.querySelectorAll<HTMLInputElement>('.qf-opt').forEach((inp, i) => { inp.value = opts[i] ?? '' })
+  const radio = document.querySelector<HTMLInputElement>(`input[name="qf-correct"][value="${q?.correct ?? 0}"]`)
   if (radio) radio.checked = true
 
-  // Image
-  const imgUrl = q?.img ?? ''
-  document.getElementById('qf-img').value = imgUrl
-  const prev = document.getElementById('qf-img-preview')
-  if (imgUrl) { prev.src = imgUrl; prev.classList.remove('hidden') }
-  else        { prev.classList.add('hidden'); prev.src = '' }
+  const imgUrl = (q as any)?.img ?? ''
+  $<HTMLInputElement>('qf-img').value = imgUrl
+  const prev = $maybe<HTMLImageElement>('qf-img-preview')
+  if (prev) {
+    if (imgUrl) { prev.src = imgUrl; prev.classList.remove('hidden') }
+    else        { prev.classList.add('hidden'); prev.src = '' }
+  }
 
-  // Always use 'choice' type (only type supported by DB)
-  document.getElementById('qf-type').value = 'choice'
+  $<HTMLSelectElement>('qf-type').value = 'choice'
   applyTypeUI('choice')
 
   qfError.textContent = ''
@@ -163,16 +161,16 @@ export function closeQuestionModal() {
 
 // ─── Submit ───────────────────────────────────────────────────────────────────
 
-async function handleSubmit(e) {
+async function handleSubmit(e: Event) {
   e.preventDefault()
   qfError.textContent = ''
 
-  const id   = document.getElementById('qf-id').value
-  const q    = document.getElementById('qf-q').value.trim()
+  const id = $<HTMLInputElement>('qf-id').value
+  const q  = $<HTMLTextAreaElement>('qf-q').value.trim()
   if (!q) { qfError.textContent = 'Введи текст питання.'; return }
 
-  const opts      = [...document.querySelectorAll('.qf-opt')].map(i => i.value.trim())
-  const correctEl = document.querySelector('input[name="qf-correct"]:checked')
+  const opts      = [...document.querySelectorAll<HTMLInputElement>('.qf-opt')].map(i => i.value.trim())
+  const correctEl = document.querySelector<HTMLInputElement>('input[name="qf-correct"]:checked')
   if (opts.some(o => !o)) { qfError.textContent = 'Заповни всі 4 варіанти.'; return }
   if (!correctEl)          { qfError.textContent = 'Вибери правильну відповідь.'; return }
 
@@ -180,11 +178,11 @@ async function handleSubmit(e) {
     q,
     options:     opts,
     correct:     Number(correctEl.value),
-    grade:       Number(document.getElementById('qf-grade').value),
-    difficulty:  document.getElementById('qf-difficulty').value,
-    isOlympiad:  document.getElementById('qf-olympiad').checked,
-    explanation: document.getElementById('qf-explanation').value.trim(),
-    code:        document.getElementById('qf-code').value.trim() || undefined,
+    grade:       Number($<HTMLSelectElement>('qf-grade').value),
+    difficulty:  $<HTMLSelectElement>('qf-difficulty').value,
+    isOlympiad:  $<HTMLInputElement>('qf-olympiad').checked,
+    explanation: $<HTMLTextAreaElement>('qf-explanation').value.trim(),
+    code:        $<HTMLTextAreaElement>('qf-code').value.trim() || undefined,
   }
 
   qfSubmitBtn.disabled    = true
@@ -195,7 +193,7 @@ async function handleSubmit(e) {
     closeQuestionModal()
     await loadQuestionsTab()
   } catch (err) {
-    qfError.textContent = err.message
+    qfError.textContent = (err as Error).message
   } finally {
     qfSubmitBtn.disabled    = false
     qfSubmitBtn.textContent = 'Зберегти'
@@ -205,37 +203,43 @@ async function handleSubmit(e) {
 // ─── Preview ──────────────────────────────────────────────────────────────────
 
 function handlePreviewClick() {
-  const opts      = [...document.querySelectorAll('.qf-opt')].map(i => i.value.trim() || '…')
-  const correctEl = document.querySelector('input[name="qf-correct"]:checked')
+  const opts      = [...document.querySelectorAll<HTMLInputElement>('.qf-opt')].map(i => i.value.trim() || '…')
+  const correctEl = document.querySelector<HTMLInputElement>('input[name="qf-correct"]:checked')
   const q = {
-    q:           document.getElementById('qf-q').value.trim() || '(текст питання)',
+    q:           $<HTMLTextAreaElement>('qf-q').value.trim() || '(текст питання)',
     a:           opts,
     options:     opts,
     correct:     correctEl ? Number(correctEl.value) : 0,
-    img:         document.getElementById('qf-img').value.trim() || null,
-    code:        document.getElementById('qf-code').value.trim() || null,
-    explanation: document.getElementById('qf-explanation').value.trim(),
+    img:         $<HTMLInputElement>('qf-img').value.trim() || null,
+    code:        $<HTMLTextAreaElement>('qf-code').value.trim() || null,
+    explanation: $<HTMLTextAreaElement>('qf-explanation').value.trim(),
   }
 
-  document.getElementById('pv-question-text').textContent = q.q
-  const pvImg = document.getElementById('pv-image')
-  if (q.img) { pvImg.src = q.img; pvImg.classList.remove('hidden') }
-  else       { pvImg.classList.add('hidden'); pvImg.src = '' }
+  $('pv-question-text').textContent = q.q
+  const pvImg = $maybe<HTMLImageElement>('pv-image')
+  if (pvImg) {
+    if (q.img) { pvImg.src = q.img; pvImg.classList.remove('hidden') }
+    else       { pvImg.classList.add('hidden'); pvImg.src = '' }
+  }
 
-  const pvCode = document.getElementById('pv-code')
-  if (q.code) { pvCode.textContent = q.code; pvCode.classList.remove('hidden') }
-  else        { pvCode.classList.add('hidden') }
+  const pvCode = $maybe('pv-code')
+  if (pvCode) {
+    if (q.code) { pvCode.textContent = q.code; pvCode.classList.remove('hidden') }
+    else        { pvCode.classList.add('hidden') }
+  }
 
-  const pvOpts = document.getElementById('pv-options')
+  const pvOpts = $<HTMLElement>('pv-options')
   pvOpts.className = 'pv-options pv-options--grid'
   renderQuestion(q, pvOpts, { preview: true })
 
-  const explWrap = document.getElementById('pv-explanation-wrap')
-  if (q.explanation) {
-    document.getElementById('pv-explanation').textContent = q.explanation
-    explWrap.classList.remove('hidden')
-  } else {
-    explWrap.classList.add('hidden')
+  const explWrap = $maybe('pv-explanation-wrap')
+  if (explWrap) {
+    if (q.explanation) {
+      $('pv-explanation').textContent = q.explanation
+      explWrap.classList.remove('hidden')
+    } else {
+      explWrap.classList.add('hidden')
+    }
   }
 
   previewModal.classList.remove('hidden')
@@ -251,9 +255,9 @@ function closePreview() {
 
 // ─── applyTypeUI ──────────────────────────────────────────────────────────────
 
-export function applyTypeUI(type) {
-  Object.values(QF_SECTIONS).forEach(id => document.getElementById(id).classList.add('hidden'))
-  document.getElementById(QF_SECTIONS[type] ?? 'qf-section-choice').classList.remove('hidden')
+export function applyTypeUI(type: string) {
+  Object.values(QF_SECTIONS).forEach(id => $maybe(id)?.classList.add('hidden'))
+  $maybe(QF_SECTIONS[type] ?? 'qf-section-choice')?.classList.remove('hidden')
   const showCode = ['choice', 'sort', 'algorithm'].includes(type)
-  document.getElementById('qf-code-wrap').classList.toggle('hidden', !showCode)
+  $maybe('qf-code-wrap')?.classList.toggle('hidden', !showCode)
 }

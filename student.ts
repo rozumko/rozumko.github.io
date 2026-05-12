@@ -1,309 +1,273 @@
-// TODO: додати типи HTMLInputElement/HTMLButtonElement до DOM-запитів при наступному рефакторингу
-// @ts-nocheck
-import { loadQuestions, getModeConfig } from './features/olympiad/quiz-engine.js';
-import { exchangeCode, saveAnswer, finishAttempt } from './features/api/client.js';
-import { renderQuestion } from './utils/question-renderer.js';
-import { showModal }      from './utils/ui.js';
+import { loadQuestions, getModeConfig } from './features/olympiad/quiz-engine.js'
+import { exchangeCode, saveAnswer, finishAttempt } from './features/api/client.js'
+import { renderQuestion, type RenderableQuestion } from './utils/question-renderer.js'
+import { showModal } from './utils/ui.js'
+import { $, $maybe } from './utils/dom.js'
 
 // --- DOM: екрани ---
-const screenEntry   = document.getElementById('screen-entry');
-const screenActions = document.getElementById('screen-actions');
+const screenEntry   = $('screen-entry')
+const screenActions = $('screen-actions')
 
 // --- DOM: вхід за кодом ---
-const codeForm      = document.getElementById('student-code-form');
-const codeInput     = document.getElementById('student-code-input');
-const codeStatus    = document.getElementById('code-status');
-const codeSuccess   = document.getElementById('code-success');
-const codeSubmitBtn = document.getElementById('code-submit-btn');
-const codeClearBtn  = document.getElementById('code-clear-btn');
+const codeForm      = $<HTMLFormElement>('student-code-form')
+const codeInput     = $<HTMLInputElement>('student-code-input')
+const codeStatus    = $('code-status')
+const codeSuccess   = $('code-success')
+const codeSubmitBtn = $<HTMLButtonElement>('code-submit-btn')
+const codeClearBtn  = $<HTMLButtonElement>('code-clear-btn')
 
 // --- DOM: тренування ---
-const gradeButtons      = document.querySelectorAll('[data-grade]');
-const diffButtons       = document.querySelectorAll('[data-difficulty]');
-const startPracticeBtn  = document.getElementById('start-practice-btn');
+const gradeButtons     = document.querySelectorAll<HTMLButtonElement>('[data-grade]')
+const diffButtons      = document.querySelectorAll<HTMLButtonElement>('[data-difficulty]')
+const startPracticeBtn = $<HTMLButtonElement>('start-practice-btn')
 
 // --- Тренування: показати/сховати ---
-document.getElementById('show-practice-btn').addEventListener('click', () => {
-  document.getElementById('code-card').classList.add('hidden');
-  document.getElementById('practice-section').classList.remove('hidden');
-});
-document.getElementById('hide-practice-btn').addEventListener('click', () => {
-  document.getElementById('practice-section').classList.add('hidden');
-  document.getElementById('code-card').classList.remove('hidden');
-});
+$('show-practice-btn').addEventListener('click', () => {
+  $('code-card').classList.add('hidden')
+  $('practice-section').classList.remove('hidden')
+})
+$('hide-practice-btn').addEventListener('click', () => {
+  $('practice-section').classList.add('hidden')
+  $('code-card').classList.remove('hidden')
+})
 
 // --- DOM: quiz overlay ---
-const quizOverlay     = document.getElementById('quiz-overlay');
-const quizModeBadge   = document.getElementById('quiz-mode-badge');
-const quizProgressTxt = document.getElementById('quiz-progress-text');
-const quizProgressBar = document.getElementById('quiz-progress-bar');
-const quizTimer       = document.getElementById('quiz-timer');
-const quizTimerDisplay= document.getElementById('quiz-timer-display');
-const quizQuestionEl  = document.getElementById('quiz-question-text');
-const quizOptionsEl   = document.getElementById('quiz-options');
-const quizFeedback    = document.getElementById('quiz-feedback');
-const quizExplanation = document.getElementById('quiz-explanation');
-const quizNextBtn     = document.getElementById('quiz-next-btn');
-const quizQuitBtn     = document.getElementById('quiz-quit-btn');
+const quizOverlay     = $('quiz-overlay')
+const quizModeBadge   = $('quiz-mode-badge')
+const quizProgressTxt = $('quiz-progress-text')
+const quizProgressBar = $('quiz-progress-bar')
+const quizTimer       = $('quiz-timer')
+const quizTimerDisplay = $('quiz-timer-display')
+const quizQuestionEl  = $('quiz-question-text')
+const quizOptionsEl   = $('quiz-options')
+const quizFeedback    = $('quiz-feedback')
+const quizExplanation = $('quiz-explanation')
+const quizNextBtn     = $<HTMLButtonElement>('quiz-next-btn')
+const quizQuitBtn     = $<HTMLButtonElement>('quiz-quit-btn')
 
 // --- Lightbox ---
-const quizImage    = document.getElementById('quiz-image');
-const imgLightbox  = document.getElementById('img-lightbox');
-const imgLightboxImg = document.getElementById('img-lightbox-img');
+const quizImage     = $maybe<HTMLImageElement>('quiz-image')
+const imgLightbox   = $maybe('img-lightbox')
+const imgLightboxImg = $maybe<HTMLImageElement>('img-lightbox-img')
 
-function openLightbox(src, alt) {
-  imgLightboxImg.src = src;
-  imgLightboxImg.alt = alt || '';
-  imgLightbox.classList.remove('hidden');
-  imgLightbox.focus();
+function openLightbox(src: string, alt: string) {
+  if (!imgLightboxImg || !imgLightbox) return
+  imgLightboxImg.src = src
+  imgLightboxImg.alt = alt || ''
+  imgLightbox.classList.remove('hidden')
+  imgLightbox.focus()
 }
 function closeLightbox() {
-  imgLightbox.classList.add('hidden');
-  imgLightboxImg.src = '';
+  if (!imgLightbox || !imgLightboxImg) return
+  imgLightbox.classList.add('hidden')
+  imgLightboxImg.src = ''
 }
-imgLightbox.addEventListener('click', (e) => {
-  if (e.target === imgLightbox || e.target === document.getElementById('img-lightbox-close') || e.target.closest('#img-lightbox-close')) closeLightbox();
-});
+imgLightbox?.addEventListener('click', (e) => {
+  const target = e.target as HTMLElement
+  if (target === imgLightbox || target.closest('#img-lightbox-close')) closeLightbox()
+})
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && !imgLightbox.classList.contains('hidden')) closeLightbox();
-});
+  if (e.key === 'Escape' && imgLightbox && !imgLightbox.classList.contains('hidden')) closeLightbox()
+})
 
 // --- DOM: result overlay ---
-const resultOverlay   = document.getElementById('result-overlay');
-const resultTitle     = document.getElementById('result-title');
-const resultModeLabel = document.getElementById('result-mode-label');
-const resultScore     = document.getElementById('result-score');
-const resultTotal     = document.getElementById('result-total');
-const resultTime      = document.getElementById('result-time');
-const resultSavedMsg  = document.getElementById('result-saved-msg');
-const resultErrorMsg  = document.getElementById('result-error-msg');
-const resultCloseBtn  = document.getElementById('result-close-btn');
+const resultOverlay   = $('result-overlay')
+const resultTitle     = $('result-title')
+const resultModeLabel = $('result-mode-label')
+const resultScore     = $('result-score')
+const resultTotal     = $('result-total')
+const resultTime      = $('result-time')
+const resultSavedMsg  = $('result-saved-msg')
+const resultErrorMsg  = $('result-error-msg')
+const resultCloseBtn  = $<HTMLButtonElement>('result-close-btn')
 
 // --- DOM: quit confirm ---
-const quitConfirm    = document.getElementById('quit-confirm');
-const quitConfirmYes = document.getElementById('quit-confirm-yes');
-const quitConfirmNo  = document.getElementById('quit-confirm-no');
+const quitConfirm    = $('quit-confirm')
+const quitConfirmYes = $<HTMLButtonElement>('quit-confirm-yes')
+const quitConfirmNo  = $<HTMLButtonElement>('quit-confirm-no')
 
 // ===================== ERROR BOUNDARY =====================
-// Глобальний перехоплювач критичних помилок.
-// Захищає учня від білого екрану при несподіваних збоях під час квізу.
 
-/**
- * Показати error boundary overlay з повідомленням.
- * Якщо є активний backup олімпіади — виводить дані для вчителя.
- *
- * @param {string} [msg] — опціональне технічне повідомлення (для логування)
- */
 function showErrorBoundary(msg = '') {
   try {
-    const overlay = document.getElementById('error-boundary');
-    if (!overlay) return; // якщо DOM ще не готовий — нічого не робимо
+    const overlay = $maybe('error-boundary')
+    if (!overlay) return
 
-    // Перевіряємо чи є backup олімпіади — якщо так, показуємо дані для вчителя
-    const backupDiv  = document.getElementById('error-boundary-backup');
-    const backupText = document.getElementById('error-boundary-backup-text');
+    const backupDiv  = $maybe('error-boundary-backup')
+    const backupText = $maybe('error-boundary-backup-text')
     try {
-      const raw = localStorage.getItem('rozumko_quiz_backup');
+      const raw = localStorage.getItem('rozumko_quiz_backup')
       if (raw) {
-        const b = JSON.parse(raw);
-        // Показуємо backup тільки якщо він актуальний (менше 3 годин)
-        const fresh = b?.startedAt && Date.now() - b.startedAt < 3 * 60 * 60 * 1000;
-        if (fresh && b.meta?.code) {
-          backupText.textContent =
-            `Код: ${b.meta.code} · Результат на момент збою: ${b.score ?? '?'}/${b.meta?.totalQuestions ?? '?'}`;
-          backupDiv.classList.remove('hidden');
+        const b = JSON.parse(raw)
+        const fresh = b?.startedAt && Date.now() - b.startedAt < 3 * 60 * 60 * 1000
+        if (fresh && b.meta?.code && backupText && backupDiv) {
+          backupText.textContent = `Код: ${b.meta.code} · Результат на момент збою: ${b.score ?? '?'}/${b.meta?.totalQuestions ?? '?'}`
+          backupDiv.classList.remove('hidden')
         }
       }
     } catch { /* ігноруємо помилки localStorage */ }
 
-    overlay.classList.remove('hidden');
-    // Зупиняємо таймер квізу якщо він іде — щоб час не спливав поки учень бачить помилку
-    if (timerInterval) {
-      clearInterval(timerInterval);
-      timerInterval = null;
-    }
-
-    console.error('[Розумко] Критична помилка:', msg);
+    overlay.classList.remove('hidden')
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null }
+    console.error('[Розумко] Критична помилка:', msg)
   } catch { /* якщо навіть error boundary зламався — мовчимо */ }
 }
 
-// Ловимо необроблені Promise-помилки (async functions без try/catch)
 window.addEventListener('unhandledrejection', (event) => {
-  // Ігноруємо помилки від Firebase App Check та зовнішніх скриптів
-  const msg = event.reason?.message ?? String(event.reason ?? '');
-  if (msg.includes('AppCheck') || msg.includes('recaptcha') || msg.includes('net::')) return;
-
-  // Показуємо boundary тільки якщо квіз активний (є timerInterval або currentMode)
-  // Для звичайних помилок входу/завантаження — є свої try/catch блоки
+  const msg = (event.reason as Error)?.message ?? String(event.reason ?? '')
+  if (msg.includes('AppCheck') || msg.includes('recaptcha') || msg.includes('net::')) return
   if (currentMode && currentIdx > 0) {
-    showErrorBoundary(msg);
-    event.preventDefault(); // не логуємо в консоль двічі
+    showErrorBoundary(msg)
+    event.preventDefault()
   }
-});
+})
 
-// Ловимо синхронні помилки JS (ReferenceError, TypeError тощо)
 window.addEventListener('error', (event) => {
-  const msg = `${event.message} (${event.filename}:${event.lineno})`;
-  if (currentMode && currentIdx > 0) {
-    showErrorBoundary(msg);
-  }
-});
+  const msg = `${event.message} (${event.filename}:${event.lineno})`
+  if (currentMode && currentIdx > 0) showErrorBoundary(msg)
+})
 
 // --- Стан ---
-let studentData   = null; // { code, grade, classId, teacherUid }
-let selectedGrade = null;
-let selectedDiff  = null;
+interface StudentData { grade: number; code: string }
 
-// Quiz state
-let questions        = [];
-let currentIdx       = 0;
-let score            = 0;
-let answered         = false;
-let timerInterval    = null;
-let secondsLeft      = 0;
-let startedAt        = null;
-let currentMode      = null;
-let currentSessionId = null;
+let studentData:      StudentData | null = null
+let selectedGrade:    number | null = null
+let selectedDiff:     string | null = null
 
-// Новий API стан
-let currentAttemptId    = null; // UUID спроби від нового backend
-let olympiadQuestions   = null; // питання отримані через exchange-code
+let questions:        RenderableQuestion[] = []
+let currentIdx        = 0
+let score             = 0
+let answered          = false
+let timerInterval:    ReturnType<typeof setInterval> | null = null
+let secondsLeft       = 0
+let startedAt:        number | null = null
+let currentMode:      string | null = null
+
+let currentAttemptId:   string | null = null
+let olympiadQuestions:  RenderableQuestion[] | null = null
 
 // ===================== FULLSCREEN =====================
 
 function enterFullscreen() {
-  const el = document.documentElement;
+  const el = document.documentElement as HTMLElement & {
+    webkitRequestFullscreen?: () => void
+  }
   try {
-    if (el.requestFullscreen)            el.requestFullscreen();
-    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    if (el.requestFullscreen)             el.requestFullscreen()
+    else if (el.webkitRequestFullscreen)  el.webkitRequestFullscreen()
   } catch { /* браузер може відхилити — не критично */ }
 }
 function exitFullscreen() {
+  const doc = document as Document & {
+    webkitExitFullscreen?: () => void
+    webkitFullscreenElement?: Element | null
+  }
   try {
-    if (document.exitFullscreen && document.fullscreenElement)
-      document.exitFullscreen();
-    else if (document.webkitExitFullscreen && document.webkitFullscreenElement)
-      document.webkitExitFullscreen();
+    if (doc.exitFullscreen && doc.fullscreenElement)
+      doc.exitFullscreen()
+    else if (doc.webkitExitFullscreen && doc.webkitFullscreenElement)
+      doc.webkitExitFullscreen()
   } catch { /* ігноруємо */ }
 }
 
 // ===================== LOCALSTORAGE BACKUP =====================
 
-const QUIZ_BACKUP_KEY  = 'rozumko_quiz_backup';
-const DONE_KEY = (code, eventId) => `rozumko_done_${code}_${eventId}`;
+const QUIZ_BACKUP_KEY = 'rozumko_quiz_backup'
 
 function saveQuizBackup() {
-  if (currentMode !== 'olympiad' || !currentAttemptId) return;
+  if (currentMode !== 'olympiad' || !currentAttemptId) return
   try {
     localStorage.setItem(QUIZ_BACKUP_KEY, JSON.stringify({
-      attemptId:   currentAttemptId,
-      mode:        currentMode,
+      attemptId: currentAttemptId,
+      mode:      currentMode,
       currentIdx,
       score,
       secondsLeft,
       startedAt,
-      meta:        startQuiz.meta,
-      savedAt:     Date.now()
-    }));
+      meta:      (startQuiz as any).meta,
+      savedAt:   Date.now(),
+    }))
   } catch { /* localStorage недоступний */ }
 }
 
 function clearQuizBackup() {
-  try { localStorage.removeItem(QUIZ_BACKUP_KEY); } catch { /* ігноруємо */ }
+  try { localStorage.removeItem(QUIZ_BACKUP_KEY) } catch { /* ігноруємо */ }
 }
-
-function getQuizBackup() {
-  try {
-    const raw = localStorage.getItem(QUIZ_BACKUP_KEY);
-    if (!raw) return null;
-    const b = JSON.parse(raw);
-    // Ігноруємо бекап старший за 3 години
-    if (Date.now() - b.savedAt > 3 * 60 * 60 * 1000) { clearQuizBackup(); return null; }
-    return b;
-  } catch { return null; }
-}
-
-// ===================== ВІДНОВЛЕННЯ СЕСІЇ =====================
-// В новій архітектурі сесія не зберігається між перезавантаженнями.
-// Учень вводить код щоразу — attempt створюється через exchangeCode.
 
 // ===================== ВХІД ЗА КОДОМ =====================
 
 codeForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const code = codeInput.value.trim().toUpperCase();
-  if (!code) { codeStatus.textContent = 'Введи код учня.'; return; }
-  const CODE_RE = /^([А-ЯҐЄІЇ]{2,5}\d{3}|\d{3}[А-ЯҐЄІЇ]{2,5})$/u;
-  if (!CODE_RE.test(code)) { codeStatus.textContent = 'Невірний формат. Приклад: КІТ247'; return; }
+  e.preventDefault()
+  const code = codeInput.value.trim().toUpperCase()
+  if (!code) { codeStatus.textContent = 'Введи код учня.'; return }
+  const CODE_RE = /^([А-ЯҐЄІЇ]{2,5}\d{3}|\d{3}[А-ЯҐЄІЇ]{2,5})$/u
+  if (!CODE_RE.test(code)) { codeStatus.textContent = 'Невірний формат. Приклад: КІТ247'; return }
 
-  codeStatus.textContent = '';
-  codeSubmitBtn.disabled = true;
-  codeSubmitBtn.textContent = 'Перевірка…';
+  codeStatus.textContent    = ''
+  codeSubmitBtn.disabled    = true
+  codeSubmitBtn.textContent = 'Перевірка…'
 
   try {
-    const result = await exchangeCode(code);
-    currentAttemptId  = result.attemptId;
-    olympiadQuestions = result.questions;
-    studentData = { grade: result.grade, code };
-    showScreenActions(code);
-    showActiveEventInfo(result.grade);
+    const result          = await exchangeCode(code)
+    currentAttemptId      = result.attemptId
+    olympiadQuestions     = result.questions
+    studentData           = { grade: result.grade, code }
+    showScreenActions(code)
+    showActiveEventInfo(result.grade)
   } catch (err) {
-    codeStatus.textContent = err.message;
-    codeSubmitBtn.disabled = false;
-    codeSubmitBtn.textContent = 'Увійти →';
+    codeStatus.textContent    = (err as Error).message
+    codeSubmitBtn.disabled    = false
+    codeSubmitBtn.textContent = 'Увійти →'
   }
-});
+})
 
 function clearCode() {
-  codeInput.value = '';
-  codeInput.disabled = false;
-  codeStatus.textContent = '';
-  codeSuccess.textContent = '';
-  codeSubmitBtn.disabled = false;
-  codeSubmitBtn.textContent = 'Увійти →';
-  studentData       = null;
-  currentAttemptId  = null;
-  olympiadQuestions = null;
-  showScreenEntry();
-  codeInput.focus();
+  codeInput.value           = ''
+  codeInput.disabled        = false
+  codeStatus.textContent    = ''
+  codeSuccess.textContent   = ''
+  codeSubmitBtn.disabled    = false
+  codeSubmitBtn.textContent = 'Увійти →'
+  studentData               = null
+  currentAttemptId          = null
+  olympiadQuestions         = null
+  showScreenEntry()
+  codeInput.focus()
 }
 
-codeClearBtn.addEventListener('click', clearCode);
-document.getElementById('code-clear-btn-2').addEventListener('click', clearCode);
+codeClearBtn.addEventListener('click', clearCode)
+$maybe<HTMLButtonElement>('code-clear-btn-2')?.addEventListener('click', clearCode)
 
 // ===================== ЗАПУСК ОЛІМПІАДИ / ДЕМО =====================
 
-document.getElementById('start-demo-btn').addEventListener('click', () => launchOlympiad('demo'));
-document.getElementById('start-olympiad-btn').addEventListener('click', () => launchOlympiad('olympiad'));
+$maybe<HTMLButtonElement>('start-demo-btn')?.addEventListener('click', () => launchOlympiad('demo'))
+$maybe<HTMLButtonElement>('start-olympiad-btn')?.addEventListener('click', () => launchOlympiad('olympiad'))
 
-async function launchOlympiad(mode) {
-  const code = studentData?.code;
-  if (!code) { showModal('Спочатку введи код учня.'); return; }
+async function launchOlympiad(mode: string) {
+  const code = studentData?.code
+  if (!code) { showModal('Спочатку введи код учня.'); return }
 
-  const btn = mode === 'olympiad'
-    ? document.getElementById('start-olympiad-btn')
-    : document.getElementById('start-demo-btn');
-  btn.disabled = true;
-  showLoading();
+  const btnId = mode === 'olympiad' ? 'start-olympiad-btn' : 'start-demo-btn'
+  const btn   = $maybe<HTMLButtonElement>(btnId)
+  if (btn) btn.disabled = true
+  showLoading()
 
   try {
-    const grade = studentData.grade;
-
+    const grade = studentData!.grade
     if (mode === 'olympiad') {
-      if (!olympiadQuestions) throw new Error('Спочатку введи код від вчителя.');
-      const cfg = getModeConfig(mode, null);
-      startQuiz(olympiadQuestions, mode, cfg, { code, grade });
-      return;
+      if (!olympiadQuestions) throw new Error('Спочатку введи код від вчителя.')
+      const cfg = getModeConfig(mode, null)
+      startQuiz(olympiadQuestions, mode, cfg, { code, grade })
+      return
     }
-
-    const cfg = getModeConfig(mode, null);
-    const qs  = await loadQuestions(grade, mode, cfg.count);
-    startQuiz(qs, mode, cfg, { code, grade });
+    const cfg = getModeConfig(mode, null)
+    const qs  = await loadQuestions(grade, mode, cfg.count, null)
+    startQuiz(qs, mode, cfg, { code, grade })
   } catch (err) {
-    hideLoading();
-    showModal(err.message);
+    hideLoading()
+    showModal((err as Error).message)
   } finally {
-    btn.disabled = false;
+    if (btn) btn.disabled = false
   }
 }
 
@@ -311,265 +275,254 @@ async function launchOlympiad(mode) {
 
 gradeButtons.forEach(btn => {
   btn.addEventListener('click', () => {
-    // Стан вибору керується через aria-pressed + CSS [aria-pressed="true"] в style.css
-    gradeButtons.forEach(b => b.setAttribute('aria-pressed', 'false'));
-    btn.setAttribute('aria-pressed', 'true');
-    selectedGrade = Number(btn.dataset.grade);
-    updateStartBtn();
-  });
-});
+    gradeButtons.forEach(b => b.setAttribute('aria-pressed', 'false'))
+    btn.setAttribute('aria-pressed', 'true')
+    selectedGrade = Number(btn.dataset['grade'])
+    updateStartBtn()
+  })
+})
 
 diffButtons.forEach(btn => {
   btn.addEventListener('click', () => {
-    diffButtons.forEach(b => b.setAttribute('aria-pressed', 'false'));
-    btn.setAttribute('aria-pressed', 'true');
-    selectedDiff = btn.dataset.difficulty;
-    updateStartBtn();
-  });
-});
+    diffButtons.forEach(b => b.setAttribute('aria-pressed', 'false'))
+    btn.setAttribute('aria-pressed', 'true')
+    selectedDiff = btn.dataset['difficulty'] ?? null
+    updateStartBtn()
+  })
+})
 
 function updateStartBtn() {
-  startPracticeBtn.disabled = !(selectedGrade && selectedDiff);
+  startPracticeBtn.disabled = !(selectedGrade && selectedDiff)
 }
 
 startPracticeBtn.addEventListener('click', async () => {
-  startPracticeBtn.disabled = true;
-  showLoading();
+  startPracticeBtn.disabled = true
+  showLoading()
   try {
-    const cfg = getModeConfig('practice');
-    const qs  = await loadQuestions(selectedGrade, 'practice', cfg.count, selectedDiff);
-    if (qs.length === 0) throw new Error('Питань для цих налаштувань немає.');
-    startQuiz(qs, 'practice', cfg, { grade: selectedGrade });
+    const cfg = getModeConfig('practice')
+    const qs  = await loadQuestions(selectedGrade!, 'practice', cfg.count, selectedDiff!)
+    if (qs.length === 0) throw new Error('Питань для цих налаштувань немає.')
+    startQuiz(qs, 'practice', cfg, { grade: selectedGrade })
   } catch (err) {
-    hideLoading();
-    showModal(err.message);
+    hideLoading()
+    showModal((err as Error).message)
   } finally {
-    startPracticeBtn.disabled = false;
+    startPracticeBtn.disabled = false
   }
-});
+})
 
 // ===================== QUIZ ENGINE =====================
 
-function startQuiz(qs, mode, cfg, meta) {
-  questions    = qs;
-  currentIdx   = 0;
-  score        = 0;
-  answered     = false;
-  currentMode  = mode;
-  startedAt    = Date.now();
-  Object.assign(startQuiz, { meta }); // зберігаємо мета для збереження результату
+interface QuizMeta { code?: string; grade?: number | null; [k: string]: unknown }
 
-  // Бейдж режиму — CSS-клас замість Tailwind-утиліт
-  const labels     = { practice: 'Тренування', demo: 'Демо', olympiad: 'Олімпіада' };
-  const badgeColor = { practice: '#fef3c7', demo: '#e0f2fe', olympiad: '#ffe4e6' };
-  const badgeText  = { practice: '#92400e', demo: '#0369a1', olympiad: '#9f1239' };
-  quizModeBadge.textContent = labels[mode];
-  quizModeBadge.className   = 'quiz-badge';
-  quizModeBadge.style.background = badgeColor[mode] ?? '#f1f5f9';
-  quizModeBadge.style.color      = badgeText[mode]  ?? '#334155';
+function startQuiz(qs: RenderableQuestion[], mode: string, cfg: any, meta: QuizMeta) {
+  questions   = qs
+  currentIdx  = 0
+  score       = 0
+  answered    = false
+  currentMode = mode
+  startedAt   = Date.now()
+  ;(startQuiz as any).meta = meta
 
-  // Таймер
-  clearInterval(timerInterval);
+  const labels:     Record<string, string> = { practice: 'Тренування', demo: 'Демо', olympiad: 'Олімпіада' }
+  const badgeColor: Record<string, string> = { practice: '#fef3c7', demo: '#e0f2fe', olympiad: '#ffe4e6' }
+  const badgeText:  Record<string, string> = { practice: '#92400e', demo: '#0369a1', olympiad: '#9f1239' }
+  quizModeBadge.textContent          = labels[mode]
+  quizModeBadge.className            = 'quiz-badge'
+  ;(quizModeBadge as HTMLElement).style.background = badgeColor[mode] ?? '#f1f5f9'
+  ;(quizModeBadge as HTMLElement).style.color      = badgeText[mode]  ?? '#334155'
+
+  clearInterval(timerInterval!)
   if (cfg.timeMinutes) {
-    secondsLeft = cfg.timeMinutes * 60;
-    quizTimer.classList.add('visible');
-    updateTimerDisplay();
+    secondsLeft = cfg.timeMinutes * 60
+    quizTimer.classList.add('visible')
+    updateTimerDisplay()
     timerInterval = setInterval(() => {
-      secondsLeft--;
-      updateTimerDisplay();
-      if (secondsLeft <= 0) finishQuiz(true);
-    }, 1000);
+      secondsLeft--
+      updateTimerDisplay()
+      if (secondsLeft <= 0) finishQuiz(true)
+    }, 1000)
   } else {
-    quizTimer.classList.remove('visible');
+    quizTimer.classList.remove('visible')
   }
 
-  hideLoading();
-  showOverlay(quizOverlay);
-  if (mode === 'olympiad') enterFullscreen();
-  showQuestion();
+  hideLoading()
+  showOverlay(quizOverlay)
+  if (mode === 'olympiad') enterFullscreen()
+  showQuestion()
 }
 
 function showQuestion() {
-  const q = questions[currentIdx];
-  answered = false;
+  const q   = questions[currentIdx]
+  answered  = false
 
-  quizProgressTxt.textContent = `${currentIdx + 1} / ${questions.length}`;
-  quizProgressBar.style.width = `${(currentIdx / questions.length) * 100}%`;
-  quizQuestionEl.textContent = q.q;
+  quizProgressTxt.textContent        = `${currentIdx + 1} / ${questions.length}`
+  ;(quizProgressBar as HTMLElement).style.width = `${(currentIdx / questions.length) * 100}%`
+  quizQuestionEl.textContent         = q.q as string
 
-  // Зображення
-  if (q.img) {
-    quizImage.src = q.img;
-    quizImage.classList.remove('hidden');
-    quizImage.onclick = () => openLightbox(q.img, q.q);
-  } else {
-    quizImage.classList.add('hidden');
-    quizImage.src = '';
-    quizImage.onclick = null;
+  if (q.img && quizImage) {
+    quizImage.src    = q.img as string
+    quizImage.classList.remove('hidden')
+    quizImage.onclick = () => openLightbox(q.img as string, q.q as string)
+  } else if (quizImage) {
+    quizImage.classList.add('hidden')
+    quizImage.src    = ''
+    quizImage.onclick = null
   }
 
-  const codeBlock = document.getElementById('quiz-code-block');
-  if (q.code) {
-    codeBlock.textContent = q.code;
-    codeBlock.classList.remove('hidden');
+  const codeBlock = $maybe('quiz-code-block')
+  if (q.code && codeBlock) {
+    codeBlock.textContent = q.code as string
+    codeBlock.classList.remove('hidden')
   } else {
-    codeBlock.classList.add('hidden');
+    codeBlock?.classList.add('hidden')
   }
 
-  quizFeedback.textContent = '';
-  quizExplanation.textContent = '';
-  quizExplanation.classList.add('hidden');
-  quizNextBtn.classList.add('hidden');
-  quizOptionsEl.innerHTML = '';
+  quizFeedback.textContent    = ''
+  quizExplanation.textContent = ''
+  quizExplanation.classList.add('hidden')
+  quizNextBtn.classList.add('hidden')
+  quizOptionsEl.innerHTML     = ''
 
-  const type = q.type ?? 'choice';
-  // Семантичні CSS-класи з style.css замість Tailwind-утиліт
-  quizOptionsEl.className = (type === 'choice')    ? 'quiz-options quiz-options--grid'
-    : type === 'truefalse'                         ? 'quiz-options quiz-options--two'
-    : 'quiz-options quiz-options--stack';
+  const type = q.type ?? 'choice'
+  quizOptionsEl.className = type === 'choice'
+    ? 'quiz-options quiz-options--grid'
+    : type === 'truefalse'
+    ? 'quiz-options quiz-options--two'
+    : 'quiz-options quiz-options--stack'
 
-  renderQuestion(q, quizOptionsEl, {
+  renderQuestion(q, quizOptionsEl as HTMLElement, {
     onAnswer: (result) => {
-      answered = true;
+      answered = true
       if (currentMode === 'olympiad' && currentAttemptId && typeof result === 'number') {
-        // Олімпіадний режим: correct невідомий — зберігаємо індекс, показуємо нейтральний фідбек
-        saveAnswer(currentAttemptId, q.id, result).catch(() => {});
-        showFeedbackOlympiad();
+        saveAnswer(currentAttemptId, q.id as string, result).catch(() => {})
+        showFeedbackOlympiad()
       } else {
-        if (result === true) score++;
-        showFeedback(result, q);
+        if (result === true) score++
+        showFeedback(result as boolean, q)
       }
     },
-  });
+  })
 }
-
-// ── Спільний фідбек ────────────────────────────────────────────────────────
 
 function showFeedbackOlympiad() {
-  quizFeedback.textContent = '✓ Відповідь збережено';
-  quizFeedback.className = 'quiz-feedback';
-  quizExplanation.classList.add('hidden');
-  quizNextBtn.classList.remove('hidden');
-  quizNextBtn.textContent = currentIdx + 1 < questions.length ? 'Далі' : 'Завершити';
+  quizFeedback.textContent = '✓ Відповідь збережено'
+  quizFeedback.className   = 'quiz-feedback'
+  quizExplanation.classList.add('hidden')
+  quizNextBtn.classList.remove('hidden')
+  quizNextBtn.textContent  = currentIdx + 1 < questions.length ? 'Далі' : 'Завершити'
 }
 
-function showFeedback(isCorrect, q) {
-  quizFeedback.textContent = isCorrect ? '✓ Правильно!' : '✗ Неправильно';
-  quizFeedback.className = isCorrect ? 'quiz-feedback quiz-feedback--correct' : 'quiz-feedback quiz-feedback--incorrect';
-  const cfg = getModeConfig(currentMode);
+function showFeedback(isCorrect: boolean, q: RenderableQuestion) {
+  quizFeedback.textContent = isCorrect ? '✓ Правильно!' : '✗ Неправильно'
+  quizFeedback.className   = isCorrect
+    ? 'quiz-feedback quiz-feedback--correct'
+    : 'quiz-feedback quiz-feedback--incorrect'
+  const cfg = getModeConfig(currentMode!)
   if (cfg.showExplanation && q.explanation) {
-    quizExplanation.textContent = q.explanation;
-    quizExplanation.classList.remove('hidden');
+    quizExplanation.textContent = q.explanation
+    quizExplanation.classList.remove('hidden')
   }
-  quizNextBtn.classList.remove('hidden');
-  quizNextBtn.textContent = currentIdx + 1 < questions.length ? 'Далі' : 'Завершити';
-  saveQuizBackup();
+  quizNextBtn.classList.remove('hidden')
+  quizNextBtn.textContent = currentIdx + 1 < questions.length ? 'Далі' : 'Завершити'
+  saveQuizBackup()
 }
 
 quizNextBtn.addEventListener('click', () => {
-  currentIdx++;
-  if (currentIdx < questions.length) {
-    showQuestion();
-  } else {
-    finishQuiz(false);
-  }
-});
+  currentIdx++
+  if (currentIdx < questions.length) showQuestion()
+  else finishQuiz(false)
+})
 
-async function finishQuiz(timeUp) {
-  clearInterval(timerInterval);
-  const elapsed = Math.round((Date.now() - startedAt) / 1000);
-  hideOverlay(quizOverlay);
-  if (currentMode === 'olympiad') exitFullscreen();
+async function finishQuiz(timeUp: boolean) {
+  clearInterval(timerInterval!)
+  const elapsed = Math.round((Date.now() - startedAt!) / 1000)
+  hideOverlay(quizOverlay)
+  if (currentMode === 'olympiad') exitFullscreen()
 
-  // Показуємо результат
-  const labels = { practice: 'Тренування', demo: 'Демо-версія', olympiad: 'Олімпіада' };
-  resultModeLabel.textContent = labels[currentMode];
-  resultTitle.textContent = timeUp ? 'Час вийшов!' : (score >= questions.length * 0.8 ? 'Відмінно!' : score >= questions.length * 0.5 ? 'Добре!' : 'Спробуй ще!');
-  resultScore.textContent = score;
-  resultTotal.textContent = questions.length;
-  resultTime.textContent = `Час: ${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`;
-  resultSavedMsg.classList.add('hidden');
-  resultErrorMsg.classList.add('hidden');
-  showOverlay(resultOverlay);
+  const labels: Record<string, string> = { practice: 'Тренування', demo: 'Демо-версія', olympiad: 'Олімпіада' }
+  resultModeLabel.textContent = labels[currentMode!]
+  resultTitle.textContent     = timeUp ? 'Час вийшов!'
+    : score >= questions.length * 0.8 ? 'Відмінно!'
+    : score >= questions.length * 0.5 ? 'Добре!'
+    : 'Спробуй ще!'
+  resultScore.textContent     = String(score)
+  resultTotal.textContent     = String(questions.length)
+  resultTime.textContent      = `Час: ${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`
+  resultSavedMsg.classList.add('hidden')
+  resultErrorMsg.classList.add('hidden')
+  showOverlay(resultOverlay)
 
-  // Зберігаємо результат якщо олімпіада
   if (currentMode === 'olympiad' && currentAttemptId) {
-    const meta = startQuiz.meta;
+    const meta = (startQuiz as any).meta as QuizMeta
     try {
-      await finishAttempt(currentAttemptId);
-      clearQuizBackup();
-      resultSavedMsg.classList.remove('hidden');
-    } catch (err) {
-      const backup = { score, total: questions.length, code: meta.code };
-      try { localStorage.setItem(QUIZ_BACKUP_KEY + '_failed', JSON.stringify(backup)); } catch { /* ігноруємо */ }
+      await finishAttempt(currentAttemptId)
+      clearQuizBackup()
+      resultSavedMsg.classList.remove('hidden')
+    } catch {
+      const backup = { score, total: questions.length, code: meta.code }
+      try { localStorage.setItem(QUIZ_BACKUP_KEY + '_failed', JSON.stringify(backup)) } catch { /* ігноруємо */ }
       resultErrorMsg.innerHTML =
         `⚠️ Немає зв'язку — результат не збережено автоматично.<br>
          <strong>Скажи вчителю:</strong> код <strong>${meta.code}</strong>, результат <strong>${score}/${questions.length}</strong>.<br>
-         <span style="font-size:0.8em;opacity:0.7">Коли з'явиться інтернет — оновлення сторінки може відновити збереження.</span>`;
-      resultErrorMsg.classList.remove('hidden');
+         <span style="font-size:0.8em;opacity:0.7">Коли з'явиться інтернет — оновлення сторінки може відновити збереження.</span>`
+      resultErrorMsg.classList.remove('hidden')
     }
-    currentAttemptId  = null;
-    olympiadQuestions = null;
+    currentAttemptId  = null
+    olympiadQuestions = null
   }
 }
 
 // ===================== ВИХІД З ТЕСТУ =====================
 
-quizQuitBtn.addEventListener('click', () => showOverlay(quitConfirm));
-quitConfirmNo.addEventListener('click', () => hideOverlay(quitConfirm));
+quizQuitBtn.addEventListener('click', () => showOverlay(quitConfirm))
+quitConfirmNo.addEventListener('click', () => hideOverlay(quitConfirm))
 quitConfirmYes.addEventListener('click', () => {
-  clearInterval(timerInterval);
-  hideOverlay(quitConfirm);
-  hideOverlay(quizOverlay);
-  if (currentMode === 'olympiad') exitFullscreen();
-  currentAttemptId  = null;
-  olympiadQuestions = null;
-});
+  clearInterval(timerInterval!)
+  hideOverlay(quitConfirm)
+  hideOverlay(quizOverlay)
+  if (currentMode === 'olympiad') exitFullscreen()
+  currentAttemptId  = null
+  olympiadQuestions = null
+})
 
-resultCloseBtn.addEventListener('click', () => {
-  hideOverlay(resultOverlay);
-});
+resultCloseBtn.addEventListener('click', () => hideOverlay(resultOverlay))
 
 // ===================== УТИЛІТИ =====================
 
 function updateTimerDisplay() {
-  const m = Math.floor(secondsLeft / 60);
-  const s = secondsLeft % 60;
-  quizTimerDisplay.textContent = `${m}:${String(s).padStart(2, '0')}`;
-  // Останні 60 секунд — переходимо в «urgent» режим (червоний фон)
-  if (secondsLeft <= 60) quizTimer.classList.add('urgent');
+  const m = Math.floor(secondsLeft / 60)
+  const s = secondsLeft % 60
+  quizTimerDisplay.textContent = `${m}:${String(s).padStart(2, '0')}`
+  if (secondsLeft <= 60) quizTimer.classList.add('urgent')
 }
 
-// Показ/приховання overlay-елементів через CSS-клас .active
-// (quiz-overlay, result-overlay, quit-overlay використовують display через .active)
-function showOverlay(el) { el.classList.add('active'); }
-function hideOverlay(el) { el.classList.remove('active'); }
+function showOverlay(el: HTMLElement) { el.classList.add('active') }
+function hideOverlay(el: HTMLElement) { el.classList.remove('active') }
 
-const quizLoadingOverlay = document.getElementById('quiz-loading-overlay');
-function showLoading() { quizLoadingOverlay.classList.add('active'); }
-function hideLoading() { quizLoadingOverlay.classList.remove('active'); }
+const quizLoadingOverlay = $('quiz-loading-overlay')
+function showLoading() { quizLoadingOverlay.classList.add('active') }
+function hideLoading()  { quizLoadingOverlay.classList.remove('active') }
 
 function showScreenEntry() {
-  screenActions.classList.add('hidden');
-  screenEntry.classList.remove('hidden');
+  screenActions.classList.add('hidden')
+  screenEntry.classList.remove('hidden')
 }
 
-function showScreenActions(code) {
-  screenEntry.classList.add('hidden');
-  screenActions.classList.remove('hidden');
-  // Показуємо код в полі для контексту (якщо потрібно)
-  const successEl = document.getElementById('code-success');
-  if (successEl) { successEl.textContent = `Код: ${code}`; }
+function showScreenActions(code: string) {
+  screenEntry.classList.add('hidden')
+  screenActions.classList.remove('hidden')
+  const successEl = $maybe('code-success')
+  if (successEl) successEl.textContent = `Код: ${code}`
 }
 
-function showActiveEventInfo(_grade) {
-  const olympiadBtn = document.getElementById('start-olympiad-btn');
-  const infoBox     = document.getElementById('active-event-info');
-  const titleEl     = document.getElementById('active-event-title');
-  const metaEl      = document.getElementById('active-event-meta');
-  olympiadBtn.classList.remove('btn-disabled');
-  olympiadBtn.title = '';
-  titleEl.textContent = '🏆 Олімпіада з інформатики';
-  metaEl.textContent  = '10 питань · 15 хв';
-  infoBox.classList.remove('hidden');
+function showActiveEventInfo(_grade: number) {
+  const olympiadBtn = $maybe<HTMLButtonElement>('start-olympiad-btn')
+  const infoBox     = $maybe('active-event-info')
+  const titleEl     = $maybe('active-event-title')
+  const metaEl      = $maybe('active-event-meta')
+  if (olympiadBtn) { olympiadBtn.classList.remove('btn-disabled'); olympiadBtn.title = '' }
+  if (titleEl) titleEl.textContent = '🏆 Олімпіада з інформатики'
+  if (metaEl)  metaEl.textContent  = '10 питань · 15 хв'
+  infoBox?.classList.remove('hidden')
 }

@@ -1,5 +1,3 @@
-// TODO: додати типи HTMLInputElement/HTMLButtonElement до DOM-запитів при наступному рефакторингу
-// @ts-nocheck
 import {
   loginTeacher, logoutTeacher, getTeacherSession, getTeacherMe, getAdminStats,
 } from './features/api/client.js'
@@ -8,14 +6,15 @@ import { initTeachersTab,  loadTeachers      } from './features/admin/teachers-t
 import { initResultsTab,   loadResults       } from './features/admin/results-tab.js'
 import { initQuestionsTab, loadQuestionsTab  } from './features/admin/questions-tab.js'
 import { friendlyError } from './features/admin/ui.js'
+import { $, $maybe } from './utils/dom.js'
 
-const authSection  = document.getElementById('auth-section')
-const adminPanel   = document.getElementById('admin-panel')
-const loginForm    = document.getElementById('admin-login-form')
-const loginError   = document.getElementById('admin-login-error')
-const loginBtn     = document.getElementById('admin-login-btn')
-const logoutBtn    = document.getElementById('admin-logout-btn')
-const emailDisplay = document.getElementById('admin-email-display')
+const authSection  = $('auth-section')
+const adminPanel   = $('admin-panel')
+const loginForm    = $<HTMLFormElement>('admin-login-form')
+const loginError   = $('admin-login-error')
+const loginBtn     = $<HTMLButtonElement>('admin-login-btn')
+const logoutBtn    = $<HTMLButtonElement>('admin-logout-btn')
+const emailDisplay = $('admin-email-display')
 
 // --- Init ---
 init()
@@ -38,8 +37,8 @@ async function init() {
 // --- Login ---
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault()
-  const email    = document.getElementById('admin-email').value.trim()
-  const password = document.getElementById('admin-password').value
+  const email    = $<HTMLInputElement>('admin-email').value.trim()
+  const password = $<HTMLInputElement>('admin-password').value
   loginError.textContent = ''
   loginBtn.disabled    = true
   loginBtn.textContent = 'Вхід…'
@@ -52,7 +51,7 @@ loginForm.addEventListener('submit', async (e) => {
     }
     showDashboard(me.name || email)
   } catch (err) {
-    loginError.textContent = friendlyError(err.message)
+    loginError.textContent = friendlyError((err as Error).message)
     loginBtn.disabled    = false
     loginBtn.textContent = 'Увійти'
   }
@@ -65,20 +64,21 @@ logoutBtn.addEventListener('click', async () => {
 })
 
 // --- Tabs ---
-document.querySelectorAll('.admin-tab').forEach(tab => {
+document.querySelectorAll<HTMLElement>('.admin-tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('tab-active'))
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'))
     tab.classList.add('tab-active')
-    document.getElementById(`tab-${tab.dataset.tab}`).classList.remove('hidden')
-    if (tab.dataset.tab === 'teachers')  loadTeachers()
-    if (tab.dataset.tab === 'results')   loadResults()
-    if (tab.dataset.tab === 'questions') loadQuestionsTab()
+    const tabName = tab.dataset['tab']
+    if (tabName) $maybe(`tab-${tabName}`)?.classList.remove('hidden')
+    if (tabName === 'teachers')  loadTeachers()
+    if (tabName === 'results')   loadResults()
+    if (tabName === 'questions') loadQuestionsTab()
   })
 })
 
 // --- Dashboard ---
-function showDashboard(nameOrEmail) {
+function showDashboard(nameOrEmail: string) {
   authSection.classList.add('hidden')
   adminPanel.classList.remove('hidden')
   emailDisplay.textContent = nameOrEmail
@@ -98,10 +98,10 @@ function showAuth() {
 async function refreshStats() {
   try {
     const { teachers, codes, results } = await getAdminStats()
-    document.getElementById('stat-teachers').textContent = teachers
-    document.getElementById('stat-students').textContent = codes
-    document.getElementById('stat-results').textContent  = results
-    document.getElementById('stat-events').textContent   = '—'
+    $('stat-teachers').textContent = String(teachers)
+    $('stat-students').textContent = String(codes)
+    $('stat-results').textContent  = String(results)
+    $('stat-events').textContent   = '—'
   } catch {
     // некритично
   }

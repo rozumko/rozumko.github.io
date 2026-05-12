@@ -15,6 +15,9 @@ export interface Question {
   grade?: number
   isOlympiad?: boolean
   a?: string[] // normalized alias for question-renderer
+  img?: string | null
+  type?: string
+  [key: string]: unknown // дозволяє передавати Question туди де очікується RenderableQuestion
 }
 
 export interface Attempt {

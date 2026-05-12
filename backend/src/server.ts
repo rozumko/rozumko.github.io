@@ -28,6 +28,32 @@ await app.register(rateLimit, {
   timeWindow: '1 minute',
 })
 
+// Production error handler — не витікаємо stack traces
+app.setErrorHandler((err: Error & { statusCode?: number; code?: string }, _req, reply) => {
+  const statusCode = err.statusCode ?? 500
+  if (statusCode >= 500) {
+    app.log.error(err)
+    return reply.code(500).send({ error: 'Внутрішня помилка сервера' })
+  }
+  // Fastify schema validation errors — не розкриваємо FST_ERR_VALIDATION, code тощо
+  if (statusCode === 400 && err.code?.startsWith('FST_ERR')) {
+    return reply.code(400).send({ error: 'Невірний запит' })
+  }
+  // 404 — не розкриваємо структуру роутів
+  if (statusCode === 404) {
+    return reply.code(404).send({ error: 'Не знайдено' })
+  }
+  return reply.code(statusCode).send({ error: err.message })
+})
+
+// Security headers
+app.addHook('onSend', async (_req, reply) => {
+  reply.header('X-Content-Type-Options', 'nosniff')
+  reply.header('X-Frame-Options', 'DENY')
+  reply.header('Referrer-Policy', 'no-referrer')
+  reply.header('X-Permitted-Cross-Domain-Policies', 'none')
+})
+
 app.get('/health', async () => ({ status: 'ok' }))
 
 import { studentRoutes } from './routes/student.js'

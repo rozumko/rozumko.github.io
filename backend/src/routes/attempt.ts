@@ -89,6 +89,13 @@ export async function attemptRoutes(app: FastifyInstance) {
       return reply.code(409).send({ error: 'Спроба вже завершена' })
     }
 
+    // Ліміт часу: спроба не може тривати більше 90 хвилин
+    const MAX_DURATION_MS = 90 * 60 * 1000
+    if (attempt.startedAt && Date.now() - new Date(attempt.startedAt).getTime() > MAX_DURATION_MS) {
+      await db.update(attempts).set({ status: 'finished', score: 0, finishedAt: new Date() }).where(eq(attempts.id, id))
+      return reply.code(410).send({ error: 'Час спроби вичерпано' })
+    }
+
     const studentAnswers = (attempt.answers as Record<string, number>) ?? {}
 
     // Завантажити саме питання, видані цій спробі, з ключами відповідей

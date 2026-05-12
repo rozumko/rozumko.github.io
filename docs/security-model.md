@@ -32,7 +32,7 @@ validated against current role/status in the database.
 |--------------------------------|-----------------------------------------------------|
 | Student guessing codes         | Ukrainian-word format, max_uses per code, rate limit 10 req/min per IP |
 | Student replaying attemptId    | attemptId tied to attempt row, server checks status |
-| Student submitting after time  | Backend checks attempt status on finish             |
+| Student submitting after time  | Backend enforces 90-min hard limit on `/finish`; auto-closes expired attempt |
 | Teacher accessing another class| Backend checks `teacher_id` ownership on every request |
 | JWT with stale role            | Role re-fetched from DB on every authenticated request |
 | Direct Supabase table access   | RLS enabled on all tables; anon key has no write access |
@@ -51,7 +51,8 @@ validated against current role/status in the database.
 2. Supabase returns a JWT signed with the project's secret.
 3. Frontend stores the JWT (Supabase SDK handles refresh automatically).
 4. Every API request sends `Authorization: Bearer <jwt>`.
-5. Backend verifies the signature using Supabase JWKS endpoint.
+5. Backend verifies the signature using Supabase JWKS endpoint (`jose` library,
+   algorithm explicitly restricted to `ES256` — prevents `alg:none` and HMAC downgrade attacks).
 6. Backend loads `role` and `status` from `app_users` table.
 7. If `status = 'blocked'` → 403, regardless of valid JWT.
 8. Handler receives verified `{ userId, role }` — never raw JWT claims.
@@ -168,6 +169,21 @@ Production data requires a separate backup process:
 - periodic restore test on a non-production database.
 
 A backup is considered valid only after a successful restore test.
+
+---
+
+## HTTP security headers
+
+Fastify `onSend` hook додає до кожної відповіді:
+
+| Header                             | Value          | Призначення                        |
+|------------------------------------|----------------|------------------------------------|
+| `X-Content-Type-Options`           | `nosniff`      | Забороняє MIME-sniffing            |
+| `X-Frame-Options`                  | `DENY`         | Захист від clickjacking            |
+| `Referrer-Policy`                  | `no-referrer`  | Не передає Referer третім сторонам |
+| `X-Permitted-Cross-Domain-Policies`| `none`         | Блокує Flash/PDF cross-domain      |
+
+Production error handler: `500` відповіді повертають лише `{ error: 'Внутрішня помилка сервера' }` — stack traces та внутрішні повідомлення логуються, але не витікають у відповідь.
 
 ---
 
