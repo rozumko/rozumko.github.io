@@ -257,6 +257,13 @@ export function getAdminTeachers(): Promise<{ teachers: { id: string; email: str
   return authRequest('/api/admin/teachers')
 }
 
+export function setTeacherStatus(id: string, status: 'active' | 'blocked'): Promise<{ id: string; status: string }> {
+  return authRequest(`/api/admin/teachers/${id}/status`, {
+    method: 'PUT',
+    body: JSON.stringify({ status }),
+  })
+}
+
 export function getAdminResults(): Promise<{ results: Attempt[] }> {
   return authRequest('/api/admin/results')
 }

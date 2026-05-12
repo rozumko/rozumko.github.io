@@ -117,6 +117,61 @@ export async function runMigrations() {
 - `teacher_classes`
 - `event_registrations`
 
+## ⚠️ ОБОВ'ЯЗКОВО після кожної нової міграції — RLS
+
+**Кожна нова таблиця в Supabase МУСИТЬ мати увімкнений RLS.**
+
+Без RLS `anon` ключ (публічний, є у фронтенді) дає прямий доступ до таблиці через
+Supabase Data API — в обхід бекенду і всієї авторизації.
+
+Після запуску міграції в Supabase SQL Editor виконай:
+
+```sql
+ALTER TABLE public.<нова_таблиця> ENABLE ROW LEVEL SECURITY;
+```
+
+Або одразу для всіх таблиць зі схеми:
+
+```sql
+-- Запускати після кожної міграції що додає нові таблиці
+ALTER TABLE public.questions           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.attempts            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.access_codes        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.app_users           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.attempt_questions   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.event_questions     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.teacher_classes     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.event_registrations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.olympiad_events     ENABLE ROW LEVEL SECURITY;
+```
+
+**Без жодних policies = anon/authenticated не мають доступу через Data API.
+`service_role` (бекенд) обходить RLS автоматично — нічого не зламається.**
+
+Перевірка після увімкнення:
+
+```bash
+curl "https://<project>.supabase.co/rest/v1/<table>?select=*&limit=1" \
+  -H "apikey: <anon_key>" -H "Authorization: Bearer <anon_key>"
+# Очікувана відповідь: []
+```
+
+**Поточний стан (станом на 2026-05-12):**
+
+| Таблиця | RLS | Примітка |
+|---|---|---|
+| `questions` | ✅ | увімкнено |
+| `attempts` | ✅ | увімкнено |
+| `access_codes` | ✅ | увімкнено |
+| `app_users` | ✅ | увімкнено |
+| `attempt_questions` | ✅ | увімкнено |
+| `event_questions` | ✅ | увімкнено |
+| `teacher_classes` | ✅ | увімкнено |
+| `event_registrations` | ✅ | увімкнено |
+| `olympiad_events` | ✅ | увімкнено |
+
+---
+
 ## Portability checklist
 
 Before merging a migration, verify:
@@ -126,6 +181,7 @@ Before merging a migration, verify:
 - [ ] `DATABASE_URL` is the only connection configuration
 - [ ] Migration runs cleanly on a fresh empty PostgreSQL instance
 - [ ] `drizzle-kit migrate` exits with code 0 in CI
+- [ ] **RLS увімкнено для всіх нових таблиць в Supabase**
 
 ## Migrating away from Supabase PostgreSQL
 

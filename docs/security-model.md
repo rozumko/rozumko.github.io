@@ -31,7 +31,7 @@ validated against current role/status in the database.
 | Surface                        | Mitigation                                          |
 |--------------------------------|-----------------------------------------------------|
 | Student guessing codes         | Ukrainian-word format, max_uses per code, rate limit 10 req/min per IP |
-| Student replaying attemptId    | attemptId tied to attempt row, server checks status |
+| Student replaying attemptId    | `X-Attempt-Token` (HMAC) required — knowing UUID is not enough |
 | Student submitting after time  | Backend enforces 90-min hard limit on `/finish`; auto-closes expired attempt |
 | Teacher accessing another class| Backend checks `teacher_id` ownership on every request |
 | JWT with stale role            | Role re-fetched from DB on every authenticated request |
@@ -71,9 +71,11 @@ validated against current role/status in the database.
 5. Backend creates an `attempt` row and records its immutable question list in
    `attempt_questions`.
 6. Backend increments `used_count` only after event and question validation.
-7. Backend returns `{ attemptId, grade, questions }` (no answer keys).
-8. Student uses `attemptId` in URL path for subsequent requests.
-9. Frontend keeps `attemptId` in memory + localStorage backup (crash recovery).
+7. Backend returns `{ attemptId, attemptToken, grade, questions }` (no answer keys).
+   - `attemptToken = HMAC-SHA256(attemptId, ATTEMPT_SECRET)` — stateless, no DB column needed.
+8. Student sends `X-Attempt-Token` header on every subsequent request (`/answer`, `/finish`).
+   Without a valid token → 403, even if `attemptId` is known.
+9. Frontend keeps `attemptId` + `attemptToken` in memory + localStorage backup (crash recovery).
 
 ---
 
@@ -106,19 +108,26 @@ A teacher cannot read another teacher's olympiad or results.
 
 RLS is a **defense-in-depth** layer, not the primary authorization mechanism.
 
+> ⚠️ **Пріоритет:** кожна нова таблиця в Supabase мусить мати `ENABLE ROW LEVEL SECURITY`
+> одразу після міграції. Без цього `anon` ключ (публічний) дає прямий доступ до даних
+> в обхід бекенду. Детальний чеклист — у `docs/migrations.md`.
+
 Rules of thumb:
-- Enable RLS on every table (Supabase warns if not).
-- The `anon` role must have **no** write access to any table.
+- Enable RLS on every table immediately after migration.
+- No policies needed — zero policies means zero access for `anon`/`authenticated` via Data API.
+- The `anon` role must have **no** read or write access to any table.
 - The `service_role` key (used only by backend) bypasses RLS — keep it secret,
   never expose in frontend code or public repos.
 - RLS policies should reflect the same rules as backend handlers, but simpler.
   If a policy becomes complex, it's a sign that logic belongs in the backend.
 
 ```sql
--- Example: students can never read the answers table directly
-ALTER TABLE answers ENABLE ROW LEVEL SECURITY;
--- No policy = no access for anon/authenticated roles via Data API
+-- Вмикаємо RLS — без policy = anon не має доступу
+ALTER TABLE public.questions ENABLE ROW LEVEL SECURITY;
+-- service_role (бекенд) обходить RLS автоматично
 ```
+
+**Поточний стан таблиць (2026-05-12):** RLS увімкнено на всіх 9 таблицях ✅.
 
 ---
 
@@ -138,16 +147,14 @@ ALTER TABLE answers ENABLE ROW LEVEL SECURITY;
 
 ## Certificates and diplomas
 
-Certificates and diplomas must not require storing student first names or last
-names on the server.
+Certificates and diplomas do not store student names on the server. **Реалізовано.**
 
-Target flow:
+Flow:
 
-1. Teacher opens a result row in their cabinet.
-2. Teacher chooses "Certificate" or "Diploma".
-3. Teacher enters the student's name locally before print/PDF export.
-4. The document is generated in the browser.
-5. The name is not sent to the backend and is not saved in the database.
+1. Teacher opens a result row → clicks «Сертифікат».
+2. Modal prompts for student name (browser only, not sent anywhere).
+3. Certificate renders in a new window → `window.print()` → PDF or paper.
+4. The name is not sent to the backend and is not saved in the database.
 
 This keeps official participation data useful while avoiding a stored list of
 children's personal names. If a teacher needs to regenerate a certificate later,

@@ -1,7 +1,14 @@
-import { loadQuestions as apiLoadQuestions } from '../api/client.js'
+import { loadQuestions as apiLoadQuestions, type Question } from '../api/client.js'
+
+export interface ModeConfig {
+  count:           number
+  timeMinutes:     number | null
+  showExplanation: boolean
+  saveResult:      boolean
+}
 
 // mode: 'practice' | 'demo' | 'olympiad'
-export async function loadQuestions(grade: number, mode: string, count: number, difficulty: string | null) {
+export async function loadQuestions(grade: number, mode: string, count: number, difficulty: string | null): Promise<Question[]> {
   // demo uses olympiad (isOlympiad=true) hard questions — no answer keys returned
   const isOlympiad = mode === 'olympiad' || mode === 'demo'
   const diff       = mode === 'demo' ? 'hard' : (difficulty ?? undefined)
@@ -10,14 +17,14 @@ export async function loadQuestions(grade: number, mode: string, count: number, 
   return qs
 }
 
-export function getModeConfig(mode, event = null) {
-  const defaults = {
+export function getModeConfig(mode: string, event: { questionsCount?: number; timeMinutes?: number } | null = null): ModeConfig {
+  const defaults: Record<string, ModeConfig> = {
     practice: { count: 10, timeMinutes: null, showExplanation: true,  saveResult: false },
     demo:     { count: 5,  timeMinutes: 10,   showExplanation: false, saveResult: false },
     olympiad: { count: 10, timeMinutes: 15,   showExplanation: false, saveResult: true  },
   }
   const cfg = { ...defaults[mode] }
-  if (!cfg) return null
+  if (!cfg) return defaults['practice']
   if (event && (mode === 'olympiad' || mode === 'demo')) {
     if (event.questionsCount) cfg.count       = event.questionsCount
     if (event.timeMinutes)    cfg.timeMinutes = event.timeMinutes

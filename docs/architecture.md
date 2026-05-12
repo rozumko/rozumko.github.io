@@ -96,9 +96,11 @@ Always call `GET /api/me` and use the response.
 - Codes are stored in the `access_codes` table with: `event_id`,
   `registration_id`, `code`, `grade`, `max_uses`, `used_count`, `expires_at`.
 - `POST /api/student/exchange-code` validates the code and creates an `attempt`
-  row. The backend returns `{ attemptId, grade, questions }`.
+  row. The backend returns `{ attemptId, attemptToken, grade, questions }`.
+- `attemptToken` = `HMAC-SHA256(attemptId, ATTEMPT_SECRET)`. Усі наступні запити
+  (`/answer`, `/finish`) вимагають заголовок `X-Attempt-Token`. Без токена — 403.
 - Questions are sent to the frontend (without `correct` field).
-- The student carries `attemptId` in memory (+ localStorage backup for crash recovery).
+- The student carries `attemptId` + `attemptToken` in memory (+ localStorage backup for crash recovery).
 - No Supabase Auth involved for students at all.
 
 ## Current olympiad event model
@@ -133,23 +135,55 @@ Teacher code generation is intentionally registration-based:
 ## Demo olympiad
 
 Demo olympiad is a separate public scenario, not a sub-step after entering an
-official access code.
+official access code. **Реалізовано.**
 
-- Practice: no code, class + difficulty, explanations allowed.
-- Demo olympiad: no code, hard questions for the selected grade, no official result.
-- Official olympiad: access code required, server-side scoring, official result.
+| Режим | Код | Питання | Результат |
+|---|---|---|---|
+| Тренування | ні | `isOlympiad=false`, будь-яка складність | не зберігається |
+| Демо-олімпіада | ні | `isOlympiad=true`, `difficulty=hard` | не зберігається |
+| Офіційна олімпіада | так (від вчителя) | фіксований набір події | зберігається на сервері |
 
-If demo mode imitates olympiad behavior, the backend must not include answer
-keys in the response. Use a dedicated demo endpoint or a demo attempt flow
-instead of reusing public practice responses with answer keys.
+Flow демо:
+1. Учень натискає «Демо-олімпіада» на головному екрані (без коду).
+2. Обирає клас (1–4).
+3. Фронтенд викликає `GET /api/questions?grade=X&isOlympiad=true&difficulty=hard`.
+4. Quiz запускається в режимі `demo` — таймер 10 хв, без пояснень, без збереження.
+5. `correct` ніколи не повертається публічним endpoint — оцінювання лише в браузері (для неофіційного демо це прийнятно).
+
+Після введення офіційного коду демо також доступне з `screen-actions` — там клас вже відомий з коду.
 
 ## Answer key and scoring
 
 - Answer keys are stored in the database, never sent to the frontend.
+- Public `GET /api/questions` never includes `correct` or `explanation` fields.
 - Scoring runs server-side in `POST /api/attempt/:id/finish`.
 - The frontend sends raw answers; the backend compares against the key and
   writes the final score.
 - No partial answer key is ever included in API responses.
+- Time limit: backend enforces 90-minute hard cap on `/finish` — expired attempts
+  are auto-closed with score 0.
+
+## Certificates and diplomas
+
+Teacher-side feature. Generates a printable certificate in the browser without
+storing student names on the server. **Реалізовано.**
+
+Flow:
+1. Teacher opens the Results tab → clicks «Сертифікат» on a result row.
+2. A modal prompts for the student's name (not sent to backend).
+3. A new browser window opens with a styled certificate.
+4. `window.print()` triggers automatically — teacher saves as PDF or prints.
+
+The student name exists only in the browser during the print session.
+
+## Admin: teacher management
+
+Admins can block and unblock teacher accounts. **Реалізовано.**
+
+- `GET /api/admin/teachers` — list with `status` field (`active` | `blocked`).
+- `PUT /api/admin/teachers/:id/status` — set status. Protected: cannot block own account.
+- Blocked teachers receive 403 on every authenticated request (`requireAuth` checks `status`).
+- UI: each teacher row has «Заблокувати» / «Розблокувати» button that updates on action.
 
 ## Portability guarantee
 

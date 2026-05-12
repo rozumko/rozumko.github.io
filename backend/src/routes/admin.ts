@@ -29,6 +29,28 @@ export async function adminRoutes(app: FastifyInstance) {
     return reply.send({ teachers: list })
   })
 
+  // PUT /api/admin/teachers/:id/status
+  app.put<{
+    Params: { id: string }
+    Body: { status: 'active' | 'blocked' }
+  }>('/teachers/:id/status', { preHandler: requireAdmin }, async (req, reply) => {
+    const { id } = req.params
+    const { status } = req.body
+    if (!['active', 'blocked'].includes(status)) {
+      return reply.code(400).send({ error: 'Невірний статус' })
+    }
+    if (req.user?.id === id) {
+      return reply.code(403).send({ error: 'Не можна заблокувати власний акаунт' })
+    }
+    const [updated] = await db
+      .update(appUsers)
+      .set({ status })
+      .where(eq(appUsers.id, id))
+      .returning({ id: appUsers.id, status: appUsers.status })
+    if (!updated) return reply.code(404).send({ error: 'Користувача не знайдено' })
+    return reply.send({ id: updated.id, status: updated.status })
+  })
+
   // GET /api/admin/events
   app.get('/events', { preHandler: requireAdmin }, async (_req, reply) => {
     const list = await db
