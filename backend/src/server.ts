@@ -54,6 +54,10 @@ app.addHook('onSend', async (_req, reply) => {
   reply.header('X-Permitted-Cross-Domain-Policies', 'none')
 })
 
+app.setNotFoundHandler((_req, reply) => {
+  reply.code(404).send({ error: 'Не знайдено' })
+})
+
 app.get('/health', async () => ({ status: 'ok' }))
 
 import { studentRoutes } from './routes/student.js'
