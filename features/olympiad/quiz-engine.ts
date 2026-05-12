@@ -1,9 +1,11 @@
 import { loadQuestions as apiLoadQuestions } from '../api/client.js'
 
 // mode: 'practice' | 'demo' | 'olympiad'
-export async function loadQuestions(grade, mode, count, difficulty) {
-  const isOlympiad = mode === 'olympiad'
-  const qs = await apiLoadQuestions({ grade, isOlympiad, count, difficulty })
+export async function loadQuestions(grade: number, mode: string, count: number, difficulty: string | null) {
+  // demo uses olympiad (isOlympiad=true) hard questions — no answer keys returned
+  const isOlympiad = mode === 'olympiad' || mode === 'demo'
+  const diff       = mode === 'demo' ? 'hard' : (difficulty ?? undefined)
+  const qs = await apiLoadQuestions({ grade, isOlympiad, count, difficulty: diff })
   if (!qs.length) throw new Error(`Питань для ${grade} класу ще немає. Зверніться до вчителя.`)
   return qs
 }

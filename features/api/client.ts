@@ -114,7 +114,7 @@ async function request(path: string, options: RequestInit = {}): Promise<any> {
 
 // ─── Student API ───────────────────────────────────────────────────────────
 
-export async function exchangeCode(code: string): Promise<{ attemptId: string; grade: number; questions: Question[] }> {
+export async function exchangeCode(code: string): Promise<{ attemptId: string; attemptToken: string; grade: number; questions: Question[] }> {
   const data = await request('/api/student/exchange-code', {
     method: 'POST',
     body: JSON.stringify({ code }),
@@ -123,9 +123,10 @@ export async function exchangeCode(code: string): Promise<{ attemptId: string; g
   return data
 }
 
-export async function saveAnswer(attemptId: string, questionId: string, answer: number): Promise<void> {
+export async function saveAnswer(attemptId: string, attemptToken: string, questionId: string, answer: number): Promise<void> {
   return request(`/api/attempt/${attemptId}/answer`, {
     method: 'POST',
+    headers: { 'X-Attempt-Token': attemptToken },
     body: JSON.stringify({ questionId, answer }),
   })
 }
@@ -142,9 +143,10 @@ export async function loadQuestions({
   return data.questions.map((q: Question) => ({ ...q, a: q.options }))
 }
 
-export async function finishAttempt(attemptId: string): Promise<{ score: number; total: number; results: any[] }> {
+export async function finishAttempt(attemptId: string, attemptToken: string): Promise<{ score: number; total: number; results: any[] }> {
   return request(`/api/attempt/${attemptId}/finish`, {
     method: 'POST',
+    headers: { 'X-Attempt-Token': attemptToken },
     body: JSON.stringify({}),
   })
 }

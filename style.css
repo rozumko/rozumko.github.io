@@ -606,11 +606,20 @@ button {
 }
 .btn-slate:hover { background: var(--clr-border); }
 
-/* Напівпрозора кнопка «Тренування без коду» */
+/* Обгортка для кнопок без коду */
+.no-code-btns {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+}
+
+/* Напівпрозорі кнопки «Тренування» / «Демо» */
 .btn-practice-toggle {
   width: 100%;
   max-width: 24rem;
-  margin-top: var(--sp-4);
+  margin-top: var(--sp-2);
   padding: var(--sp-4);
   border-radius: var(--r-xl);
   background: rgba(255,255,255,0.18);
@@ -625,6 +634,8 @@ button {
   transition: background-color var(--transition-fast);
 }
 .btn-practice-toggle:hover { background: rgba(255,255,255,0.28); }
+.btn-practice-toggle--demo  { background: rgba(251,191,36,0.22); border-color: rgba(251,191,36,0.4); }
+.btn-practice-toggle--demo:hover { background: rgba(251,191,36,0.35); }
 
 /* ── Панель тренування ──────────────────────────────────────── */
 

@@ -3,6 +3,13 @@ import { asc, eq } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { attemptQuestions, attempts, questions } from '../db/schema.js'
 import { isQuestionInAttempt, scoreAttempt } from './attempt-validation.js'
+import { verifyAttemptToken } from './student.js'
+
+function checkAttemptToken(req: { headers: Record<string, string | string[] | undefined> }, attemptId: string): boolean {
+  const token = req.headers['x-attempt-token']
+  if (!token || typeof token !== 'string') return false
+  return verifyAttemptToken(attemptId, token)
+}
 
 export async function attemptRoutes(app: FastifyInstance) {
   // POST /api/attempt/:id/answer
@@ -38,6 +45,9 @@ export async function attemptRoutes(app: FastifyInstance) {
 
     if (!attempt) {
       return reply.code(404).send({ error: 'Спробу не знайдено' })
+    }
+    if (!checkAttemptToken(req, id)) {
+      return reply.code(403).send({ error: 'Невірний токен спроби' })
     }
     if (attempt.status !== 'in_progress') {
       return reply.code(409).send({ error: 'Спроба вже завершена' })
@@ -84,6 +94,9 @@ export async function attemptRoutes(app: FastifyInstance) {
 
     if (!attempt) {
       return reply.code(404).send({ error: 'Спробу не знайдено' })
+    }
+    if (!checkAttemptToken(req, id)) {
+      return reply.code(403).send({ error: 'Невірний токен спроби' })
     }
     if (attempt.status === 'finished') {
       return reply.code(409).send({ error: 'Спроба вже завершена' })

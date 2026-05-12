@@ -70,10 +70,15 @@
       </form>
     </div>
 
-    <!-- Кнопка «Тренування без коду» -->
-    <button id="show-practice-btn" class="btn-practice-toggle">
-      <i class="fas fa-dumbbell" aria-hidden="true"></i> Тренування без коду
-    </button>
+    <!-- Кнопки без коду -->
+    <div class="no-code-btns">
+      <button id="show-practice-btn" class="btn-practice-toggle">
+        <i class="fas fa-dumbbell" aria-hidden="true"></i> Тренування
+      </button>
+      <button id="show-demo-btn" class="btn-practice-toggle btn-practice-toggle--demo">
+        <i class="fas fa-star" aria-hidden="true"></i> Демо-олімпіада
+      </button>
+    </div>
 
     <!-- Панель тренування — підміняє код-картку -->
     <div id="practice-section" class="student-card hidden" style="margin-top: 0;">
@@ -103,6 +108,27 @@
 
       <button id="start-practice-btn" class="btn btn-start" disabled>
         Почати тренування
+      </button>
+    </div>
+
+    <!-- Панель демо-олімпіади -->
+    <div id="demo-section" class="student-card hidden" style="margin-top: 0;">
+      <div class="practice-header">
+        <p class="practice-header__title">Демо-олімпіада — обери клас</p>
+        <button id="hide-demo-btn" class="practice-header__close" aria-label="Закрити демо">
+          <i class="fas fa-times" aria-hidden="true"></i>
+        </button>
+      </div>
+      <p class="practice-header__sub">Складні олімпіадні питання · без коду · результат не зберігається</p>
+      <div id="demo-grade-buttons" class="selector-grid selector-grid--grade"
+           role="group" aria-label="Клас для демо">
+        <button data-demo-grade="1" class="selector-btn" aria-pressed="false">1</button>
+        <button data-demo-grade="2" class="selector-btn" aria-pressed="false">2</button>
+        <button data-demo-grade="3" class="selector-btn" aria-pressed="false">3</button>
+        <button data-demo-grade="4" class="selector-btn" aria-pressed="false">4</button>
+      </div>
+      <button id="start-demo-free-btn" class="btn btn-start" disabled>
+        Почати демо
       </button>
     </div>
 

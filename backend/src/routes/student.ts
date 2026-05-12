@@ -1,8 +1,26 @@
 import type { FastifyInstance } from 'fastify'
 import { and, asc, eq, sql } from 'drizzle-orm'
+import { createHmac, timingSafeEqual } from 'crypto'
 import { db } from '../db/index.js'
 import { accessCodes, attemptQuestions, attempts, eventQuestions, olympiadEvents, questions } from '../db/schema.js'
 import { assertEventCanIssueCodes } from './teacher-events-validation.js'
+
+const ATTEMPT_SECRET = process.env.ATTEMPT_SECRET ?? 'dev-secret-change-in-prod'
+
+export function generateAttemptToken(attemptId: string): string {
+  return createHmac('sha256', ATTEMPT_SECRET).update(attemptId).digest('hex')
+}
+
+export function verifyAttemptToken(attemptId: string, token: string): boolean {
+  const expected = Buffer.from(generateAttemptToken(attemptId), 'hex')
+  try {
+    const actual = Buffer.from(token, 'hex')
+    if (actual.length !== expected.length) return false
+    return timingSafeEqual(expected, actual)
+  } catch {
+    return false
+  }
+}
 
 export async function studentRoutes(app: FastifyInstance) {
   // POST /api/student/exchange-code
@@ -121,9 +139,10 @@ export async function studentRoutes(app: FastifyInstance) {
     })
 
     return reply.code(201).send({
-      attemptId: attempt.id,
-      grade:     accessCode.grade,
-      questions: qs,
+      attemptId:    attempt.id,
+      attemptToken: generateAttemptToken(attempt.id),
+      grade:        accessCode.grade,
+      questions:    qs,
     })
   })
 }

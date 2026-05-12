@@ -21,14 +21,56 @@ const gradeButtons     = document.querySelectorAll<HTMLButtonElement>('[data-gra
 const diffButtons      = document.querySelectorAll<HTMLButtonElement>('[data-difficulty]')
 const startPracticeBtn = $<HTMLButtonElement>('start-practice-btn')
 
+// --- DOM: демо без коду ---
+const demoGradeButtons  = document.querySelectorAll<HTMLButtonElement>('[data-demo-grade]')
+const startDemoFreeBtn  = $<HTMLButtonElement>('start-demo-free-btn')
+let selectedDemoGrade: number | null = null
+
 // --- Тренування: показати/сховати ---
 $('show-practice-btn').addEventListener('click', () => {
   $('code-card').classList.add('hidden')
+  $('demo-section').classList.add('hidden')
   $('practice-section').classList.remove('hidden')
 })
 $('hide-practice-btn').addEventListener('click', () => {
   $('practice-section').classList.add('hidden')
   $('code-card').classList.remove('hidden')
+})
+
+// --- Демо: показати/сховати ---
+$('show-demo-btn').addEventListener('click', () => {
+  $('code-card').classList.add('hidden')
+  $('practice-section').classList.add('hidden')
+  $('demo-section').classList.remove('hidden')
+})
+$('hide-demo-btn').addEventListener('click', () => {
+  $('demo-section').classList.add('hidden')
+  $('code-card').classList.remove('hidden')
+})
+
+demoGradeButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    demoGradeButtons.forEach(b => b.setAttribute('aria-pressed', 'false'))
+    btn.setAttribute('aria-pressed', 'true')
+    selectedDemoGrade = Number(btn.dataset['demoGrade'])
+    startDemoFreeBtn.disabled = false
+  })
+})
+
+startDemoFreeBtn.addEventListener('click', async () => {
+  if (!selectedDemoGrade) return
+  startDemoFreeBtn.disabled = true
+  showLoading()
+  try {
+    const cfg = getModeConfig('demo', null)
+    const qs  = await loadQuestions(selectedDemoGrade, 'demo', cfg.count, null)
+    startQuiz(qs, 'demo', cfg, { grade: selectedDemoGrade })
+  } catch (err) {
+    hideLoading()
+    showModal((err as Error).message)
+  } finally {
+    startDemoFreeBtn.disabled = false
+  }
 })
 
 // --- DOM: quiz overlay ---
@@ -143,8 +185,9 @@ let secondsLeft       = 0
 let startedAt:        number | null = null
 let currentMode:      string | null = null
 
-let currentAttemptId:   string | null = null
-let olympiadQuestions:  RenderableQuestion[] | null = null
+let currentAttemptId:    string | null = null
+let currentAttemptToken: string | null = null
+let olympiadQuestions:   RenderableQuestion[] | null = null
 
 // ===================== FULLSCREEN =====================
 
@@ -210,6 +253,7 @@ codeForm.addEventListener('submit', async (e) => {
   try {
     const result          = await exchangeCode(code)
     currentAttemptId      = result.attemptId
+    currentAttemptToken   = result.attemptToken
     olympiadQuestions     = result.questions
     studentData           = { grade: result.grade, code }
     showScreenActions(code)
@@ -230,6 +274,7 @@ function clearCode() {
   codeSubmitBtn.textContent = 'Увійти →'
   studentData               = null
   currentAttemptId          = null
+  currentAttemptToken       = null
   olympiadQuestions         = null
   showScreenEntry()
   codeInput.focus()
@@ -394,8 +439,8 @@ function showQuestion() {
   renderQuestion(q, quizOptionsEl as HTMLElement, {
     onAnswer: (result) => {
       answered = true
-      if (currentMode === 'olympiad' && currentAttemptId && typeof result === 'number') {
-        saveAnswer(currentAttemptId, q.id as string, result).catch(() => {})
+      if (currentMode === 'olympiad' && currentAttemptId && currentAttemptToken && typeof result === 'number') {
+        saveAnswer(currentAttemptId, currentAttemptToken, q.id as string, result).catch(() => {})
         showFeedbackOlympiad()
       } else {
         if (result === true) score++
@@ -453,10 +498,10 @@ async function finishQuiz(timeUp: boolean) {
   resultErrorMsg.classList.add('hidden')
   showOverlay(resultOverlay)
 
-  if (currentMode === 'olympiad' && currentAttemptId) {
+  if (currentMode === 'olympiad' && currentAttemptId && currentAttemptToken) {
     const meta = (startQuiz as any).meta as QuizMeta
     try {
-      await finishAttempt(currentAttemptId)
+      await finishAttempt(currentAttemptId, currentAttemptToken)
       clearQuizBackup()
       resultSavedMsg.classList.remove('hidden')
     } catch {
@@ -468,8 +513,9 @@ async function finishQuiz(timeUp: boolean) {
          <span style="font-size:0.8em;opacity:0.7">Коли з'явиться інтернет — оновлення сторінки може відновити збереження.</span>`
       resultErrorMsg.classList.remove('hidden')
     }
-    currentAttemptId  = null
-    olympiadQuestions = null
+    currentAttemptId    = null
+    currentAttemptToken = null
+    olympiadQuestions   = null
   }
 }
 
@@ -482,8 +528,9 @@ quitConfirmYes.addEventListener('click', () => {
   hideOverlay(quitConfirm)
   hideOverlay(quizOverlay)
   if (currentMode === 'olympiad') exitFullscreen()
-  currentAttemptId  = null
-  olympiadQuestions = null
+  currentAttemptId    = null
+  currentAttemptToken = null
+  olympiadQuestions   = null
 })
 
 resultCloseBtn.addEventListener('click', () => hideOverlay(resultOverlay))
