@@ -3,7 +3,8 @@ import {
   createTeacherClass, createTeacherRegistration,
   getTeacherMe, generateCodes, getTeacherClasses, getTeacherCodes,
   getTeacherRegistrationEvents, getTeacherRegistrations, getTeacherResults,
-  type TeacherClass, type EventRegistration, type TeacherEvent, type Attempt,
+  getClassStudents, addClassStudent, updateClassStudent, deleteClassStudent,
+  type TeacherClass, type ClassStudent, type EventRegistration, type TeacherEvent, type Attempt,
 } from './features/api/client.js'
 import { esc, friendlyError } from './utils/ui.js'
 import { $, $maybe } from './utils/dom.js'
@@ -326,13 +327,206 @@ function renderClasses() {
   classesList.innerHTML = ''
   teacherClasses.forEach(cls => {
     const card = document.createElement('div')
-    card.className = 'teacher-info-card'
+    card.className = 'teacher-info-card teacher-info-card--clickable'
     card.innerHTML = `
       <div>
         <p class="teacher-info-card__title">${esc(cls.name)}</p>
         <p class="teacher-info-card__meta">${esc(String(cls.grade))} клас</p>
-      </div>`
+      </div>
+      <button class="btn-class-open btn-adm-slate btn-sm" data-class-id="${esc(cls.id)}" data-class-name="${esc(cls.name)}" data-class-grade="${esc(String(cls.grade))}">
+        <i class="fas fa-users" aria-hidden="true"></i> Учні
+      </button>`
+    card.querySelector<HTMLButtonElement>('.btn-class-open')!
+      .addEventListener('click', () => openClassDetail(cls))
     classesList.appendChild(card)
+  })
+}
+
+// ─── Class detail panel ───────────────────────────────────────────────────
+
+let classDetailPanel: HTMLElement | null = null
+
+function openClassDetail(cls: TeacherClass) {
+  closeClassDetail()
+
+  const panel = document.createElement('div')
+  panel.id        = 'class-detail-panel'
+  panel.className = 'class-detail-overlay'
+  panel.innerHTML = `<div class="class-detail-panel">
+    <div class="class-detail-panel__head">
+      <div>
+        <p class="class-detail-panel__eyebrow">${esc(String(cls.grade))} клас</p>
+        <h3 class="class-detail-panel__title">${esc(cls.name)}</h3>
+      </div>
+      <button id="class-detail-close" class="btn-adm-slate btn-sm" aria-label="Закрити">
+        <i class="fas fa-times" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <p class="class-detail-panel__hint">
+      <i class="fas fa-info-circle" aria-hidden="true"></i>
+      Введіть довільну мітку — наприклад <strong>«Маша К.»</strong>, <strong>«Учень 5»</strong>.
+      Повні прізвища не зберігайте — для сертифіката ім'я вводиться окремо перед друком.
+    </p>
+
+    <form id="add-student-form" class="class-detail-panel__add-form" novalidate>
+      <input id="student-label-input" type="text" maxlength="60"
+        placeholder="Маша К., Учень 5, …" class="form-input" autocomplete="off" />
+      <button type="submit" class="btn-adm-emerald btn-sm">
+        <i class="fas fa-plus" aria-hidden="true"></i> Додати
+      </button>
+    </form>
+    <p id="add-student-status" class="generate-status" style="margin-top:var(--sp-2)"></p>
+
+    <div id="students-list" class="students-list">
+      <p class="admin-loading-text">Завантаження…</p>
+    </div>
+  </div>`
+
+  document.body.appendChild(panel)
+  classDetailPanel = panel
+
+  panel.querySelector<HTMLButtonElement>('#class-detail-close')!
+    .addEventListener('click', closeClassDetail)
+
+  panel.querySelector<HTMLFormElement>('#add-student-form')!
+    .addEventListener('submit', async (e) => {
+      e.preventDefault()
+      const input  = panel.querySelector<HTMLInputElement>('#student-label-input')!
+      const status = panel.querySelector<HTMLElement>('#add-student-status')!
+      const label  = input.value.trim()
+      if (!label) { input.focus(); return }
+
+      const btn = panel.querySelector<HTMLButtonElement>('#add-student-form button[type="submit"]')!
+      btn.disabled = true
+      status.textContent = ''
+      try {
+        await addClassStudent(cls.id, label)
+        input.value = ''
+        input.focus()
+        await reloadStudentsList(cls.id)
+      } catch (err) {
+        status.textContent = (err as Error).message
+        status.className   = 'generate-status generate-status--err'
+      } finally {
+        btn.disabled = false
+      }
+    })
+
+  // Закрити по кліку на overlay (поза sidebar)
+  panel.addEventListener('click', (e) => { if (e.target === panel) closeClassDetail() })
+  // Закрити по Escape
+  document.addEventListener('keydown', handleDetailEsc)
+
+  reloadStudentsList(cls.id)
+
+  // Затримка для анімації
+  requestAnimationFrame(() => panel.classList.add('class-detail-overlay--open'))
+}
+
+function closeClassDetail() {
+  document.removeEventListener('keydown', handleDetailEsc)
+  if (classDetailPanel) {
+    classDetailPanel.remove()
+    classDetailPanel = null
+  }
+}
+
+function handleDetailEsc(e: KeyboardEvent) {
+  if (e.key === 'Escape') closeClassDetail()
+}
+
+async function reloadStudentsList(classId: string) {
+  const container = document.getElementById('students-list')
+  if (!container) return
+  container.innerHTML = '<p class="admin-loading-text">Завантаження…</p>'
+  try {
+    const { students } = await getClassStudents(classId)
+    renderStudentsList(container, classId, students)
+  } catch (err) {
+    container.innerHTML = `<p class="generate-status generate-status--err">${esc((err as Error).message)}</p>`
+  }
+}
+
+function renderStudentsList(container: HTMLElement, classId: string, students: ClassStudent[]) {
+  if (!students.length) {
+    container.innerHTML = `
+      <div class="students-list__empty">
+        <i class="fas fa-user-plus" aria-hidden="true"></i>
+        <p>Учнів ще немає. Додайте першого за допомогою форми вище.</p>
+      </div>`
+    return
+  }
+  container.innerHTML = ''
+  students.forEach((s, i) => {
+    const row = document.createElement('div')
+    row.className = 'student-row'
+    row.dataset['id'] = s.id
+    row.innerHTML = `
+      <span class="student-row__num">${i + 1}</span>
+      <span class="student-row__label" title="${esc(s.label)}">${esc(s.label)}</span>
+      <div class="student-row__actions">
+        <button class="btn-student-edit btn-adm-slate btn-sm" aria-label="Редагувати">
+          <i class="fas fa-pencil-alt" aria-hidden="true"></i>
+        </button>
+        <button class="btn-student-delete btn-adm-danger btn-sm" aria-label="Видалити">
+          <i class="fas fa-trash" aria-hidden="true"></i>
+        </button>
+      </div>`
+
+    row.querySelector<HTMLButtonElement>('.btn-student-edit')!
+      .addEventListener('click', () => startEditStudent(row, s, classId))
+
+    row.querySelector<HTMLButtonElement>('.btn-student-delete')!
+      .addEventListener('click', async () => {
+        if (!confirm(`Видалити «${s.label}» зі списку?`)) return
+        try {
+          await deleteClassStudent(s.id)
+          await reloadStudentsList(classId)
+        } catch (err) {
+          const status = document.getElementById('add-student-status')
+          if (status) { status.textContent = (err as Error).message; status.className = 'generate-status generate-status--err' }
+        }
+      })
+
+    container.appendChild(row)
+  })
+}
+
+function startEditStudent(row: HTMLElement, s: ClassStudent, classId: string) {
+  // Замінюємо label на inline input
+  const labelEl = row.querySelector<HTMLElement>('.student-row__label')!
+  const actionsEl = row.querySelector<HTMLElement>('.student-row__actions')!
+  const originalLabel = s.label
+
+  labelEl.innerHTML = `<input class="student-edit-input form-input" value="${esc(s.label)}" maxlength="60" />`
+  actionsEl.innerHTML = `
+    <button class="btn-student-save btn-adm-emerald btn-sm"><i class="fas fa-check"></i></button>
+    <button class="btn-student-cancel btn-adm-slate btn-sm"><i class="fas fa-times"></i></button>`
+
+  const input = labelEl.querySelector<HTMLInputElement>('.student-edit-input')!
+  input.focus()
+  input.select()
+
+  const save = async () => {
+    const newLabel = input.value.trim()
+    if (!newLabel) { input.focus(); return }
+    try {
+      await updateClassStudent(s.id, newLabel)
+      await reloadStudentsList(classId)
+    } catch (err) {
+      const status = document.getElementById('add-student-status')
+      if (status) { status.textContent = (err as Error).message; status.className = 'generate-status generate-status--err' }
+    }
+  }
+
+  actionsEl.querySelector<HTMLButtonElement>('.btn-student-save')!.addEventListener('click', save)
+  actionsEl.querySelector<HTMLButtonElement>('.btn-student-cancel')!.addEventListener('click', () => {
+    reloadStudentsList(classId)
+  })
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') save()
+    if (e.key === 'Escape') { s.label = originalLabel; reloadStudentsList(classId) }
   })
 }
 

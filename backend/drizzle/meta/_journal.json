@@ -64,6 +64,13 @@
       "when": 1778187600000,
       "tag": "0008_add_access_codes_registration_id",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1747180800000,
+      "tag": "0009_add_class_students",
+      "breakpoints": true
     }
   ]
 }

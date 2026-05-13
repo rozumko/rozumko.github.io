@@ -125,3 +125,15 @@ export const eventRegistrations = pgTable('event_registrations', {
 
 export type EventRegistration = typeof eventRegistrations.$inferSelect
 export type NewEventRegistration = typeof eventRegistrations.$inferInsert
+
+export const classStudents = pgTable('class_students', {
+  id:        uuid('id').primaryKey().defaultRandom(),
+  classId:   uuid('class_id').notNull().references(() => teacherClasses.id, { onDelete: 'cascade' }),
+  teacherId: uuid('teacher_id').notNull().references(() => appUsers.id),
+  label:     text('label').notNull(), // довільна мітка вчителя: "Маша К.", "Учень 5", тощо
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
+export type ClassStudent = typeof classStudents.$inferSelect
+export type NewClassStudent = typeof classStudents.$inferInsert

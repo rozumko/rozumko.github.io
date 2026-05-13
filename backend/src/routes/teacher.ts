@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { and, count, desc, eq, gte, inArray, lte } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { accessCodes, attempts, eventQuestions, eventRegistrations, olympiadEvents, teacherClasses } from '../db/schema.js'
+import { accessCodes, attempts, classStudents, eventQuestions, eventRegistrations, olympiadEvents, teacherClasses } from '../db/schema.js'
 import { requireAuth } from '../lib/auth.js'
 import { assertEventCanAcceptRegistrations, normalizeRegistrationInput, normalizeTeacherClassInput } from './registration-validation.js'
 import { assertEventCanIssueCodes } from './teacher-events-validation.js'
@@ -390,4 +390,111 @@ export async function teacherRoutes(app: FastifyInstance) {
 
     return reply.send({ results })
   })
+
+  // ─── Class students ───────────────────────────────────────────────────────
+
+  // GET /api/teacher/classes/:id/students
+  app.get<{ Params: { id: string } }>(
+    '/classes/:id/students',
+    { preHandler: requireAuth },
+    async (req, reply) => {
+      // Перевіряємо що клас належить вчителю
+      const [cls] = await db
+        .select({ id: teacherClasses.id })
+        .from(teacherClasses)
+        .where(and(eq(teacherClasses.id, req.params.id), eq(teacherClasses.teacherId, req.user!.id)))
+        .limit(1)
+      if (!cls) return reply.code(404).send({ error: 'Клас не знайдено' })
+
+      const students = await db
+        .select({ id: classStudents.id, label: classStudents.label, createdAt: classStudents.createdAt })
+        .from(classStudents)
+        .where(eq(classStudents.classId, req.params.id))
+        .orderBy(classStudents.createdAt)
+
+      return reply.send({ students })
+    }
+  )
+
+  // POST /api/teacher/classes/:id/students
+  app.post<{
+    Params: { id: string }
+    Body: { label: string }
+  }>(
+    '/classes/:id/students',
+    {
+      preHandler: requireAuth,
+      schema: {
+        body: {
+          type: 'object',
+          required: ['label'],
+          properties: { label: { type: 'string', minLength: 1, maxLength: 60 } },
+        },
+      },
+    },
+    async (req, reply) => {
+      const label = req.body.label.trim()
+      if (!label) return reply.code(400).send({ error: 'Мітка не може бути порожньою' })
+
+      const [cls] = await db
+        .select({ id: teacherClasses.id })
+        .from(teacherClasses)
+        .where(and(eq(teacherClasses.id, req.params.id), eq(teacherClasses.teacherId, req.user!.id)))
+        .limit(1)
+      if (!cls) return reply.code(404).send({ error: 'Клас не знайдено' })
+
+      const [inserted] = await db
+        .insert(classStudents)
+        .values({ classId: req.params.id, teacherId: req.user!.id, label })
+        .returning({ id: classStudents.id, label: classStudents.label, createdAt: classStudents.createdAt })
+
+      return reply.code(201).send({ student: inserted })
+    }
+  )
+
+  // PUT /api/teacher/students/:id
+  app.put<{
+    Params: { id: string }
+    Body: { label: string }
+  }>(
+    '/students/:id',
+    {
+      preHandler: requireAuth,
+      schema: {
+        body: {
+          type: 'object',
+          required: ['label'],
+          properties: { label: { type: 'string', minLength: 1, maxLength: 60 } },
+        },
+      },
+    },
+    async (req, reply) => {
+      const label = req.body.label.trim()
+      if (!label) return reply.code(400).send({ error: 'Мітка не може бути порожньою' })
+
+      const [updated] = await db
+        .update(classStudents)
+        .set({ label, updatedAt: new Date() })
+        .where(and(eq(classStudents.id, req.params.id), eq(classStudents.teacherId, req.user!.id)))
+        .returning({ id: classStudents.id, label: classStudents.label })
+
+      if (!updated) return reply.code(404).send({ error: 'Учня не знайдено' })
+      return reply.send({ student: updated })
+    }
+  )
+
+  // DELETE /api/teacher/students/:id
+  app.delete<{ Params: { id: string } }>(
+    '/students/:id',
+    { preHandler: requireAuth },
+    async (req, reply) => {
+      const [deleted] = await db
+        .delete(classStudents)
+        .where(and(eq(classStudents.id, req.params.id), eq(classStudents.teacherId, req.user!.id)))
+        .returning({ id: classStudents.id })
+
+      if (!deleted) return reply.code(404).send({ error: 'Учня не знайдено' })
+      return reply.code(204).send()
+    }
+  )
 }

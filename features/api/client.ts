@@ -85,6 +85,12 @@ export interface TeacherClass {
   updatedAt: string
 }
 
+export interface ClassStudent {
+  id: string
+  label: string
+  createdAt: string
+}
+
 export interface EventRegistration {
   id: string
   eventId: string
@@ -207,6 +213,28 @@ export function getTeacherRegistrationEvents(): Promise<{ events: TeacherEvent[]
 
 export function getTeacherClasses(): Promise<{ classes: TeacherClass[] }> {
   return authRequest('/api/teacher/classes')
+}
+
+export function getClassStudents(classId: string): Promise<{ students: ClassStudent[] }> {
+  return authRequest(`/api/teacher/classes/${classId}/students`)
+}
+
+export function addClassStudent(classId: string, label: string): Promise<{ student: ClassStudent }> {
+  return authRequest(`/api/teacher/classes/${classId}/students`, {
+    method: 'POST',
+    body: JSON.stringify({ label }),
+  })
+}
+
+export function updateClassStudent(studentId: string, label: string): Promise<{ student: ClassStudent }> {
+  return authRequest(`/api/teacher/students/${studentId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ label }),
+  })
+}
+
+export function deleteClassStudent(studentId: string): Promise<void> {
+  return authRequest(`/api/teacher/students/${studentId}`, { method: 'DELETE' })
 }
 
 export function createTeacherClass(data: { name: string; grade: number }): Promise<{ class: TeacherClass }> {
