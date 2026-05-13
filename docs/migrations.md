@@ -34,6 +34,7 @@ drizzle/
   0006_add_attempt_questions.sql
   0007_add_teacher_classes_registrations.sql
   0008_add_access_codes_registration_id.sql
+  0009_add_class_students.sql
   meta/
     _journal.json    ← drizzle migration journal (do not edit manually)
 
@@ -116,6 +117,7 @@ export async function runMigrations() {
 - `app_users`
 - `teacher_classes`
 - `event_registrations`
+- `class_students`
 
 ## ⚠️ ОБОВ'ЯЗКОВО після кожної нової міграції — RLS
 
@@ -143,6 +145,7 @@ ALTER TABLE public.event_questions     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.teacher_classes     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.event_registrations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.olympiad_events     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.class_students      ENABLE ROW LEVEL SECURITY;
 ```
 
 **Без жодних policies = anon/authenticated не мають доступу через Data API.
@@ -156,7 +159,7 @@ curl "https://<project>.supabase.co/rest/v1/<table>?select=*&limit=1" \
 # Очікувана відповідь: []
 ```
 
-**Поточний стан (станом на 2026-05-12):**
+**Поточний стан (станом на 2026-05-13):**
 
 | Таблиця | RLS | Примітка |
 |---|---|---|
@@ -169,6 +172,7 @@ curl "https://<project>.supabase.co/rest/v1/<table>?select=*&limit=1" \
 | `teacher_classes` | ✅ | увімкнено |
 | `event_registrations` | ✅ | увімкнено |
 | `olympiad_events` | ✅ | увімкнено |
+| `class_students` | ✅ | увімкнено при створенні («Run and enable RLS») |
 
 ---
 

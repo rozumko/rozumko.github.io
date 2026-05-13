@@ -114,6 +114,9 @@ Core tables:
 - `event_questions`: explicit question selection per event and grade.
 - `attempt_questions`: immutable list of questions assigned to one attempt.
 - `teacher_classes`: classes owned by a teacher.
+- `class_students`: optional student labels per class (teacher-defined, max 60 chars,
+  e.g. "Маша К." or "Учень 5"). Not full names — no PII obligation. Cascade-deleted
+  with the class. CRUD via `/api/teacher/classes/:id/students` and `/api/teacher/students/:id`.
 - `event_registrations`: teacher/class/participant registration for an event,
   without storing student names.
 - `access_codes.registration_id`: links generated codes back to the registration

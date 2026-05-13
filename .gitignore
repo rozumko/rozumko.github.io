@@ -10,6 +10,7 @@ node_modules/
 *.pem
 serviceAccountKey.json
 firebase-adminsdk*.json
+# (Firebase більше не використовується, але залишаємо для безпеки)
 
 # ── Тимчасові скрипти (створювались під час розробки) ─────────────────────
 tmp_replace.*
@@ -27,6 +28,9 @@ script_base64.txt
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+
+# ── AI / Claude Code локальні налаштування ────────────────────────────────
+.claude/settings.local.json
 
 # ── Редактори ──────────────────────────────────────────────────────────────
 .vscode/

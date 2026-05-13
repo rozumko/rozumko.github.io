@@ -87,7 +87,6 @@
 - [Архітектура](./docs/architecture.md)
 - [Модель безпеки](./docs/security-model.md)
 - [Міграції БД](./docs/migrations.md)
-- [Формат питань](./docs/task-format.md)
 
 ---
 

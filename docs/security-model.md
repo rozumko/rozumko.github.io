@@ -127,7 +127,8 @@ ALTER TABLE public.questions ENABLE ROW LEVEL SECURITY;
 -- service_role (бекенд) обходить RLS автоматично
 ```
 
-**Поточний стан таблиць (2026-05-12):** RLS увімкнено на всіх 9 таблицях ✅.
+**Поточний стан таблиць (2026-05-13):** RLS увімкнено на всіх 10 таблицях ✅.
+(`class_students` — увімкнено при створенні через «Run and enable RLS» в Supabase SQL Editor)
 
 ---
 
