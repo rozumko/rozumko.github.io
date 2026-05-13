@@ -16,17 +16,36 @@ const loginBtn     = $<HTMLButtonElement>('admin-login-btn')
 const logoutBtn    = $<HTMLButtonElement>('admin-logout-btn')
 const emailDisplay = $('admin-email-display')
 
+// --- Cold start banner ---
+function showColdStartBanner() {
+  let banner = document.getElementById('cold-start-banner')
+  if (banner) return
+  banner = document.createElement('div')
+  banner.id        = 'cold-start-banner'
+  banner.className = 'cold-start-banner'
+  banner.innerHTML = `
+    <span class="cold-start-banner__spinner"></span>
+    <span>Сервер запускається… зазвичай займає до 30 секунд.</span>`
+  document.body.appendChild(banner)
+}
+function hideColdStartBanner() {
+  document.getElementById('cold-start-banner')?.remove()
+}
+
 // --- Init ---
 init()
 
 async function init() {
   const session = getTeacherSession()
   if (session?.accessToken) {
+    showColdStartBanner()
     try {
       const me = await getTeacherMe()
+      hideColdStartBanner()
       if (me.role !== 'admin') throw new Error('not admin')
       showDashboard(me.name || session.email)
     } catch {
+      hideColdStartBanner()
       showAuth()
     }
   } else {
@@ -42,15 +61,18 @@ loginForm.addEventListener('submit', async (e) => {
   loginError.textContent = ''
   loginBtn.disabled    = true
   loginBtn.textContent = 'Вхід…'
+  showColdStartBanner()
   try {
     await loginTeacher(email, password)
     const me = await getTeacherMe()
+    hideColdStartBanner()
     if (me.role !== 'admin') {
       await logoutTeacher()
       throw new Error('Доступ тільки для адміністратора')
     }
     showDashboard(me.name || email)
   } catch (err) {
+    hideColdStartBanner()
     loginError.textContent = friendlyError((err as Error).message)
     loginBtn.disabled    = false
     loginBtn.textContent = 'Увійти'
@@ -71,6 +93,7 @@ document.querySelectorAll<HTMLElement>('.admin-tab').forEach(tab => {
     tab.classList.add('tab-active')
     const tabName = tab.dataset['tab']
     if (tabName) $maybe(`tab-${tabName}`)?.classList.remove('hidden')
+    if (tabName === 'events')    loadEvents()
     if (tabName === 'teachers')  loadTeachers()
     if (tabName === 'results')   loadResults()
     if (tabName === 'questions') loadQuestionsTab()
@@ -97,11 +120,11 @@ function showAuth() {
 
 async function refreshStats() {
   try {
-    const { teachers, codes, results } = await getAdminStats()
+    const { teachers, codes, results, events } = await getAdminStats()
     $('stat-teachers').textContent = String(teachers)
     $('stat-students').textContent = String(codes)
     $('stat-results').textContent  = String(results)
-    $('stat-events').textContent   = '—'
+    $('stat-events').textContent   = String(events ?? 0)
   } catch {
     // некритично
   }

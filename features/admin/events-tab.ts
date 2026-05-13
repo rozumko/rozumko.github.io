@@ -66,11 +66,17 @@ async function handleSubmit(e: Event) {
   submitBtn.disabled    = true
   submitBtn.textContent = 'Збереження…'
   try {
-    await createEvent(buildEventPayload({ title, startsAt, endsAt }))
+    const { event } = await createEvent(buildEventPayload({ title, startsAt, endsAt }))
     $maybe('event-form-section')?.classList.add('hidden')
     resetForm()
     await loadEvents()
     deps.refreshStats?.()
+    // Підсвітити нову подію і показати підказку
+    highlightEvent(event.id)
+    showModal(
+      `✅ Подія «${title}» створена у статусі «Чернетка».\n\n` +
+      `Щоб вчителі могли реєструватись — опублікуй подію (кнопка «Опублікувати» на картці).`
+    )
   } catch (err) {
     errorEl.textContent = (err as Error).message
   } finally {
@@ -111,6 +117,25 @@ function buildEventCard(event: OlympiadEvent): HTMLElement {
   wireStatusButton(node, event, '.btn-archive',  'archived')
   wireStatusButton(node, event, '.btn-draft',    'draft')
 
+  // Кнопка «Опублікувати» — тільки для draft
+  if (event.status === 'draft') {
+    const publishBtn = document.createElement('button')
+    publishBtn.type      = 'button'
+    publishBtn.className = 'btn-event-publish'
+    publishBtn.innerHTML = '<i class="fas fa-globe" aria-hidden="true"></i> Опублікувати'
+    publishBtn.title     = 'Зробити подію доступною для реєстрації вчителів'
+    publishBtn.addEventListener('click', async () => {
+      try {
+        await updateEvent(event.id, { status: 'published' })
+        await loadEvents()
+        deps.refreshStats?.()
+      } catch (err) {
+        showModal((err as Error).message)
+      }
+    })
+    node.querySelector<HTMLElement>('.event-card__actions')!.prepend(publishBtn)
+  }
+
   const questionsBtn = document.createElement('button')
   questionsBtn.type      = 'button'
   questionsBtn.className = 'btn-event-questions'
@@ -123,6 +148,21 @@ function buildEventCard(event: OlympiadEvent): HTMLElement {
   if (event.status !== 'draft')    node.querySelector<HTMLElement>('.btn-draft')?.classList.remove('hidden')
 
   return node
+}
+
+function highlightEvent(eventId: string) {
+  // Знаходимо картку після рендеру і скролимо до неї
+  setTimeout(() => {
+    const list = $maybe('events-list')
+    if (!list) return
+    const cards = list.querySelectorAll<HTMLElement>('.event-card')
+    // Перша картка — найновіша (список відсортований desc)
+    if (cards.length) {
+      cards[0].scrollIntoView({ behavior: 'smooth', block: 'center' })
+      cards[0].classList.add('event-card--highlight')
+      setTimeout(() => cards[0].classList.remove('event-card--highlight'), 3000)
+    }
+  }, 100)
 }
 
 function wireStatusButton(node: HTMLElement, event: OlympiadEvent, selector: string, status: OlympiadEvent['status']) {

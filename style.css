@@ -1859,6 +1859,65 @@ body.teacher-dashboard-active {
 .generate-status--ok      { color: #059669; }
 .generate-status--err     { color: #e11d48; }
 .generate-status--neutral { color: var(--clr-text-faint); }
+.generate-status--info    { color: #0369a1; }
+
+/* Cold start banner */
+.cold-start-banner {
+  position: fixed;
+  bottom: var(--sp-4);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: var(--sp-3) var(--sp-5);
+  border-radius: 999px;
+  font-size: var(--font-size-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  z-index: 9999;
+  box-shadow: 0 4px 24px rgba(0,0,0,.35);
+  animation: fadeInUp .3s ease;
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+.cold-start-banner__spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Event card highlight after creation */
+.event-card--highlight {
+  outline: 2px solid var(--clr-emerald);
+  animation: highlightPulse 3s ease forwards;
+}
+@keyframes highlightPulse {
+  0%,20% { outline-color: var(--clr-emerald); }
+  100%   { outline-color: transparent; }
+}
+
+/* Publish button */
+.btn-event-publish {
+  background: #f59e0b;
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: var(--sp-1) var(--sp-3);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+.btn-event-publish:hover { background: #d97706; }
 .code-chip--inactive      { opacity: 0.5; }
 
 /* Список кодів */

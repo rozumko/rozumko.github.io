@@ -43,17 +43,36 @@ let teacherClasses: TeacherClass[] = []
 let registrationEvents: TeacherEvent[] = []
 let teacherRegistrations: EventRegistration[] = []
 
+// --- Cold start banner ---
+function showColdStartBanner() {
+  let banner = document.getElementById('cold-start-banner')
+  if (banner) return
+  banner = document.createElement('div')
+  banner.id        = 'cold-start-banner'
+  banner.className = 'cold-start-banner'
+  banner.innerHTML = `
+    <span class="cold-start-banner__spinner"></span>
+    <span>Сервер запускається… зазвичай займає до 30 секунд.</span>`
+  document.body.appendChild(banner)
+}
+function hideColdStartBanner() {
+  document.getElementById('cold-start-banner')?.remove()
+}
+
 // --- Init ---
 init()
 
 async function init() {
   const session = getTeacherSession()
   if (session?.accessToken) {
+    showColdStartBanner()
     try {
       const me = await getTeacherMe()
+      hideColdStartBanner()
       showDashboard(me.name || session.email)
       await Promise.all([loadRegistrationEvents(), loadClasses(), loadRegistrations(), loadCodes(), loadResults()])
     } catch {
+      hideColdStartBanner()
       showAuth()
     }
   } else {
@@ -80,12 +99,15 @@ loginForm.addEventListener('submit', async (e) => {
   loginError.textContent     = ''
   loginSubmitBtn.disabled    = true
   loginSubmitBtn.textContent = 'Вхід…'
+  showColdStartBanner()
   try {
     await loginTeacher(email, password)
     const me = await getTeacherMe()
+    hideColdStartBanner()
     showDashboard(me.name || email)
     await Promise.all([loadRegistrationEvents(), loadClasses(), loadRegistrations(), loadCodes(), loadResults()])
   } catch (err) {
+    hideColdStartBanner()
     loginError.textContent     = friendlyError((err as Error).message)
     loginSubmitBtn.disabled    = false
     loginSubmitBtn.textContent = 'Увійти'
@@ -221,11 +243,20 @@ function renderGenerateRegistrationOptions() {
     Number(reg.codesCreatedCount ?? 0) < Number(reg.participantsCount)
   )
   if (!eligible.length) {
-    registrationGenerateSelect.innerHTML = '<option value="">Немає реєстрацій для кодів</option>'
+    registrationGenerateSelect.innerHTML = '<option value="">Немає активних реєстрацій</option>'
     registrationGenerateSelect.disabled  = true
     if (generateBtn) generateBtn.disabled = true
-    generateStatus.textContent = 'Спочатку зареєструйте клас на поточну подію.'
-    generateStatus.className   = 'generate-status generate-status--err'
+    // Показати конкретну причину
+    const hasRegs = teacherRegistrations.length > 0
+    if (hasRegs) {
+      const pendingPayment = teacherRegistrations.some(r => r.paymentStatus === 'pending')
+      generateStatus.textContent = pendingPayment
+        ? '⏳ Очікується підтвердження оплати. Зверніться до організатора олімпіади.'
+        : '✅ Всі коди для поточних реєстрацій вже згенеровані.'
+    } else {
+      generateStatus.textContent = 'ℹ️ Спочатку зареєструйте клас на активну подію.'
+    }
+    generateStatus.className = 'generate-status generate-status--info'
     return
   }
   eligible.forEach(reg => {
@@ -262,9 +293,14 @@ function renderRegistrationEventOptions() {
   if (!registrationEventSelect) return
   registrationEventSelect.innerHTML = ''
   if (!registrationEvents.length) {
-    registrationEventSelect.innerHTML = '<option value="">Немає подій для реєстрації</option>'
+    registrationEventSelect.innerHTML = '<option value="">Немає опублікованих подій</option>'
     registrationEventSelect.disabled  = true
     if (registrationSubmitBtn) registrationSubmitBtn.disabled = true
+    // Підказка: адмін має опублікувати подію
+    if (registrationStatus) {
+      registrationStatus.textContent = 'ℹ️ Адміністратор ще не опублікував жодної події. Зверніться до організатора олімпіади.'
+      registrationStatus.className   = 'generate-status generate-status--info'
+    }
     return
   }
   registrationEvents.forEach(event => {
@@ -331,11 +367,11 @@ function renderRegistrations(registrations: EventRegistration[]) {
 
 function paymentLabel(status: string): string {
   const labels: Record<string, string> = {
-    not_required: 'оплата не потрібна',
-    pending:      'очікує оплату',
-    paid:         'оплачено',
-    failed:       'помилка оплати',
-    refunded:     'повернено',
+    not_required: '🎉 Безкоштовно (пілот)',
+    pending:      '⏳ Очікує оплату батьків',
+    paid:         '✅ Оплачено',
+    failed:       '❌ Помилка оплати',
+    refunded:     '↩️ Повернено',
   }
   return labels[status] ?? status
 }
