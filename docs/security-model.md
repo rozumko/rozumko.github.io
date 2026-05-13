@@ -1,4 +1,4 @@
-# Security Model — MegaRozum
+# Security Model — Rozumko
 
 ## Core principles
 

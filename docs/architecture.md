@@ -1,8 +1,8 @@
-# Architecture — MegaRozum
+# Architecture — Rozumko
 
 ## Overview
 
-MegaRozum is an olympiad platform for grades 1–4. The architecture prioritizes
+Rozumko is an olympiad platform for grades 1–4. The architecture prioritizes
 portability over convenience: Supabase is used as the starting managed platform,
 but no critical logic depends on Supabase-specific APIs.
 

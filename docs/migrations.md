@@ -1,4 +1,4 @@
-# Database Migrations — MegaRozum
+# Database Migrations — Rozumko
 
 ## Source of truth
 

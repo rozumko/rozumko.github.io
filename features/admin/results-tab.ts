@@ -163,7 +163,7 @@ function printCertificate(r: Attempt, studentName: string) {
 <body>
   <div class="cert">
     <div class="cert__logo">🏆</div>
-    <div class="cert__org">МегаРозум · Олімпіада з інформатики</div>
+    <div class="cert__org">Розумко · Олімпіада з інформатики</div>
     <div class="cert__head">Сертифікат учасника</div>
     <div class="cert__name">${studentName}</div>
     <div class="cert__body">
