@@ -11,8 +11,6 @@ services:
         sync: false
       - key: SUPABASE_URL
         sync: false
-      - key: SUPABASE_JWT_ISSUER
-        sync: false
       - key: ATTEMPT_SECRET
         sync: false
       - key: NODE_ENV
