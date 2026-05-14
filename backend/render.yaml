@@ -3,11 +3,17 @@ services:
     name: megarozum-backend
     runtime: node
     rootDir: backend
-    buildCommand: npm install && npm run build
+    buildCommand: npm install && npm run build && npm run db:migrate
     startCommand: node dist/server.js
     healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_JWT_ISSUER
+        sync: false
+      - key: ATTEMPT_SECRET
         sync: false
       - key: NODE_ENV
         value: production
