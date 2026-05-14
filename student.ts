@@ -188,6 +188,7 @@ let currentMode:      string | null = null
 let currentAttemptId:    string | null = null
 let currentAttemptToken: string | null = null
 let olympiadQuestions:   RenderableQuestion[] | null = null
+let failedAnswers:       Set<string> = new Set() // questionId-и, які не вдалось зберегти
 
 // ===================== FULLSCREEN =====================
 
@@ -362,12 +363,13 @@ startPracticeBtn.addEventListener('click', async () => {
 interface QuizMeta { code?: string; grade?: number | null; [k: string]: unknown }
 
 function startQuiz(qs: RenderableQuestion[], mode: string, cfg: any, meta: QuizMeta) {
-  questions   = qs
-  currentIdx  = 0
-  score       = 0
-  answered    = false
-  currentMode = mode
-  startedAt   = Date.now()
+  questions     = qs
+  currentIdx    = 0
+  score         = 0
+  answered      = false
+  currentMode   = mode
+  startedAt     = Date.now()
+  failedAnswers = new Set()
   ;(startQuiz as any).meta = meta
 
   const labels:     Record<string, string> = { practice: 'Тренування', demo: 'Демо', olympiad: 'Олімпіада' }
@@ -441,7 +443,14 @@ function showQuestion() {
     onAnswer: (result) => {
       answered = true
       if (currentMode === 'olympiad' && currentAttemptId && currentAttemptToken && typeof result === 'number') {
-        saveAnswer(currentAttemptId, currentAttemptToken, q.id as string, result).catch(() => {})
+        const qId = q.id as string
+        // Спроба зберегти відповідь; якщо мережа впала — один retry через 2 сек
+        saveAnswer(currentAttemptId, currentAttemptToken, qId, result)
+          .catch(() => new Promise(r => setTimeout(r, 2000)).then(
+            () => saveAnswer(currentAttemptId!, currentAttemptToken!, qId, result)
+          ))
+          .then(() => { failedAnswers.delete(qId) })
+          .catch(() => { failedAnswers.add(qId) })
         showFeedbackOlympiad()
       } else {
         if (result === true) score++
@@ -509,6 +518,12 @@ async function finishQuiz(timeUp: boolean) {
   // Для олімпіади — спершу відправляємо на сервер, потім показуємо його score
   if (currentAttemptId && currentAttemptToken) {
     const meta = (startQuiz as any).meta as QuizMeta
+    // Попереджаємо якщо є відповіді що не дійшли до сервера після retry
+    if (failedAnswers.size > 0) {
+      resultErrorMsg.innerHTML =
+        `⚠️ ${failedAnswers.size} відповід${failedAnswers.size === 1 ? 'ь' : 'і'} не збережено через проблеми з мережею. Результат може бути нижчим від реального.`
+      resultErrorMsg.classList.remove('hidden')
+    }
     // Показуємо оверлей з плейсхолдером поки сервер рахує
     resultScore.textContent = '…'
     resultTotal.textContent = String(questions.length)

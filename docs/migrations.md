@@ -71,13 +71,27 @@ Supabase, Railway, Neon, Render, or a self-hosted PostgreSQL without changes.
 Never run `drizzle-kit push` in production — it is for rapid prototyping only
 and does not write migration files.
 
-## Workflow: applying migrations in production
+## Workflow: applying migrations in production (Render + Supabase)
 
-```bash
-# On deploy (Railway, Fly.io, or VPS)
-node -e "import('./src/db/migrate.ts').then(m => m.runMigrations())"
-# or as a deploy step in railway.toml / fly.toml / Dockerfile CMD
+Міграції **не запускаються автоматично** при деплої. Це навмисне рішення:
+
+- Render free tier не гарантує мережевий доступ до БД під час build/start
+- Supabase connection pooler (порт 6543, PgBouncer transaction mode) несумісний
+  з Drizzle `migrate()` через advisory locks
+- Міграції — рідкісна навмисна операція, а не частина кожного деплою
+
+**Правильний процес** — запускати локально з прямим підключенням до БД:
+
+```powershell
+# PowerShell — взяти DATABASE_URL з Supabase → Project Settings → Database → URI
+$env:DATABASE_URL = "postgresql://postgres.[ref]:[password]@aws-0-eu-west-1.pooler.supabase.com:5432/postgres"
+npm run db:migrate
 ```
+
+> ⚠️ Використовуй порт **5432** (session mode / direct), не 6543 (transaction pooler).
+> Рядок підключення знайдеш у Supabase → Project Settings → Database → **Connection string → URI**.
+
+Після успішного `Migrations applied.` — пушай код. Render задеплоїть сервер без міграцій.
 
 `migrate.ts` example:
 
