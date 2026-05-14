@@ -188,7 +188,8 @@ let currentMode:      string | null = null
 let currentAttemptId:    string | null = null
 let currentAttemptToken: string | null = null
 let olympiadQuestions:   RenderableQuestion[] | null = null
-let failedAnswers:       Set<string> = new Set() // questionId-и, які не вдалось зберегти
+let failedAnswers:       Set<string> = new Set()    // questionId-и, які не вдалось зберегти
+let pendingSaves:        Promise<void>[] = []       // активні збереження відповідей
 
 // ===================== FULLSCREEN =====================
 
@@ -370,6 +371,7 @@ function startQuiz(qs: RenderableQuestion[], mode: string, cfg: any, meta: QuizM
   currentMode   = mode
   startedAt     = Date.now()
   failedAnswers = new Set()
+  pendingSaves  = []
   ;(startQuiz as any).meta = meta
 
   const labels:     Record<string, string> = { practice: 'Тренування', demo: 'Демо', olympiad: 'Олімпіада' }
@@ -444,13 +446,14 @@ function showQuestion() {
       answered = true
       if (currentMode === 'olympiad' && currentAttemptId && currentAttemptToken && typeof result === 'number') {
         const qId = q.id as string
-        // Спроба зберегти відповідь; якщо мережа впала — один retry через 2 сек
-        saveAnswer(currentAttemptId, currentAttemptToken, qId, result)
-          .catch(() => new Promise(r => setTimeout(r, 2000)).then(
+        // Зберігаємо promise — finishQuiz чекатиме його завершення
+        const save = saveAnswer(currentAttemptId, currentAttemptToken, qId, result)
+          .catch(() => new Promise<void>(r => setTimeout(r, 2000)).then(
             () => saveAnswer(currentAttemptId!, currentAttemptToken!, qId, result)
           ))
           .then(() => { failedAnswers.delete(qId) })
           .catch(() => { failedAnswers.add(qId) })
+        pendingSaves.push(save)
         showFeedbackOlympiad()
       } else {
         if (result === true) score++
@@ -518,6 +521,10 @@ async function finishQuiz(timeUp: boolean) {
   // Для олімпіади — спершу відправляємо на сервер, потім показуємо його score
   if (currentAttemptId && currentAttemptToken) {
     const meta = (startQuiz as any).meta as QuizMeta
+    // Чекаємо всі pending saves (включно з retry) перед фінішем
+    await Promise.allSettled(pendingSaves)
+    pendingSaves = []
+
     // Попереджаємо якщо є відповіді що не дійшли до сервера після retry
     if (failedAnswers.size > 0) {
       resultErrorMsg.innerHTML =
@@ -543,10 +550,10 @@ async function finishQuiz(timeUp: boolean) {
       clearQuizBackup()
       resultSavedMsg.classList.remove('hidden')
     } catch {
-      // Сервер недоступний — показуємо локальний score з попередженням
-      resultScore.textContent = String(score)
+      // Сервер недоступний — не показуємо score (в official mode він не рахується локально)
+      resultScore.textContent = '—'
       resultTotal.textContent = String(questions.length)
-      resultTitle.textContent = timeUp ? 'Час вийшов!' : 'Помилка збереження'
+      resultTitle.textContent = 'Результат не збережено'
       const backup = { score, total: questions.length, code: meta.code }
       try { localStorage.setItem(QUIZ_BACKUP_KEY + '_failed', JSON.stringify(backup)) } catch { /* ігноруємо */ }
       resultErrorMsg.innerHTML =

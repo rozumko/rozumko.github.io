@@ -32,15 +32,12 @@ export async function questionsRoutes(app: FastifyInstance) {
     if (isOlympiad !== undefined) filters.push(eq(questions.isOlympiad, isOlympiad))
     if (difficulty)               filters.push(eq(questions.difficulty,  difficulty))
 
-    const qs = await db
+    const rows = await db
       .select({
         id:          questions.id,
         q:           questions.q,
         code:        questions.code,
         options:     questions.options,
-        // correct і explanation потрібні для локального оцінювання в practice/demo.
-        // Безпечно: цей endpoint — тільки для тренувань, не для офіційних спроб.
-        // Офіційна олімпіада отримує питання через exchange-code (без correct).
         correct:     questions.correct,
         explanation: questions.explanation,
         difficulty:  questions.difficulty,
@@ -50,6 +47,13 @@ export async function questionsRoutes(app: FastifyInstance) {
       .where(filters.length ? and(...filters) : undefined)
       .orderBy(sql`random()`)
       .limit(count)
+
+    // correct і explanation повертаємо тільки для тренувальних питань (isOlympiad=false).
+    // Для олімпіадних питань (isOlympiad=true) ключі відповідей залишаються на сервері —
+    // навіть у демо-режимі, щоб не розкривати банк офіційних питань.
+    const qs = isOlympiad === false
+      ? rows
+      : rows.map(({ correct: _c, explanation: _e, ...rest }) => rest)
 
     return reply.send({ questions: qs })
   })
