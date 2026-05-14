@@ -477,8 +477,10 @@ async function reloadStudentsList(classId: string) {
   container.innerHTML = '<p class="admin-loading-text">Завантаження…</p>'
   try {
     const { students } = await getClassStudents(classId)
+    console.debug('[students] classId:', classId, '→ count:', students.length, students)
     renderStudentsList(container, classId, students)
   } catch (err) {
+    console.error('[students] error for classId:', classId, err)
     container.innerHTML = `<p class="generate-status generate-status--err">${esc((err as Error).message)}</p>`
   }
 }
