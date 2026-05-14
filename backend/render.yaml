@@ -3,7 +3,7 @@ services:
     name: megarozum-backend
     runtime: node
     rootDir: backend
-    buildCommand: npm install && npm run build && npm run db:migrate
+    buildCommand: npm install && npm run build && node dist/db/migrate.js
     startCommand: node dist/server.js
     healthCheckPath: /health
     envVars:
