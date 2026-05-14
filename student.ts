@@ -221,14 +221,15 @@ function saveQuizBackup() {
   if (currentMode !== 'olympiad' || !currentAttemptId) return
   try {
     localStorage.setItem(QUIZ_BACKUP_KEY, JSON.stringify({
-      attemptId: currentAttemptId,
-      mode:      currentMode,
+      attemptId:    currentAttemptId,
+      attemptToken: currentAttemptToken,
+      mode:         currentMode,
       currentIdx,
       score,
       secondsLeft,
       startedAt,
-      meta:      (startQuiz as any).meta,
-      savedAt:   Date.now(),
+      meta:         (startQuiz as any).meta,
+      savedAt:      Date.now(),
     }))
   } catch { /* localStorage недоступний */ }
 }
@@ -487,24 +488,50 @@ async function finishQuiz(timeUp: boolean) {
 
   const labels: Record<string, string> = { practice: 'Тренування', demo: 'Демо-версія', olympiad: 'Олімпіада' }
   resultModeLabel.textContent = labels[currentMode!]
-  resultTitle.textContent     = timeUp ? 'Час вийшов!'
-    : score >= questions.length * 0.8 ? 'Відмінно!'
-    : score >= questions.length * 0.5 ? 'Добре!'
-    : 'Спробуй ще!'
-  resultScore.textContent     = String(score)
-  resultTotal.textContent     = String(questions.length)
   resultTime.textContent      = `Час: ${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`
   resultSavedMsg.classList.add('hidden')
   resultErrorMsg.classList.add('hidden')
-  showOverlay(resultOverlay)
 
-  if (currentMode === 'olympiad' && currentAttemptId && currentAttemptToken) {
+  // Для practice/demo — показуємо результат одразу (локальне оцінювання)
+  if (currentMode !== 'olympiad') {
+    const finalScore = score
+    const total      = questions.length
+    resultScore.textContent = String(finalScore)
+    resultTotal.textContent = String(total)
+    resultTitle.textContent = timeUp ? 'Час вийшов!'
+      : finalScore >= total * 0.8 ? 'Відмінно!'
+      : finalScore >= total * 0.5 ? 'Добре!'
+      : 'Спробуй ще!'
+    showOverlay(resultOverlay)
+    return
+  }
+
+  // Для олімпіади — спершу відправляємо на сервер, потім показуємо його score
+  if (currentAttemptId && currentAttemptToken) {
     const meta = (startQuiz as any).meta as QuizMeta
+    // Показуємо оверлей з плейсхолдером поки сервер рахує
+    resultScore.textContent = '…'
+    resultTotal.textContent = String(questions.length)
+    resultTitle.textContent = timeUp ? 'Час вийшов!' : 'Обробка результату…'
+    showOverlay(resultOverlay)
     try {
-      await finishAttempt(currentAttemptId, currentAttemptToken)
+      const serverResult = await finishAttempt(currentAttemptId, currentAttemptToken)
+      // Оновлюємо UI серверним score — єдиним достовірним результатом
+      const finalScore = serverResult.score
+      const total      = serverResult.total
+      resultScore.textContent = String(finalScore)
+      resultTotal.textContent = String(total)
+      resultTitle.textContent = timeUp ? 'Час вийшов!'
+        : finalScore >= total * 0.8 ? 'Відмінно!'
+        : finalScore >= total * 0.5 ? 'Добре!'
+        : 'Спробуй ще!'
       clearQuizBackup()
       resultSavedMsg.classList.remove('hidden')
     } catch {
+      // Сервер недоступний — показуємо локальний score з попередженням
+      resultScore.textContent = String(score)
+      resultTotal.textContent = String(questions.length)
+      resultTitle.textContent = timeUp ? 'Час вийшов!' : 'Помилка збереження'
       const backup = { score, total: questions.length, code: meta.code }
       try { localStorage.setItem(QUIZ_BACKUP_KEY + '_failed', JSON.stringify(backup)) } catch { /* ігноруємо */ }
       resultErrorMsg.innerHTML =
