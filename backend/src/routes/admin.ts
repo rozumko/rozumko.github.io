@@ -331,7 +331,7 @@ export async function adminRoutes(app: FastifyInstance) {
     const { q, grade, difficulty, isOlympiad = false, options, correct, explanation, code } = req.body
     const [inserted] = await db
       .insert(questions)
-      .values({ q, grade, difficulty, isOlympiad, options, correct, explanation: explanation ?? null, code: code ?? null, subject: 'informatics' })
+      .values({ q, grade, difficulty, isOlympiad, options, correct, explanation: explanation ?? null, code: code ?? null })
       .returning({ id: questions.id })
     return reply.code(201).send({ id: inserted.id })
   })

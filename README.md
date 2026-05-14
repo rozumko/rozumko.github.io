@@ -83,10 +83,10 @@
 
 ## Документація
 
-- [Продуктовий план](./docs/product-roadmap.md)
 - [Архітектура](./docs/architecture.md)
 - [Модель безпеки](./docs/security-model.md)
 - [Міграції БД](./docs/migrations.md)
+- [Продуктовий план](./docs/product-roadmap.md)
 
 ---
 
@@ -103,7 +103,7 @@ npm install
 npm run dev
 ```
 
-Backend потребує `.env` з `DATABASE_URL`, `SUPABASE_URL`, `PORT`.
+Backend потребує `.env` з `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_JWT_ISSUER`, `ATTEMPT_SECRET`, `PORT`.
 
 ---
 

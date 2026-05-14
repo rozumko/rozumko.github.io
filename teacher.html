@@ -232,7 +232,7 @@
         <div class="teacher-list-heading">
           <h3 style="margin:0;font-size:1rem;font-weight:600">Реєстрації</h3>
         </div>
-        <div id="registrations-list" class="teacher-card-list">
+        <div id="registrations-list" class="teacher-card-list" aria-live="polite" aria-label="Список реєстрацій">
           <div class="empty-state">
             <i class="fas fa-clipboard-list empty-state__icon" aria-hidden="true"></i>
             <p class="empty-state__title">Реєстрацій ще немає</p>
@@ -262,13 +262,18 @@
           <p id="generate-status" class="generate-status"></p>
         </div>
 
-        <div style="display:flex;justify-content:space-between;align-items:center;margin:var(--sp-4) 0 var(--sp-2)">
-          <h3 style="margin:0;font-size:1rem;font-weight:600">Коди учнів</h3>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:var(--sp-3);margin:var(--sp-4) 0 var(--sp-2);flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:var(--sp-2);flex:1;min-width:0">
+            <h3 style="margin:0;font-size:1rem;font-weight:600;white-space:nowrap">Коди учнів</h3>
+            <select id="filter-registration" class="form-input form-input--sm" style="max-width:18rem">
+              <option value="">Всі реєстрації</option>
+            </select>
+          </div>
           <button id="copy-all-btn" class="btn btn-secondary hidden">
             <i class="fas fa-copy" aria-hidden="true"></i> Копіювати всі
           </button>
         </div>
-        <div id="codes-list" class="codes-list">
+        <div id="codes-list" class="codes-list" aria-live="polite" aria-label="Список кодів доступу">
           <p class="empty-state__sub" style="text-align:center;padding:var(--sp-4)">Кодів ще немає. Згенеруй перші коди.</p>
         </div>
       </section>

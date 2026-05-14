@@ -103,6 +103,58 @@ Always call `GET /api/me` and use the response.
 - The student carries `attemptId` + `attemptToken` in memory (+ localStorage backup for crash recovery).
 - No Supabase Auth involved for students at all.
 
+## Validation modules (pure functions, no I/O)
+
+Business rules are extracted into dedicated `*-validation.ts` files that can be
+unit-tested without a database connection or network:
+
+| File | Exports |
+|------|---------|
+| `routes/student-validation.ts` | `CODE_RE`, `normalizeCode`, `validateCodeFormat`, `generateAttemptToken`, `verifyAttemptToken`, `normalizeStudentLabel` |
+| `routes/attempt-validation.ts` | `isQuestionInAttempt`, `scoreAttempt` |
+| `routes/registration-validation.ts` | `assertRegistrationCanBeCancelled`, `normalizeRegistrationInput`, `assertEventCanAcceptRegistrations`, `assertEventCanIssueCodes` |
+| `routes/event-validation.ts` | `normalizeEventInput`, `normalizeEventPatch`, `normalizeEventQuestionSelection`, `assertQuestionsBelongToGrade` |
+| `routes/teacher-validation.ts` | `normalizeTeacherClassInput` |
+| `lib/auth.ts` | `checkRole(userRole, required)` — pure role check, admin passes any requirement |
+
+## Atomic operations
+
+Two critical multi-step writes use `db.transaction()` to prevent race conditions:
+
+### exchange-code
+```
+BEGIN
+  UPDATE access_codes SET used_count = used_count + 1
+  INSERT INTO attempts
+  INSERT INTO attempt_questions (one row per question)
+COMMIT
+```
+
+### cancel registration
+```
+BEGIN
+  DELETE FROM access_codes WHERE registration_id = $id
+  UPDATE event_registrations SET status = 'cancelled'
+COMMIT
+```
+
+## Registration cancellation rules
+
+`assertRegistrationCanBeCancelled` enforces:
+- Event status must not be `active`, `finished`, or `archived`.
+- Event `starts_at` must be in the future.
+- No used codes exist for this registration (`used_count > 0` on any code).
+
+Violation of any rule → `400 Bad Request` with a Ukrainian-language message.
+
+## Startup environment check
+
+On boot, the server validates that all required env vars are present:
+```ts
+const REQUIRED_ENV = ['DATABASE_URL', 'SUPABASE_JWT_ISSUER', 'ATTEMPT_SECRET']
+```
+Any missing variable → `process.exit(1)` with an explicit error message.
+
 ## Current olympiad event model
 
 The olympiad flow is event-based. An admin creates an olympiad event with

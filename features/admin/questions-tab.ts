@@ -101,8 +101,8 @@ function buildQuestionCard(q: Question): HTMLElement {
       <p class="question-item__meta">✓ ${esc(correctHint)}</p>
     </div>
     <div class="question-item__actions">
-      <button class="btn-q-edit btn-adm-slate btn-icon" title="Редагувати"><i class="fas fa-pen"></i></button>
-      <button class="btn-q-del  btn-adm-danger btn-icon" title="Видалити"><i class="fas fa-trash"></i></button>
+      <button class="btn-q-edit btn-adm-slate btn-icon" aria-label="Редагувати питання"><i class="fas fa-pen" aria-hidden="true"></i></button>
+      <button class="btn-q-del  btn-adm-danger btn-icon" aria-label="Видалити питання"><i class="fas fa-trash" aria-hidden="true"></i></button>
     </div>`
 
   el.querySelector<HTMLButtonElement>('.btn-q-edit')!.addEventListener('click', () => openQuestionModal(q))

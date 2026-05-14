@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   assertEventCanAcceptRegistrations,
+  assertRegistrationCanBeCancelled,
   normalizeRegistrationInput,
   normalizeTeacherClassInput,
 } from './registration-validation.js'
@@ -69,5 +70,58 @@ test('assertEventCanAcceptRegistrations rejects ended event', () => {
       endsAt: new Date('2026-05-09T10:00:00.000Z'),
     }, NOW),
     /недоступна/
+  )
+})
+
+// ── assertRegistrationCanBeCancelled ─────────────────────────
+
+const FUTURE_START = new Date('2026-05-11T09:00:00.000Z') // після NOW
+
+test('assertRegistrationCanBeCancelled дозволяє скасування published події що ще не стартувала', () => {
+  assert.doesNotThrow(() => assertRegistrationCanBeCancelled(
+    { status: 'published', startsAt: FUTURE_START },
+    0, // usedCodesCount
+    NOW,
+  ))
+})
+
+test('assertRegistrationCanBeCancelled дозволяє скасування draft події', () => {
+  assert.doesNotThrow(() => assertRegistrationCanBeCancelled(
+    { status: 'draft', startsAt: FUTURE_START },
+    0,
+    NOW,
+  ))
+})
+
+test('assertRegistrationCanBeCancelled відхиляє активну подію', () => {
+  assert.throws(
+    () => assertRegistrationCanBeCancelled(
+      { status: 'active', startsAt: new Date('2026-05-10T08:00:00.000Z') },
+      0,
+      NOW,
+    ),
+    /до початку події/
+  )
+})
+
+test('assertRegistrationCanBeCancelled відхиляє подію що вже стартувала (за часом)', () => {
+  assert.throws(
+    () => assertRegistrationCanBeCancelled(
+      { status: 'published', startsAt: new Date('2026-05-10T09:00:00.000Z') }, // <= NOW
+      0,
+      NOW,
+    ),
+    /до початку події/
+  )
+})
+
+test('assertRegistrationCanBeCancelled відхиляє якщо є використані коди', () => {
+  assert.throws(
+    () => assertRegistrationCanBeCancelled(
+      { status: 'published', startsAt: FUTURE_START },
+      1, // usedCodesCount > 0
+      NOW,
+    ),
+    /вже використані/
   )
 })

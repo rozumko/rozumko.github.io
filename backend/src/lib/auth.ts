@@ -49,6 +49,13 @@ export async function requireAuth(req: FastifyRequest, reply: FastifyReply) {
   req.user = { id: user.id, authUserId, role: user.role, name: user.name }
 }
 
+/** Pure role check — no I/O. Returns error string or null. */
+export function checkRole(userRole: string | undefined, required: string): string | null {
+  if (!userRole) return 'Потрібна авторизація'
+  if (userRole !== required && userRole !== 'admin') return 'Недостатньо прав'
+  return null
+}
+
 export async function requireAdmin(req: FastifyRequest, reply: FastifyReply) {
   await requireAuth(req, reply)
   if (reply.sent) return
@@ -61,8 +68,7 @@ export async function requireRole(role: 'teacher' | 'admin') {
   return async (req: FastifyRequest, reply: FastifyReply) => {
     await requireAuth(req, reply)
     if (reply.sent) return
-    if (req.user?.role !== role && req.user?.role !== 'admin') {
-      return reply.code(403).send({ error: 'Недостатньо прав' })
-    }
+    const err = checkRole(req.user?.role, role)
+    if (err) return reply.code(403).send({ error: err })
   }
 }

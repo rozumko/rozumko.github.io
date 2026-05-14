@@ -3,7 +3,7 @@ import { and, count, desc, eq, gte, inArray, lte } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { accessCodes, attempts, classStudents, eventQuestions, eventRegistrations, olympiadEvents, teacherClasses } from '../db/schema.js'
 import { requireAuth } from '../lib/auth.js'
-import { assertEventCanAcceptRegistrations, normalizeRegistrationInput, normalizeTeacherClassInput } from './registration-validation.js'
+import { assertEventCanAcceptRegistrations, assertRegistrationCanBeCancelled, normalizeRegistrationInput, normalizeTeacherClassInput } from './registration-validation.js'
 import { assertEventCanIssueCodes } from './teacher-events-validation.js'
 
 const CODE_WORDS = [
@@ -11,10 +11,15 @@ const CODE_WORDS = [
   'ВОВК','ОРЕЛ','КОЗА','КІНЬ','ГУСЬ','КРОТ','ТИГР','РИСЬ','ЛОСЬ','ЗУБР',
 ]
 
-function generateCode(): string {
-  const word = CODE_WORDS[Math.floor(Math.random() * CODE_WORDS.length)]
-  const digits = String(Math.floor(Math.random() * 1000)).padStart(3, '0')
-  return `${word}${digits}`
+function generateCode(exclude: Set<string> = new Set()): string {
+  // 20 слів × 1000 цифр = 20 000 комбінацій. При колізії — retry (max 20 спроб).
+  for (let i = 0; i < 20; i++) {
+    const word   = CODE_WORDS[Math.floor(Math.random() * CODE_WORDS.length)]
+    const digits = String(Math.floor(Math.random() * 1000)).padStart(3, '0')
+    const code   = `${word}${digits}`
+    if (!exclude.has(code)) { exclude.add(code); return code }
+  }
+  throw new Error('Не вдалося згенерувати унікальний код. Спробуйте ще раз.')
 }
 
 export async function teacherRoutes(app: FastifyInstance) {
@@ -229,6 +234,71 @@ export async function teacherRoutes(app: FastifyInstance) {
     return reply.code(201).send({ registration: created })
   })
 
+  // DELETE /api/teacher/registrations/:id
+  // Скасовує реєстрацію до початку події. Видаляє невикористані коди.
+  app.delete<{ Params: { id: string } }>('/registrations/:id', {
+    preHandler: requireAuth,
+  }, async (req, reply) => {
+    const { id } = req.params
+
+    // 1. Знайти реєстрацію вчителя
+    const [reg] = await db
+      .select({
+        id:     eventRegistrations.id,
+        status: eventRegistrations.status,
+        eventId: eventRegistrations.eventId,
+      })
+      .from(eventRegistrations)
+      .where(and(
+        eq(eventRegistrations.id, id),
+        eq(eventRegistrations.teacherId, req.user!.id),
+      ))
+      .limit(1)
+
+    if (!reg) return reply.code(404).send({ error: 'Реєстрацію не знайдено' })
+    if (reg.status === 'cancelled') return reply.code(409).send({ error: 'Реєстрацію вже скасовано' })
+
+    // 2. Знайти подію
+    const [event] = await db
+      .select({ status: olympiadEvents.status, startsAt: olympiadEvents.startsAt })
+      .from(olympiadEvents)
+      .where(eq(olympiadEvents.id, reg.eventId))
+      .limit(1)
+
+    if (!event) return reply.code(404).send({ error: 'Подію не знайдено' })
+
+    // 3. Перевірити кількість використаних кодів для цієї реєстрації
+    const [{ usedTotal }] = await db
+      .select({ usedTotal: count() })
+      .from(accessCodes)
+      .innerJoin(attempts, eq(attempts.codeId, accessCodes.id))
+      .where(eq(accessCodes.registrationId, id))
+
+    // 4. Перевірити правила скасування
+    try {
+      assertRegistrationCanBeCancelled(event, usedTotal)
+    } catch (err) {
+      return reply.code(409).send({ error: (err as Error).message })
+    }
+
+    // 5 + 6. Видалити коди і позначити скасованою — атомарно
+    const cancelled = await db.transaction(async (tx) => {
+      await tx
+        .delete(accessCodes)
+        .where(eq(accessCodes.registrationId, id))
+
+      const [updated] = await tx
+        .update(eventRegistrations)
+        .set({ status: 'cancelled', updatedAt: new Date() })
+        .where(eq(eventRegistrations.id, id))
+        .returning()
+
+      return updated
+    })
+
+    return reply.send({ registration: cancelled })
+  })
+
   // POST /api/teacher/codes/generate
   // Body: { registrationId, maxUses, expiresAt? }
   app.post<{
@@ -305,7 +375,7 @@ export async function teacherRoutes(app: FastifyInstance) {
     }
 
     const existingCodes = await db
-      .select({ id: accessCodes.id })
+      .select({ id: accessCodes.id, code: accessCodes.code })
       .from(accessCodes)
       .where(and(
         eq(accessCodes.createdBy, req.user!.id),
@@ -318,10 +388,11 @@ export async function teacherRoutes(app: FastifyInstance) {
 
     const codesToCreate = registration.participantsCount - existingCodes.length
 
+    const usedCodes = new Set(existingCodes.map(c => c.code))
     const codes = Array.from({ length: codesToCreate }, () => ({
       eventId: registration.eventId,
       registrationId: registration.id,
-      code:      generateCode(),
+      code:      generateCode(usedCodes),
       grade:     registration.grade,
       maxUses,
       createdBy: req.user!.id,
@@ -336,9 +407,39 @@ export async function teacherRoutes(app: FastifyInstance) {
     return reply.code(201).send({ codes: inserted })
   })
 
-  // GET /api/teacher/codes
-  // Повертає всі коди вчителя
-  app.get('/codes', { preHandler: requireAuth }, async (req, reply) => {
+  // GET /api/teacher/codes[?registrationId=<uuid>]
+  // Повертає коди вчителя. Опційний фільтр за registrationId.
+  app.get<{ Querystring: { registrationId?: string } }>('/codes', {
+    preHandler: requireAuth,
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: {
+          registrationId: { type: 'string', minLength: 36, maxLength: 36 },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    const { registrationId } = req.query
+
+    const conditions = [eq(accessCodes.createdBy, req.user!.id)]
+
+    if (registrationId) {
+      // Перевірити, що реєстрація належить цьому вчителю
+      const [reg] = await db
+        .select({ id: eventRegistrations.id })
+        .from(eventRegistrations)
+        .where(and(
+          eq(eventRegistrations.id, registrationId),
+          eq(eventRegistrations.teacherId, req.user!.id),
+        ))
+        .limit(1)
+
+      if (!reg) return reply.code(404).send({ error: 'Реєстрацію не знайдено' })
+
+      conditions.push(eq(accessCodes.registrationId, registrationId))
+    }
+
     const list = await db
       .select({
         id: accessCodes.id,
@@ -354,7 +455,7 @@ export async function teacherRoutes(app: FastifyInstance) {
       })
       .from(accessCodes)
       .leftJoin(olympiadEvents, eq(accessCodes.eventId, olympiadEvents.id))
-      .where(eq(accessCodes.createdBy, req.user!.id))
+      .where(and(...conditions))
       .orderBy(desc(accessCodes.createdAt))
 
     return reply.send({ codes: list })

@@ -1,9 +1,9 @@
 import type { FastifyInstance } from 'fastify'
-import { asc, eq } from 'drizzle-orm'
+import { asc, eq, sql } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { attemptQuestions, attempts, questions } from '../db/schema.js'
 import { isQuestionInAttempt, scoreAttempt } from './attempt-validation.js'
-import { verifyAttemptToken } from './student.js'
+import { verifyAttemptToken } from './student-validation.js'
 
 function checkAttemptToken(req: { headers: Record<string, string | string[] | undefined> }, attemptId: string): boolean {
   const token = req.headers['x-attempt-token']
@@ -62,12 +62,13 @@ export async function attemptRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: 'Питання не належить цій спробі' })
     }
 
-    const currentAnswers = (attempt.answers as Record<string, number>) ?? {}
-    const updatedAnswers = { ...currentAnswers, [questionId]: answer }
-
+    // Атомарний JSONB merge — захист від race condition при одночасних відповідях.
+    // sql`||` (jsonb concat) виконується атомарно в одному UPDATE, без read-modify-write.
     await db
       .update(attempts)
-      .set({ answers: updatedAnswers })
+      .set({
+        answers: sql`COALESCE(${attempts.answers}, '{}'::jsonb) || ${JSON.stringify({ [questionId]: answer })}::jsonb`,
+      })
       .where(eq(attempts.id, id))
 
     return reply.code(200).send({ saved: true })
@@ -99,7 +100,16 @@ export async function attemptRoutes(app: FastifyInstance) {
       return reply.code(403).send({ error: 'Невірний токен спроби' })
     }
     if (attempt.status === 'finished') {
-      return reply.code(409).send({ error: 'Спроба вже завершена' })
+      // Повертаємо збережений результат — idempotent finish.
+      // Захищає від сценарію: учень завершив, браузер закрили, localStorage втрачено.
+      const savedQs = await db
+        .select({ id: questions.id, correct: questions.correct, explanation: questions.explanation })
+        .from(attemptQuestions)
+        .innerJoin(questions, eq(attemptQuestions.questionId, questions.id))
+        .where(eq(attemptQuestions.attemptId, id))
+        .orderBy(asc(attemptQuestions.position))
+      const { results } = scoreAttempt(savedQs, (attempt.answers as Record<string, number>) ?? {})
+      return reply.code(200).send({ score: attempt.score ?? 0, total: attempt.totalQ ?? savedQs.length, results })
     }
 
     // Ліміт часу: спроба не може тривати більше 90 хвилин

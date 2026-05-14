@@ -109,10 +109,23 @@ export interface EventRegistration {
 
 async function request(path: string, options: RequestInit = {}): Promise<any> {
   const { headers: extraHeaders, ...rest } = options as any
-  const res = await fetch(`${API_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...extraHeaders },
-    ...rest,
-  })
+  let res: Response
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      headers: { 'Content-Type': 'application/json', ...extraHeaders },
+      ...rest,
+    })
+  } catch {
+    throw new Error('Немає з\'єднання з сервером. Перевірте інтернет.')
+  }
+
+  // Деякі відповіді можуть бути не JSON (502, 503 від проксі)
+  const contentType = res.headers.get('content-type') ?? ''
+  if (!contentType.includes('application/json')) {
+    if (!res.ok) throw new Error(`Помилка сервера (${res.status}). Спробуйте пізніше.`)
+    return {}
+  }
+
   const data = await res.json()
   if (!res.ok) throw new Error(data.error ?? `Помилка ${res.status}`)
   return data
@@ -260,6 +273,12 @@ export function createTeacherRegistration(data: {
   })
 }
 
+export function cancelTeacherRegistration(registrationId: string): Promise<{ registration: EventRegistration }> {
+  return authRequest(`/api/teacher/registrations/${encodeURIComponent(registrationId)}`, {
+    method: 'DELETE',
+  })
+}
+
 export function generateCodes({ registrationId, maxUses = 1 }: { registrationId: string; maxUses?: number }): Promise<{ codes: Pick<AccessCode, 'id' | 'code'>[] }> {
   return authRequest('/api/teacher/codes/generate', {
     method: 'POST',
@@ -267,8 +286,9 @@ export function generateCodes({ registrationId, maxUses = 1 }: { registrationId:
   })
 }
 
-export function getTeacherCodes(): Promise<{ codes: AccessCode[] }> {
-  return authRequest('/api/teacher/codes')
+export function getTeacherCodes(registrationId?: string): Promise<{ codes: AccessCode[] }> {
+  const qs = registrationId ? `?registrationId=${encodeURIComponent(registrationId)}` : ''
+  return authRequest(`/api/teacher/codes${qs}`)
 }
 
 export function getTeacherResults(): Promise<{ results: Attempt[] }> {

@@ -2,7 +2,6 @@ import { pgTable, text, integer, boolean, timestamp, jsonb, uuid } from 'drizzle
 
 export const questions = pgTable('questions', {
   id:          uuid('id').primaryKey().defaultRandom(),
-  firebaseId:  text('firebase_id').unique(),
   q:           text('q').notNull(),
   code:        text('code'),
   options:     jsonb('options').notNull().$type<string[]>(),
@@ -10,7 +9,6 @@ export const questions = pgTable('questions', {
   explanation: text('explanation'),
   difficulty:  text('difficulty'),
   grade:       integer('grade'),
-  subject:     text('subject'),
   isOlympiad:  boolean('is_olympiad').default(false),
   createdAt:   timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt:   timestamp('updated_at', { withTimezone: true }).defaultNow(),

@@ -1,26 +1,16 @@
 import type { FastifyInstance } from 'fastify'
-import { and, asc, eq, sql } from 'drizzle-orm'
-import { createHmac, timingSafeEqual } from 'crypto'
+import { and, asc, eq, lt, sql } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { accessCodes, attemptQuestions, attempts, eventQuestions, olympiadEvents, questions } from '../db/schema.js'
 import { assertEventCanIssueCodes } from './teacher-events-validation.js'
+import {
+  normalizeCode,
+  validateCodeFormat,
+  generateAttemptToken,
+  verifyAttemptToken,
+} from './student-validation.js'
 
-const ATTEMPT_SECRET = process.env.ATTEMPT_SECRET ?? 'dev-secret-change-in-prod'
-
-export function generateAttemptToken(attemptId: string): string {
-  return createHmac('sha256', ATTEMPT_SECRET).update(attemptId).digest('hex')
-}
-
-export function verifyAttemptToken(attemptId: string, token: string): boolean {
-  const expected = Buffer.from(generateAttemptToken(attemptId), 'hex')
-  try {
-    const actual = Buffer.from(token, 'hex')
-    if (actual.length !== expected.length) return false
-    return timingSafeEqual(expected, actual)
-  } catch {
-    return false
-  }
-}
+export { generateAttemptToken, verifyAttemptToken }
 
 export async function studentRoutes(app: FastifyInstance) {
   // POST /api/student/exchange-code
@@ -40,13 +30,10 @@ export async function studentRoutes(app: FastifyInstance) {
       },
     },
   }, async (req, reply) => {
-    const { code } = req.body
-    const normalized = code.trim().toUpperCase()
+    const normalized = normalizeCode(req.body.code)
 
-    // Перевірити формат: СЛОВО(2-5 укр. літер)+3 цифри або навпаки
-    const CODE_RE = /^([А-ЯҐЄІЇ]{2,5}\d{3}|\d{3}[А-ЯҐЄІЇ]{2,5})$/u
-    if (!CODE_RE.test(normalized)) {
-      return reply.code(400).send({ error: 'Невірний формат коду. Приклад: КІТ247' })
+    try { validateCodeFormat(normalized) } catch (e: any) {
+      return reply.code(400).send({ error: e.message })
     }
 
     // 1. Знайти код
@@ -65,7 +52,8 @@ export async function studentRoutes(app: FastifyInstance) {
       return reply.code(410).send({ error: 'Код застарів' })
     }
 
-    // 3. Перевірити ліміт використань
+    // 3. Попередня перевірка ліміту (оптимізація — уникає зайвих запитів до БД)
+    //    Фінальна атомарна перевірка відбувається всередині транзакції.
     if (accessCode.usedCount >= accessCode.maxUses) {
       return reply.code(409).send({ error: 'Код вже використано' })
     }
@@ -112,14 +100,23 @@ export async function studentRoutes(app: FastifyInstance) {
       return reply.code(422).send({ error: 'Для цього класу ще не обрано питання в події' })
     }
 
-    // 5. Збільшити лічильник використань після успішної перевірки події та питань
-    await db
-      .update(accessCodes)
-      .set({ usedCount: sql`${accessCodes.usedCount} + 1` })
-      .where(eq(accessCodes.id, accessCode.id))
-
-    // 6. Створити спробу і зафіксувати виданий набір питань
+    // 5 + 6. Атомарно: збільшити лічильник + створити спробу + зафіксувати питання
+    // Умовний UPDATE (used_count < max_uses) всередині транзакції — захист від race condition:
+    // два одночасних запити не зможуть обидва пройти, навіть якщо обидва пройшли попередню перевірку.
     const [attempt] = await db.transaction(async tx => {
+      const incremented = await tx
+        .update(accessCodes)
+        .set({ usedCount: sql`${accessCodes.usedCount} + 1` })
+        .where(and(
+          eq(accessCodes.id, accessCode.id),
+          lt(accessCodes.usedCount, accessCodes.maxUses),
+        ))
+        .returning({ id: accessCodes.id })
+
+      if (incremented.length === 0) {
+        throw Object.assign(new Error('Код вже використано'), { statusCode: 409 })
+      }
+
       const [createdAttempt] = await tx
         .insert(attempts)
         .values({

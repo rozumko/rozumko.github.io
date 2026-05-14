@@ -3,6 +3,14 @@ import cors from '@fastify/cors'
 import rateLimit from '@fastify/rate-limit'
 import 'dotenv/config'
 
+// ── Перевірка обов'язкових env-змінних при старті ────────────
+const REQUIRED_ENV = ['DATABASE_URL', 'SUPABASE_URL', 'SUPABASE_JWT_ISSUER', 'ATTEMPT_SECRET'] as const
+const missing = REQUIRED_ENV.filter(k => !process.env[k])
+if (missing.length) {
+  console.error(`[startup] Відсутні обов'язкові змінні середовища: ${missing.join(', ')}`)
+  process.exit(1)
+}
+
 const app = Fastify({ logger: true })
 
 // CORS — дозволяємо тільки GitHub Pages та localhost для розробки

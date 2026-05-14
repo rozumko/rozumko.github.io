@@ -3,6 +3,7 @@ import {
   createTeacherClass, createTeacherRegistration,
   getTeacherMe, generateCodes, getTeacherClasses, getTeacherCodes,
   getTeacherRegistrationEvents, getTeacherRegistrations, getTeacherResults,
+  cancelTeacherRegistration,
   getClassStudents, addClassStudent, updateClassStudent, deleteClassStudent,
   type TeacherClass, type ClassStudent, type EventRegistration, type TeacherEvent, type Attempt,
 } from './features/api/client.js'
@@ -38,6 +39,7 @@ const registrationCountInput    = $maybe<HTMLInputElement>('registration-count')
 const registrationSubmitBtn     = $maybe<HTMLButtonElement>('registration-submit-btn')
 const registrationStatus        = $maybe('registration-form-status')
 const registrationGenerateSelect = $maybe<HTMLSelectElement>('generate-registration')
+const filterRegistrationSelect   = $maybe<HTMLSelectElement>('filter-registration')
 const generateBtn               = $maybe<HTMLButtonElement>('generate-btn')
 
 let teacherClasses: TeacherClass[] = []
@@ -192,7 +194,7 @@ generateBtn?.addEventListener('click', async () => {
     const { codes } = await generateCodes({ registrationId, maxUses: 1 })
     generateStatus.textContent = `✓ Додано ${codes.length} кодів`
     generateStatus.className   = 'generate-status generate-status--ok'
-    await Promise.all([loadCodes(), loadRegistrations()])
+    await Promise.all([loadCodes(currentFilterRegId()), loadRegistrations()])
   } catch (err) {
     generateStatus.textContent = (err as Error).message
     generateStatus.className   = 'generate-status generate-status--err'
@@ -230,9 +232,28 @@ async function loadRegistrations() {
     teacherRegistrations = registrations
     renderRegistrations(registrations)
     renderGenerateRegistrationOptions()
+    renderFilterRegistrationOptions()
   } catch (err) {
     registrationsList.innerHTML = `<p class="empty-state__sub" style="text-align:center;padding:var(--sp-4)">${esc((err as Error).message)}</p>`
   }
+}
+
+function renderFilterRegistrationOptions() {
+  if (!filterRegistrationSelect) return
+  const prev = filterRegistrationSelect.value
+  filterRegistrationSelect.innerHTML = '<option value="">Всі реєстрації</option>'
+  // Тільки активні реєстрації (не скасовані)
+  teacherRegistrations
+    .filter(reg => reg.status !== 'cancelled')
+    .forEach(reg => {
+      const opt = document.createElement('option')
+      opt.value       = reg.id
+      opt.textContent = `${reg.className ?? 'Клас'} · ${reg.eventTitle ?? 'Подія'}`
+      filterRegistrationSelect!.appendChild(opt)
+    })
+  // Зберегти попередній вибір тільки якщо реєстрація ще існує та активна
+  const stillValid = [...filterRegistrationSelect.options].some(o => o.value === prev)
+  filterRegistrationSelect.value = stillValid ? prev : ''
 }
 
 function renderGenerateRegistrationOptions() {
@@ -336,8 +357,8 @@ function renderClasses() {
       <button class="btn-class-open btn-adm-slate btn-sm" data-class-id="${esc(cls.id)}" data-class-name="${esc(cls.name)}" data-class-grade="${esc(String(cls.grade))}">
         <i class="fas fa-users" aria-hidden="true"></i> Учні
       </button>`
-    card.querySelector<HTMLButtonElement>('.btn-class-open')!
-      .addEventListener('click', () => openClassDetail(cls))
+    const openBtn = card.querySelector<HTMLButtonElement>('.btn-class-open')!
+    openBtn.addEventListener('click', () => openClassDetail(cls, openBtn))
     classesList.appendChild(card)
   })
 }
@@ -345,18 +366,23 @@ function renderClasses() {
 // ─── Class detail panel ───────────────────────────────────────────────────
 
 let classDetailPanel: HTMLElement | null = null
+let classDetailOpener: HTMLElement | null = null  // для повернення фокусу
 
-function openClassDetail(cls: TeacherClass) {
+function openClassDetail(cls: TeacherClass, opener?: HTMLElement) {
   closeClassDetail()
+  classDetailOpener = opener ?? null
 
   const panel = document.createElement('div')
-  panel.id        = 'class-detail-panel'
-  panel.className = 'class-detail-overlay'
+  panel.id              = 'class-detail-panel'
+  panel.className       = 'class-detail-overlay'
+  panel.setAttribute('role', 'dialog')
+  panel.setAttribute('aria-modal', 'true')
+  panel.setAttribute('aria-labelledby', 'class-detail-title')
   panel.innerHTML = `<div class="class-detail-panel">
     <div class="class-detail-panel__head">
       <div>
         <p class="class-detail-panel__eyebrow">${esc(String(cls.grade))} клас</p>
-        <h3 class="class-detail-panel__title">${esc(cls.name)}</h3>
+        <h3 class="class-detail-panel__title" id="class-detail-title">${esc(cls.name)}</h3>
       </div>
       <button id="class-detail-close" class="btn-adm-slate btn-sm" aria-label="Закрити">
         <i class="fas fa-times" aria-hidden="true"></i>
@@ -420,8 +446,14 @@ function openClassDetail(cls: TeacherClass) {
 
   reloadStudentsList(cls.id)
 
-  // Затримка для анімації
-  requestAnimationFrame(() => panel.classList.add('class-detail-overlay--open'))
+  // Затримка для анімації, потім переводимо фокус усередину
+  requestAnimationFrame(() => {
+    panel.classList.add('class-detail-overlay--open')
+    const firstFocusable = panel.querySelector<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    )
+    firstFocusable?.focus()
+  })
 }
 
 function closeClassDetail() {
@@ -430,6 +462,9 @@ function closeClassDetail() {
     classDetailPanel.remove()
     classDetailPanel = null
   }
+  // Повертаємо фокус на кнопку що відкрила панель
+  classDetailOpener?.focus()
+  classDetailOpener = null
 }
 
 function handleDetailEsc(e: KeyboardEvent) {
@@ -501,8 +536,8 @@ function startEditStudent(row: HTMLElement, s: ClassStudent, classId: string) {
 
   labelEl.innerHTML = `<input class="student-edit-input form-input" value="${esc(s.label)}" maxlength="60" />`
   actionsEl.innerHTML = `
-    <button class="btn-student-save btn-adm-emerald btn-sm"><i class="fas fa-check"></i></button>
-    <button class="btn-student-cancel btn-adm-slate btn-sm"><i class="fas fa-times"></i></button>`
+    <button class="btn-student-save btn-adm-emerald btn-sm" aria-label="Зберегти"><i class="fas fa-check" aria-hidden="true"></i></button>
+    <button class="btn-student-cancel btn-adm-slate btn-sm" aria-label="Скасувати редагування"><i class="fas fa-times" aria-hidden="true"></i></button>`
 
   const input = labelEl.querySelector<HTMLInputElement>('.student-edit-input')!
   input.focus()
@@ -549,13 +584,56 @@ function renderRegistrations(registrations: EventRegistration[]) {
     const codeStatus = codesCreatedCount >= participantsCount
       ? 'коди створено'
       : `кодів ${codesCreatedCount}/${participantsCount}`
+
+    const isCancellable = reg.status === 'registered'
     row.innerHTML = `
-      <div>
+      <div style="flex:1;min-width:0">
         <p class="teacher-info-card__title">${esc(reg.className ?? 'Клас')} · ${esc(reg.eventTitle ?? 'Подія')}</p>
         <p class="teacher-info-card__meta">${esc(String(reg.grade))} клас · ${esc(String(reg.participantsCount))} учасників · ${paymentLabel(reg.paymentStatus)} · ${codeStatus}</p>
       </div>
-      <span class="teacher-info-card__badge">${esc(reg.status)}</span>`
+      <div style="display:flex;align-items:center;gap:var(--sp-2);flex-shrink:0">
+        <span class="teacher-info-card__badge">${reg.status === 'cancelled' ? '❌ Скасовано' : esc(reg.status)}</span>
+        ${isCancellable ? `<button class="btn-cancel-reg btn-adm-danger btn-sm" data-id="${esc(reg.id)}" aria-label="Скасувати реєстрацію">
+          <i class="fas fa-times" aria-hidden="true"></i>
+        </button>` : ''}
+      </div>`
     registrationsList.appendChild(row)
+  })
+
+  // Обробник скасування — inline підтвердження без confirm()
+  registrationsList.querySelectorAll<HTMLButtonElement>('.btn-cancel-reg').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const card = btn.closest('.teacher-info-card')!
+      // Якщо вже є рядок підтвердження — не дублюємо
+      if (card.querySelector('.cancel-confirm-row')) return
+
+      const row = document.createElement('div')
+      row.className = 'cancel-confirm-row'
+      row.style.cssText = 'display:flex;align-items:center;gap:var(--sp-2);margin-top:var(--sp-2);flex-wrap:wrap'
+      row.innerHTML = `
+        <span style="font-size:var(--font-size-sm);color:var(--clr-text-muted)">Скасувати? Невикористані коди буде видалено.</span>
+        <button class="btn-cancel-confirm btn-adm-danger btn-sm">Так, скасувати</button>
+        <button class="btn-cancel-abort btn-secondary btn-sm">Ні</button>`
+      card.appendChild(row)
+
+      row.querySelector('.btn-cancel-abort')!.addEventListener('click', () => row.remove())
+      row.querySelector<HTMLButtonElement>('.btn-cancel-confirm')!.addEventListener('click', async () => {
+        const confirmBtn = row.querySelector<HTMLButtonElement>('.btn-cancel-confirm')!
+        confirmBtn.disabled = true
+        confirmBtn.textContent = 'Скасовую…'
+        try {
+          await cancelTeacherRegistration(btn.dataset.id!)
+          await Promise.all([loadRegistrations(), loadCodes(currentFilterRegId())])
+        } catch (err) {
+          confirmBtn.disabled = false
+          confirmBtn.textContent = 'Так, скасувати'
+          const msg = document.createElement('span')
+          msg.style.cssText = 'color:#dc2626;font-size:var(--font-size-xs)'
+          msg.textContent = (err as Error).message
+          row.appendChild(msg)
+        }
+      })
+    })
   })
 }
 
@@ -580,11 +658,16 @@ copyAllBtn.addEventListener('click', () => {
   })
 })
 
+// Поточне значення фільтра кодів
+function currentFilterRegId(): string | undefined {
+  return filterRegistrationSelect?.value || undefined
+}
+
 // --- Load codes ---
-async function loadCodes() {
-  const { codes } = await getTeacherCodes()
+async function loadCodes(registrationId?: string) {
+  const { codes } = await getTeacherCodes(registrationId)
   if (!codes.length) {
-    codesList.innerHTML = '<p class="empty-state__sub" style="text-align:center;padding:var(--sp-4)">Кодів ще немає. Згенеруй перші коди.</p>'
+    codesList.innerHTML = '<p class="empty-state__sub" style="text-align:center;padding:var(--sp-4)">Кодів немає для цієї реєстрації.</p>'
     copyAllBtn.classList.add('hidden')
     return
   }
@@ -601,6 +684,12 @@ async function loadCodes() {
   })
   copyAllBtn.classList.remove('hidden')
 }
+
+// Фільтр кодів за реєстрацією
+filterRegistrationSelect?.addEventListener('change', () => {
+  const regId = filterRegistrationSelect.value || undefined
+  loadCodes(regId)
+})
 
 // --- Load results ---
 async function loadResults() {

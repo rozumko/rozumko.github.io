@@ -76,3 +76,19 @@ export function assertEventCanAcceptRegistrations(
     throw new Error('Реєстрація на цю подію вже недоступна')
   }
 }
+
+export function assertRegistrationCanBeCancelled(
+  event: { status: string; startsAt: Date },
+  usedCodesCount: number,
+  now = new Date()
+): void {
+  if (['active', 'finished', 'archived'].includes(event.status)) {
+    throw new Error('Скасувати реєстрацію можна лише до початку події')
+  }
+  if (event.startsAt <= now) {
+    throw new Error('Скасувати реєстрацію можна лише до початку події')
+  }
+  if (usedCodesCount > 0) {
+    throw new Error('Неможливо скасувати реєстрацію: деякі коди вже використані учнями')
+  }
+}
