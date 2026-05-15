@@ -46,67 +46,75 @@
   <div id="auth-section" class="auth-page-wrap">
     <div class="auth-page-inner">
 
-      <!-- Картка входу -->
-      <div class="auth-card">
-        <div class="auth-card__header">
-          <p class="auth-card__eyebrow">Кабінет</p>
-          <h1 class="auth-card__title">Вхід для вчителя</h1>
-          <p class="auth-card__sub">Увійдіть, щоб керувати класами, кодами та результатами.</p>
-        </div>
-        <div class="auth-card__body">
-          <form id="teacher-login-form" novalidate aria-describedby="login-error">
-            <div class="form-fields">
-              <div class="form-group">
-                <label for="login-email" class="form-label">Електронна пошта</label>
-                <input id="login-email" type="email" autocomplete="email"
-                  placeholder="teacher@school.ua" required class="form-input"/>
-              </div>
-              <div class="form-group">
-                <label for="login-password" class="form-label">Пароль</label>
-                <input id="login-password" type="password" autocomplete="current-password"
-                  placeholder="••••••••" required class="form-input"/>
-              </div>
-            </div>
-            <p id="login-error" class="form-error" role="alert" aria-live="assertive"></p>
-            <button type="submit" id="login-submit-btn" class="btn btn-sky btn--full">Увійти</button>
-          </form>
-          <div class="auth-divider">
-            <p class="auth-divider__text">Ще немає кабінету?</p>
-            <button id="show-register-btn" class="btn btn-secondary btn--full">Зареєструватись</button>
-          </div>
-        </div>
-      </div>
+      <!-- Єдина картка: login / register -->
+      <div class="auth-card" id="auth-card">
 
-      <!-- Картка реєстрації -->
-      <div id="register-section" class="auth-card hidden" style="margin-top: var(--sp-4);">
+        <!-- Заголовок (змінюється через JS) -->
+        <div class="auth-card__header" id="auth-card-header">
+          <p class="auth-card__eyebrow">Кабінет</p>
+          <h1 class="auth-card__title" id="auth-card-title">Вхід для вчителя</h1>
+          <p class="auth-card__sub" id="auth-card-sub">Увійдіть, щоб керувати класами, кодами та результатами.</p>
+        </div>
+
         <div class="auth-card__body">
-          <h2 class="auth-register__title">Реєстрація вчителя</h2>
-          <form id="teacher-register-form" novalidate aria-describedby="register-error">
-            <div class="form-fields">
-              <div class="form-group">
-                <label for="reg-email" class="form-label">Електронна пошта</label>
-                <input id="reg-email" type="email" autocomplete="email"
-                  placeholder="teacher@school.ua" required class="form-input"/>
+
+          <!-- ── РЕЖИМ ВХОДУ ── -->
+          <div id="login-mode">
+            <form id="teacher-login-form" novalidate aria-describedby="login-error">
+              <div class="form-fields">
+                <div class="form-group">
+                  <label for="login-email" class="form-label">Електронна пошта</label>
+                  <input id="login-email" type="email" autocomplete="email"
+                    placeholder="teacher@school.ua" required class="form-input"/>
+                </div>
+                <div class="form-group">
+                  <label for="login-password" class="form-label">Пароль</label>
+                  <input id="login-password" type="password" autocomplete="current-password"
+                    placeholder="••••••••" required class="form-input"/>
+                </div>
               </div>
-              <div class="form-group">
-                <label for="reg-school" class="form-label">Школа або заклад</label>
-                <input id="reg-school" type="text" autocomplete="organization"
-                  placeholder="Ліцей №1, м. Київ" class="form-input"/>
-              </div>
-              <div class="form-group">
-                <label for="reg-password" class="form-label">Пароль (мінімум 8 символів)</label>
-                <input id="reg-password" type="password" autocomplete="new-password"
-                  placeholder="••••••••" minlength="8" required class="form-input"/>
-              </div>
-            </div>
-            <p class="form-privacy-note">
-              <i class="fas fa-shield-alt" aria-hidden="true"></i>
-              Зберігаємо лише email і назву закладу.
+              <p id="login-error" class="form-error" role="alert" aria-live="assertive"></p>
+              <button type="submit" id="login-submit-btn" class="btn btn-sky btn--full">Увійти</button>
+            </form>
+            <p class="auth-switch-hint">
+              Ще немає кабінету?
+              <button id="show-register-btn" class="auth-switch-link">Зареєструватись</button>
             </p>
-            <p id="register-error" class="form-error" role="alert" aria-live="assertive"></p>
-            <button type="submit" id="register-submit-btn" class="btn btn-emerald btn--full">Створити кабінет</button>
-            <button type="button" id="hide-register-btn" class="btn btn-secondary btn--full" style="margin-top: var(--sp-2);">Назад до входу</button>
-          </form>
+          </div>
+
+          <!-- ── РЕЖИМ РЕЄСТРАЦІЇ ── -->
+          <div id="register-mode" class="hidden">
+            <form id="teacher-register-form" novalidate aria-describedby="register-error">
+              <div class="form-fields">
+                <div class="form-group">
+                  <label for="reg-email" class="form-label">Електронна пошта</label>
+                  <input id="reg-email" type="email" autocomplete="email"
+                    placeholder="teacher@school.ua" required class="form-input"/>
+                </div>
+                <div class="form-group">
+                  <label for="reg-school" class="form-label">Школа або заклад</label>
+                  <input id="reg-school" type="text" autocomplete="organization"
+                    placeholder="Ліцей №1, м. Київ" class="form-input"/>
+                </div>
+                <div class="form-group">
+                  <label for="reg-password" class="form-label">Пароль (мінімум 8 символів)</label>
+                  <input id="reg-password" type="password" autocomplete="new-password"
+                    placeholder="••••••••" minlength="8" required class="form-input"/>
+                </div>
+              </div>
+              <p class="form-privacy-note">
+                <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                Зберігаємо лише email і назву закладу.
+              </p>
+              <p id="register-error" class="form-error" role="alert" aria-live="assertive"></p>
+              <button type="submit" id="register-submit-btn" class="btn btn-emerald btn--full">Створити кабінет</button>
+            </form>
+            <p class="auth-switch-hint">
+              Вже є кабінет?
+              <button id="hide-register-btn" class="auth-switch-link">Увійти</button>
+            </p>
+          </div>
+
         </div>
       </div>
 

@@ -1788,6 +1788,29 @@ button {
   margin-bottom: var(--sp-3);
 }
 
+/* Перемикач login ↔ register */
+.auth-switch-hint {
+  margin-top: var(--sp-5);
+  padding-top: var(--sp-5);
+  border-top: 1px solid var(--clr-border);
+  text-align: center;
+  font-size: var(--font-size-sm);
+  color: var(--clr-text-muted);
+}
+.auth-switch-link {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-left: var(--sp-1);
+  color: var(--clr-primary);
+  font-size: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.auth-switch-link:hover { color: var(--clr-primary-dark); }
+
 /* Футер auth-сторінки */
 .teacher-auth-footer {
   margin-top: var(--sp-8);
