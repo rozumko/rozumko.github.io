@@ -169,83 +169,91 @@
 
       <!-- Вкладка: Класи -->
       <section id="tab-classes" class="tab-panel hidden">
-        <div class="class-form-card">
-          <h2 class="tab-panel__heading" style="margin-bottom:var(--sp-4)">Класи та реєстрації</h2>
-          <form id="teacher-class-form" class="class-form__row" novalidate>
-            <div class="class-form__field">
-              <label for="class-name" class="form-label">Назва класу</label>
-              <input id="class-name" type="text" maxlength="80" placeholder="Наприклад: 2-А" class="form-input"/>
-            </div>
-            <div class="class-form__grade">
-              <label for="class-grade" class="form-label">Клас</label>
-              <select id="class-grade" class="form-input">
-                <option value="1">1 клас</option>
-                <option value="2">2 клас</option>
-                <option value="3">3 клас</option>
-                <option value="4">4 клас</option>
-              </select>
-            </div>
-            <div class="class-form__actions">
-              <button id="class-submit-btn" type="submit" class="btn btn-emerald">
-                <i class="fas fa-plus" aria-hidden="true"></i> Додати клас
-              </button>
-            </div>
-          </form>
-          <p id="class-form-status" class="generate-status"></p>
-        </div>
+        <div class="classes-grid">
 
-        <div class="class-form-card">
-          <h3 class="tab-panel__heading" style="margin-bottom:var(--sp-4);font-size:1rem">Реєстрація класу на подію</h3>
-          <form id="registration-form" class="class-form__row" novalidate>
-            <div class="class-form__field">
-              <label for="registration-class" class="form-label">Клас</label>
-              <select id="registration-class" class="form-input">
-                <option value="">Створіть клас</option>
-              </select>
+          <!-- Ліва колонка: Класи -->
+          <div class="classes-col">
+            <div class="class-form-card">
+              <h2 class="tab-panel__heading">Мої класи</h2>
+              <form id="teacher-class-form" class="class-form__row" novalidate>
+                <div class="class-form__field">
+                  <label for="class-name" class="form-label">Назва</label>
+                  <input id="class-name" type="text" maxlength="80" placeholder="Наприклад: 2-А" class="form-input"/>
+                </div>
+                <div class="class-form__grade">
+                  <label for="class-grade" class="form-label">Клас</label>
+                  <select id="class-grade" class="form-input">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                  </select>
+                </div>
+                <div class="class-form__actions">
+                  <button id="class-submit-btn" type="submit" class="btn btn-emerald">
+                    <i class="fas fa-plus" aria-hidden="true"></i> Додати
+                  </button>
+                </div>
+              </form>
+              <p id="class-form-status" class="generate-status"></p>
             </div>
-            <div class="class-form__field">
-              <label for="registration-event" class="form-label">Подія</label>
-              <select id="registration-event" class="form-input">
-                <option value="">Завантаження подій…</option>
-              </select>
-            </div>
-            <div class="class-form__grade">
-              <label for="registration-count" class="form-label">Учасників</label>
-              <input id="registration-count" type="number" min="1" max="100" value="1" class="form-input form-input--count"/>
-            </div>
-            <div class="class-form__actions">
-              <button id="registration-submit-btn" type="submit" class="btn btn-sky">
-                <i class="fas fa-clipboard-check" aria-hidden="true"></i> Зареєструвати
-              </button>
-            </div>
-          </form>
-          <p class="form-privacy-note" style="margin-top:var(--sp-3)">
-            <i class="fas fa-shield-alt" aria-hidden="true"></i>
-            Імена та прізвища дітей не зберігаються. Тут фіксується лише кількість учасників.
-          </p>
-          <p id="registration-form-status" class="generate-status"></p>
-        </div>
 
-        <div class="teacher-list-heading">
-          <h3 style="margin:0;font-size:1rem;font-weight:600">Мої класи</h3>
-        </div>
-        <div id="classes-list" class="teacher-card-list">
-          <div class="empty-state">
-            <i class="fas fa-users empty-state__icon" aria-hidden="true"></i>
-            <p class="empty-state__title">Класів ще немає</p>
-            <p class="empty-state__sub">Додайте клас, щоб реєструвати учасників на події.</p>
+            <div id="classes-list" class="teacher-card-list">
+              <div class="empty-state">
+                <i class="fas fa-users empty-state__icon" aria-hidden="true"></i>
+                <p class="empty-state__title">Класів ще немає</p>
+                <p class="empty-state__sub">Додайте клас, щоб реєструвати учасників на події.</p>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div class="teacher-list-heading">
-          <h3 style="margin:0;font-size:1rem;font-weight:600">Реєстрації</h3>
-        </div>
-        <div id="registrations-list" class="teacher-card-list" aria-live="polite" aria-label="Список реєстрацій">
-          <div class="empty-state">
-            <i class="fas fa-clipboard-list empty-state__icon" aria-hidden="true"></i>
-            <p class="empty-state__title">Реєстрацій ще немає</p>
-            <p class="empty-state__sub">Після реєстрації класу подія з'явиться тут.</p>
+          <!-- Права колонка: Реєстрації -->
+          <div class="classes-col">
+            <div class="class-form-card">
+              <h2 class="tab-panel__heading">Реєстрація на подію</h2>
+              <form id="registration-form" novalidate>
+                <div class="class-form__row">
+                  <div class="class-form__field">
+                    <label for="registration-class" class="form-label">Клас</label>
+                    <select id="registration-class" class="form-input">
+                      <option value="">Створіть клас</option>
+                    </select>
+                  </div>
+                  <div class="class-form__grade">
+                    <label for="registration-count" class="form-label">Учасників</label>
+                    <input id="registration-count" type="number" min="1" max="100" value="1" class="form-input form-input--count"/>
+                  </div>
+                </div>
+                <div class="class-form__row" style="margin-top:var(--sp-3)">
+                  <div class="class-form__field">
+                    <label for="registration-event" class="form-label">Подія</label>
+                    <select id="registration-event" class="form-input">
+                      <option value="">Завантаження подій…</option>
+                    </select>
+                  </div>
+                  <div class="class-form__actions">
+                    <button id="registration-submit-btn" type="submit" class="btn btn-sky">
+                      <i class="fas fa-clipboard-check" aria-hidden="true"></i> Зареєструвати
+                    </button>
+                  </div>
+                </div>
+              </form>
+              <p class="form-privacy-note" style="margin-top:var(--sp-3)">
+                <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                Імена дітей не зберігаються — лише кількість учасників.
+              </p>
+              <p id="registration-form-status" class="generate-status"></p>
+            </div>
+
+            <div id="registrations-list" class="teacher-card-list" aria-live="polite" aria-label="Список реєстрацій">
+              <div class="empty-state">
+                <i class="fas fa-clipboard-list empty-state__icon" aria-hidden="true"></i>
+                <p class="empty-state__title">Реєстрацій ще немає</p>
+                <p class="empty-state__sub">Після реєстрації класу подія з'явиться тут.</p>
+              </div>
+            </div>
           </div>
+
         </div>
       </section>
 

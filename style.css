@@ -1912,10 +1912,26 @@ body.teacher-dashboard-active {
 /* Tab panel header */
 .tab-panel__top     { display: flex; flex-direction: column; gap: var(--sp-4); margin-bottom: var(--sp-6); }
 @media (min-width: 640px) { .tab-panel__top { flex-direction: row; align-items: center; justify-content: space-between; } }
-.tab-panel__heading { font-size: var(--font-size-xl); font-weight: 700; color: var(--clr-text); }
+.tab-panel__heading { font-size: var(--font-size-xl); font-weight: 700; color: var(--clr-text); margin-bottom: var(--sp-4); }
 
 /* Форма нового класу */
 /* Базова картка (light) — спільні властивості */
+/* Двоколонковий grid вкладки "Класи" */
+.classes-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-6);
+  align-items: start;
+}
+.classes-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+@media (max-width: 900px) {
+  .classes-grid { grid-template-columns: 1fr; }
+}
+
 .class-form-card,
 .class-card,
 .empty-state,
