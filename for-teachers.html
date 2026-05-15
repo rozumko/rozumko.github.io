@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="uk">
 <head>
   <meta charset="UTF-8" />
@@ -8,14 +8,12 @@
   <meta name="keywords" content="Розумко для вчителів, кабінет вчителя, олімпіада з інформатики, організація класу, результати учнів" />
   <link rel="canonical" href="https://rozumko.github.io/for-teachers.html" />
 
-  <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://rozumko.github.io/for-teachers.html" />
   <meta property="og:title" content="Для вчителів — Розумко" />
   <meta property="og:description" content="Інструкція для вчителів: як організувати олімпіаду Розумко для свого класу." />
   <meta property="og:image" content="https://rozumko.github.io/android-chrome-512x512.png" />
 
-  <!-- Twitter -->
   <meta property="twitter:card" content="summary_large_image" />
   <meta property="twitter:url" content="https://rozumko.github.io/for-teachers.html" />
   <meta property="twitter:title" content="Для вчителів — Розумко" />
@@ -23,7 +21,6 @@
   <meta property="twitter:image" content="https://rozumko.github.io/android-chrome-512x512.png" />
 
   <meta name="theme-color" content="#3b82f6" />
-  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -31,109 +28,85 @@
   <link rel="stylesheet" href="tokens.css"/>
   <link rel="stylesheet" href="style.css"/>
 </head>
-<body class="bg-slate-50 text-slate-800 font-['Montserrat']">
+<body class="doc-page">
   <a href="#main-content" class="skip-link">Перейти до основного контенту</a>
-  <div class="min-h-screen flex flex-col">
-    <header class="bg-white border-b border-slate-200 px-4 sm:px-6 py-4 shadow-sm">
-      <div class="container mx-auto max-w-5xl flex flex-wrap items-center justify-between gap-3">
-        <a href="index.html" class="text-slate-900 font-bold text-xl no-underline">Розумко</a>
-        <nav class="flex flex-wrap items-center gap-3 text-sm font-semibold" aria-label="Навігація сторінками Розумко">
-          <a href="for-students.html" class="text-slate-500 hover:text-sky-700">Для учнів</a>
-          <a href="for-parents.html" class="text-slate-500 hover:text-sky-700">Для батьків</a>
-          <a href="for-teachers.html" class="text-slate-500 hover:text-sky-700">Для вчителів</a>
-          <a href="terms.html" class="text-slate-500 hover:text-sky-700">Правила</a>
-          <a href="privacy.html" class="text-slate-500 hover:text-sky-700">Приватність</a>
-          <a href="index.html" class="text-sky-600 hover:text-sky-700 flex items-center gap-2"><i class="fas fa-arrow-left" aria-hidden="true"></i> На головну</a>
-        </nav>
+  <div id="site-header"></div>
+
+  <main id="main-content" class="doc-main" tabindex="-1">
+    <article class="doc-article">
+      <p class="doc-subtitle">Інструкція та правила організації участі класу</p>
+      <h1 class="doc-h1">Для вчителів</h1>
+      <p class="doc-date">Версія від 14 травня 2026 р.</p>
+      <div class="doc-content">
+
+        <section class="doc-highlight doc-highlight--sky">
+          <p class="doc-highlight__heading"><i class="fas fa-chalkboard-teacher" aria-hidden="true"></i> Роль вчителя</p>
+          <p>Вчитель у «Розумко» — координатор участі класу: створює клас, додає довільні мітки учасників (наприклад, «Учень 1» або ініціали), отримує коди доступу, передає інформацію батькам і переглядає результати свого класу.</p>
+        </section>
+
+        <section>
+          <h2 class="doc-h2">1. Що може робити вчитель</h2>
+          <ul class="doc-list">
+            <li>створювати класи або групи учнів;</li>
+            <li>додавати учнів до класу в мінімальному обсязі, потрібному для організації участі;</li>
+            <li>генерувати та передавати учням коди доступу;</li>
+            <li>організовувати участь класу в олімпіаді або тренуванні;</li>
+            <li>переглядати результати учнів свого класу;</li>
+            <li>допомагати батькам і учням із технічним входом.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2 class="doc-h2">2. Важливо про згоду батьків</h2>
+          <div class="doc-text-block">
+            <p>Перед внесенням даних учнів до Сервісу переконайтеся, що батьки або законні представники учнів знають про участь дитини та погоджуються з <a href="terms.html" class="doc-link">Правилами та умовами</a> і <a href="privacy.html" class="doc-link">Політикою конфіденційності</a>.</p>
+            <p>Не додавайте до Сервісу зайві дані: адресу, телефон дитини, дату народження, фото, медичну інформацію або інші відомості, які не потрібні для участі.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 class="doc-h2">3. Як організувати участь класу</h2>
+          <ol class="doc-list doc-list--ordered">
+            <li>Зайдіть у <a href="teacher.html" class="doc-link">кабінет вчителя</a>.</li>
+            <li>Створіть клас або оберіть наявний.</li>
+            <li>Додайте учнів — достатньо довільної мітки: «Учень 1», ініціали або будь-яке умовне позначення. Повне ім'я на сервері не зберігається. Для сертифіката ім'я вводиться локально перед друком і нікуди не відправляється.</li>
+            <li>Згенеруйте коди доступу.</li>
+            <li>Передайте батькам інформацію про участь, правила, оплату, якщо подія платна, та посилання на документи.</li>
+            <li>Під час проведення допомагайте лише з технічним входом, але не з відповідями.</li>
+            <li>Після завершення перегляньте результати та передайте учням електронні документи, якщо вони доступні.</li>
+          </ol>
+        </section>
+
+        <section>
+          <h2 class="doc-h2">4. Академічна доброчесність</h2>
+          <div class="doc-text-block">
+            <p>Олімпіада має сенс лише тоді, коли учні виконують завдання самостійно. Вчитель може пояснити інструкцію, допомогти відкрити сторінку, ввести код або розв'язати технічну проблему, але не повинен підказувати відповіді.</p>
+            <p>Якщо в класі діти проходять олімпіаду одночасно, бажано розсадити їх так, щоб вони не бачили екрани одне одного, і нагадати, що результат має бути особистим.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 class="doc-h2">5. Безпека кабінету</h2>
+          <ul class="doc-list">
+            <li>не передавайте свій пароль від кабінету іншим особам;</li>
+            <li>не публікуйте коди доступу у відкритих чатах або на публічних сторінках;</li>
+            <li>після роботи на спільному комп'ютері виходьте з кабінету;</li>
+            <li>якщо помітили підозрілий доступ або помилку в даних — напишіть на <a href="mailto:educatorartem@gmail.com" class="doc-link">educatorartem@gmail.com</a>.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2 class="doc-h2">6. Повідомлення для батьків, яке можна скопіювати</h2>
+          <div class="doc-info-box">
+            <p>Шановні батьки! Наш клас бере участь в онлайн-олімпіаді з інформатики «Розумко» для учнів 1–4 класів. Учень входить за кодом доступу без власної реєстрації. Перед участю просимо ознайомитися з Правилами та умовами, Політикою конфіденційності та сторінкою «Для батьків»: https://rozumko.github.io/for-parents.html. Під час виконання завдань дитина має працювати самостійно; дорослі можуть допомогти лише з технічним входом.</p>
+          </div>
+        </section>
+
       </div>
-    </header>
+    </article>
+  </main>
 
-    <main id="main-content" class="flex-grow container mx-auto max-w-4xl px-4 sm:px-6 py-10 sm:py-12" tabindex="-1">
-      <article class="bg-white rounded-3xl shadow-xl border border-slate-100 p-6 sm:p-10 lg:p-12">
-        <p class="text-sm text-slate-400 mb-2">Інструкція та правила організації участі класу</p>
-        <h1 class="text-3xl sm:text-4xl font-bold text-slate-900 mb-3">Для вчителів</h1>
-        <p class="text-sm text-slate-400 mb-8">Версія від 14 травня 2026 р.</p>
-        <div class="space-y-10 text-slate-600 leading-relaxed text-[15px]">
-
-          <section class="rounded-2xl bg-sky-50 border border-sky-100 p-5">
-            <p class="font-semibold text-sky-900 mb-2"><i class="fas fa-chalkboard-teacher mr-2" aria-hidden="true"></i>Роль вчителя</p>
-            <p>Вчитель у «Розумко» — координатор участі класу: створює клас, додає довільні мітки учасників (наприклад, «Учень 1» або ініціали), отримує коди доступу, передає інформацію батькам і переглядає результати свого класу.</p>
-          </section>
-
-          <section>
-            <h2 class="text-xl font-bold text-slate-800 mb-4">1. Що може робити вчитель</h2>
-            <ul class="list-disc ml-6 space-y-2">
-              <li>створювати класи або групи учнів;</li>
-              <li>додавати учнів до класу в мінімальному обсязі, потрібному для організації участі;</li>
-              <li>генерувати та передавати учням коди доступу;</li>
-              <li>організовувати участь класу в олімпіаді або тренуванні;</li>
-              <li>переглядати результати учнів свого класу;</li>
-              <li>допомагати батькам і учням із технічним входом.</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 class="text-xl font-bold text-slate-800 mb-4">2. Важливо про згоду батьків</h2>
-            <div class="space-y-3">
-              <p>Перед внесенням даних учнів до Сервісу переконайтеся, що батьки або законні представники учнів знають про участь дитини та погоджуються з <a href="terms.html" class="text-sky-600 hover:underline">Правилами та умовами</a> і <a href="privacy.html" class="text-sky-600 hover:underline">Політикою конфіденційності</a>.</p>
-              <p>Не додавайте до Сервісу зайві дані: адресу, телефон дитини, дату народження, фото, медичну інформацію або інші відомості, які не потрібні для участі.</p>
-            </div>
-          </section>
-
-          <section>
-            <h2 class="text-xl font-bold text-slate-800 mb-4">3. Як організувати участь класу</h2>
-            <ol class="list-decimal ml-6 space-y-2">
-              <li>Зайдіть у <a href="teacher.html" class="text-sky-600 hover:underline">кабінет вчителя</a>.</li>
-              <li>Створіть клас або оберіть наявний.</li>
-              <li>Додайте учнів — достатньо довільної мітки: «Учень 1», ініціали або будь-яке умовне позначення. Повне ім’я на сервері не зберігається. Для сертифіката ім’я вводиться локально перед друком і нікуди не відправляється.</li>
-              <li>Згенеруйте коди доступу.</li>
-              <li>Передайте батькам інформацію про участь, правила, оплату, якщо подія платна, та посилання на документи.</li>
-              <li>Під час проведення допомагайте лише з технічним входом, але не з відповідями.</li>
-              <li>Після завершення перегляньте результати та передайте учням електронні документи, якщо вони доступні.</li>
-            </ol>
-          </section>
-
-          <section>
-            <h2 class="text-xl font-bold text-slate-800 mb-4">4. Академічна доброчесність</h2>
-            <div class="space-y-3">
-              <p>Олімпіада має сенс лише тоді, коли учні виконують завдання самостійно. Вчитель може пояснити інструкцію, допомогти відкрити сторінку, ввести код або розв’язати технічну проблему, але не повинен підказувати відповіді.</p>
-              <p>Якщо в класі діти проходять олімпіаду одночасно, бажано розсадити їх так, щоб вони не бачили екрани одне одного, і нагадати, що результат має бути особистим.</p>
-            </div>
-          </section>
-
-          <section>
-            <h2 class="text-xl font-bold text-slate-800 mb-4">5. Безпека кабінету</h2>
-            <ul class="list-disc ml-6 space-y-2">
-              <li>не передавайте свій пароль від кабінету іншим особам;</li>
-              <li>не публікуйте коди доступу у відкритих чатах або на публічних сторінках;</li>
-              <li>після роботи на спільному комп’ютері виходьте з кабінету;</li>
-              <li>якщо помітили підозрілий доступ або помилку в даних — напишіть на <a href="mailto:educatorartem@gmail.com" class="text-sky-600 hover:underline">educatorartem@gmail.com</a>.</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 class="text-xl font-bold text-slate-800 mb-4">6. Повідомлення для батьків, яке можна скопіювати</h2>
-            <div class="rounded-2xl bg-slate-50 border border-slate-100 p-5 text-slate-700">
-              <p>Шановні батьки! Наш клас бере участь в онлайн-олімпіаді з інформатики «Розумко» для учнів 1–4 класів. Учень входить за кодом доступу без власної реєстрації. Перед участю просимо ознайомитися з Правилами та умовами, Політикою конфіденційності та сторінкою «Для батьків»: https://rozumko.github.io/for-parents.html. Під час виконання завдань дитина має працювати самостійно; дорослі можуть допомогти лише з технічним входом.</p>
-            </div>
-          </section>
-
-        </div>
-      </article>
-    </main>
-
-    <footer class="py-8 text-center text-slate-400 text-sm">
-      <div class="container mx-auto px-4">
-        <div class="flex flex-wrap justify-center gap-4 sm:gap-8 mb-4">
-          <a href="for-students.html" class="hover:text-slate-600 transition-colors">Для учнів</a>
-          <a href="for-parents.html" class="hover:text-slate-600 transition-colors">Для батьків</a>
-          <a href="for-teachers.html" class="hover:text-slate-600 transition-colors">Для вчителів</a>
-          <a href="privacy.html" class="hover:text-slate-600 transition-colors">Політика конфіденційності</a>
-          <a href="terms.html" class="hover:text-slate-600 transition-colors">Правила та умови</a>
-        </div>
-        <p>&copy; 2024–2026 Розумко. Усі права захищені.</p>
-      </div>
-    </footer>
-  </div>
+  <div id="site-footer"></div>
+  <script type="module" src="layout.js"></script>
 </body>
 </html>

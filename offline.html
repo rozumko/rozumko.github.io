@@ -9,50 +9,103 @@
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
   <meta name="theme-color" content="#7c3aed">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <!-- Інлайн-стилі: ця сторінка показується БЕЗ інтернету, тому CDN недоступний -->
   <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Montserrat', sans-serif;
+      font-family: 'Montserrat', system-ui, sans-serif;
       background: linear-gradient(135deg, #4c1d95 0%, #1e40af 100%);
       min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
     }
+    .card {
+      width: 100%;
+      max-width: 22rem;
+      text-align: center;
+    }
+    .icon { font-size: 4.5rem; margin-bottom: 1.5rem; }
+    h1 { color: #fff; font-size: 1.5rem; font-weight: 700; margin-bottom: .5rem; }
+    .subtitle {
+      color: rgba(255,255,255,.7);
+      font-size: .875rem;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+    .backup-hint {
+      display: none;
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 1rem;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      text-align: left;
+    }
+    .backup-hint__title {
+      color: #fff;
+      font-weight: 600;
+      font-size: .875rem;
+      margin-bottom: .25rem;
+    }
+    .backup-hint__desc {
+      color: rgba(255,255,255,.7);
+      font-size: .75rem;
+      line-height: 1.5;
+    }
+    .btn-reload {
+      display: block;
+      width: 100%;
+      background: #fff;
+      color: #6d28d9;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 1rem 1.5rem;
+      border: none;
+      border-radius: 1rem;
+      cursor: pointer;
+      margin-bottom: .75rem;
+      transition: opacity .15s;
+    }
+    .btn-reload:hover { opacity: .9; }
+    .btn-reload:active { opacity: .8; }
+    .link-home {
+      display: block;
+      color: rgba(255,255,255,.5);
+      font-size: .875rem;
+      text-decoration: none;
+      transition: color .15s;
+    }
+    .link-home:hover { color: rgba(255,255,255,.85); }
   </style>
 </head>
 
-<body class="flex items-center justify-center p-4">
-  <div class="w-full max-w-sm text-center">
+<body>
+  <div class="card">
 
-    <!-- Іконка -->
-    <div class="text-7xl mb-6" role="img" aria-label="Немає з'єднання">📡</div>
+    <div class="icon" role="img" aria-label="Немає з'єднання">📡</div>
 
-    <!-- Заголовок -->
-    <h1 class="text-white text-2xl font-bold mb-2">Немає інтернету</h1>
-    <p class="text-white/70 text-sm mb-8 leading-relaxed">
+    <h1>Немає інтернету</h1>
+    <p class="subtitle">
       Перевір підключення до мережі<br>і спробуй ще раз.
     </p>
 
     <!-- Якщо учень був на олімпіаді — нагадуємо про backup -->
-    <div id="backup-hint" class="hidden bg-white/10 border border-white/20 rounded-2xl p-4 mb-6 text-left">
-      <p class="text-white font-semibold text-sm mb-1">⚠️ Ти проходив олімпіаду?</p>
-      <p class="text-white/70 text-xs leading-relaxed">
+    <div id="backup-hint" class="backup-hint">
+      <p class="backup-hint__title">⚠️ Ти проходив олімпіаду?</p>
+      <p class="backup-hint__desc">
         Твій прогрес збережено локально. Повернись на сторінку учня —
         коли з'явиться інтернет, результат відновиться автоматично.
       </p>
     </div>
 
-    <!-- Кнопка «Спробувати знову» -->
-    <button
-      onclick="tryReload()"
-      class="w-full bg-white text-violet-700 font-bold py-4 px-6 rounded-2xl text-base hover:bg-white/90 active:scale-95 transition-all mb-3">
+    <button onclick="tryReload()" class="btn-reload">
       Спробувати знову
     </button>
 
-    <!-- Посилання на головну (якщо вона закешована) -->
-    <a href="/"
-      class="block text-white/50 text-sm hover:text-white/80 transition-colors">
-      ← На головну
-    </a>
+    <a href="/" class="link-home">← На головну</a>
 
   </div>
 
@@ -65,12 +118,11 @@
         const backup = JSON.parse(raw);
         // Backup вважається актуальним якщо йому менше 3 годин
         if (backup?.startedAt && Date.now() - backup.startedAt < 3 * 60 * 60 * 1000) {
-          document.getElementById('backup-hint').classList.remove('hidden');
+          document.getElementById('backup-hint').style.display = 'block';
         }
       } catch { /* ігноруємо помилки localStorage */ }
     })();
 
-    // Перезавантажуємо поточну сторінку — браузер сам вирішить чи є мережа
     function tryReload() {
       window.location.reload();
     }

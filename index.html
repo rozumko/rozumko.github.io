@@ -47,6 +47,7 @@
 
 <body class="index-page">
   <a href="#main-content" class="skip-link">Перейти до основного контенту</a>
+  <div id="site-header"></div>
 
   <main id="main-content" class="index-main" tabindex="-1">
     <div class="index-inner">
@@ -106,37 +107,9 @@
     </div>
   </main>
 
-  <footer class="site-footer">
-    <div class="site-footer__inner">
-      <nav class="site-footer__nav" aria-label="Навігація сайту">
-        <div>
-          <p class="footer-col__heading">Про сервіс</p>
-          <ul class="footer-col__list">
-            <li><a href="for-students.html">Для учнів</a></li>
-            <li><a href="for-parents.html">Для батьків</a></li>
-            <li><a href="for-teachers.html">Для вчителів</a></li>
-          </ul>
-        </div>
-        <div>
-          <p class="footer-col__heading">Документи</p>
-          <ul class="footer-col__list">
-            <li><a href="privacy.html">Конфіденційність</a></li>
-            <li><a href="terms.html">Правила та умови</a></li>
-          </ul>
-        </div>
-        <div class="footer-col--wide">
-          <p class="footer-col__heading">Кабінет</p>
-          <ul class="footer-col__list">
-            <li><a href="teacher.html">Вхід для вчителя</a></li>
-          </ul>
-        </div>
-      </nav>
-      <div class="site-footer__copy">
-        <p>&copy; 2024–2026 Розумко. Усі права захищені.</p>
-      </div>
-    </div>
-  </footer>
+  <div id="site-footer"></div>
 
+  <script type="module" src="layout.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
