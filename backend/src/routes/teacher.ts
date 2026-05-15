@@ -23,6 +23,7 @@ function generateCode(exclude: Set<string> = new Set()): string {
 }
 
 export async function teacherRoutes(app: FastifyInstance) {
+
   // GET /api/me
   app.get('/me', { preHandler: requireAuth }, async (req, reply) => {
     return reply.send(req.user)

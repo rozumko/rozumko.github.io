@@ -192,6 +192,25 @@ export async function loginTeacher(email: string, password: string): Promise<any
   return data
 }
 
+export async function registerTeacher(email: string, password: string, school?: string): Promise<any> {
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+    body: JSON.stringify({ email, password, data: { school: school || '' } }),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error_description ?? data.msg ?? 'Помилка реєстрації')
+  // Якщо Supabase повертає access_token — одразу зберігаємо сесію
+  if (data.access_token) {
+    localStorage.setItem('teacher_session', JSON.stringify({
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      email: data.user?.email,
+    }))
+  }
+  return data
+}
+
 export function getTeacherSession(): TeacherSession | null {
   try { return JSON.parse(localStorage.getItem('teacher_session') ?? 'null') } catch { return null }
 }

@@ -1,5 +1,5 @@
 import {
-  loginTeacher, logoutTeacher, getTeacherSession,
+  loginTeacher, logoutTeacher, getTeacherSession, registerTeacher,
   createTeacherClass, createTeacherRegistration,
   getTeacherMe, generateCodes, getTeacherClasses, getTeacherCodes,
   getTeacherRegistrationEvents, getTeacherRegistrations, getTeacherResults,
@@ -114,6 +114,61 @@ loginForm.addEventListener('submit', async (e) => {
     loginError.textContent     = friendlyError((err as Error).message)
     loginSubmitBtn.disabled    = false
     loginSubmitBtn.textContent = 'Увійти'
+  }
+})
+
+// --- Register (show/hide/submit) ---
+const showRegisterBtn  = $maybe<HTMLButtonElement>('show-register-btn')
+const hideRegisterBtn  = $maybe<HTMLButtonElement>('hide-register-btn')
+const registerSection  = $maybe('register-section')
+const registerForm     = $maybe<HTMLFormElement>('teacher-register-form')
+const registerError    = $maybe('register-error')
+const registerSubmitBtn = $maybe<HTMLButtonElement>('register-submit-btn')
+
+showRegisterBtn?.addEventListener('click', () => {
+  registerSection?.classList.remove('hidden')
+  showRegisterBtn.classList.add('hidden')
+  $maybe<HTMLInputElement>('reg-email')?.focus()
+})
+
+hideRegisterBtn?.addEventListener('click', () => {
+  registerSection?.classList.add('hidden')
+  showRegisterBtn?.classList.remove('hidden')
+})
+
+registerForm?.addEventListener('submit', async (e) => {
+  e.preventDefault()
+  const email    = $maybe<HTMLInputElement>('reg-email')?.value.trim() ?? ''
+  const school   = $maybe<HTMLInputElement>('reg-school')?.value.trim() ?? ''
+  const password = $maybe<HTMLInputElement>('reg-password')?.value ?? ''
+  if (!email || !password) return
+  if (registerError) registerError.textContent = ''
+  registerSubmitBtn!.disabled  = true
+  registerSubmitBtn!.textContent = 'Реєстрація…'
+  showColdStartBanner()
+  try {
+    await registerTeacher(email, password, school)
+    // Спробуємо одразу увійти (якщо підтвердження email не потрібне)
+    try {
+      const me = await getTeacherMe()
+      hideColdStartBanner()
+      showDashboard(me.name || email)
+      await Promise.all([loadRegistrationEvents(), loadClasses(), loadRegistrations(), loadCodes(), loadResults()])
+    } catch {
+      hideColdStartBanner()
+      // Email-підтвердження включено — показуємо повідомлення
+      if (registerError) {
+        registerError.textContent = '✅ Реєстрацію надіслано. Перевірте пошту та підтвердіть email, потім увійдіть.'
+        registerError.style.color = 'var(--clr-emerald, #059669)'
+      }
+      registerSubmitBtn!.disabled   = false
+      registerSubmitBtn!.textContent = 'Створити кабінет'
+    }
+  } catch (err) {
+    hideColdStartBanner()
+    if (registerError) registerError.textContent = friendlyError((err as Error).message)
+    registerSubmitBtn!.disabled   = false
+    registerSubmitBtn!.textContent = 'Створити кабінет'
   }
 })
 

@@ -4,6 +4,13 @@ import { db } from '../db/index.js'
 import { appUsers } from '../db/schema.js'
 import type { FastifyRequest, FastifyReply } from 'fastify'
 
+// JWT payload shape from Supabase
+interface SupabaseJwtPayload {
+  sub?: string
+  email?: string
+  user_metadata?: { school?: string; name?: string }
+}
+
 const JWKS = createRemoteJWKSet(
   new URL(`${process.env.SUPABASE_URL}/auth/v1/.well-known/jwks.json`)
 )
@@ -16,13 +23,13 @@ export async function requireAuth(req: FastifyRequest, reply: FastifyReply) {
 
   const token = header.slice(7)
 
-  let payload: { sub?: string }
+  let payload: SupabaseJwtPayload
   try {
     const result = await jwtVerify(token, JWKS, {
       issuer:     `${process.env.SUPABASE_URL}/auth/v1`,
       algorithms: ['ES256'],  // явно забороняємо alg:none та HMAC downgrade
     })
-    payload = result.payload as { sub?: string }
+    payload = result.payload as SupabaseJwtPayload
   } catch {
     return reply.code(401).send({ error: 'Недійсний токен' })
   }
@@ -33,15 +40,24 @@ export async function requireAuth(req: FastifyRequest, reply: FastifyReply) {
   }
 
   // Роль береться з БД, не з JWT
-  const [user] = await db
+  let [user] = await db
     .select()
     .from(appUsers)
     .where(eq(appUsers.authUserId, authUserId))
     .limit(1)
 
+  // Auto-provision: новий вчитель зареєструвався через Supabase Auth,
+  // але запис у appUsers ще не існує — створюємо з роллю 'teacher'
   if (!user) {
-    return reply.code(403).send({ error: 'Користувача не знайдено' })
+    const email = payload.email ?? ''
+    if (!email) return reply.code(403).send({ error: 'Email не знайдено в токені' })
+    const [created] = await db
+      .insert(appUsers)
+      .values({ authUserId, email, role: 'teacher', status: 'active' })
+      .returning()
+    user = created
   }
+
   if (user.status === 'blocked') {
     return reply.code(403).send({ error: 'Акаунт заблоковано' })
   }
