@@ -5,13 +5,13 @@
  *   - При install: кешуємо критичну статику (shell сайту)
  *   - При fetch навігації (HTML): network-first → якщо offline → offline.html
  *   - При fetch статики (JS/CSS/шрифти): cache-first → якщо немає → мережа
- *   - Firebase API-запити: НЕ перехоплюємо (проксувати Firebase небезпечно)
+ *   - Backend API (Render) та Supabase: НЕ перехоплюємо
  *
  * При оновленні коду: змінити CACHE_NAME — старий кеш очиститься автоматично.
  * ─────────────────────────────────────────────────────────────
  */
 
-const CACHE_NAME = 'rozumko-v1';
+const CACHE_NAME = 'rozumko-v2';
 
 /**
  * Статичні ресурси що кешуються при першому завантаженні.
@@ -21,8 +21,14 @@ const PRECACHE_URLS = [
   '/',
   '/index.html',
   '/student.html',
+  '/olympiad-enter.html',
+  '/for-students.html',
+  '/for-parents.html',
+  '/for-teachers.html',
+  '/terms.html',
+  '/privacy.html',
   '/offline.html',
-  '/style.css',
+  '/404.html',
   '/manifest.json',
   '/favicon-32x32.png',
   '/favicon-16x16.png',
@@ -31,17 +37,16 @@ const PRECACHE_URLS = [
 
 /**
  * Хости що НЕ треба перехоплювати.
- * Firebase, Google APIs, CDN — вони мають власну надійність.
+ * Backend API, Supabase, Google Fonts, CDN — вони мають власну надійність.
  */
 const BYPASS_HOSTS = [
-  'firestore.googleapis.com',
-  'identitytoolkit.googleapis.com',
-  'securetoken.googleapis.com',
-  'recaptcha.net',
-  'www.gstatic.com',
+  // Supabase (Auth + PostgreSQL API)
+  'supabase.co',
+  'supabase.com',
+  // Google Fonts
   'fonts.googleapis.com',
   'fonts.gstatic.com',
-  'cdn.tailwindcss.com',
+  // Font Awesome CDN
   'cdnjs.cloudflare.com',
 ];
 
@@ -69,7 +74,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then(keys =>
       Promise.all(
         keys
-          .filter(key => key !== CACHE_NAME)   // всі кеші крім поточного
+          .filter(key => key !== CACHE_NAME)
           .map(key => {
             console.log(`[SW] видаляємо старий кеш: ${key}`);
             return caches.delete(key);
@@ -89,7 +94,7 @@ self.addEventListener('fetch', (event) => {
   // Пропускаємо не-HTTP запити (chrome-extension://, etc.)
   if (!url.protocol.startsWith('http')) return;
 
-  // Пропускаємо Firebase та зовнішні API — вони не мають бути в кеші
+  // Пропускаємо зовнішні API — вони не мають бути в кеші
   if (BYPASS_HOSTS.some(host => url.hostname.includes(host))) return;
 
   // Пропускаємо POST/PUT/DELETE — тільки GET кешуємо
@@ -114,22 +119,16 @@ self.addEventListener('fetch', (event) => {
  * Network-first для HTML-навігації.
  * Намагається отримати свіжу версію сторінки.
  * При будь-якій помилці мережі — відповідає offline.html з кешу.
- *
- * @param {Request} request
- * @returns {Promise<Response>}
  */
 async function networkFirstWithOfflineFallback(request) {
   try {
     const networkResponse = await fetch(request);
-    // Оновлюємо кеш свіжою версією сторінки
     const cache = await caches.open(CACHE_NAME);
     cache.put(request, networkResponse.clone());
     return networkResponse;
   } catch {
-    // Мережа недоступна — шукаємо в кеші
     const cached = await caches.match(request);
     if (cached) return cached;
-    // Нема в кеші — показуємо offline.html
     return caches.match('/offline.html');
   }
 }
@@ -138,9 +137,6 @@ async function networkFirstWithOfflineFallback(request) {
  * Cache-first для статичних ресурсів.
  * Спочатку шукає в кеші — якщо є, повертає миттєво.
  * Якщо немає — завантажує з мережі і додає в кеш.
- *
- * @param {Request} request
- * @returns {Promise<Response>}
  */
 async function cacheFirstWithNetworkFallback(request) {
   const cached = await caches.match(request);
@@ -148,14 +144,12 @@ async function cacheFirstWithNetworkFallback(request) {
 
   try {
     const networkResponse = await fetch(request);
-    // Кешуємо тільки успішні відповіді
     if (networkResponse.ok) {
       const cache = await caches.open(CACHE_NAME);
       cache.put(request, networkResponse.clone());
     }
     return networkResponse;
   } catch {
-    // Нічого не можемо зробити — ресурс недоступний
     return new Response('Ресурс недоступний офлайн', { status: 503 });
   }
 }

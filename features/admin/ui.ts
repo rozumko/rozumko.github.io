@@ -17,7 +17,7 @@ export { showModal, esc, friendlyError } from '../../utils/ui.js';
  *
  * Специфічна для адмінки — в student/teacher не потрібна.
  *
- * @param {import('firebase/firestore').Timestamp|string|null} val
+ * @param {string|null} val
  * @returns {string}
  */
 export function formatDate(val) {

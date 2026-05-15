@@ -145,7 +145,7 @@ function showErrorBoundary(msg = '') {
 
 window.addEventListener('unhandledrejection', (event) => {
   const msg = (event.reason as Error)?.message ?? String(event.reason ?? '')
-  if (msg.includes('AppCheck') || msg.includes('recaptcha') || msg.includes('net::')) return
+  if (msg.includes('net::') || msg.includes('Failed to fetch')) return
   if (currentMode && currentIdx > 0) {
     showErrorBoundary(msg)
     event.preventDefault()
