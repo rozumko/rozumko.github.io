@@ -406,7 +406,8 @@ button {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--sp-1) var(--sp-3);
+  justify-content: center;
+  gap: var(--sp-1) var(--sp-4);
   flex: 1;
 }
 .site-header__link {
@@ -424,16 +425,20 @@ button {
 .site-header__cta {
   font-size: var(--font-size-sm);
   font-weight: 700;
-  color: var(--clr-primary);
+  color: #fff;
   text-decoration: none;
-  border: 1.5px solid var(--clr-primary);
-  padding: 4px var(--sp-3);
+  background: var(--clr-primary);
+  padding: 6px var(--sp-4);
   border-radius: var(--r-full);
   white-space: nowrap;
   flex-shrink: 0;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition: background var(--transition-fast), box-shadow var(--transition-fast);
+  box-shadow: 0 2px 8px rgba(59,130,246,.35);
 }
-.site-header__cta:hover { background: var(--clr-primary); color: #fff; }
+.site-header__cta:hover {
+  background: var(--clr-primary-dark);
+  box-shadow: 0 4px 12px rgba(59,130,246,.45);
+}
 
 /* ── Бургер-кнопка (тільки мобілка) ─── */
 .site-header__burger {
