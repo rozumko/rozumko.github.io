@@ -573,19 +573,35 @@ function renderStudentsList(container: HTMLElement, classId: string, students: C
       </div>`
     return
   }
-  container.innerHTML = ''
+
+  // Header + scrollable body
+  container.innerHTML = `
+    <div class="students-list__head" aria-hidden="true">
+      <span>#</span>
+      <span>Мітка учня</span>
+      <span style="text-align:center">Код доступу</span>
+      <span style="text-align:right">${students.length} учн.</span>
+    </div>
+    <div class="students-list__body" role="list" aria-label="Учні класу"></div>`
+
+  const body = container.querySelector<HTMLElement>('.students-list__body')!
+
   students.forEach((s, i) => {
     const row = document.createElement('div')
     row.className = 'student-row'
     row.dataset['id'] = s.id
+    row.setAttribute('role', 'listitem')
+    // Колонка "Код" — поки порожня, буде заповнюватись після генерації кодів
+    const codeVal = (s as any).code ?? ''
     row.innerHTML = `
       <span class="student-row__num">${i + 1}</span>
       <span class="student-row__label" title="${esc(s.label)}">${esc(s.label)}</span>
+      <span class="student-row__code">${codeVal ? esc(codeVal) : '<span style="opacity:.35">—</span>'}</span>
       <div class="student-row__actions">
-        <button class="btn-student-edit btn-adm-slate btn-sm" aria-label="Редагувати">
+        <button class="btn-student-edit btn-adm-slate btn-sm" aria-label="Редагувати ${esc(s.label)}">
           <i class="fas fa-pencil-alt" aria-hidden="true"></i>
         </button>
-        <button class="btn-student-delete btn-adm-danger btn-sm" aria-label="Видалити">
+        <button class="btn-student-delete btn-adm-danger btn-sm" aria-label="Видалити ${esc(s.label)}">
           <i class="fas fa-trash" aria-hidden="true"></i>
         </button>
       </div>`
@@ -605,7 +621,7 @@ function renderStudentsList(container: HTMLElement, classId: string, students: C
         }
       })
 
-    container.appendChild(row)
+    body.appendChild(row)
   })
 }
 

@@ -1899,7 +1899,7 @@ body.teacher-dashboard-active {
 /* Основний контент дашборду */
 .dashboard-main {
   padding: var(--sp-4);
-  max-width: 56rem;
+  max-width: 72rem;
   margin: 0 auto;
 }
 @media (min-width: 640px) {
@@ -2081,11 +2081,12 @@ body.teacher-dashboard-active {
 }
 
 /* Список учнів */
+/* Students list — compact table */
 .students-list {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
+  overflow: hidden;
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-lg);
 }
 .students-list__empty {
   display: flex;
@@ -2098,25 +2099,51 @@ body.teacher-dashboard-active {
   text-align: center;
 }
 .students-list__empty i { font-size: 2rem; opacity: .4; }
-.student-row {
-  display: flex;
+
+/* Sticky header row */
+.students-list__head {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto auto;
   align-items: center;
   gap: var(--sp-3);
   padding: var(--sp-2) var(--sp-3);
-  border: 1px solid var(--clr-border);
-  border-radius: var(--r-lg);
+  background: var(--clr-surface-muted);
+  border-bottom: 1px solid var(--clr-border);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--clr-text-muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  position: sticky;
+  top: 0;
+}
+
+/* Scrollable body */
+.students-list__body {
+  max-height: 22rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.student-row {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto auto;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: 1px solid var(--clr-border);
   background: #fff;
   transition: background .1s;
 }
-.student-row:hover { background: var(--clr-surface); }
+.student-row:last-child { border-bottom: none; }
+.student-row:hover { background: var(--clr-surface-muted); }
+
 .student-row__num {
   font-size: var(--font-size-xs);
-  color: var(--clr-text-muted);
-  min-width: 1.5rem;
+  color: var(--clr-text-faint);
   text-align: right;
 }
 .student-row__label {
-  flex: 1;
   font-size: var(--font-size-sm);
   font-weight: 500;
   color: var(--clr-text);
@@ -2124,17 +2151,28 @@ body.teacher-dashboard-active {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Колонка "Код" — поки порожня, зарезервована для майбутнього */
+.student-row__code {
+  font-size: var(--font-size-xs);
+  color: var(--clr-text-muted);
+  font-family: monospace;
+  white-space: nowrap;
+  min-width: 5rem;
+  text-align: center;
+}
+.student-row__actions {
+  display: flex;
+  gap: var(--sp-1);
+  flex-shrink: 0;
+  justify-content: flex-end;
+}
+
 .student-edit-input {
   flex: 1;
   font-size: var(--font-size-sm);
   padding: var(--sp-1) var(--sp-2);
   border: 1px solid var(--clr-border);
   border-radius: var(--r-sm);
-}
-.student-row__actions {
-  display: flex;
-  gap: var(--sp-1);
-  flex-shrink: 0;
 }
 /* .btn-adm-danger defined in admin section below */
 
