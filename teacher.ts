@@ -66,6 +66,23 @@ function hideColdStartBanner() {
 init()
 
 async function init() {
+  // Обробляємо #access_token=... після підтвердження email від Supabase
+  const hash = new URLSearchParams(window.location.hash.slice(1))
+  const accessToken  = hash.get('access_token')
+  const refreshToken = hash.get('refresh_token')
+  const type         = hash.get('type') // 'signup' | 'recovery' | etc.
+
+  if (accessToken && (type === 'signup' || type === 'magiclink' || type === 'recovery')) {
+    // Зберігаємо сесію з токена в хеші
+    localStorage.setItem('teacher_session', JSON.stringify({
+      accessToken,
+      refreshToken: refreshToken ?? '',
+      email: '',
+    }))
+    // Очищаємо хеш з URL щоб токен не залишався в адресному рядку
+    history.replaceState(null, '', window.location.pathname)
+  }
+
   const session = getTeacherSession()
   if (session?.accessToken) {
     showColdStartBanner()
