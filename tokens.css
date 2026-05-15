@@ -7,33 +7,33 @@
 :root {
 
   /* ── Бренд ─────────────────────────────────────────────────── */
-  --clr-brand:          #3b82f6;
-  --clr-brand-dark:     #2563eb;
-  --clr-primary:        #3b82f6;   /* аліас для --clr-brand, використовується в UI */
-  --clr-primary-dark:   #2563eb;
+  --clr-brand:          #2563eb;   /* глибший, впевненіший синій */
+  --clr-brand-dark:     #1d4ed8;
+  --clr-primary:        #2563eb;
+  --clr-primary-dark:   #1d4ed8;
 
   /* ── Ролі (кнопки входу на index.html) ─────────────────────── */
-  --clr-student:        #10b981;   /* смарагдовий — учень */
+  --clr-student:        #10b981;
   --clr-student-dark:   #059669;
-  --clr-teacher:        #0ea5e9;   /* блакитний — вчитель */
-  --clr-teacher-dark:   #0284c7;
+  --clr-teacher:        #0284c7;   /* глибший sky */
+  --clr-teacher-dark:   #0369a1;
 
   /* ── Статуси ────────────────────────────────────────────────── */
   --clr-success:        #22c55e;
   --clr-danger:         #ef4444;
   --clr-warning:        #f59e0b;
 
-  /* ── Нейтральна палітра ─────────────────────────────────────── */
+  /* ── Нейтральна палітра — з легким синім тінтом ────────────── */
   --clr-surface:        #ffffff;
-  --clr-surface-muted:  #f8fafc;
-  --clr-surface-subtle: #f1f5f9;
-  --clr-border:         #e2e8f0;
-  --clr-border-light:   rgba(226,232,240,0.6);
+  --clr-surface-muted:  #f0f4ff;   /* було #f8fafc — синій тінт */
+  --clr-surface-subtle: #e8eeff;   /* було #f1f5f9 */
+  --clr-border:         #dde3f0;   /* було #e2e8f0 — синюватий */
+  --clr-border-light:   rgba(221,227,240,0.6);
 
   /* ── Текст ──────────────────────────────────────────────────── */
-  --clr-text:           #0f172a;
-  --clr-text-muted:     #64748b;
-  --clr-text-faint:     #94a3b8;
+  --clr-text:           #0a0f1e;   /* було #0f172a — глибший */
+  --clr-text-muted:     #4b5680;   /* було #64748b — синювато-сірий */
+  --clr-text-faint:     #8892b0;   /* було #94a3b8 */
   --clr-text-inverse:   #ffffff;
 
   /* ── Spacing scale ──────────────────────────────────────────── */
@@ -46,24 +46,27 @@
   --sp-8:   2rem;      /* 32px */
   --sp-10:  2.5rem;    /* 40px */
   --sp-12:  3rem;      /* 48px */
+  --sp-14:  3.5rem;    /* 56px — новий */
   --sp-16:  4rem;      /* 64px */
+  --sp-20:  5rem;      /* 80px — новий */
+  --sp-24:  6rem;      /* 96px — новий */
 
-  /* ── Border radius ──────────────────────────────────────────── */
+  /* ── Border radius — більші, впевненіші ─────────────────────── */
   --r-sm:   0.5rem;    /*  8px */
-  --r-md:   0.75rem;   /* 12px */
-  --r-lg:   1rem;      /* 16px */
-  --r-xl:   1.5rem;    /* 24px */
-  --r-2xl:  2rem;      /* 32px */
-  --r-3xl:  2.5rem;    /* 40px */
+  --r-md:   1rem;      /* 16px — було 12px */
+  --r-lg:   1.25rem;   /* 20px — було 16px */
+  --r-xl:   1.75rem;   /* 28px — було 24px */
+  --r-2xl:  2.5rem;    /* 40px — було 32px */
+  --r-3xl:  3rem;      /* 48px — було 40px */
   --r-full: 9999px;
 
-  /* ── Тіні ───────────────────────────────────────────────────── */
-  --shadow-card: 0 20px 60px -15px rgba(15,23,42,0.15),
-                 0 4px 16px -4px  rgba(15,23,42,0.06);
-  --shadow-btn:  0 8px 24px rgba(15,23,42,0.10);
-  --shadow-sm:   0 1px 4px  rgba(15,23,42,0.06);
-  --shadow-md:   0 4px 16px rgba(15,23,42,0.10);
-  --shadow-lg:   0 8px 32px rgba(15,23,42,0.16);
+  /* ── Тіні — виражені, з синім відтінком ─────────────────────── */
+  --shadow-card: 0 24px 64px -12px rgba(37,99,235,.12),
+                 0 4px  16px -4px  rgba(37,99,235,.06);
+  --shadow-btn:  0 8px 24px rgba(37,99,235,.25);
+  --shadow-sm:   0 1px 4px  rgba(10,15,30,.06);
+  --shadow-md:   0 4px 20px rgba(10,15,30,.10);
+  --shadow-lg:   0 12px 40px rgba(10,15,30,.14);
 
   /* ── Transitions ────────────────────────────────────────────── */
   --transition-fast:    150ms ease;
@@ -81,34 +84,35 @@
   --font-size-3xl:      1.875rem;
   --font-size-4xl:      2.25rem;
   --font-size-5xl:      3rem;
+  --font-size-hero:     clamp(2.75rem, 7vw, 4.5rem);  /* новий — для hero-заголовків */
 
   /* ── Акценти: сторінка учня (student.html) ──────────────────── */
-  --student-bg-from:    #4c1d95;
-  --student-bg-to:      #1e40af;
-  --clr-violet:         #7c3aed;
-  --clr-violet-dark:    #6d28d9;
-  --clr-violet-light:   #ede9fe;
+  --student-bg-from:    #3730a3;   /* було #4c1d95 — indigo замість violet */
+  --student-bg-to:      #1e40af;   /* було #1e40af — без змін */
+  --clr-violet:         #4f46e5;   /* було #7c3aed */
+  --clr-violet-dark:    #4338ca;   /* було #6d28d9 */
+  --clr-violet-light:   #e0e7ff;   /* було #ede9fe */
   --clr-amber:          #fbbf24;
   --clr-amber-dark:     #f59e0b;
 
   /* ── Акценти: сторінка вчителя (teacher.html) ──────────────── */
-  --clr-sky:            #0ea5e9;
-  --clr-sky-dark:       #0284c7;
-  --clr-sky-light:      #e0f2fe;
+  --clr-sky:            #0284c7;   /* глибший */
+  --clr-sky-dark:       #0369a1;
+  --clr-sky-light:      #dbeafe;
   --clr-emerald:        #10b981;
   --clr-emerald-dark:   #059669;
   --clr-emerald-light:  #d1fae5;
 
   /* ── Акценти: адмін-панель (admin.html) — dark theme ────────── */
-  --adm-bg:             #0f172a;
-  --adm-surface:        #1e293b;
-  --adm-surface-2:      #0f172a;
-  --adm-border:         #334155;
+  --adm-bg:             #060b18;   /* глибший */
+  --adm-surface:        #0f172a;   /* було #1e293b */
+  --adm-surface-2:      #060b18;
+  --adm-border:         #1e2d4a;   /* синюватий */
   --adm-text:           #f1f5f9;
-  --adm-text-muted:     #94a3b8;
-  --adm-text-faint:     #64748b;
-  --adm-sky:            #38bdf8;
-  --adm-sky-hover:      #0ea5e9;
+  --adm-text-muted:     #8892b0;
+  --adm-text-faint:     #4b5680;
+  --adm-sky:            #60a5fa;
+  --adm-sky-hover:      #3b82f6;
   --adm-emerald:        #10b981;
   --adm-emerald-hover:  #059669;
   --adm-rose:           #f43f5e;
