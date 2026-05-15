@@ -40,7 +40,7 @@
 <body class="student-page">
 
   <!-- ═══════════════════════════════════════════════════════════
-       ЕКРАН 1: ВХІД ЗА КОДОМ
+       ЕКРАН: ГОЛОВНЕ МЕНЮ
        ═══════════════════════════════════════════════════════════ -->
   <div id="screen-entry" class="student-screen">
 
@@ -52,35 +52,27 @@
     <div class="entry-logo">
       <span class="entry-logo__icon" aria-hidden="true">🏆</span>
       <h1 class="entry-logo__title">Розумко</h1>
-      <p class="entry-logo__sub">Олімпіада з інформатики</p>
+      <p class="entry-logo__sub">Тренування та олімпіади з інформатики</p>
     </div>
 
-    <!-- Картка вводу коду -->
-    <div id="code-card" class="student-card">
-      <p class="card-label">Введи код від учителя</p>
-      <form id="student-code-form" novalidate>
-        <input id="student-code-input"
-          type="text" inputmode="text" autocomplete="off" autocapitalize="characters"
-          placeholder="Наприклад: КІТ247" maxlength="10"
-          class="code-input" />
-        <p id="code-status"   class="code-status"  role="alert" aria-live="assertive"></p>
-        <p id="code-success"  class="code-success hidden" aria-live="polite"></p>
-        <button id="code-submit-btn" type="submit" class="btn btn-violet">Увійти →</button>
-        <button id="code-clear-btn"  type="button" class="btn btn-slate hidden">Змінити код</button>
-      </form>
-    </div>
-
-    <!-- Кнопки без коду -->
-    <div class="no-code-btns">
-      <button id="show-practice-btn" class="btn-practice-toggle">
-        <i class="fas fa-dumbbell" aria-hidden="true"></i> Тренування
+    <!-- Головне меню — видно коли жодна панель не відкрита -->
+    <div id="hub-menu">
+      <button id="show-practice-btn" class="hub-btn hub-btn--primary">
+        <i class="fas fa-dumbbell" aria-hidden="true"></i>
+        <span class="hub-btn__label">Тренування</span>
+        <span class="hub-btn__sub">Обери клас і складність</span>
       </button>
-      <button id="show-demo-btn" class="btn-practice-toggle btn-practice-toggle--demo">
-        <i class="fas fa-star" aria-hidden="true"></i> Демо-олімпіада
+      <button id="show-demo-btn" class="hub-btn hub-btn--demo">
+        <i class="fas fa-star" aria-hidden="true"></i>
+        <span class="hub-btn__label">Демо-олімпіада</span>
+        <span class="hub-btn__sub">Спробуй без реєстрації</span>
       </button>
+      <a href="olympiad-enter.html" class="hub-olympiad-link">
+        У мене є код від учителя →
+      </a>
     </div>
 
-    <!-- Панель тренування — підміняє код-картку -->
+    <!-- Панель тренування -->
     <div id="practice-section" class="student-card hidden" style="margin-top: 0;">
       <div class="practice-header">
         <p class="practice-header__title">Обери клас і складність</p>
@@ -88,8 +80,6 @@
           <i class="fas fa-times" aria-hidden="true"></i>
         </button>
       </div>
-
-      <!-- Вибір класу -->
       <div id="practice-grade-buttons" class="selector-grid selector-grid--grade"
            role="group" aria-label="Клас">
         <button data-grade="1" class="selector-btn" aria-pressed="false">1</button>
@@ -97,15 +87,12 @@
         <button data-grade="3" class="selector-btn" aria-pressed="false">3</button>
         <button data-grade="4" class="selector-btn" aria-pressed="false">4</button>
       </div>
-
-      <!-- Вибір складності -->
       <div id="practice-difficulty-buttons" class="selector-grid selector-grid--diff"
            role="group" aria-label="Складність">
         <button data-difficulty="easy"   class="selector-btn selector-btn--diff" aria-pressed="false">😊 Легкий</button>
         <button data-difficulty="medium" class="selector-btn selector-btn--diff" aria-pressed="false">🔥 Середній</button>
         <button data-difficulty="hard"   class="selector-btn selector-btn--diff" aria-pressed="false">⚡ Важкий</button>
       </div>
-
       <button id="start-practice-btn" class="btn btn-start" disabled>
         Почати тренування
       </button>
@@ -144,39 +131,6 @@
     </footer>
 
   </div><!-- /screen-entry -->
-
-
-  <!-- ═══════════════════════════════════════════════════════════
-       ЕКРАН 2: ВИБІР ДІЇ (після введення коду)
-       ═══════════════════════════════════════════════════════════ -->
-  <div id="screen-actions" class="student-screen hidden">
-
-    <!-- Інформація про активну подію -->
-    <div id="active-event-info" class="event-info-card hidden">
-      <p id="active-event-title" class="event-info-card__title"></p>
-      <p id="active-event-meta"  class="event-info-card__meta"></p>
-    </div>
-
-    <!-- Кнопки вибору режиму -->
-    <p class="actions-prompt">Що хочеш зробити?</p>
-    <div id="olympiad-actions" class="action-list">
-      <button id="start-demo-btn" class="action-card action-card--demo">
-        <span class="action-card__icon" aria-hidden="true">🎯</span>
-        Демо-версія
-        <span class="action-card__sub">спробуй перед олімпіадою</span>
-      </button>
-      <button id="start-olympiad-btn" class="action-card action-card--olympiad">
-        <span class="action-card__icon" aria-hidden="true">🏆</span>
-        Основна олімпіада
-        <span class="action-card__sub">офіційний результат</span>
-      </button>
-    </div>
-
-    <button id="code-clear-btn-2" class="btn-text">
-      <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Змінити код
-    </button>
-
-  </div><!-- /screen-actions -->
 
 
   <!-- ═══════════════════════════════════════════════════════════

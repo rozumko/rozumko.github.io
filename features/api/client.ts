@@ -133,6 +133,10 @@ async function request(path: string, options: RequestInit = {}): Promise<any> {
 
 // ─── Student API ───────────────────────────────────────────────────────────
 
+export function validateCode(code: string): Promise<{ eventTitle: string; grade: number }> {
+  return request(`/api/student/validate-code?code=${encodeURIComponent(code)}`)
+}
+
 export async function exchangeCode(code: string): Promise<{ attemptId: string; attemptToken: string; grade: number; questions: Question[] }> {
   const data = await request('/api/student/exchange-code', {
     method: 'POST',

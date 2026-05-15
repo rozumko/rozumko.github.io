@@ -13,7 +13,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         index:          resolve(__dirname, 'index.html'),
-        student:        resolve(__dirname, 'student.html'),
+        student:          resolve(__dirname, 'student.html'),
+        'olympiad-enter': resolve(__dirname, 'olympiad-enter.html'),
         teacher:        resolve(__dirname, 'teacher.html'),
         admin:          resolve(__dirname, 'admin.html'),
         offline:        resolve(__dirname, 'offline.html'),

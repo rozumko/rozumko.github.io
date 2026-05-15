@@ -13,6 +13,59 @@ import {
 export { generateAttemptToken, verifyAttemptToken }
 
 export async function studentRoutes(app: FastifyInstance) {
+  // GET /api/student/validate-code?code=XXX
+  // Перевіряє код без споживання — для сторінки olympiad-enter.html
+  app.get<{ Querystring: { code?: string } }>('/validate-code', {
+    config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
+    schema: {
+      querystring: {
+        type: 'object',
+        required: ['code'],
+        properties: { code: { type: 'string', minLength: 4, maxLength: 10 } },
+      },
+    },
+  }, async (req, reply) => {
+    const normalized = normalizeCode(req.query.code ?? '')
+    try { validateCodeFormat(normalized) } catch (e: any) {
+      return reply.code(400).send({ error: e.message })
+    }
+
+    const [accessCode] = await db
+      .select({
+        id:        accessCodes.id,
+        eventId:   accessCodes.eventId,
+        grade:     accessCodes.grade,
+        usedCount: accessCodes.usedCount,
+        maxUses:   accessCodes.maxUses,
+        expiresAt: accessCodes.expiresAt,
+      })
+      .from(accessCodes)
+      .where(eq(accessCodes.code, normalized))
+      .limit(1)
+
+    if (!accessCode) return reply.code(404).send({ error: 'Код не знайдено' })
+    if (accessCode.expiresAt && accessCode.expiresAt < new Date())
+      return reply.code(410).send({ error: 'Код застарів' })
+    if (accessCode.usedCount >= accessCode.maxUses)
+      return reply.code(409).send({ error: 'Код вже використано максимальну кількість разів' })
+    if (!accessCode.eventId)
+      return reply.code(409).send({ error: 'Код не привʼязаний до олімпіадної події' })
+
+    const [event] = await db
+      .select({ id: olympiadEvents.id, title: olympiadEvents.title, status: olympiadEvents.status, startsAt: olympiadEvents.startsAt, endsAt: olympiadEvents.endsAt })
+      .from(olympiadEvents)
+      .where(eq(olympiadEvents.id, accessCode.eventId))
+      .limit(1)
+
+    if (!event) return reply.code(404).send({ error: 'Олімпіаду не знайдено' })
+
+    try { assertEventCanIssueCodes(event) } catch (err) {
+      return reply.code(409).send({ error: (err as Error).message })
+    }
+
+    return reply.send({ eventTitle: event.title, grade: accessCode.grade })
+  })
+
   // POST /api/student/exchange-code
   // Body: { code: string }
   // Returns: { attemptId, grade, questions: [...] }

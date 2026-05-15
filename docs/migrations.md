@@ -35,6 +35,7 @@ drizzle/
   0007_add_teacher_classes_registrations.sql
   0008_add_access_codes_registration_id.sql
   0009_add_class_students.sql
+  0010_drop_dead_columns.sql
   meta/
     _journal.json    ← drizzle migration journal (do not edit manually)
 

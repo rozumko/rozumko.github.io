@@ -22,14 +22,23 @@ but no critical logic depends on Supabase-specific APIs.
 ### Student (no account)
 
 ```
-student.html
+student.html  ← hub: Training | Demo | "У мене є код →"
+  ↓  (olympiad path only)
+olympiad-enter.html
+  ↓  GET /api/student/validate-code?code=XXX   ← перевірка без споживання
+Fastify backend
+  ↓  returns { eventTitle, grade }
+olympiad-enter.html  ← показує правила + checkbox
   ↓  POST /api/student/exchange-code   { code: "ABC123" }
 Fastify backend
   ↓  validates code, creates attempt row
 Supabase PostgreSQL
-  ↓  returns attemptId (opaque UUID)
+  ↓  returns { attemptId, attemptToken, grade, questions }
+olympiad-enter.html
+  ↓  sessionStorage.setItem('pendingOlympiad', ...)
+  ↓  redirect → student.html
 student.html
-  ↓  all subsequent requests carry attemptId in URL path
+  ↓  читає sessionStorage → стартує квіз
   ↓  POST /api/attempt/:id/answer
   ↓  POST /api/attempt/:id/finish
 Fastify backend   ← scores, validates, writes result
@@ -39,6 +48,11 @@ Students never touch Supabase directly. They have no Supabase Auth session.
 An access code maps to exactly one olympiad + class. The backend creates the
 attempt row and returns an opaque attempt token the student carries for the
 duration of the session.
+
+`GET /api/student/validate-code` is a read-only pre-check: it verifies the code
+exists, is not expired, is not exhausted, and the event is active — but does NOT
+increment `used_count`. The student sees the event name and agrees to the rules
+before the actual `exchange-code` call consumes the code.
 
 ### Teacher
 
@@ -95,8 +109,10 @@ Always call `GET /api/me` and use the response.
   generates participation codes for that specific registration.
 - Codes are stored in the `access_codes` table with: `event_id`,
   `registration_id`, `code`, `grade`, `max_uses`, `used_count`, `expires_at`.
-- `POST /api/student/exchange-code` validates the code and creates an `attempt`
-  row. The backend returns `{ attemptId, attemptToken, grade, questions }`.
+- Two-step student entry flow:
+  1. `GET /api/student/validate-code?code=XXX` — checks validity, returns `{ eventTitle, grade }`. Does NOT consume the code. Rate-limited: 20 req/min per IP.
+  2. Student reads the rules on `olympiad-enter.html` and checks the agreement checkbox.
+  3. `POST /api/student/exchange-code` — consumes the code, creates an `attempt` row, returns `{ attemptId, attemptToken, grade, questions }`.
 - `attemptToken` = `HMAC-SHA256(attemptId, ATTEMPT_SECRET)`. Усі наступні запити
   (`/answer`, `/finish`) вимагають заголовок `X-Attempt-Token`. Без токена — 403.
 - Questions are sent to the frontend (without `correct` field).
@@ -151,8 +167,9 @@ Violation of any rule → `400 Bad Request` with a Ukrainian-language message.
 
 On boot, the server validates that all required env vars are present:
 ```ts
-const REQUIRED_ENV = ['DATABASE_URL', 'SUPABASE_JWT_ISSUER', 'ATTEMPT_SECRET']
+const REQUIRED_ENV = ['DATABASE_URL', 'SUPABASE_URL', 'ATTEMPT_SECRET']
 ```
+`SUPABASE_URL` is used to build the JWKS endpoint URL (`${SUPABASE_URL}/auth/v1/.well-known/jwks.json`).
 Any missing variable → `process.exit(1)` with an explicit error message.
 
 ## Current olympiad event model
@@ -199,13 +216,13 @@ official access code. **Реалізовано.**
 | Офіційна олімпіада | так (від вчителя) | фіксований набір події | зберігається на сервері |
 
 Flow демо:
-1. Учень натискає «Демо-олімпіада» на головному екрані (без коду).
+1. Учень натискає «Демо-олімпіада» на `student.html` (без коду).
 2. Обирає клас (1–4).
 3. Фронтенд викликає `GET /api/questions?grade=X&isOlympiad=true&difficulty=hard`.
 4. Quiz запускається в режимі `demo` — таймер 10 хв, без пояснень, без збереження.
 5. `correct` ніколи не повертається публічним endpoint — оцінювання лише в браузері (для неофіційного демо це прийнятно).
 
-Після введення офіційного коду демо також доступне з `screen-actions` — там клас вже відомий з коду.
+Демо повністю незалежне від олімпіадного коду. `student.html` є хабом: тренування і демо доступні без будь-якого коду; для офіційної олімпіади учень переходить на `olympiad-enter.html`.
 
 ## Answer key and scoring
 

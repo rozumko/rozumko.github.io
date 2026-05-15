@@ -59,23 +59,30 @@ validated against current role/status in the database.
 
 ### Student
 
+Two-step entry flow to prevent code consumption before the student has read the rules:
+
 1. Teacher creates a class and registers it for an active olympiad event.
 2. Teacher generates access codes for that registration.
-3. Student enters a code on `student.html` (format: `КІТ247` — Ukrainian word + 3 digits).
-4. `POST /api/student/exchange-code` validates:
-   - format matches `/^([А-ЯҐЄІЇ]{2,5}\d{3}|\d{3}[А-ЯҐЄІЇ]{2,5})$/u`
+3. Student opens `olympiad-enter.html` and enters a code (format: `КІТ247` — Ukrainian word + 3 digits).
+4. **Step 1 — validate:** `GET /api/student/validate-code?code=XXX` (rate-limit: 20/min):
+   - format validates against `/^([А-ЯҐЄІЇ]{2,5}\d{3}|\d{3}[А-ЯҐЄІЇ]{2,5})$/u`
    - code exists and is not expired (`expires_at`)
    - `used_count < max_uses`
-   - code has an active current `event_id`
-   - the event has selected questions for the code grade
-5. Backend creates an `attempt` row and records its immutable question list in
-   `attempt_questions`.
-6. Backend increments `used_count` only after event and question validation.
-7. Backend returns `{ attemptId, attemptToken, grade, questions }` (no answer keys).
+   - code has an active `event_id`
+   - event status allows participation
+   - returns `{ eventTitle, grade }` — does NOT increment `used_count`
+5. Student reads the rules on the page and checks the agreement checkbox.
+6. **Step 2 — exchange:** `POST /api/student/exchange-code` validates again (atomically) and:
+   - increments `used_count` inside a transaction (`WHERE used_count < max_uses`)
+   - creates an `attempt` row
+   - records the immutable question list in `attempt_questions`
+   - returns `{ attemptId, attemptToken, grade, questions }` (no answer keys)
    - `attemptToken = HMAC-SHA256(attemptId, ATTEMPT_SECRET)` — stateless, no DB column needed.
-8. Student sends `X-Attempt-Token` header on every subsequent request (`/answer`, `/finish`).
+7. Frontend stores the result in `sessionStorage`, redirects to `student.html`.
+8. `student.html` reads `sessionStorage`, starts the quiz, clears `sessionStorage`.
+9. Student sends `X-Attempt-Token` header on every subsequent request (`/answer`, `/finish`).
    Without a valid token → 403, even if `attemptId` is known.
-9. Frontend keeps `attemptId` + `attemptToken` in memory + localStorage backup (crash recovery).
+10. Frontend keeps `attemptId` + `attemptToken` in memory + localStorage backup (crash recovery).
 
 ---
 
@@ -85,6 +92,7 @@ validated against current role/status in the database.
 
 | Endpoint                          | Student | Teacher | Admin |
 |-----------------------------------|---------|---------|-------|
+| GET  /api/student/validate-code   | ✓       | —       | —     |
 | POST /api/student/exchange-code   | ✓       | —       | —     |
 | POST /api/attempt/:id/answer      | ✓ (own) | —       | —     |
 | POST /api/attempt/:id/finish      | ✓ (own) | —       | —     |
@@ -198,7 +206,8 @@ Production error handler: `500` відповіді повертають лише
 ## Rate limiting and abuse prevention
 
 - Глобально: 100 запитів / хвилину з однієї IP (`@fastify/rate-limit`).
-- `POST /api/student/exchange-code`: окремий ліміт — 10 запитів / хвилину з однієї IP. При перевищенні — `429 Too Many Requests`.
+- `GET /api/student/validate-code`: 20 запитів / хвилину з однієї IP.
+- `POST /api/student/exchange-code`: 10 запитів / хвилину з однієї IP. При перевищенні — `429 Too Many Requests`.
 - Access codes: configurable `max_uses` per code, hard expiry via `expires_at`.
 - CORS: дозволено лише `https://rozumko.github.io`, `localhost:5173`, `localhost:4173`.
 

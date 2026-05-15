@@ -641,6 +641,105 @@ button {
 .btn-practice-toggle--demo  { background: rgba(251,191,36,0.22); border-color: rgba(251,191,36,0.4); }
 .btn-practice-toggle--demo:hover { background: rgba(251,191,36,0.35); }
 
+/* ── Hub-menu: нове головне меню student.html ───────────────── */
+#hub-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+}
+.hub-btn {
+  width: 100%;
+  max-width: 24rem;
+  padding: var(--sp-4) var(--sp-5);
+  border-radius: var(--r-2xl);
+  border: none;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  transition: filter var(--transition-fast), transform .1s;
+  cursor: pointer;
+  text-align: left;
+}
+.hub-btn:hover  { filter: brightness(1.08); }
+.hub-btn:active { transform: scale(.98); }
+.hub-btn:focus-visible { outline: 3px solid rgba(255,255,255,.7); outline-offset: 3px; }
+.hub-btn i { font-size: 1.5rem; flex-shrink: 0; }
+.hub-btn__label { font-size: var(--font-size-lg); font-weight: 800; line-height: 1.2; }
+.hub-btn__sub   { font-size: var(--font-size-xs); opacity: .85; margin-top: 2px; }
+.hub-btn__label, .hub-btn__sub { display: block; }
+.hub-btn--primary { background: linear-gradient(135deg, #10b981, #059669); }
+.hub-btn--demo    { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.hub-olympiad-link {
+  margin-top: var(--sp-1);
+  color: rgba(255,255,255,.85);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255,255,255,.4);
+  padding-bottom: 1px;
+  transition: color var(--transition-fast);
+}
+.hub-olympiad-link:hover { color: #fff; border-color: #fff; }
+
+/* ── olympiad-enter.html ───────────────────────────────────── */
+.oe-event-confirm {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: var(--r-xl);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-4);
+}
+.oe-event-confirm__icon { font-size: 1.5rem; }
+.oe-event-confirm__title { font-weight: 700; color: #166534; font-size: var(--font-size-base); }
+.oe-event-confirm__meta  { font-size: var(--font-size-sm); color: #15803d; margin-top: 2px; }
+.oe-rules {
+  background: #fafafa;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--r-xl);
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-4);
+}
+.oe-rules__heading {
+  font-weight: 700;
+  color: var(--clr-text);
+  margin-bottom: var(--sp-3);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.oe-rules__list {
+  list-style: disc;
+  padding-left: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  font-size: var(--font-size-sm);
+  color: var(--clr-text-muted);
+  line-height: 1.5;
+}
+.oe-rules__list li strong { color: var(--clr-text); }
+.oe-agree {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-xl);
+  border: 2px solid #e2e8f0;
+  background: #fff;
+  cursor: pointer;
+  margin-bottom: var(--sp-4);
+  transition: border-color var(--transition-fast);
+}
+.oe-agree:has(.oe-agree__checkbox:checked) { border-color: #7c3aed; background: #faf5ff; }
+.oe-agree__checkbox { width: 20px; height: 20px; accent-color: #7c3aed; flex-shrink: 0; margin-top: 2px; cursor: pointer; }
+.oe-agree__text { font-size: var(--font-size-sm); font-weight: 600; color: var(--clr-text); line-height: 1.5; }
+
 /* ── Панель тренування ──────────────────────────────────────── */
 
 .practice-header {

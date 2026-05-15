@@ -1,20 +1,8 @@
 import { loadQuestions, getModeConfig } from './features/olympiad/quiz-engine.js'
-import { exchangeCode, saveAnswer, finishAttempt } from './features/api/client.js'
+import { saveAnswer, finishAttempt } from './features/api/client.js'
 import { renderQuestion, type RenderableQuestion } from './utils/question-renderer.js'
 import { showModal } from './utils/ui.js'
 import { $, $maybe } from './utils/dom.js'
-
-// --- DOM: екрани ---
-const screenEntry   = $('screen-entry')
-const screenActions = $('screen-actions')
-
-// --- DOM: вхід за кодом ---
-const codeForm      = $<HTMLFormElement>('student-code-form')
-const codeInput     = $<HTMLInputElement>('student-code-input')
-const codeStatus    = $('code-status')
-const codeSuccess   = $('code-success')
-const codeSubmitBtn = $<HTMLButtonElement>('code-submit-btn')
-const codeClearBtn  = $<HTMLButtonElement>('code-clear-btn')
 
 // --- DOM: тренування ---
 const gradeButtons     = document.querySelectorAll<HTMLButtonElement>('[data-grade]')
@@ -28,24 +16,24 @@ let selectedDemoGrade: number | null = null
 
 // --- Тренування: показати/сховати ---
 $('show-practice-btn').addEventListener('click', () => {
-  $('code-card').classList.add('hidden')
+  $('hub-menu').classList.add('hidden')
   $('demo-section').classList.add('hidden')
   $('practice-section').classList.remove('hidden')
 })
 $('hide-practice-btn').addEventListener('click', () => {
   $('practice-section').classList.add('hidden')
-  $('code-card').classList.remove('hidden')
+  $('hub-menu').classList.remove('hidden')
 })
 
 // --- Демо: показати/сховати ---
 $('show-demo-btn').addEventListener('click', () => {
-  $('code-card').classList.add('hidden')
+  $('hub-menu').classList.add('hidden')
   $('practice-section').classList.add('hidden')
   $('demo-section').classList.remove('hidden')
 })
 $('hide-demo-btn').addEventListener('click', () => {
   $('demo-section').classList.add('hidden')
-  $('code-card').classList.remove('hidden')
+  $('hub-menu').classList.remove('hidden')
 })
 
 demoGradeButtons.forEach(btn => {
@@ -170,9 +158,6 @@ window.addEventListener('error', (event) => {
 })
 
 // --- Стан ---
-interface StudentData { grade: number; code: string }
-
-let studentData:      StudentData | null = null
 let selectedGrade:    number | null = null
 let selectedDiff:     string | null = null
 
@@ -187,7 +172,6 @@ let currentMode:      string | null = null
 
 let currentAttemptId:    string | null = null
 let currentAttemptToken: string | null = null
-let olympiadQuestions:   RenderableQuestion[] | null = null
 let failedAnswers:       Set<string> = new Set()    // questionId-и, які не вдалось зберегти
 let pendingSaves:        Promise<void>[] = []       // активні збереження відповідей
 
@@ -240,84 +224,25 @@ function clearQuizBackup() {
   try { localStorage.removeItem(QUIZ_BACKUP_KEY) } catch { /* ігноруємо */ }
 }
 
-// ===================== ВХІД ЗА КОДОМ =====================
+// ===================== ОЛІМПІАДА З SESSIONSTORAGE =====================
+// olympiad-enter.html викликає exchange-code, зберігає результат у sessionStorage
+// і перенаправляє сюди. Ми читаємо і стартуємо квіз.
 
-codeForm.addEventListener('submit', async (e) => {
-  e.preventDefault()
-  const code = codeInput.value.trim().toUpperCase()
-  if (!code) { codeStatus.textContent = 'Введи код учня.'; return }
-  const CODE_RE = /^([А-ЯҐЄІЇ]{2,5}\d{3}|\d{3}[А-ЯҐЄІЇ]{2,5})$/u
-  if (!CODE_RE.test(code)) { codeStatus.textContent = 'Невірний формат. Приклад: КІТ247'; return }
-
-  codeStatus.textContent    = ''
-  codeSubmitBtn.disabled    = true
-  codeSubmitBtn.textContent = 'Перевірка…'
-
+;(function checkPendingOlympiad() {
+  const raw = sessionStorage.getItem('pendingOlympiad')
+  if (!raw) return
+  sessionStorage.removeItem('pendingOlympiad')
   try {
-    const result          = await exchangeCode(code)
-    currentAttemptId      = result.attemptId
-    currentAttemptToken   = result.attemptToken
-    olympiadQuestions     = result.questions
-    studentData           = { grade: result.grade, code }
-    showScreenActions(code)
-    showActiveEventInfo(result.grade)
-  } catch (err) {
-    codeStatus.textContent    = (err as Error).message
-    codeSubmitBtn.disabled    = false
-    codeSubmitBtn.textContent = 'Увійти →'
-  }
-})
-
-function clearCode() {
-  codeInput.value           = ''
-  codeInput.disabled        = false
-  codeStatus.textContent    = ''
-  codeSuccess.textContent   = ''
-  codeSubmitBtn.disabled    = false
-  codeSubmitBtn.textContent = 'Увійти →'
-  studentData               = null
-  currentAttemptId          = null
-  currentAttemptToken       = null
-  olympiadQuestions         = null
-  showScreenEntry()
-  codeInput.focus()
-}
-
-codeClearBtn.addEventListener('click', clearCode)
-$maybe<HTMLButtonElement>('code-clear-btn-2')?.addEventListener('click', clearCode)
-
-// ===================== ЗАПУСК ОЛІМПІАДИ / ДЕМО =====================
-
-$maybe<HTMLButtonElement>('start-demo-btn')?.addEventListener('click', () => launchOlympiad('demo'))
-$maybe<HTMLButtonElement>('start-olympiad-btn')?.addEventListener('click', () => launchOlympiad('olympiad'))
-
-async function launchOlympiad(mode: string) {
-  const code = studentData?.code
-  if (!code) { showModal('Спочатку введи код учня.'); return }
-
-  const btnId = mode === 'olympiad' ? 'start-olympiad-btn' : 'start-demo-btn'
-  const btn   = $maybe<HTMLButtonElement>(btnId)
-  if (btn) btn.disabled = true
-  showLoading()
-
-  try {
-    const grade = studentData!.grade
-    if (mode === 'olympiad') {
-      if (!olympiadQuestions) throw new Error('Спочатку введи код від вчителя.')
-      const cfg = getModeConfig(mode, null)
-      startQuiz(olympiadQuestions, mode, cfg, { code, grade })
-      return
+    const pending = JSON.parse(raw) as {
+      attemptId: string; attemptToken: string; grade: number; questions: RenderableQuestion[]
     }
-    const cfg = getModeConfig(mode, null)
-    const qs  = await loadQuestions(grade, mode, cfg.count, null)
-    startQuiz(qs, mode, cfg, { code, grade })
-  } catch (err) {
-    hideLoading()
-    showModal((err as Error).message)
-  } finally {
-    if (btn) btn.disabled = false
-  }
-}
+    currentAttemptId    = pending.attemptId
+    currentAttemptToken = pending.attemptToken
+    const cfg = getModeConfig('olympiad', null)
+    showLoading()
+    startQuiz(pending.questions, 'olympiad', cfg, { grade: pending.grade })
+  } catch { /* пошкоджений sessionStorage — ігноруємо */ }
+})()
 
 // ===================== ТРЕНУВАННЯ =====================
 
@@ -564,7 +489,6 @@ async function finishQuiz(timeUp: boolean) {
     }
     currentAttemptId    = null
     currentAttemptToken = null
-    olympiadQuestions   = null
   }
 }
 
@@ -579,7 +503,6 @@ quitConfirmYes.addEventListener('click', () => {
   if (currentMode === 'olympiad') exitFullscreen()
   currentAttemptId    = null
   currentAttemptToken = null
-  olympiadQuestions   = null
 })
 
 resultCloseBtn.addEventListener('click', () => hideOverlay(resultOverlay))
@@ -600,25 +523,3 @@ const quizLoadingOverlay = $('quiz-loading-overlay')
 function showLoading() { quizLoadingOverlay.classList.add('active') }
 function hideLoading()  { quizLoadingOverlay.classList.remove('active') }
 
-function showScreenEntry() {
-  screenActions.classList.add('hidden')
-  screenEntry.classList.remove('hidden')
-}
-
-function showScreenActions(code: string) {
-  screenEntry.classList.add('hidden')
-  screenActions.classList.remove('hidden')
-  const successEl = $maybe('code-success')
-  if (successEl) successEl.textContent = `Код: ${code}`
-}
-
-function showActiveEventInfo(_grade: number) {
-  const olympiadBtn = $maybe<HTMLButtonElement>('start-olympiad-btn')
-  const infoBox     = $maybe('active-event-info')
-  const titleEl     = $maybe('active-event-title')
-  const metaEl      = $maybe('active-event-meta')
-  if (olympiadBtn) { olympiadBtn.classList.remove('btn-disabled'); olympiadBtn.title = '' }
-  if (titleEl) titleEl.textContent = '🏆 Олімпіада з інформатики'
-  if (metaEl)  metaEl.textContent  = '10 питань · 15 хв'
-  infoBox?.classList.remove('hidden')
-}

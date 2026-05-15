@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Вхід на олімпіаду — Розумко</title>
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#7c3aed">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+  <link rel="stylesheet" href="tokens.css"/>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="student-page">
+
+  <div class="student-screen" style="max-width: 480px;">
+
+    <a href="student.html" class="student-back">
+      <i class="fas fa-arrow-left" aria-hidden="true"></i> Назад
+    </a>
+
+    <!-- Логотип -->
+    <div class="entry-logo">
+      <span class="entry-logo__icon" aria-hidden="true">🏆</span>
+      <h1 class="entry-logo__title">Олімпіада</h1>
+      <p class="entry-logo__sub">Введи код і прочитай правила</p>
+    </div>
+
+    <!-- КРОК 1: Введення коду -->
+    <div id="step-code" class="student-card">
+      <p class="card-label">Крок 1 — Введи код від учителя</p>
+      <form id="code-form" novalidate>
+        <input id="code-input"
+          type="text" inputmode="text" autocomplete="off" autocapitalize="characters"
+          placeholder="Наприклад: КІТ247" maxlength="10"
+          class="code-input" aria-label="Код доступу" />
+        <p id="code-error" class="code-status" role="alert" aria-live="assertive"></p>
+        <button id="code-submit-btn" type="submit" class="btn btn-violet">
+          Перевірити код →
+        </button>
+      </form>
+    </div>
+
+    <!-- КРОК 2: Правила (прихований до валідації) -->
+    <div id="step-rules" class="student-card hidden">
+
+      <!-- Підтвердження події -->
+      <div id="event-confirm" class="oe-event-confirm">
+        <span class="oe-event-confirm__icon" aria-hidden="true">✅</span>
+        <div>
+          <p id="event-title" class="oe-event-confirm__title"></p>
+          <p id="event-grade" class="oe-event-confirm__meta"></p>
+        </div>
+      </div>
+
+      <!-- Правила -->
+      <div class="oe-rules">
+        <p class="oe-rules__heading">
+          <i class="fas fa-list-ul" aria-hidden="true"></i> Крок 2 — Прочитай правила
+        </p>
+        <ul class="oe-rules__list">
+          <li>Виконуй завдання <strong>самостійно</strong> — без підказок і без інтернету.</li>
+          <li>Не давай свій код іншим і не передавай відповіді.</li>
+          <li>Папір і ручка для чернетки — можна, якщо не заборонено завданням.</li>
+          <li>Після відповіді перейти назад — не можна. Думай перед вибором.</li>
+          <li>Якщо щось не працює — поклич дорослого, але відповіді обирай сам.</li>
+          <li>Час відраховується з моменту натискання «Почати». Не зупиняється.</li>
+        </ul>
+      </div>
+
+      <!-- Згода -->
+      <label class="oe-agree">
+        <input type="checkbox" id="agree-checkbox" class="oe-agree__checkbox" />
+        <span class="oe-agree__text">
+          Я прочитав(ла) правила і обіцяю виконувати завдання чесно та самостійно
+        </span>
+      </label>
+
+      <button id="start-btn" class="btn btn-violet" disabled>
+        <i class="fas fa-flag-checkered" aria-hidden="true"></i> Почати олімпіаду
+      </button>
+      <p id="start-error" class="code-status" role="alert" aria-live="assertive"></p>
+
+      <button id="change-code-btn" class="btn-text" style="margin-top: var(--sp-2)">
+        <i class="fas fa-arrow-left" aria-hidden="true"></i> Змінити код
+      </button>
+    </div>
+
+    <!-- Футер -->
+    <footer class="student-footer">
+      <nav class="student-footer__links" aria-label="Корисні посилання">
+        <a href="for-students.html">Для учнів</a>
+        <a href="for-parents.html">Для батьків</a>
+        <a href="privacy.html">Конфіденційність</a>
+        <a href="terms.html">Правила</a>
+      </nav>
+      <p>&copy; 2024–2026 Розумко</p>
+    </footer>
+
+  </div>
+
+  <script type="module" src="olympiad-enter.js"></script>
+</body>
+</html>
