@@ -31,13 +31,17 @@ validated against current role/status in the database.
 | Surface                        | Mitigation                                          |
 |--------------------------------|-----------------------------------------------------|
 | Student guessing codes         | Ukrainian-word format, max_uses per code, rate limit 10 req/min per IP |
-| Student replaying attemptId    | `X-Attempt-Token` (HMAC) required — knowing UUID is not enough |
+| Student replaying attemptId    | `X-Attempt-Token` (HMAC-SHA256, server secret required) — UUID alone insufficient |
+| Student calling /finish early to harvest answer keys | `correct` field never included in `/finish` response — only `isCorrect` (boolean) |
 | Student submitting after time  | Backend enforces 90-min hard limit on `/finish`; auto-closes expired attempt |
 | Teacher accessing another class| Backend checks `teacher_id` ownership on every request |
+| Unauthorized teacher self-registration | New accounts provisioned with `status: 'pending'`; admin must explicitly approve |
 | JWT with stale role            | Role re-fetched from DB on every authenticated request |
 | Direct Supabase table access   | RLS enabled on all tables; anon key has no write access |
-| Answer key extraction          | Never included in any API response                  |
+| Answer key extraction          | `correct` never sent during quiz; never sent after quiz; `isCorrect` only |
 | Score manipulation             | Score written only by backend on finish             |
+| ATTEMPT_SECRET not set         | Server throws on startup if env var missing — no silent fallback |
+| Teacher results leaking raw answers | `/results` returns score/status only; `answers` JSONB column excluded |
 | CSRF                           | SameSite cookies or Authorization header (not cookies) |
 | XSS → token theft              | attempt_token in memory only, not localStorage      |
 
@@ -144,11 +148,14 @@ ALTER TABLE public.questions ENABLE ROW LEVEL SECURITY;
 
 | Data              | Where stored         | Sent to frontend?      |
 |-------------------|----------------------|------------------------|
-| Answer key        | `questions.correct` (DB) | Never                |
+| Answer key (`correct`) | `questions.correct` (DB) | **Never** — stripped from all API responses including `/finish` |
+| `isCorrect`       | computed in `/finish` | Yes — boolean only, no key |
+| Attempt answers (raw) | `attempts.answers` (DB) | Never — excluded from `/results` response |
 | Final score       | `attempts.score`     | Only after finish      |
 | Student name      | not stored           | —                      |
 | Certificate name  | browser memory only  | Not sent to backend    |
 | Teacher password  | Supabase Auth        | Never (Supabase manages) |
+| `ATTEMPT_SECRET`  | Server env var only  | Never                  |
 | `service_role` key| Server env var only  | Never                  |
 | `anon` key        | Frontend env var     | Yes (public, read-only scope) |
 
@@ -222,3 +229,7 @@ Production error handler: `500` відповіді повертають лише
 - Score calculation in frontend JavaScript.
 - `attemptId` used to identify attempts — but it's an opaque UUID, no sensitive data.
 - Student first names or last names stored for certificates/diplomas.
+- `correct` field included in any `/finish` or `/results` API response.
+- `answers` JSONB (raw student choices) exposed via `/results` endpoint.
+- `ATTEMPT_SECRET` with a hardcoded fallback value — must throw if unset.
+- New teacher accounts auto-approved without admin confirmation (`status` must start as `'pending'`).

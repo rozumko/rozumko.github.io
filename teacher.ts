@@ -8,6 +8,10 @@ import {
   type TeacherClass, type ClassStudent, type EventRegistration, type TeacherEvent, type Attempt,
 } from './features/api/client.js'
 import { esc, friendlyError } from './utils/ui.js'
+
+function isPendingError(msg: string): boolean {
+  return msg.includes('ACCOUNT_PENDING') || msg.includes('очікує підтвердження')
+}
 import { $, $maybe } from './utils/dom.js'
 
 // --- DOM ---
@@ -128,7 +132,10 @@ loginForm.addEventListener('submit', async (e) => {
     await Promise.all([loadRegistrationEvents(), loadClasses(), loadRegistrations(), loadCodes(), loadResults()])
   } catch (err) {
     hideColdStartBanner()
-    loginError.textContent     = friendlyError((err as Error).message)
+    const msg = (err as Error).message
+    loginError.textContent     = isPendingError(msg)
+      ? '⏳ Акаунт очікує підтвердження адміністратора. Зверніться до організатора олімпіади.'
+      : friendlyError(msg)
     loginSubmitBtn.disabled    = false
     loginSubmitBtn.textContent = 'Увійти'
   }
@@ -180,11 +187,17 @@ registerForm?.addEventListener('submit', async (e) => {
       hideColdStartBanner()
       showDashboard(me.name || email)
       await Promise.all([loadRegistrationEvents(), loadClasses(), loadRegistrations(), loadCodes(), loadResults()])
-    } catch {
+    } catch (loginErr) {
       hideColdStartBanner()
-      // Email-підтвердження включено — показуємо підказку і переводимо до входу
       if (registerError) {
-        registerError.textContent = '✅ Реєстрацію надіслано! Перевірте пошту та підтвердіть email, потім увійдіть.'
+        const msg = (loginErr as Error).message
+        if (isPendingError(msg)) {
+          // Реєстрація успішна, але потрібне підтвердження адміна
+          registerError.textContent = '✅ Акаунт створено! Зверніться до організатора олімпіади для підтвердження доступу.'
+        } else {
+          // Email-підтвердження Supabase увімкнено — лист надіслано
+          registerError.textContent = '✅ Реєстрацію надіслано! Перевірте пошту та підтвердіть email, потім увійдіть.'
+        }
         registerError.style.color = 'var(--clr-emerald, #059669)'
       }
       registerSubmitBtn!.disabled    = false

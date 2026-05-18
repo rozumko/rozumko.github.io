@@ -2920,6 +2920,7 @@ body.teacher-dashboard-active {
 .admin-row__actions { display: flex; flex-direction: column; align-items: flex-end; gap: var(--sp-2); }
 .btn-sm { padding: var(--sp-2) var(--sp-3); font-size: var(--font-size-sm); min-height: 2.25rem; }
 .badge--blocked { background: #fee2e2; color: #991b1b; border-radius: 4px; padding: 1px 6px; font-size: var(--font-size-xs); font-weight: 600; }
+.badge--pending { background: #fef9c3; color: #92400e; border-radius: 4px; padding: 1px 6px; font-size: var(--font-size-xs); font-weight: 600; }
 
 /* ── Loading state in question list ─────────────────────────── */
 .admin-loading-text { color: var(--adm-text-muted); font-size: var(--font-size-sm); padding: var(--sp-4); }

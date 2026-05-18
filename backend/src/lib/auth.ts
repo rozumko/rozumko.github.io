@@ -47,15 +47,25 @@ export async function requireAuth(req: FastifyRequest, reply: FastifyReply) {
     .limit(1)
 
   // Auto-provision: новий вчитель зареєструвався через Supabase Auth,
-  // але запис у appUsers ще не існує — створюємо з роллю 'teacher'
+  // але запис у appUsers ще не існує — створюємо з роллю 'teacher', status 'pending'.
+  // Адміністратор має вручну підтвердити акаунт через панель адміна.
   if (!user) {
     const email = payload.email ?? ''
     if (!email) return reply.code(403).send({ error: 'Email не знайдено в токені' })
-    const [created] = await db
+    await db
       .insert(appUsers)
-      .values({ authUserId, email, role: 'teacher', status: 'active' })
-      .returning()
-    user = created
+      .values({ authUserId, email, role: 'teacher', status: 'pending' })
+    return reply.code(403).send({
+      error: 'Акаунт очікує підтвердження адміністратора. Зверніться до організатора олімпіади.',
+      code: 'ACCOUNT_PENDING',
+    })
+  }
+
+  if (user.status === 'pending') {
+    return reply.code(403).send({
+      error: 'Акаунт ще не підтверджено адміністратором. Зверніться до організатора олімпіади.',
+      code: 'ACCOUNT_PENDING',
+    })
   }
 
   if (user.status === 'blocked') {

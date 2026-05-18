@@ -17,7 +17,9 @@ export function validateCodeFormat(code: string): void {
 // ── HMAC attempt token ────────────────────────────────────────
 // Читаємо секрет lazy (при першому виклику), щоб dotenv встиг завантажитись
 function getAttemptSecret(): string {
-  return process.env.ATTEMPT_SECRET ?? 'dev-secret-change-in-prod'
+  const secret = process.env.ATTEMPT_SECRET
+  if (!secret) throw new Error('ATTEMPT_SECRET environment variable is not set')
+  return secret
 }
 
 export function generateAttemptToken(attemptId: string): string {

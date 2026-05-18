@@ -36,7 +36,7 @@ export async function adminRoutes(app: FastifyInstance) {
   }>('/teachers/:id/status', { preHandler: requireAdmin }, async (req, reply) => {
     const { id } = req.params
     const { status } = req.body
-    if (!['active', 'blocked'].includes(status)) {
+    if (!['active', 'blocked', 'pending'].includes(status)) {
       return reply.code(400).send({ error: 'Невірний статус' })
     }
     if (req.user?.id === id) {

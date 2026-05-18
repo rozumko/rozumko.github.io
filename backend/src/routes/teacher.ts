@@ -479,7 +479,18 @@ export async function teacherRoutes(app: FastifyInstance) {
     const codeMap = Object.fromEntries(teacherCodes.map(c => [c.id, c]))
 
     const allAttempts = await db
-      .select()
+      .select({
+        id:         attempts.id,
+        codeId:     attempts.codeId,
+        grade:      attempts.grade,
+        status:     attempts.status,
+        score:      attempts.score,
+        totalQ:     attempts.totalQ,
+        startedAt:  attempts.startedAt,
+        finishedAt: attempts.finishedAt,
+        // answers (JSONB відповідей учня) свідомо не повертається:
+        // вчителю достатньо балу; сирі вибори учня — зайва деталь
+      })
       .from(attempts)
       .where(inArray(attempts.codeId, codeIds))
       .orderBy(desc(attempts.startedAt))
