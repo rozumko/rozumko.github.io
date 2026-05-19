@@ -100,16 +100,9 @@ export async function attemptRoutes(app: FastifyInstance) {
       return reply.code(403).send({ error: 'Невірний токен спроби' })
     }
     if (attempt.status === 'finished') {
-      // Повертаємо збережений результат — idempotent finish.
-      // Захищає від сценарію: учень завершив, браузер закрили, localStorage втрачено.
-      const savedQs = await db
-        .select({ id: questions.id, correct: questions.correct, explanation: questions.explanation })
-        .from(attemptQuestions)
-        .innerJoin(questions, eq(attemptQuestions.questionId, questions.id))
-        .where(eq(attemptQuestions.attemptId, id))
-        .orderBy(asc(attemptQuestions.position))
-      const { results } = scoreAttempt(savedQs, (attempt.answers as Record<string, number>) ?? {})
-      return reply.code(200).send({ score: attempt.score ?? 0, total: attempt.totalQ ?? savedQs.length, results })
+      // Ідемпотентне завершення — повертаємо лише score/total без isCorrect по кожному питанню,
+      // щоб не дозволити використовувати /finish як оракул правильних відповідей.
+      return reply.code(200).send({ score: attempt.score ?? 0, total: attempt.totalQ ?? 0 })
     }
 
     // Ліміт часу: спроба не може тривати більше 90 хвилин
@@ -142,10 +135,8 @@ export async function attemptRoutes(app: FastifyInstance) {
       })
       .where(eq(attempts.id, id))
 
-    return reply.code(200).send({
-      score,
-      total,
-      results,
-    })
+    // results (isCorrect по питанню) не повертаємо — щоб унеможливити binary-search оракул.
+    // Фронтенду достатньо score/total для відображення результату.
+    return reply.code(200).send({ score, total })
   })
 }

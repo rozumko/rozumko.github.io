@@ -235,7 +235,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
     const found = selection.questionIds.length
       ? await db
-          .select({ id: questions.id, grade: questions.grade })
+          .select({ id: questions.id, grade: questions.grade, isOlympiad: questions.isOlympiad })
           .from(questions)
           .where(inArray(questions.id, selection.questionIds))
       : []
@@ -244,6 +244,11 @@ export async function adminRoutes(app: FastifyInstance) {
       assertQuestionsBelongToGrade(selection.questionIds, found, selection.grade)
     } catch (err) {
       return reply.code(400).send({ error: (err as Error).message })
+    }
+
+    const nonOlympiad = found.filter(q => !q.isOlympiad)
+    if (nonOlympiad.length) {
+      return reply.code(400).send({ error: `Питання ${nonOlympiad.map(q => q.id).join(', ')} не є олімпіадними (isOlympiad=false). До події можна додавати лише олімпіадні питання.` })
     }
 
     await db.transaction(async tx => {

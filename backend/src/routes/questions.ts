@@ -48,12 +48,10 @@ export async function questionsRoutes(app: FastifyInstance) {
       .orderBy(sql`random()`)
       .limit(count)
 
-    // correct і explanation повертаємо тільки для тренувальних питань (isOlympiad=false).
-    // Для олімпіадних питань (isOlympiad=true) ключі відповідей залишаються на сервері —
-    // навіть у демо-режимі, щоб не розкривати банк офіційних питань.
-    const qs = isOlympiad === false
-      ? rows
-      : rows.map(({ correct: _c, explanation: _e, ...rest }) => rest)
+    // correct і explanation НІКОЛИ не повертаються клієнту — незалежно від isOlympiad.
+    // Навіть тренувальні питання не розкривають ключі через публічний endpoint,
+    // щоб унеможливити використання /api/questions як оракула відповідей.
+    const qs = rows.map(({ correct: _c, explanation: _e, ...rest }) => rest)
 
     return reply.send({ questions: qs })
   })

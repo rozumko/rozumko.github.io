@@ -206,16 +206,18 @@ const QUIZ_BACKUP_KEY = 'rozumko_quiz_backup'
 function saveQuizBackup() {
   if (currentMode !== 'olympiad' || !currentAttemptId) return
   try {
+    // attemptToken навмисно НЕ зберігається в localStorage —
+    // він знаходиться лише в пам'яті (змінна currentAttemptToken).
+    // Це запобігає крадіжці токена на спільних комп'ютерах через DevTools / XSS.
     localStorage.setItem(QUIZ_BACKUP_KEY, JSON.stringify({
-      attemptId:    currentAttemptId,
-      attemptToken: currentAttemptToken,
-      mode:         currentMode,
+      attemptId:  currentAttemptId,
+      mode:       currentMode,
       currentIdx,
       score,
       secondsLeft,
       startedAt,
-      meta:         (startQuiz as any).meta,
-      savedAt:      Date.now(),
+      meta:       (startQuiz as any).meta,
+      savedAt:    Date.now(),
     }))
   } catch { /* localStorage недоступний */ }
 }
