@@ -1505,7 +1505,9 @@ button {
   font-weight: 600;
   margin-bottom: var(--sp-6);
   line-height: 1.6;
+  white-space: pre-line;
 }
+.app-modal-card .modal-actions { display: flex; flex-direction: column; gap: var(--sp-3); }
 .btn-modal-ok {
   background: var(--clr-violet);
   color: #fff;
@@ -1519,6 +1521,27 @@ button {
   transition: background-color var(--transition-base);
 }
 .btn-modal-ok:hover { background: var(--clr-violet-dark); }
+
+/* Контейнер кнопок модалі — для showConfirm */
+.modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  width: 100%;
+}
+.btn-modal-cancel {
+  background: transparent;
+  color: var(--clr-text-muted, #6b7280);
+  font-weight: 600;
+  font-size: var(--font-size-base);
+  padding: var(--sp-3) var(--sp-6);
+  border-radius: var(--r-xl);
+  font-family: var(--font-family);
+  cursor: pointer;
+  border: 1px solid var(--clr-border, #e5e7eb);
+  transition: background-color var(--transition-base);
+}
+.btn-modal-cancel:hover { background: var(--clr-surface-hover, #f3f4f6); }
 
 /* ── Lightbox ───────────────────────────────────────────────── */
 
@@ -2966,7 +2989,21 @@ body.teacher-dashboard-active {
   box-shadow: 0 25px 60px rgba(0,0,0,0.5);
   max-width: 24rem; width: 100%; padding: var(--sp-6); text-align: center;
 }
-.admin-modal-msg { color: var(--adm-text); font-size: var(--font-size-base); margin-bottom: var(--sp-5); }
+.admin-modal-msg { color: var(--adm-text); font-size: var(--font-size-base); margin-bottom: var(--sp-5); white-space: pre-line; }
+.admin-modal-card .modal-actions { display: flex; flex-direction: column; gap: var(--sp-3); }
+.btn-adm-ghost {
+  background: transparent;
+  color: var(--adm-text-muted, #9ca3af);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-lg);
+  font-family: var(--font-family);
+  cursor: pointer;
+  border: 1px solid var(--adm-border);
+  transition: background-color var(--transition-base);
+}
+.btn-adm-ghost:hover { background: rgba(255,255,255,0.05); }
 
 /* ── Question modal ──────────────────────────────────────────── */
 .question-modal-overlay {

@@ -7,7 +7,7 @@ import {
   getClassStudents, addClassStudent, updateClassStudent, deleteClassStudent,
   type TeacherClass, type ClassStudent, type EventRegistration, type TeacherEvent, type Attempt,
 } from './features/api/client.js'
-import { esc, friendlyError } from './utils/ui.js'
+import { esc, friendlyError, showConfirm } from './utils/ui.js'
 
 function isPendingError(msg: string): boolean {
   return msg.includes('ACCOUNT_PENDING') || msg.includes('очікує підтвердження')
@@ -623,15 +623,19 @@ function renderStudentsList(container: HTMLElement, classId: string, students: C
       .addEventListener('click', () => startEditStudent(row, s, classId))
 
     row.querySelector<HTMLButtonElement>('.btn-student-delete')!
-      .addEventListener('click', async () => {
-        if (!confirm(`Видалити «${s.label}» зі списку?`)) return
-        try {
-          await deleteClassStudent(s.id)
-          await reloadStudentsList(classId)
-        } catch (err) {
-          const status = document.getElementById('add-student-status')
-          if (status) { status.textContent = (err as Error).message; status.className = 'generate-status generate-status--err' }
-        }
+      .addEventListener('click', () => {
+        showConfirm(
+          `Видалити учня «${s.label}» зі списку?\n\nКод учня стане недійсним. Якщо він ще не проходив олімпіаду — результату не буде.`,
+          async () => {
+            try {
+              await deleteClassStudent(s.id)
+              await reloadStudentsList(classId)
+            } catch (err) {
+              const status = document.getElementById('add-student-status')
+              if (status) { status.textContent = (err as Error).message; status.className = 'generate-status generate-status--err' }
+            }
+          }
+        )
       })
 
     body.appendChild(row)

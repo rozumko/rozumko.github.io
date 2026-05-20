@@ -1,7 +1,7 @@
 import { getAdminQuestions, createQuestion, updateQuestion, deleteQuestion, type Question } from '../../features/api/client.js'
 import { createFocusTrap } from '../../utils/focus-trap.js'
 import { renderQuestion }  from '../../utils/question-renderer.js'
-import { esc, showModal }  from './ui.js'
+import { esc, showModal, showConfirm }  from './ui.js'
 import { $, $maybe } from '../../utils/dom.js'
 
 let currentQuestions: Question[] = []
@@ -106,14 +106,18 @@ function buildQuestionCard(q: Question): HTMLElement {
     </div>`
 
   el.querySelector<HTMLButtonElement>('.btn-q-edit')!.addEventListener('click', () => openQuestionModal(q))
-  el.querySelector<HTMLButtonElement>('.btn-q-del')!.addEventListener('click', async () => {
-    if (!confirm('Видалити питання?')) return
-    try {
-      await deleteQuestion(q.id)
-      await loadQuestionsTab()
-    } catch (err) {
-      showModal((err as Error).message)
-    }
+  el.querySelector<HTMLButtonElement>('.btn-q-del')!.addEventListener('click', () => {
+    showConfirm(
+      `Видалити питання?\n\n«${q.q.slice(0, 80)}${q.q.length > 80 ? '…' : ''}»\n\nЦю дію неможливо скасувати.`,
+      async () => {
+        try {
+          await deleteQuestion(q.id)
+          await loadQuestionsTab()
+        } catch (err) {
+          showModal((err as Error).message)
+        }
+      }
+    )
   })
 
   return el

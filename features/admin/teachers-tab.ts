@@ -1,5 +1,5 @@
 import { getAdminTeachers, setTeacherStatus } from '../../features/api/client.js'
-import { esc, showModal } from './ui.js'
+import { esc, showModal, showConfirm } from './ui.js'
 import { $, $maybe } from '../../utils/dom.js'
 
 interface Teacher {
@@ -71,17 +71,22 @@ function buildTeacherRow(t: Teacher): HTMLElement {
       ${actionBtn}
     </div>`
 
-  el.querySelector<HTMLButtonElement>('.btn-teacher-status')!.addEventListener('click', async () => {
+  el.querySelector<HTMLButtonElement>('.btn-teacher-status')!.addEventListener('click', () => {
     const btn       = el.querySelector<HTMLButtonElement>('.btn-teacher-status')!
     const newStatus = btn.dataset['action'] as 'active' | 'blocked'
-    const label     = isPending ? 'підтвердити' : isBlocked ? 'розблокувати' : 'заблокувати'
-    if (!confirm(`${label.charAt(0).toUpperCase() + label.slice(1)} вчителя ${t.email}?`)) return
-    try {
-      await setTeacherStatus(t.id, newStatus)
-      await loadTeachers()
-    } catch (err) {
-      showModal((err as Error).message)
-    }
+    const confirmMsg = isPending
+      ? `Підтвердити вчителя ${t.email}?\n\nПісля підтвердження він зможе увійти до кабінету та реєструвати класи.`
+      : isBlocked
+        ? `Розблокувати вчителя ${t.email}?\n\nВін знову зможе входити до системи.`
+        : `Заблокувати вчителя ${t.email}?\n\nВін більше не зможе входити до системи. Його дані збережуться.`
+    showConfirm(confirmMsg, async () => {
+      try {
+        await setTeacherStatus(t.id, newStatus)
+        await loadTeachers()
+      } catch (err) {
+        showModal((err as Error).message)
+      }
+    })
   })
 
   return el

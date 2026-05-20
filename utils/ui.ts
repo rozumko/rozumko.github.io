@@ -3,9 +3,10 @@
  * ─────────────────────────────────────────────────────────────
  * Спільні UI-утиліти для всіх сторінок: student, teacher, admin.
  *
- *   showModal(msg)     — інформаційна модаль (#app-modal / #modal-message)
- *   esc(str)           — XSS-захист для innerHTML
- *   friendlyError(msg) — API помилки → зрозумілий текст для користувача
+ *   showModal(msg)              — інформаційна модаль (#app-modal / #modal-message)
+ *   showConfirm(msg, onConfirm) — модаль підтвердження з двома кнопками
+ *   esc(str)                    — XSS-захист для innerHTML
+ *   friendlyError(msg)          — API помилки → зрозумілий текст для користувача
  * ─────────────────────────────────────────────────────────────
  */
 
@@ -16,17 +17,22 @@ import { createFocusTrap } from './focus-trap.js'
 let _appModal:   HTMLElement | null = null
 let _trapRemove: (() => void) | null = null
 
+function closeModal() {
+  _trapRemove?.()
+  _trapRemove = null
+  _appModal?.classList.add('hidden')
+  // Скидаємо cancel-кнопку назад у прихований стан
+  const cancelBtn = document.getElementById('modal-cancel-btn')
+  if (cancelBtn) cancelBtn.classList.add('hidden')
+}
+
 function getModal(): HTMLElement | null {
   if (!_appModal) {
     _appModal = document.getElementById('app-modal')
-    const okBtn = document.getElementById('modal-ok-btn')
-    if (okBtn) {
-      okBtn.addEventListener('click', () => {
-        _trapRemove?.()
-        _trapRemove = null
-        _appModal?.classList.add('hidden')
-      })
-    }
+    const okBtn     = document.getElementById('modal-ok-btn')
+    const cancelBtn = document.getElementById('modal-cancel-btn')
+    if (okBtn)     okBtn.addEventListener('click',     () => closeModal())
+    if (cancelBtn) cancelBtn.addEventListener('click', () => closeModal())
   }
   return _appModal
 }
@@ -45,11 +51,39 @@ export function showModal(msg: string): void {
   modal.classList.remove('hidden')
 
   _trapRemove?.()
-  _trapRemove = createFocusTrap(modal, () => {
-    _trapRemove?.()
-    _trapRemove = null
-    modal.classList.add('hidden')
-  })
+  _trapRemove = createFocusTrap(modal, closeModal)
+}
+
+/**
+ * Показати модаль підтвердження з двома кнопками: «Підтвердити» / «Скасувати».
+ * onConfirm викликається лише якщо користувач натиснув «Підтвердити».
+ * Escape / «Скасувати» — закриває без дії.
+ *
+ * Вимога до розмітки: #app-modal, #modal-message, #modal-ok-btn, #modal-cancel-btn.
+ */
+export function showConfirm(msg: string, onConfirm: () => void): void {
+  const modal = getModal()
+  if (!modal) { if (confirm(msg)) onConfirm(); return }
+
+  const msgEl     = document.getElementById('modal-message')
+  const okBtn     = document.getElementById('modal-ok-btn')
+  const cancelBtn = document.getElementById('modal-cancel-btn')
+
+  if (msgEl) msgEl.textContent = msg
+  if (cancelBtn) cancelBtn.classList.remove('hidden')
+
+  // Замінюємо обробник OK — одноразовий, щоб не накопичувати
+  const handleOk = () => {
+    okBtn?.removeEventListener('click', handleOk)
+    closeModal()
+    onConfirm()
+  }
+  okBtn?.removeEventListener('click', closeModal) // прибираємо дефолтний
+  okBtn?.addEventListener('click', handleOk, { once: true })
+
+  modal.classList.remove('hidden')
+  _trapRemove?.()
+  _trapRemove = createFocusTrap(modal, closeModal)
 }
 
 // ─── XSS-захист ───────────────────────────────────────────────────────────────

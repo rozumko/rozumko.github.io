@@ -3,7 +3,7 @@ import {
   type OlympiadEvent, type EventQuestion, type Question,
 } from '../api/client.js'
 import { EVENT_STATUS_LABELS, buildEventPayload, countActiveEvents, formatEventDate } from './event-utils.js'
-import { esc, showModal } from './ui.js'
+import { esc, showModal, showConfirm } from './ui.js'
 import { $, $maybe } from '../../utils/dom.js'
 
 interface Deps { refreshStats?: () => void }
@@ -124,14 +124,19 @@ function buildEventCard(event: OlympiadEvent): HTMLElement {
     publishBtn.className = 'btn-event-publish'
     publishBtn.innerHTML = '<i class="fas fa-globe" aria-hidden="true"></i> Опублікувати'
     publishBtn.title     = 'Зробити подію доступною для реєстрації вчителів'
-    publishBtn.addEventListener('click', async () => {
-      try {
-        await updateEvent(event.id, { status: 'published' })
-        await loadEvents()
-        deps.refreshStats?.()
-      } catch (err) {
-        showModal((err as Error).message)
-      }
+    publishBtn.addEventListener('click', () => {
+      showConfirm(
+        `Опублікувати подію «${event.title}»?\n\nВчителі зможуть бачити її та реєструвати класи. Назад у чернетку можна повернути.`,
+        async () => {
+          try {
+            await updateEvent(event.id, { status: 'published' })
+            await loadEvents()
+            deps.refreshStats?.()
+          } catch (err) {
+            showModal((err as Error).message)
+          }
+        }
+      )
     })
     node.querySelector<HTMLElement>('.event-card__actions')!.prepend(publishBtn)
   }
@@ -165,15 +170,25 @@ function highlightEvent(eventId: string) {
   }, 100)
 }
 
+const STATUS_CONFIRM_MSGS: Partial<Record<OlympiadEvent['status'], (title: string) => string>> = {
+  active:   t => `Зробити подію «${t}» активною?\n\nУчні зможуть проходити олімпіаду за кодами.`,
+  archived: t => `Архівувати подію «${t}»?\n\nУчні більше не зможуть проходити олімпіаду. Результати збережуться.`,
+  draft:    t => `Повернути подію «${t}» у чернетку?\n\nВона стане недоступною для вчителів та учнів.`,
+}
+
 function wireStatusButton(node: HTMLElement, event: OlympiadEvent, selector: string, status: OlympiadEvent['status']) {
-  node.querySelector<HTMLButtonElement>(selector)?.addEventListener('click', async () => {
-    try {
-      await updateEvent(event.id, { status })
-      await loadEvents()
-      deps.refreshStats?.()
-    } catch (err) {
-      showModal((err as Error).message)
-    }
+  node.querySelector<HTMLButtonElement>(selector)?.addEventListener('click', () => {
+    const msgFn = STATUS_CONFIRM_MSGS[status]
+    const msg = msgFn ? msgFn(event.title) : `Змінити статус на «${status}»?`
+    showConfirm(msg, async () => {
+      try {
+        await updateEvent(event.id, { status })
+        await loadEvents()
+        deps.refreshStats?.()
+      } catch (err) {
+        showModal((err as Error).message)
+      }
+    })
   })
 }
 

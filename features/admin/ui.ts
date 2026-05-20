@@ -9,7 +9,7 @@
  */
 
 // Re-export спільних утиліт — admin-модулі імпортують все з одного місця
-export { showModal, esc, friendlyError } from '../../utils/ui.js';
+export { showModal, showConfirm, esc, friendlyError } from '../../utils/ui.js';
 
 /**
  * Перетворює Firebase Timestamp або рядок дати в читабельний вигляд.
