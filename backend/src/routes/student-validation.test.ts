@@ -1,5 +1,10 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+
+// ATTEMPT_SECRET має бути виставлений до імпорту модуля, щоб getAttemptSecret() не кинула виняток.
+// У реальному середовищі — реальний секрет із env; тут — фіктивний для тестів.
+process.env.ATTEMPT_SECRET = 'test-secret-for-unit-tests-only'
+
 import {
   normalizeCode,
   validateCodeFormat,

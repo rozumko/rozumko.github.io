@@ -61,10 +61,11 @@ test('scoreAttempt з порожнім набором питань', () => {
   assert.equal(Object.keys(result.results).length, 0)
 })
 
-test('scoreAttempt зберігає explanation у результаті', () => {
+test('scoreAttempt зберігає explanation у результаті (hideKeys=false для тренувального режиму)', () => {
+  // hideKeys=false — тренувальний режим, ключі відповідей дозволені
   const result = scoreAttempt([
     { id: 'q1', correct: 1, explanation: 'Тому що так' },
-  ], { q1: 2 })
+  ], { q1: 2 }, false)
 
   assert.equal(result.results.q1.explanation, 'Тому що так')
   assert.equal(result.results.q1.isCorrect, false)
