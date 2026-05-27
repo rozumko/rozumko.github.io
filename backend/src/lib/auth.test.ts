@@ -1,5 +1,10 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+
+// SUPABASE_URL потрібен до імпорту auth.ts — модуль ініціалізує JWKS URL на рівні модуля.
+// У реальному середовищі — справжній URL; тут — фіктивний для unit-тестів.
+process.env.SUPABASE_URL = 'https://test.supabase.co'
+
 import { checkRole } from './auth.js'
 
 test('checkRole: дозволяє точний збіг ролі', () => {

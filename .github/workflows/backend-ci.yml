@@ -35,3 +35,4 @@ jobs:
         run: npm test
         env:
           ATTEMPT_SECRET: test-secret-for-ci-only
+          SUPABASE_URL: https://test.supabase.co
