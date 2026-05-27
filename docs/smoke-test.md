@@ -2,7 +2,7 @@
 
 Ручний чеклист для перевірки повного сценарію перед пілотом.
 
-_Оновлено: 2026-05-15_
+_Оновлено: 2026-05-27_
 
 ---
 
@@ -76,11 +76,16 @@ _Оновлено: 2026-05-15_
 
 ## 8. Перевірка безпеки
 
-- [ ] DevTools → Network → відповідь `/api/attempt/*/finish` не містить поля `correct` (лише `isCorrect`)
+- [ ] DevTools → Network → відповідь `/api/attempt/*/finish` містить лише `{ score, total }` — без `correct`, без `isCorrect` по питанню
 - [ ] DevTools → Network → відповідь `/api/teacher/results` не містить поля `answers`
+- [ ] `GET /api/questions?isOlympiad=false` → відповідь **містить** `correct` і `explanation` (навмисно — practice-режим)
+- [ ] `GET /api/questions?isOlympiad=true` → відповідь **не містить** `correct` і `explanation`
 - [ ] `localStorage` → `pendingOlympiad` очищено після старту квізу
-- [ ] `POST /api/attempt/:id/finish` **одразу** після `exchange-code` (0 відповідей) → відповідь без `correct`
+- [ ] `localStorage` → backup квізу не містить поля `attemptToken` (лише `attemptId`)
+- [ ] `POST /api/attempt/:id/finish` **одразу** після `exchange-code` (0 відповідей) → `{ score: 0, total: N }` без `correct`
 - [ ] `POST /api/attempt/:id/answer` без `X-Attempt-Token` → `403`
 - [ ] `GET /api/admin/teachers` без авторизації → `401`
 - [ ] `GET /api/teacher/me` з токеном вчителя до `/api/admin/*` → `403`
 - [ ] Реєстрація нового вчителя → спроба одразу увійти → `403 ACCOUNT_PENDING`
+- [ ] Адмін: спроба додати питання з `isOlympiad=false` до події → помилка 400
+- [ ] `GET /ping` → `{ status: "ok", db: "ok" }` (перевірка що Supabase доступний)

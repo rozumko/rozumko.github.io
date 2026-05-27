@@ -4,20 +4,22 @@ const SUPABASE_ANON_KEY = 'sb_publishable_thaWciLcFJKxX3rcGbnGmg_2kLtAzNn'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
+export type QuestionType = 'choice' | 'truefalse' | 'input' | 'sort' | 'sequence' | 'match'
+
 export interface Question {
   id: string
   q: string
   code?: string | null
-  options: string[]
-  correct: number
+  type?: QuestionType             // 'choice' якщо відсутній (legacy)
+  options: string[] | Record<string, unknown>  // string[] для choice/truefalse; об'єкт для решти
+  correct?: number                // відсутній для isOlympiad=true або type=input/sort/…
   explanation?: string | null
   difficulty?: string
   grade?: number
   isOlympiad?: boolean
-  a?: string[] // normalized alias for question-renderer
+  a?: string[]                    // normalized alias для question-renderer (choice/truefalse)
   img?: string | null
-  type?: string
-  [key: string]: unknown // дозволяє передавати Question туди де очікується RenderableQuestion
+  [key: string]: unknown          // дозволяє передавати Question туди де очікується RenderableQuestion
 }
 
 export interface Attempt {
@@ -146,7 +148,7 @@ export async function exchangeCode(code: string): Promise<{ attemptId: string; a
   return data
 }
 
-export async function saveAnswer(attemptId: string, attemptToken: string, questionId: string, answer: number): Promise<void> {
+export async function saveAnswer(attemptId: string, attemptToken: string, questionId: string, answer: number | string): Promise<void> {
   return request(`/api/attempt/${attemptId}/answer`, {
     method: 'POST',
     headers: { 'X-Attempt-Token': attemptToken },
@@ -166,7 +168,7 @@ export async function loadQuestions({
   return data.questions.map((q: Question) => ({ ...q, a: q.options }))
 }
 
-export async function finishAttempt(attemptId: string, attemptToken: string): Promise<{ score: number; total: number; results: any[] }> {
+export async function finishAttempt(attemptId: string, attemptToken: string): Promise<{ score: number; total: number }> {
   return request(`/api/attempt/${attemptId}/finish`, {
     method: 'POST',
     headers: { 'X-Attempt-Token': attemptToken },

@@ -14,14 +14,15 @@ import { createFocusTrap } from './focus-trap.js'
 
 // ─── Модаль ───────────────────────────────────────────────────────────────────
 
-let _appModal:   HTMLElement | null = null
-let _trapRemove: (() => void) | null = null
+let _appModal:        HTMLElement | null = null
+let _trapRemove:      (() => void) | null = null
+let _pendingConfirm:  (() => void) | null = null  // callback для showConfirm; null = info-режим
 
 function closeModal() {
   _trapRemove?.()
   _trapRemove = null
+  _pendingConfirm = null   // завжди скидаємо при будь-якому закритті (OK / Cancel / Escape)
   _appModal?.classList.add('hidden')
-  // Скидаємо cancel-кнопку назад у прихований стан
   const cancelBtn = document.getElementById('modal-cancel-btn')
   if (cancelBtn) cancelBtn.classList.add('hidden')
 }
@@ -31,7 +32,14 @@ function getModal(): HTMLElement | null {
     _appModal = document.getElementById('app-modal')
     const okBtn     = document.getElementById('modal-ok-btn')
     const cancelBtn = document.getElementById('modal-cancel-btn')
-    if (okBtn)     okBtn.addEventListener('click',     () => closeModal())
+
+    // Один статичний обробник OK — перевіряє _pendingConfirm у момент кліку.
+    // Це унеможливлює витік старого callback після Cancel/Escape.
+    if (okBtn) okBtn.addEventListener('click', () => {
+      const cb = _pendingConfirm  // читаємо до closeModal(), яка скидає його
+      closeModal()
+      cb?.()
+    })
     if (cancelBtn) cancelBtn.addEventListener('click', () => closeModal())
   }
   return _appModal
@@ -46,6 +54,7 @@ function getModal(): HTMLElement | null {
 export function showModal(msg: string): void {
   const modal = getModal()
   if (!modal) { alert(msg); return }
+  _pendingConfirm = null   // info-режим: OK просто закриває
   const msgEl = document.getElementById('modal-message')
   if (msgEl) msgEl.textContent = msg
   modal.classList.remove('hidden')
@@ -55,9 +64,9 @@ export function showModal(msg: string): void {
 }
 
 /**
- * Показати модаль підтвердження з двома кнопками: «Підтвердити» / «Скасувати».
- * onConfirm викликається лише якщо користувач натиснув «Підтвердити».
- * Escape / «Скасувати» — закриває без дії.
+ * Показати модаль підтвердження з двома кнопками: «OK» / «Скасувати».
+ * onConfirm викликається лише якщо натиснуто OK.
+ * Cancel / Escape — закриває без дії, callback не зберігається.
  *
  * Вимога до розмітки: #app-modal, #modal-message, #modal-ok-btn, #modal-cancel-btn.
  */
@@ -65,21 +74,11 @@ export function showConfirm(msg: string, onConfirm: () => void): void {
   const modal = getModal()
   if (!modal) { if (confirm(msg)) onConfirm(); return }
 
+  _pendingConfirm = onConfirm   // буде викликано лише при натисканні OK
   const msgEl     = document.getElementById('modal-message')
-  const okBtn     = document.getElementById('modal-ok-btn')
   const cancelBtn = document.getElementById('modal-cancel-btn')
-
-  if (msgEl) msgEl.textContent = msg
+  if (msgEl)     msgEl.textContent = msg
   if (cancelBtn) cancelBtn.classList.remove('hidden')
-
-  // Замінюємо обробник OK — одноразовий, щоб не накопичувати
-  const handleOk = () => {
-    okBtn?.removeEventListener('click', handleOk)
-    closeModal()
-    onConfirm()
-  }
-  okBtn?.removeEventListener('click', closeModal) // прибираємо дефолтний
-  okBtn?.addEventListener('click', handleOk, { once: true })
 
   modal.classList.remove('hidden')
   _trapRemove?.()

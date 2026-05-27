@@ -235,7 +235,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
     const found = selection.questionIds.length
       ? await db
-          .select({ id: questions.id, grade: questions.grade, isOlympiad: questions.isOlympiad })
+          .select({ id: questions.id, grade: questions.grade, isOlympiad: questions.isOlympiad, type: questions.type })
           .from(questions)
           .where(inArray(questions.id, selection.questionIds))
       : []
@@ -249,6 +249,12 @@ export async function adminRoutes(app: FastifyInstance) {
     const nonOlympiad = found.filter(q => !q.isOlympiad)
     if (nonOlympiad.length) {
       return reply.code(400).send({ error: `Питання ${nonOlympiad.map(q => q.id).join(', ')} не є олімпіадними (isOlympiad=false). До події можна додавати лише олімпіадні питання.` })
+    }
+
+    const OLYMPIAD_ALLOWED_TYPES: string[] = ['choice', 'truefalse']
+    const unsupported = found.filter(q => !OLYMPIAD_ALLOWED_TYPES.includes(q.type ?? 'choice'))
+    if (unsupported.length) {
+      return reply.code(400).send({ error: `Питання ${unsupported.map(q => q.id).join(', ')} мають тип "${unsupported[0].type}", який не підтримується в олімпіадному режимі. Дозволено: choice, truefalse.` })
     }
 
     await db.transaction(async tx => {
@@ -312,21 +318,23 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post<{
     Body: {
       q: string; grade: number; difficulty: string; isOlympiad: boolean
-      options: string[]; correct: number; explanation?: string; code?: string
+      type?: string; options: string[] | Record<string, unknown>
+      correct?: number; explanation?: string; code?: string
     }
   }>('/questions', {
     preHandler: requireAdmin,
     schema: {
       body: {
         type: 'object',
-        required: ['q', 'grade', 'difficulty', 'options', 'correct'],
+        required: ['q', 'grade', 'difficulty', 'options'],
         properties: {
           q:           { type: 'string' },
           grade:       { type: 'integer', minimum: 1, maximum: 4 },
           difficulty:  { type: 'string', enum: ['easy', 'medium', 'hard'] },
           isOlympiad:  { type: 'boolean' },
-          options:     { type: 'array', items: { type: 'string' }, minItems: 2 },
-          correct:     { type: 'integer', minimum: 0 },
+          type:        { type: 'string', enum: ['choice', 'truefalse', 'input', 'sort', 'sequence', 'match'] },
+          options:     {},   // jsonb — будь-яка структура залежно від type
+          correct:     { oneOf: [{ type: 'integer', minimum: 0 }, { type: 'null' }] },
           explanation: { type: 'string' },
           code:        { type: 'string' },
         },
@@ -334,9 +342,21 @@ export async function adminRoutes(app: FastifyInstance) {
     },
   }, async (req, reply) => {
     const { q, grade, difficulty, isOlympiad = false, options, correct, explanation, code } = req.body
+    const type = (req.body.type ?? 'choice') as import('../db/schema.js').QuestionType
+
+    // Type-specific validation: correct обов'язковий для choice/truefalse, заборонений для решти
+    const NEEDS_CORRECT = ['choice', 'truefalse']
+    if (NEEDS_CORRECT.includes(type)) {
+      if (correct == null) return reply.code(400).send({ error: `Для типу "${type}" поле correct обов'язкове.` })
+      const optLen = Array.isArray(options) ? options.length : 0
+      if (correct >= optLen) return reply.code(400).send({ error: `correct (${correct}) виходить за межі options (${optLen} варіантів).` })
+    } else {
+      if (correct != null) return reply.code(400).send({ error: `Для типу "${type}" поле correct має бути відсутнє або null.` })
+    }
+
     const [inserted] = await db
       .insert(questions)
-      .values({ q, grade, difficulty, isOlympiad, options, correct, explanation: explanation ?? null, code: code ?? null })
+      .values({ q, grade, difficulty, isOlympiad, type, options, correct: correct ?? null, explanation: explanation ?? null, code: code ?? null })
       .returning({ id: questions.id })
     return reply.code(201).send({ id: inserted.id })
   })
@@ -346,18 +366,65 @@ export async function adminRoutes(app: FastifyInstance) {
     Params: { id: string }
     Body: {
       q?: string; grade?: number; difficulty?: string; isOlympiad?: boolean
-      options?: string[]; correct?: number; explanation?: string; code?: string
+      type?: string; options?: string[] | Record<string, unknown>
+      correct?: number; explanation?: string; code?: string
     }
-  }>('/questions/:id', { preHandler: requireAdmin }, async (req, reply) => {
+  }>('/questions/:id', {
+    preHandler: requireAdmin,
+    schema: {
+      body: {
+        type: 'object',
+        properties: {
+          q:           { type: 'string' },
+          grade:       { type: 'integer', minimum: 1, maximum: 4 },
+          difficulty:  { type: 'string', enum: ['easy', 'medium', 'hard'] },
+          isOlympiad:  { type: 'boolean' },
+          type:        { type: 'string', enum: ['choice', 'truefalse', 'input', 'sort', 'sequence', 'match'] },
+          options:     {},
+          correct:     { oneOf: [{ type: 'integer', minimum: 0 }, { type: 'null' }] },
+          explanation: { type: 'string' },
+          code:        { type: 'string' },
+        },
+        additionalProperties: false,
+      },
+    },
+  }, async (req, reply) => {
     const { id } = req.params
-    const updates: Record<string, unknown> = { updatedAt: new Date() }
     const b = req.body
+
+    // Завантажити поточний стан питання для merge-валідації
+    const [current] = await db
+      .select({ type: questions.type, correct: questions.correct, options: questions.options })
+      .from(questions)
+      .where(eq(questions.id, id))
+      .limit(1)
+    if (!current) return reply.code(404).send({ error: 'Питання не знайдено' })
+
+    // Змерджити поточний стан з body → next — повна майбутня форма питання
+    const next = {
+      type:    (b.type    ?? current.type)    as string,
+      correct: b.correct  !== undefined ? b.correct  : current.correct,
+      options: b.options  !== undefined ? b.options  : current.options,
+    }
+
+    // Валідація next — аналогічна POST
+    const NEEDS_CORRECT = ['choice', 'truefalse']
+    if (NEEDS_CORRECT.includes(next.type)) {
+      if (next.correct == null) return reply.code(400).send({ error: `Для типу "${next.type}" поле correct обов'язкове.` })
+      const optLen = Array.isArray(next.options) ? next.options.length : 0
+      if (next.correct >= optLen) return reply.code(400).send({ error: `correct (${next.correct}) виходить за межі options (${optLen} варіантів).` })
+    } else {
+      if (next.correct != null) return reply.code(400).send({ error: `Для типу "${next.type}" поле correct має бути null. Передайте "correct": null щоб очистити.` })
+    }
+
+    const updates: Record<string, unknown> = { updatedAt: new Date() }
     if (b.q           !== undefined) updates.q           = b.q
     if (b.grade       !== undefined) updates.grade       = b.grade
     if (b.difficulty  !== undefined) updates.difficulty  = b.difficulty
     if (b.isOlympiad  !== undefined) updates.isOlympiad  = b.isOlympiad
+    if (b.type        !== undefined) updates.type        = b.type
     if (b.options     !== undefined) updates.options     = b.options
-    if (b.correct     !== undefined) updates.correct     = b.correct
+    if (b.correct     !== undefined) updates.correct     = b.correct  // null очищає
     if (b.explanation !== undefined) updates.explanation = b.explanation
     if (b.code        !== undefined) updates.code        = b.code
 

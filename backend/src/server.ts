@@ -31,7 +31,7 @@ await app.register(cors, {
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Attempt-Token'],
 })
 
 // Rate limiting — глобально: 100 запитів / хвилину з однієї IP

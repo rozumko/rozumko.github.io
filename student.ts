@@ -371,18 +371,23 @@ function showQuestion() {
   renderQuestion(q, quizOptionsEl as HTMLElement, {
     onAnswer: (result) => {
       answered = true
-      if (currentMode === 'olympiad' && currentAttemptId && currentAttemptToken && typeof result === 'number') {
-        const qId = q.id as string
-        // Зберігаємо promise — finishQuiz чекатиме його завершення
-        const save = saveAnswer(currentAttemptId, currentAttemptToken, qId, result)
-          .catch(() => new Promise<void>(r => setTimeout(r, 2000)).then(
-            () => saveAnswer(currentAttemptId!, currentAttemptToken!, qId, result)
-          ))
-          .then(() => { failedAnswers.delete(qId) })
-          .catch(() => { failedAnswers.add(qId) })
-        pendingSaves.push(save)
-        showFeedbackOlympiad()
+      if (typeof result === 'number') {
+        // result — індекс відповіді: correct невідомий клієнту (isOlympiad=true).
+        // Olympiad: зберігаємо на сервері. Demo: лише нейтральний feedback без збереження.
+        if (currentMode === 'olympiad' && currentAttemptId && currentAttemptToken) {
+          const qId = q.id as string
+          // Зберігаємо promise — finishQuiz чекатиме його завершення
+          const save = saveAnswer(currentAttemptId, currentAttemptToken, qId, result)
+            .catch(() => new Promise<void>(r => setTimeout(r, 2000)).then(
+              () => saveAnswer(currentAttemptId!, currentAttemptToken!, qId, result)
+            ))
+            .then(() => { failedAnswers.delete(qId) })
+            .catch(() => { failedAnswers.add(qId) })
+          pendingSaves.push(save)
+        }
+        showFeedbackOlympiad() // нейтральний feedback: "збережено" для olympiad, "прийнято" для demo
       } else {
+        // result — boolean: correct відомий клієнту (isOlympiad=false, practice-режим).
         if (result === true) score++
         showFeedback(result as boolean, q)
       }
@@ -391,7 +396,8 @@ function showQuestion() {
 }
 
 function showFeedbackOlympiad() {
-  quizFeedback.textContent = '✓ Відповідь збережено'
+  // Для олімпіади — "Відповідь збережено", для demo — нейтральне "Відповідь прийнято"
+  quizFeedback.textContent = currentMode === 'olympiad' ? '✓ Відповідь збережено' : '✓ Відповідь прийнято'
   quizFeedback.className   = 'quiz-feedback'
   quizExplanation.classList.add('hidden')
   quizNextBtn.classList.remove('hidden')
@@ -431,8 +437,9 @@ async function finishQuiz(timeUp: boolean) {
   resultSavedMsg.classList.add('hidden')
   resultErrorMsg.classList.add('hidden')
 
-  // Для practice/demo — показуємо результат одразу (локальне оцінювання)
-  if (currentMode !== 'olympiad') {
+  // Для practice — показуємо score (локальне оцінювання з correct).
+  // Для demo — не рахуємо score (correct невідомий), показуємо нейтральне завершення.
+  if (currentMode === 'practice') {
     const finalScore = score
     const total      = questions.length
     resultScore.textContent = String(finalScore)
@@ -441,6 +448,13 @@ async function finishQuiz(timeUp: boolean) {
       : finalScore >= total * 0.8 ? 'Відмінно!'
       : finalScore >= total * 0.5 ? 'Добре!'
       : 'Спробуй ще!'
+    showOverlay(resultOverlay)
+    return
+  }
+  if (currentMode === 'demo') {
+    resultScore.textContent = '—'
+    resultTotal.textContent = String(questions.length)
+    resultTitle.textContent = timeUp ? 'Час вийшов!' : 'Демо завершено!'
     showOverlay(resultOverlay)
     return
   }
@@ -485,7 +499,7 @@ async function finishQuiz(timeUp: boolean) {
       try { localStorage.setItem(QUIZ_BACKUP_KEY + '_failed', JSON.stringify(backup)) } catch { /* ігноруємо */ }
       resultErrorMsg.innerHTML =
         `⚠️ Немає зв'язку — результат не збережено автоматично.<br>
-         <strong>Скажи вчителю:</strong> код <strong>${meta.code}</strong>, результат <strong>${score}/${questions.length}</strong>.<br>
+         <strong>Скажи вчителю:</strong> код <strong>${meta.code}</strong>, результат невідомий — перевірте на сервері.<br>
          <span style="font-size:0.8em;opacity:0.7">Коли з'явиться інтернет — оновлення сторінки може відновити збереження.</span>`
       resultErrorMsg.classList.remove('hidden')
     }
@@ -524,4 +538,3 @@ function hideOverlay(el: HTMLElement) { el.classList.remove('active') }
 const quizLoadingOverlay = $('quiz-loading-overlay')
 function showLoading() { quizLoadingOverlay.classList.add('active') }
 function hideLoading()  { quizLoadingOverlay.classList.remove('active') }
-

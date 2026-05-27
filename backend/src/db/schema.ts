@@ -1,11 +1,23 @@
 import { pgTable, text, integer, boolean, timestamp, jsonb, uuid } from 'drizzle-orm/pg-core'
 
+/**
+ * Типи питань:
+ *   choice     — вибір одного з варіантів (options: string[], correct: number — індекс)
+ *   truefalse  — Так/Ні (options: ['Так','Ні'], correct: 0|1)
+ *   input      — текстова/числова відповідь (options: {answer,inputType?}, correct: null)
+ *   sort       — розставити кроки по порядку (options: {items,correctOrder}, correct: null)
+ *   sequence   — аналог sort, інший UX
+ *   match      — зіставлення пар (options: {left,right,pairs}, correct: null)
+ */
+export type QuestionType = 'choice' | 'truefalse' | 'input' | 'sort' | 'sequence' | 'match'
+
 export const questions = pgTable('questions', {
   id:          uuid('id').primaryKey().defaultRandom(),
   q:           text('q').notNull(),
   code:        text('code'),
-  options:     jsonb('options').notNull().$type<string[]>(),
-  correct:     integer('correct').notNull(),
+  type:        text('type').notNull().default('choice').$type<QuestionType>(),
+  options:     jsonb('options').notNull().$type<string[] | Record<string, unknown>>(),
+  correct:     integer('correct'),   // null для input/sort/sequence/match
   explanation: text('explanation'),
   difficulty:  text('difficulty'),
   grade:       integer('grade'),
@@ -64,7 +76,7 @@ export const attempts = pgTable('attempts', {
   codeId:      uuid('code_id').notNull().references(() => accessCodes.id),
   grade:       integer('grade').notNull(),
   status:      text('status').notNull().default('in_progress'), // in_progress | finished | expired
-  answers:     jsonb('answers').default({}).$type<Record<string, number>>(),
+  answers:     jsonb('answers').default({}).$type<Record<string, number | string>>(),
   score:       integer('score'),
   totalQ:      integer('total_q'),
   startedAt:   timestamp('started_at', { withTimezone: true }).defaultNow(),

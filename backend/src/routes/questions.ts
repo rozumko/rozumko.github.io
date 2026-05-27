@@ -21,9 +21,13 @@ export async function questionsRoutes(app: FastifyInstance) {
     },
   }, async (req, reply) => {
     const grade      = req.query.grade      ? Number(req.query.grade)          : undefined
-    const isOlympiad = req.query.isOlympiad !== undefined
-      ? req.query.isOlympiad === 'true'
-      : undefined
+    let isOlympiad: boolean | undefined = undefined
+    if (req.query.isOlympiad !== undefined) {
+      if (req.query.isOlympiad !== 'true' && req.query.isOlympiad !== 'false') {
+        return reply.code(400).send({ error: 'isOlympiad must be "true" or "false"' })
+      }
+      isOlympiad = req.query.isOlympiad === 'true'
+    }
     const count      = req.query.count      ? Math.min(Number(req.query.count), 50) : 10
     const difficulty = req.query.difficulty
 
@@ -37,6 +41,7 @@ export async function questionsRoutes(app: FastifyInstance) {
         id:          questions.id,
         q:           questions.q,
         code:        questions.code,
+        type:        questions.type,
         options:     questions.options,
         correct:     questions.correct,
         explanation: questions.explanation,
@@ -48,10 +53,13 @@ export async function questionsRoutes(app: FastifyInstance) {
       .orderBy(sql`random()`)
       .limit(count)
 
-    // correct і explanation НІКОЛИ не повертаються клієнту — незалежно від isOlympiad.
-    // Навіть тренувальні питання не розкривають ключі через публічний endpoint,
-    // щоб унеможливити використання /api/questions як оракула відповідей.
-    const qs = rows.map(({ correct: _c, explanation: _e, ...rest }) => rest)
+    // correct і explanation повертаються ЛИШЕ для тренувальних питань (isOlympiad=false).
+    // Це навмисна поведінка: practice-режим показує правильну відповідь після вибору.
+    // Для олімпіадних питань (isOlympiad=true або фільтр не вказано) — ключі завжди стрипляються.
+    // Реальний захист від витоку олімпіадних ключів — прапор isOlympiad на рівні питання.
+    const qs = isOlympiad === false
+      ? rows
+      : rows.map(({ correct: _c, explanation: _e, ...rest }) => rest)
 
     return reply.send({ questions: qs })
   })

@@ -2,24 +2,43 @@ export function isQuestionInAttempt(questionId: string, attemptQuestionIds: stri
   return attemptQuestionIds.includes(questionId)
 }
 
-// hideKeys=true для всіх спроб із кодом (олімпіада):
-// correct та explanation не повертаються клієнту — лише isCorrect.
-// hideKeys=false зарезервовано для майбутнього тренувального режиму без кодів.
+/**
+ * Підраховує результат спроби.
+ *
+ * Реалізовані типи:
+ *   choice / truefalse — порівнює integer-індекс (given === correct)
+ *
+ * НЕ реалізовані (рахуються як 0):
+ *   input    — потребує окремої колонки correct_text text у БД (зараз correct — integer)
+ *   sort / sequence / match — складна структура, потребує окремого алгоритму
+ *
+ * hideKeys=true (дефолт) — не повертає correct/explanation у results (захист від oracle-атаки).
+ */
 export function scoreAttempt(
-  attemptQuestions: { id: string; correct: number; explanation: string | null }[],
-  studentAnswers: Record<string, number>,
+  attemptQuestions: { id: string; type?: string; correct: number | null; explanation: string | null }[],
+  studentAnswers: Record<string, number | string>,
   hideKeys = true,
 ): {
   score: number
-  results: Record<string, { correct?: number; explanation?: string | null; isCorrect: boolean }>
+  results: Record<string, { correct?: number | null; explanation?: string | null; isCorrect: boolean }>
 } {
   let score = 0
-  const results: Record<string, { correct?: number; explanation?: string | null; isCorrect: boolean }> = {}
+  const results: Record<string, { correct?: number | null; explanation?: string | null; isCorrect: boolean }> = {}
 
   for (const question of attemptQuestions) {
     const given = studentAnswers[question.id]
-    const isCorrect = given === question.correct
+    const type = question.type ?? 'choice'
+
+    let isCorrect = false
+
+    if (type === 'choice' || type === 'truefalse') {
+      // integer-індекс
+      isCorrect = question.correct !== null && given === question.correct
+    }
+    // input / sort / sequence / match: isCorrect = false (не реалізовано)
+
     if (isCorrect) score++
+
     results[question.id] = hideKeys
       ? { isCorrect }
       : { correct: question.correct, explanation: question.explanation, isCorrect }

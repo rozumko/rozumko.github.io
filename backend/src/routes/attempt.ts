@@ -16,7 +16,7 @@ export async function attemptRoutes(app: FastifyInstance) {
   // Зберігає відповідь на одне питання (не перевіряє правильність)
   app.post<{
     Params: { id: string }
-    Body: { questionId: string; answer: number }
+    Body: { questionId: string; answer: number | string }
   }>('/:id/answer', {
     schema: {
       params: {
@@ -29,7 +29,13 @@ export async function attemptRoutes(app: FastifyInstance) {
         required: ['questionId', 'answer'],
         properties: {
           questionId: { type: 'string', format: 'uuid' },
-          answer:     { type: 'integer', minimum: 0, maximum: 3 },
+          // choice/truefalse: integer 0–9; input: рядок (макс 200 символів)
+          answer: {
+            oneOf: [
+              { type: 'integer', minimum: 0, maximum: 9 },
+              { type: 'string', minLength: 1, maxLength: 200 },
+            ],
+          },
         },
       },
     },
@@ -112,11 +118,11 @@ export async function attemptRoutes(app: FastifyInstance) {
       return reply.code(410).send({ error: 'Час спроби вичерпано' })
     }
 
-    const studentAnswers = (attempt.answers as Record<string, number>) ?? {}
+    const studentAnswers = (attempt.answers as Record<string, number | string>) ?? {}
 
     // Завантажити саме питання, видані цій спробі, з ключами відповідей
     const qs = await db
-      .select({ id: questions.id, correct: questions.correct, explanation: questions.explanation })
+      .select({ id: questions.id, type: questions.type, correct: questions.correct, explanation: questions.explanation })
       .from(attemptQuestions)
       .innerJoin(questions, eq(attemptQuestions.questionId, questions.id))
       .where(eq(attemptQuestions.attemptId, id))

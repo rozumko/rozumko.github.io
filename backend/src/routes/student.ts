@@ -139,9 +139,10 @@ export async function studentRoutes(app: FastifyInstance) {
     // 4. Вибрати питання з набору події для цього класу
     const qs = await db
       .select({
-        id: questions.id,
-        q: questions.q,
-        code: questions.code,
+        id:      questions.id,
+        q:       questions.q,
+        code:    questions.code,
+        type:    questions.type,
         options: questions.options,
       })
       .from(eventQuestions)

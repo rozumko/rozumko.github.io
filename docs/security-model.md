@@ -6,8 +6,9 @@
    untrusted input: request body, headers, cookies, query params.
 2. **The backend is the single source of truth** for all olympiad state.
 3. **Students have no accounts.** Access is code-based, not identity-based.
-4. **Answer keys never leave the server.**
-5. **Final scores are calculated server-side only.**
+4. **Olympiad answer keys never leave the server.** Practice answers may be
+   returned for local training feedback when `isOlympiad=false`.
+5. **Official olympiad scores are calculated server-side only.**
 6. **JWT proves identity; the database decides rights.**
 
 ---
@@ -32,13 +33,15 @@ validated against current role/status in the database.
 |--------------------------------|-----------------------------------------------------|
 | Student guessing codes         | Ukrainian-word format, max_uses per code, rate limit 10 req/min per IP |
 | Student replaying attemptId    | `X-Attempt-Token` (HMAC-SHA256, server secret required) — UUID alone insufficient |
-| Student calling /finish early to harvest answer keys | `correct` field never included in `/finish` response — only `isCorrect` (boolean) |
+| Student calling /finish early to harvest answer keys | `/finish` returns only `{ score, total }` — no per-question `isCorrect`, no answer keys |
 | Student submitting after time  | Backend enforces 90-min hard limit on `/finish`; auto-closes expired attempt |
 | Teacher accessing another class| Backend checks `teacher_id` ownership on every request |
 | Unauthorized teacher self-registration | New accounts provisioned with `status: 'pending'`; admin must explicitly approve |
 | JWT with stale role            | Role re-fetched from DB on every authenticated request |
 | Direct Supabase table access   | RLS enabled on all tables; anon key has no write access |
-| Answer key extraction          | `correct` never sent during quiz; never sent after quiz; `isCorrect` only |
+| Answer key extraction          | `/questions?isOlympiad=true` never returns `correct`; `/questions?isOlympiad=false` returns `correct` навмисно (practice-режим потребує локального оцінювання); `/finish` повертає лише `{ score, total }` |
+| Oracle attack via /finish      | `/finish` returns only `score/total` — no per-question `isCorrect`, so binary-search of answers is impossible |
+| Non-olympiad questions in event | `PUT /events/:id/questions` rejects questions with `isOlympiad=false` — only olympiad questions allowed in events |
 | Score manipulation             | Score written only by backend on finish             |
 | ATTEMPT_SECRET not set         | Server throws on startup if env var missing — no silent fallback |
 | Teacher results leaking raw answers | `/results` returns score/status only; `answers` JSONB column excluded |
@@ -86,7 +89,7 @@ Two-step entry flow to prevent code consumption before the student has read the 
 8. `student.html` reads `sessionStorage`, starts the quiz, clears `sessionStorage`.
 9. Student sends `X-Attempt-Token` header on every subsequent request (`/answer`, `/finish`).
    Without a valid token → 403, even if `attemptId` is known.
-10. Frontend keeps `attemptId` + `attemptToken` in memory + localStorage backup (crash recovery).
+10. Frontend keeps `attemptId` + `attemptToken` in memory only. `attemptId` is backed up to localStorage for crash recovery — `attemptToken` is intentionally excluded from localStorage to prevent theft on shared devices.
 
 ---
 
@@ -148,8 +151,8 @@ ALTER TABLE public.questions ENABLE ROW LEVEL SECURITY;
 
 | Data              | Where stored         | Sent to frontend?      |
 |-------------------|----------------------|------------------------|
-| Answer key (`correct`) | `questions.correct` (DB) | **Never** — stripped from all API responses including `/finish` |
-| `isCorrect`       | computed in `/finish` | Yes — boolean only, no key |
+| Answer key (`correct`) | `questions.correct` (DB) | Olympiad: **Never** — stripped from `/questions?isOlympiad=true`, `/exchange-code`, `/finish`, and results. Practice: returned intentionally from `/questions?isOlympiad=false` for local training feedback |
+| `isCorrect`       | not sent anywhere     | **Never** — `/finish` returns only `score/total` |
 | Attempt answers (raw) | `attempts.answers` (DB) | Never — excluded from `/results` response |
 | Final score       | `attempts.score`     | Only after finish      |
 | Student name      | not stored           | —                      |
@@ -225,11 +228,15 @@ Production error handler: `500` відповіді повертають лише
 - Frontend comparing `role === 'admin'` from a value it controls.
 - `supabase.from('answers').select('*')` anywhere in frontend code.
 - `service_role` key in any frontend file or committed to the repo.
-- Answer validation logic in frontend JavaScript.
-- Score calculation in frontend JavaScript.
+- Olympiad answer validation logic in frontend JavaScript.
+- Official olympiad score calculation in frontend JavaScript.
 - `attemptId` used to identify attempts — but it's an opaque UUID, no sensitive data.
 - Student first names or last names stored for certificates/diplomas.
-- `correct` field included in any `/finish` or `/results` API response.
+- `correct` field included in `/finish`, `/results`, or `/questions?isOlympiad=true` API response. (`/questions?isOlympiad=false` returns `correct` intentionally for local practice scoring.)
+- `isCorrect` per question sent in `/finish` response — enables oracle attack.
 - `answers` JSONB (raw student choices) exposed via `/results` endpoint.
 - `ATTEMPT_SECRET` with a hardcoded fallback value — must throw if unset.
 - New teacher accounts auto-approved without admin confirmation (`status` must start as `'pending'`).
+- Non-olympiad questions (`isOlympiad=false`) added to an olympiad event.
+- `attemptToken` stored in `localStorage` — must be memory-only (crash recovery uses `attemptId` only).
+- `correct` returned for `isOlympiad=true` questions via `/api/questions` endpoint (олімпіадні ключі мають залишатись на сервері).

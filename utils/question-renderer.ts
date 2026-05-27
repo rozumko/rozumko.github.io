@@ -1,7 +1,7 @@
 /** Мінімальний тип питання для рендерера. Конкретні поля залежать від type. */
 export interface RenderableQuestion {
   type?: string
-  options?: string[]
+  options?: string[] | Record<string, unknown>
   a?: string[]
   correct?: number | boolean | string
   explanation?: string | null
@@ -110,24 +110,35 @@ function renderTrueFalse(q, container, onAnswer, preview) {
     const btn = document.createElement('button');
     btn.className = 'btn w-full py-6 rounded-2xl border-2 border-slate-200 bg-white text-slate-800 font-bold text-xl hover:border-violet-400 hover:bg-violet-50 transition-all';
     btn.textContent = label;
-    btn.dataset.tfValue = String(value);
+    // Так=0, Ні=1 — узгоджено з БД де correct зберігається як integer-індекс
+    const answerIndex = value ? 0 : 1;
+    btn.dataset.tfIndex = String(answerIndex);
 
     if (preview) {
       btn.disabled = true;
       btn.style.cursor = 'default';
-      if (value === q.correct) markCorrect(btn);
+      if (answerIndex === Number(q.correct)) markCorrect(btn);
     } else {
       btn.addEventListener('click', () => {
         if (answered) return;
         answered = true;
-        const isCorrect = value === q.correct;
-        const btns = container.querySelectorAll('button');
-        btns.forEach(b => b.disabled = true);
-        isCorrect ? markCorrect(btn) : markIncorrect(btn);
-        if (!isCorrect) {
-          btns.forEach(b => { if (b.dataset.tfValue === String(q.correct)) markCorrect(b); });
+        const allBtns = container.querySelectorAll('button');
+        allBtns.forEach(b => b.disabled = true);
+        if (q.correct != null) {
+          // practice: correct є — порівнюємо індекси
+          const isCorrect = answerIndex === Number(q.correct);
+          isCorrect ? markCorrect(btn) : markIncorrect(btn);
+          if (!isCorrect) {
+            // підсвітити правильну кнопку: correctIndex === 0 → Так, 1 → Ні
+            const correctIndex = Number(q.correct);
+            allBtns.forEach(b => { if (Number(b.dataset.tfIndex) === correctIndex) markCorrect(b); });
+          }
+          onAnswer?.(isCorrect);
+        } else {
+          // Олімпіадний режим: correct відсутній, передаємо індекс
+          btn.classList.add('quiz-option--selected');
+          onAnswer?.(answerIndex);
         }
-        onAnswer?.(isCorrect);
       });
     }
 
@@ -173,20 +184,36 @@ function renderInput(q, container, onAnswer, preview) {
     inp.disabled = true;
     checkBtn.disabled = true;
 
-    const isCorrect = isNum
-      ? Math.abs(Number(raw) - Number(q.correct)) < 0.001
-      : raw.toLowerCase() === String(q.correct).trim().toLowerCase();
+    if (q.correct != null) {
+      const isCorrect = isNum
+        ? Math.abs(Number(raw) - Number(q.correct)) < 0.001
+        : raw.toLowerCase() === String(q.correct).trim().toLowerCase();
 
-    inp.classList.remove('border-slate-200');
-    inp.classList.add(isCorrect ? 'border-emerald-400' : 'border-rose-400');
+      inp.classList.remove('border-slate-200');
+      inp.classList.add(isCorrect ? 'border-emerald-400' : 'border-rose-400');
 
-    if (!isCorrect) {
-      const hint = document.createElement('p');
-      hint.className = 'text-center text-sm font-semibold text-slate-500 mt-1';
-      hint.textContent = `Правильна відповідь: ${q.correct}`;
-      container.appendChild(hint);
+      if (!isCorrect) {
+        const hint = document.createElement('p');
+        hint.className = 'text-center text-sm font-semibold text-slate-500 mt-1';
+        hint.textContent = `Правильна відповідь: ${q.correct}`;
+        container.appendChild(hint);
+      }
+      onAnswer?.(isCorrect);
+    } else {
+      // input-питання в olympiad-режимі не підтримується end-to-end:
+      // /answer schema приймає тільки integer-індекс, рядок передати неможливо.
+      // Блокуємо сабміт — питання залишається без відповіді (видима помилка конфігурації).
+      answered = false;
+      inp.disabled = false;
+      checkBtn.disabled = false;
+      const warn = document.createElement('p');
+      warn.className = 'text-center text-sm text-rose-500 font-semibold mt-1';
+      warn.textContent = 'Питання типу «input» не підтримується в олімпіадному режимі.';
+      if (!container.querySelector('.input-unsupported-warn')) {
+        warn.classList.add('input-unsupported-warn');
+        container.appendChild(warn);
+      }
     }
-    onAnswer?.(isCorrect);
   }
 
   checkBtn.addEventListener('click', submit);
