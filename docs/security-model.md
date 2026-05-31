@@ -1,242 +1,103 @@
-# Security Model — Rozumko
+# Security Model - Rozumko
 
-## Core principles
+_Updated: 2026-05-31_
 
-1. **The client is not trusted.** Any value arriving from the browser is
-   untrusted input: request body, headers, cookies, query params.
-2. **The backend is the single source of truth** for all olympiad state.
-3. **Students have no accounts.** Access is code-based, not identity-based.
-4. **Olympiad answer keys never leave the server.** Practice answers may be
-   returned for local training feedback when `isOlympiad=false`.
-5. **Official olympiad scores are calculated server-side only.**
-6. **JWT proves identity; the database decides rights.**
+## Core Rules
 
----
+1. The browser is untrusted.
+2. Official scoring happens only on the backend.
+3. Official and demo answer keys never reach the browser.
+4. Students have no accounts; official access is code-based.
+5. JWT proves teacher identity, while the database decides role and status.
+6. All database access goes through the backend API.
 
-## Threat model
+## Student Attempt Protection
 
-### Who can interact with the system
+- Code format: Ukrainian word plus three digits, in either order.
+- `GET /api/student/validate-code`: read-only pre-check, rate-limited to 20/min/IP.
+- `POST /api/student/exchange-code`: consumes the code atomically, rate-limited to 10/min/IP.
+- `attemptToken = HMAC-SHA256(attemptId, ATTEMPT_SECRET)`.
+- `/api/attempt/:id/answer` and `/api/attempt/:id/finish` require
+  `X-Attempt-Token`.
+- `/finish` returns only `{ score, total }`, never per-question correctness.
+- After the server deadline, late answers are rejected and saved answers are graded.
 
-| Actor     | Access method              | Trust level        |
-|-----------|----------------------------|--------------------|
-| Student   | Access code → attemptId    | Zero (anonymous)   |
-| Teacher   | Supabase Auth JWT + /api/me | Low (verified ID) |
-| Admin     | Supabase Auth JWT + /api/me | Medium (verified) |
-| Anonymous | None                       | Zero               |
+For crash recovery, `localStorage` contains only non-secret attempt metadata.
+The token and personal code are not stored there. A student resumes a personal
+attempt by entering the physical code again.
 
-"Low" trust for teacher means: identity confirmed, but every request is still
-validated against current role/status in the database.
+## Answer-Key Handling
 
-### Attack surfaces
+| Endpoint or mode | Key handling |
+|---|---|
+| Practice `GET /api/questions?isOlympiad=false` | Returns keys intentionally for local feedback |
+| Demo `GET /api/questions?isOlympiad=true` | Strips top-level and nested keys |
+| Official `exchange-code` | Strips top-level and nested keys |
+| Official `/finish` | Returns only `{ score, total }` |
+| Teacher/admin results | Excludes raw `answers` |
 
-| Surface                        | Mitigation                                          |
-|--------------------------------|-----------------------------------------------------|
-| Student guessing codes         | Ukrainian-word format, max_uses per code, rate limit 10 req/min per IP |
-| Student replaying attemptId    | `X-Attempt-Token` (HMAC-SHA256, server secret required) — UUID alone insufficient |
-| Student calling /finish early to harvest answer keys | `/finish` returns only `{ score, total }` — no per-question `isCorrect`, no answer keys |
-| Student submitting after time  | Backend enforces 90-min hard limit on `/finish`; auto-closes expired attempt |
-| Teacher accessing another class| Backend checks `teacher_id` ownership on every request |
-| Unauthorized teacher self-registration | New accounts provisioned with `status: 'pending'`; admin must explicitly approve |
-| JWT with stale role            | Role re-fetched from DB on every authenticated request |
-| Direct Supabase table access   | RLS enabled on all tables; anon key has no write access |
-| Answer key extraction          | `/questions?isOlympiad=true` never returns `correct`; `/questions?isOlympiad=false` returns `correct` навмисно (practice-режим потребує локального оцінювання); `/finish` повертає лише `{ score, total }` |
-| Oracle attack via /finish      | `/finish` returns only `score/total` — no per-question `isCorrect`, so binary-search of answers is impossible |
-| Non-olympiad questions in event | `PUT /events/:id/questions` rejects questions with `isOlympiad=false` — only olympiad questions allowed in events |
-| Score manipulation             | Score written only by backend on finish             |
-| ATTEMPT_SECRET not set         | Server throws on startup if env var missing — no silent fallback |
-| Teacher results leaking raw answers | `/results` returns score/status only; `answers` JSONB column excluded |
-| CSRF                           | SameSite cookies or Authorization header (not cookies) |
-| XSS → token theft              | attempt_token in memory only, not localStorage      |
+Nested keys are stripped for `sort.correctOrder`, `match.pairs` and
+`input.answer`.
 
----
+## Teacher And Admin Authorization
 
-## Authentication
+1. Supabase Auth returns a JWT after signup or login.
+2. Backend verifies it against `${SUPABASE_URL}/auth/v1/.well-known/jwks.json`
+   with `ES256` only.
+3. Backend loads `role` and `status` from `app_users`.
+4. Missing users are provisioned as `teacher`, `status = 'pending'`.
+5. `pending` and `blocked` users receive `403`.
+6. Admin routes additionally require `role = 'admin'`.
 
-### Teacher / Admin
+The frontend stores teacher session tokens in `localStorage`. This is an MVP
+tradeoff: CSP and restricted external scripts reduce XSS risk, but an XSS flaw
+could still expose the teacher token. Keep avoiding unsafe HTML interpolation.
 
-1. User logs in via Supabase Auth (email + password or magic link).
-2. Supabase returns a JWT signed with the project's secret.
-3. Frontend stores the JWT (Supabase SDK handles refresh automatically).
-4. Every API request sends `Authorization: Bearer <jwt>`.
-5. Backend verifies the signature using Supabase JWKS endpoint (`jose` library,
-   algorithm explicitly restricted to `ES256` — prevents `alg:none` and HMAC downgrade attacks).
-6. Backend loads `role` and `status` from `app_users` table.
-7. If `status = 'blocked'` → 403, regardless of valid JWT.
-8. Handler receives verified `{ userId, role }` — never raw JWT claims.
+## Database And RLS
 
-### Student
+The backend connects using `DATABASE_URL`. The public Supabase anon key appears
+in frontend code only for Supabase Auth requests.
 
-Two-step entry flow to prevent code consumption before the student has read the rules:
+RLS is enabled on all current public application tables. This was verified
+against Supabase on 2026-05-31:
 
-1. Teacher creates a class and registers it for an active olympiad event.
-2. Teacher generates access codes for that registration.
-3. Student opens `olympiad-enter.html` and enters a code (format: `КІТ247` — Ukrainian word + 3 digits).
-4. **Step 1 — validate:** `GET /api/student/validate-code?code=XXX` (rate-limit: 20/min):
-   - format validates against `/^([А-ЯҐЄІЇ]{2,5}\d{3}|\d{3}[А-ЯҐЄІЇ]{2,5})$/u`
-   - code exists and is not expired (`expires_at`)
-   - `used_count < max_uses`
-   - code has an active `event_id`
-   - event status allows participation
-   - returns `{ eventTitle, grade }` — does NOT increment `used_count`
-5. Student reads the rules on the page and checks the agreement checkbox.
-6. **Step 2 — exchange:** `POST /api/student/exchange-code` validates again (atomically) and:
-   - increments `used_count` inside a transaction (`WHERE used_count < max_uses`)
-   - creates an `attempt` row
-   - records the immutable question list in `attempt_questions`
-   - returns `{ attemptId, attemptToken, grade, questions }` (no answer keys)
-   - `attemptToken = HMAC-SHA256(attemptId, ATTEMPT_SECRET)` — stateless, no DB column needed.
-7. Frontend stores the result in `sessionStorage`, redirects to `student.html`.
-8. `student.html` reads `sessionStorage`, starts the quiz, clears `sessionStorage`.
-9. Student sends `X-Attempt-Token` header on every subsequent request (`/answer`, `/finish`).
-   Without a valid token → 403, even if `attemptId` is known.
-10. Frontend keeps `attemptId` + `attemptToken` in memory only. `attemptId` is backed up to localStorage for crash recovery — `attemptToken` is intentionally excluded from localStorage to prevent theft on shared devices.
+- `questions`
+- `olympiad_events`
+- `event_questions`
+- `access_codes`
+- `attempts`
+- `attempt_questions`
+- `app_users`
+- `teacher_classes`
+- `class_students`
+- `event_registrations`
 
----
+Keep RLS enabled on every new table. No frontend code may call Supabase Data API
+tables directly.
 
-## Authorization
+## HTTP Protections
 
-### Endpoint protection matrix
+Backend:
 
-| Endpoint                          | Student | Teacher | Admin |
-|-----------------------------------|---------|---------|-------|
-| GET  /api/student/validate-code   | ✓       | —       | —     |
-| POST /api/student/exchange-code   | ✓       | —       | —     |
-| POST /api/attempt/:id/answer      | ✓ (own) | —       | —     |
-| POST /api/attempt/:id/finish      | ✓ (own) | —       | —     |
-| GET  /api/me                      | —       | ✓       | ✓     |
-| GET  /api/teacher/olympiads       | —       | ✓ (own) | ✓     |
-| GET  /api/teacher/classes         | —       | ✓ (own) | ✓     |
-| POST /api/teacher/classes         | —       | ✓ (own) | ✓     |
-| GET  /api/teacher/registrations   | —       | ✓ (own) | ✓     |
-| POST /api/teacher/registrations   | —       | ✓ (own) | ✓     |
-| POST /api/teacher/codes/generate  | —       | ✓ (own registration) | ✓ |
-| GET  /api/teacher/results/:id     | —       | ✓ (own) | ✓     |
-| GET  /api/admin/users             | —       | —       | ✓     |
-| POST /api/admin/olympiad          | —       | —       | ✓     |
+- CORS allows only `https://rozumko.github.io` and local Vite origins.
+- Global rate limit: 100 requests/min/IP.
+- `trustProxy: true` is enabled for Render.
+- Production errors do not expose stack traces.
+- Security headers include `nosniff`, `DENY` framing and `no-referrer`.
 
-"Own" means the backend checks that the resource belongs to the requesting user.
-A teacher cannot read another teacher's olympiad or results.
+Frontend production build:
 
----
+- CSP is injected by `vite.config.ts`.
+- `script-src 'self'`.
+- Inline handlers are not allowed on normal pages.
+- `offline.html` has a narrower documented exception for its offline script.
 
-## Row Level Security (RLS)
+## Operational Security Checklist
 
-RLS is a **defense-in-depth** layer, not the primary authorization mechanism.
-
-> ⚠️ **Пріоритет:** кожна нова таблиця в Supabase мусить мати `ENABLE ROW LEVEL SECURITY`
-> одразу після міграції. Без цього `anon` ключ (публічний) дає прямий доступ до даних
-> в обхід бекенду. Детальний чеклист — у `docs/migrations.md`.
-
-Rules of thumb:
-- Enable RLS on every table immediately after migration.
-- No policies needed — zero policies means zero access for `anon`/`authenticated` via Data API.
-- The `anon` role must have **no** read or write access to any table.
-- The `service_role` key (used only by backend) bypasses RLS — keep it secret,
-  never expose in frontend code or public repos.
-- RLS policies should reflect the same rules as backend handlers, but simpler.
-  If a policy becomes complex, it's a sign that logic belongs in the backend.
-
-```sql
--- Вмикаємо RLS — без policy = anon не має доступу
-ALTER TABLE public.questions ENABLE ROW LEVEL SECURITY;
--- service_role (бекенд) обходить RLS автоматично
-```
-
-**Поточний стан таблиць (2026-05-13):** RLS увімкнено на всіх 10 таблицях ✅.
-(`class_students` — увімкнено при створенні через «Run and enable RLS» в Supabase SQL Editor)
-
----
-
-## Sensitive data handling
-
-| Data              | Where stored         | Sent to frontend?      |
-|-------------------|----------------------|------------------------|
-| Answer key (`correct`) | `questions.correct` (DB) | Olympiad: **Never** — stripped from `/questions?isOlympiad=true`, `/exchange-code`, `/finish`, and results. Practice: returned intentionally from `/questions?isOlympiad=false` for local training feedback |
-| `isCorrect`       | not sent anywhere     | **Never** — `/finish` returns only `score/total` |
-| Attempt answers (raw) | `attempts.answers` (DB) | Never — excluded from `/results` response |
-| Final score       | `attempts.score`     | Only after finish      |
-| Student name      | not stored           | —                      |
-| Certificate name  | browser memory only  | Not sent to backend    |
-| Teacher password  | Supabase Auth        | Never (Supabase manages) |
-| `ATTEMPT_SECRET`  | Server env var only  | Never                  |
-| `service_role` key| Server env var only  | Never                  |
-| `anon` key        | Frontend env var     | Yes (public, read-only scope) |
-
----
-
-## Certificates and diplomas
-
-Certificates and diplomas do not store student names on the server. **Реалізовано.**
-
-Flow:
-
-1. Teacher opens a result row → clicks «Сертифікат».
-2. Modal prompts for student name (browser only, not sent anywhere).
-3. Certificate renders in a new window → `window.print()` → PDF or paper.
-4. The name is not sent to the backend and is not saved in the database.
-
-This keeps official participation data useful while avoiding a stored list of
-children's personal names. If a teacher needs to regenerate a certificate later,
-they enter the name again.
-
----
-
-## Backup and recovery
-
-Local quiz backup in the browser protects against short-term crashes during an
-active attempt, but it is not a database backup.
-
-Production data requires a separate backup process:
-
-- scheduled PostgreSQL export (`pg_dump` or provider equivalent);
-- encrypted backup storage;
-- retention policy;
-- documented restore procedure;
-- periodic restore test on a non-production database.
-
-A backup is considered valid only after a successful restore test.
-
----
-
-## HTTP security headers
-
-Fastify `onSend` hook додає до кожної відповіді:
-
-| Header                             | Value          | Призначення                        |
-|------------------------------------|----------------|------------------------------------|
-| `X-Content-Type-Options`           | `nosniff`      | Забороняє MIME-sniffing            |
-| `X-Frame-Options`                  | `DENY`         | Захист від clickjacking            |
-| `Referrer-Policy`                  | `no-referrer`  | Не передає Referer третім сторонам |
-| `X-Permitted-Cross-Domain-Policies`| `none`         | Блокує Flash/PDF cross-domain      |
-
-Production error handler: `500` відповіді повертають лише `{ error: 'Внутрішня помилка сервера' }` — stack traces та внутрішні повідомлення логуються, але не витікають у відповідь.
-
----
-
-## Rate limiting and abuse prevention
-
-- Глобально: 100 запитів / хвилину з однієї IP (`@fastify/rate-limit`).
-- `GET /api/student/validate-code`: 20 запитів / хвилину з однієї IP.
-- `POST /api/student/exchange-code`: 10 запитів / хвилину з однієї IP. При перевищенні — `429 Too Many Requests`.
-- Access codes: configurable `max_uses` per code, hard expiry via `expires_at`.
-- CORS: дозволено лише `https://rozumko.github.io`, `localhost:5173`, `localhost:4173`.
-
----
-
-## What must never happen
-
-- Frontend comparing `role === 'admin'` from a value it controls.
-- `supabase.from('answers').select('*')` anywhere in frontend code.
-- `service_role` key in any frontend file or committed to the repo.
-- Olympiad answer validation logic in frontend JavaScript.
-- Official olympiad score calculation in frontend JavaScript.
-- `attemptId` used to identify attempts — but it's an opaque UUID, no sensitive data.
-- Student first names or last names stored for certificates/diplomas.
-- `correct` field included in `/finish`, `/results`, or `/questions?isOlympiad=true` API response. (`/questions?isOlympiad=false` returns `correct` intentionally for local practice scoring.)
-- `isCorrect` per question sent in `/finish` response — enables oracle attack.
-- `answers` JSONB (raw student choices) exposed via `/results` endpoint.
-- `ATTEMPT_SECRET` with a hardcoded fallback value — must throw if unset.
-- New teacher accounts auto-approved without admin confirmation (`status` must start as `'pending'`).
-- Non-olympiad questions (`isOlympiad=false`) added to an olympiad event.
-- `attemptToken` stored in `localStorage` — must be memory-only (crash recovery uses `attemptId` only).
-- `correct` returned for `isOlympiad=true` questions via `/api/questions` endpoint (олімпіадні ключі мають залишатись на сервері).
+- [ ] Decide whether public Supabase signup stays enabled for the pilot.
+- [ ] Configure PostgreSQL backups, retention and a restore test.
+- [ ] Monitor `GET /ping`.
+- [ ] Keep Render at one instance until rate limiting uses shared storage.
+- [ ] Add audit logging for admin mutations before a paid launch.
+- [ ] Update CORS and CSP before adding a custom domain.
+- [ ] Treat `ATTEMPT_SECRET` rotation as an incident operation: rotation invalidates active attempts.

@@ -31,7 +31,7 @@
 - **Події олімпіад** — адмін створює подію, визначає дати та питання для кожного класу
 - **Реєстрації без ПІБ дітей** — вчитель створює клас, реєструє кількість учасників на подію і генерує коди
 - **3 режими** — тренування (з поясненнями), демо, олімпіада (таймер, fullscreen)
-- **Захист від збоїв** — localStorage-бекап під час олімпіади
+- **Захист від збоїв** — відновлення персональної спроби після F5 через повторне введення коду
 - **Доступність** — WCAG 2.2, focus trap, prefers-reduced-motion
 
 ---
@@ -53,7 +53,7 @@
 
 ```
 ├── index.html / student.html / teacher.html / admin.html
-├── student.js / teacher.js / admin.js   ← точки входу
+├── student.ts / teacher.ts / admin.ts   ← точки входу
 ├── style.css / tokens.css               ← стилі (без фреймворків)
 ├── vite.config.ts / tsconfig.json
 │
@@ -63,20 +63,21 @@
 │   └── olympiad/         ← quiz-engine, getModeConfig
 │
 ├── utils/
-│   ├── question-renderer.js
-│   ├── focus-trap.js
-│   └── ui.js
+│   ├── question-renderer.ts
+│   ├── focus-trap.ts
+│   └── dom.ts
 │
 ├── backend/              ← окремий Node.js + Fastify сервер
 │   ├── src/
 │   │   ├── routes/       ← student, attempt, teacher, admin, questions
 │   │   ├── lib/auth.ts   ← JWT middleware (JWKS)
-│   │   └── db/           ← Drizzle schema + migrations
+│   │   └── db/           ← Drizzle schema + migration runner
+│   ├── drizzle/          ← SQL-міграції
 │   └── render.yaml
 │
 ├── public/               ← статичні assets (sw.js, manifest, favicon)
 ├── docs/                 ← технічна документація
-└── .github/workflows/deploy.yml
+└── .github/workflows/    ← frontend deploy + backend CI
 ```
 
 ---
@@ -86,6 +87,7 @@
 - [Архітектура](./docs/architecture.md)
 - [Модель безпеки](./docs/security-model.md)
 - [Міграції БД](./docs/migrations.md)
+- [Smoke-тест перед пілотом](./docs/smoke-test.md)
 - [Продуктовий план](./docs/product-roadmap.md)
 
 ---
@@ -103,7 +105,7 @@ npm install
 npm run dev
 ```
 
-Backend потребує `.env` з `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_JWT_ISSUER`, `ATTEMPT_SECRET`, `PORT`.
+Backend потребує `.env` з `DATABASE_URL`, `SUPABASE_URL`, `ATTEMPT_SECRET`; `PORT` необов'язковий.
 
 ---
 

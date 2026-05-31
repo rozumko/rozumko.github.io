@@ -1,91 +1,75 @@
-# MVP Smoke Test — Розумко
+# MVP Smoke Test - Rozumko
 
-Ручний чеклист для перевірки повного сценарію перед пілотом.
+_Updated: 2026-05-31_
 
-_Оновлено: 2026-05-27_
+Run this checklist before a real pilot.
 
----
+## 1. Deployment
 
-## 0. Передумови
+- [ ] `GET https://rozumko-github-io.onrender.com/health` returns `{ "status": "ok" }`
+- [ ] `GET https://rozumko-github-io.onrender.com/ping` returns `{ "status": "ok", "db": "ok" }`
+- [ ] Latest GitHub Pages and Backend CI workflows passed for the intended commit
+- [ ] `npm run db:migrate` reports success before backend deployment
 
-- [ ] Бекенд запущений (Render) — перевірити `GET /api/health` або `/api/admin/stats` → 200
-- [ ] Supabase проєкт активний, Site URL = `https://rozumko.github.io/teacher.html`
-- [ ] GitHub Pages задеплоєний (перевірити свіжий commit у `dist/`)
+## 2. Teacher Signup Policy
 
----
+- [ ] Decide whether pilot signup is public or invitation-only in Supabase Auth settings
+- [ ] If public: register a teacher, confirm `ACCOUNT_PENDING`, activate via admin, then log in
+- [ ] If invitation-only: verify an uninvited signup is rejected
+- [ ] Confirm an expired teacher JWT requires login again; automatic refresh is not implemented
 
-## 1. Реєстрація вчителя (новий акаунт)
+## 3. Admin Setup
 
-- [ ] Відкрити `teacher.html`
-- [ ] Натиснути «Зареєструватись» → картка перемикається на форму реєстрації (без прокрутки)
-- [ ] Ввести тестовий email, школу, пароль ≥8 символів → «Створити кабінет»
-- [ ] З'явилося повідомлення «✅ Акаунт створено! Зверніться до організатора для підтвердження»
-- [ ] Спроба одразу увійти → «⏳ Акаунт очікує підтвердження адміністратора»
-- [ ] Адмін: `admin.html` → «Вчителі» → новий вчитель з бейджем «Очікує підтвердження»
-- [ ] Адмін: натиснути «Підтвердити» → статус активний
-- [ ] Вчитель: повторно увійти → кабінет відкрився
-- [ ] URL очищено від `#access_token=...` (якщо було підтвердження email)
+- [ ] Create one question of every type: `choice`, `truefalse`, `sort`, `sequence`, `match`, `input`
+- [ ] Preview each type
+- [ ] Create a draft event with dates, duration and question count
+- [ ] Assign olympiad questions for one grade
+- [ ] Activate the event
+- [ ] Confirm active timing, count and question selection can no longer be changed
+- [ ] Confirm an active or already-issued question cannot be edited or deleted
 
-## 2. Вхід та кабінет
+## 4. Teacher Setup
 
-- [ ] Вийти → знову увійти email+пароль → кабінет відкрився
-- [ ] Email відображається в правій частині хедера
-- [ ] Вкладки «Класи», «Коди учнів», «Результати» перемикаються без перезавантаження
+- [ ] Create a class
+- [ ] Add optional student labels
+- [ ] Register the class for the active event
+- [ ] Generate personal codes (`maxUses = 1`)
+- [ ] Confirm generated codes appear under the registration
 
-## 3. Адмін — налаштування події
+## 5. Student Happy Path
 
-- [ ] Логін в адмін-панель (`admin.html`)
-- [ ] Створити подію (назва, дати, статус `draft`)
-- [ ] Додати питання для класів 1–4
-- [ ] Змінити статус події на `active`
+- [ ] Wrong code fails without consuming a use
+- [ ] Correct code shows event title and rules
+- [ ] Start remains disabled until agreement checkbox is selected
+- [ ] Student is redirected to `student.html`
+- [ ] All configured question types render and accept an answer
+- [ ] Finish returns a score
+- [ ] Teacher and admin results show the attempt
 
-## 4. Вчитель — клас та реєстрація
+## 6. Recovery And Deadline
 
-- [ ] Вкладка «Класи» → ліва колонка: ввести назву «3-А тест», клас «3» → «Додати»
-- [ ] Клас з'явився в списку нижче
-- [ ] Натиснути «Учні» → бокова панель відкрилась
-- [ ] Додати мітки «Учень 1», «Учень 2» → відображаються у таблиці зі sticky-заголовком (колонки: #, Мітка, Код, дії)
-- [ ] Закрити панель (Escape або ×)
-- [ ] Права колонка «Реєстрація на подію»: обрати клас, подію, кількість → «Зареєструвати»
-- [ ] Реєстрація з'явилася в списку нижче
+- [ ] Start with a personal code, answer at least one question, press F5
+- [ ] Student is redirected to code entry and can resume with the same code
+- [ ] `localStorage.rozumko_quiz_backup` contains no token and no personal code
+- [ ] Let the timer expire after a partially completed attempt
+- [ ] Saved answers are graded; the final score is not forced to zero
+- [ ] Attempt appears in results
+- [ ] Briefly disconnect network during answer save and confirm retry/error UX
 
-## 5. Вчитель — генерація кодів
+## 7. Browser Security
 
-- [ ] Перейти на вкладку «Коди учнів»
-- [ ] Обрати реєстрацію → «Згенерувати коди»
-- [ ] Коди з'явилися у списку
-- [ ] «Копіювати всі» → коди в буфері
-- [ ] Скопіювати один код вручну
+- [ ] Official `exchange-code` response contains no `correct`, `correctOrder`, `pairs` or `answer` keys
+- [ ] Demo `GET /api/questions?isOlympiad=true` response contains no answer keys
+- [ ] Practice `GET /api/questions?isOlympiad=false` intentionally includes keys
+- [ ] `/api/attempt/:id/finish` returns only `{ score, total }`
+- [ ] Teacher/admin results contain no raw `answers`
+- [ ] `/api/attempt/:id/answer` without `X-Attempt-Token` returns `403`
+- [ ] Admin endpoint without authorization returns `401`
+- [ ] Production HTML has CSP and no inline `onclick`
 
-## 6. Учень
+## 8. Operational
 
-- [ ] Відкрити `olympiad-enter.html`
-- [ ] Ввести неправильний код → помилка, код не споживається
-- [ ] Ввести правильний код → Крок 2: назва події, правила
-- [ ] Кнопка «Почати» неактивна до галочки → поставити галочку → активується
-- [ ] Натиснути «Почати» → редирект на `student.html`
-- [ ] Квіз стартував автоматично в олімпіадному режимі
-- [ ] Відповісти на всі питання → «Завершити»
-- [ ] Побачити результат із балом
-
-## 7. Вчитель — результати
-
-- [ ] Вкладка «Результати»
-- [ ] Спроба «Учня 1» з'явилася з балом та датою
-- [ ] (якщо є сертифікат) Відкрити → ввести ім'я → роздрукувати / PDF
-
-## 8. Перевірка безпеки
-
-- [ ] DevTools → Network → відповідь `/api/attempt/*/finish` містить лише `{ score, total }` — без `correct`, без `isCorrect` по питанню
-- [ ] DevTools → Network → відповідь `/api/teacher/results` не містить поля `answers`
-- [ ] `GET /api/questions?isOlympiad=false` → відповідь **містить** `correct` і `explanation` (навмисно — practice-режим)
-- [ ] `GET /api/questions?isOlympiad=true` → відповідь **не містить** `correct` і `explanation`
-- [ ] `localStorage` → `pendingOlympiad` очищено після старту квізу
-- [ ] `localStorage` → backup квізу не містить поля `attemptToken` (лише `attemptId`)
-- [ ] `POST /api/attempt/:id/finish` **одразу** після `exchange-code` (0 відповідей) → `{ score: 0, total: N }` без `correct`
-- [ ] `POST /api/attempt/:id/answer` без `X-Attempt-Token` → `403`
-- [ ] `GET /api/admin/teachers` без авторизації → `401`
-- [ ] `GET /api/teacher/me` з токеном вчителя до `/api/admin/*` → `403`
-- [ ] Реєстрація нового вчителя → спроба одразу увійти → `403 ACCOUNT_PENDING`
-- [ ] Адмін: спроба додати питання з `isOlympiad=false` до події → помилка 400
-- [ ] `GET /ping` → `{ status: "ok", db: "ok" }` (перевірка що Supabase доступний)
+- [ ] PostgreSQL backup exists
+- [ ] Restore procedure was tested on a non-production database
+- [ ] Monitoring checks `/ping`
+- [ ] Render runs one instance while rate limiting remains process-local
