@@ -31,6 +31,11 @@ environments receive the same schema.
 `0012` is intentionally idempotent: production received the columns manually
 before the SQL was incorporated into Drizzle history.
 
+The production database also received `0009`-`0011` manually before their
+journal timestamps were corrected. Existing production therefore may not list
+those three historical entries in `drizzle.__drizzle_migrations`, even though
+the schema is present. New environments apply the full ordered history.
+
 ## Development Workflow
 
 ```powershell
