@@ -1,8 +1,8 @@
 import type { FastifyInstance } from 'fastify'
 import { asc, eq, sql } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { attemptQuestions, attempts, questions } from '../db/schema.js'
-import { isQuestionInAttempt, scoreAttempt } from './attempt-validation.js'
+import { accessCodes, attemptQuestions, attempts, olympiadEvents, questions } from '../db/schema.js'
+import { isQuestionInAttempt, scoreAttempt, type AnswerValue } from './attempt-validation.js'
 import { verifyAttemptToken } from './student-validation.js'
 
 function checkAttemptToken(req: { headers: Record<string, string | string[] | undefined> }, attemptId: string): boolean {
@@ -11,12 +11,18 @@ function checkAttemptToken(req: { headers: Record<string, string | string[] | un
   return verifyAttemptToken(attemptId, token)
 }
 
+function getRemainingSeconds(startedAt: Date | null, timeMinutes: number, endsAt: Date, now = new Date()): number {
+  const attemptDeadline = (startedAt?.getTime() ?? now.getTime()) + timeMinutes * 60_000
+  const deadline = Math.min(attemptDeadline, endsAt.getTime())
+  return Math.max(0, Math.ceil((deadline - now.getTime()) / 1000))
+}
+
 export async function attemptRoutes(app: FastifyInstance) {
   // POST /api/attempt/:id/answer
   // Зберігає відповідь на одне питання (не перевіряє правильність)
   app.post<{
     Params: { id: string }
-    Body: { questionId: string; answer: number | string }
+    Body: { questionId: string; answer: number | string | number[] }
   }>('/:id/answer', {
     schema: {
       params: {
@@ -29,11 +35,13 @@ export async function attemptRoutes(app: FastifyInstance) {
         required: ['questionId', 'answer'],
         properties: {
           questionId: { type: 'string', format: 'uuid' },
-          // choice/truefalse: integer 0–9; input: рядок (макс 200 символів)
+          // choice/truefalse/sequence: integer-індекс; input: рядок;
+          // sort/match: масив integer-індексів
           answer: {
             oneOf: [
-              { type: 'integer', minimum: 0, maximum: 9 },
+              { type: 'integer', minimum: 0, maximum: 99 },
               { type: 'string', minLength: 1, maxLength: 200 },
+              { type: 'array', items: { type: 'integer', minimum: 0, maximum: 99 }, minItems: 1, maxItems: 20 },
             ],
           },
         },
@@ -57,6 +65,18 @@ export async function attemptRoutes(app: FastifyInstance) {
     }
     if (attempt.status !== 'in_progress') {
       return reply.code(409).send({ error: 'Спроба вже завершена' })
+    }
+
+    // Вікно події та ліміт спроби: не приймаємо відповіді після дедлайну.
+    const [evt] = await db
+      .select({ endsAt: olympiadEvents.endsAt, timeMinutes: olympiadEvents.timeMinutes })
+      .from(accessCodes)
+      .innerJoin(olympiadEvents, eq(accessCodes.eventId, olympiadEvents.id))
+      .where(eq(accessCodes.id, attempt.codeId))
+      .limit(1)
+    if (evt && getRemainingSeconds(attempt.startedAt, evt.timeMinutes, evt.endsAt) === 0) {
+      await db.update(attempts).set({ status: 'expired', score: 0, finishedAt: new Date() }).where(eq(attempts.id, id))
+      return reply.code(410).send({ error: 'Час спроби вичерпано' })
     }
 
     const issuedQuestions = await db
@@ -110,19 +130,27 @@ export async function attemptRoutes(app: FastifyInstance) {
       // щоб не дозволити використовувати /finish як оракул правильних відповідей.
       return reply.code(200).send({ score: attempt.score ?? 0, total: attempt.totalQ ?? 0 })
     }
-
-    // Ліміт часу: спроба не може тривати більше 90 хвилин
-    const MAX_DURATION_MS = 90 * 60 * 1000
-    if (attempt.startedAt && Date.now() - new Date(attempt.startedAt).getTime() > MAX_DURATION_MS) {
-      await db.update(attempts).set({ status: 'finished', score: 0, finishedAt: new Date() }).where(eq(attempts.id, id))
+    if (attempt.status === 'expired') {
       return reply.code(410).send({ error: 'Час спроби вичерпано' })
     }
 
-    const studentAnswers = (attempt.answers as Record<string, number | string>) ?? {}
+    const [evt] = await db
+      .select({ endsAt: olympiadEvents.endsAt, timeMinutes: olympiadEvents.timeMinutes })
+      .from(accessCodes)
+      .innerJoin(olympiadEvents, eq(accessCodes.eventId, olympiadEvents.id))
+      .where(eq(accessCodes.id, attempt.codeId))
+      .limit(1)
+
+    if (evt && getRemainingSeconds(attempt.startedAt, evt.timeMinutes, evt.endsAt) === 0) {
+      await db.update(attempts).set({ status: 'expired', score: 0, finishedAt: new Date() }).where(eq(attempts.id, id))
+      return reply.code(410).send({ error: 'Час спроби вичерпано' })
+    }
+
+    const studentAnswers = (attempt.answers as Record<string, AnswerValue>) ?? {}
 
     // Завантажити саме питання, видані цій спробі, з ключами відповідей
     const qs = await db
-      .select({ id: questions.id, type: questions.type, correct: questions.correct, explanation: questions.explanation })
+      .select({ id: questions.id, type: questions.type, correct: questions.correct, explanation: questions.explanation, options: questions.options })
       .from(attemptQuestions)
       .innerJoin(questions, eq(attemptQuestions.questionId, questions.id))
       .where(eq(attemptQuestions.attemptId, id))

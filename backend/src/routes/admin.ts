@@ -4,7 +4,16 @@ import { db } from '../db/index.js'
 import { questions, accessCodes, attempts, appUsers, olympiadEvents, eventQuestions } from '../db/schema.js'
 import { requireAdmin } from '../lib/auth.js'
 import { assertQuestionsBelongToGrade, normalizeEventQuestionSelection } from './event-questions-validation.js'
+import { validateQuestionShape, type QuestionType } from './question-input-validation.js'
 import { EVENT_STATUSES, assertEventDateOrder, normalizeEventInput, normalizeEventPatch } from './event-validation.js'
+
+function normalizePositiveInt(value: unknown, field: string, fallback?: number): number | undefined {
+  if (value === undefined) return fallback
+  if (!Number.isInteger(value) || (value as number) < 1 || (value as number) > 100) {
+    throw new Error(`${field} має бути цілим числом від 1 до 100`)
+  }
+  return value as number
+}
 
 export async function adminRoutes(app: FastifyInstance) {
 
@@ -62,7 +71,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // POST /api/admin/events
   app.post<{
-    Body: { title: string; description?: string | null; startsAt: string; endsAt: string; status?: string }
+    Body: { title: string; description?: string | null; startsAt: string; endsAt: string; status?: string; timeMinutes?: number; questionsCount?: number }
   }>('/events', {
     preHandler: requireAdmin,
     schema: {
@@ -75,13 +84,19 @@ export async function adminRoutes(app: FastifyInstance) {
           startsAt:    { type: 'string' },
           endsAt:      { type: 'string' },
           status:      { type: 'string', enum: EVENT_STATUSES },
+          timeMinutes: { type: 'integer', minimum: 1, maximum: 100 },
+          questionsCount: { type: 'integer', minimum: 1, maximum: 100 },
         },
       },
     },
   }, async (req, reply) => {
     let eventData
     try {
-      eventData = normalizeEventInput(req.body)
+      eventData = {
+        ...normalizeEventInput(req.body),
+        timeMinutes: normalizePositiveInt(req.body.timeMinutes, 'timeMinutes', 15),
+        questionsCount: normalizePositiveInt(req.body.questionsCount, 'questionsCount', 10),
+      }
     } catch (err) {
       return reply.code(400).send({ error: (err as Error).message })
     }
@@ -97,7 +112,7 @@ export async function adminRoutes(app: FastifyInstance) {
   // PUT /api/admin/events/:id
   app.put<{
     Params: { id: string }
-    Body: { title?: string; description?: string | null; startsAt?: string; endsAt?: string; status?: string }
+    Body: { title?: string; description?: string | null; startsAt?: string; endsAt?: string; status?: string; timeMinutes?: number; questionsCount?: number }
   }>('/events/:id', {
     preHandler: requireAdmin,
     schema: {
@@ -114,13 +129,19 @@ export async function adminRoutes(app: FastifyInstance) {
           startsAt:    { type: 'string' },
           endsAt:      { type: 'string' },
           status:      { type: 'string', enum: EVENT_STATUSES },
+          timeMinutes: { type: 'integer', minimum: 1, maximum: 100 },
+          questionsCount: { type: 'integer', minimum: 1, maximum: 100 },
         },
       },
     },
   }, async (req, reply) => {
     let updates
     try {
-      updates = normalizeEventPatch(req.body)
+      updates = {
+        ...normalizeEventPatch(req.body),
+        ...(req.body.timeMinutes !== undefined ? { timeMinutes: normalizePositiveInt(req.body.timeMinutes, 'timeMinutes') } : {}),
+        ...(req.body.questionsCount !== undefined ? { questionsCount: normalizePositiveInt(req.body.questionsCount, 'questionsCount') } : {}),
+      }
     } catch (err) {
       return reply.code(400).send({ error: (err as Error).message })
     }
@@ -251,10 +272,11 @@ export async function adminRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: `Питання ${nonOlympiad.map(q => q.id).join(', ')} не є олімпіадними (isOlympiad=false). До події можна додавати лише олімпіадні питання.` })
     }
 
-    const OLYMPIAD_ALLOWED_TYPES: string[] = ['choice', 'truefalse']
+    // Усі типи мають серверне оцінювання і санітизацію ключів.
+    const OLYMPIAD_ALLOWED_TYPES: string[] = ['choice', 'truefalse', 'sort', 'sequence', 'match', 'input']
     const unsupported = found.filter(q => !OLYMPIAD_ALLOWED_TYPES.includes(q.type ?? 'choice'))
     if (unsupported.length) {
-      return reply.code(400).send({ error: `Питання ${unsupported.map(q => q.id).join(', ')} мають тип "${unsupported[0].type}", який не підтримується в олімпіадному режимі. Дозволено: choice, truefalse.` })
+      return reply.code(400).send({ error: `Питання ${unsupported.map(q => q.id).join(', ')} мають тип "${unsupported[0].type}", який не підтримується в олімпіадному режимі. Дозволено: ${OLYMPIAD_ALLOWED_TYPES.join(', ')}.` })
     }
 
     await db.transaction(async tx => {
@@ -342,21 +364,19 @@ export async function adminRoutes(app: FastifyInstance) {
     },
   }, async (req, reply) => {
     const { q, grade, difficulty, isOlympiad = false, options, correct, explanation, code } = req.body
-    const type = (req.body.type ?? 'choice') as import('../db/schema.js').QuestionType
+    const type = (req.body.type ?? 'choice') as QuestionType
 
-    // Type-specific validation: correct обов'язковий для choice/truefalse, заборонений для решти
-    const NEEDS_CORRECT = ['choice', 'truefalse']
-    if (NEEDS_CORRECT.includes(type)) {
-      if (correct == null) return reply.code(400).send({ error: `Для типу "${type}" поле correct обов'язкове.` })
-      const optLen = Array.isArray(options) ? options.length : 0
-      if (correct >= optLen) return reply.code(400).send({ error: `correct (${correct}) виходить за межі options (${optLen} варіантів).` })
-    } else {
-      if (correct != null) return reply.code(400).send({ error: `Для типу "${type}" поле correct має бути відсутнє або null.` })
+    // Валідація форми за типом (choice/truefalse/sequence/sort/match/input)
+    let shape
+    try {
+      shape = validateQuestionShape(type, options, correct ?? null)
+    } catch (err) {
+      return reply.code(400).send({ error: (err as Error).message })
     }
 
     const [inserted] = await db
       .insert(questions)
-      .values({ q, grade, difficulty, isOlympiad, type, options, correct: correct ?? null, explanation: explanation ?? null, code: code ?? null })
+      .values({ q, grade, difficulty, isOlympiad, type, options: shape.options as any, correct: shape.correct, explanation: explanation ?? null, code: code ?? null })
       .returning({ id: questions.id })
     return reply.code(201).send({ id: inserted.id })
   })
@@ -402,19 +422,17 @@ export async function adminRoutes(app: FastifyInstance) {
 
     // Змерджити поточний стан з body → next — повна майбутня форма питання
     const next = {
-      type:    (b.type    ?? current.type)    as string,
+      type:    (b.type    ?? current.type)    as QuestionType,
       correct: b.correct  !== undefined ? b.correct  : current.correct,
       options: b.options  !== undefined ? b.options  : current.options,
     }
 
-    // Валідація next — аналогічна POST
-    const NEEDS_CORRECT = ['choice', 'truefalse']
-    if (NEEDS_CORRECT.includes(next.type)) {
-      if (next.correct == null) return reply.code(400).send({ error: `Для типу "${next.type}" поле correct обов'язкове.` })
-      const optLen = Array.isArray(next.options) ? next.options.length : 0
-      if (next.correct >= optLen) return reply.code(400).send({ error: `correct (${next.correct}) виходить за межі options (${optLen} варіантів).` })
-    } else {
-      if (next.correct != null) return reply.code(400).send({ error: `Для типу "${next.type}" поле correct має бути null. Передайте "correct": null щоб очистити.` })
+    // Валідація повної майбутньої форми за типом
+    let shape
+    try {
+      shape = validateQuestionShape(next.type, next.options, next.correct ?? null)
+    } catch (err) {
+      return reply.code(400).send({ error: (err as Error).message })
     }
 
     const updates: Record<string, unknown> = { updatedAt: new Date() }
@@ -423,8 +441,9 @@ export async function adminRoutes(app: FastifyInstance) {
     if (b.difficulty  !== undefined) updates.difficulty  = b.difficulty
     if (b.isOlympiad  !== undefined) updates.isOlympiad  = b.isOlympiad
     if (b.type        !== undefined) updates.type        = b.type
-    if (b.options     !== undefined) updates.options     = b.options
-    if (b.correct     !== undefined) updates.correct     = b.correct  // null очищає
+    // options/correct беремо з провалідованої форми (нормалізовані)
+    if (b.options !== undefined || b.type !== undefined) updates.options = shape.options
+    if (b.correct !== undefined || b.type !== undefined) updates.correct = shape.correct  // null очищає
     if (b.explanation !== undefined) updates.explanation = b.explanation
     if (b.code        !== undefined) updates.code        = b.code
 

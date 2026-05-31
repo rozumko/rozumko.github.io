@@ -276,9 +276,8 @@
         <p class="error-boundary__backup-label">📋 Скажи вчителю:</p>
         <p id="error-boundary-backup-text" class="error-boundary__backup-text"></p>
       </div>
-      <button class="btn-reload" onclick="window.location.reload()">Перезавантажити</button>
-      <button class="btn-boundary-dismiss"
-        onclick="document.getElementById('error-boundary').classList.add('hidden')">
+      <button id="error-boundary-reload" class="btn-reload">Перезавантажити</button>
+      <button id="error-boundary-dismiss" class="btn-boundary-dismiss">
         Закрити і спробувати продовжити
       </button>
     </div>
@@ -289,14 +288,6 @@
   <div id="toast-notification" role="status" aria-live="polite"></div>
 
   <script type="module" src="student.js"></script>
-
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(err => {
-        console.warn('[SW] Реєстрація не вдалась:', err);
-      });
-    }
-  </script>
 </body>
 
 </html>

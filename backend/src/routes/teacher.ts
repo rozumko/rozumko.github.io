@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify'
+import { randomInt } from 'crypto'
 import { and, count, desc, eq, gte, inArray, lte } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { accessCodes, attempts, classStudents, eventQuestions, eventRegistrations, olympiadEvents, teacherClasses } from '../db/schema.js'
@@ -6,16 +7,23 @@ import { requireAuth } from '../lib/auth.js'
 import { assertEventCanAcceptRegistrations, assertRegistrationCanBeCancelled, normalizeRegistrationInput, normalizeTeacherClassInput } from './registration-validation.js'
 import { assertEventCanIssueCodes } from './teacher-events-validation.js'
 
+// Прості, знайомі дітям українські слова (3–5 літер, лише кирилиця).
+// Без англ. літер і спецсимволів — щоб дитині було легко прочитати і ввести.
 const CODE_WORDS = [
-  'КІТ','ПЕС','ЛИС','РАК','ВУЖ','ЖУК','БИК','ЛЕВ','КИТ','ВІЛ',
-  'ВОВК','ОРЕЛ','КОЗА','КІНЬ','ГУСЬ','КРОТ','ТИГР','РИСЬ','ЛОСЬ','ЗУБР',
+  'КІТ','ПЕС','ЛИС','РАК','ВУЖ','ЖУК','БИК','ЛЕВ','КИТ','СОМ',
+  'МАК','ДУБ','САД','ЛІС','СОВА','МИША','ЇЖАК','КРАБ','ВОВК','ОРЕЛ',
+  'КОЗА','КІНЬ','ГУСЬ','КРОТ','ТИГР','РИСЬ','ЛОСЬ','ЗУБР','БОБЕР','БАРАН',
+  'КАЧКА','ОСЛИК','СОНЦЕ','ХМАРА','ЗІРКА','ЛИСТ','ГРИБ','СНІГ','РІКА','ГОРА',
+  'МОРЕ','ПОЛЕ','ОЗЕРО','КЛЕН','ВЕРБА','СОСНА','ТРАВА','СЛИВА','ГРУША','ВИШНЯ',
+  'ДИНЯ','КАВУН','ЛИМОН','БАНАН',
 ]
 
 function generateCode(exclude: Set<string> = new Set()): string {
-  // 20 слів × 1000 цифр = 20 000 комбінацій. При колізії — retry (max 20 спроб).
-  for (let i = 0; i < 20; i++) {
-    const word   = CODE_WORDS[Math.floor(Math.random() * CODE_WORDS.length)]
-    const digits = String(Math.floor(Math.random() * 1000)).padStart(3, '0')
+  // 54 слова × 10 000 (4 цифри) ≈ 540 000 комбінацій. crypto.randomInt —
+  // криптографічний RNG (не передбачуваний Math.random). При колізії — retry.
+  for (let i = 0; i < 30; i++) {
+    const word   = CODE_WORDS[randomInt(0, CODE_WORDS.length)]
+    const digits = String(randomInt(0, 10000)).padStart(4, '0')
     const code   = `${word}${digits}`
     if (!exclude.has(code)) { exclude.add(code); return code }
   }
@@ -171,18 +179,18 @@ export async function teacherRoutes(app: FastifyInstance) {
   // POST /api/teacher/registrations
   // Реєстрація без ПІБ дітей: тільки клас, подія і кількість учасників.
   app.post<{
-    Body: { eventId: string; classId: string; participantsCount: number; paymentStatus?: string }
+    Body: { eventId: string; classId: string; participantsCount: number }
   }>('/registrations', {
     preHandler: requireAuth,
     schema: {
       body: {
         type: 'object',
         required: ['eventId', 'classId', 'participantsCount'],
+        additionalProperties: false,
         properties: {
           eventId:           { type: 'string', format: 'uuid' },
           classId:           { type: 'string', format: 'uuid' },
           participantsCount: { type: 'integer', minimum: 1, maximum: 100 },
-          paymentStatus:     { type: 'string' },
         },
       },
     },

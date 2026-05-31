@@ -18,7 +18,7 @@ export type RegistrationInput = {
   eventId?: string
   classId?: string
   participantsCount?: number
-  paymentStatus?: string
+  // paymentStatus свідомо відсутній: статус оплати НЕ приймається з клієнта.
 }
 
 export type NormalizedRegistrationInput = {
@@ -52,16 +52,15 @@ export function normalizeRegistrationInput(input: RegistrationInput): Normalized
     throw new Error('Кількість учасників має бути від 1 до 100')
   }
 
-  const paymentStatus = input.paymentStatus ?? 'not_required'
-  if (!PAYMENT_STATUSES.includes(paymentStatus as PaymentStatus)) {
-    throw new Error('Некоректний статус оплати')
-  }
-
+  // Статус оплати визначає виключно сервер, не клієнт. Інакше вчитель міг би
+  // надіслати paymentStatus:'paid' і згенерувати платні коди безкоштовно.
+  // На час безкоштовного пілоту — 'not_required'. Коли зʼявляться платежі,
+  // статус 'paid' виставлятиме лише вебхук платіжного провайдера (окремий шлях).
   return {
     eventId,
     classId,
     participantsCount,
-    paymentStatus: paymentStatus as PaymentStatus,
+    paymentStatus: 'not_required',
   }
 }
 

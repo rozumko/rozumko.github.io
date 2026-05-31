@@ -1,3 +1,4 @@
+import './register-sw.js'
 // Unified header + footer for all public pages.
 // Each page includes this module via <script type="module" src="layout.js">.
 // Placeholders: <div id="site-header"></div> and <div id="site-footer"></div>

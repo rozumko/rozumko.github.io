@@ -82,7 +82,15 @@ startBtn.addEventListener('click', async () => {
       attemptToken: result.attemptToken,
       grade:        result.grade,
       questions:    result.questions,
+      resumed:      result.resumed ?? false,
+      answeredQuestionIds: result.answeredQuestionIds ?? [],
+      remainingSeconds: result.remainingSeconds,
     }))
+    // Якщо це відновлення раніше початої спроби (закрив вкладку / F5) —
+    // коротко повідомляємо учня, щоб він не лякався.
+    if (result.resumed) {
+      startBtn.textContent = '↩️ Відновлюємо твою спробу…'
+    }
     window.location.href = 'student.html'
   } catch (err) {
     startError.textContent = (err as Error).message

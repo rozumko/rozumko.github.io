@@ -1,3 +1,4 @@
+import './register-sw.js'
 import {
   loginTeacher, logoutTeacher, getTeacherSession, registerTeacher,
   createTeacherClass, createTeacherRegistration,

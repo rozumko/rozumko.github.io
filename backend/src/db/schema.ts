@@ -35,6 +35,8 @@ export const olympiadEvents = pgTable('olympiad_events', {
   description: text('description'),
   startsAt:    timestamp('starts_at', { withTimezone: true }).notNull(),
   endsAt:      timestamp('ends_at', { withTimezone: true }).notNull(),
+  timeMinutes: integer('time_minutes').notNull().default(15),
+  questionsCount: integer('questions_count').notNull().default(10),
   status:      text('status').notNull().default('draft'), // draft | published | active | finished | archived
   createdBy:   text('created_by').notNull(),
   createdAt:   timestamp('created_at', { withTimezone: true }).defaultNow(),
@@ -76,7 +78,7 @@ export const attempts = pgTable('attempts', {
   codeId:      uuid('code_id').notNull().references(() => accessCodes.id),
   grade:       integer('grade').notNull(),
   status:      text('status').notNull().default('in_progress'), // in_progress | finished | expired
-  answers:     jsonb('answers').default({}).$type<Record<string, number | string>>(),
+  answers:     jsonb('answers').default({}).$type<Record<string, number | string | number[]>>(),
   score:       integer('score'),
   totalQ:      integer('total_q'),
   startedAt:   timestamp('started_at', { withTimezone: true }).defaultNow(),

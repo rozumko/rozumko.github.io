@@ -1,3 +1,4 @@
+import './register-sw.js'
 import { loadQuestions, getModeConfig } from './features/olympiad/quiz-engine.js'
 import { saveAnswer, finishAttempt } from './features/api/client.js'
 import { renderQuestion, type RenderableQuestion } from './utils/question-renderer.js'
@@ -157,6 +158,9 @@ window.addEventListener('error', (event) => {
   if (currentMode && currentIdx > 0) showErrorBoundary(msg)
 })
 
+$<HTMLButtonElement>('error-boundary-reload').addEventListener('click', () => window.location.reload())
+$<HTMLButtonElement>('error-boundary-dismiss').addEventListener('click', () => $maybe('error-boundary')?.classList.add('hidden'))
+
 // --- Стан ---
 let selectedGrade:    number | null = null
 let selectedDiff:     string | null = null
@@ -237,12 +241,18 @@ function clearQuizBackup() {
   try {
     const pending = JSON.parse(raw) as {
       attemptId: string; attemptToken: string; grade: number; questions: RenderableQuestion[]
+      answeredQuestionIds?: string[]; remainingSeconds?: number
     }
     currentAttemptId    = pending.attemptId
     currentAttemptToken = pending.attemptToken
     const cfg = getModeConfig('olympiad', null)
     showLoading()
-    startQuiz(pending.questions, 'olympiad', cfg, { grade: pending.grade })
+    const answeredIds = new Set(pending.answeredQuestionIds ?? [])
+    const firstUnanswered = pending.questions.findIndex(q => !answeredIds.has(q.id as string))
+    startQuiz(pending.questions, 'olympiad', cfg, { grade: pending.grade }, {
+      currentIdx: firstUnanswered === -1 ? Math.max(0, pending.questions.length - 1) : firstUnanswered,
+      secondsLeft: pending.remainingSeconds,
+    })
   } catch { /* пошкоджений sessionStorage — ігноруємо */ }
 })()
 
@@ -289,10 +299,11 @@ startPracticeBtn.addEventListener('click', async () => {
 // ===================== QUIZ ENGINE =====================
 
 interface QuizMeta { code?: string; grade?: number | null; [k: string]: unknown }
+interface QuizStartState { currentIdx?: number; secondsLeft?: number }
 
-function startQuiz(qs: RenderableQuestion[], mode: string, cfg: any, meta: QuizMeta) {
+function startQuiz(qs: RenderableQuestion[], mode: string, cfg: any, meta: QuizMeta, restore: QuizStartState = {}) {
   questions     = qs
-  currentIdx    = 0
+  currentIdx    = restore.currentIdx ?? 0
   score         = 0
   answered      = false
   currentMode   = mode
@@ -311,7 +322,7 @@ function startQuiz(qs: RenderableQuestion[], mode: string, cfg: any, meta: QuizM
 
   clearInterval(timerInterval!)
   if (cfg.timeMinutes) {
-    secondsLeft = cfg.timeMinutes * 60
+    secondsLeft = restore.secondsLeft ?? cfg.timeMinutes * 60
     quizTimer.classList.add('visible')
     updateTimerDisplay()
     timerInterval = setInterval(() => {
@@ -371,26 +382,30 @@ function showQuestion() {
   renderQuestion(q, quizOptionsEl as HTMLElement, {
     onAnswer: (result) => {
       answered = true
-      if (typeof result === 'number') {
-        // result — індекс відповіді: correct невідомий клієнту (isOlympiad=true).
-        // Olympiad: зберігаємо на сервері. Demo: лише нейтральний feedback без збереження.
-        if (currentMode === 'olympiad' && currentAttemptId && currentAttemptToken) {
-          const qId = q.id as string
-          // Зберігаємо promise — finishQuiz чекатиме його завершення
-          const save = saveAnswer(currentAttemptId, currentAttemptToken, qId, result)
-            .catch(() => new Promise<void>(r => setTimeout(r, 2000)).then(
-              () => saveAnswer(currentAttemptId!, currentAttemptToken!, qId, result)
-            ))
-            .then(() => { failedAnswers.delete(qId) })
-            .catch(() => { failedAnswers.add(qId) })
-          pendingSaves.push(save)
-        }
-        showFeedbackOlympiad() // нейтральний feedback: "збережено" для olympiad, "прийнято" для demo
-      } else {
-        // result — boolean: correct відомий клієнту (isOlympiad=false, practice-режим).
+      // boolean → practice (correct відомий клієнту, локальне оцінювання).
+      // number | number[] | string → olympiad/demo (correct стрипнуто; оцінює сервер).
+      //   number    — choice/truefalse/sequence (індекс)
+      //   number[]  — sort/match (порядок / пари)
+      //   string    — input (текст)
+      if (typeof result === 'boolean') {
         if (result === true) score++
-        showFeedback(result as boolean, q)
+        showFeedback(result, q)
+        return
       }
+
+      // Olympiad: зберігаємо сиру відповідь на сервері. Demo: лише нейтральний feedback.
+      if (currentMode === 'olympiad' && currentAttemptId && currentAttemptToken) {
+        const qId = q.id as string
+        // Зберігаємо promise — finishQuiz чекатиме його завершення
+        const save = saveAnswer(currentAttemptId, currentAttemptToken, qId, result)
+          .catch(() => new Promise<void>(r => setTimeout(r, 2000)).then(
+            () => saveAnswer(currentAttemptId!, currentAttemptToken!, qId, result)
+          ))
+          .then(() => { failedAnswers.delete(qId) })
+          .catch(() => { failedAnswers.add(qId) })
+        pendingSaves.push(save)
+      }
+      showFeedbackOlympiad() // нейтральний feedback: "збережено" для olympiad, "прийнято" для demo
     },
   })
 }

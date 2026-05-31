@@ -55,6 +55,8 @@ async function handleSubmit(e: Event) {
   const title    = $<HTMLInputElement>('event-title').value
   const startsAt = $<HTMLInputElement>('event-from').value
   const endsAt   = $<HTMLInputElement>('event-to').value
+  const questionsCount = Number($<HTMLInputElement>('event-questions').value)
+  const timeMinutes = Number($<HTMLInputElement>('event-time').value)
 
   if (!title.trim()) { errorEl.textContent = 'Введіть назву події.'; return }
   if (!startsAt || !endsAt) { errorEl.textContent = 'Вкажіть початок і кінець події.'; return }
@@ -62,11 +64,23 @@ async function handleSubmit(e: Event) {
     errorEl.textContent = 'Дата завершення має бути пізніше дати початку.'
     return
   }
+  if (!Number.isInteger(questionsCount) || questionsCount < 1 || questionsCount > 100) {
+    errorEl.textContent = 'Кількість питань має бути від 1 до 100.'
+    return
+  }
+  if (!Number.isInteger(timeMinutes) || timeMinutes < 1 || timeMinutes > 100) {
+    errorEl.textContent = 'Час проходження має бути від 1 до 100 хвилин.'
+    return
+  }
 
   submitBtn.disabled    = true
   submitBtn.textContent = 'Збереження…'
   try {
-    const { event } = await createEvent(buildEventPayload({ title, startsAt, endsAt }))
+    const { event } = await createEvent({
+      ...buildEventPayload({ title, startsAt, endsAt }),
+      questionsCount,
+      timeMinutes,
+    })
     $maybe('event-form-section')?.classList.add('hidden')
     resetForm()
     await loadEvents()
@@ -112,6 +126,8 @@ function buildEventCard(event: OlympiadEvent): HTMLElement {
   badge.classList.add(`event-status-badge--${event.status}`)
   node.querySelector<HTMLElement>('.event-from')!.textContent = formatEventDate(event.startsAt)
   node.querySelector<HTMLElement>('.event-to')!.textContent   = formatEventDate(event.endsAt)
+  node.querySelector<HTMLElement>('.event-questions')!.textContent = String(event.questionsCount)
+  node.querySelector<HTMLElement>('.event-time')!.textContent = String(event.timeMinutes)
 
   wireStatusButton(node, event, '.btn-activate', 'active')
   wireStatusButton(node, event, '.btn-archive',  'archived')

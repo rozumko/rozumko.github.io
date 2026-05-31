@@ -58,6 +58,8 @@ export interface OlympiadEvent {
   description: string | null
   startsAt: string
   endsAt: string
+  timeMinutes: number
+  questionsCount: number
   status: 'draft' | 'published' | 'active' | 'finished' | 'archived'
   createdBy: string
   createdAt: string
@@ -69,6 +71,8 @@ export type OlympiadEventInput = {
   description?: string | null
   startsAt: string
   endsAt: string
+  timeMinutes?: number
+  questionsCount?: number
   status?: OlympiadEvent['status']
 }
 
@@ -139,16 +143,39 @@ export function validateCode(code: string): Promise<{ eventTitle: string; grade:
   return request(`/api/student/validate-code?code=${encodeURIComponent(code)}`)
 }
 
-export async function exchangeCode(code: string): Promise<{ attemptId: string; attemptToken: string; grade: number; questions: Question[] }> {
+// Нормалізує питання з API у форму, яку очікує question-renderer.
+// Для choice/truefalse: options — масив рядків → дублюємо в q.a.
+// Для sort/sequence/match/input: options — обʼєкт → розгортаємо його поля
+// (items, correctOrder, left, right, pairs, given, choices, answer, inputType)
+// у top-level q, бо рендерер читає саме звідти. Ключі відповідей для олімпіади
+// сервер уже видалив з options, тож після розгортання їх просто не буде.
+function normalizeQuestion(q: Question): Question {
+  if (q.options && typeof q.options === 'object' && !Array.isArray(q.options)) {
+    return { ...q, ...(q.options as Record<string, unknown>) } as Question
+  }
+  return { ...q, a: q.options as string[] }
+}
+
+export async function exchangeCode(code: string): Promise<{
+  attemptId: string
+  attemptToken: string
+  grade: number
+  questions: Question[]
+  resumed?: boolean
+  answeredQuestionIds?: string[]
+  remainingSeconds: number
+  timeMinutes: number
+  questionsCount: number
+}> {
   const data = await request('/api/student/exchange-code', {
     method: 'POST',
     body: JSON.stringify({ code }),
   })
-  data.questions = data.questions.map((q: Question) => ({ ...q, a: q.options }))
+  data.questions = data.questions.map(normalizeQuestion)
   return data
 }
 
-export async function saveAnswer(attemptId: string, attemptToken: string, questionId: string, answer: number | string): Promise<void> {
+export async function saveAnswer(attemptId: string, attemptToken: string, questionId: string, answer: number | string | number[]): Promise<void> {
   return request(`/api/attempt/${attemptId}/answer`, {
     method: 'POST',
     headers: { 'X-Attempt-Token': attemptToken },
@@ -165,7 +192,7 @@ export async function loadQuestions({
   if (count      != null) params.set('count',      String(count))
   if (difficulty)         params.set('difficulty', difficulty)
   const data = await request(`/api/questions?${params}`)
-  return data.questions.map((q: Question) => ({ ...q, a: q.options }))
+  return data.questions.map(normalizeQuestion)
 }
 
 export async function finishAttempt(attemptId: string, attemptToken: string): Promise<{ score: number; total: number }> {
@@ -290,7 +317,7 @@ export function createTeacherRegistration(data: {
   eventId: string
   classId: string
   participantsCount: number
-  paymentStatus?: EventRegistration['paymentStatus']
+  // paymentStatus не надсилається: статус оплати визначає сервер.
 }): Promise<{ registration: EventRegistration }> {
   return authRequest('/api/teacher/registrations', {
     method: 'POST',

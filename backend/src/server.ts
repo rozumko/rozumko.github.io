@@ -13,7 +13,10 @@ if (missing.length) {
   process.exit(1)
 }
 
-const app = Fastify({ logger: true })
+// trustProxy: true — Render тримає застосунок за реверс-проксі. Без цього
+// req.ip = IP проксі (один на всіх), і rate-limit рахується глобально замість
+// per-client. Вмикаємо, щоб ліміти діяли на реальний IP клієнта (X-Forwarded-For).
+const app = Fastify({ logger: true, trustProxy: true })
 
 // CORS — дозволяємо тільки GitHub Pages та localhost для розробки
 const allowedOrigins = [

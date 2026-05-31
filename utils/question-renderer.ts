@@ -31,7 +31,7 @@ export interface RenderableQuestion {
 export function renderQuestion(
   q: RenderableQuestion,
   container: HTMLElement,
-  { onAnswer = null as ((result: boolean | number) => void) | null, preview = false } = {}
+  { onAnswer = null as ((result: boolean | number | number[] | string) => void) | null, preview = false } = {}
 ) {
   container.innerHTML = '';
   const type = q.type ?? 'choice';
@@ -149,7 +149,8 @@ function renderTrueFalse(q, container, onAnswer, preview) {
 // ── input ──────────────────────────────────────────────────────────────────
 
 function renderInput(q, container, onAnswer, preview) {
-  const isNum = q.inputType === 'number' || typeof q.correct === 'number';
+  const answerKey = q.answer ?? q.correct;
+  const isNum = q.inputType === 'number' || typeof answerKey === 'number';
   let answered = false;
 
   if (preview) {
@@ -159,7 +160,7 @@ function renderInput(q, container, onAnswer, preview) {
     container.appendChild(placeholder);
     const hint = document.createElement('p');
     hint.className = 'text-center text-sm font-semibold text-emerald-600 mt-2';
-    hint.textContent = `Правильна відповідь: ${q.correct}`;
+    hint.textContent = `Правильна відповідь: ${answerKey}`;
     container.appendChild(hint);
     return;
   }
@@ -184,10 +185,10 @@ function renderInput(q, container, onAnswer, preview) {
     inp.disabled = true;
     checkBtn.disabled = true;
 
-    if (q.correct != null) {
+    if (answerKey != null) {
       const isCorrect = isNum
-        ? Math.abs(Number(raw) - Number(q.correct)) < 0.001
-        : raw.toLowerCase() === String(q.correct).trim().toLowerCase();
+        ? Math.abs(Number(raw) - Number(answerKey)) < 0.001
+        : raw.toLowerCase() === String(answerKey).trim().toLowerCase();
 
       inp.classList.remove('border-slate-200');
       inp.classList.add(isCorrect ? 'border-emerald-400' : 'border-rose-400');
@@ -195,24 +196,13 @@ function renderInput(q, container, onAnswer, preview) {
       if (!isCorrect) {
         const hint = document.createElement('p');
         hint.className = 'text-center text-sm font-semibold text-slate-500 mt-1';
-        hint.textContent = `Правильна відповідь: ${q.correct}`;
+        hint.textContent = `Правильна відповідь: ${answerKey}`;
         container.appendChild(hint);
       }
       onAnswer?.(isCorrect);
     } else {
-      // input-питання в olympiad-режимі не підтримується end-to-end:
-      // /answer schema приймає тільки integer-індекс, рядок передати неможливо.
-      // Блокуємо сабміт — питання залишається без відповіді (видима помилка конфігурації).
-      answered = false;
-      inp.disabled = false;
-      checkBtn.disabled = false;
-      const warn = document.createElement('p');
-      warn.className = 'text-center text-sm text-rose-500 font-semibold mt-1';
-      warn.textContent = 'Питання типу «input» не підтримується в олімпіадному режимі.';
-      if (!container.querySelector('.input-unsupported-warn')) {
-        warn.classList.add('input-unsupported-warn');
-        container.appendChild(warn);
-      }
+      // Olympiad/demo: ключ стрипнуто сервером, надсилаємо сиру відповідь.
+      onAnswer?.(raw);
     }
   }
 
@@ -290,6 +280,17 @@ function renderSort(q, container, onAnswer, preview) {
       if (answered) return;
       answered = true;
 
+      // Олімпіадний режим: correctOrder стрипнуто сервером → оцінює сервер.
+      // Зберігаємо порядок учня (масив індексів елементів) і виходимо без локального фідбеку.
+      if (!Array.isArray(q.correctOrder)) {
+        order.forEach((itemIdx, pos) => {
+          const block = container.children[pos]?.querySelector('div');
+          block?.classList.add('quiz-option--selected');
+        });
+        onAnswer?.([...order]);
+        return;
+      }
+
       const isCorrect = q.correctOrder.every((correctIdx, pos) => order[pos] === correctIdx);
 
       container.innerHTML = '';
@@ -350,7 +351,9 @@ function renderSequence(q, container, onAnswer, preview) {
 
   // Варіанти
   let answered = false;
-  const seqCorrect = Number(q.correct);
+  // correct може бути відсутнім (олімпіадний режим — сервер перевіряє)
+  const hasCorrect = q.correct != null && !Number.isNaN(Number(q.correct));
+  const seqCorrect = hasCorrect ? Number(q.correct) : -1;
   const seqBtns = [];
   q.choices.forEach((opt, i) => {
     const btn = document.createElement('button');
@@ -366,11 +369,17 @@ function renderSequence(q, container, onAnswer, preview) {
       btn.addEventListener('click', () => {
         if (answered) return;
         answered = true;
-        const isCorrect = i === seqCorrect;
         seqBtns.forEach(b => b.disabled = true);
-        isCorrect ? markCorrect(btn) : markIncorrect(btn);
-        if (!isCorrect) markCorrect(seqBtns[seqCorrect]);
-        onAnswer?.(isCorrect);
+        if (hasCorrect) {
+          const isCorrect = i === seqCorrect;
+          isCorrect ? markCorrect(btn) : markIncorrect(btn);
+          if (!isCorrect) markCorrect(seqBtns[seqCorrect]);
+          onAnswer?.(isCorrect);
+        } else {
+          // Олімпіадний режим: зберігаємо індекс, правильність перевіряє сервер
+          btn.classList.add('quiz-option--selected');
+          onAnswer?.(i);
+        }
       });
     }
 
@@ -391,7 +400,7 @@ function renderMatch(q, container, onAnswer, preview) {
     return;
   }
 
-  const shuffled = [...q.right].sort(() => Math.random() - 0.5);
+  const shuffled = q.right.map((item, index) => ({ item, index })).sort(() => Math.random() - 0.5);
   let answered = false;
 
   q.left.forEach((leftItem) => {
@@ -414,9 +423,9 @@ function renderMatch(q, container, onAnswer, preview) {
     placeholder.value = '';
     placeholder.textContent = 'Обери…';
     select.appendChild(placeholder);
-    shuffled.forEach(item => {
+    shuffled.forEach(({ item, index }) => {
       const opt = document.createElement('option');
-      opt.value = item;
+      opt.value = String(index);
       opt.textContent = item;
       select.appendChild(opt);
     });
@@ -434,9 +443,21 @@ function renderMatch(q, container, onAnswer, preview) {
     if (selects.some(s => !s.value)) return;
     answered = true;
 
+    // Олімпіадний режим: pairs стрипнуто сервером → оцінює сервер.
+    // Зберігаємо вибір учня як масив індексів правого стовпця (за оригінальним q.right).
+    if (!Array.isArray(q.pairs)) {
+      const chosen = selects.map(sel => Number(sel.value));
+      selects.forEach(sel => {
+        sel.disabled = true;
+        sel.classList.add('quiz-option--selected');
+      });
+      onAnswer?.(chosen);
+      return;
+    }
+
     let allCorrect = true;
     selects.forEach((sel, i) => {
-      const ok = sel.value === q.right[q.pairs[i]];
+      const ok = Number(sel.value) === q.pairs[i];
       if (!ok) allCorrect = false;
       sel.disabled = true;
       const leftEl = sel.parentElement.querySelector('div');

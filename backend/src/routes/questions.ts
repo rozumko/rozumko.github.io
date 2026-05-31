@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import { eq, and, sql } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { questions } from '../db/schema.js'
+import { stripOptionKeys } from './question-sanitize.js'
 
 export async function questionsRoutes(app: FastifyInstance) {
   // GET /api/questions?grade=4&isOlympiad=false&count=10&difficulty=hard
@@ -55,11 +56,15 @@ export async function questionsRoutes(app: FastifyInstance) {
 
     // correct і explanation повертаються ЛИШЕ для тренувальних питань (isOlympiad=false).
     // Це навмисна поведінка: practice-режим показує правильну відповідь після вибору.
-    // Для олімпіадних питань (isOlympiad=true або фільтр не вказано) — ключі завжди стрипляються.
-    // Реальний захист від витоку олімпіадних ключів — прапор isOlympiad на рівні питання.
+    // Для олімпіадних питань (isOlympiad=true або фільтр не вказано) — ключі завжди стрипляються:
+    //   • top-level correct/explanation (choice/truefalse/sequence)
+    //   • ключі всередині options (sort.correctOrder, match.pairs, input.answer)
     const qs = isOlympiad === false
       ? rows
-      : rows.map(({ correct: _c, explanation: _e, ...rest }) => rest)
+      : rows.map(({ correct: _c, explanation: _e, options, ...rest }) => ({
+          ...rest,
+          options: stripOptionKeys(options),
+        }))
 
     return reply.send({ questions: qs })
   })
