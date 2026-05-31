@@ -1,6 +1,12 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { assertEventDateOrder, normalizeEventInput, normalizeEventPatch } from './event-validation.js'
+import {
+  assertEventDateOrder,
+  assertEventQuestionSelectionAllowed,
+  assertEventRuleChangesAllowed,
+  normalizeEventInput,
+  normalizeEventPatch,
+} from './event-validation.js'
 
 test('normalizeEventInput accepts a valid draft event', () => {
   const event = normalizeEventInput({
@@ -69,4 +75,15 @@ test('assertEventDateOrder rejects merged invalid dates', () => {
     ),
     /Дата завершення/
   )
+})
+
+test('assertEventRuleChangesAllowed locks timing fields while attempts are active', () => {
+  assert.doesNotThrow(() => assertEventRuleChangesAllowed(true, { title: 'Нова назва' }))
+  assert.throws(() => assertEventRuleChangesAllowed(true, { timeMinutes: 20 }), /Не можна змінювати час/)
+  assert.doesNotThrow(() => assertEventRuleChangesAllowed(false, { timeMinutes: 20 }))
+})
+
+test('assertEventQuestionSelectionAllowed locks active question sets', () => {
+  assert.throws(() => assertEventQuestionSelectionAllowed(true), /Не можна змінювати набір питань/)
+  assert.doesNotThrow(() => assertEventQuestionSelectionAllowed(false))
 })

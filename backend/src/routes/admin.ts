@@ -1,11 +1,18 @@
 import type { FastifyInstance } from 'fastify'
 import { eq, desc, count, and, asc, inArray } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { questions, accessCodes, attempts, appUsers, olympiadEvents, eventQuestions } from '../db/schema.js'
+import { questions, accessCodes, attempts, attemptQuestions, appUsers, olympiadEvents, eventQuestions } from '../db/schema.js'
 import { requireAdmin } from '../lib/auth.js'
 import { assertQuestionsBelongToGrade, normalizeEventQuestionSelection } from './event-questions-validation.js'
 import { validateQuestionShape, type QuestionType } from './question-input-validation.js'
-import { EVENT_STATUSES, assertEventDateOrder, normalizeEventInput, normalizeEventPatch } from './event-validation.js'
+import {
+  EVENT_STATUSES,
+  assertEventDateOrder,
+  assertEventQuestionSelectionAllowed,
+  assertEventRuleChangesAllowed,
+  normalizeEventInput,
+  normalizeEventPatch,
+} from './event-validation.js'
 
 function normalizePositiveInt(value: unknown, field: string, fallback?: number): number | undefined {
   if (value === undefined) return fallback
@@ -13,6 +20,34 @@ function normalizePositiveInt(value: unknown, field: string, fallback?: number):
     throw new Error(`${field} має бути цілим числом від 1 до 100`)
   }
   return value as number
+}
+
+async function eventRulesAreLocked(eventId: string, status: string): Promise<boolean> {
+  if (status === 'active') return true
+  const [attempt] = await db
+    .select({ id: attempts.id })
+    .from(attempts)
+    .innerJoin(accessCodes, eq(attempts.codeId, accessCodes.id))
+    .where(and(eq(accessCodes.eventId, eventId), eq(attempts.status, 'in_progress')))
+    .limit(1)
+  return !!attempt
+}
+
+async function questionIsLocked(questionId: string): Promise<boolean> {
+  const [issued] = await db
+    .select({ id: attemptQuestions.id })
+    .from(attemptQuestions)
+    .where(eq(attemptQuestions.questionId, questionId))
+    .limit(1)
+  if (issued) return true
+
+  const [selectedForActiveEvent] = await db
+    .select({ id: eventQuestions.id })
+    .from(eventQuestions)
+    .innerJoin(olympiadEvents, eq(eventQuestions.eventId, olympiadEvents.id))
+    .where(and(eq(eventQuestions.questionId, questionId), eq(olympiadEvents.status, 'active')))
+    .limit(1)
+  return !!selectedForActiveEvent
 }
 
 export async function adminRoutes(app: FastifyInstance) {
@@ -147,7 +182,7 @@ export async function adminRoutes(app: FastifyInstance) {
     }
 
     const [current] = await db
-      .select({ startsAt: olympiadEvents.startsAt, endsAt: olympiadEvents.endsAt })
+      .select({ startsAt: olympiadEvents.startsAt, endsAt: olympiadEvents.endsAt, status: olympiadEvents.status })
       .from(olympiadEvents)
       .where(eq(olympiadEvents.id, req.params.id))
       .limit(1)
@@ -155,6 +190,7 @@ export async function adminRoutes(app: FastifyInstance) {
     if (!current) return reply.code(404).send({ error: 'Подію не знайдено' })
 
     try {
+      assertEventRuleChangesAllowed(await eventRulesAreLocked(req.params.id, current.status), req.body)
       assertEventDateOrder(updates.startsAt ?? current.startsAt, updates.endsAt ?? current.endsAt)
     } catch (err) {
       return reply.code(400).send({ error: (err as Error).message })
@@ -194,12 +230,18 @@ export async function adminRoutes(app: FastifyInstance) {
     }
 
     const [event] = await db
-      .select({ id: olympiadEvents.id })
+      .select({ id: olympiadEvents.id, status: olympiadEvents.status })
       .from(olympiadEvents)
       .where(eq(olympiadEvents.id, req.params.id))
       .limit(1)
 
     if (!event) return reply.code(404).send({ error: 'Подію не знайдено' })
+
+    try {
+      assertEventQuestionSelectionAllowed(await eventRulesAreLocked(event.id, event.status))
+    } catch (err) {
+      return reply.code(409).send({ error: (err as Error).message })
+    }
 
     const selected = await db
       .select({
@@ -313,7 +355,7 @@ export async function adminRoutes(app: FastifyInstance) {
       })
       .from(attempts)
       .leftJoin(accessCodes, eq(attempts.codeId, accessCodes.id))
-      .where(eq(attempts.status, 'finished'))
+      .where(inArray(attempts.status, ['finished', 'expired']))
       .orderBy(desc(attempts.finishedAt))
     return reply.send({ results: allAttempts })
   })
@@ -419,6 +461,9 @@ export async function adminRoutes(app: FastifyInstance) {
       .where(eq(questions.id, id))
       .limit(1)
     if (!current) return reply.code(404).send({ error: 'Питання не знайдено' })
+    if (await questionIsLocked(id)) {
+      return reply.code(409).send({ error: 'Не можна редагувати питання активної олімпіади або питання, яке вже було видане учню' })
+    }
 
     // Змерджити поточний стан з body → next — повна майбутня форма питання
     const next = {
@@ -463,6 +508,9 @@ export async function adminRoutes(app: FastifyInstance) {
     { preHandler: requireAdmin },
     async (req, reply) => {
       const { id } = req.params
+      if (await questionIsLocked(id)) {
+        return reply.code(409).send({ error: 'Не можна видаляти питання активної олімпіади або питання, яке вже було видане учню' })
+      }
       const [deleted] = await db
         .delete(questions)
         .where(eq(questions.id, id))

@@ -3,6 +3,7 @@ import { and, asc, desc, eq, lt, sql } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { accessCodes, attemptQuestions, attempts, eventQuestions, olympiadEvents, questions } from '../db/schema.js'
 import { assertEventCanIssueCodes } from './teacher-events-validation.js'
+import { finalizeAttemptFromSavedAnswers } from './attempt-finalization.js'
 import { sanitizeOlympiadQuestion } from './question-sanitize.js'
 import {
   normalizeCode,
@@ -165,10 +166,7 @@ export async function studentRoutes(app: FastifyInstance) {
     if (existing && accessCode.maxUses === 1) {
       const remainingSeconds = getRemainingSeconds(existing.startedAt, event.timeMinutes, event.endsAt)
       if (remainingSeconds === 0) {
-        await db
-          .update(attempts)
-          .set({ status: 'expired', score: 0, finishedAt: new Date() })
-          .where(eq(attempts.id, existing.id))
+        await finalizeAttemptFromSavedAnswers(existing.id)
         return reply.code(410).send({ error: 'Час спроби вичерпано' })
       }
 

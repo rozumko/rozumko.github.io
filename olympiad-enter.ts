@@ -80,6 +80,7 @@ startBtn.addEventListener('click', async () => {
     sessionStorage.setItem('pendingOlympiad', JSON.stringify({
       attemptId:    result.attemptId,
       attemptToken: result.attemptToken,
+      code,
       grade:        result.grade,
       questions:    result.questions,
       resumed:      result.resumed ?? false,

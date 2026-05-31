@@ -12,7 +12,7 @@ export interface Question {
   code?: string | null
   type?: QuestionType             // 'choice' якщо відсутній (legacy)
   options: string[] | Record<string, unknown>  // string[] для choice/truefalse; об'єкт для решти
-  correct?: number                // відсутній для isOlympiad=true або type=input/sort/…
+  correct?: number | null         // null для input/sort/match; відсутній у відповіді для олімпіади
   explanation?: string | null
   difficulty?: string
   grade?: number

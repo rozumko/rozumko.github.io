@@ -1,8 +1,9 @@
 import type { FastifyInstance } from 'fastify'
-import { asc, eq, sql } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { accessCodes, attemptQuestions, attempts, olympiadEvents, questions } from '../db/schema.js'
-import { isQuestionInAttempt, scoreAttempt, type AnswerValue } from './attempt-validation.js'
+import { accessCodes, attemptQuestions, attempts, olympiadEvents } from '../db/schema.js'
+import { finalizeAttemptFromSavedAnswers } from './attempt-finalization.js'
+import { isQuestionInAttempt } from './attempt-validation.js'
 import { verifyAttemptToken } from './student-validation.js'
 
 function checkAttemptToken(req: { headers: Record<string, string | string[] | undefined> }, attemptId: string): boolean {
@@ -75,7 +76,7 @@ export async function attemptRoutes(app: FastifyInstance) {
       .where(eq(accessCodes.id, attempt.codeId))
       .limit(1)
     if (evt && getRemainingSeconds(attempt.startedAt, evt.timeMinutes, evt.endsAt) === 0) {
-      await db.update(attempts).set({ status: 'expired', score: 0, finishedAt: new Date() }).where(eq(attempts.id, id))
+      await finalizeAttemptFromSavedAnswers(id)
       return reply.code(410).send({ error: 'Час спроби вичерпано' })
     }
 
@@ -131,7 +132,7 @@ export async function attemptRoutes(app: FastifyInstance) {
       return reply.code(200).send({ score: attempt.score ?? 0, total: attempt.totalQ ?? 0 })
     }
     if (attempt.status === 'expired') {
-      return reply.code(410).send({ error: 'Час спроби вичерпано' })
+      return reply.code(200).send(await finalizeAttemptFromSavedAnswers(id))
     }
 
     const [evt] = await db
@@ -142,35 +143,11 @@ export async function attemptRoutes(app: FastifyInstance) {
       .limit(1)
 
     if (evt && getRemainingSeconds(attempt.startedAt, evt.timeMinutes, evt.endsAt) === 0) {
-      await db.update(attempts).set({ status: 'expired', score: 0, finishedAt: new Date() }).where(eq(attempts.id, id))
-      return reply.code(410).send({ error: 'Час спроби вичерпано' })
+      return reply.code(200).send(await finalizeAttemptFromSavedAnswers(id))
     }
-
-    const studentAnswers = (attempt.answers as Record<string, AnswerValue>) ?? {}
-
-    // Завантажити саме питання, видані цій спробі, з ключами відповідей
-    const qs = await db
-      .select({ id: questions.id, type: questions.type, correct: questions.correct, explanation: questions.explanation, options: questions.options })
-      .from(attemptQuestions)
-      .innerJoin(questions, eq(attemptQuestions.questionId, questions.id))
-      .where(eq(attemptQuestions.attemptId, id))
-      .orderBy(asc(attemptQuestions.position))
-
-    const { score, results } = scoreAttempt(qs, studentAnswers)
-
-    const total = attempt.totalQ ?? qs.length
-
-    await db
-      .update(attempts)
-      .set({
-        status:     'finished',
-        score,
-        finishedAt: new Date(),
-      })
-      .where(eq(attempts.id, id))
 
     // results (isCorrect по питанню) не повертаємо — щоб унеможливити binary-search оракул.
     // Фронтенду достатньо score/total для відображення результату.
-    return reply.code(200).send({ score, total })
+    return reply.code(200).send(await finalizeAttemptFromSavedAnswers(id))
   })
 }

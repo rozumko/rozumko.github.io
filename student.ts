@@ -131,8 +131,8 @@ function showErrorBoundary(msg = '') {
       if (raw) {
         const b = JSON.parse(raw)
         const fresh = b?.startedAt && Date.now() - b.startedAt < 3 * 60 * 60 * 1000
-        if (fresh && b.meta?.code && backupText && backupDiv) {
-          backupText.textContent = `Код: ${b.meta.code} · Результат на момент збою: ${b.score ?? '?'}/${b.meta?.totalQuestions ?? '?'}`
+        if (fresh && backupText && backupDiv) {
+          backupText.textContent = `Спробу збережено до питання ${Number(b.currentIdx ?? 0) + 1}. Введи свій код повторно, щоб продовжити.`
           backupDiv.classList.remove('hidden')
         }
       }
@@ -210,17 +210,14 @@ const QUIZ_BACKUP_KEY = 'rozumko_quiz_backup'
 function saveQuizBackup() {
   if (currentMode !== 'olympiad' || !currentAttemptId) return
   try {
-    // attemptToken навмисно НЕ зберігається в localStorage —
-    // він знаходиться лише в пам'яті (змінна currentAttemptToken).
-    // Це запобігає крадіжці токена на спільних комп'ютерах через DevTools / XSS.
+    // attemptToken і персональний код навмисно НЕ зберігаються в localStorage.
+    // Для відновлення учень повторно вводить фізичний код і отримує токен із сервера.
     localStorage.setItem(QUIZ_BACKUP_KEY, JSON.stringify({
       attemptId:  currentAttemptId,
       mode:       currentMode,
       currentIdx,
-      score,
       secondsLeft,
       startedAt,
-      meta:       (startQuiz as any).meta,
       savedAt:    Date.now(),
     }))
   } catch { /* localStorage недоступний */ }
@@ -230,17 +227,34 @@ function clearQuizBackup() {
   try { localStorage.removeItem(QUIZ_BACKUP_KEY) } catch { /* ігноруємо */ }
 }
 
+function hasFreshQuizBackup(): boolean {
+  try {
+    const raw = localStorage.getItem(QUIZ_BACKUP_KEY)
+    if (!raw) return false
+    const backup = JSON.parse(raw)
+    return backup?.mode === 'olympiad'
+      && typeof backup.attemptId === 'string'
+      && typeof backup.savedAt === 'number'
+      && Date.now() - backup.savedAt < 3 * 60 * 60 * 1000
+  } catch {
+    return false
+  }
+}
+
 // ===================== ОЛІМПІАДА З SESSIONSTORAGE =====================
 // olympiad-enter.html викликає exchange-code, зберігає результат у sessionStorage
 // і перенаправляє сюди. Ми читаємо і стартуємо квіз.
 
 ;(function checkPendingOlympiad() {
   const raw = sessionStorage.getItem('pendingOlympiad')
-  if (!raw) return
+  if (!raw) {
+    if (hasFreshQuizBackup()) window.location.replace('olympiad-enter.html')
+    return
+  }
   sessionStorage.removeItem('pendingOlympiad')
   try {
     const pending = JSON.parse(raw) as {
-      attemptId: string; attemptToken: string; grade: number; questions: RenderableQuestion[]
+      attemptId: string; attemptToken: string; code: string; grade: number; questions: RenderableQuestion[]
       answeredQuestionIds?: string[]; remainingSeconds?: number
     }
     currentAttemptId    = pending.attemptId
@@ -249,11 +263,13 @@ function clearQuizBackup() {
     showLoading()
     const answeredIds = new Set(pending.answeredQuestionIds ?? [])
     const firstUnanswered = pending.questions.findIndex(q => !answeredIds.has(q.id as string))
-    startQuiz(pending.questions, 'olympiad', cfg, { grade: pending.grade }, {
+    startQuiz(pending.questions, 'olympiad', cfg, { grade: pending.grade, code: pending.code }, {
       currentIdx: firstUnanswered === -1 ? Math.max(0, pending.questions.length - 1) : firstUnanswered,
       secondsLeft: pending.remainingSeconds,
     })
-  } catch { /* пошкоджений sessionStorage — ігноруємо */ }
+  } catch {
+    if (hasFreshQuizBackup()) window.location.replace('olympiad-enter.html')
+  }
 })()
 
 // ===================== ТРЕНУВАННЯ =====================
@@ -334,6 +350,7 @@ function startQuiz(qs: RenderableQuestion[], mode: string, cfg: any, meta: QuizM
     quizTimer.classList.remove('visible')
   }
 
+  saveQuizBackup()
   hideLoading()
   showOverlay(quizOverlay)
   if (mode === 'olympiad') enterFullscreen()
@@ -417,6 +434,7 @@ function showFeedbackOlympiad() {
   quizExplanation.classList.add('hidden')
   quizNextBtn.classList.remove('hidden')
   quizNextBtn.textContent  = currentIdx + 1 < questions.length ? 'Далі' : 'Завершити'
+  saveQuizBackup()
 }
 
 function showFeedback(isCorrect: boolean, q: RenderableQuestion) {
@@ -510,7 +528,7 @@ async function finishQuiz(timeUp: boolean) {
       resultScore.textContent = '—'
       resultTotal.textContent = String(questions.length)
       resultTitle.textContent = 'Результат не збережено'
-      const backup = { score, total: questions.length, code: meta.code }
+      const backup = { attemptId: currentAttemptId, savedAt: Date.now() }
       try { localStorage.setItem(QUIZ_BACKUP_KEY + '_failed', JSON.stringify(backup)) } catch { /* ігноруємо */ }
       resultErrorMsg.innerHTML =
         `⚠️ Немає зв'язку — результат не збережено автоматично.<br>

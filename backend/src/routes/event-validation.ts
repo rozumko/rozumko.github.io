@@ -24,6 +24,8 @@ export type NormalizedEventPatch = Partial<NormalizedEventInput> & {
   updatedAt: Date
 }
 
+const LOCKED_EVENT_RULE_FIELDS = ['startsAt', 'endsAt', 'timeMinutes', 'questionsCount'] as const
+
 function parseDate(value: string | undefined, field: string): Date {
   if (!value) throw new Error(`Поле ${field} обов'язкове`)
   const date = new Date(value)
@@ -86,5 +88,17 @@ export function normalizeEventPatch(input: EventPatchInput): NormalizedEventPatc
 export function assertEventDateOrder(startsAt: Date, endsAt: Date): void {
   if (startsAt >= endsAt) {
     throw new Error('Дата завершення має бути пізніше дати початку')
+  }
+}
+
+export function assertEventRuleChangesAllowed(isLocked: boolean, patch: Record<string, unknown>): void {
+  if (isLocked && LOCKED_EVENT_RULE_FIELDS.some(field => patch[field] !== undefined)) {
+    throw new Error('Не можна змінювати час або кількість питань активної олімпіади чи події з незавершеними спробами')
+  }
+}
+
+export function assertEventQuestionSelectionAllowed(isLocked: boolean): void {
+  if (isLocked) {
+    throw new Error('Не можна змінювати набір питань активної олімпіади чи події з незавершеними спробами')
   }
 }

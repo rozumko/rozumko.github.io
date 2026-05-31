@@ -5,6 +5,14 @@ export function isQuestionInAttempt(questionId: string, attemptQuestionIds: stri
 /** Значення відповіді учня: індекс (choice/truefalse/sequence), рядок/число (input), масив індексів (sort/match). */
 export type AnswerValue = number | string | number[]
 
+export type ScoredQuestion = {
+  id: string
+  type?: string
+  correct: number | null
+  explanation: string | null
+  options?: unknown
+}
+
 function arraysEqual(a: unknown, b: unknown): boolean {
   if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false
   return a.every((v, i) => Number(v) === Number(b[i]))
@@ -35,7 +43,7 @@ function isInputCorrect(given: unknown, options: Record<string, unknown> | undef
  * hideKeys=true (дефолт) — не повертає correct/explanation у результатах (захист від oracle-атаки).
  */
 export function scoreAttempt(
-  attemptQuestions: { id: string; type?: string; correct: number | null; explanation: string | null; options?: unknown }[],
+  attemptQuestions: ScoredQuestion[],
   studentAnswers: Record<string, AnswerValue>,
   hideKeys = true,
 ): {
@@ -83,4 +91,15 @@ export function scoreAttempt(
   }
 
   return { score, results }
+}
+
+export function scoreSavedAttempt(
+  attemptQuestions: ScoredQuestion[],
+  studentAnswers: Record<string, AnswerValue>,
+  totalQ: number | null,
+): { score: number; total: number } {
+  return {
+    score: scoreAttempt(attemptQuestions, studentAnswers).score,
+    total: totalQ ?? attemptQuestions.length,
+  }
 }
