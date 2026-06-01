@@ -13,7 +13,9 @@ _Updated: 2026-05-31_
 
 ## Student Attempt Protection
 
-- Code format: Ukrainian word plus three digits, in either order.
+- Code format: Ukrainian word plus three or four digits, in either order
+  (new codes use four digits; three-digit codes remain valid for backward
+  compatibility). Cyrillic letters and digits only.
 - `GET /api/student/validate-code`: read-only pre-check, rate-limited to 20/min/IP.
 - `POST /api/student/exchange-code`: consumes the code atomically, rate-limited to 10/min/IP.
 - `attemptToken = HMAC-SHA256(attemptId, ATTEMPT_SECRET)`.
