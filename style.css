@@ -2514,6 +2514,29 @@ body.teacher-dashboard-active {
 .result-row__total      { font-size: var(--font-size-base); color: var(--clr-text-faint); }
 .result-row__time       { font-size: var(--font-size-xs); color: var(--clr-text-faint); }
 
+/* Бейдж нагороди у списку результатів вчителя */
+.result-award {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  background: var(--clr-violet-soft, #f5f3ff);
+  color: var(--clr-violet-dark, #6d28d9);
+}
+.result-award--diploma {
+  background: #fef3c7;
+  color: #b45309;
+}
+.btn-cert-teacher {
+  width: auto;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  font-size: var(--font-size-sm);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 
 /* ───────────────────────────────────────────────────────────────
    8. ADMIN PAGE  (admin.html) — dark theme
@@ -2636,13 +2659,13 @@ body.teacher-dashboard-active {
 
 .btn-adm-violet {
   display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
-  background: #7c3aed; color: #fff; font-weight: 600;
+  background: var(--adm-violet); color: #fff; font-weight: 600;
   padding: var(--sp-2) var(--sp-4); border-radius: var(--r-lg);
   font-family: var(--font-family); font-size: var(--font-size-sm);
   min-height: 2.5rem;
   cursor: pointer; border: none; transition: background-color var(--transition-base);
 }
-.btn-adm-violet:hover { background: #6d28d9; }
+.btn-adm-violet:hover { background: var(--adm-violet-hover); }
 .btn-adm-violet:focus-visible { outline: 3px solid rgba(124,58,237,0.5); outline-offset: 2px; }
 
 .btn-adm-danger {
@@ -2956,7 +2979,7 @@ body.teacher-dashboard-active {
   padding: var(--sp-4);
 }
 .cert-modal {
-  background: var(--adm-card);
+  background: var(--adm-surface);
   border-radius: var(--r-xl);
   padding: var(--sp-8);
   max-width: 480px; width: 100%;
@@ -2972,7 +2995,7 @@ body.teacher-dashboard-active {
   font-size: var(--font-size-base);
   margin-bottom: var(--sp-6);
 }
-.cert-modal__input:focus-visible { outline: none; border-color: var(--adm-violet); box-shadow: 0 0 0 3px rgba(124,58,237,0.25); }
+.cert-modal__input:focus-visible { outline: none; border-color: var(--clr-violet); box-shadow: 0 0 0 3px rgba(124,58,237,0.25); }
 .cert-modal__actions { display: flex; gap: var(--sp-3); }
 
 /* ── App modal (dark) ────────────────────────────────────────── */

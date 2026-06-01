@@ -8,7 +8,8 @@ import {
   getClassStudents, addClassStudent, updateClassStudent, deleteClassStudent,
   type TeacherClass, type ClassStudent, type EventRegistration, type TeacherEvent, type Attempt,
 } from './features/api/client.js'
-import { esc, friendlyError, showConfirm } from './utils/ui.js'
+import { esc, friendlyError, showConfirm, showModal } from './utils/ui.js'
+import { openCertModal, awardLabel, percent, getAward } from './utils/certificate.js'
 
 function isPendingError(msg: string): boolean {
   return msg.includes('ACCOUNT_PENDING') || msg.includes('очікує підтвердження')
@@ -816,17 +817,30 @@ async function loadResults() {
       const code  = r.accessCode?.code  ?? r.code ?? r.id
       const grade = r.accessCode?.grade ?? r.grade
       const date  = r.finishedAt ? new Date(r.finishedAt).toLocaleDateString('uk-UA') : ''
+      const finished = r.status === 'finished'
+      const award = finished ? getAward(r.score, r.totalQ) : null
+      const pct   = percent(r.score, r.totalQ)
+      const badgeClass = award?.kind === 'diploma' ? 'result-award result-award--diploma' : 'result-award'
+
       const row   = document.createElement('div')
       row.className = 'result-row'
+      // ПІБ дитини не зберігається на сервері; вчитель вводить його локально перед друком.
       row.innerHTML = `
         <div>
           <p class="result-row__code">${esc(String(code))}</p>
-          <p class="result-row__meta">${esc(String(grade))} клас</p>
+          <p class="result-row__meta">${esc(String(grade))} клас${finished ? ` · <span class="${badgeClass}">${esc(awardLabel(r.score, r.totalQ))}</span>` : ''}</p>
         </div>
         <div class="result-row__score-wrap">
-          <p class="result-row__score">${esc(String(r.score ?? '?'))}<span class="result-row__total">/${esc(String(r.totalQ ?? '?'))}</span></p>
+          <p class="result-row__score">${esc(String(r.score ?? '?'))}<span class="result-row__total">/${esc(String(r.totalQ ?? '?'))}</span>${finished ? ` · ${pct}%` : ''}</p>
           <p class="result-row__time">${esc(date)}</p>
-        </div>`
+        </div>
+        ${finished ? `<button class="btn btn-violet btn-cert-teacher" type="button"><i class="fas fa-certificate" aria-hidden="true"></i> ${award?.kind === 'diploma' ? 'Диплом' : 'Сертифікат'}</button>` : ''}`
+
+      if (finished) {
+        row.querySelector<HTMLButtonElement>('.btn-cert-teacher')!.addEventListener('click', () =>
+          openCertModal({ grade, score: r.score, totalQ: r.totalQ, finishedAt: r.finishedAt, code: String(code) }, showModal)
+        )
+      }
       resultsList.appendChild(row)
     })
   } catch {
