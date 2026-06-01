@@ -13,7 +13,9 @@ Implemented:
 - personal-code recovery after F5 or a closed tab;
 - teacher classes, registrations, student labels and personal code generation;
 - admin event setup, question bank, results and teacher activation;
-- certificates generated in the browser without storing child names;
+- teacher-issued certificates and diplomas (award tier by score: participation
+  certificate, or diploma for I/II/III place), generated in the browser without
+  storing child names;
 - GitHub Pages frontend deployment and Render backend CI.
 
 ## Before Free Pilot
