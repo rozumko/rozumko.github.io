@@ -154,7 +154,8 @@ const authCardTitle    = $maybe('auth-card-title')
 const authCardSub      = $maybe('auth-card-sub')
 
 // ── Cloudflare Turnstile (explicit-рендер) ───────────────────────────────────
-// api.js вантажиться async; коли готовий — викликає window.onloadTurnstileCallback.
+// api.js вантажимо лише після відкриття форми реєстрації. Так зовнішній JS
+// Cloudflare не виконується у звичайному login/dashboard-потоці.
 // Токен одноразовий, тож після кожної спроби реєстрації робимо reset.
 type TurnstileApi = {
   render: (el: string | HTMLElement, opts: { sitekey: string }) => string
@@ -166,6 +167,8 @@ declare global {
 }
 
 let turnstileWidgetId: string | null = null
+let turnstileLoadPromise: Promise<void> | null = null
+const TURNSTILE_SCRIPT_ID = 'turnstile-api'
 
 function renderTurnstile(): void {
   if (turnstileWidgetId !== null) return
@@ -174,19 +177,51 @@ function renderTurnstile(): void {
   turnstileWidgetId = window.turnstile.render(container, { sitekey: TURNSTILE_SITE_KEY })
 }
 
-window.onloadTurnstileCallback = renderTurnstile
-// На випадок, якщо api.js завантажився ще до виконання цього модуля:
-if (window.turnstile) renderTurnstile()
+function loadTurnstile(): Promise<void> {
+  if (window.turnstile) {
+    renderTurnstile()
+    return Promise.resolve()
+  }
+  if (turnstileLoadPromise) return turnstileLoadPromise
+
+  turnstileLoadPromise = new Promise<void>((resolve, reject) => {
+    window.onloadTurnstileCallback = () => {
+      renderTurnstile()
+      resolve()
+    }
+
+    const script = document.createElement('script')
+    script.id = TURNSTILE_SCRIPT_ID
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onloadTurnstileCallback'
+    script.async = true
+    script.defer = true
+    script.addEventListener('error', () => reject(new Error('Не вдалося завантажити захист від ботів. Оновіть сторінку та спробуйте ще раз.')))
+    document.head.appendChild(script)
+  })
+
+  return turnstileLoadPromise
+}
 
 function switchToRegister() {
+  // Реєстрація завжди починається без локальної teacher-сесії. Це також закриває
+  // крайовий випадок зі stale token після невдалого bootstrap-запиту до API.
+  void logoutTeacher()
   loginMode?.classList.add('hidden')
   registerMode?.classList.remove('hidden')
   if (authCardTitle) authCardTitle.textContent = 'Реєстрація вчителя'
   if (authCardSub)   authCardSub.textContent   = 'Створіть кабінет для керування класами та результатами.'
   $maybe<HTMLInputElement>('reg-email')?.focus()
+  loadTurnstile().catch(err => {
+    if (registerError) registerError.textContent = (err as Error).message
+  })
 }
 
 function switchToLogin() {
+  // Після виконання стороннього JS повертаємось до чистого документа перед входом.
+  if (document.getElementById(TURNSTILE_SCRIPT_ID) || window.turnstile) {
+    window.location.reload()
+    return
+  }
   registerMode?.classList.add('hidden')
   loginMode?.classList.remove('hidden')
   if (authCardTitle) authCardTitle.textContent = 'Вхід для вчителя'
@@ -203,11 +238,17 @@ registerForm?.addEventListener('submit', async (e) => {
   const school   = $maybe<HTMLInputElement>('reg-school')?.value.trim() ?? ''
   const password = $maybe<HTMLInputElement>('reg-password')?.value ?? ''
   if (!email || !password) return
-
-  // CAPTCHA: якщо віджет відрендерився — токен обовʼязковий (Supabase теж його вимагає,
-  // коли захист увімкнено; це лише дружня перед-перевірка для UX).
-  const captchaToken = turnstileWidgetId !== null ? window.turnstile?.getResponse(turnstileWidgetId) : undefined
-  if (turnstileWidgetId !== null && !captchaToken) {
+  // CAPTCHA обов'язкова і на клієнті, і в Supabase Auth. Якщо скрипт ще вантажиться
+  // або впав, не надсилаємо запит, який гарантовано буде відхилено.
+  if (turnstileWidgetId === null || !window.turnstile) {
+    if (registerError) {
+      registerError.textContent = 'Захист від ботів ще завантажується. Спробуйте ще раз.'
+      registerError.style.color = ''
+    }
+    return
+  }
+  const captchaToken = window.turnstile.getResponse(turnstileWidgetId)
+  if (!captchaToken) {
     if (registerError) {
       registerError.textContent = 'Підтвердіть, що ви не робот.'
       registerError.style.color = ''
@@ -221,30 +262,15 @@ registerForm?.addEventListener('submit', async (e) => {
   showColdStartBanner()
   try {
     await registerTeacher(email, password, school, captchaToken)
-    // Спробуємо одразу увійти (якщо підтвердження email не потрібне)
-    try {
-      const me = await getTeacherMe()
-      hideColdStartBanner()
-      showDashboard(me.name || email)
-      await Promise.all([loadRegistrationEvents(), loadClasses(), loadRegistrations(), loadCodes(), loadResults()])
-    } catch (loginErr) {
-      hideColdStartBanner()
-      if (registerError) {
-        const msg = (loginErr as Error).message
-        if (isPendingError(msg)) {
-          // Реєстрація успішна, але потрібне підтвердження адміна
-          registerError.textContent = '✅ Акаунт створено! Зверніться до організатора олімпіади для підтвердження доступу.'
-        } else {
-          // Email-підтвердження Supabase увімкнено — лист надіслано
-          registerError.textContent = '✅ Реєстрацію надіслано! Перевірте пошту та підтвердіть email, потім увійдіть.'
-        }
-        registerError.style.color = 'var(--clr-emerald, #059669)'
-      }
-      // Токен Turnstile одноразовий — скидаємо перед можливою повторною спробою.
-      if (turnstileWidgetId !== null) window.turnstile?.reset(turnstileWidgetId)
-      registerSubmitBtn!.disabled    = false
-      registerSubmitBtn!.textContent = 'Створити кабінет'
+    hideColdStartBanner()
+    if (registerError) {
+      registerError.textContent = '✅ Реєстрацію надіслано! Перевірте пошту та підтвердіть email, потім увійдіть.'
+      registerError.style.color = 'var(--clr-emerald, #059669)'
     }
+    // Токен Turnstile одноразовий — скидаємо перед можливою повторною спробою.
+    window.turnstile.reset(turnstileWidgetId)
+    registerSubmitBtn!.disabled    = false
+    registerSubmitBtn!.textContent = 'Створити кабінет'
   } catch (err) {
     hideColdStartBanner()
     if (registerError) registerError.textContent = friendlyError((err as Error).message)

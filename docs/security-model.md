@@ -1,6 +1,6 @@
 # Security Model - Rozumko
 
-_Updated: 2026-05-31_
+_Updated: 2026-06-02_
 
 ## Core Rules
 
@@ -85,12 +85,19 @@ Backend:
 - Global rate limit: 100 requests/min/IP.
 - `trustProxy: true` is enabled for Render.
 - Production errors do not expose stack traces.
-- Security headers include `nosniff`, `DENY` framing and `no-referrer`.
+- Security headers include HSTS (`max-age=31536000; includeSubDomains`),
+  `nosniff`, `DENY` framing and `no-referrer`.
 
 Frontend production build:
 
 - CSP is injected by `vite.config.ts`.
-- `script-src 'self'`.
+- Normal pages use `script-src 'self'`.
+- `teacher.html` additionally allows `https://challenges.cloudflare.com` for
+  the Turnstile registration widget. The external script is loaded lazily only
+  after the unauthenticated registration form is opened. Opening registration
+  clears any existing local teacher session first. Returning to login reloads
+  a clean document, and the signup request never persists a session token.
+  A later email-confirm redirect may persist its token on that clean page.
 - Inline handlers are not allowed on normal pages.
 - `offline.html` has a narrower documented exception for its offline script.
 
@@ -113,7 +120,9 @@ Frontend production build:
       `captcha_token` is ignored by GoTrue → "no captcha_token found",
       verified against the live Auth API); with supabase-js the equivalent is
       `options: { captchaToken }`. Reset the CAPTCHA challenge after each
-      request. The dashboard toggle alone has no effect.
+      request. The dashboard toggle enforces rejection of signup requests
+      without a valid token; the frontend widget is also required so legitimate
+      users can obtain one.
       Refs: https://supabase.com/docs/guides/auth/auth-captcha ,
       https://github.com/supabase/auth#captcha
 - [ ] Configure PostgreSQL backups, retention and a restore test.
