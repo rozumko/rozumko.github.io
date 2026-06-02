@@ -96,7 +96,26 @@ Frontend production build:
 
 ## Operational Security Checklist
 
-- [ ] Decide whether public Supabase signup stays enabled for the pilot.
+- [x] Decide whether public Supabase signup stays enabled for the pilot.
+      Decision (2026-06-02): keep public signup ON. Self-registration is an
+      intended teacher flow. Residual risk is low because `mailer_autoconfirm`
+      is OFF (no JWT before email confirmation, so no `app_users` row is
+      provisioned for unconfirmed addresses) and every new teacher lands as
+      `pending` until an admin approves. Note: this does not protect the
+      `/auth/v1/signup` endpoint itself — it can still be called with arbitrary
+      third-party emails, burning the project email quota and seeding
+      unconfirmed `auth.users` rows (abuse risk: Low). Recommended fix (not
+      optional): add CAPTCHA (Turnstile/hCaptcha). This requires BOTH enabling
+      it in Supabase Auth settings AND updating the signup form to fetch a
+      CAPTCHA token and send it. Field path depends on the client:
+      `registerTeacher` uses a raw fetch to `/auth/v1/signup`, so the token
+      goes in the body as `gotrue_meta_security.captcha_token` (a flat
+      `captcha_token` is ignored by GoTrue → "no captcha_token found",
+      verified against the live Auth API); with supabase-js the equivalent is
+      `options: { captchaToken }`. Reset the CAPTCHA challenge after each
+      request. The dashboard toggle alone has no effect.
+      Refs: https://supabase.com/docs/guides/auth/auth-captcha ,
+      https://github.com/supabase/auth#captcha
 - [ ] Configure PostgreSQL backups, retention and a restore test.
 - [ ] Monitor `GET /ping`.
 - [ ] Keep Render at one instance until rate limiting uses shared storage.
