@@ -1,6 +1,6 @@
 # MVP Smoke Test - Rozumko
 
-_Updated: 2026-05-31_
+_Updated: 2026-06-02_
 
 Run this checklist before a real pilot.
 
@@ -10,6 +10,7 @@ Run this checklist before a real pilot.
 - [ ] `GET https://rozumko-github-io.onrender.com/ping` returns `{ "status": "ok", "db": "ok" }`
 - [ ] Latest GitHub Pages and Backend CI workflows passed for the intended commit
 - [ ] `npm run db:migrate` reports success before backend deployment
+- [ ] Render backend is synced from `backend/render.yaml` and waits for CI checks
 
 ## 2. Teacher Signup Policy
 
@@ -59,15 +60,25 @@ Run this checklist before a real pilot.
 ## 7. Browser Security
 
 - [ ] Official `exchange-code` response contains no `correct`, `correctOrder`, `pairs` or `answer` keys
-- [ ] Demo `GET /api/questions?isOlympiad=true` response contains no answer keys
+- [ ] Demo `GET /api/questions?isOlympiad=false&hideAnswers=true` response contains no answer keys
 - [ ] Practice `GET /api/questions?isOlympiad=false` intentionally includes keys
+- [ ] Public `GET /api/questions?isOlympiad=true` returns `400`
+- [ ] Public `GET /api/questions?count=abc`, `count=-5`, `count=0`, `count=999` return `400`
 - [ ] `/api/attempt/:id/finish` returns only `{ score, total }`
 - [ ] Teacher/admin results contain no raw `answers`
 - [ ] `/api/attempt/:id/answer` without `X-Attempt-Token` returns `403`
 - [ ] Admin endpoint without authorization returns `401`
 - [ ] Production HTML has CSP and no inline `onclick`
 
-## 8. Operational
+## 8. Backend Security
+
+- [ ] Send repeated `GET /api/student/validate-code?code=<invalid>` requests with a fixed `X-Forwarded-For`; rate-limit returns `429`
+- [ ] Repeat with rotating left-most `X-Forwarded-For`; rate-limit still returns `429`
+- [ ] Invalid UUIDs on admin and teacher routes return `400`, not `500`
+- [ ] Supabase Auth -> Bot and Abuse Protection has enforced Turnstile for signup
+- [ ] Supabase Auth -> Rate Limits has reviewed password login and signup limits
+
+## 9. Operational
 
 - [ ] PostgreSQL backup exists
 - [ ] Restore procedure was tested on a non-production database

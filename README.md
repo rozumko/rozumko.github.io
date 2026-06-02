@@ -86,6 +86,7 @@
 
 - [Архітектура](./docs/architecture.md)
 - [Модель безпеки](./docs/security-model.md)
+- [Політика повідомлення про вразливості](./SECURITY.md)
 - [Міграції БД](./docs/migrations.md)
 - [Smoke-тест перед пілотом](./docs/smoke-test.md)
 - [Продуктовий план](./docs/product-roadmap.md)

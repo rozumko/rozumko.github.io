@@ -4,6 +4,7 @@ import rateLimit from '@fastify/rate-limit'
 import 'dotenv/config'
 import { sql } from 'drizzle-orm'
 import { db } from './db/index.js'
+import { FASTIFY_SECURITY_OPTIONS } from './lib/security-config.js'
 
 // ── Перевірка обов'язкових env-змінних при старті ────────────
 const REQUIRED_ENV = ['DATABASE_URL', 'SUPABASE_URL', 'ATTEMPT_SECRET'] as const
@@ -15,7 +16,7 @@ if (missing.length) {
 
 // Render тримає застосунок за одним реверс-проксі. Довіряємо лише цьому hop:
 // trustProxy: true дозволив би клієнту підробити X-Forwarded-For і обійти rate-limit.
-const app = Fastify({ logger: true, trustProxy: 1 })
+const app = Fastify({ logger: true, ...FASTIFY_SECURITY_OPTIONS })
 
 // CORS — дозволяємо тільки GitHub Pages та localhost для розробки
 const allowedOrigins = [

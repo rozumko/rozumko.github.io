@@ -35,6 +35,16 @@
 - Весь доступ до БД — через бекенд API. Прямих запитів із фронтенду до Supabase таблиць немає
 - `features/api/client.ts` — єдина точка для всіх HTTP-запитів із фронтенду
 
+## Запобіжники безпеки
+
+- Перед змінами auth, API, оцінювання, деплою або БД прочитай `docs/security-model.md`
+- Не змінюй `trustProxy: 1` на `trustProxy: true`
+- Публічний `/api/questions` повертає лише тренувальні питання; олімпіадні питання видаються тільки через `POST /api/student/exchange-code`
+- Для нових params/body/query ID додавай UUID-валідацію до звернення до БД
+- Після змін запускай frontend: `npm run typecheck && npm test && npm run build`
+- Після змін запускай backend: `cd backend && npm run build && npm test`
+- Не послаблюй security regression tests без окремого аудиту причин
+
 ## Структура (ключові файли)
 
 ```

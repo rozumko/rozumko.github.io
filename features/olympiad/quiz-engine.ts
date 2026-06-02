@@ -1,4 +1,7 @@
 import { loadQuestions as apiLoadQuestions, type Question } from '../api/client.js'
+import { getPublicQuestionRequest } from './public-question-policy.js'
+
+export { getPublicQuestionRequest } from './public-question-policy.js'
 
 export interface ModeConfig {
   count:           number
@@ -9,10 +12,8 @@ export interface ModeConfig {
 
 // mode: 'practice' | 'demo' | 'olympiad'
 export async function loadQuestions(grade: number, mode: string, count: number, difficulty: string | null): Promise<Question[]> {
-  // Публічний API видає лише тренувальні питання. У demo ховаємо ключі відповідей.
-  const hideAnswers = mode === 'demo'
-  const diff       = mode === 'demo' ? 'hard' : (difficulty ?? undefined)
-  const qs = await apiLoadQuestions({ grade, isOlympiad: false, count, difficulty: diff, hideAnswers })
+  const request = getPublicQuestionRequest(mode, difficulty)
+  const qs = await apiLoadQuestions({ grade, count, ...request })
   if (!qs.length) throw new Error(`Питань для ${grade} класу ще немає. Зверніться до вчителя.`)
   return qs
 }

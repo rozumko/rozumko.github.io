@@ -1,6 +1,6 @@
 # Architecture - Rozumko
 
-_Updated: 2026-05-31_
+_Updated: 2026-06-02_
 
 ## Overview
 
@@ -21,7 +21,7 @@ the backend.
 | Mode | Code | Questions | Scoring |
 |---|---|---|---|
 | Practice | No | `isOlympiad=false` | Local feedback; answer keys are intentionally returned |
-| Demo | No | `isOlympiad=true`, `difficulty=hard` | No score; answer keys stay hidden |
+| Demo | No | Practice pool, `difficulty=hard` | No score; answer keys stay hidden |
 | Official olympiad | Yes | Fixed event selection | Server-side only |
 
 ### Official olympiad flow
@@ -114,8 +114,9 @@ To keep conditions fair:
 ## Deployment
 
 - Frontend: `.github/workflows/deploy.yml` builds `dist/` and deploys GitHub Pages.
-- Backend CI: `.github/workflows/backend-ci.yml`.
+- Project CI: `.github/workflows/backend-ci.yml` checks frontend and backend.
 - Backend hosting: `backend/render.yaml`.
+- Render waits for CI checks before backend auto-deploy.
 - Required backend env: `DATABASE_URL`, `SUPABASE_URL`, `ATTEMPT_SECRET`.
 - Health checks: `GET /health` and database-aware `GET /ping`.
 

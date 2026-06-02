@@ -5,6 +5,7 @@ services:
     rootDir: backend
     buildCommand: npm install && npm run build
     startCommand: node dist/server.js
+    autoDeployTrigger: checksPass
     healthCheckPath: /health
     envVars:
       - key: DATABASE_URL

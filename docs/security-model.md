@@ -58,6 +58,14 @@ Backend:
 
 - CORS is restricted to approved origins.
 - API requests are rate-limited.
+- Render adds one reverse-proxy hop. Fastify must use `trustProxy: 1`, never
+  `trustProxy: true`, so clients cannot spoof `X-Forwarded-For` and bypass
+  rate limits.
+- `GET /api/questions` is practice-only. Official olympiad questions are issued
+  only by `POST /api/student/exchange-code`.
+- Public question query parameters are allowlisted. `count` must be an integer
+  from `1` to `50`.
+- UUID request parameters are validated before database access.
 - Production errors do not expose stack traces.
 - Security headers include HSTS, MIME sniffing protection, framing protection
   and a restrictive referrer policy.
@@ -71,9 +79,46 @@ Frontend production build:
 - Inline handlers are not allowed on normal pages.
 - The static offline page has a narrow documented exception for its offline script.
 
+## Automated Change Gates
+
+Every pull request and every push to `main` runs `.github/workflows/backend-ci.yml`.
+It must pass before merge:
+
+```bash
+npm run typecheck
+npm test
+npm run build
+
+cd backend
+npm run build
+npm test
+```
+
+`backend/src/security-regression.test.ts` protects the audited invariants:
+
+- spoofed `X-Forwarded-For` does not create a fresh rate-limit bucket;
+- public question query validation rejects unsafe values;
+- public questions are filtered to `isOlympiad=false`;
+- demo responses strip answer keys;
+- critical UUID parameters fail with `400` before database access;
+- Render backend auto-deploy waits for CI checks.
+
+GitHub Pages also runs frontend typecheck, tests and build inside its deployment
+workflow. Render Blueprint uses `autoDeployTrigger: checksPass`.
+
 ## Operational Security Checklist
 
 - [x] Keep teacher self-registration enabled for the pilot with email
       confirmation, administrator approval and Turnstile bot protection.
-- [ ] Maintain a private operational security checklist outside the public
-      repository.
+- [ ] Supabase Auth -> Bot and Abuse Protection: Turnstile is enabled and
+      enforced for signup.
+- [ ] Supabase Auth -> Rate Limits: review password login and signup limits.
+- [ ] Render: backend service is synced from `backend/render.yaml` and deploys
+      only after CI checks pass.
+- [ ] Render: keep one backend instance while rate limiting is process-local.
+- [ ] GitHub: protect `main` and require the Project CI backend/frontend jobs
+      before merge.
+- [ ] After backend deployment, run the security section in `docs/smoke-test.md`.
+- [ ] Periodically remove stale pending teacher accounts.
+- [ ] Maintain a private operational checklist for secrets, backups and incident
+      contacts outside the public repository.
