@@ -7,34 +7,31 @@ import { stripOptionKeys } from './question-sanitize.js'
 export async function questionsRoutes(app: FastifyInstance) {
   // GET /api/questions?grade=4&isOlympiad=false&count=10&difficulty=hard
   app.get<{
-    Querystring: { grade?: string; isOlympiad?: string; count?: string; difficulty?: string }
+    Querystring: { grade?: string; isOlympiad?: string; count?: string; difficulty?: string; hideAnswers?: string }
   }>('/', {
     schema: {
       querystring: {
         type: 'object',
+        additionalProperties: false,
         properties: {
-          grade:      { type: 'string' },
-          isOlympiad: { type: 'string' },
-          count:      { type: 'string' },
-          difficulty: { type: 'string' },
+          grade:       { type: 'string', enum: ['1', '2', '3', '4'] },
+          isOlympiad:  { type: 'string', enum: ['false'] },
+          count:       { type: 'string', pattern: '^(?:[1-9]|[1-4][0-9]|50)$' },
+          difficulty:  { type: 'string', enum: ['easy', 'medium', 'hard'] },
+          hideAnswers: { type: 'string', enum: ['true', 'false'] },
         },
       },
     },
   }, async (req, reply) => {
     const grade      = req.query.grade      ? Number(req.query.grade)          : undefined
-    let isOlympiad: boolean | undefined = undefined
-    if (req.query.isOlympiad !== undefined) {
-      if (req.query.isOlympiad !== 'true' && req.query.isOlympiad !== 'false') {
-        return reply.code(400).send({ error: 'isOlympiad must be "true" or "false"' })
-      }
-      isOlympiad = req.query.isOlympiad === 'true'
-    }
-    const count      = req.query.count      ? Math.min(Number(req.query.count), 50) : 10
+    const count      = req.query.count      ? Number(req.query.count)          : 10
     const difficulty = req.query.difficulty
+    const hideAnswers = req.query.hideAnswers === 'true'
 
-    const filters = []
+    // Публічний endpoint видає лише тренувальні питання. Олімпіадні питання
+    // студент отримує тільки після POST /api/student/exchange-code.
+    const filters = [eq(questions.isOlympiad, false)]
     if (grade      !== undefined) filters.push(eq(questions.grade,      grade))
-    if (isOlympiad !== undefined) filters.push(eq(questions.isOlympiad, isOlympiad))
     if (difficulty)               filters.push(eq(questions.difficulty,  difficulty))
 
     const rows = await db
@@ -50,21 +47,19 @@ export async function questionsRoutes(app: FastifyInstance) {
         grade:       questions.grade,
       })
       .from(questions)
-      .where(filters.length ? and(...filters) : undefined)
+      .where(and(...filters))
       .orderBy(sql`random()`)
       .limit(count)
 
-    // correct і explanation повертаються ЛИШЕ для тренувальних питань (isOlympiad=false).
-    // Це навмисна поведінка: practice-режим показує правильну відповідь після вибору.
-    // Для олімпіадних питань (isOlympiad=true або фільтр не вказано) — ключі завжди стрипляються:
+    // Для demo-режиму тренувальні питання віддаються без ключів:
     //   • top-level correct/explanation (choice/truefalse/sequence)
     //   • ключі всередині options (sort.correctOrder, match.pairs, input.answer)
-    const qs = isOlympiad === false
-      ? rows
-      : rows.map(({ correct: _c, explanation: _e, options, ...rest }) => ({
+    const qs = hideAnswers
+      ? rows.map(({ correct: _c, explanation: _e, options, ...rest }) => ({
           ...rest,
           options: stripOptionKeys(options),
         }))
+      : rows
 
     return reply.send({ questions: qs })
   })

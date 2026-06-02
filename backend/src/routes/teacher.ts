@@ -247,6 +247,13 @@ export async function teacherRoutes(app: FastifyInstance) {
   // Скасовує реєстрацію до початку події. Видаляє невикористані коди.
   app.delete<{ Params: { id: string } }>('/registrations/:id', {
     preHandler: requireAuth,
+    schema: {
+      params: {
+        type: 'object',
+        required: ['id'],
+        properties: { id: { type: 'string', format: 'uuid' } },
+      },
+    },
   }, async (req, reply) => {
     const { id } = req.params
 
@@ -424,7 +431,7 @@ export async function teacherRoutes(app: FastifyInstance) {
       querystring: {
         type: 'object',
         properties: {
-          registrationId: { type: 'string', minLength: 36, maxLength: 36 },
+          registrationId: { type: 'string', format: 'uuid' },
         },
       },
     },
@@ -517,7 +524,16 @@ export async function teacherRoutes(app: FastifyInstance) {
   // GET /api/teacher/classes/:id/students
   app.get<{ Params: { id: string } }>(
     '/classes/:id/students',
-    { preHandler: requireAuth },
+    {
+      preHandler: requireAuth,
+      schema: {
+        params: {
+          type: 'object',
+          required: ['id'],
+          properties: { id: { type: 'string', format: 'uuid' } },
+        },
+      },
+    },
     async (req, reply) => {
       // Перевіряємо що клас належить вчителю
       const [cls] = await db
@@ -546,6 +562,11 @@ export async function teacherRoutes(app: FastifyInstance) {
     {
       preHandler: requireAuth,
       schema: {
+        params: {
+          type: 'object',
+          required: ['id'],
+          properties: { id: { type: 'string', format: 'uuid' } },
+        },
         body: {
           type: 'object',
           required: ['label'],
@@ -582,6 +603,11 @@ export async function teacherRoutes(app: FastifyInstance) {
     {
       preHandler: requireAuth,
       schema: {
+        params: {
+          type: 'object',
+          required: ['id'],
+          properties: { id: { type: 'string', format: 'uuid' } },
+        },
         body: {
           type: 'object',
           required: ['label'],
@@ -607,7 +633,16 @@ export async function teacherRoutes(app: FastifyInstance) {
   // DELETE /api/teacher/students/:id
   app.delete<{ Params: { id: string } }>(
     '/students/:id',
-    { preHandler: requireAuth },
+    {
+      preHandler: requireAuth,
+      schema: {
+        params: {
+          type: 'object',
+          required: ['id'],
+          properties: { id: { type: 'string', format: 'uuid' } },
+        },
+      },
+    },
     async (req, reply) => {
       const [deleted] = await db
         .delete(classStudents)

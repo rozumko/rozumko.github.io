@@ -189,13 +189,14 @@ export async function saveAnswer(attemptId: string, attemptToken: string, questi
 }
 
 export async function loadQuestions({
-  grade, isOlympiad, count, difficulty,
-}: { grade?: number; isOlympiad?: boolean; count?: number; difficulty?: string } = {}): Promise<Question[]> {
+  grade, isOlympiad, count, difficulty, hideAnswers,
+}: { grade?: number; isOlympiad?: boolean; count?: number; difficulty?: string; hideAnswers?: boolean } = {}): Promise<Question[]> {
   const params = new URLSearchParams()
   if (grade      != null) params.set('grade',      String(grade))
   if (isOlympiad != null) params.set('isOlympiad', String(isOlympiad))
   if (count      != null) params.set('count',      String(count))
   if (difficulty)         params.set('difficulty', difficulty)
+  if (hideAnswers != null) params.set('hideAnswers', String(hideAnswers))
   const data = await request(`/api/questions?${params}`)
   return data.questions.map(normalizeQuestion)
 }

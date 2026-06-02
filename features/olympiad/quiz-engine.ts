@@ -9,10 +9,10 @@ export interface ModeConfig {
 
 // mode: 'practice' | 'demo' | 'olympiad'
 export async function loadQuestions(grade: number, mode: string, count: number, difficulty: string | null): Promise<Question[]> {
-  // demo uses olympiad (isOlympiad=true) hard questions — no answer keys returned
-  const isOlympiad = mode === 'olympiad' || mode === 'demo'
+  // Публічний API видає лише тренувальні питання. У demo ховаємо ключі відповідей.
+  const hideAnswers = mode === 'demo'
   const diff       = mode === 'demo' ? 'hard' : (difficulty ?? undefined)
-  const qs = await apiLoadQuestions({ grade, isOlympiad, count, difficulty: diff })
+  const qs = await apiLoadQuestions({ grade, isOlympiad: false, count, difficulty: diff, hideAnswers })
   if (!qs.length) throw new Error(`Питань для ${grade} класу ще немає. Зверніться до вчителя.`)
   return qs
 }

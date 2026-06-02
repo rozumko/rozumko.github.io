@@ -76,8 +76,23 @@ export async function adminRoutes(app: FastifyInstance) {
   // PUT /api/admin/teachers/:id/status
   app.put<{
     Params: { id: string }
-    Body: { status: 'active' | 'blocked' }
-  }>('/teachers/:id/status', { preHandler: requireAdmin }, async (req, reply) => {
+    Body: { status: 'active' | 'blocked' | 'pending' }
+  }>('/teachers/:id/status', {
+    preHandler: requireAdmin,
+    schema: {
+      params: {
+        type: 'object',
+        required: ['id'],
+        properties: { id: { type: 'string', format: 'uuid' } },
+      },
+      body: {
+        type: 'object',
+        required: ['status'],
+        properties: { status: { type: 'string', enum: ['active', 'blocked', 'pending'] } },
+        additionalProperties: false,
+      },
+    },
+  }, async (req, reply) => {
     const { id } = req.params
     const { status } = req.body
     if (!['active', 'blocked', 'pending'].includes(status)) {
@@ -434,6 +449,11 @@ export async function adminRoutes(app: FastifyInstance) {
   }>('/questions/:id', {
     preHandler: requireAdmin,
     schema: {
+      params: {
+        type: 'object',
+        required: ['id'],
+        properties: { id: { type: 'string', format: 'uuid' } },
+      },
       body: {
         type: 'object',
         properties: {
@@ -505,7 +525,16 @@ export async function adminRoutes(app: FastifyInstance) {
   // DELETE /api/admin/questions/:id
   app.delete<{ Params: { id: string } }>(
     '/questions/:id',
-    { preHandler: requireAdmin },
+    {
+      preHandler: requireAdmin,
+      schema: {
+        params: {
+          type: 'object',
+          required: ['id'],
+          properties: { id: { type: 'string', format: 'uuid' } },
+        },
+      },
+    },
     async (req, reply) => {
       const { id } = req.params
       if (await questionIsLocked(id)) {
