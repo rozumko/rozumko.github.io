@@ -6,6 +6,7 @@ import {
   getTeacherRegistrationEvents, getTeacherRegistrations, getTeacherResults,
   cancelTeacherRegistration,
   getClassStudents, addClassStudent, updateClassStudent, deleteClassStudent,
+  TURNSTILE_SITE_KEY,
   type TeacherClass, type ClassStudent, type EventRegistration, type TeacherEvent, type Attempt,
 } from './features/api/client.js'
 import { esc, friendlyError, showConfirm, showModal } from './utils/ui.js'
@@ -152,6 +153,31 @@ const registerSubmitBtn = $maybe<HTMLButtonElement>('register-submit-btn')
 const authCardTitle    = $maybe('auth-card-title')
 const authCardSub      = $maybe('auth-card-sub')
 
+// ── Cloudflare Turnstile (explicit-рендер) ───────────────────────────────────
+// api.js вантажиться async; коли готовий — викликає window.onloadTurnstileCallback.
+// Токен одноразовий, тож після кожної спроби реєстрації робимо reset.
+type TurnstileApi = {
+  render: (el: string | HTMLElement, opts: { sitekey: string }) => string
+  getResponse: (id?: string) => string | undefined
+  reset: (id?: string) => void
+}
+declare global {
+  interface Window { turnstile?: TurnstileApi; onloadTurnstileCallback?: () => void }
+}
+
+let turnstileWidgetId: string | null = null
+
+function renderTurnstile(): void {
+  if (turnstileWidgetId !== null) return
+  const container = document.getElementById('turnstile-container')
+  if (!container || !window.turnstile) return
+  turnstileWidgetId = window.turnstile.render(container, { sitekey: TURNSTILE_SITE_KEY })
+}
+
+window.onloadTurnstileCallback = renderTurnstile
+// На випадок, якщо api.js завантажився ще до виконання цього модуля:
+if (window.turnstile) renderTurnstile()
+
 function switchToRegister() {
   loginMode?.classList.add('hidden')
   registerMode?.classList.remove('hidden')
@@ -177,12 +203,24 @@ registerForm?.addEventListener('submit', async (e) => {
   const school   = $maybe<HTMLInputElement>('reg-school')?.value.trim() ?? ''
   const password = $maybe<HTMLInputElement>('reg-password')?.value ?? ''
   if (!email || !password) return
+
+  // CAPTCHA: якщо віджет відрендерився — токен обовʼязковий (Supabase теж його вимагає,
+  // коли захист увімкнено; це лише дружня перед-перевірка для UX).
+  const captchaToken = turnstileWidgetId !== null ? window.turnstile?.getResponse(turnstileWidgetId) : undefined
+  if (turnstileWidgetId !== null && !captchaToken) {
+    if (registerError) {
+      registerError.textContent = 'Підтвердіть, що ви не робот.'
+      registerError.style.color = ''
+    }
+    return
+  }
+
   if (registerError) registerError.textContent = ''
   registerSubmitBtn!.disabled    = true
   registerSubmitBtn!.textContent = 'Реєстрація…'
   showColdStartBanner()
   try {
-    await registerTeacher(email, password, school)
+    await registerTeacher(email, password, school, captchaToken)
     // Спробуємо одразу увійти (якщо підтвердження email не потрібне)
     try {
       const me = await getTeacherMe()
@@ -202,12 +240,15 @@ registerForm?.addEventListener('submit', async (e) => {
         }
         registerError.style.color = 'var(--clr-emerald, #059669)'
       }
+      // Токен Turnstile одноразовий — скидаємо перед можливою повторною спробою.
+      if (turnstileWidgetId !== null) window.turnstile?.reset(turnstileWidgetId)
       registerSubmitBtn!.disabled    = false
       registerSubmitBtn!.textContent = 'Створити кабінет'
     }
   } catch (err) {
     hideColdStartBanner()
     if (registerError) registerError.textContent = friendlyError((err as Error).message)
+    if (turnstileWidgetId !== null) window.turnstile?.reset(turnstileWidgetId)
     registerSubmitBtn!.disabled    = false
     registerSubmitBtn!.textContent = 'Створити кабінет'
   }

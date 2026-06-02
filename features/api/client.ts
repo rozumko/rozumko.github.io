@@ -2,6 +2,11 @@ const API_URL = 'https://rozumko-github-io.onrender.com'
 const SUPABASE_URL = 'https://ivcufigpmamgkfxwulzl.supabase.co'
 const SUPABASE_ANON_KEY = 'sb_publishable_thaWciLcFJKxX3rcGbnGmg_2kLtAzNn'
 
+// Cloudflare Turnstile SITE KEY (публічний — призначений для вставки у фронтенд).
+// SECRET KEY сюди НЕ кладемо: він живе лише в Supabase → Authentication →
+// Bot and Abuse Protection. Захист стає примусовим після увімкнення Turnstile там.
+export const TURNSTILE_SITE_KEY = '0x4AAAAAADdbJzWWHyf-ABhd'
+
 // ─── Types ─────────────────────────────────────────────────────────────────
 
 export type QuestionType = 'choice' | 'truefalse' | 'input' | 'sort' | 'sequence' | 'match'
@@ -221,11 +226,16 @@ export async function loginTeacher(email: string, password: string): Promise<any
   return data
 }
 
-export async function registerTeacher(email: string, password: string, school?: string): Promise<any> {
+export async function registerTeacher(email: string, password: string, school?: string, captchaToken?: string): Promise<any> {
+  // CAPTCHA-токен GoTrue читає САМЕ з gotrue_meta_security.captcha_token (перевірено
+  // проти живого Auth API). Плоский captcha_token ігнорується → "no captcha_token found".
+  // У supabase-js цей же шлях відповідає options.captchaToken.
+  const body: Record<string, unknown> = { email, password, data: { school: school || '' } }
+  if (captchaToken) body.gotrue_meta_security = { captcha_token: captchaToken }
   const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
-    body: JSON.stringify({ email, password, data: { school: school || '' } }),
+    body: JSON.stringify(body),
   })
   const data = await res.json()
   if (!res.ok) throw new Error(data.error_description ?? data.msg ?? 'Помилка реєстрації')
