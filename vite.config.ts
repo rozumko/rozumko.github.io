@@ -25,6 +25,27 @@ const BASE_CSP = [
 
 const STRICT_CSP = ["script-src 'self'", ...BASE_CSP].join('; ')
 
+// teacher.html додатково вантажить Cloudflare Turnstile (захист реєстрації від ботів):
+//   - script-src: api.js віджета
+//   - frame-src:  Turnstile рендериться в iframe (без директиви впав би на default-src 'self')
+//   - connect-src: віджет робить запити до challenges.cloudflare.com
+// Розширення скоупимо ЛИШЕ на teacher.html, решта сторінок лишаються на STRICT_CSP.
+const TURNSTILE_ORIGIN = 'https://challenges.cloudflare.com'
+const TEACHER_CSP = [
+  `script-src 'self' ${TURNSTILE_ORIGIN}`,
+  "default-src 'self'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com",
+  "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
+  "img-src 'self' data:",
+  `connect-src 'self' https://rozumko-github-io.onrender.com https://ivcufigpmamgkfxwulzl.supabase.co https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com ${TURNSTILE_ORIGIN}`,
+  `frame-src ${TURNSTILE_ORIGIN}`,
+  "manifest-src 'self'",
+  "worker-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join('; ')
+
 // offline.html обслуговується Service Worker без доступу до зовнішніх JS-бандлів,
 // тому має власний інлайн-скрипт + onclick. Для цієї сторінки (статичної, без
 // доступу до API/секретів) дозволяємо інлайн-скрипти.
@@ -41,13 +62,15 @@ function cspPlugin(): Plugin {
       order: 'pre',
       handler(html, ctx) {
         const isOffline = ctx.path.endsWith('offline.html')
+        const isTeacher = ctx.path.endsWith('teacher.html')
+        const content = isOffline ? OFFLINE_CSP : isTeacher ? TEACHER_CSP : STRICT_CSP
         return {
           html,
           tags: [{
             tag: 'meta',
             attrs: {
               'http-equiv': 'Content-Security-Policy',
-              content: isOffline ? OFFLINE_CSP : STRICT_CSP,
+              content,
             },
             injectTo: 'head-prepend',
           }],

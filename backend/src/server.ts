@@ -63,6 +63,7 @@ app.setErrorHandler((err: Error & { statusCode?: number; code?: string }, _req, 
 
 // Security headers
 app.addHook('onSend', async (_req, reply) => {
+  reply.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
   reply.header('X-Content-Type-Options', 'nosniff')
   reply.header('X-Frame-Options', 'DENY')
   reply.header('Referrer-Policy', 'no-referrer')
