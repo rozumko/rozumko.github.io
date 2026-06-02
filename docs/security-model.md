@@ -13,121 +13,67 @@ _Updated: 2026-06-02_
 
 ## Student Attempt Protection
 
-- Code format: Ukrainian word plus three or four digits, in either order
-  (new codes use four digits; three-digit codes remain valid for backward
-  compatibility). Cyrillic letters and digits only.
-- `GET /api/student/validate-code`: read-only pre-check, rate-limited to 20/min/IP.
-- `POST /api/student/exchange-code`: consumes the code atomically, rate-limited to 10/min/IP.
-- `attemptToken = HMAC-SHA256(attemptId, ATTEMPT_SECRET)`.
-- `/api/attempt/:id/answer` and `/api/attempt/:id/finish` require
-  `X-Attempt-Token`.
-- `/finish` returns only `{ score, total }`, never per-question correctness.
+- Student access codes are validated and consumed atomically by the backend.
+- Sensitive student endpoints are rate-limited.
+- Active attempts use server-verified tokens.
+- Finishing an official attempt returns only the aggregate result, never
+  per-question correctness.
 - After the server deadline, late answers are rejected and saved answers are graded.
 
-For crash recovery, `localStorage` contains only non-secret attempt metadata.
-The token and personal code are not stored there. A student resumes a personal
-attempt by entering the physical code again.
+For crash recovery, the browser stores only non-secret attempt metadata.
 
 ## Answer-Key Handling
 
-| Endpoint or mode | Key handling |
+| Mode | Key handling |
 |---|---|
-| Practice `GET /api/questions?isOlympiad=false` | Returns keys intentionally for local feedback |
-| Demo `GET /api/questions?isOlympiad=true` | Strips top-level and nested keys |
-| Official `exchange-code` | Strips top-level and nested keys |
-| Official `/finish` | Returns only `{ score, total }` |
+| Practice | Returns keys intentionally for local feedback |
+| Demo | Strips top-level and nested keys |
+| Official attempt | Strips top-level and nested keys |
+| Official result | Returns only the aggregate score |
 | Teacher/admin results | Excludes raw `answers` |
 
-Nested keys are stripped for `sort.correctOrder`, `match.pairs` and
-`input.answer`.
+Nested answer keys are stripped for structured question types.
 
 ## Teacher And Admin Authorization
 
 1. Supabase Auth returns a JWT after signup or login.
-2. Backend verifies it against `${SUPABASE_URL}/auth/v1/.well-known/jwks.json`
-   with `ES256` only.
-3. Backend loads `role` and `status` from `app_users`.
-4. Missing users are provisioned as `teacher`, `status = 'pending'`.
-5. `pending` and `blocked` users receive `403`.
-6. Admin routes additionally require `role = 'admin'`.
+2. The backend verifies the JWT before handling protected requests.
+3. The database decides the user's role and status.
+4. New teachers remain pending until an administrator approves them.
+5. Pending and blocked users cannot access protected teacher features.
+6. Admin routes additionally require the admin role.
 
-The frontend stores teacher session tokens in `localStorage`. This is an MVP
-tradeoff: CSP and restricted external scripts reduce XSS risk, but an XSS flaw
-could still expose the teacher token. Keep avoiding unsafe HTML interpolation.
+The frontend limits third-party scripts around authenticated flows. Keep
+avoiding unsafe HTML interpolation.
 
 ## Database And RLS
 
-The backend connects using `DATABASE_URL`. The public Supabase anon key appears
-in frontend code only for Supabase Auth requests.
-
-RLS is enabled on all current public application tables. This was verified
-against Supabase on 2026-05-31:
-
-- `questions`
-- `olympiad_events`
-- `event_questions`
-- `access_codes`
-- `attempts`
-- `attempt_questions`
-- `app_users`
-- `teacher_classes`
-- `class_students`
-- `event_registrations`
-
-Keep RLS enabled on every new table. No frontend code may call Supabase Data API
-tables directly.
+The backend is the only component that accesses application tables. Row Level
+Security is enabled for application data. No frontend code may call Supabase
+Data API tables directly.
 
 ## HTTP Protections
 
 Backend:
 
-- CORS allows only `https://rozumko.github.io` and local Vite origins.
-- Global rate limit: 100 requests/min/IP.
-- `trustProxy: true` is enabled for Render.
+- CORS is restricted to approved origins.
+- API requests are rate-limited.
 - Production errors do not expose stack traces.
-- Security headers include HSTS (`max-age=31536000; includeSubDomains`),
-  `nosniff`, `DENY` framing and `no-referrer`.
+- Security headers include HSTS, MIME sniffing protection, framing protection
+  and a restrictive referrer policy.
 
 Frontend production build:
 
 - CSP is injected by `vite.config.ts`.
-- Normal pages use `script-src 'self'`.
-- `teacher.html` additionally allows `https://challenges.cloudflare.com` for
-  the Turnstile registration widget. The external script is loaded lazily only
-  after the unauthenticated registration form is opened. Opening registration
-  clears any existing local teacher session first. Returning to login reloads
-  a clean document, and the signup request never persists a session token.
-  A later email-confirm redirect may persist its token on that clean page.
+- Normal pages allow scripts only from the application origin.
+- The teacher registration page loads the Turnstile widget lazily only for the
+  unauthenticated registration flow.
 - Inline handlers are not allowed on normal pages.
-- `offline.html` has a narrower documented exception for its offline script.
+- The static offline page has a narrow documented exception for its offline script.
 
 ## Operational Security Checklist
 
-- [x] Decide whether public Supabase signup stays enabled for the pilot.
-      Decision (2026-06-02): keep public signup ON. Self-registration is an
-      intended teacher flow. Residual risk is low because `mailer_autoconfirm`
-      is OFF (no JWT before email confirmation, so no `app_users` row is
-      provisioned for unconfirmed addresses) and every new teacher lands as
-      `pending` until an admin approves. Note: this does not protect the
-      `/auth/v1/signup` endpoint itself — it can still be called with arbitrary
-      third-party emails, burning the project email quota and seeding
-      unconfirmed `auth.users` rows (abuse risk: Low). Recommended fix (not
-      optional): add CAPTCHA (Turnstile/hCaptcha). This requires BOTH enabling
-      it in Supabase Auth settings AND updating the signup form to fetch a
-      CAPTCHA token and send it. Field path depends on the client:
-      `registerTeacher` uses a raw fetch to `/auth/v1/signup`, so the token
-      goes in the body as `gotrue_meta_security.captcha_token` (a flat
-      `captcha_token` is ignored by GoTrue → "no captcha_token found",
-      verified against the live Auth API); with supabase-js the equivalent is
-      `options: { captchaToken }`. Reset the CAPTCHA challenge after each
-      request. The dashboard toggle enforces rejection of signup requests
-      without a valid token; the frontend widget is also required so legitimate
-      users can obtain one.
-      Refs: https://supabase.com/docs/guides/auth/auth-captcha ,
-      https://github.com/supabase/auth#captcha
-- [ ] Configure PostgreSQL backups, retention and a restore test.
-- [ ] Monitor `GET /ping`.
-- [ ] Keep Render at one instance until rate limiting uses shared storage.
-- [ ] Add audit logging for admin mutations before a paid launch.
-- [ ] Update CORS and CSP before adding a custom domain.
-- [ ] Treat `ATTEMPT_SECRET` rotation as an incident operation: rotation invalidates active attempts.
+- [x] Keep teacher self-registration enabled for the pilot with email
+      confirmation, administrator approval and Turnstile bot protection.
+- [ ] Maintain a private operational security checklist outside the public
+      repository.
