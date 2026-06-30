@@ -2,10 +2,9 @@ import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import rateLimit from '@fastify/rate-limit'
 import 'dotenv/config'
-import { sql } from 'drizzle-orm'
-import { db } from './db/index.js'
 import { FASTIFY_SECURITY_OPTIONS } from './lib/security-config.js'
 import { getFastifyRateLimitOptions } from './lib/rate-limit-config.js'
+import { healthRoutes } from './routes/health.js'
 
 // ── Перевірка обов'язкових env-змінних при старті ────────────
 const REQUIRED_ENV = ['DATABASE_URL', 'SUPABASE_URL', 'ATTEMPT_SECRET'] as const
@@ -72,17 +71,7 @@ app.setNotFoundHandler((_req, reply) => {
   reply.code(404).send({ error: 'Не знайдено' })
 })
 
-app.get('/health', async () => ({ status: 'ok' }))
-
-// /ping — пінгує БД щоб Supabase не засинав. Використовується UptimeRobot.
-app.get('/ping', async (_req, reply) => {
-  try {
-    await db.execute(sql`SELECT 1`)
-    return reply.send({ status: 'ok', db: 'ok' })
-  } catch {
-    return reply.code(503).send({ status: 'error', db: 'unreachable' })
-  }
-})
+await app.register(healthRoutes)
 
 import { studentRoutes } from './routes/student.js'
 import { attemptRoutes } from './routes/attempt.js'

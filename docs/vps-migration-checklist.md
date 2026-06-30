@@ -55,7 +55,7 @@ implemented and tested.
 - [ ] Take or identify a fresh source PostgreSQL backup.
 - [ ] Restore it into a non-production target database.
 - [ ] Run migrations against the target database.
-- [ ] Verify `/ping` returns `db: ok`.
+- [ ] Verify `/ready` and `/ping` return `db: ok`.
 - [ ] Verify admin can see events.
 - [ ] Verify teacher/admin results routes return without `500`.
 - [ ] Verify a known event has expected question assignments.
@@ -67,7 +67,8 @@ Use `docs/backup-restore.md` for dump/restore details.
 - [ ] Build the backend image from `./backend`.
 - [ ] Start the backend with production env values.
 - [ ] Run `npm run db:migrate:prod` from the built backend environment.
-- [ ] Confirm `/health` returns `{ "status": "ok" }`.
+- [ ] Confirm `/health` returns `{ "status": "ok", "service": "rozumko-backend" }`.
+- [ ] Confirm `/ready` returns `{ "status": "ok", "db": "ok" }`.
 - [ ] Confirm `/ping` returns `{ "status": "ok", "db": "ok" }`.
 - [ ] Confirm logs do not print secrets.
 - [ ] Confirm restart policy is enabled.
@@ -101,7 +102,7 @@ Use `docs/backup-restore.md` for dump/restore details.
 - [ ] Deploy backend.
 - [ ] Switch frontend/API DNS or env.
 - [ ] Run the smoke test again.
-- [ ] Watch logs, `/ping`, CPU, memory and disk for at least 30 minutes.
+- [ ] Watch logs, `/ready`, `/ping`, CPU, memory and disk for at least 30 minutes.
 
 ## Rollback Rule
 

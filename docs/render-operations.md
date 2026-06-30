@@ -8,8 +8,8 @@ The backend runs on Render from `backend/render.yaml`.
 
 - Render deploys the backend only after CI checks pass:
   `autoDeployTrigger: checksPass`.
-- The backend health check path is `/health`.
-- Live monitoring should use `/ping`, because it verifies database access.
+- The backend liveness path is `/health`.
+- Live monitoring should use `/ready` or `/ping`, because they verify database access.
 - Required secrets are configured in Render environment variables, not in Git.
 
 ## Instance Count Rule
@@ -39,15 +39,16 @@ Do not scale to multiple instances until one of these is true:
 - [ ] Environment variables are present: `DATABASE_URL`, `SUPABASE_URL`,
       `ATTEMPT_SECRET`, `NODE_ENV=production`, `RATE_LIMIT_STORE=memory`.
 - [ ] Instance count is one.
-- [ ] `/health` returns `{ "status": "ok" }`.
+- [ ] `/health` returns `{ "status": "ok", "service": "rozumko-backend" }`.
+- [ ] `/ready` returns `{ "status": "ok", "db": "ok" }`.
 - [ ] `/ping` returns `{ "status": "ok", "db": "ok" }`.
 - [ ] The service was warmed shortly before students start.
 
 ## If Backend Is Cold Or Slow
 
-1. Hit `/ping` manually before the event window.
+1. Hit `/ready` manually before the event window.
 2. Wait for startup if Render is waking the service.
-3. Confirm `/ping` returns `db: ok`.
+3. Confirm `/ready` returns `db: ok`.
 4. Start the student flow only after the backend is warm.
 
 For a larger pilot, prefer a paid instance over relying on cold-start timing.
@@ -70,7 +71,7 @@ Record these after any Render incident:
 - deployed commit;
 - event time window;
 - start and end of outage or slowdown;
-- `/health` and `/ping` behavior;
+- `/health`, `/ready` and `/ping` behavior;
 - Render logs around the incident;
 - number of affected classes or attempts;
 - follow-up action.

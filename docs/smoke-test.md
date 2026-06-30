@@ -6,7 +6,8 @@ Run this checklist before a real pilot.
 
 ## 1. Deployment
 
-- [ ] `GET https://rozumko-github-io.onrender.com/health` returns `{ "status": "ok" }`
+- [ ] `GET https://rozumko-github-io.onrender.com/health` returns `{ "status": "ok", "service": "rozumko-backend" }`
+- [ ] `GET https://rozumko-github-io.onrender.com/ready` returns `{ "status": "ok", "db": "ok" }`
 - [ ] `GET https://rozumko-github-io.onrender.com/ping` returns `{ "status": "ok", "db": "ok" }`
 - [ ] Latest GitHub Pages and Backend CI workflows passed for the intended commit
 - [ ] `npm run db:migrate` reports success before backend deployment
@@ -17,7 +18,7 @@ Run this checklist before a real pilot.
 - [ ] Backend `.env` exists and contains local or staging credentials
 - [ ] Frontend `.env.local` sets `VITE_API_URL=http://localhost:3000`
 - [ ] `cd backend && npm run dev` starts without missing env errors
-- [ ] `GET http://localhost:3000/health` returns `{ "status": "ok" }`
+- [ ] `GET http://localhost:3000/health` returns `{ "status": "ok", "service": "rozumko-backend" }`
 - [ ] `npm run dev` serves the frontend and uses the local backend
 
 ## 2. Teacher Signup Policy

@@ -74,6 +74,6 @@ At minimum, every provider move must prove:
 
 - PostgreSQL backup and restore work on the target provider.
 - `npm run db:migrate:prod` succeeds against the target database.
-- `/health`, `/ping` and the student attempt smoke flow pass.
+- `/health`, `/ready`, `/ping` and the student attempt smoke flow pass.
 - CORS and CSP match the new frontend/backend domains.
 - Monitoring and rollback are ready before production cutover.

@@ -2,12 +2,14 @@
 
 _Updated: 2026-06-30_
 
-Rozumko has two backend health endpoints:
+Rozumko has three backend health endpoints:
 
 - `GET /health` checks that the HTTP process is alive.
-- `GET /ping` checks that the backend can also reach PostgreSQL.
+- `GET /ready` checks that the backend can also reach PostgreSQL.
+- `GET /ping` keeps the current UptimeRobot/Supabase keep-awake behavior and
+  returns the same database status shape as `/ready`.
 
-For live olympiads, monitor `/ping`. It catches more useful failures than
+For live olympiads, monitor `/ready` or `/ping`. They catch more useful failures than
 `/health` because a running backend without database access cannot start or
 finish attempts safely.
 
@@ -16,7 +18,7 @@ finish attempts safely.
 Monitor:
 
 ```text
-https://rozumko-github-io.onrender.com/ping
+https://rozumko-github-io.onrender.com/ready
 ```
 
 Expected response:
@@ -40,9 +42,9 @@ Keep alert recipients in the monitoring service, not in the public repository.
 
 ## Pre-Event Check
 
-- [ ] Monitoring is enabled for `/ping`.
+- [ ] Monitoring is enabled for `/ready` or `/ping`.
 - [ ] The check is green.
-- [ ] A manual browser request to `/ping` returns `db: ok`.
+- [ ] A manual browser request to `/ready` returns `db: ok`.
 - [ ] Alert recipients received a test notification.
 - [ ] The operator knows where to view recent failures.
 
@@ -50,9 +52,9 @@ Keep alert recipients in the monitoring service, not in the public repository.
 
 If monitoring alerts:
 
-1. Open `/ping` manually.
+1. Open `/ready` manually.
 2. Check whether teachers are reporting real failures.
-3. If `/ping` is down or slow for more than 2 minutes, follow
+3. If `/ready` is down or slow for more than 2 minutes, follow
    `docs/olympiad-day-runbook.md`.
 4. Record start time, recovery time and visible symptoms.
 
@@ -69,5 +71,5 @@ Do not rely on monitoring alone. Teacher reports are part of the signal.
 
 Before a pilot, this statement should be true:
 
-> `/ping` is monitored, alerts reach the operator, and a test alert has been
+> `/ready` is monitored, alerts reach the operator, and a test alert has been
 > received before students start.
