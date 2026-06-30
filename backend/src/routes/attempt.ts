@@ -39,7 +39,7 @@ export async function attemptRoutes(app: FastifyInstance) {
           // choice/truefalse/sequence: integer-індекс; input: рядок;
           // sort/match: масив integer-індексів
           answer: {
-            oneOf: [
+            anyOf: [
               { type: 'integer', minimum: 0, maximum: 99 },
               { type: 'string', minLength: 1, maxLength: 200 },
               { type: 'array', items: { type: 'integer', minimum: 0, maximum: 99 }, minItems: 1, maxItems: 20 },
