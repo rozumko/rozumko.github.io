@@ -94,6 +94,7 @@
 - [Backup/restore](./docs/backup-restore.md)
 - [Monitoring](./docs/monitoring.md)
 - [Render operations](./docs/render-operations.md)
+- [Deployment portability](./docs/deployment-portability.md)
 - [Продуктовий план](./docs/product-roadmap.md)
 
 ---

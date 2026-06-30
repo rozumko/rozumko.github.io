@@ -1,0 +1,45 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: "postgresql://rozumko:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/rozumko"
+      SUPABASE_URL: "${SUPABASE_URL:?set SUPABASE_URL}"
+      ATTEMPT_SECRET: "${ATTEMPT_SECRET:?set ATTEMPT_SECRET}"
+      REDIS_URL: redis://valkey:6379
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: rozumko
+      POSTGRES_USER: rozumko
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rozumko -d rozumko"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    command: ["valkey-server", "--appendonly", "yes"]
+    volumes:
+      - valkey_data:/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  valkey_data:
