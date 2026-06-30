@@ -1,11 +1,11 @@
 const API_URL = import.meta.env.VITE_API_URL || 'https://rozumko-github-io.onrender.com'
-const SUPABASE_URL = 'https://ivcufigpmamgkfxwulzl.supabase.co'
-const SUPABASE_ANON_KEY = 'sb_publishable_thaWciLcFJKxX3rcGbnGmg_2kLtAzNn'
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://ivcufigpmamgkfxwulzl.supabase.co'
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_thaWciLcFJKxX3rcGbnGmg_2kLtAzNn'
 
 // Cloudflare Turnstile SITE KEY (публічний — призначений для вставки у фронтенд).
 // SECRET KEY сюди НЕ кладемо: він живе лише в Supabase → Authentication →
 // Bot and Abuse Protection. Захист стає примусовим після увімкнення Turnstile там.
-export const TURNSTILE_SITE_KEY = '0x4AAAAAADdbJzWWHyf-ABhd'
+export const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAADdbJzWWHyf-ABhd'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
