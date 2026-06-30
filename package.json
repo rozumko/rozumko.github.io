@@ -4,6 +4,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "node --test \"features/**/*.test.mjs\"",
+    "load:test": "node scripts/load-test-attempt-flow.mjs",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

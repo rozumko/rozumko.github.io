@@ -81,6 +81,7 @@ Run this checklist before a real pilot.
 ## 9. Operational
 
 - [ ] `docs/olympiad-day-runbook.md` is printed or open for the event operator
+- [ ] `docs/load-test.md` was run against staging at the planned concurrency
 - [ ] PostgreSQL backup exists
 - [ ] Restore procedure was tested on a non-production database
 - [ ] Monitoring checks `/ping`
