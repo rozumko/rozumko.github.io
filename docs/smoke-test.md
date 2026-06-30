@@ -84,5 +84,5 @@ Run this checklist before a real pilot.
 - [ ] `docs/load-test.md` was run against staging at the planned concurrency
 - [ ] `docs/backup-restore.md` restore drill passed on a non-production database
 - [ ] PostgreSQL backup exists from after final event setup
-- [ ] Monitoring checks `/ping`
+- [ ] `docs/monitoring.md` alert test was received by the event operator
 - [ ] Render runs one instance while rate limiting remains process-local
