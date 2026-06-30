@@ -95,6 +95,7 @@
 - [Monitoring](./docs/monitoring.md)
 - [Render operations](./docs/render-operations.md)
 - [Deployment portability](./docs/deployment-portability.md)
+- [VPS migration checklist](./docs/vps-migration-checklist.md)
 - [Продуктовий план](./docs/product-roadmap.md)
 
 ---

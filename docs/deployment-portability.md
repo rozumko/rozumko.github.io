@@ -69,12 +69,11 @@ ATTEMPT_SECRET=<64-hex-chars>
 
 ## Migration Checklist
 
-Before moving from Render/Supabase hosting to a VPS or another provider:
+Use `docs/vps-migration-checklist.md` for the step-by-step migration process.
+At minimum, every provider move must prove:
 
-- [ ] Restore a PostgreSQL backup into the target database.
-- [ ] Run `npm run db:migrate:prod` against the target database.
-- [ ] Verify `/health` and `/ping`.
-- [ ] Run the student attempt smoke flow.
-- [ ] Re-check CORS and CSP for the new frontend/backend domains.
-- [ ] Confirm backups and restore drills on the new provider.
-- [ ] Confirm monitoring alerts reach the event operator.
+- PostgreSQL backup and restore work on the target provider.
+- `npm run db:migrate:prod` succeeds against the target database.
+- `/health`, `/ping` and the student attempt smoke flow pass.
+- CORS and CSP match the new frontend/backend domains.
+- Monitoring and rollback are ready before production cutover.
