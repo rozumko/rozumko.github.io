@@ -13,6 +13,7 @@ services:
       DATABASE_URL: "postgresql://rozumko:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/rozumko"
       SUPABASE_URL: "${SUPABASE_URL:?set SUPABASE_URL}"
       ATTEMPT_SECRET: "${ATTEMPT_SECRET:?set ATTEMPT_SECRET}"
+      RATE_LIMIT_STORE: memory
       REDIS_URL: redis://valkey:6379
     ports:
       - "3000:3000"

@@ -55,6 +55,9 @@ Valkey is included for future shared rate limiting. The current backend still
 uses in-process rate limiting, so do not scale multiple backend replicas until a
 shared limiter is implemented and tested.
 
+Keep `RATE_LIMIT_STORE=memory` until Redis/Valkey-backed rate limiting is added
+in code. Setting another value currently makes the backend fail fast at startup.
+
 Before using the compose file, create an uncommitted `.env` next to it with at
 least:
 

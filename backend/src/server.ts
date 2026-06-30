@@ -5,6 +5,7 @@ import 'dotenv/config'
 import { sql } from 'drizzle-orm'
 import { db } from './db/index.js'
 import { FASTIFY_SECURITY_OPTIONS } from './lib/security-config.js'
+import { getFastifyRateLimitOptions } from './lib/rate-limit-config.js'
 
 // ── Перевірка обов'язкових env-змінних при старті ────────────
 const REQUIRED_ENV = ['DATABASE_URL', 'SUPABASE_URL', 'ATTEMPT_SECRET'] as const
@@ -38,10 +39,7 @@ await app.register(cors, {
 })
 
 // Rate limiting — глобально: 100 запитів / хвилину з однієї IP
-await app.register(rateLimit, {
-  max: 100,
-  timeWindow: '1 minute',
-})
+await app.register(rateLimit, getFastifyRateLimitOptions())
 
 // Production error handler — не витікаємо stack traces
 app.setErrorHandler((err: Error & { statusCode?: number; code?: string }, _req, reply) => {
