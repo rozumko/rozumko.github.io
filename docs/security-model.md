@@ -58,6 +58,9 @@ Backend:
 
 - CORS is restricted to approved origins.
 - API requests are rate-limited.
+- Rate limiting currently uses `RATE_LIMIT_STORE=memory`. Unsupported store
+  values fail fast at startup so multi-instance deployments do not accidentally
+  run with a false shared-limiter assumption.
 - Render adds one reverse-proxy hop. Fastify must use `trustProxy: 1`, never
   `trustProxy: true`, so clients cannot spoof `X-Forwarded-For` and bypass
   rate limits.
@@ -97,6 +100,7 @@ npm test
 `backend/src/security-regression.test.ts` protects the audited invariants:
 
 - spoofed `X-Forwarded-For` does not create a fresh rate-limit bucket;
+- unsupported shared rate-limit store modes fail closed;
 - public question query validation rejects unsafe values;
 - public questions are filtered to `isOlympiad=false`;
 - demo responses strip answer keys;
@@ -117,7 +121,7 @@ workflow. Render Blueprint uses `autoDeployTrigger: checksPass`.
 - [ ] Supabase Auth -> Rate Limits: review password login and signup limits.
 - [ ] Render: backend service is synced from `backend/render.yaml` and deploys
       only after CI checks pass.
-- [ ] Render: keep one backend instance while rate limiting is process-local.
+- [ ] Render: keep one backend instance while `RATE_LIMIT_STORE=memory`.
 - [ ] GitHub: protect `main` and require the Project CI backend/frontend jobs
       before merge.
 - [ ] After backend deployment, run the security section in `docs/smoke-test.md`.

@@ -14,16 +14,17 @@ The backend runs on Render from `backend/render.yaml`.
 
 ## Instance Count Rule
 
-Keep the backend at one running instance while rate limiting is process-local.
+Keep the backend at one running instance while `RATE_LIMIT_STORE=memory`.
 
 Reason:
 
-- `@fastify/rate-limit` uses in-process state unless configured with a shared
-  store.
+- `RATE_LIMIT_STORE=memory` means `@fastify/rate-limit` uses in-process state.
 - With multiple backend instances and no shared store, a client can receive a
   separate rate-limit bucket per instance.
 - The current security model assumes one Render reverse-proxy hop and
   `trustProxy: 1`.
+- Unsupported store values fail fast at startup; Redis/Valkey mode is reserved
+  but not implemented yet.
 
 Do not scale to multiple instances until one of these is true:
 
@@ -36,7 +37,7 @@ Do not scale to multiple instances until one of these is true:
 - [ ] The latest Backend CI workflow passed.
 - [ ] Render service is synced from `backend/render.yaml`.
 - [ ] Environment variables are present: `DATABASE_URL`, `SUPABASE_URL`,
-      `ATTEMPT_SECRET`, `NODE_ENV=production`.
+      `ATTEMPT_SECRET`, `NODE_ENV=production`, `RATE_LIMIT_STORE=memory`.
 - [ ] Instance count is one.
 - [ ] `/health` returns `{ "status": "ok" }`.
 - [ ] `/ping` returns `{ "status": "ok", "db": "ok" }`.
@@ -56,6 +57,7 @@ For a larger pilot, prefer a paid instance over relying on cold-start timing.
 Before increasing instance count:
 
 - [ ] Add a shared rate-limit store.
+- [ ] Change `RATE_LIMIT_STORE` only after the shared store is implemented.
 - [ ] Re-run rate-limit spoofing regression tests.
 - [ ] Run load tests at the intended concurrency.
 - [ ] Update `docs/security-model.md` and `docs/smoke-test.md`.

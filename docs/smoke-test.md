@@ -83,6 +83,7 @@ Run this checklist before a real pilot.
 - [ ] Send repeated `GET /api/student/validate-code?code=<invalid>` requests with a fixed `X-Forwarded-For`; rate-limit returns `429`
 - [ ] Repeat with rotating left-most `X-Forwarded-For`; rate-limit still returns `429`
 - [ ] Invalid UUIDs on admin and teacher routes return `400`, not `500`
+- [ ] Backend env has `RATE_LIMIT_STORE=memory` until shared rate limiting is implemented
 - [ ] Supabase Auth -> Bot and Abuse Protection has enforced Turnstile for signup
 - [ ] Supabase Auth -> Rate Limits has reviewed password login and signup limits
 
