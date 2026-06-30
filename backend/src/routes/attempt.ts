@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify'
-import { eq, sql } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { accessCodes, attemptQuestions, attempts, olympiadEvents } from '../db/schema.js'
 import { finalizeAttemptFromSavedAnswers } from './attempt-finalization.js'
@@ -91,12 +91,17 @@ export async function attemptRoutes(app: FastifyInstance) {
 
     // Атомарний JSONB merge — захист від race condition при одночасних відповідях.
     // sql`||` (jsonb concat) виконується атомарно в одному UPDATE, без read-modify-write.
-    await db
+    const updated = await db
       .update(attempts)
       .set({
         answers: sql`COALESCE(${attempts.answers}, '{}'::jsonb) || ${JSON.stringify({ [questionId]: answer })}::jsonb`,
       })
-      .where(eq(attempts.id, id))
+      .where(and(eq(attempts.id, id), eq(attempts.status, 'in_progress')))
+      .returning({ id: attempts.id })
+
+    if (updated.length === 0) {
+      return reply.code(409).send({ error: 'Спроба вже завершена' })
+    }
 
     return reply.code(200).send({ saved: true })
   })

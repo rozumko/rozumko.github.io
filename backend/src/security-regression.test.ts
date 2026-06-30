@@ -152,3 +152,13 @@ test('Render деплоїть backend лише після проходження
   const blueprint = readFileSync(new URL('../render.yaml', import.meta.url), 'utf8')
   assert.match(blueprint, /^\s+autoDeployTrigger:\s+checksPass\s*$/m)
 })
+
+test('attempt finalization is protected against late answer races', () => {
+  const answerRoute = readFileSync(new URL('./routes/attempt.ts', import.meta.url), 'utf8')
+  const finalization = readFileSync(new URL('./routes/attempt-finalization.ts', import.meta.url), 'utf8')
+
+  assert.match(answerRoute, /eq\(attempts\.status,\s*'in_progress'\)/)
+  assert.match(answerRoute, /\.returning\(\{\s*id:\s*attempts\.id\s*\}\)/)
+  assert.match(finalization, /db\.transaction/)
+  assert.match(finalization, /\.for\('update'\)/)
+})
