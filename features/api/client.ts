@@ -1,4 +1,4 @@
-const API_URL = 'https://rozumko-github-io.onrender.com'
+const API_URL = import.meta.env.VITE_API_URL || 'https://rozumko-github-io.onrender.com'
 const SUPABASE_URL = 'https://ivcufigpmamgkfxwulzl.supabase.co'
 const SUPABASE_ANON_KEY = 'sb_publishable_thaWciLcFJKxX3rcGbnGmg_2kLtAzNn'
 

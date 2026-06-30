@@ -12,6 +12,14 @@ Run this checklist before a real pilot.
 - [ ] `npm run db:migrate` reports success before backend deployment
 - [ ] Render backend is synced from `backend/render.yaml` and waits for CI checks
 
+## 1a. Local Smoke Setup
+
+- [ ] Backend `.env` exists and contains local or staging credentials
+- [ ] Frontend `.env.local` sets `VITE_API_URL=http://localhost:3000`
+- [ ] `cd backend && npm run dev` starts without missing env errors
+- [ ] `GET http://localhost:3000/health` returns `{ "status": "ok" }`
+- [ ] `npm run dev` serves the frontend and uses the local backend
+
 ## 2. Teacher Signup Policy
 
 - [ ] Decide whether pilot signup is public or invitation-only in Supabase Auth settings
