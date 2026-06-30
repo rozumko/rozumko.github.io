@@ -89,6 +89,11 @@
 - [Політика повідомлення про вразливості](./SECURITY.md)
 - [Міграції БД](./docs/migrations.md)
 - [Smoke-тест перед пілотом](./docs/smoke-test.md)
+- [Runbook дня олімпіади](./docs/olympiad-day-runbook.md)
+- [Load-test офіційного flow](./docs/load-test.md)
+- [Backup/restore](./docs/backup-restore.md)
+- [Monitoring](./docs/monitoring.md)
+- [Render operations](./docs/render-operations.md)
 - [Продуктовий план](./docs/product-roadmap.md)
 
 ---
@@ -107,6 +112,12 @@ npm run dev
 ```
 
 Backend потребує `.env` з `DATABASE_URL`, `SUPABASE_URL`, `ATTEMPT_SECRET`; `PORT` необов'язковий.
+
+Frontend за замовчуванням використовує production API. Для локального smoke-тесту скопіюйте `.env.example` у `.env.local` і встановіть:
+
+```bash
+VITE_API_URL=http://localhost:3000
+```
 
 ---
 

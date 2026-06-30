@@ -1,6 +1,6 @@
 # Security Model - Rozumko
 
-_Updated: 2026-06-02_
+_Updated: 2026-06-30_
 
 ## Core Rules
 
@@ -101,6 +101,8 @@ npm test
 - public questions are filtered to `isOlympiad=false`;
 - demo responses strip answer keys;
 - critical UUID parameters fail with `400` before database access;
+- attempt finalization rejects late answers and locks the attempt row while
+  scoring saved answers;
 - Render backend auto-deploy waits for CI checks.
 
 GitHub Pages also runs frontend typecheck, tests and build inside its deployment

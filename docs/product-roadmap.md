@@ -1,6 +1,6 @@
 # Product Roadmap - Rozumko
 
-_Updated: 2026-05-31_
+_Updated: 2026-06-30_
 
 ## Current MVP Status
 
@@ -16,6 +16,8 @@ Implemented:
 - teacher-issued certificates and diplomas (award tier by score: participation
   certificate, or diploma for I/II/III place), generated in the browser without
   storing child names;
+- late-answer protection for concurrent `/answer` and `/finish` races;
+- lightweight HTTP load-test scaffold for the official student attempt flow;
 - GitHub Pages frontend deployment and Render backend CI.
 
 ## Before Free Pilot
@@ -31,11 +33,10 @@ Implemented:
 
 1. Add browser E2E coverage for admin setup, student completion, timer expiry and F5 recovery.
 2. Add audit logging for admin actions.
-3. Make answer saving robust against rare concurrent `/answer` and `/finish` races.
-4. Add shared rate-limit storage before scaling Render beyond one instance.
-5. Add a deliberate teacher-token refresh strategy or shorten the documented session expectation.
-6. Prepare support instructions for code loss, interrupted attempts and manual result review.
-7. Add payment provider integration without storing card data.
+3. Add shared rate-limit storage before scaling Render beyond one instance.
+4. Add a deliberate teacher-token refresh strategy or shorten the documented session expectation.
+5. Prepare support instructions for code loss, interrupted attempts and manual result review.
+6. Add payment provider integration without storing card data.
 
 ## Later
 

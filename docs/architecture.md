@@ -1,6 +1,6 @@
 # Architecture - Rozumko
 
-_Updated: 2026-06-02_
+_Updated: 2026-06-30_
 
 ## Overview
 
@@ -56,6 +56,10 @@ event.ends_at
 
 After the deadline, late answers are rejected and already saved answers are
 graded. The attempt becomes `finished`.
+
+Finalization runs inside a database transaction and locks the attempt row while
+saved answers are scored, so a concurrent late `/answer` cannot change the
+result after `/finish` has started.
 
 ## Teacher And Admin Auth
 

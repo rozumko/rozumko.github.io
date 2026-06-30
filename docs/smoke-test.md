@@ -1,6 +1,6 @@
 # MVP Smoke Test - Rozumko
 
-_Updated: 2026-06-02_
+_Updated: 2026-06-30_
 
 Run this checklist before a real pilot.
 
