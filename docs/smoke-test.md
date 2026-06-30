@@ -82,7 +82,7 @@ Run this checklist before a real pilot.
 
 - [ ] `docs/olympiad-day-runbook.md` is printed or open for the event operator
 - [ ] `docs/load-test.md` was run against staging at the planned concurrency
-- [ ] PostgreSQL backup exists
-- [ ] Restore procedure was tested on a non-production database
+- [ ] `docs/backup-restore.md` restore drill passed on a non-production database
+- [ ] PostgreSQL backup exists from after final event setup
 - [ ] Monitoring checks `/ping`
 - [ ] Render runs one instance while rate limiting remains process-local
