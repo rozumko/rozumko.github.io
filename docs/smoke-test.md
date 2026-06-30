@@ -85,4 +85,4 @@ Run this checklist before a real pilot.
 - [ ] `docs/backup-restore.md` restore drill passed on a non-production database
 - [ ] PostgreSQL backup exists from after final event setup
 - [ ] `docs/monitoring.md` alert test was received by the event operator
-- [ ] Render runs one instance while rate limiting remains process-local
+- [ ] `docs/render-operations.md` pre-event Render check passed
