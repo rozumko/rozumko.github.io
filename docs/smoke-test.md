@@ -80,6 +80,7 @@ Run this checklist before a real pilot.
 
 ## 9. Operational
 
+- [ ] `docs/olympiad-day-runbook.md` is printed or open for the event operator
 - [ ] PostgreSQL backup exists
 - [ ] Restore procedure was tested on a non-production database
 - [ ] Monitoring checks `/ping`
