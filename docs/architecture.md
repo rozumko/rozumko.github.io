@@ -257,6 +257,9 @@ App support **[PLANNED]** may use:
 
 ## Operational Notes
 
-- Frontend JWT refresh is not automatic; an expired teacher session requires login.
+- Frontend JWT refresh is automatic: on a `401`, `authRequest` refreshes the
+  Supabase session once (`grant_type=refresh_token`) and retries the request;
+  concurrent calls share one in-flight refresh. Only a failed refresh (missing
+  or expired refresh token) clears the session and requires login.
 - Rate limiting is in process memory and is suitable only for one Render instance.
 - Database backup and restore are handled operationally.

@@ -118,6 +118,13 @@ export interface EventRegistration {
 
 // ─── Core request ──────────────────────────────────────────────────────────
 
+// Помилка API з HTTP-статусом і опційним кодом — щоб виклики (напр. authRequest)
+// могли реагувати на 401 і виконати refresh токена.
+export interface ApiError extends Error { status: number; code?: string }
+function apiError(message: string, status: number, code?: string): ApiError {
+  return Object.assign(new Error(message), { status, code })
+}
+
 async function request(path: string, options: RequestInit = {}): Promise<any> {
   const { headers: extraHeaders, ...rest } = options as any
   let res: Response
@@ -133,12 +140,12 @@ async function request(path: string, options: RequestInit = {}): Promise<any> {
   // Деякі відповіді можуть бути не JSON (502, 503 від проксі)
   const contentType = res.headers.get('content-type') ?? ''
   if (!contentType.includes('application/json')) {
-    if (!res.ok) throw new Error(`Помилка сервера (${res.status}). Спробуйте пізніше.`)
+    if (!res.ok) throw apiError(`Помилка сервера (${res.status}). Спробуйте пізніше.`, res.status)
     return {}
   }
 
   const data = await res.json()
-  if (!res.ok) throw new Error(data.error ?? `Помилка ${res.status}`)
+  if (!res.ok) throw apiError(data.error ?? `Помилка ${res.status}`, res.status, data.code)
   return data
 }
 
@@ -261,13 +268,63 @@ export async function logoutTeacher(): Promise<void> {
   }
 }
 
-function authRequest(path: string, options: RequestInit = {}): Promise<any> {
+// Оновлення сесії вчителя через Supabase refresh-token grant.
+// Один in-flight запит для всіх паралельних викликів: якщо кілька запитів
+// одночасно впіймали 401, refresh відбувається РАЗ, решта чекає той самий проміс.
+// Supabase ротує refresh-токен, тож зберігаємо новий (з fallback на старий).
+let refreshInFlight: Promise<string | null> | null = null
+
+function refreshTeacherSession(): Promise<string | null> {
+  const session = getTeacherSession()
+  if (!session?.refreshToken) return Promise.resolve(null)
+  if (!refreshInFlight) {
+    refreshInFlight = (async () => {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+          body: JSON.stringify({ refresh_token: session.refreshToken }),
+        })
+        if (!res.ok) return null
+        const data = await res.json()
+        if (!data.access_token) return null
+        localStorage.setItem('teacher_session', JSON.stringify({
+          accessToken: data.access_token,
+          refreshToken: data.refresh_token ?? session.refreshToken,
+          email: data.user?.email ?? session.email,
+        }))
+        return data.access_token as string
+      } catch {
+        return null
+      } finally {
+        refreshInFlight = null
+      }
+    })()
+  }
+  return refreshInFlight
+}
+
+async function authRequest(path: string, options: RequestInit = {}): Promise<any> {
   const session = getTeacherSession()
   if (!session?.accessToken) throw new Error('Не авторизовано')
-  return request(path, {
+
+  const send = (token: string) => request(path, {
     ...options,
-    headers: { 'Authorization': `Bearer ${session.accessToken}`, ...(options as any).headers },
+    headers: { 'Authorization': `Bearer ${token}`, ...(options as any).headers },
   })
+
+  try {
+    return await send(session.accessToken)
+  } catch (e) {
+    // Лише протухлий/невалідний токен (401). 403 (pending/blocked) не ретраїмо.
+    if ((e as ApiError)?.status !== 401) throw e
+    const freshToken = await refreshTeacherSession()
+    if (!freshToken) {
+      localStorage.removeItem('teacher_session')
+      throw new Error('Сесія завершилася. Увійдіть знову.')
+    }
+    return send(freshToken)
+  }
 }
 
 export function getTeacherMe(): Promise<{ id: string; authUserId: string; role: string; name: string }> {

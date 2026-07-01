@@ -26,7 +26,9 @@ Run this checklist before a real pilot.
 - [ ] Decide whether pilot signup is public or invitation-only in Supabase Auth settings
 - [ ] If public: register a teacher, confirm `ACCOUNT_PENDING`, activate via admin, then log in
 - [ ] If invitation-only: verify an uninvited signup is rejected
-- [ ] Confirm an expired teacher JWT requires login again
+- [ ] Confirm an expired teacher access token auto-refreshes (the action
+      succeeds without a manual re-login); only a failed/absent refresh token
+      forces login again
 
 ## 3. Admin Setup
 
