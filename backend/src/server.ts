@@ -37,8 +37,12 @@ await app.register(cors, {
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Attempt-Token'],
 })
 
-// Rate limiting — глобально: 100 запитів / хвилину з однієї IP
+// Rate limiting — глобально: 100 запитів / хвилину з однієї IP.
+// ⚠ Лічильник живе в памʼяті процесу → коректний ЛИШЕ на одному інстансі.
+// Горизонтальне масштабування потребує shared store (Redis/Valkey).
+// Див. docs/security-model.md та numInstances: 1 у backend/render.yaml.
 await app.register(rateLimit, getFastifyRateLimitOptions())
+app.log.info('rate-limit: in-memory store active — requires a single backend instance')
 
 // Production error handler — не витікаємо stack traces
 app.setErrorHandler((err: Error & { statusCode?: number; code?: string }, _req, reply) => {
