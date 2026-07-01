@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { assertEventCanIssueCodes } from './teacher-events-validation.js'
+import { assertEventCanIssueCodes, resolveCodeExpiry } from './teacher-events-validation.js'
 
 const NOW = new Date('2026-05-10T10:00:00.000Z')
 
@@ -43,4 +43,24 @@ test('assertEventCanIssueCodes rejects finished event', () => {
     }, NOW),
     /вже завершилась/
   )
+})
+
+const ENDS_AT = new Date('2026-05-10T11:00:00.000Z')
+
+test('resolveCodeExpiry: без заданого терміну → endsAt', () => {
+  assert.equal(resolveCodeExpiry(undefined, ENDS_AT).getTime(), ENDS_AT.getTime())
+})
+
+test('resolveCodeExpiry: заданий термін раніше endsAt → залишається', () => {
+  const earlier = '2026-05-10T10:30:00.000Z'
+  assert.equal(resolveCodeExpiry(earlier, ENDS_AT).toISOString(), earlier)
+})
+
+test('resolveCodeExpiry: заданий термін пізніше endsAt → clamp до endsAt', () => {
+  const later = '2026-05-10T23:00:00.000Z'
+  assert.equal(resolveCodeExpiry(later, ENDS_AT).getTime(), ENDS_AT.getTime())
+})
+
+test('resolveCodeExpiry: некоректна дата → безпечний дефолт endsAt', () => {
+  assert.equal(resolveCodeExpiry('not-a-date', ENDS_AT).getTime(), ENDS_AT.getTime())
 })

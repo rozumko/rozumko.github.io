@@ -5,7 +5,7 @@ import { db } from '../db/index.js'
 import { accessCodes, attempts, classStudents, eventQuestions, eventRegistrations, olympiadEvents, teacherClasses } from '../db/schema.js'
 import { requireAuth } from '../lib/auth.js'
 import { assertEventCanAcceptRegistrations, assertRegistrationCanBeCancelled, normalizeRegistrationInput, normalizeTeacherClassInput } from './registration-validation.js'
-import { assertEventCanIssueCodes } from './teacher-events-validation.js'
+import { assertEventCanIssueCodes, resolveCodeExpiry } from './teacher-events-validation.js'
 
 // Прості, знайомі дітям українські слова (3–5 літер, лише кирилиця).
 // Без англ. літер і спецсимволів — щоб дитині було легко прочитати і ввести.
@@ -412,7 +412,8 @@ export async function teacherRoutes(app: FastifyInstance) {
       grade:     registration.grade,
       maxUses,
       createdBy: req.user!.id,
-      expiresAt: expiresAt ? new Date(expiresAt) : null,
+      // TTL: за замовчуванням код живе до кінця події; заданий термін не пізніше endsAt.
+      expiresAt: resolveCodeExpiry(expiresAt, event.endsAt),
     }))
 
     const inserted = await db
