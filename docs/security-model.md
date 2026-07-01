@@ -2,6 +2,18 @@
 
 _Updated: 2026-07-01_
 
+> **Implementation status legend.**
+>
+> - **[IMPLEMENTED]** — enforced by code and covered by tests today.
+> - **[PLANNED]** — required rules for features not built yet. They are
+>   binding *when* the feature is built: the listed regression tests must land
+>   **before** the feature code. Nothing enforces them today because the
+>   feature does not exist.
+>
+> As of _2026-07-01_ the enforced surface is the **official olympiad flow** and
+> **teacher/admin auth**. **Home Mode, payments/entitlement and multi-client
+> session rules are [PLANNED].**
+
 ## Core Rules
 
 1. The browser is untrusted.
@@ -55,7 +67,10 @@ The backend is the only component that accesses application tables. Row Level
 Security is enabled for application data. No frontend code may call Supabase
 Data API tables directly.
 
-## School And Home Data Boundaries
+## School And Home Data Boundaries **[PLANNED]**
+
+_Home Mode and an anonymous School backend are not implemented. These boundaries
+are binding once those surfaces are built._
 
 School Mode is the low-risk classroom surface:
 
@@ -77,7 +92,9 @@ Do not build a flow where a classroom code, avatar, printed QR, child memory or
 other school-session token becomes the way to recover a child's individual
 result in a parent account.
 
-## Payment And Entitlement Boundaries
+## Payment And Entitlement Boundaries **[PLANNED]**
+
+_No payment or entitlement code exists yet. Binding once payments are built._
 
 Payment card data must stay with the payment provider. Rozumko may store only
 the minimum payment-provider references and entitlement state needed to grant or
@@ -89,7 +106,10 @@ or webhooks must be verified before they change entitlement state.
 Entitlement state can unlock missions, reports, finals or diplomas. It must not
 change answer keys, scoring rules or stored attempt answers.
 
-## Multi-Client Security Boundaries
+## Multi-Client Security Boundaries **[PLANNED]**
+
+_Only the web/PWA client exists today. Binding once native/app clients or a
+non-browser session strategy are built._
 
 The website, PWA and any tablet/phone apps are untrusted clients.
 
@@ -164,7 +184,8 @@ npm test
   scoring saved answers;
 - Render backend auto-deploy waits for CI checks.
 
-Home Mode security regression tests should cover:
+Home Mode security regression tests **[PLANNED]** should cover (these must land
+before any Home Mode feature code):
 
 - payment callback verification before entitlement changes;
 - expired entitlement blocks paid content;

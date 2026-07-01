@@ -2,6 +2,20 @@
 
 _Updated: 2026-07-01_
 
+> **Implementation status legend.** This document mixes shipped design with
+> forward-looking direction. Sections are tagged:
+>
+> - **[IMPLEMENTED]** — code, schema and tests exist in this repo today.
+> - **[PLANNED]** — design intent only. No tables, routes or tests yet. Do not
+>   assume these exist; do not build on top of them without first adding the
+>   schema, routes and the security regression tests listed in
+>   `security-model.md`.
+>
+> As of _2026-07-01_ the shipped core is the **official olympiad flow**
+> (events, access codes, attempts, server-side scoring, teacher/admin panels).
+> **Home Mode, payments, entitlements, parent/child/consent data and a dedicated
+> anonymous School-mode backend are [PLANNED] and not implemented.**
+
 ## Overview
 
 Rozumko is an educational platform for grades 1-4 built around short missions
@@ -45,7 +59,12 @@ Mission content is organized around:
 - parent-readable outcomes: attention, logic, following instructions,
   confidence with tasks and useful screen time.
 
-## School/Home Architecture
+## School/Home Architecture **[PLANNED]**
+
+_The School/Home split below is design intent. The listed `features/missions/`,
+`features/school/`, `features/home/` directories and Home/School backend routes
+do not exist yet. A public School entry page exists, but there is no anonymous
+classroom backend or mission mode._
 
 School mode and Home missions stay decoupled. School mode may send users to a
 Home URL as a neutral brand path, but it does not transfer individual classroom
@@ -74,7 +93,9 @@ Backend direction:
   requires backend state;
 - all frontend HTTP calls continue to go through `features/api/client.ts`.
 
-## Multi-Platform Direction
+## Multi-Platform Direction **[PLANNED]**
+
+_Direction for future native/PWA clients. Only the web/PWA client exists today._
 
 Rozumko is web-first today and app-ready by design.
 
@@ -100,7 +121,12 @@ Do not fork business logic into a mobile app. A tablet or phone app may cache UI
 state and non-secret progress metadata, but official/paid scoring and access
 decisions must still come from the backend.
 
-## Paid Access Direction
+## Paid Access Direction **[PLANNED]**
+
+_Entitlement/payment state is design intent. No entitlement or payment-provider
+tables or webhook handlers exist yet; `event_registrations.payment_status` is the
+only payment-related field in the schema and has no provider integration. The
+**Official olympiad flow** subsection below, by contrast, is **[IMPLEMENTED]**._
 
 Home access is represented by backend entitlement state. The data model should
 be able to represent active, expired and revoked access.
@@ -188,7 +214,7 @@ To keep conditions fair:
 
 ## Key Tables
 
-Current implemented tables:
+Current implemented tables **[IMPLEMENTED]**:
 
 - `questions`
 - `olympiad_events`
@@ -201,7 +227,7 @@ Current implemented tables:
 - `class_students`
 - `event_registrations`
 
-Home Mode concepts use tables or equivalent storage for:
+Home Mode concepts **[PLANNED]** would use tables or equivalent storage for:
 
 - parent identity/profile;
 - child profile created by a parent;
@@ -212,7 +238,7 @@ Home Mode concepts use tables or equivalent storage for:
 - paid access entitlement;
 - payment provider event/audit record.
 
-App support may use:
+App support **[PLANNED]** may use:
 
 - device/session records;
 - refresh/session token strategy suitable for non-browser clients;
@@ -225,7 +251,9 @@ App support may use:
 - Backend hosting: `backend/render.yaml`.
 - Render waits for CI checks before backend auto-deploy.
 - Required backend env: `DATABASE_URL`, `SUPABASE_URL`, `ATTEMPT_SECRET`.
-- Health checks: `GET /health` and database-aware `GET /ping`.
+- Health checks: `GET /health` (liveness) plus database-aware `GET /ready`
+  (readiness) and `GET /ping` (keep-awake); `/ready` and `/ping` return `503`
+  if the database is unreachable.
 
 ## Operational Notes
 
