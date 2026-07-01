@@ -65,7 +65,7 @@ Do not rely on monitoring alone. Teacher reports are part of the signal.
 - [ ] Review downtime and latency history for the event window.
 - [ ] Add incidents to the private operational note.
 - [ ] Create follow-up issues for repeated failures or slow recovery.
-- [ ] Confirm monitoring remains enabled for future pilots.
+- [ ] Confirm monitoring remains enabled for upcoming pilots.
 
 ## Readiness Standard
 

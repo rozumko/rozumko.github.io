@@ -1,52 +1,72 @@
-# Product Roadmap - Rozumko
+# Product Direction - Rozumko
 
-_Updated: 2026-06-30_
+_Updated: 2026-07-01_
 
-## Current MVP Status
+## Positioning
 
-Implemented:
+Rozumko is an educational platform for short logic missions for children in
+grades 1-4. The product turns screen time into structured practice for
+attention, logic, step-by-step thinking and confidence with tasks.
 
-- practice, demo and official olympiad modes;
-- event-based official olympiads with per-event duration and question count;
-- server-side scoring for all six question types;
-- answer-key stripping for official and demo modes;
-- personal-code recovery after F5 or a closed tab;
-- teacher classes, registrations, student labels and personal code generation;
-- admin event setup, question bank, results and teacher activation;
-- teacher-issued certificates and diplomas (award tier by score: participation
-  certificate, or diploma for I/II/III place), generated in the browser without
-  storing child names;
-- late-answer protection for concurrent `/answer` and `/finish` races;
-- lightweight HTTP load-test scaffold for the official student attempt flow;
-- GitHub Pages frontend deployment and Render backend CI.
+Rozumko should not present itself only as an informatics olympiad. Online events
+remain one supported format, but the broader product is logic practice through
+missions.
 
-## Before Free Pilot
+## Product Surfaces
 
-1. Run `docs/smoke-test.md` end to end with all six question types.
-2. Clean legacy test attempts and codes if they obscure results.
-3. Populate and review the real olympiad question bank.
-4. Decide Supabase Auth signup policy.
-5. Configure PostgreSQL backups and perform one restore test.
-6. Configure monitoring for `/ping`.
+| Surface | Audience | Purpose |
+|---|---|---|
+| Home missions | Parents and children | Useful home practice, progress and motivation. |
+| School mode | Teachers and classes | Free classroom activity, trust and brand familiarity. |
+| Official events | Teachers, students and admins | Structured online event flow with codes, timing, scoring and certificates. |
 
-## Before Paid Launch
+School mode and Home missions are intentionally separate. A classroom activity
+may point families to the Home surface, but it must not transfer individual
+classroom results into parent accounts.
 
-1. Add browser E2E coverage for admin setup, student completion, timer expiry and F5 recovery.
-2. Add audit logging for admin actions.
-3. Add shared rate-limit storage before scaling Render beyond one instance.
-4. Add a deliberate teacher-token refresh strategy or shorten the documented session expectation.
-5. Prepare support instructions for code loss, interrupted attempts and manual result review.
-6. Add payment provider integration without storing card data.
+## Business Model In Public Terms
 
-## Later
+Rozumko's paid value is the home learning experience: regular short missions,
+clear progress, seasonal motivation and recognition. Classroom use exists to be
+useful for teachers and safe for schools, not to make teachers collect payments.
 
-- Custom domain with updated CORS and CSP.
-- Learning resources, games and courses.
-- Optional progress tracking with minimal child data.
-- Subscription features after the free pilot validates demand.
+Payment features must keep card data with the payment provider. Rozumko stores
+only the access state needed to provide the service.
+
+## Product Principles
+
+1. Keep child data minimal.
+2. Keep classroom use free from payment collection and parent-account linking.
+3. Keep answer keys and official scoring on the backend.
+4. Keep the content reusable across home missions, school activities and events.
+5. Keep the experience touch-friendly for web, PWA and app clients.
+6. Keep all clients on one backend and one set of scoring/access rules.
+
+## Content Direction
+
+Mission content should be repeatable and versioned. A mission can be reused in
+different contexts when the data boundaries are respected:
+
+- a home mission can produce individual progress after parent consent;
+- a school mission can produce aggregate class-level insight;
+- an official event can produce a scored result and certificate/diploma.
+
+Parent-facing copy should use simple language:
+
+- attention;
+- logic;
+- useful screen time;
+- confidence with tasks;
+- short practice.
+
+Avoid making public copy sound like school audit, teacher ranking or fear-based
+AI marketing.
 
 ## Privacy Direction
 
-Keep child data minimal. The server may store event, class, code, answers, score
-and technical timestamps. Certificate names remain browser-only. Payment card
-data must remain with the payment provider.
+School mode should not store child personal data or connect classroom activity
+to parent payment. Home missions may store parent-led child profile, consent,
+answers, score, progress and technical timestamps when needed for the service.
+
+Certificate names remain browser-only unless a feature explicitly collects
+consent to store names. Payment card data remains with the payment provider.

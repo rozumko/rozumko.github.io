@@ -1,12 +1,20 @@
 # Architecture - Rozumko
 
-_Updated: 2026-06-30_
+_Updated: 2026-07-01_
 
 ## Overview
 
-Rozumko is an online informatics olympiad and training platform for grades 1-4.
-The frontend is static, while all database access and official scoring go through
-the backend.
+Rozumko is an educational platform for grades 1-4 built around short logic
+missions, classroom activities and structured online events. The public product
+surfaces are:
+
+- **School Mode**: a free classroom mode for trust and awareness, with no parent
+  accounts, payments or child personal data.
+- **Home missions**: parent-led home practice with consented child progress and
+  parent-readable results.
+
+The frontend is static, while all database access and official or
+diploma-generating scoring go through the backend.
 
 | Layer | Technology |
 |---|---|
@@ -16,13 +24,78 @@ the backend.
 | Auth | Supabase Auth for teachers and admins only |
 | Hosting | GitHub Pages frontend, Render backend |
 
-## Student Modes
+## Current Student/Event Modes
+
+The platform includes these student-facing event and practice modes:
 
 | Mode | Code | Questions | Scoring |
 |---|---|---|---|
 | Practice | No | `isOlympiad=false` | Local feedback; answer keys are intentionally returned |
 | Demo | No | Practice pool, `difficulty=hard` | No score; answer keys stay hidden |
 | Official olympiad | Yes | Fixed event selection | Server-side only |
+
+## School/Home Architecture
+
+School mode and Home missions stay decoupled. School mode may send users to a
+Home URL as a neutral brand path, but it does not transfer individual classroom
+results into parent accounts.
+
+| Area | School Mode | Home Mode |
+|---|---|---|
+| Entry | `/school` or classroom entry | `/home` or seasonal mission landing |
+| Identity | Anonymous or temporary classroom session | Parent-led account/profile |
+| Child data | No child personal data | Stored only after parent consent |
+| Results | Aggregate/class-level only | Individual progress and reports |
+| Payments | None | Paid access handled in Home |
+| Scoring | Server-side for official/diploma results | Server-side for paid/diploma results |
+
+Frontend structure:
+
+- `features/missions/` for reusable mission runner logic;
+- `features/school/` for anonymous classroom UX;
+- `features/home/` for parent-led Home Mode UX.
+
+Backend direction:
+
+- explicit Home Mode routes for parent profile, consent, attempts, reports and
+  entitlement checks;
+- explicit School Mode routes only if anonymous classroom aggregate support
+  requires backend state;
+- all frontend HTTP calls continue to go through `features/api/client.ts`.
+
+## Multi-Platform Direction
+
+Rozumko is web-first today and app-ready by design.
+
+Principles:
+
+- web, PWA and native apps are clients of the same backend product;
+- scoring, answer keys, consent, entitlement and paid-access rules stay on the
+  backend;
+- mission content and scoring profiles should be versioned and data-driven;
+- client code should keep mission/domain logic separate from page-specific DOM
+  glue where practical;
+- APIs are designed so mobile clients can consume them without a separate
+  backend.
+
+Near-term client strategy:
+
+1. Keep the website and PWA as the first client.
+2. Make Home Mode touch-first and mobile-friendly.
+3. Keep business logic outside individual clients.
+4. Keep the option open for a wrapped app or native app using the same backend.
+
+Do not fork business logic into a mobile app. A tablet or phone app may cache UI
+state and non-secret progress metadata, but official/paid scoring and access
+decisions must still come from the backend.
+
+## Paid Access Direction
+
+Home access is represented by backend entitlement state. The data model should
+be able to represent active, expired and revoked access.
+
+Payment state unlocks access. It must not decide scores or alter answer
+evaluation.
 
 ### Official olympiad flow
 
@@ -104,6 +177,8 @@ To keep conditions fair:
 
 ## Key Tables
 
+Current implemented tables:
+
 - `questions`
 - `olympiad_events`
 - `event_questions`
@@ -115,6 +190,23 @@ To keep conditions fair:
 - `class_students`
 - `event_registrations`
 
+Home Mode concepts use tables or equivalent storage for:
+
+- parent identity/profile;
+- child profile created by a parent;
+- consent records;
+- mission and mission version;
+- mission attempt;
+- result report;
+- paid access entitlement;
+- payment provider event/audit record.
+
+App support may use:
+
+- device/session records;
+- refresh/session token strategy suitable for non-browser clients;
+- push notification preferences after retention is validated.
+
 ## Deployment
 
 - Frontend: `.github/workflows/deploy.yml` builds `dist/` and deploys GitHub Pages.
@@ -124,9 +216,8 @@ To keep conditions fair:
 - Required backend env: `DATABASE_URL`, `SUPABASE_URL`, `ATTEMPT_SECRET`.
 - Health checks: `GET /health` and database-aware `GET /ping`.
 
-## Known MVP Limitations
+## Operational Notes
 
 - Frontend JWT refresh is not automatic; an expired teacher session requires login.
 - Rate limiting is in process memory and is suitable only for one Render instance.
-- Database backup and restore must be configured operationally.
-- Browser E2E coverage is still missing.
+- Database backup and restore are handled operationally.

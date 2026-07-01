@@ -1,109 +1,114 @@
-# 🧠 Розумко — Онлайн-олімпіада з інформатики
+# Rozumko - Logic Missions For Grades 1-4
 
-> Онлайн-платформа для проведення олімпіад та тренувань з інформатики для учнів 1–4 класів.
+> Rozumko is an educational web platform for short logic missions, practice tasks
+> and online events for younger schoolchildren.
 
 [![License: Proprietary](https://img.shields.io/badge/license-Proprietary-red.svg)](./LICENSE)
 [![GitHub Pages](https://img.shields.io/badge/hosted-GitHub%20Pages-blue.svg)](https://rozumko.github.io)
 
 ---
 
-## ⚠️ Ліцензія
+## License
 
-**Це комерційний проєкт з закритою ліцензією.**  
-Публічний репозиторій розміщений виключно для прозорості та не надає жодних прав на використання коду.
+**This is a commercial proprietary project.**
+The public repository is provided for transparency and does not grant permission
+to use, copy, modify or redistribute the code.
 
 ---
 
-## Про проєкт
+## About
 
-**Розумко** — освітня платформа для проведення онлайн-олімпіад і тренувань з інформатики для учнів початкової школи.
+**Rozumko** helps children in grades 1-4 practise attention, logic and
+step-by-step thinking through short digital missions.
 
-| Роль | Можливості |
+The public product is organized around two clear surfaces:
+
+| Surface | Purpose |
 |---|---|
-| 👨‍🏫 **Вчитель** | Кабінет: класи, реєстрації на події, генерація кодів за реєстраціями, перегляд результатів |
-| 🧒 **Учень** | Вхід за кодом без реєстрації, тренування або олімпіада |
-| 🔧 **Адмін** | Банк питань (CRUD), події олімпіад, добір питань для подій, результати, список вчителів |
+| **Home missions** | Parent-led practice for useful screen time, progress and short logic activities. |
+| **School mode** | A low-friction classroom surface for teachers and groups, kept separate from parent payments and child personal data. |
 
-### Ключові особливості
+The existing platform also includes official event flows with access codes,
+teacher/admin tools, server-side scoring and electronic certificates/diplomas.
 
-- **Без реєстрації для учнів** — вхід тільки за кодом (`КІТ247`)
-- **Безпека** — відповіді та оцінювання тільки на сервері, ключі відповідей ніколи не надходять у браузер
-- **Події олімпіад** — адмін створює подію, визначає дати та питання для кожного класу
-- **Реєстрації без ПІБ дітей** — вчитель створює клас, реєструє кількість учасників на подію і генерує коди
-- **3 режими** — тренування (з поясненнями), демо, олімпіада (таймер, fullscreen)
-- **Захист від збоїв** — відновлення персональної спроби після F5 через повторне введення коду
-- **Доступність** — WCAG 2.2, focus trap, prefers-reduced-motion
+### Key Principles
+
+- **Useful screen time** - short tasks for attention, logic and confidence with problems.
+- **Clean School/Home split** - classroom use does not transfer individual child results into parent accounts.
+- **Server-side scoring** - official, paid or diploma-generating scoring belongs on the backend.
+- **Minimal child data** - students do not use Supabase Auth accounts.
+- **Backend-only database access** - frontend code calls the backend API, never Supabase tables directly.
+- **App-ready direction** - the website, PWA and app clients share the same backend product rules.
 
 ---
 
-## Стек
+## Stack
 
-| Шар | Технологія |
+| Layer | Technology |
 |---|---|
 | Frontend | Vite + TypeScript (allowJs) + Vanilla JS + CSS tokens |
 | Backend | Node.js + Fastify v5 + TypeScript |
-| База даних | PostgreSQL (Supabase, портабельний) + Drizzle ORM |
-| Auth | Supabase Auth (тільки вчитель/адмін) + JWKS верифікація |
-| Хостинг Frontend | GitHub Pages (деплой через GitHub Actions) |
-| Хостинг Backend | Render (free tier) |
+| Database | PostgreSQL (Supabase, portable) + Drizzle ORM |
+| Auth | Supabase Auth for teachers/admins + JWKS verification |
+| Frontend hosting | GitHub Pages via GitHub Actions |
+| Backend hosting | Render |
 
 ---
 
-## Структура проєкту
+## Project Structure
 
-```
-├── index.html / student.html / teacher.html / admin.html
-├── student.ts / teacher.ts / admin.ts   ← точки входу
-├── style.css / tokens.css               ← стилі (без фреймворків)
-├── vite.config.ts / tsconfig.json
-│
-├── features/
-│   ├── api/client.ts     ← всі запити до backend (типізовані)
-│   ├── admin/            ← вкладки адмін-панелі
-│   └── olympiad/         ← quiz-engine, getModeConfig
-│
-├── utils/
-│   ├── question-renderer.ts
-│   ├── focus-trap.ts
-│   └── dom.ts
-│
-├── backend/              ← окремий Node.js + Fastify сервер
-│   ├── src/
-│   │   ├── routes/       ← student, attempt, teacher, admin, questions
-│   │   ├── lib/auth.ts   ← JWT middleware (JWKS)
-│   │   └── db/           ← Drizzle schema + migration runner
-│   ├── drizzle/          ← SQL-міграції
-│   └── render.yaml
-│
-├── public/               ← статичні assets (sw.js, manifest, favicon)
-├── docs/                 ← технічна документація
-└── .github/workflows/    ← frontend deploy + backend CI
+```text
+index.html / home.html / school.html / student.html / teacher.html / admin.html
+student.ts / teacher.ts / admin.ts
+style.css / tokens.css
+vite.config.ts / tsconfig.json
+
+features/
+  api/client.ts
+  admin/
+  olympiad/
+
+utils/
+  question-renderer.ts
+  focus-trap.ts
+  dom.ts
+
+backend/
+  src/routes/
+  src/lib/auth.ts
+  src/db/
+  drizzle/
+  render.yaml
+
+public/
+docs/
+.github/workflows/
 ```
 
 ---
 
-## Документація
+## Documentation
 
-- [Архітектура](./docs/architecture.md)
-- [Модель безпеки](./docs/security-model.md)
-- [Політика повідомлення про вразливості](./SECURITY.md)
-- [Міграції БД](./docs/migrations.md)
-- [Smoke-тест перед пілотом](./docs/smoke-test.md)
-- [Runbook дня олімпіади](./docs/olympiad-day-runbook.md)
-- [Load-test офіційного flow](./docs/load-test.md)
+- [Architecture](./docs/architecture.md)
+- [Security model](./docs/security-model.md)
+- [Security policy](./SECURITY.md)
+- [Database migrations](./docs/migrations.md)
+- [Smoke test](./docs/smoke-test.md)
+- [Event day runbook](./docs/olympiad-day-runbook.md)
+- [Load test](./docs/load-test.md)
 - [Backup/restore](./docs/backup-restore.md)
 - [Monitoring](./docs/monitoring.md)
 - [Render operations](./docs/render-operations.md)
 - [Deployment portability](./docs/deployment-portability.md)
 - [VPS migration checklist](./docs/vps-migration-checklist.md)
-- [Продуктовий план](./docs/product-roadmap.md)
+- [Product direction](./docs/product-roadmap.md)
 
 ---
 
-## Локальний запуск
+## Local Development
 
 ```bash
-# Frontend (dev server)
+# Frontend
 npm install
 npm run dev
 
@@ -113,9 +118,11 @@ npm install
 npm run dev
 ```
 
-Backend потребує `.env` з `DATABASE_URL`, `SUPABASE_URL`, `ATTEMPT_SECRET`; `PORT` необов'язковий.
+Backend requires `.env` with `DATABASE_URL`, `SUPABASE_URL`,
+`ATTEMPT_SECRET`; `PORT` is optional.
 
-Frontend за замовчуванням використовує production API. Для локального smoke-тесту скопіюйте `.env.example` у `.env.local` і встановіть:
+The frontend uses the production API by default. For local smoke testing, copy
+`.env.example` to `.env.local` and set:
 
 ```bash
 VITE_API_URL=http://localhost:3000
@@ -123,4 +130,4 @@ VITE_API_URL=http://localhost:3000
 
 ---
 
-*© 2024–2026 Розумко. Всі права захищені.*
+*Copyright 2024-2026 Rozumko. All rights reserved.*

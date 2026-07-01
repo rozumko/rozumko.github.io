@@ -23,8 +23,8 @@ Reason:
   separate rate-limit bucket per instance.
 - The current security model assumes one Render reverse-proxy hop and
   `trustProxy: 1`.
-- Unsupported store values fail fast at startup; Redis/Valkey mode is reserved
-  but not implemented yet.
+- Unsupported store values fail fast at startup. Shared-store mode must be
+  configured and tested before multiple backend instances are used.
 
 Do not scale to multiple instances until one of these is true:
 

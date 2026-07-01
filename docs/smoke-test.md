@@ -1,4 +1,4 @@
-# MVP Smoke Test - Rozumko
+# Smoke Test - Rozumko
 
 _Updated: 2026-06-30_
 
@@ -26,7 +26,7 @@ Run this checklist before a real pilot.
 - [ ] Decide whether pilot signup is public or invitation-only in Supabase Auth settings
 - [ ] If public: register a teacher, confirm `ACCOUNT_PENDING`, activate via admin, then log in
 - [ ] If invitation-only: verify an uninvited signup is rejected
-- [ ] Confirm an expired teacher JWT requires login again; automatic refresh is not implemented
+- [ ] Confirm an expired teacher JWT requires login again
 
 ## 3. Admin Setup
 

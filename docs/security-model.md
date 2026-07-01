@@ -1,6 +1,6 @@
 # Security Model - Rozumko
 
-_Updated: 2026-06-30_
+_Updated: 2026-07-01_
 
 ## Core Rules
 
@@ -10,6 +10,9 @@ _Updated: 2026-06-30_
 4. Students have no accounts; official access is code-based.
 5. JWT proves teacher identity, while the database decides role and status.
 6. All database access goes through the backend API.
+7. School Mode and Home Mode must not be linked by individual child identifiers
+   or claim tokens.
+8. Payment state may unlock access, but it must not decide scoring.
 
 ## Student Attempt Protection
 
@@ -51,6 +54,58 @@ avoiding unsafe HTML interpolation.
 The backend is the only component that accesses application tables. Row Level
 Security is enabled for application data. No frontend code may call Supabase
 Data API tables directly.
+
+## School And Home Data Boundaries
+
+School Mode is the low-risk classroom surface:
+
+- no child personal data;
+- no parent accounts or parent identifiers;
+- no payments;
+- no individual school-to-home claim tokens;
+- aggregate/class-level results only.
+
+Home Mode is the parent-led surface:
+
+- parent consent is required before storing child progress;
+- child profiles are created by the parent or responsible adult;
+- individual reports and diplomas are based on Home Mode data, not imported
+  from anonymous classroom sessions;
+- paid access is checked by backend entitlement state.
+
+Do not build a flow where a classroom code, avatar, printed QR, child memory or
+other school-session token becomes the way to recover a child's individual
+result in a parent account.
+
+## Payment And Entitlement Boundaries
+
+Payment card data must stay with the payment provider. Rozumko may store only
+the minimum payment-provider references and entitlement state needed to grant or
+revoke access.
+
+Paid Home access is represented by backend entitlement state. Payment callbacks
+or webhooks must be verified before they change entitlement state.
+
+Entitlement state can unlock missions, reports, finals or diplomas. It must not
+change answer keys, scoring rules or stored attempt answers.
+
+## Multi-Client Security Boundaries
+
+The website, PWA and any tablet/phone apps are untrusted clients.
+
+Security rules must not depend on the client type:
+
+- answer keys for paid, official or diploma-generating missions stay off the
+  client;
+- scoring happens on the backend;
+- entitlement checks happen on the backend;
+- consent state is stored and verified by the backend;
+- a native app must not call Supabase tables directly;
+- mobile clients need an audited session/token strategy.
+
+Offline or cached app state may include only non-secret UI state or recovery
+metadata. It must not include answer keys, payment authority or server-trusted
+scores.
 
 ## HTTP Protections
 
@@ -108,6 +163,16 @@ npm test
 - attempt finalization rejects late answers and locks the attempt row while
   scoring saved answers;
 - Render backend auto-deploy waits for CI checks.
+
+Home Mode security regression tests should cover:
+
+- payment callback verification before entitlement changes;
+- expired entitlement blocks paid content;
+- revoked entitlement blocks paid content;
+- Home Mode answer keys do not reach the browser for paid or diploma-generating
+  missions;
+- School Mode never exposes individual classroom results through a parent
+  recovery path.
 
 GitHub Pages also runs frontend typecheck, tests and build inside its deployment
 workflow. Render Blueprint uses `autoDeployTrigger: checksPass`.

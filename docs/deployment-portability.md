@@ -51,12 +51,13 @@ npm run db:migrate:prod
 - `postgres`
 - `valkey`
 
-Valkey is included for future shared rate limiting. The current backend still
-uses in-process rate limiting, so do not scale multiple backend replicas until a
-shared limiter is implemented and tested.
+Valkey is included as the reference component for shared rate limiting. The
+backend uses in-process rate limiting in the current deployment shape, so keep a
+single backend replica unless the shared limiter path has been explicitly
+enabled and tested.
 
-Keep `RATE_LIMIT_STORE=memory` until Redis/Valkey-backed rate limiting is added
-in code. Setting another value currently makes the backend fail fast at startup.
+Keep `RATE_LIMIT_STORE=memory` for this deployment shape. Setting another value
+makes the backend fail fast at startup.
 
 Before using the compose file, create an uncommitted `.env` next to it with at
 least:
