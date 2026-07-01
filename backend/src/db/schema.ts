@@ -1,4 +1,4 @@
-import { pgTable, text, integer, boolean, timestamp, jsonb, uuid } from 'drizzle-orm/pg-core'
+import { pgTable, text, integer, boolean, timestamp, jsonb, uuid, unique } from 'drizzle-orm/pg-core'
 
 /**
  * Типи питань:
@@ -152,3 +152,59 @@ export const classStudents = pgTable('class_students', {
 
 export type ClassStudent = typeof classStudents.$inferSelect
 export type NewClassStudent = typeof classStudents.$inferInsert
+
+// ── School Mode (просунутий режим, Kahoot-стиль) ──────────────────────────────
+// Ефемерні класні сесії: вчитель створює, учні приєднуються анонімно за кодом.
+// Жодних дитячих PII — nickname лише мітка, avatar із allowlist. Скоринг на сервері.
+
+export const schoolSessions = pgTable('school_sessions', {
+  id:             uuid('id').primaryKey().defaultRandom(),
+  teacherId:      uuid('teacher_id').notNull().references(() => appUsers.id),
+  grade:          integer('grade').notNull(),
+  difficulty:     text('difficulty'),                 // easy | medium | hard | null
+  questionsCount: integer('questions_count').notNull().default(10),
+  joinCode:       text('join_code').notNull().unique(),
+  status:         text('status').notNull().default('lobby'), // lobby | active | finished
+  createdAt:      timestamp('created_at', { withTimezone: true }).defaultNow(),
+  startedAt:      timestamp('started_at', { withTimezone: true }),
+  finishedAt:     timestamp('finished_at', { withTimezone: true }),
+})
+
+export type SchoolSession = typeof schoolSessions.$inferSelect
+export type NewSchoolSession = typeof schoolSessions.$inferInsert
+
+// Immutable набір питань сесії (як attempt_questions).
+export const schoolSessionQuestions = pgTable('school_session_questions', {
+  id:         uuid('id').primaryKey().defaultRandom(),
+  sessionId:  uuid('session_id').notNull().references(() => schoolSessions.id, { onDelete: 'cascade' }),
+  questionId: uuid('question_id').notNull().references(() => questions.id),
+  position:   integer('position').notNull(),
+})
+
+export type SchoolSessionQuestion = typeof schoolSessionQuestions.$inferSelect
+
+// Ефемерний учасник. participant_token (HMAC) видає сервер; тут не зберігається.
+export const schoolParticipants = pgTable('school_participants', {
+  id:        uuid('id').primaryKey().defaultRandom(),
+  sessionId: uuid('session_id').notNull().references(() => schoolSessions.id, { onDelete: 'cascade' }),
+  avatar:    text('avatar').notNull(),      // із allowlist SCHOOL_AVATARS
+  nickname:  text('nickname').notNull(),    // довільна мітка, не справжнє імʼя
+  score:     integer('score').notNull().default(0),
+  joinedAt:  timestamp('joined_at', { withTimezone: true }).defaultNow(),
+})
+
+export type SchoolParticipant = typeof schoolParticipants.$inferSelect
+
+// Відповіді учасника; is_correct рахує сервер. UNIQUE(participant, question) — без дублів.
+export const schoolAnswers = pgTable('school_answers', {
+  id:            uuid('id').primaryKey().defaultRandom(),
+  participantId: uuid('participant_id').notNull().references(() => schoolParticipants.id, { onDelete: 'cascade' }),
+  questionId:    uuid('question_id').notNull().references(() => questions.id),
+  answer:        jsonb('answer'),
+  isCorrect:     boolean('is_correct').notNull(),
+  answeredAt:    timestamp('answered_at', { withTimezone: true }).defaultNow(),
+}, (t) => ({
+  uniqParticipantQuestion: unique('school_answers_participant_question_uq').on(t.participantId, t.questionId),
+}))
+
+export type SchoolAnswer = typeof schoolAnswers.$inferSelect
