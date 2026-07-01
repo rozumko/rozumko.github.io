@@ -7,6 +7,11 @@ services:
     startCommand: node dist/server.js
     autoDeployTrigger: checksPass
     healthCheckPath: /health
+    # OPERATIONAL INVARIANT: rate limiting is in-process memory
+    # (RATE_LIMIT_STORE=memory). It is correct ONLY on a single instance.
+    # Do not raise numInstances above 1 until a shared store (Redis/Valkey)
+    # is implemented and tested — see docs/security-model.md.
+    numInstances: 1
     envVars:
       - key: DATABASE_URL
         sync: false

@@ -72,6 +72,10 @@ Use `docs/backup-restore.md` for dump/restore details.
 - [ ] Confirm `/ping` returns `{ "status": "ok", "db": "ok" }`.
 - [ ] Confirm logs do not print secrets.
 - [ ] Confirm restart policy is enabled.
+- [ ] Confirm the backend runs as a SINGLE instance (no horizontal scaling /
+      no multi-replica) while `RATE_LIMIT_STORE=memory`. The startup log must
+      show `in-memory store active — requires a single backend instance`.
+      Scaling out requires a shared store (Redis/Valkey) first.
 
 ## Phase 5 - Point Frontend And Domains
 

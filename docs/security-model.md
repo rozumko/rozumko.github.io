@@ -133,9 +133,15 @@ Backend:
 
 - CORS is restricted to approved origins.
 - API requests are rate-limited.
-- Rate limiting currently uses `RATE_LIMIT_STORE=memory`. Unsupported store
-  values fail fast at startup so multi-instance deployments do not accidentally
-  run with a false shared-limiter assumption.
+- Rate limiting currently uses `RATE_LIMIT_STORE=memory`. **This is correct only
+  on a single backend instance**: the counter lives in one process's memory, so
+  running two or more instances silently multiplies the effective limit and lets
+  clients bypass it by hitting different instances. The deploy is pinned to one
+  instance (`numInstances: 1` in `backend/render.yaml`) and the backend logs
+  `in-memory store active — requires a single backend instance` at startup.
+  Horizontal scaling requires a shared store (Redis/Valkey) first. Unsupported
+  store values also fail fast at startup so a multi-instance deploy cannot run
+  with a false shared-limiter assumption.
 - Render adds one reverse-proxy hop. Fastify must use `trustProxy: 1`, never
   `trustProxy: true`, so clients cannot spoof `X-Forwarded-For` and bypass
   rate limits.

@@ -11,14 +11,9 @@ import {
   generateAttemptToken,
   verifyAttemptToken,
 } from './student-validation.js'
+import { getRemainingSeconds } from './attempt-timing.js'
 
 export { generateAttemptToken, verifyAttemptToken }
-
-function getRemainingSeconds(startedAt: Date | null, timeMinutes: number, endsAt: Date, now = new Date()): number {
-  const attemptDeadline = (startedAt?.getTime() ?? now.getTime()) + timeMinutes * 60_000
-  const deadline = Math.min(attemptDeadline, endsAt.getTime())
-  return Math.max(0, Math.ceil((deadline - now.getTime()) / 1000))
-}
 
 export async function studentRoutes(app: FastifyInstance) {
   // GET /api/student/validate-code?code=XXX
