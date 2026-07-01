@@ -103,6 +103,8 @@ export default defineConfig({
         teacher:          resolve(__dirname, 'teacher.html'),
         admin:            resolve(__dirname, 'admin.html'),
         offline:          resolve(__dirname, 'offline.html'),
+        home:             resolve(__dirname, 'home.html'),
+        school:           resolve(__dirname, 'school.html'),
         'for-teachers':   resolve(__dirname, 'for-teachers.html'),
         'for-students':   resolve(__dirname, 'for-students.html'),
         'for-parents':    resolve(__dirname, 'for-parents.html'),

@@ -4,6 +4,8 @@ import './register-sw.js'
 // Placeholders: <div id="site-header"></div> and <div id="site-footer"></div>
 
 const NAV = [
+  { href: 'home.html', label: 'Домашні місії' },
+  { href: 'school.html', label: 'Шкільний режим' },
   { href: 'for-students.html', label: 'Для учнів' },
   { href: 'for-parents.html',  label: 'Для батьків' },
   { href: 'for-teachers.html', label: 'Для вчителів' },
@@ -33,7 +35,7 @@ function injectHeader(): void {
           <span></span><span></span><span></span>
         </button>
         <nav id="site-nav" class="site-header__nav" aria-label="Навігація сайтом">${links}</nav>
-        <a href="student.html" class="site-header__cta">Для учнів →</a>
+        <a href="home.html" class="site-header__cta">Почати вдома →</a>
       </div>
     </header>`
 
@@ -85,6 +87,8 @@ function injectFooter(): void {
               <li><a href="for-students.html">Для учнів</a></li>
               <li><a href="for-parents.html">Для батьків</a></li>
               <li><a href="for-teachers.html">Для вчителів</a></li>
+              <li><a href="home.html">Домашні місії</a></li>
+              <li><a href="school.html">Шкільний режим</a></li>
             </ul>
           </div>
           <div>
@@ -98,6 +102,7 @@ function injectFooter(): void {
             <p class="footer-col__heading">Кабінет</p>
             <ul class="footer-col__list">
               <li><a href="teacher.html">Вхід для вчителя</a></li>
+              <li><a href="student.html">Вхід учня за кодом</a></li>
             </ul>
           </div>
         </nav>

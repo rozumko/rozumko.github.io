@@ -1,8 +1,8 @@
 {
-  "name": "Розумко — Олімпіада з інформатики",
+  "name": "Розумко — логічні місії",
   "short_name": "Розумко",
-  "description": "Онлайн-олімпіада з інформатики для учнів 1–4 класів",
-  "start_url": "/student.html",
+  "description": "Логічні місії для дітей 1–4 класів: увага, логіка й корисний екранний час",
+  "start_url": "/home.html",
   "display": "standalone",
   "background_color": "#4c1d95",
   "theme_color": "#7c3aed",
