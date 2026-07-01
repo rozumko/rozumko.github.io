@@ -46,7 +46,9 @@ async function init() {
       showDashboard(me.name || session.email)
     } catch {
       hideColdStartBanner()
-      showAuth()
+      // authRequest чистить сесію, якщо refresh-токен теж мертвий. Тоді показуємо
+      // явне повідомлення; транзієнтна помилка / не-адмін (сесія лишилась) — без нього.
+      showAuth(getTeacherSession() ? undefined : 'Сесія завершилася. Увійдіть знову.')
     }
   } else {
     showAuth()
@@ -111,11 +113,12 @@ function showDashboard(nameOrEmail: string) {
   loadResults()
 }
 
-function showAuth() {
+function showAuth(message?: string) {
   adminPanel.classList.add('hidden')
   authSection.classList.remove('hidden')
   loginBtn.disabled    = false
   loginBtn.textContent = 'Увійти'
+  loginError.textContent = message ?? ''
 }
 
 async function refreshStats() {

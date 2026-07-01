@@ -100,7 +100,9 @@ async function init() {
       await Promise.all([loadRegistrationEvents(), loadClasses(), loadRegistrations(), loadCodes(), loadResults()])
     } catch {
       hideColdStartBanner()
-      showAuth()
+      // authRequest чистить сесію, якщо refresh-токен теж мертвий. Тоді показуємо
+      // явне повідомлення; транзієнтна помилка (сесія лишилась) — без нього.
+      showAuth(getTeacherSession() ? undefined : 'Сесія завершилася. Увійдіть знову.')
     }
   } else {
     showAuth()
@@ -925,11 +927,12 @@ function showDashboard(nameOrEmail: string) {
   $maybe('auth-back-link')?.classList.add('hidden')
 }
 
-function showAuth() {
+function showAuth(message?: string) {
   dashboardSection.classList.add('hidden')
   authSection.classList.remove('hidden')
   document.body.classList.remove('teacher-dashboard-active')
   $maybe('auth-back-link')?.classList.remove('hidden')
   loginSubmitBtn.disabled    = false
   loginSubmitBtn.textContent = 'Увійти'
+  loginError.textContent = message ?? ''
 }
