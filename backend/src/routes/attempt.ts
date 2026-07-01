@@ -5,17 +5,12 @@ import { accessCodes, attemptQuestions, attempts, olympiadEvents } from '../db/s
 import { finalizeAttemptFromSavedAnswers } from './attempt-finalization.js'
 import { isQuestionInAttempt } from './attempt-validation.js'
 import { verifyAttemptToken } from './student-validation.js'
+import { getRemainingSeconds } from './attempt-timing.js'
 
 function checkAttemptToken(req: { headers: Record<string, string | string[] | undefined> }, attemptId: string): boolean {
   const token = req.headers['x-attempt-token']
   if (!token || typeof token !== 'string') return false
   return verifyAttemptToken(attemptId, token)
-}
-
-function getRemainingSeconds(startedAt: Date | null, timeMinutes: number, endsAt: Date, now = new Date()): number {
-  const attemptDeadline = (startedAt?.getTime() ?? now.getTime()) + timeMinutes * 60_000
-  const deadline = Math.min(attemptDeadline, endsAt.getTime())
-  return Math.max(0, Math.ceil((deadline - now.getTime()) / 1000))
 }
 
 export async function attemptRoutes(app: FastifyInstance) {
