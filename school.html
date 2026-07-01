@@ -42,15 +42,25 @@
       <h1 class="doc-h1">Шкільний режим</h1>
       <p class="doc-date">Безкоштовна класна місія: мислення, алгоритми, логіка й закономірності</p>
 
-      <!-- INTRO: вибір класу -->
+      <!-- INTRO: вибір класу та місії -->
       <section id="mission-intro" class="doc-content">
-        <p>Обери клас і почни коротку місію. Без реєстрації, без оплати й без збору дитячих персональних даних — усе відбувається у браузері.</p>
-        <div style="display:flex; gap:12px; flex-wrap:wrap; margin:20px 0;">
-          <button class="btn school-grade-btn" data-grade="1">1 клас</button>
-          <button class="btn school-grade-btn" data-grade="2">2 клас</button>
-          <button class="btn school-grade-btn" data-grade="3">3 клас</button>
-          <button class="btn school-grade-btn" data-grade="4">4 клас</button>
+        <p>Обери клас і місію. Без реєстрації, без оплати й без збору дитячих персональних даних — усе відбувається у браузері.</p>
+
+        <p style="font-weight:700; margin:20px 0 8px;">Клас</p>
+        <div id="grade-select" role="group" aria-label="Вибір класу" style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn school-grade-btn" data-grade="1" aria-pressed="true">1 клас</button>
+          <button class="btn school-grade-btn" data-grade="2" aria-pressed="false">2 клас</button>
+          <button class="btn school-grade-btn" data-grade="3" aria-pressed="false">3 клас</button>
+          <button class="btn school-grade-btn" data-grade="4" aria-pressed="false">4 клас</button>
         </div>
+
+        <p style="font-weight:700; margin:24px 0 8px;">Місія</p>
+        <div id="mission-select" role="group" aria-label="Вибір місії" style="display:flex; gap:12px; flex-wrap:wrap;">
+          <button class="btn school-mission-btn" data-mission="warmup">🔥 Розминка<br><small>5 легких питань</small></button>
+          <button class="btn school-mission-btn" data-mission="training">⭐ Тренування<br><small>10 питань</small></button>
+          <button class="btn school-mission-btn" data-mission="challenge">🚀 Виклик<br><small>10 складних питань</small></button>
+        </div>
+
         <p id="mission-error" class="quiz-feedback quiz-feedback--incorrect" aria-live="polite"></p>
       </section>
 
@@ -77,7 +87,8 @@
       <!-- RESULT: підсумок -->
       <section id="mission-result" class="hidden doc-content">
         <section class="doc-highlight doc-highlight--sky">
-          <p class="doc-highlight__heading"><i class="fas fa-star" aria-hidden="true"></i> Місію завершено!</p>
+          <p class="doc-highlight__heading"><i class="fas fa-star" aria-hidden="true"></i> <span id="result-mission-label">Місію завершено!</span></p>
+          <p id="result-stars" style="font-size:1.6rem; letter-spacing:2px;" aria-hidden="true"></p>
           <p>Правильних відповідей: <strong id="result-score"></strong> (<span id="result-percent"></span>).</p>
           <p id="result-message"></p>
         </section>
@@ -85,7 +96,7 @@
           <p class="doc-highlight__heading"><i class="fas fa-route" aria-hidden="true"></i> Для сімей</p>
           <p>Якщо дитині сподобалось — удома є більше місій. Домашній прогрес починається окремо й тільки за згодою дорослого.</p>
         </section>
-        <button id="mission-retry-btn" class="btn" style="margin-top:16px;">Ще одна місія</button>
+        <button id="mission-retry-btn" class="btn" style="margin-top:16px;">Обрати іншу місію</button>
       </section>
 
       <!-- Пояснення для вчителя -->

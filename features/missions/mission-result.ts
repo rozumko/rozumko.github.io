@@ -20,6 +20,14 @@ export function missionSummary(correct: number, total: number): MissionSummary {
   return { correct: safeCorrect, total: safeTotal, percent }
 }
 
+/** Зірки за відсотком: 0..3. Пороги збігаються з рівнями encouragement(). */
+export function starRating(percent: number): number {
+  if (percent >= 90) return 3
+  if (percent >= 70) return 2
+  if (percent >= 40) return 1
+  return 0
+}
+
 /** Дитяче підбадьорення за відсотком (без тиску й оцінок). */
 export function encouragement(percent: number): string {
   if (percent >= 90) return 'Неймовірно! Ти справжній майстер мислення! 🏆'

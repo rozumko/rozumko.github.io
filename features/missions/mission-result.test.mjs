@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { missionSummary, encouragement } from './mission-result.ts'
+import { missionSummary, encouragement, starRating } from './mission-result.ts'
 
 test('missionSummary: звичайний підрахунок відсотка', () => {
   assert.deepEqual(missionSummary(7, 10), { correct: 7, total: 10, percent: 70 })
@@ -29,4 +29,14 @@ test('encouragement: рівні за відсотком', () => {
   assert.match(encouragement(75), /Чудова/)
   assert.match(encouragement(50), /старт/)
   assert.match(encouragement(10), /спробував/)
+})
+
+test('starRating: пороги 90/70/40', () => {
+  assert.equal(starRating(100), 3)
+  assert.equal(starRating(90), 3)
+  assert.equal(starRating(89), 2)
+  assert.equal(starRating(70), 2)
+  assert.equal(starRating(40), 1)
+  assert.equal(starRating(39), 0)
+  assert.equal(starRating(0), 0)
 })
