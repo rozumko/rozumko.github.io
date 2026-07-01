@@ -104,7 +104,10 @@ export const appUsers = pgTable('app_users', {
   email:      text('email').notNull(),
   name:       text('name'),
   role:       text('role').notNull().default('teacher'), // teacher | admin
-  status:     text('status').notNull().default('active'), // active | blocked
+  // pending | active | blocked. Дефолт 'pending' (safe-by-default): будь-який
+  // insert без явного статусу НЕ дає активного користувача. Auto-provision у
+  // lib/auth.ts все одно ставить 'pending' явно; адмін активує вручну.
+  status:     text('status').notNull().default('pending'),
   createdAt:  timestamp('created_at', { withTimezone: true }).defaultNow(),
 })
 
