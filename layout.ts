@@ -3,14 +3,12 @@ import './register-sw.js'
 // Each page includes this module via <script type="module" src="layout.js">.
 // Placeholders: <div id="site-header"></div> and <div id="site-footer"></div>
 
+// Хедер тримаємо мінімальним: лише дві продуктові поверхні + CTA.
+// Інформаційні сторінки (Для учнів/батьків/вчителів, Правила, Приватність)
+// живуть тільки у футері, щоб не перевантажувати навігацію.
 const NAV = [
   { href: 'home.html', label: 'Домашні місії' },
   { href: 'school.html', label: 'Шкільний режим' },
-  { href: 'for-students.html', label: 'Для учнів' },
-  { href: 'for-parents.html',  label: 'Для батьків' },
-  { href: 'for-teachers.html', label: 'Для вчителів' },
-  { href: 'terms.html',        label: 'Правила' },
-  { href: 'privacy.html',      label: 'Приватність' },
 ]
 
 function activePage(): string {
