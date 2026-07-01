@@ -4,9 +4,9 @@ _Updated: 2026-07-01_
 
 ## Overview
 
-Rozumko is an educational platform for grades 1-4 built around short logic
-missions, classroom activities and structured online events. The public product
-surfaces are:
+Rozumko is an educational platform for grades 1-4 built around short missions
+that develop computational thinking and age-appropriate AI literacy. The public
+product surfaces are:
 
 - **School Mode**: a free classroom mode for trust and awareness, with no parent
   accounts, payments or child personal data.
@@ -33,6 +33,17 @@ The platform includes these student-facing event and practice modes:
 | Practice | No | `isOlympiad=false` | Local feedback; answer keys are intentionally returned |
 | Demo | No | Practice pool, `difficulty=hard` | No score; answer keys stay hidden |
 | Official olympiad | Yes | Fixed event selection | Server-side only |
+
+## Content Goals
+
+Mission content is organized around:
+
+- computational thinking: algorithms, patterns, decomposition, sequencing,
+  logic, debugging and careful reading of instructions;
+- AI basics: simple concepts about algorithms, data, prompts, reliability,
+  ethics and safety;
+- parent-readable outcomes: attention, logic, following instructions,
+  confidence with tasks and useful screen time.
 
 ## School/Home Architecture
 

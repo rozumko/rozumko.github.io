@@ -2,7 +2,7 @@
 
 Ти працюєш ВИКЛЮЧНО всередині папки `C:\Users\artem\Documents\GitHub\rozumko.github.io`.
 
-Це освітня платформа для логічних місій, тренувань і онлайн-подій для учнів 1–4 класів.
+Це освітня платформа для розвитку обчислювального мислення, основ ШІ, логічних місій, тренувань і онлайн-подій для учнів 1–4 класів.
 
 **Поточний стек:** Vite 6 + TypeScript (allowJs) + Vanilla JS + CSS — фронтенд; Node.js + Fastify v5 + TypeScript — бекенд; PostgreSQL (Supabase) + Drizzle ORM — БД; Supabase Auth (тільки вчитель/адмін); GitHub Pages (GitHub Actions) + Render (бекенд).
 

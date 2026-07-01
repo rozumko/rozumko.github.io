@@ -1,48 +1,52 @@
-# Rozumko - Logic Missions For Grades 1-4
+# Розумко — обчислювальне мислення та основи ШІ для 1–4 класів
 
-> Rozumko is an educational web platform for short logic missions, practice tasks
-> and online events for younger schoolchildren.
+> Розумко — освітня вебплатформа з короткими місіями, що розвивають
+> обчислювальне мислення, логіку та вікову ШІ-грамотність у дітей молодшої
+> школи.
 
 [![License: Proprietary](https://img.shields.io/badge/license-Proprietary-red.svg)](./LICENSE)
 [![GitHub Pages](https://img.shields.io/badge/hosted-GitHub%20Pages-blue.svg)](https://rozumko.github.io)
 
 ---
 
-## License
+## Ліцензія
 
-**This is a commercial proprietary project.**
-The public repository is provided for transparency and does not grant permission
-to use, copy, modify or redistribute the code.
+**Це комерційний проєкт із закритою ліцензією.**
+Публічний репозиторій розміщений для прозорості та не надає прав на
+використання, копіювання, зміну або поширення коду.
 
 ---
 
-## About
+## Про Проєкт
 
-**Rozumko** helps children in grades 1-4 practise attention, logic and
-step-by-step thinking through short digital missions.
+**Розумко** допомагає дітям 1–4 класів тренувати обчислювальне мислення через
+короткі цифрові місії: увагу, логіку, алгоритми, закономірності, інструкції,
+основи ШІ, етику, безпеку та розв'язання задач крок за кроком.
 
-The public product is organized around two clear surfaces:
+Публічний продукт організований навколо двох поверхонь:
 
-| Surface | Purpose |
+| Поверхня | Призначення |
 |---|---|
-| **Home missions** | Parent-led practice for useful screen time, progress and short logic activities. |
-| **School mode** | A low-friction classroom surface for teachers and groups, kept separate from parent payments and child personal data. |
+| **Домашні місії** | Батьківський шлях для корисного екранного часу, обчислювального мислення, основ ШІ та поступового прогресу. |
+| **Шкільний режим** | Простий класний режим для вчителів і груп, відокремлений від батьківських оплат і дитячих персональних даних. |
 
-The existing platform also includes official event flows with access codes,
-teacher/admin tools, server-side scoring and electronic certificates/diplomas.
+Платформа також підтримує події з кодами доступу, кабінети вчителя й
+адміністратора, серверне оцінювання та електронні сертифікати/дипломи.
 
-### Key Principles
+### Ключові Принципи
 
-- **Useful screen time** - short tasks for attention, logic and confidence with problems.
-- **Clean School/Home split** - classroom use does not transfer individual child results into parent accounts.
-- **Server-side scoring** - official, paid or diploma-generating scoring belongs on the backend.
-- **Minimal child data** - students do not use Supabase Auth accounts.
-- **Backend-only database access** - frontend code calls the backend API, never Supabase tables directly.
-- **App-ready direction** - the website, PWA and app clients share the same backend product rules.
+- **Обчислювальне мислення в центрі** - алгоритми, закономірності, логіка та задачі крок за кроком.
+- **Основи ШІ без хайпу і страху** - прості поняття, етика й безпека перед інструментами.
+- **Корисний екранний час** - короткі завдання для уваги, логіки й упевненості.
+- **Чисте розділення School/Home** - класна активність не переносить індивідуальні результати дітей у батьківські акаунти.
+- **Серверне оцінювання** - офіційні, платні або дипломні результати оцінюються на бекенді.
+- **Мінімум дитячих даних** - учні не мають Supabase Auth акаунтів.
+- **Доступ до БД тільки через бекенд** - фронтенд звертається до backend API, а не напряму до Supabase-таблиць.
+- **App-ready напрям** - сайт, PWA і застосунки мають спиратися на ті самі backend-правила продукту.
 
 ---
 
-## Stack
+## Стек
 
 | Layer | Technology |
 |---|---|
@@ -55,7 +59,7 @@ teacher/admin tools, server-side scoring and electronic certificates/diplomas.
 
 ---
 
-## Project Structure
+## Структура Проєкту
 
 ```text
 index.html / home.html / school.html / student.html / teacher.html / admin.html
@@ -87,7 +91,7 @@ docs/
 
 ---
 
-## Documentation
+## Документація
 
 - [Architecture](./docs/architecture.md)
 - [Security model](./docs/security-model.md)
@@ -105,7 +109,7 @@ docs/
 
 ---
 
-## Local Development
+## Локальний Запуск
 
 ```bash
 # Frontend
@@ -118,11 +122,11 @@ npm install
 npm run dev
 ```
 
-Backend requires `.env` with `DATABASE_URL`, `SUPABASE_URL`,
-`ATTEMPT_SECRET`; `PORT` is optional.
+Backend потребує `.env` із `DATABASE_URL`, `SUPABASE_URL`, `ATTEMPT_SECRET`;
+`PORT` необов'язковий.
 
-The frontend uses the production API by default. For local smoke testing, copy
-`.env.example` to `.env.local` and set:
+Frontend за замовчуванням використовує production API. Для локального
+smoke-тесту скопіюйте `.env.example` у `.env.local` і встановіть:
 
 ```bash
 VITE_API_URL=http://localhost:3000
@@ -130,4 +134,4 @@ VITE_API_URL=http://localhost:3000
 
 ---
 
-*Copyright 2024-2026 Rozumko. All rights reserved.*
+*Copyright 2024-2026 Розумко. Усі права захищені.*
