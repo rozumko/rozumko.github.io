@@ -2,6 +2,12 @@
 
 _Updated: 2026-07-01_
 
+> **This is product direction, not a status report.** Shipped today: the
+> **Official events** flow (codes, timing, server-side scoring, teacher/admin
+> panels, browser certificates). **Home missions, payments, consent and a
+> dedicated School-mode backend are [PLANNED]** — see the implementation-status
+> legend in [architecture.md](./architecture.md).
+
 ## Positioning
 
 Rozumko is an educational platform for short missions that develop
