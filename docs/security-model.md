@@ -29,6 +29,9 @@ _Updated: 2026-07-01_
 ## Student Attempt Protection
 
 - Student access codes are validated and consumed atomically by the backend.
+- Student access codes carry a TTL: they default to expiring at the event's
+  `ends_at` and a teacher-supplied expiry is clamped to `ends_at`, so a code
+  cannot outlive its event and the brute-force window stays bounded.
 - Sensitive student endpoints are rate-limited.
 - Active attempts use server-verified tokens.
 - Finishing an official attempt returns only the aggregate result, never
