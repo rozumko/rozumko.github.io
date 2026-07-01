@@ -68,6 +68,10 @@ Run this checklist before a real pilot.
 
 ## 7. Browser Security
 
+> Most of §7 and §8 are automated by `scripts/smoke-security.ps1`:
+> `pwsh ./scripts/smoke-security.ps1` (add `-IncludeRateLimit` for the §8
+> rate-limit probe, which sends ~50 requests — run off-peak / against staging).
+
 - [ ] Official `exchange-code` response contains no `correct`, `correctOrder`, `pairs` or `answer` keys
 - [ ] Demo `GET /api/questions?isOlympiad=false&hideAnswers=true` response contains no answer keys
 - [ ] Practice `GET /api/questions?isOlympiad=false` intentionally includes keys
@@ -75,7 +79,9 @@ Run this checklist before a real pilot.
 - [ ] Public `GET /api/questions?count=abc`, `count=-5`, `count=0`, `count=999` return `400`
 - [ ] `/api/attempt/:id/finish` returns only `{ score, total }`
 - [ ] Teacher/admin results contain no raw `answers`
-- [ ] `/api/attempt/:id/answer` without `X-Attempt-Token` returns `403`
+- [ ] `/api/attempt/:id/answer` for a real in-progress attempt without
+      `X-Attempt-Token` returns `403` (an unknown attempt id returns `404`, a
+      malformed id returns `400` — the script asserts "never 200")
 - [ ] Admin endpoint without authorization returns `401`
 - [ ] Production HTML has CSP and no inline `onclick`
 
