@@ -186,8 +186,9 @@ Backend:
   `trustProxy: true`, so clients cannot spoof `X-Forwarded-For` and bypass
   rate limits.
 - No-code practice UIs load the static practice bundle from GitHub Pages.
-  Home Demo uses `GET /api/questions` with `hideAnswers=true` so keys do not
-  reach the browser. Official olympiad questions are issued only by
+  Home Demo uses `GET /api/questions` with `hideAnswers=true` and a track
+  allowlist (`informatics`, `computational-thinking`, `ai-basics`) so keys do
+  not reach the browser. Official olympiad questions are issued only by
   `POST /api/student/exchange-code`.
 - Public question query parameters are allowlisted. `count` must be an integer
   from `1` to `50`.

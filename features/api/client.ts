@@ -10,6 +10,7 @@ export const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x
 // ─── Types ─────────────────────────────────────────────────────────────────
 
 export type QuestionType = 'choice' | 'truefalse' | 'input' | 'sort' | 'sequence' | 'match'
+export type QuestionTrack = 'informatics' | 'computational-thinking' | 'ai-basics'
 
 export interface Question {
   id: string
@@ -20,6 +21,7 @@ export interface Question {
   correct?: number | null         // null для input/sort/match; відсутній у відповіді для олімпіади
   explanation?: string | null
   difficulty?: string
+  track?: QuestionTrack | null
   grade?: number
   isOlympiad?: boolean
   a?: string[]                    // normalized alias для question-renderer (choice/truefalse)
@@ -196,13 +198,14 @@ export async function saveAnswer(attemptId: string, attemptToken: string, questi
 }
 
 export async function loadQuestions({
-  grade, isOlympiad, count, difficulty, hideAnswers,
-}: { grade?: number; isOlympiad?: boolean; count?: number; difficulty?: string; hideAnswers?: boolean } = {}): Promise<Question[]> {
+  grade, isOlympiad, count, difficulty, track, hideAnswers,
+}: { grade?: number; isOlympiad?: boolean; count?: number; difficulty?: string; track?: QuestionTrack; hideAnswers?: boolean } = {}): Promise<Question[]> {
   const params = new URLSearchParams()
   if (grade      != null) params.set('grade',      String(grade))
   if (isOlympiad != null) params.set('isOlympiad', String(isOlympiad))
   if (count      != null) params.set('count',      String(count))
   if (difficulty)         params.set('difficulty', difficulty)
+  if (track)              params.set('track',      track)
   if (hideAnswers != null) params.set('hideAnswers', String(hideAnswers))
   const data = await request(`/api/questions?${params}`)
   return data.questions.map(normalizeQuestion)
@@ -611,10 +614,11 @@ export function deleteQuestion(id: string): Promise<void> {
   return authRequest(`/api/admin/questions/${id}`, { method: 'DELETE' })
 }
 
-export function getAdminQuestions(params: { grade?: number | string; isOlympiad?: boolean | string; difficulty?: string } = {}): Promise<{ questions: Question[] }> {
+export function getAdminQuestions(params: { grade?: number | string; isOlympiad?: boolean | string; difficulty?: string; track?: QuestionTrack | string } = {}): Promise<{ questions: Question[] }> {
   const p = new URLSearchParams()
   if (params.grade      != null) p.set('grade',      String(params.grade))
   if (params.isOlympiad != null) p.set('isOlympiad', String(params.isOlympiad))
   if (params.difficulty)         p.set('difficulty', params.difficulty)
+  if (params.track)              p.set('track',      String(params.track))
   return authRequest(`/api/admin/questions?${p}`)
 }

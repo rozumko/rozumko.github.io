@@ -19,7 +19,6 @@ interface TrackPreset {
   track: HomeDemoTrack
   label: string
   difficulty: 'easy' | 'medium' | 'hard'
-  keywords: string[]
 }
 
 const TRACKS: Record<string, TrackPreset> = {
@@ -27,19 +26,16 @@ const TRACKS: Record<string, TrackPreset> = {
     track: 'informatics',
     label: 'Інформатика',
     difficulty: 'easy',
-    keywords: ['комп', 'ноут', 'клавіат', 'миша', 'файл', 'екран', 'програма', 'код'],
   },
   'computational-thinking': {
     track: 'computational-thinking',
     label: 'Обчислювальне мислення',
     difficulty: 'medium',
-    keywords: ['алгоритм', 'патерн', 'закономір', 'послідов', 'умова', 'команд', 'робот', 'маршрут'],
   },
   'ai-basics': {
     track: 'ai-basics',
     label: 'Основи ШІ',
     difficulty: 'hard',
-    keywords: ['штуч', 'інтелект', 'дан', 'модель', 'приклад', 'ознака', 'розпізна', 'класиф'],
   },
 }
 
@@ -90,22 +86,25 @@ function stripKeys(q: Question): Question {
   return copy as Question
 }
 
-function scoreTrack(q: Question, preset: TrackPreset): number {
-  const haystack = [q.q, q.code, ...(Array.isArray(q.options) ? q.options : [])]
-    .filter(Boolean).join(' ').toLowerCase()
-  return preset.keywords.reduce((sum, keyword) => sum + (haystack.includes(keyword) ? 1 : 0), 0)
-}
-
 async function loadDemoQuestions(preset: TrackPreset): Promise<Question[]> {
-  const pool = await loadQuestions({
+  const byTrack = await loadQuestions({
     grade: selectedGrade,
     isOlympiad: false,
-    count: 50,
+    count: DEMO_COUNT,
+    track: preset.track,
+    hideAnswers: true,
+  })
+  if (byTrack.length >= Math.min(DEMO_COUNT, 3)) return byTrack.slice(0, DEMO_COUNT).map(stripKeys)
+
+  // Тимчасовий fallback для наявної БД до розмітки старих питань `track`.
+  const fallback = await loadQuestions({
+    grade: selectedGrade,
+    isOlympiad: false,
+    count: DEMO_COUNT,
     difficulty: preset.difficulty,
     hideAnswers: true,
   })
-  const ranked = [...pool].sort((a, b) => scoreTrack(b, preset) - scoreTrack(a, preset))
-  return ranked.slice(0, DEMO_COUNT).map(stripKeys)
+  return fallback.map(stripKeys)
 }
 
 // ── Телеметрія ────────────────────────────────────────────────

@@ -10,6 +10,7 @@ import { pgTable, text, integer, boolean, timestamp, jsonb, uuid, unique } from 
  *   match      — зіставлення пар (options: {left,right,pairs}, correct: null)
  */
 export type QuestionType = 'choice' | 'truefalse' | 'input' | 'sort' | 'sequence' | 'match'
+export type QuestionTrack = 'informatics' | 'computational-thinking' | 'ai-basics'
 
 export const questions = pgTable('questions', {
   id:          uuid('id').primaryKey().defaultRandom(),
@@ -20,6 +21,7 @@ export const questions = pgTable('questions', {
   correct:     integer('correct'),   // null для input/sort/sequence/match
   explanation: text('explanation'),
   difficulty:  text('difficulty'),
+  track:       text('track').$type<QuestionTrack>(),
   grade:       integer('grade'),
   isOlympiad:  boolean('is_olympiad').default(false),
   createdAt:   timestamp('created_at', { withTimezone: true }).defaultNow(),

@@ -55,14 +55,14 @@ The platform includes these student-facing event and practice modes:
 | Mode | Code | Questions | Scoring |
 |---|---|---|---|
 | Practice | No | Static practice bundle generated from `isOlympiad=false` (`public/questions/grade-N.json`) | Local feedback; answer keys are intentionally bundled |
-| Home Demo | No | `GET /api/questions` with `hideAnswers=true`; temporary track selection by difficulty/keywords | No child score; parent report is server-scored after consent |
+| Home Demo | No | `GET /api/questions` with `hideAnswers=true` and `track=<direction>` | No child score; parent report is server-scored after consent |
 | Official olympiad | Yes | Fixed event selection from the backend | Server-side only |
 
 `student.html` and `/school` self-serve no-code practice missions load the
 static bundle from GitHub Pages, so children do not wait for backend cold starts
 and anonymous classes do not consume backend rate-limit budget. Home Demo uses
-`GET /api/questions?isOlympiad=false&hideAnswers=true` so answer keys do not
-reach the browser before the parent-reporting flow. Official olympiad questions
+`GET /api/questions?isOlympiad=false&hideAnswers=true&track=...` so answer keys
+do not reach the browser before the parent-reporting flow. Official olympiad questions
 are still issued only through code exchange.
 
 ## Content Goals
@@ -82,6 +82,11 @@ distractor generation so one mechanic can produce many variants. Practice-only
 public variants may still expose local-feedback keys when explicitly treated as
 practice; Home Demo, paid, official, diploma-generating and parent-reporting
 variants must keep trusted scoring on the backend.
+
+`questions.track` is the current taxonomy bridge for the three product
+directions (`informatics`, `computational-thinking`, `ai-basics`). AIG item
+models should emit the same track values plus more granular skill/topic metadata
+when that engine lands.
 
 ## Surface Architecture — School **[IMPLEMENTED]**, Home **[PLANNED]**, Olympiad **[IMPLEMENTED]/[PLANNED]**
 

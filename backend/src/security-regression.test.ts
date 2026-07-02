@@ -125,6 +125,7 @@ test('публічний API питань фільтрує олімпіадні 
               correct: null,
               explanation: 'Пояснення',
               difficulty: 'easy',
+              track: 'ai-basics',
               grade: 1,
             }],
           }),
@@ -140,7 +141,7 @@ test('публічний API питань фільтрує олімпіадні 
 
     const demo = await app.inject({
       method: 'GET',
-      url: '/api/questions?isOlympiad=false&count=1&hideAnswers=true',
+      url: '/api/questions?isOlympiad=false&count=1&hideAnswers=true&track=ai-basics',
     })
 
     assert.equal(demo.statusCode, 200)
@@ -158,7 +159,7 @@ test('публічний API питань фільтрує олімпіадні 
     .from(questions)
     .where(capturedWhere as any)
     .toSQL()
-  assert.deepEqual(sql.params, [false])
+  assert.deepEqual(sql.params, [false, 'ai-basics'])
 })
 
 test('критичні UUID-параметри відхиляються до звернення до БД', async () => {

@@ -16,9 +16,9 @@ _Updated: 2026-07-02_
 > Known v1 limitation: `answerChangeCount` undercounts by design — the shared
 > question renderer locks most answer types after the first commit, so only
 > repeated `select` changes (match) are counted. Safe direction: the
-> "attention" pattern cannot fire falsely. Track-specific demo selection is a
-> temporary keyword/difficulty layer over the practice pool until item-model
-> taxonomy exists in the AIG engine.
+> "attention" pattern cannot fire falsely. Track-specific demo selection now
+> uses `questions.track`; Home Demo keeps a temporary difficulty fallback only
+> for legacy rows that have not been tagged yet.
 
 This document fixes the minimal data and API contract for the first Home Mode
 slice: a free demo mission, a parent lead with consent, and a parent-readable
@@ -30,7 +30,7 @@ correct/incorrect makes the behavioral report impossible later.
 
 ```text
 /home (landing)
-  -> child plays a demo mission (one short block per track)
+  -> child plays a demo mission (one short block per `questions.track`)
   -> emotional completion screen for the child (no correctness shown)
   -> report is LOCKED behind a parent action
   -> parent enters email + consent            POST /api/home/leads
@@ -61,6 +61,10 @@ One short demo block per direction, 5-7 items each:
 | `informatics` | Інформатика |
 | `computational-thinking` | Обчислювальне мислення |
 | `ai-basics` | Основи ШІ |
+
+`questions.track` is nullable for legacy content, but every new Home Demo item
+must set one of these values. The UI may temporarily fall back to difficulty
+while old rows are being tagged; the product contract is track-based selection.
 
 ## Mission Versioning
 

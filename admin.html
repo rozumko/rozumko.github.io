@@ -226,6 +226,12 @@
             <option value="medium">Середні</option>
             <option value="hard">Складні</option>
           </select>
+          <select id="q-filter-track" class="adm-input adm-input--sm" style="width:auto">
+            <option value="">Всі напрями</option>
+            <option value="informatics">Інформатика</option>
+            <option value="computational-thinking">Обчислювальне мислення</option>
+            <option value="ai-basics">Основи ШІ</option>
+          </select>
           <button id="q-filter-apply" class="btn-adm-sky" style="padding: var(--sp-2) var(--sp-4); font-size: var(--font-size-sm);">Фільтрувати</button>
           <span id="q-count" class="admin-filter-count"></span>
         </div>
@@ -334,6 +340,15 @@
               <option value="easy">Легка</option>
               <option value="medium">Середня</option>
               <option value="hard">Складна</option>
+            </select>
+          </div>
+          <div>
+            <label class="adm-label">Напрям</label>
+            <select id="qf-track" class="adm-input adm-input--sm">
+              <option value="">Без напряму</option>
+              <option value="informatics">Інформатика</option>
+              <option value="computational-thinking">Обчислювальне мислення</option>
+              <option value="ai-basics">Основи ШІ</option>
             </select>
           </div>
           <div class="adm-checkbox-row" style="align-items: flex-end; padding-bottom: var(--sp-2);">

@@ -25,6 +25,11 @@ const QF_SECTIONS: Record<string, string> = {
 }
 
 const DIFF_LABELS: Record<string, string> = { easy: 'Легке', medium: 'Середнє', hard: 'Складне' }
+const TRACK_LABELS: Record<string, string> = {
+  informatics: 'Інформатика',
+  'computational-thinking': 'Обчислювальне мислення',
+  'ai-basics': 'Основи ШІ',
+}
 const TYPE_LABELS: Record<QuestionType, string> = {
   choice:    'Вибір',
   truefalse: 'Так/Ні',
@@ -65,8 +70,9 @@ export async function loadQuestionsTab() {
     const typeRaw    = $<HTMLSelectElement>('q-filter-type').value
     const isOlympiad = typeRaw !== '' ? typeRaw === 'true' : undefined
     const difficulty = $<HTMLSelectElement>('q-filter-difficulty').value || undefined
+    const track      = $<HTMLSelectElement>('q-filter-track').value || undefined
 
-    const { questions } = await getAdminQuestions({ grade, isOlympiad, difficulty })
+    const { questions } = await getAdminQuestions({ grade, isOlympiad, difficulty, track })
     currentQuestions = questions
 
     $('q-count').textContent = `${questions.length} питань`
@@ -95,6 +101,7 @@ export async function loadQuestionsTab() {
 
 function buildQuestionCard(q: Question): HTMLElement {
   const diffLabel  = DIFF_LABELS[q.difficulty ?? ''] ?? q.difficulty ?? '—'
+  const trackLabel = q.track ? (TRACK_LABELS[q.track] ?? q.track) : null
   const type = q.type ?? 'choice'
   const correctHint = describeCorrectAnswer(q)
   const el = document.createElement('div')
@@ -105,6 +112,7 @@ function buildQuestionCard(q: Question): HTMLElement {
         <span class="qi-badge qi-badge--grade">${esc(String(q.grade))} клас</span>
         <span class="qi-badge qi-badge--type">${esc(TYPE_LABELS[type] ?? type)}</span>
         <span class="qi-badge qi-badge--${q.difficulty ?? 'medium'}">${esc(diffLabel)}</span>
+        ${trackLabel ? `<span class="qi-badge qi-badge--practice">${esc(trackLabel)}</span>` : ''}
         ${q.isOlympiad
           ? '<span class="qi-badge qi-badge--olympiad">Олімпіада</span>'
           : '<span class="qi-badge qi-badge--practice">Тренування</span>'}
@@ -143,6 +151,7 @@ export function openQuestionModal(q: Question | null) {
   $<HTMLInputElement>('qf-id').value                    = q?.id ?? ''
   $<HTMLSelectElement>('qf-grade').value                = String(q?.grade ?? '1')
   $<HTMLSelectElement>('qf-difficulty').value           = q?.difficulty ?? 'medium'
+  $<HTMLSelectElement>('qf-track').value                = q?.track ?? ''
   ;($<HTMLInputElement>('qf-olympiad')).checked         = q?.isOlympiad ?? false
   $<HTMLTextAreaElement>('qf-q').value                  = q?.q ?? ''
   $<HTMLTextAreaElement>('qf-explanation').value        = q?.explanation ?? ''
@@ -198,6 +207,7 @@ async function handleSubmit(e: Event) {
     ...shape,
     grade:       Number($<HTMLSelectElement>('qf-grade').value),
     difficulty:  $<HTMLSelectElement>('qf-difficulty').value,
+    track:       $<HTMLSelectElement>('qf-track').value || null,
     isOlympiad:  $<HTMLInputElement>('qf-olympiad').checked,
     explanation: $<HTMLTextAreaElement>('qf-explanation').value.trim(),
     code:        $<HTMLTextAreaElement>('qf-code').value.trim() || undefined,
