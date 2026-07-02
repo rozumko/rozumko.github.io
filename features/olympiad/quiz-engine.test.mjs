@@ -11,11 +11,11 @@ test('demo використовує лише тренувальний пул б�
   })
 })
 
-test('practice використовує тренувальний пул з локальним feedback', () => {
+test('practice API fallback використовує тренувальний пул без ключів', () => {
   assert.deepEqual(getPublicQuestionRequest('practice', 'medium'), {
     isOlympiad: false,
     difficulty: 'medium',
-    hideAnswers: false,
+    hideAnswers: true,
   })
 })
 

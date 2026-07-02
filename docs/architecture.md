@@ -17,8 +17,9 @@ _Updated: 2026-07-02_
 > advanced anonymous classroom-game backend: sessions, join codes,
 > participants, server-scored answers, teacher leaderboard).
 > The **Home demo slice** (parent lead + consent, server-scored demo report,
-> demo UI on `/home`) and the **entitlement model** (backend access state with
-> admin manual control and audit trail) are also implemented. **Payment
+> demo UI on `/home`), the **entitlement model** (backend access state with
+> admin manual control and audit trail) and the first gated Club practice
+> mission slice are also implemented. **Payment
 > provider integration (checkout, webhooks), subscription UI and AIG
 > JSON-template content generation remain [PLANNED].**
 
@@ -57,15 +58,18 @@ The platform includes these student-facing event and practice modes:
 | Mode | Code | Questions | Scoring |
 |---|---|---|---|
 | Practice | No | Static practice bundle generated from `isOlympiad=false` (`public/questions/grade-N.json`) | Local feedback; answer keys are intentionally bundled |
-| Home Demo | No | `GET /api/questions` with `hideAnswers=true` and `track=<direction>` | No child score; parent report is server-scored after consent |
+| Home Demo | No | `GET /api/questions` with safe answer stripping and `track=<direction>` | No child score; parent report is server-scored after consent |
+| Home Club Practice | Parent lead token + active entitlement | `GET /api/home/leads/:id/club/questions` | Server-side report after each paid practice mission |
 | Official olympiad | Yes | Fixed event selection from the backend | Server-side only |
 
 `student.html` and `/school` self-serve no-code practice missions load the
 static bundle from GitHub Pages, so children do not wait for backend cold starts
 and anonymous classes do not consume backend rate-limit budget. Home Demo uses
-`GET /api/questions?isOlympiad=false&hideAnswers=true&track=...` so answer keys
-do not reach the browser before the parent-reporting flow. Official olympiad questions
-are still issued only through code exchange.
+`GET /api/questions?isOlympiad=false&track=...` with safe answer stripping so
+answer keys do not reach the browser before the parent-reporting flow. Club
+practice questions are issued only by the lead-token route
+`GET /api/home/leads/:id/club/questions`, which checks active entitlement first.
+Official olympiad questions are still issued only through code exchange.
 
 ## Content Goals
 
@@ -80,17 +84,18 @@ Mission content is organized around:
 
 The planned content engine is Automatic Item Generation through JSON templates:
 item models describe parameters, constraints, answer computation and
-distractor generation so one mechanic can produce many variants. Practice-only
-public variants may still expose local-feedback keys when explicitly treated as
-practice; Home Demo, paid, official, diploma-generating and parent-reporting
-variants must keep trusted scoring on the backend.
+distractor generation so one mechanic can produce many variants. Static
+practice bundles may still expose local-feedback keys when explicitly
+generated as practice assets; public API, Home Demo, paid, official,
+diploma-generating and parent-reporting variants must keep trusted scoring on
+the backend.
 
 `questions.track` is the current taxonomy bridge for the three product
 directions (`informatics`, `computational-thinking`, `ai-basics`). AIG item
 models should emit the same track values plus more granular skill/topic metadata
 when that engine lands.
 
-## Surface Architecture — School **[IMPLEMENTED]**, Home Demo/Entitlement **[IMPLEMENTED]**, Club/Payments **[PLANNED]**, Olympiad **[IMPLEMENTED]/[PLANNED]**
+## Surface Architecture — School **[IMPLEMENTED]**, Home Demo/Entitlement/Club Practice **[IMPLEMENTED]**, Payments **[PLANNED]**, Olympiad **[IMPLEMENTED]/[PLANNED]**
 
 _School Mode is shipped: `/school` runs self-serve missions (grade +
 difficulty presets, local feedback) from the static practice bundle through the
@@ -99,10 +104,10 @@ a teacher creates a session
 in the dashboard ("Класна гра" tab), students join anonymously by a 6-digit
 code with an avatar + nickname label, answers are scored server-side and the
 teacher sees an anonymous leaderboard (`/api/school`, migration 0014). Home
-Mode has an implemented first slice: `/home`, parent lead + consent,
-server-scored demo reports, and backend entitlement state. Full Rozumko Club
-paid-content UX, checkout/webhooks and richer parent account flows are still
-planned._
+Mode has implemented slices: `/home`, parent lead + consent, server-scored
+demo reports, backend entitlement state and repeatable Club practice missions
+gated by entitlement. Checkout/webhooks and richer parent account flows are
+still planned._
 
 School, Home and Olympiad surfaces stay decoupled at the identity/data level.
 School Mode may send users to a Home URL as a neutral brand path, but it does
@@ -130,10 +135,10 @@ Backend:
 - School Mode routes are implemented under `/api/school`: teacher session
   lifecycle (create/start/finish/state+leaderboard, scoped to the owning
   teacher) and anonymous student join/answer with server-side scoring;
-- Home Mode routes are implemented under `/api/home` for the first slice
-  (parent lead + consent, demo attempt/report, entitlement check), specified
-  in [home-demo-contract.md](./home-demo-contract.md); further parent-profile
-  and paid-content routes are planned;
+- Home Mode routes are implemented under `/api/home` for parent lead + consent,
+  demo attempt/report, entitlement check and gated Club practice, specified in
+  [home-demo-contract.md](./home-demo-contract.md); further parent-profile and
+  payment-provider routes are planned;
 - subscription-aware seasonal event access is planned and must not reuse
   anonymous School identity;
 - all frontend HTTP calls continue to go through `features/api/client.ts`.
@@ -192,9 +197,15 @@ grant access until the period end, past_due adds a 7-day grace window,
 expired/revoked block immediately, and a missing period end fails closed.
 Admins manage state manually via `PUT /api/admin/home-entitlements/:leadId`;
 parents read their state via `GET /api/home/leads/:id/entitlement`
-(lead-token). Payment-provider checkout and verified webhooks are the next
-slice and will write through the same `applyEntitlementChange` path with
-`actor: 'provider'`._
+(lead-token). The entitlement already unlocks real paid content: Club practice
+uses `GET /api/home/leads/:id/club` for state, `GET .../club/questions` to
+issue paid mission questions, `POST .../mission-report` to score/store an
+attempt and `GET .../mission-reports` for progress. Question issuing, mission
+submission and progress reads are gated by `hasHomeAccess`; mission questions
+and responses never include answer keys (migration 0019,
+`home_mission_attempts`). Payment-provider checkout and verified webhooks are
+the next slice and will write through the same `applyEntitlementChange` path
+with `actor: 'provider'`._
 
 Payment state unlocks access. It must not decide scores or alter answer
 evaluation.
@@ -301,6 +312,7 @@ Current implemented tables **[IMPLEMENTED]**:
 - `home_demo_reports`
 - `home_entitlements` (paid access state, one per lead)
 - `home_entitlement_events` (entitlement audit trail)
+- `home_mission_attempts` (repeatable Club practice attempts, gated by entitlement)
 
 Remaining Home Mode concepts **[PLANNED]** would use tables or equivalent
 storage for:

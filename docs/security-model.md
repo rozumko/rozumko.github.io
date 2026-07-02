@@ -51,7 +51,8 @@ For crash recovery, the browser stores only non-secret attempt metadata.
 
 | Mode | Key handling |
 |---|---|
-| Practice | Returns keys intentionally for local feedback |
+| Static practice bundle | May include keys intentionally for local feedback |
+| Public question API | Strips top-level and nested keys |
 | Demo | Strips top-level and nested keys |
 | Official attempt | Strips top-level and nested keys |
 | Official result | Returns only the aggregate score |
@@ -125,10 +126,10 @@ _No AIG JSON-template generation engine exists yet. Binding once it is built._
 Automatic Item Generation may create many task variants from one item model,
 but trust boundaries stay unchanged:
 
-- public practice variants may expose local-feedback answer keys only when
-  explicitly marked as practice;
-- Home Demo, paid, official, diploma-generating or parent-reporting variants
-  must keep answer evaluation on the backend;
+- static practice bundles may expose local-feedback answer keys only when
+  explicitly generated as practice assets;
+- public API, Home Demo, paid, official, diploma-generating or
+  parent-reporting variants must keep answer evaluation on the backend;
 - generated task versions used for reports or diplomas must be versioned enough
   to explain what the child completed;
 - client-side generation, random seeds or cached task state must not be treated
@@ -197,9 +198,11 @@ Backend:
   `trustProxy: true`, so clients cannot spoof `X-Forwarded-For` and bypass
   rate limits.
 - No-code practice UIs load the static practice bundle from GitHub Pages.
-  Home Demo uses `GET /api/questions` with `hideAnswers=true` and a track
+  Home Demo uses `GET /api/questions` with safe answer stripping and a track
   allowlist (`informatics`, `computational-thinking`, `ai-basics`) so keys do
-  not reach the browser. Official olympiad questions are issued only by
+  not reach the browser. Club practice questions are issued only by
+  `GET /api/home/leads/:id/club/questions`, which requires a valid lead token
+  and active entitlement. Official olympiad questions are issued only by
   `POST /api/student/exchange-code`.
 - Public question query parameters are allowlisted. `count` must be an integer
   from `1` to `50`.
@@ -238,7 +241,8 @@ npm test
 - unsupported shared rate-limit store modes fail closed;
 - public question query validation rejects unsafe values;
 - public questions are filtered to `isOlympiad=false`;
-- demo responses strip answer keys;
+- public questions strip answer keys by default; demo responses strip answer
+  keys explicitly;
 - critical UUID parameters fail with `400` before database access;
 - attempt finalization rejects late answers and locks the attempt row while
   scoring saved answers;
@@ -279,14 +283,26 @@ invariants:
   any state change; every change writes an audit event;
 - the entitlement module never touches scoring or answer keys (source check).
 
+`backend/src/routes/home-club.test.ts` protects the paid Club practice flow
+(written before the route code):
+
+- missing, expired or revoked entitlement blocks paid mission question issuing
+  and submissions (403) and writes nothing; `active` past its period end also
+  blocks;
+- the entitlement gate runs before any row is written, and scoring itself is
+  identical regardless of entitlement state (shared practice-pool scorer);
+- paid mission questions and responses expose no answer keys or explanations;
+  progress listings require active entitlement and return reports and
+  aggregates only, never raw events;
+- Home routes never touch School tables and School routes never accept lead
+  tokens (source check — no school-to-home identity path).
+
 Remaining Home Mode security regression tests **[PLANNED]** (must land before
 the corresponding feature code):
 
 - payment callback/webhook verification before entitlement changes;
-- Home Mode answer keys do not reach the browser for paid, demo report or
-  diploma-generating missions;
-- School Mode never exposes individual classroom results through a parent
-  recovery path.
+- diploma-generating Home missions keep answer keys off the browser (same rule
+  already enforced for demo and paid practice missions).
 
 AIG/security regression tests **[PLANNED]** should cover before an AIG engine
 is used for paid, official or diploma-generating flows:

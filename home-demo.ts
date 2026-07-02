@@ -1,8 +1,9 @@
 import { $, $maybe } from './utils/dom.js'
 import { runMission, type MissionElements } from './features/missions/mission-runner.js'
 import {
-  createHomeLead, loadQuestions, submitHomeDemoReport,
-  type Question, type HomeDemoTrack, type HomeDemoEvent, type HomeDemoReport,
+  createHomeLead, loadQuestions, submitHomeDemoReport, getHomeClub, submitHomeMissionReport,
+  loadHomeClubQuestions,
+  type Question, type HomeDemoTrack, type HomeDemoEvent, type HomeDemoReport, type HomeClubState,
 } from './features/api/client.js'
 
 // Home Demo (зріз 2 контракту docs/home-demo-contract.md).
@@ -68,6 +69,10 @@ let selectedGrade = 1
 let currentTrack: TrackPreset | null = null
 let events: HomeDemoEvent[] = []
 let startedAtIso = ''
+// Лід зʼявляється після згоди батька і живе лише в памʼяті сторінки (MVP).
+let lead: { id: string; token: string } | null = null
+// 'demo' — звіт залочений до згоди; 'club' — платна практика, звіт одразу.
+let missionMode: 'demo' | 'club' = 'demo'
 let questionShownAt = 0
 let selectTouches = 0 // повторні зміни select-ів (match) — сигнал невпевненості
 
@@ -107,6 +112,24 @@ async function loadDemoQuestions(preset: TrackPreset): Promise<Question[]> {
   return fallback.map(stripKeys)
 }
 
+async function loadClubQuestions(preset: TrackPreset): Promise<Question[]> {
+  if (!lead) throw new Error('Потрібно спершу розблокувати батьківський звіт')
+  const byTrack = await loadHomeClubQuestions(lead.id, lead.token, {
+    grade: selectedGrade,
+    count: DEMO_COUNT,
+    track: preset.track,
+  })
+  if (byTrack.length >= Math.min(DEMO_COUNT, 3)) return byTrack.slice(0, DEMO_COUNT).map(stripKeys)
+
+  const fallback = await loadHomeClubQuestions(lead.id, lead.token, {
+    grade: selectedGrade,
+    count: DEMO_COUNT,
+    track: preset.track,
+    difficulty: preset.difficulty,
+  })
+  return fallback.map(stripKeys)
+}
+
 // ── Телеметрія ────────────────────────────────────────────────
 // Контракт вимагає timeToAnswerMs і answerChangeCount у кожній події з першого
 // релізу. Поточний renderer блокує choice-типи після першого кліку, тож
@@ -134,12 +157,13 @@ function recordEvent(questionId: string, answer: RawAnswer) {
   })
 }
 
-// ── Запуск демо-місії ─────────────────────────────────────────
-async function startDemo(preset: TrackPreset) {
+// ── Запуск місії (демо або Club practice) ─────────────────────
+async function startDemo(preset: TrackPreset, mode: 'demo' | 'club' = 'demo') {
   hide(introEl)
   hide(resultEl)
   errorEl.textContent = ''
   currentTrack = preset
+  missionMode = mode
   events = []
   startedAtIso = new Date().toISOString()
 
@@ -150,7 +174,9 @@ async function startDemo(preset: TrackPreset) {
   els.nextBtn.classList.add('hidden')
 
   try {
-    const questions = await loadDemoQuestions(preset)
+    const questions = mode === 'club'
+      ? await loadClubQuestions(preset)
+      : await loadDemoQuestions(preset)
 
     questionShownAt = Date.now()
     selectTouches = 0
@@ -181,12 +207,83 @@ function showCompletion() {
 
   $('result-track-label').textContent = currentTrack ? `${currentTrack.label} • ${selectedGrade} клас` : 'Місію завершено!'
   $('result-stars').textContent = '🏆'
-  $('result-message').textContent = 'Місію завершено! Розгорнутий результат чекає у звіті для батьків.'
 
+  if (missionMode === 'club' && lead) {
+    // Club: згода вже є — звіт формується одразу, без повторного gate.
+    $('result-message').textContent = 'Місію завершено!'
+    hide($('parent-gate'))
+    show(resultEl)
+    void submitClubReport()
+    return
+  }
+
+  $('result-message').textContent = 'Місію завершено! Розгорнутий результат чекає у звіті для батьків.'
   // Свідомо без цифр для дитини: рахунок і аналіз — у батьківському звіті.
   hide($('demo-report'))
+  hide($('club-block'))
   show($('parent-gate'))
   show(resultEl)
+}
+
+async function submitClubReport() {
+  if (!lead || !currentTrack) return
+  const status = $('club-status')
+  status.textContent = 'Готуємо звіт…'
+  show($('club-block'))
+  try {
+    const { report } = await submitHomeMissionReport(lead.id, lead.token, {
+      missionId:      `practice-${currentTrack.track}-grade${selectedGrade}`,
+      missionVersion: MISSION_VERSION,
+      track:          currentTrack.track,
+      grade:          selectedGrade as 1 | 2 | 3 | 4,
+      startedAt:      startedAtIso,
+      finishedAt:     new Date().toISOString(),
+      events,
+    })
+    renderReport(report)
+    show($('demo-report'))
+  } catch (err) {
+    status.textContent = (err as Error).message
+  }
+  void refreshClubBlock()
+}
+
+// ── Rozumko Club: стан доступу і запуск платної практики ──────
+async function refreshClubBlock() {
+  if (!lead) return
+  const block = $('club-block')
+  const status = $('club-status')
+  const tracksBox = $('club-tracks')
+  tracksBox.innerHTML = ''
+
+  let club: HomeClubState
+  try {
+    club = await getHomeClub(lead.id, lead.token)
+  } catch {
+    hide(block)
+    return
+  }
+
+  if (club.hasAccess) {
+    const until = club.currentPeriodEnd
+      ? ` до ${new Date(club.currentPeriodEnd).toLocaleDateString('uk-UA')}`
+      : ''
+    status.textContent = `Доступ активний${until}. Обери напрям нової місії:`
+    for (const key of club.tracks) {
+      const preset = TRACKS[key]
+      if (!preset) continue
+      const btn = document.createElement('button')
+      btn.className = 'btn'
+      btn.textContent = preset.label
+      btn.addEventListener('click', () => { void startDemo(preset, 'club') })
+      tracksBox.appendChild(btn)
+    }
+  } else {
+    status.textContent = club.status === 'none'
+      ? 'Повний доступ до регулярної практики відкриється з підпискою Rozumko Club. Ми напишемо на вказаний email, щойно оформлення стане доступним.'
+      : 'Доступ до Rozumko Club зараз неактивний. Якщо це виглядає як помилка — напишіть нам.'
+  }
+  show(block)
 }
 
 // ── Parent gate: згода → лід → серверний звіт ─────────────────
@@ -206,12 +303,13 @@ async function unlockReport() {
   btn.textContent = 'Готуємо звіт…'
 
   try {
-    const lead = await createHomeLead(
+    const created = await createHomeLead(
       email,
       { policyVersion: POLICY_VERSION, acceptedAt: new Date().toISOString() },
       { grade: selectedGrade as 1 | 2 | 3 | 4, ...(displayName ? { displayName } : {}) },
     )
-    const { report } = await submitHomeDemoReport(lead.leadId, lead.leadToken, {
+    lead = { id: created.leadId, token: created.leadToken }
+    const { report } = await submitHomeDemoReport(lead.id, lead.token, {
       missionId:      `demo-${currentTrack.track}-grade${selectedGrade}`,
       missionVersion: MISSION_VERSION,
       track:          currentTrack.track,
@@ -223,6 +321,7 @@ async function unlockReport() {
     renderReport(report)
     hide($('parent-gate'))
     show($('demo-report'))
+    void refreshClubBlock()
   } catch (err) {
     gateError.textContent = (err as Error).message
   } finally {
@@ -303,5 +402,8 @@ $maybe('demo-retry-btn')?.addEventListener('click', () => {
 })
 
 $maybe<HTMLButtonElement>('gate-submit-btn')?.addEventListener('click', unlockReport)
+// Доступ можуть видати після розблокування звіту (зараз — вручну адміном):
+// кнопка дає перезапитати стан без перепроходження демо.
+$maybe<HTMLButtonElement>('club-refresh-btn')?.addEventListener('click', () => { void refreshClubBlock() })
 
 highlightGrade(selectedGrade)

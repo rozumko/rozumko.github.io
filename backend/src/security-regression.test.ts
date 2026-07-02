@@ -149,6 +149,26 @@ test('публічний API питань фільтрує олімпіадні 
     assert.equal('correct' in question, false)
     assert.equal('explanation' in question, false)
     assert.equal('correctOrder' in question.options, false)
+
+    const defaultSafe = await app.inject({
+      method: 'GET',
+      url: '/api/questions?isOlympiad=false&count=1&track=ai-basics',
+    })
+    assert.equal(defaultSafe.statusCode, 200)
+    const [defaultQuestion] = defaultSafe.json().questions
+    assert.equal('correct' in defaultQuestion, false)
+    assert.equal('explanation' in defaultQuestion, false)
+    assert.equal('correctOrder' in defaultQuestion.options, false)
+
+    const explicitFalse = await app.inject({
+      method: 'GET',
+      url: '/api/questions?isOlympiad=false&count=1&track=ai-basics&hideAnswers=false',
+    })
+    assert.equal(explicitFalse.statusCode, 200)
+    const [explicitQuestion] = explicitFalse.json().questions
+    assert.equal('correct' in explicitQuestion, false)
+    assert.equal('explanation' in explicitQuestion, false)
+    assert.equal('correctOrder' in explicitQuestion.options, false)
   } finally {
     db.select = originalSelect
     await app.close()

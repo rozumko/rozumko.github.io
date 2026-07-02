@@ -28,8 +28,6 @@ export async function questionsRoutes(app: FastifyInstance) {
     const count      = req.query.count      ? Number(req.query.count)          : 10
     const difficulty = req.query.difficulty
     const track      = req.query.track as QuestionTrack | undefined
-    const hideAnswers = req.query.hideAnswers === 'true'
-
     // Публічний endpoint видає лише тренувальні питання. Олімпіадні питання
     // студент отримує тільки після POST /api/student/exchange-code.
     const filters = [eq(questions.isOlympiad, false)]
@@ -55,15 +53,14 @@ export async function questionsRoutes(app: FastifyInstance) {
       .orderBy(sql`random()`)
       .limit(count)
 
-    // Для demo-режиму тренувальні питання віддаються без ключів:
+    // Публічний API ніколи не віддає ключі: демо/Club/reporting scoring має
+    // лишатися серверним, а локальний feedback живе тільки у static bundle.
     //   • top-level correct/explanation (choice/truefalse/sequence)
     //   • ключі всередині options (sort.correctOrder, match.pairs, input.answer)
-    const qs = hideAnswers
-      ? rows.map(({ correct: _c, explanation: _e, options, ...rest }) => ({
-          ...rest,
-          options: stripOptionKeys(options),
-        }))
-      : rows
+    const qs = rows.map(({ correct: _c, explanation: _e, options, ...rest }) => ({
+      ...rest,
+      options: stripOptionKeys(options),
+    }))
 
     return reply.send({ questions: qs })
   })

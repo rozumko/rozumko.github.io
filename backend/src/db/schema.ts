@@ -293,3 +293,25 @@ export const homeEntitlementEvents = pgTable('home_entitlement_events', {
 })
 
 export type HomeEntitlementEvent = typeof homeEntitlementEvents.$inferSelect
+
+// Club practice-місії (платний контент). На відміну від демо — повторювані:
+// без UNIQUE на (profile, mission). Кожна спроба зберігає сирі події і
+// серверний звіт. Доступ вирішує hasHomeAccess ДО запису (гейт у роуті).
+export const homeMissionAttempts = pgTable('home_mission_attempts', {
+  id:               uuid('id').primaryKey().defaultRandom(),
+  childProfileId:   uuid('child_profile_id').notNull().references(() => homeChildProfiles.id, { onDelete: 'cascade' }),
+  missionId:        text('mission_id').notNull(),
+  missionVersion:   integer('mission_version').notNull(),
+  track:            text('track').notNull(),
+  grade:            integer('grade').notNull(),
+  events:           jsonb('events').notNull(),
+  report:           jsonb('report').notNull(),
+  reportVersion:    integer('report_version').notNull().default(1),
+  correct:          integer('correct').notNull(),
+  total:            integer('total').notNull(),
+  clientStartedAt:  timestamp('client_started_at', { withTimezone: true }),
+  clientFinishedAt: timestamp('client_finished_at', { withTimezone: true }),
+  createdAt:        timestamp('created_at', { withTimezone: true }).defaultNow(),
+})
+
+export type HomeMissionAttempt = typeof homeMissionAttempts.$inferSelect
