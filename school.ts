@@ -41,8 +41,13 @@ const els: MissionElements = {
 
 function show(el: HTMLElement) { el.classList.remove('hidden') }
 function hide(el: HTMLElement) { el.classList.add('hidden') }
+function setMissionActive(active: boolean) {
+  document.documentElement.classList.toggle('mission-active', active)
+  document.body.classList.toggle('mission-active', active)
+}
 
 function showIntro() {
+  setMissionActive(false)
   hide(quizEl)
   hide(resultEl)
   errorEl.textContent = ''
@@ -67,6 +72,7 @@ async function startMission(preset: MissionPreset) {
   currentMissionLabel = `${preset.label} • ${selectedGrade} клас`
 
   show(quizEl)
+  setMissionActive(true)
   els.questionText.textContent = 'Готуємо місію…'
   els.options.innerHTML = ''
   els.nextBtn.classList.add('hidden')
@@ -81,6 +87,7 @@ async function startMission(preset: MissionPreset) {
       onComplete: showResult,
     })
   } catch (err) {
+    setMissionActive(false)
     hide(quizEl)
     show(introEl)
     errorEl.textContent = (err as Error).message
@@ -88,6 +95,7 @@ async function startMission(preset: MissionPreset) {
 }
 
 function showResult(summary: MissionSummary) {
+  setMissionActive(false)
   hide(quizEl)
   els.progressBar.style.width = '100%'
 
@@ -157,6 +165,7 @@ $maybe<HTMLButtonElement>('join-btn')?.addEventListener('click', async () => {
   hide(introEl)
   hide(resultEl)
   show(quizEl)
+  setMissionActive(true)
   els.questionText.textContent = 'Приєднуємось до гри…'
   els.options.innerHTML = ''
   els.nextBtn.classList.add('hidden')
@@ -172,6 +181,7 @@ $maybe<HTMLButtonElement>('join-btn')?.addEventListener('click', async () => {
       onComplete: showResult,
     })
   } catch (err) {
+    setMissionActive(false)
     hide(quizEl)
     show(introEl)
     errorEl.textContent = (err as Error).message
