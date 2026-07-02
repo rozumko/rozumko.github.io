@@ -26,6 +26,10 @@ report. It exists so that the demo attempt schema captures, from day one, the
 behavioral telemetry the report needs — a demo that stores only
 correct/incorrect makes the behavioral report impossible later.
 
+Later Home slices are documented in `architecture.md` and `security-model.md`:
+the entitlement model and gated Club practice missions are now implemented,
+while payment-provider checkout/webhooks remain planned.
+
 ## Flow Overview
 
 ```text
@@ -173,7 +177,7 @@ Notes:
   `correct`/score fields or School session identifiers — are stripped before
   the handler runs, so they can never reach scoring or storage.
 
-## Storage (Drizzle, planned tables)
+## Storage (Drizzle, implemented tables)
 
 - `home_leads` — parent email, consent policy version, accepted_at,
   created_at;

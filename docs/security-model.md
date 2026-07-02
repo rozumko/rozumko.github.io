@@ -13,10 +13,11 @@ _Updated: 2026-07-02_
 > As of _2026-07-02_ the enforced surfaces are the **official olympiad flow**,
 > **teacher/admin auth**, **School Mode** (self-serve missions and the
 > anonymous classroom game), the **Home demo/lead slice** (consent-gated
-> demo attempts and reports) and the **entitlement model** (backend access
-> state, admin manual control, audit trail). **Payment provider integration
-> (checkout, verified webhooks), AIG JSON-template generation and
-> multi-client session rules are [PLANNED].**
+> demo attempts and reports), the **entitlement model** (backend access state,
+> admin manual control, audit trail) and gated **Club practice missions**.
+> **Payment provider integration (checkout, verified webhooks), full
+> subscription UI, AIG JSON-template generation and multi-client session rules
+> are [PLANNED].**
 
 ## Core Rules
 
@@ -78,11 +79,13 @@ The backend is the only component that accesses application tables. Row Level
 Security is enabled for application data. No frontend code may call Supabase
 Data API tables directly.
 
-## Surface Data Boundaries — School **[IMPLEMENTED]**, Home **[PLANNED]**, Olympiad **[IMPLEMENTED]/[PLANNED]**
+## Surface Data Boundaries — School **[IMPLEMENTED]**, Home Demo/Entitlement/Club Practice **[IMPLEMENTED]**, Payments **[PLANNED]**, Olympiad **[IMPLEMENTED]/[PLANNED]**
 
 _The School side is enforced by the shipped classroom-game backend
-(`/api/school`, `school-flow.test.ts`). The Home side is binding once Home
-Mode is built._
+(`/api/school`, `school-flow.test.ts`). Home demo, parent lead/consent,
+entitlement and Club practice are enforced by `/api/home`,
+`home-flow.test.ts`, `home-entitlement.test.ts` and `home-club.test.ts`.
+Checkout/webhook payment-provider rules are binding once payments are built._
 
 School Mode is the low-risk classroom surface:
 

@@ -1,6 +1,6 @@
 # Smoke Test - Rozumko
 
-_Updated: 2026-06-30_
+_Updated: 2026-07-02_
 
 Run this checklist before a real pilot.
 
@@ -85,6 +85,22 @@ Run this checklist before a real pilot.
 - [ ] Admin cannot edit or delete a question while it belongs to the running
       game (409)
 
+## 6b. Home Demo And Club Practice
+
+- [ ] `/home` loads a demo mission without answer keys in network responses
+- [ ] Parent can enter email + consent and receive a server-scored report
+- [ ] `GET /api/home/leads/:id/club` returns `hasAccess: false` for a lead
+      without entitlement and does not list paid tracks
+- [ ] After an admin/manual entitlement grant, `GET /api/home/leads/:id/club`
+      returns `hasAccess: true`
+- [ ] `GET /api/home/leads/:id/club/questions` without active entitlement
+      returns `403`
+- [ ] `GET /api/home/leads/:id/club/questions` with active entitlement returns
+      questions without `correct`, `explanation`, `correctOrder`, `pairs` or
+      `answer` keys
+- [ ] `POST /api/home/leads/:id/mission-report` stores a repeatable Club
+      attempt and returns a parent-readable report
+
 ## 7. Browser Security
 
 > Most of §7 and §8 are automated by `scripts/smoke-security.ps1`:
@@ -92,8 +108,8 @@ Run this checklist before a real pilot.
 > rate-limit probe, which sends ~50 requests — run off-peak / against staging).
 
 - [ ] Official `exchange-code` response contains no `correct`, `correctOrder`, `pairs` or `answer` keys
-- [ ] Demo `GET /api/questions?isOlympiad=false&hideAnswers=true` response contains no answer keys
-- [ ] Practice `GET /api/questions?isOlympiad=false` intentionally includes keys
+- [ ] Public `GET /api/questions?isOlympiad=false` response contains no answer keys
+- [ ] Public `GET /api/questions?isOlympiad=false&hideAnswers=false` still contains no answer keys
 - [ ] Public `GET /api/questions?isOlympiad=true` returns `400`
 - [ ] Public `GET /api/questions?count=abc`, `count=-5`, `count=0`, `count=999` return `400`
 - [ ] `/api/attempt/:id/finish` returns only `{ score, total }`

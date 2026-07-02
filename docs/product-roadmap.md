@@ -4,10 +4,13 @@ _Updated: 2026-07-02_
 
 > **This is product direction, not a status report.** Shipped today: the
 > **Official events** flow (codes, timing, server-side scoring, teacher/admin
-> panels, browser certificates) and **School Mode** (self-serve missions plus
-> the anonymous classroom game). **Home Mode, payments, subscriptions, consent,
-> parent reports and AIG JSON-templates are [PLANNED]** — see the
-> implementation-status legend in [architecture.md](./architecture.md).
+> panels, browser certificates), **School Mode** (self-serve missions plus the
+> anonymous classroom game) and the first **Home/Rozumko Club** slices are
+> shipped: `/home`, parent lead + consent, child profile, server-scored parent
+> report, entitlement state and gated Club practice missions. **Payment
+> provider checkout/webhooks, full subscription UI, richer parent account UX
+> and AIG JSON-templates are [PLANNED]** — see the implementation-status legend
+> in [architecture.md](./architecture.md).
 
 ## Positioning
 
@@ -27,8 +30,8 @@ Rozumko is organized as three autonomous surfaces:
 
 | Surface | Audience | Purpose | Status |
 |---|---|---|---|
-| School Mode | Teachers and classes | Free classroom activity, trust and brand familiarity. No payment collection and no child personal data. | Partly implemented |
-| Home Mode / Rozumko Club | Parents and children | Parent-led home practice, free demo, consented progress, parent-readable reports and subscription access. | Planned |
+| School Mode | Teachers and classes | Free classroom activity, trust and brand familiarity. No payment collection and no child personal data. | Implemented for self-serve missions and anonymous classroom game |
+| Home Mode / Rozumko Club | Parents and children | Parent-led home practice, free demo, consented progress, parent-readable reports and subscription access. | First slices implemented: demo, consent, report, entitlement and gated Club practice; checkout/webhooks planned |
 | Olympiad / Seasonal Events | Home subscribers and external participants | Seasonal deadlines, finals, diplomas and one-off event access. | Official event flow implemented; subscription integration planned |
 
 The surfaces may share content themes and mechanics, but they must not share
