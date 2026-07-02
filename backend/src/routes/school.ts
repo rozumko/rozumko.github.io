@@ -172,6 +172,12 @@ export async function schoolRoutes(app: FastifyInstance) {
       .limit(1)
     if (!session) return reply.code(404).send({ error: 'Сесію не знайдено' })
     if (session.status === 'finished') return reply.code(409).send({ error: 'Сесію вже завершено' })
+    // Приєднання лише до активної гри: якщо пустити дитину в lobby, вона отримає
+    // питання, але кожна відповідь ловитиме 409 до старту — і "спалить" гру нулем.
+    // Поллінг статусу не варіант: клас за шкільним NAT упреться в rate-limit.
+    if (session.status !== 'active') {
+      return reply.code(409).send({ error: 'Вчитель ще не розпочав гру. Зачекай і спробуй ще раз.' })
+    }
 
     const [participant] = await db.insert(schoolParticipants)
       .values({ sessionId: session.id, avatar: req.body.avatar, nickname })

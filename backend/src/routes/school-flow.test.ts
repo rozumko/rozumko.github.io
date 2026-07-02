@@ -204,6 +204,21 @@ test('school: cannot answer when session is not active (409)', async () => {
   } finally { restore() }
 })
 
+test('school: join is rejected while the session is still in lobby (409)', async () => {
+  const state = createState()
+  state.session.status = 'lobby'
+  const restore = installFakeDb(state)
+  try {
+    await withApp(async (app) => {
+      const res = await app.inject({ method: 'POST', url: '/api/school/join', payload: { code: '123456', avatar: AVATAR, nickname: 'Рано' } })
+      assert.equal(res.statusCode, 409, res.body)
+      assert.match(res.json().error, /не розпочав/)
+      // учасник НЕ створюється — жодного спаленого токена
+      assert.equal(state.participant, null)
+    })
+  } finally { restore() }
+})
+
 test('school: join rejects an avatar outside the allowlist (400)', async () => {
   const state = createState()
   const restore = installFakeDb(state)

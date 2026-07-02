@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { eq, desc, count, and, asc, inArray } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { questions, accessCodes, attempts, attemptQuestions, appUsers, olympiadEvents, eventQuestions } from '../db/schema.js'
+import { questions, accessCodes, attempts, attemptQuestions, appUsers, olympiadEvents, eventQuestions, schoolSessions, schoolSessionQuestions } from '../db/schema.js'
 import { requireAdmin } from '../lib/auth.js'
 import { assertQuestionsBelongToGrade, normalizeEventQuestionSelection } from './event-questions-validation.js'
 import { validateQuestionShape, type QuestionType } from './question-input-validation.js'
@@ -47,7 +47,21 @@ async function questionIsLocked(questionId: string): Promise<boolean> {
     .innerJoin(olympiadEvents, eq(eventQuestions.eventId, olympiadEvents.id))
     .where(and(eq(eventQuestions.questionId, questionId), eq(olympiadEvents.status, 'active')))
     .limit(1)
-  return !!selectedForActiveEvent
+  if (selectedForActiveEvent) return true
+
+  // School-сесія читає поточний стан questions при join/скорингу, тож редагування
+  // питання під час незавершеної гри розсинхронізувало б видане питання і ключ.
+  // Finished-сесії не лочать: is_correct уже зафіксовано, ре-скорингу немає.
+  const [inLiveSchoolSession] = await db
+    .select({ id: schoolSessionQuestions.id })
+    .from(schoolSessionQuestions)
+    .innerJoin(schoolSessions, eq(schoolSessionQuestions.sessionId, schoolSessions.id))
+    .where(and(
+      eq(schoolSessionQuestions.questionId, questionId),
+      inArray(schoolSessions.status, ['lobby', 'active']),
+    ))
+    .limit(1)
+  return !!inLiveSchoolSession
 }
 
 export async function adminRoutes(app: FastifyInstance) {
@@ -540,10 +554,20 @@ export async function adminRoutes(app: FastifyInstance) {
       if (await questionIsLocked(id)) {
         return reply.code(409).send({ error: 'Не можна видаляти питання активної олімпіади або питання, яке вже було видане учню' })
       }
-      const [deleted] = await db
-        .delete(questions)
-        .where(eq(questions.id, id))
-        .returning({ id: questions.id })
+      let deleted
+      try {
+        [deleted] = await db
+          .delete(questions)
+          .where(eq(questions.id, id))
+          .returning({ id: questions.id })
+      } catch (e) {
+        // FK 23503: питання ще згадується історією (напр. завершеною класною грою).
+        // Чесний 409 замість 500 — редагувати такі питання можна, видаляти ні.
+        if (typeof e === 'object' && e !== null && (e as { code?: string }).code === '23503') {
+          return reply.code(409).send({ error: 'Питання використовується в історії ігор — видалити не можна' })
+        }
+        throw e
+      }
       if (!deleted) return reply.code(404).send({ error: 'Питання не знайдено' })
       return reply.code(204).send()
     }

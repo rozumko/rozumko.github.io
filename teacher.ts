@@ -955,7 +955,12 @@ function schoolSetError(msg: string) {
 function renderSchoolStatus() {
   if (!schoolSession) return
   const statusEl = $maybe('school-status')
-  const labels: Record<string, string> = { lobby: '⏳ Очікування учнів', active: '🟢 Гра триває', finished: '🏁 Завершено' }
+  // Учні можуть приєднатися лише ПІСЛЯ старту (join у lobby сервер відхиляє).
+  const labels: Record<string, string> = {
+    lobby: '⏳ Натисніть «Почати гру» — тоді учні зможуть ввести код',
+    active: '🟢 Гра триває — диктуйте код учням',
+    finished: '🏁 Завершено',
+  }
   if (statusEl) statusEl.textContent = labels[schoolSession.status] ?? schoolSession.status
   $maybe('school-start-btn')?.classList.toggle('hidden', schoolSession.status !== 'lobby')
   $maybe('school-finish-btn')?.classList.toggle('hidden', schoolSession.status !== 'active')
