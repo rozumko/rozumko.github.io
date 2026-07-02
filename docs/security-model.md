@@ -157,8 +157,9 @@ Backend:
 - Render adds one reverse-proxy hop. Fastify must use `trustProxy: 1`, never
   `trustProxy: true`, so clients cannot spoof `X-Forwarded-For` and bypass
   rate limits.
-- `GET /api/questions` is practice-only. Official olympiad questions are issued
-  only by `POST /api/student/exchange-code`.
+- No-code practice/demo UIs load the static practice bundle from GitHub Pages.
+  `GET /api/questions` remains a practice-only guard/compatibility endpoint.
+  Official olympiad questions are issued only by `POST /api/student/exchange-code`.
 - Public question query parameters are allowlisted. `count` must be an integer
   from `1` to `50`.
 - UUID request parameters are validated before database access.

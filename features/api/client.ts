@@ -161,7 +161,7 @@ export function validateCode(code: string): Promise<{ eventTitle: string; grade:
 // (items, correctOrder, left, right, pairs, given, choices, answer, inputType)
 // у top-level q, бо рендерер читає саме звідти. Ключі відповідей для олімпіади
 // сервер уже видалив з options, тож після розгортання їх просто не буде.
-function normalizeQuestion(q: Question): Question {
+export function normalizeQuestion(q: Question): Question {
   if (q.options && typeof q.options === 'object' && !Array.isArray(q.options)) {
     return { ...q, ...(q.options as Record<string, unknown>) } as Question
   }

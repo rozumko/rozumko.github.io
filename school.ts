@@ -1,5 +1,5 @@
 import { $, $maybe } from './utils/dom.js'
-import { loadQuestions } from './features/olympiad/quiz-engine.js'
+import { loadStaticQuestions } from './features/missions/static-questions.js'
 import { joinSchoolSession, submitSchoolAnswer } from './features/api/client.js'
 import { runMission, type MissionElements } from './features/missions/mission-runner.js'
 import { encouragement, starRating, type MissionSummary } from './features/missions/mission-result.js'
@@ -72,7 +72,10 @@ async function startMission(preset: MissionPreset) {
   els.nextBtn.classList.add('hidden')
 
   try {
-    const questions = await loadQuestions(selectedGrade, 'practice', preset.count, preset.difficulty)
+    // Самостійні місії — зі статичного бандла (GitHub Pages), без бекенду:
+    // немає cold start і анонімного трафіку в rate-limit. Класна гра за кодом
+    // лишається на API (там сервер рахує бали).
+    const questions = await loadStaticQuestions(selectedGrade, { count: preset.count, difficulty: preset.difficulty })
     runMission(els, questions, {
       showExplanation: true, // practice завжди показує пояснення
       onComplete: showResult,
