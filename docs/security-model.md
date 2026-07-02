@@ -1,6 +1,6 @@
 # Security Model - Rozumko
 
-_Updated: 2026-07-01_
+_Updated: 2026-07-02_
 
 > **Implementation status legend.**
 >
@@ -10,9 +10,10 @@ _Updated: 2026-07-01_
 >   **before** the feature code. Nothing enforces them today because the
 >   feature does not exist.
 >
-> As of _2026-07-01_ the enforced surface is the **official olympiad flow** and
-> **teacher/admin auth**. **Home Mode, payments/entitlement and multi-client
-> session rules are [PLANNED].**
+> As of _2026-07-02_ the enforced surfaces are the **official olympiad flow**,
+> **teacher/admin auth** and **School Mode** (self-serve missions and the
+> anonymous classroom game). **Home Mode, payments/entitlement and
+> multi-client session rules are [PLANNED].**
 
 ## Core Rules
 
@@ -70,18 +71,26 @@ The backend is the only component that accesses application tables. Row Level
 Security is enabled for application data. No frontend code may call Supabase
 Data API tables directly.
 
-## School And Home Data Boundaries **[PLANNED]**
+## School And Home Data Boundaries — School **[IMPLEMENTED]**, Home **[PLANNED]**
 
-_Home Mode and an anonymous School backend are not implemented. These boundaries
-are binding once those surfaces are built._
+_The School side is enforced by the shipped classroom-game backend
+(`/api/school`, `school-flow.test.ts`). The Home side is binding once Home
+Mode is built._
 
 School Mode is the low-risk classroom surface:
 
-- no child personal data;
+- no child personal data — a participant is an ephemeral session-scoped HMAC
+  token, an avatar from a fixed allowlist and a free nickname label (control
+  characters stripped, length capped, real names never required);
 - no parent accounts or parent identifiers;
 - no payments;
-- no individual school-to-home claim tokens;
-- aggregate/class-level results only.
+- no individual school-to-home claim tokens and no per-child recovery path
+  (closing the tab ends the participant);
+- answer keys never reach the browser (same sanitizer as olympiad questions)
+  and scoring happens only on the server;
+- one answer per participant per question, only for active sessions, only for
+  questions issued to that session;
+- a teacher sees only their own sessions and an anonymous leaderboard.
 
 Home Mode is the parent-led surface:
 
@@ -192,6 +201,17 @@ npm test
 - attempt finalization rejects late answers and locks the attempt row while
   scoring saved answers;
 - Render backend auto-deploy waits for CI checks.
+
+`backend/src/routes/school-flow.test.ts` protects the classroom-game
+invariants:
+
+- join responses strip answer keys (top-level and nested);
+- scoring is server-side and one answer per question is enforced (409);
+- answers without a valid participant token are rejected (403);
+- questions not issued to the session are rejected (400);
+- inactive sessions reject answers, and lobby sessions reject join without
+  creating a participant (409);
+- avatars outside the allowlist are rejected (400).
 
 Home Mode security regression tests **[PLANNED]** should cover (these must land
 before any Home Mode feature code):
