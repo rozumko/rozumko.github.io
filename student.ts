@@ -1,5 +1,6 @@
 import './register-sw.js'
-import { loadQuestions, getModeConfig } from './features/olympiad/quiz-engine.js'
+import { getModeConfig } from './features/olympiad/quiz-engine.js'
+import { loadStaticQuestions } from './features/missions/static-questions.js'
 import { saveAnswer, finishAttempt } from './features/api/client.js'
 import { renderQuestion, type RenderableQuestion } from './utils/question-renderer.js'
 import { showModal } from './utils/ui.js'
@@ -52,8 +53,8 @@ startDemoFreeBtn.addEventListener('click', async () => {
   showLoading()
   try {
     const cfg = getModeConfig('demo', null)
-    const qs  = await loadQuestions(selectedDemoGrade, 'demo', cfg.count, null)
-    startQuiz(qs, 'demo', cfg, { grade: selectedDemoGrade })
+    const qs  = await loadStaticQuestions(selectedDemoGrade, { count: cfg.count, difficulty: 'hard' })
+    startQuiz(qs.map(stripAnswerKeysForDemo), 'demo', cfg, { grade: selectedDemoGrade })
   } catch (err) {
     hideLoading()
     showModal((err as Error).message)
@@ -301,7 +302,7 @@ startPracticeBtn.addEventListener('click', async () => {
   showLoading()
   try {
     const cfg = getModeConfig('practice')
-    const qs  = await loadQuestions(selectedGrade!, 'practice', cfg.count, selectedDiff!)
+    const qs  = await loadStaticQuestions(selectedGrade!, { count: cfg.count, difficulty: selectedDiff! })
     if (qs.length === 0) throw new Error('Питань для цих налаштувань немає.')
     startQuiz(qs, 'practice', cfg, { grade: selectedGrade })
   } catch (err) {
@@ -316,6 +317,25 @@ startPracticeBtn.addEventListener('click', async () => {
 
 interface QuizMeta { code?: string; grade?: number | null; [k: string]: unknown }
 interface QuizStartState { currentIdx?: number; secondsLeft?: number }
+
+function stripAnswerKeysForDemo(q: RenderableQuestion): RenderableQuestion {
+  const safe = { ...q } as RenderableQuestion & Record<string, unknown>
+  delete safe.correct
+  delete safe.answer
+  delete safe.correctOrder
+  delete safe.pairs
+
+  if (safe.options && typeof safe.options === 'object' && !Array.isArray(safe.options)) {
+    const options = { ...(safe.options as Record<string, unknown>) }
+    delete options.correct
+    delete options.answer
+    delete options.correctOrder
+    delete options.pairs
+    safe.options = options
+  }
+
+  return safe
+}
 
 function startQuiz(qs: RenderableQuestion[], mode: string, cfg: any, meta: QuizMeta, restore: QuizStartState = {}) {
   questions     = qs

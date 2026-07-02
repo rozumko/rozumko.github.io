@@ -47,9 +47,15 @@ The platform includes these student-facing event and practice modes:
 
 | Mode | Code | Questions | Scoring |
 |---|---|---|---|
-| Practice | No | `isOlympiad=false` | Local feedback; answer keys are intentionally returned |
-| Demo | No | Practice pool, `difficulty=hard` | No score; answer keys stay hidden |
-| Official olympiad | Yes | Fixed event selection | Server-side only |
+| Practice | No | Static practice bundle generated from `isOlympiad=false` (`public/questions/grade-N.json`) | Local feedback; answer keys are intentionally bundled |
+| Demo | No | Same static practice bundle, `difficulty=hard`; keys are stripped before rendering | No score; neutral feedback |
+| Official olympiad | Yes | Fixed event selection from the backend | Server-side only |
+
+`student.html` and `/school` self-serve no-code missions load the static bundle
+from GitHub Pages, so children do not wait for backend cold starts and anonymous
+classes do not consume backend rate-limit budget. `GET /api/questions` remains a
+practice-only backend guard/compatibility endpoint; official olympiad questions
+are still issued only through code exchange.
 
 ## Content Goals
 
@@ -65,8 +71,9 @@ Mission content is organized around:
 ## School/Home Architecture — School **[IMPLEMENTED]**, Home **[PLANNED]**
 
 _School Mode is shipped: `/school` runs self-serve missions (grade +
-difficulty presets, local feedback) through the reusable `features/missions/`
-runner, and the advanced classroom game is live — a teacher creates a session
+difficulty presets, local feedback) from the static practice bundle through the
+reusable `features/missions/` runner, and the advanced classroom game is live —
+a teacher creates a session
 in the dashboard ("Класна гра" tab), students join anonymously by a 6-digit
 code with an avatar + nickname label, answers are scored server-side and the
 teacher sees an anonymous leaderboard (`/api/school`, migration 0014). Home
