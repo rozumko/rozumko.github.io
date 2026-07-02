@@ -247,6 +247,71 @@ export async function submitSchoolAnswer(
   })
 }
 
+// ─── Home Mode (parent-led, зріз 1: лід + демо-звіт) ────────────────────────
+// Контракт: docs/home-demo-contract.md. Сирі події + телеметрія йдуть на бекенд,
+// скоринг і звіт рахує сервер. Клієнтська "правильність" не передається взагалі.
+
+export type HomeDemoTrack = 'informatics' | 'computational-thinking' | 'ai-basics'
+
+export interface HomeDemoEvent {
+  questionId: string
+  answer: number | string | number[]
+  timeToAnswerMs: number
+  answerChangeCount: number
+  position: number
+}
+
+export interface HomeDemoAttemptPayload {
+  missionId: string
+  missionVersion: number
+  track: HomeDemoTrack
+  grade: 1 | 2 | 3 | 4
+  startedAt: string
+  finishedAt: string
+  events: HomeDemoEvent[]
+}
+
+export interface HomeDemoReport {
+  missionId: string
+  missionVersion: number
+  track: HomeDemoTrack
+  correct: number
+  total: number
+  strengths: string[]
+  struggles: string[]
+  patterns: Array<{ kind: 'haste' | 'attention'; evidence: string }>
+  nextMission: { missionId: string; reason: string }
+}
+
+export async function createHomeLead(
+  parentEmail: string,
+  consent: { policyVersion: string; acceptedAt: string },
+  childProfile: { displayName?: string; grade: 1 | 2 | 3 | 4 },
+): Promise<{ leadId: string; leadToken: string; childProfileId: string }> {
+  return request('/api/home/leads', {
+    method: 'POST',
+    body: JSON.stringify({ parentEmail, consent, childProfile }),
+  })
+}
+
+export async function submitHomeDemoReport(
+  leadId: string,
+  leadToken: string,
+  payload: HomeDemoAttemptPayload,
+): Promise<{ report: HomeDemoReport }> {
+  return request(`/api/home/leads/${leadId}/demo-report`, {
+    method: 'POST',
+    headers: { 'X-Lead-Token': leadToken },
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function getHomeDemoReport(leadId: string, leadToken: string): Promise<{ report: HomeDemoReport }> {
+  return request(`/api/home/leads/${leadId}/demo-report`, {
+    headers: { 'X-Lead-Token': leadToken },
+  })
+}
+
 // ─── Teacher Auth (Supabase) ───────────────────────────────────────────────
 
 export async function loginTeacher(email: string, password: string): Promise<any> {
