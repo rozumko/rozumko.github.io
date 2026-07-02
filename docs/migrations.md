@@ -31,6 +31,7 @@ environments receive the same schema.
 | `0014_add_school_sessions` | Anonymous classroom sessions |
 | `0015_add_home_leads` | Home demo parent lead, child profile, attempt and report tables |
 | `0016_add_question_track` | Nullable question track taxonomy for Home Demo directions |
+| `0017_enable_home_rls` | Safety re-apply of RLS on Home tables (0015 was edited after merge) |
 
 `0012` is intentionally idempotent: production received the columns manually
 before the SQL was incorporated into Drizzle history.
