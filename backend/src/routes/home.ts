@@ -1,7 +1,8 @@
 import type { FastifyInstance } from 'fastify'
 import { and, eq, inArray } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { questions, homeLeads, homeChildProfiles, homeDemoAttempts, homeDemoReports } from '../db/schema.js'
+import { questions, homeLeads, homeChildProfiles, homeDemoAttempts, homeDemoReports, homeEntitlements } from '../db/schema.js'
+import { hasHomeAccess } from './home-entitlement.js'
 import { scoreAttempt, type AnswerValue } from './attempt-validation.js'
 import {
   HOME_DEMO_TRACKS, DEMO_REPORT_VERSION,
@@ -255,5 +256,31 @@ export async function homeRoutes(app: FastifyInstance) {
     if (!stored) return reply.code(404).send({ error: 'Звіт не знайдено' })
 
     return reply.send({ report: stored.report })
+  })
+
+  // ── Батько: стан платного доступу (Rozumko Club) ──────────────────────────
+  // Рішення про доступ — лише тут, на бекенді (hasHomeAccess). Entitlement
+  // відкриває контент, але не впливає на скоринг (docs/security-model.md).
+  app.get<{ Params: { id: string } }>('/leads/:id/entitlement', {
+    config: { rateLimit: { max: 30, timeWindow: '1 minute' } },
+    schema: { params: uuidParam },
+  }, async (req, reply) => {
+    if (!requireLeadToken(req.params.id, req.headers['x-lead-token'])) {
+      return reply.code(403).send({ error: 'Невірний токен' })
+    }
+
+    const [ent] = await db
+      .select({ status: homeEntitlements.status, currentPeriodEnd: homeEntitlements.currentPeriodEnd })
+      .from(homeEntitlements)
+      .where(eq(homeEntitlements.leadId, req.params.id))
+      .limit(1)
+
+    if (!ent) return reply.send({ status: 'none', hasAccess: false, currentPeriodEnd: null })
+
+    return reply.send({
+      status: ent.status,
+      hasAccess: hasHomeAccess(ent.status, ent.currentPeriodEnd),
+      currentPeriodEnd: ent.currentPeriodEnd,
+    })
   })
 }

@@ -1,7 +1,8 @@
 import type { FastifyInstance } from 'fastify'
 import { eq, desc, count, and, asc, inArray } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { questions, accessCodes, attempts, attemptQuestions, appUsers, olympiadEvents, eventQuestions, schoolSessions, schoolSessionQuestions } from '../db/schema.js'
+import { questions, accessCodes, attempts, attemptQuestions, appUsers, olympiadEvents, eventQuestions, schoolSessions, schoolSessionQuestions, homeLeads, homeEntitlements, homeEntitlementEvents, type QuestionTrack } from '../db/schema.js'
+import { ENTITLEMENT_STATUSES, normalizeEntitlementStatus, applyEntitlementChange } from './home-entitlement.js'
 import { requireAdmin } from '../lib/auth.js'
 import { assertQuestionsBelongToGrade, normalizeEventQuestionSelection } from './event-questions-validation.js'
 import { validateQuestionShape, type QuestionType } from './question-input-validation.js'
@@ -13,6 +14,14 @@ import {
   normalizeEventInput,
   normalizeEventPatch,
 } from './event-validation.js'
+
+const QUESTION_TRACKS = ['informatics', 'computational-thinking', 'ai-basics'] as const
+
+function normalizeQuestionTrack(raw: unknown): QuestionTrack | null {
+  if (raw == null || raw === '') return null
+  if (typeof raw === 'string' && (QUESTION_TRACKS as readonly string[]).includes(raw)) return raw as QuestionTrack
+  throw new Error('Невідомий напрям питання')
+}
 
 function normalizePositiveInt(value: unknown, field: string, fallback?: number): number | undefined {
   if (value === undefined) return fallback
@@ -389,15 +398,22 @@ export async function adminRoutes(app: FastifyInstance) {
     return reply.send({ results: allAttempts })
   })
 
-  // GET /api/admin/questions?grade=&isOlympiad=&difficulty=
+  // GET /api/admin/questions?grade=&isOlympiad=&difficulty=&track=
   app.get<{
-    Querystring: { grade?: string; isOlympiad?: string; difficulty?: string }
+    Querystring: { grade?: string; isOlympiad?: string; difficulty?: string; track?: string }
   }>('/questions', { preHandler: requireAdmin }, async (req, reply) => {
     const { grade, isOlympiad, difficulty } = req.query
+    let track: QuestionTrack | null
+    try {
+      track = normalizeQuestionTrack(req.query.track)
+    } catch (err) {
+      return reply.code(400).send({ error: (err as Error).message })
+    }
     const filters = []
     if (grade)      filters.push(eq(questions.grade,      Number(grade)))
     if (isOlympiad) filters.push(eq(questions.isOlympiad, isOlympiad === 'true'))
     if (difficulty) filters.push(eq(questions.difficulty, difficulty))
+    if (track)      filters.push(eq(questions.track,      track))
 
     const list = await db
       .select()
@@ -410,7 +426,7 @@ export async function adminRoutes(app: FastifyInstance) {
   // POST /api/admin/questions
   app.post<{
     Body: {
-      q: string; grade: number; difficulty: string; isOlympiad: boolean
+      q: string; grade: number; difficulty: string; track?: QuestionTrack | null; isOlympiad: boolean
       type?: string; options: string[] | Record<string, unknown>
       correct?: number; explanation?: string; code?: string
     }
@@ -424,6 +440,7 @@ export async function adminRoutes(app: FastifyInstance) {
           q:           { type: 'string' },
           grade:       { type: 'integer', minimum: 1, maximum: 4 },
           difficulty:  { type: 'string', enum: ['easy', 'medium', 'hard'] },
+          track:       { oneOf: [{ type: 'string', enum: ['informatics', 'computational-thinking', 'ai-basics'] }, { type: 'null' }] },
           isOlympiad:  { type: 'boolean' },
           type:        { type: 'string', enum: ['choice', 'truefalse', 'input', 'sort', 'sequence', 'match'] },
           options:     {},   // jsonb — будь-яка структура залежно від type
@@ -436,6 +453,12 @@ export async function adminRoutes(app: FastifyInstance) {
   }, async (req, reply) => {
     const { q, grade, difficulty, isOlympiad = false, options, correct, explanation, code } = req.body
     const type = (req.body.type ?? 'choice') as QuestionType
+    let track: QuestionTrack | null
+    try {
+      track = normalizeQuestionTrack(req.body.track)
+    } catch (err) {
+      return reply.code(400).send({ error: (err as Error).message })
+    }
 
     // Валідація форми за типом (choice/truefalse/sequence/sort/match/input)
     let shape
@@ -447,7 +470,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
     const [inserted] = await db
       .insert(questions)
-      .values({ q, grade, difficulty, isOlympiad, type, options: shape.options as any, correct: shape.correct, explanation: explanation ?? null, code: code ?? null })
+      .values({ q, grade, difficulty, track, isOlympiad, type, options: shape.options as any, correct: shape.correct, explanation: explanation ?? null, code: code ?? null })
       .returning({ id: questions.id })
     return reply.code(201).send({ id: inserted.id })
   })
@@ -456,7 +479,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.put<{
     Params: { id: string }
     Body: {
-      q?: string; grade?: number; difficulty?: string; isOlympiad?: boolean
+      q?: string; grade?: number; difficulty?: string; track?: QuestionTrack | null; isOlympiad?: boolean
       type?: string; options?: string[] | Record<string, unknown>
       correct?: number; explanation?: string; code?: string
     }
@@ -474,6 +497,7 @@ export async function adminRoutes(app: FastifyInstance) {
           q:           { type: 'string' },
           grade:       { type: 'integer', minimum: 1, maximum: 4 },
           difficulty:  { type: 'string', enum: ['easy', 'medium', 'hard'] },
+          track:       { oneOf: [{ type: 'string', enum: ['informatics', 'computational-thinking', 'ai-basics'] }, { type: 'null' }] },
           isOlympiad:  { type: 'boolean' },
           type:        { type: 'string', enum: ['choice', 'truefalse', 'input', 'sort', 'sequence', 'match'] },
           options:     {},
@@ -487,6 +511,12 @@ export async function adminRoutes(app: FastifyInstance) {
   }, async (req, reply) => {
     const { id } = req.params
     const b = req.body
+    let track: QuestionTrack | null | undefined
+    try {
+      track = b.track !== undefined ? normalizeQuestionTrack(b.track) : undefined
+    } catch (err) {
+      return reply.code(400).send({ error: (err as Error).message })
+    }
 
     // Завантажити поточний стан питання для merge-валідації
     const [current] = await db
@@ -518,6 +548,7 @@ export async function adminRoutes(app: FastifyInstance) {
     if (b.q           !== undefined) updates.q           = b.q
     if (b.grade       !== undefined) updates.grade       = b.grade
     if (b.difficulty  !== undefined) updates.difficulty  = b.difficulty
+    if (track         !== undefined) updates.track       = track
     if (b.isOlympiad  !== undefined) updates.isOlympiad  = b.isOlympiad
     if (b.type        !== undefined) updates.type        = b.type
     // options/correct беремо з провалідованої форми (нормалізовані)
@@ -572,4 +603,69 @@ export async function adminRoutes(app: FastifyInstance) {
       return reply.code(204).send()
     }
   )
+
+  // ── Home entitlements: ручне керування доступом (до платіжного провайдера) ─
+  // Кожна зміна статусу пише audit-подію. Entitlement відкриває доступ, але
+  // ніколи не змінює скоринг чи відповіді (docs/security-model.md).
+
+  const leadUuidParam = {
+    type: 'object',
+    required: ['leadId'],
+    properties: { leadId: { type: 'string', format: 'uuid' } },
+  } as const
+
+  // GET /api/admin/home-entitlements/:leadId — стан + журнал змін
+  app.get<{ Params: { leadId: string } }>('/home-entitlements/:leadId', {
+    preHandler: requireAdmin,
+    schema: { params: leadUuidParam },
+  }, async (req, reply) => {
+    const [ent] = await db.select().from(homeEntitlements)
+      .where(eq(homeEntitlements.leadId, req.params.leadId)).limit(1)
+    if (!ent) return reply.code(404).send({ error: 'Entitlement не знайдено' })
+
+    const events = await db.select().from(homeEntitlementEvents)
+      .where(eq(homeEntitlementEvents.entitlementId, ent.id))
+      .orderBy(desc(homeEntitlementEvents.createdAt))
+      .limit(20)
+
+    return reply.send({ entitlement: ent, events })
+  })
+
+  // PUT /api/admin/home-entitlements/:leadId — grant/зміна статусу (upsert)
+  app.put<{ Params: { leadId: string }; Body: { status: string; currentPeriodEnd?: string; reason?: string } }>('/home-entitlements/:leadId', {
+    preHandler: requireAdmin,
+    schema: {
+      params: leadUuidParam,
+      body: {
+        type: 'object',
+        required: ['status'],
+        additionalProperties: false,
+        properties: {
+          status:           { type: 'string', enum: [...ENTITLEMENT_STATUSES] },
+          currentPeriodEnd: { type: 'string', format: 'date-time' },
+          reason:           { type: 'string', maxLength: 200 },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    const [lead] = await db.select({ id: homeLeads.id }).from(homeLeads)
+      .where(eq(homeLeads.id, req.params.leadId)).limit(1)
+    if (!lead) return reply.code(404).send({ error: 'Лід не знайдено' })
+
+    const periodEnd = req.body.currentPeriodEnd ? new Date(req.body.currentPeriodEnd) : null
+    if (periodEnd && Number.isNaN(periodEnd.getTime())) {
+      return reply.code(400).send({ error: 'Невірна дата кінця періоду' })
+    }
+
+    try {
+      const result = await applyEntitlementChange(db, lead.id, {
+        status: normalizeEntitlementStatus(req.body.status),
+        currentPeriodEnd: periodEnd,
+        reason: req.body.reason ?? null,
+      }, 'admin')
+      return reply.send({ entitlement: result })
+    } catch (err) {
+      return reply.code(400).send({ error: (err as Error).message })
+    }
+  })
 }

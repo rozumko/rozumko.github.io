@@ -1,13 +1,13 @@
 import type { FastifyInstance } from 'fastify'
 import { eq, and, sql } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { questions } from '../db/schema.js'
+import { questions, type QuestionTrack } from '../db/schema.js'
 import { stripOptionKeys } from './question-sanitize.js'
 
 export async function questionsRoutes(app: FastifyInstance) {
-  // GET /api/questions?grade=4&isOlympiad=false&count=10&difficulty=hard
+  // GET /api/questions?grade=4&isOlympiad=false&count=10&difficulty=hard&track=ai-basics
   app.get<{
-    Querystring: { grade?: string; isOlympiad?: string; count?: string; difficulty?: string; hideAnswers?: string }
+    Querystring: { grade?: string; isOlympiad?: string; count?: string; difficulty?: string; track?: string; hideAnswers?: string }
   }>('/', {
     schema: {
       querystring: {
@@ -18,6 +18,7 @@ export async function questionsRoutes(app: FastifyInstance) {
           isOlympiad:  { type: 'string', enum: ['false'] },
           count:       { type: 'string', pattern: '^(?:[1-9]|[1-4][0-9]|50)$' },
           difficulty:  { type: 'string', enum: ['easy', 'medium', 'hard'] },
+          track:       { type: 'string', enum: ['informatics', 'computational-thinking', 'ai-basics'] },
           hideAnswers: { type: 'string', enum: ['true', 'false'] },
         },
       },
@@ -26,6 +27,7 @@ export async function questionsRoutes(app: FastifyInstance) {
     const grade      = req.query.grade      ? Number(req.query.grade)          : undefined
     const count      = req.query.count      ? Number(req.query.count)          : 10
     const difficulty = req.query.difficulty
+    const track      = req.query.track as QuestionTrack | undefined
     const hideAnswers = req.query.hideAnswers === 'true'
 
     // Публічний endpoint видає лише тренувальні питання. Олімпіадні питання
@@ -33,6 +35,7 @@ export async function questionsRoutes(app: FastifyInstance) {
     const filters = [eq(questions.isOlympiad, false)]
     if (grade      !== undefined) filters.push(eq(questions.grade,      grade))
     if (difficulty)               filters.push(eq(questions.difficulty,  difficulty))
+    if (track)                    filters.push(eq(questions.track,       track))
 
     const rows = await db
       .select({
@@ -44,6 +47,7 @@ export async function questionsRoutes(app: FastifyInstance) {
         correct:     questions.correct,
         explanation: questions.explanation,
         difficulty:  questions.difficulty,
+        track:       questions.track,
         grade:       questions.grade,
       })
       .from(questions)
