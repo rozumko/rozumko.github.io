@@ -90,7 +90,7 @@ directions (`informatics`, `computational-thinking`, `ai-basics`). AIG item
 models should emit the same track values plus more granular skill/topic metadata
 when that engine lands.
 
-## Surface Architecture — School **[IMPLEMENTED]**, Home **[PLANNED]**, Olympiad **[IMPLEMENTED]/[PLANNED]**
+## Surface Architecture — School **[IMPLEMENTED]**, Home Demo/Entitlement **[IMPLEMENTED]**, Club/Payments **[PLANNED]**, Olympiad **[IMPLEMENTED]/[PLANNED]**
 
 _School Mode is shipped: `/school` runs self-serve missions (grade +
 difficulty presets, local feedback) from the static practice bundle through the
@@ -99,7 +99,10 @@ a teacher creates a session
 in the dashboard ("Класна гра" tab), students join anonymously by a 6-digit
 code with an avatar + nickname label, answers are scored server-side and the
 teacher sees an anonymous leaderboard (`/api/school`, migration 0014). Home
-Mode (`features/home/`, parent routes, consent, payments) does not exist yet._
+Mode has an implemented first slice: `/home`, parent lead + consent,
+server-scored demo reports, and backend entitlement state. Full Rozumko Club
+paid-content UX, checkout/webhooks and richer parent account flows are still
+planned._
 
 School, Home and Olympiad surfaces stay decoupled at the identity/data level.
 School Mode may send users to a Home URL as a neutral brand path, but it does

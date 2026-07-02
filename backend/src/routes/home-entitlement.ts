@@ -68,33 +68,35 @@ export async function applyEntitlementChange(
     throw new Error(`Статус ${change.status} потребує дати кінця періоду`)
   }
 
-  const [existing] = await db
-    .select({ id: homeEntitlements.id, status: homeEntitlements.status })
-    .from(homeEntitlements)
-    .where(eq(homeEntitlements.leadId, leadId))
-    .limit(1)
+  return db.transaction(async (tx) => {
+    const [existing] = await tx
+      .select({ id: homeEntitlements.id, status: homeEntitlements.status })
+      .from(homeEntitlements)
+      .where(eq(homeEntitlements.leadId, leadId))
+      .limit(1)
 
-  let row: { id: string }
-  if (existing) {
-    const [updated] = await db.update(homeEntitlements)
-      .set({ status: change.status, currentPeriodEnd: change.currentPeriodEnd, updatedAt: new Date() })
-      .where(eq(homeEntitlements.id, existing.id))
-      .returning({ id: homeEntitlements.id })
-    row = updated
-  } else {
-    const [inserted] = await db.insert(homeEntitlements)
-      .values({ leadId, status: change.status, currentPeriodEnd: change.currentPeriodEnd })
-      .returning({ id: homeEntitlements.id })
-    row = inserted
-  }
+    let row: { id: string }
+    if (existing) {
+      const [updated] = await tx.update(homeEntitlements)
+        .set({ status: change.status, currentPeriodEnd: change.currentPeriodEnd, updatedAt: new Date() })
+        .where(eq(homeEntitlements.id, existing.id))
+        .returning({ id: homeEntitlements.id })
+      row = updated
+    } else {
+      const [inserted] = await tx.insert(homeEntitlements)
+        .values({ leadId, status: change.status, currentPeriodEnd: change.currentPeriodEnd })
+        .returning({ id: homeEntitlements.id })
+      row = inserted
+    }
 
-  await db.insert(homeEntitlementEvents).values({
-    entitlementId: row.id,
-    actor,
-    fromStatus: existing?.status ?? null,
-    toStatus: change.status,
-    reason: change.reason,
+    await tx.insert(homeEntitlementEvents).values({
+      entitlementId: row.id,
+      actor,
+      fromStatus: existing?.status ?? null,
+      toStatus: change.status,
+      reason: change.reason,
+    })
+
+    return { id: row.id, status: change.status, currentPeriodEnd: change.currentPeriodEnd }
   })
-
-  return { id: row.id, status: change.status, currentPeriodEnd: change.currentPeriodEnd }
 }

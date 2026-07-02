@@ -67,11 +67,12 @@ function createState() {
     lead: { id: ids.lead, parentEmail: 'parent@example.com' } as null | { id: string; parentEmail: string },
     entitlement: null as null | { id: string; leadId: string; status: string; currentPeriodEnd: Date | null },
     events: [] as Array<{ entitlementId: string; actor: string; fromStatus: string | null; toStatus: string; reason: string | null }>,
+    failEventInsert: false,
   }
 }
 
 function installFakeDb(state: ReturnType<typeof createState>) {
-  const original = { select: db.select, insert: db.insert, update: db.update }
+  const original = { select: db.select, insert: db.insert, update: db.update, transaction: db.transaction }
   const isTable = (a: unknown, b: unknown) => a === b
 
   class SelectQuery {
@@ -103,6 +104,7 @@ function installFakeDb(state: ReturnType<typeof createState>) {
         return [{ id: ids.entitlement }]
       }
       if (isTable(this.table, schema.homeEntitlementEvents)) {
+        if (state.failEventInsert) throw new Error('audit insert failed')
         state.events.push(this.inserted)
         return [{ id: 'event-1' }]
       }
@@ -134,8 +136,26 @@ function installFakeDb(state: ReturnType<typeof createState>) {
   db.select = (() => new SelectQuery()) as unknown as typeof db.select
   db.insert = ((t: unknown) => new InsertQuery(t)) as unknown as typeof db.insert
   db.update = ((t: unknown) => new UpdateQuery(t)) as unknown as typeof db.update
+  db.transaction = (async (fn: (tx: typeof db) => unknown) => {
+    const snapshot = {
+      entitlement: state.entitlement ? { ...state.entitlement } : null,
+      events: state.events.map(e => ({ ...e })),
+    }
+    try {
+      return await fn(db)
+    } catch (err) {
+      state.entitlement = snapshot.entitlement
+      state.events = snapshot.events
+      throw err
+    }
+  }) as unknown as typeof db.transaction
 
-  return () => { db.select = original.select; db.insert = original.insert; db.update = original.update }
+  return () => {
+    db.select = original.select
+    db.insert = original.insert
+    db.update = original.update
+    db.transaction = original.transaction
+  }
 }
 
 test('applyEntitlementChange: створює entitlement + audit-подію', async () => {
@@ -162,6 +182,21 @@ test('applyEntitlementChange: оновлює наявний і фіксує пе
     assert.equal(state.events[0].fromStatus, 'active')
     assert.equal(state.events[0].toStatus, 'revoked')
     assert.equal(state.events[0].reason, 'chargeback')
+  } finally { restore() }
+})
+
+test('applyEntitlementChange: audit insert failure rolls back entitlement change', async () => {
+  const state = createState()
+  state.entitlement = { id: ids.entitlement, leadId: ids.lead, status: 'active', currentPeriodEnd: FUTURE }
+  state.failEventInsert = true
+  const restore = installFakeDb(state)
+  try {
+    await assert.rejects(
+      () => applyEntitlementChange(db, ids.lead, { status: 'revoked', currentPeriodEnd: null, reason: 'audit failure probe' }, 'admin'),
+      /audit insert failed/,
+    )
+    assert.equal(state.entitlement?.status, 'active')
+    assert.equal(state.events.length, 0)
   } finally { restore() }
 })
 
