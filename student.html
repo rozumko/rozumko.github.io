@@ -50,7 +50,7 @@
 
     <!-- Логотип -->
     <div class="entry-logo">
-      <span class="entry-logo__icon" aria-hidden="true">🏆</span>
+      <span class="entry-logo__icon" aria-hidden="true"><i class="fas fa-brain"></i></span>
       <h1 class="entry-logo__title">Розумко</h1>
       <p class="entry-logo__sub">Обчислювальне мислення, логіка та основи ШІ</p>
     </div>
@@ -89,9 +89,9 @@
       </div>
       <div id="practice-difficulty-buttons" class="selector-grid selector-grid--diff"
            role="group" aria-label="Складність">
-        <button data-difficulty="easy"   class="selector-btn selector-btn--diff" aria-pressed="false">😊 Легкий</button>
-        <button data-difficulty="medium" class="selector-btn selector-btn--diff" aria-pressed="false">🔥 Середній</button>
-        <button data-difficulty="hard"   class="selector-btn selector-btn--diff" aria-pressed="false">⚡ Важкий</button>
+        <button data-difficulty="easy"   class="selector-btn selector-btn--diff" aria-pressed="false"><i class="fas fa-seedling" aria-hidden="true"></i> Легкий</button>
+        <button data-difficulty="medium" class="selector-btn selector-btn--diff" aria-pressed="false"><i class="fas fa-route" aria-hidden="true"></i> Середній</button>
+        <button data-difficulty="hard"   class="selector-btn selector-btn--diff" aria-pressed="false"><i class="fas fa-bolt" aria-hidden="true"></i> Важкий</button>
       </div>
       <button id="start-practice-btn" class="btn btn-start" disabled>
         Почати тренування
@@ -157,7 +157,8 @@
       </div>
       <div class="quiz-header__right">
         <div id="quiz-timer" class="quiz-timer" role="timer" aria-live="off">
-          🔥 <span id="quiz-timer-display">15:00</span>
+          <i class="fas fa-stopwatch" aria-hidden="true"></i>
+          <span id="quiz-timer-display">15:00</span>
         </div>
         <button id="quiz-quit-btn" class="btn btn-quiz-quit">Вийти</button>
       </div>
@@ -204,7 +205,7 @@
        ═══════════════════════════════════════════════════════════ -->
   <div id="result-overlay" class="result-overlay" role="dialog" aria-modal="true" aria-label="Результат">
     <div class="result-card">
-      <span class="result-emoji" aria-hidden="true">🎉</span>
+      <span class="result-emoji" aria-hidden="true"><i class="fas fa-trophy"></i></span>
       <p  id="result-mode-label" class="result-mode-label"></p>
       <h2 id="result-title"      class="result-title"></h2>
       <p class="result-score-label">Правильних відповідей</p>
@@ -226,7 +227,7 @@
        ═══════════════════════════════════════════════════════════ -->
   <div id="quit-confirm" class="quit-overlay" role="alertdialog" aria-modal="true" aria-labelledby="quit-title">
     <div class="quit-card">
-      <span class="quit-card__icon" aria-hidden="true">🚪</span>
+      <span class="quit-card__icon" aria-hidden="true"><i class="fas fa-sign-out-alt"></i></span>
       <h3 id="quit-title" class="quit-card__title">Вийти з тесту?</h3>
       <p class="quit-card__text">Прогрес не збережеться.</p>
       <div class="quit-card__actions">
@@ -267,13 +268,13 @@
   <div id="error-boundary" class="error-boundary hidden"
        role="alertdialog" aria-modal="true" aria-labelledby="error-boundary-title">
     <div class="error-boundary__card">
-      <span class="error-boundary__icon" aria-hidden="true">⚠️</span>
+      <span class="error-boundary__icon" aria-hidden="true"><i class="fas fa-exclamation-triangle"></i></span>
       <h2 id="error-boundary-title" class="error-boundary__title">Щось пішло не так</h2>
       <p id="error-boundary-msg" class="error-boundary__msg">
         Виникла неочікувана помилка. Перезавантаж сторінку.
       </p>
       <div id="error-boundary-backup" class="error-boundary__backup hidden">
-        <p class="error-boundary__backup-label">📋 Скажи вчителю:</p>
+        <p class="error-boundary__backup-label"><i class="fas fa-clipboard-list" aria-hidden="true"></i> Скажи вчителю:</p>
         <p id="error-boundary-backup-text" class="error-boundary__backup-text"></p>
       </div>
       <button id="error-boundary-reload" class="btn-reload">Перезавантажити</button>
