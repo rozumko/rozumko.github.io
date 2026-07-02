@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify'
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, desc, eq, inArray } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { questions, homeLeads, homeChildProfiles, homeDemoAttempts, homeDemoReports, homeEntitlements } from '../db/schema.js'
+import { questions, homeLeads, homeChildProfiles, homeDemoAttempts, homeDemoReports, homeEntitlements, homeMissionAttempts } from '../db/schema.js'
 import { hasHomeAccess } from './home-entitlement.js'
 import { scoreAttempt, type AnswerValue } from './attempt-validation.js'
 import {
@@ -103,6 +103,39 @@ function requireLeadToken(leadId: string, header: unknown): boolean {
   return typeof header === 'string' && verifyLeadToken(leadId, header)
 }
 
+/**
+ * Довірений скоринг сирих подій: перерахунок із ключів БД, лише тренувальний
+ * пул (isOlympiad=false). Спільний для демо і Club practice. null — у подіях
+ * є питання поза пулом (або неіснуюче), маршрут відповідає 400.
+ */
+async function scoreEventsFromPracticePool(events: DemoAttemptEvent[]): Promise<ScoredDemoItem[] | null> {
+  const questionIds = events.map(e => e.questionId)
+  const pool = await db
+    .select({ id: questions.id, type: questions.type, correct: questions.correct, explanation: questions.explanation, options: questions.options })
+    .from(questions)
+    .where(and(eq(questions.isOlympiad, false), inArray(questions.id, questionIds)))
+  const byId = new Map(pool.map(q => [q.id, q]))
+  if (questionIds.some(id => !byId.has(id))) return null
+
+  const answers: Record<string, AnswerValue> = {}
+  for (const e of events) answers[e.questionId] = e.answer
+  const { results } = scoreAttempt(
+    questionIds.map(id => {
+      const q = byId.get(id)!
+      return { id: q.id, type: q.type ?? 'choice', correct: q.correct, explanation: q.explanation, options: q.options }
+    }),
+    answers,
+  )
+
+  return events.map(e => ({
+    questionId:        e.questionId,
+    position:          e.position,
+    isCorrect:         results[e.questionId]?.isCorrect ?? false,
+    timeToAnswerMs:    e.timeToAnswerMs,
+    answerChangeCount: e.answerChangeCount,
+  }))
+}
+
 export async function homeRoutes(app: FastifyInstance) {
   // ── Батько: створити лід (email + згода + профіль дитини) ─────────────────
   app.post<{ Body: { parentEmail: string; consent: { policyVersion: string; acceptedAt: string }; childProfile: { displayName?: string; grade: number } } }>('/leads', {
@@ -171,35 +204,10 @@ export async function homeRoutes(app: FastifyInstance) {
       return reply.code(409).send({ error: 'Звіт для цієї місії вже формується' })
     }
 
-    // Демо — лише тренувальний пул. Питання поза ним (або неіснуючі) → 400.
-    const questionIds = req.body.events.map(e => e.questionId)
-    const pool = await db
-      .select({ id: questions.id, type: questions.type, correct: questions.correct, explanation: questions.explanation, options: questions.options })
-      .from(questions)
-      .where(and(eq(questions.isOlympiad, false), inArray(questions.id, questionIds)))
-    const byId = new Map(pool.map(q => [q.id, q]))
-    if (questionIds.some(id => !byId.has(id))) {
+    const scoredItems = await scoreEventsFromPracticePool(req.body.events)
+    if (!scoredItems) {
       return reply.code(400).send({ error: 'Питання не з тренувального пулу' })
     }
-
-    // Довірений скоринг: перерахунок із ключів БД, сирі відповіді клієнта.
-    const answers: Record<string, AnswerValue> = {}
-    for (const e of req.body.events) answers[e.questionId] = e.answer
-    const { results } = scoreAttempt(
-      questionIds.map(id => {
-        const q = byId.get(id)!
-        return { id: q.id, type: q.type ?? 'choice', correct: q.correct, explanation: q.explanation, options: q.options }
-      }),
-      answers,
-    )
-
-    const scoredItems: ScoredDemoItem[] = req.body.events.map(e => ({
-      questionId:        e.questionId,
-      position:          e.position,
-      isCorrect:         results[e.questionId]?.isCorrect ?? false,
-      timeToAnswerMs:    e.timeToAnswerMs,
-      answerChangeCount: e.answerChangeCount,
-    }))
     const report = buildDemoReport(scoredItems, {
       missionId: req.body.missionId,
       missionVersion: req.body.missionVersion,
@@ -282,5 +290,116 @@ export async function homeRoutes(app: FastifyInstance) {
       hasAccess: hasHomeAccess(ent.status, ent.currentPeriodEnd),
       currentPeriodEnd: ent.currentPeriodEnd,
     })
+  })
+
+  // ── Club: стан доступу + доступні напрями ─────────────────────────────────
+  app.get<{ Params: { id: string } }>('/leads/:id/club', {
+    config: { rateLimit: { max: 30, timeWindow: '1 minute' } },
+    schema: { params: uuidParam },
+  }, async (req, reply) => {
+    if (!requireLeadToken(req.params.id, req.headers['x-lead-token'])) {
+      return reply.code(403).send({ error: 'Невірний токен' })
+    }
+
+    const [ent] = await db
+      .select({ status: homeEntitlements.status, currentPeriodEnd: homeEntitlements.currentPeriodEnd })
+      .from(homeEntitlements)
+      .where(eq(homeEntitlements.leadId, req.params.id))
+      .limit(1)
+
+    return reply.send({
+      status: ent?.status ?? 'none',
+      hasAccess: ent ? hasHomeAccess(ent.status, ent.currentPeriodEnd) : false,
+      currentPeriodEnd: ent?.currentPeriodEnd ?? null,
+      tracks: [...HOME_DEMO_TRACKS],
+    })
+  })
+
+  // ── Club: практична місія (ПЛАТНИЙ контент, гейт entitlement) ─────────────
+  // Повторювана, на відміну від демо. Гейт вирішує hasHomeAccess ДО будь-якого
+  // запису; entitlement не впливає на сам скоринг (docs/security-model.md).
+  app.post<{ Params: { id: string }; Body: DemoReportBody }>('/leads/:id/mission-report', {
+    config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
+    schema: { params: uuidParam, body: demoReportBody },
+  }, async (req, reply) => {
+    if (!requireLeadToken(req.params.id, req.headers['x-lead-token'])) {
+      return reply.code(403).send({ error: 'Невірний токен' })
+    }
+
+    const [ent] = await db
+      .select({ status: homeEntitlements.status, currentPeriodEnd: homeEntitlements.currentPeriodEnd })
+      .from(homeEntitlements)
+      .where(eq(homeEntitlements.leadId, req.params.id))
+      .limit(1)
+    if (!ent || !hasHomeAccess(ent.status, ent.currentPeriodEnd)) {
+      return reply.code(403).send({ error: 'Потрібна активна підписка Rozumko Club' })
+    }
+
+    const [profile] = await db.select({ id: homeChildProfiles.id }).from(homeChildProfiles)
+      .where(eq(homeChildProfiles.leadId, req.params.id)).limit(1)
+    if (!profile) return reply.code(404).send({ error: 'Профіль дитини не знайдено' })
+
+    try { validateDemoEvents(req.body.events) } catch (e) {
+      return reply.code(400).send({ error: (e as Error).message })
+    }
+
+    const scoredItems = await scoreEventsFromPracticePool(req.body.events)
+    if (!scoredItems) {
+      return reply.code(400).send({ error: 'Питання не з тренувального пулу' })
+    }
+    const report = buildDemoReport(scoredItems, {
+      missionId: req.body.missionId,
+      missionVersion: req.body.missionVersion,
+      track: req.body.track,
+    })
+
+    await db.insert(homeMissionAttempts).values({
+      childProfileId:   profile.id,
+      missionId:        req.body.missionId,
+      missionVersion:   req.body.missionVersion,
+      track:            req.body.track,
+      grade:            req.body.grade,
+      events:           req.body.events,
+      report,
+      reportVersion:    DEMO_REPORT_VERSION,
+      correct:          report.correct,
+      total:            report.total,
+      clientStartedAt:  Number.isNaN(Date.parse(req.body.startedAt)) ? null : new Date(req.body.startedAt),
+      clientFinishedAt: Number.isNaN(Date.parse(req.body.finishedAt)) ? null : new Date(req.body.finishedAt),
+    }).returning({ id: homeMissionAttempts.id })
+
+    return reply.code(201).send({ report })
+  })
+
+  // ── Club: прогрес — список спроб (без сирих подій у відповіді) ────────────
+  app.get<{ Params: { id: string } }>('/leads/:id/mission-reports', {
+    config: { rateLimit: { max: 30, timeWindow: '1 minute' } },
+    schema: { params: uuidParam },
+  }, async (req, reply) => {
+    if (!requireLeadToken(req.params.id, req.headers['x-lead-token'])) {
+      return reply.code(403).send({ error: 'Невірний токен' })
+    }
+
+    const [profile] = await db.select({ id: homeChildProfiles.id }).from(homeChildProfiles)
+      .where(eq(homeChildProfiles.leadId, req.params.id)).limit(1)
+    if (!profile) return reply.code(404).send({ error: 'Профіль дитини не знайдено' })
+
+    const attempts = await db
+      .select({
+        missionId:      homeMissionAttempts.missionId,
+        missionVersion: homeMissionAttempts.missionVersion,
+        track:          homeMissionAttempts.track,
+        grade:          homeMissionAttempts.grade,
+        correct:        homeMissionAttempts.correct,
+        total:          homeMissionAttempts.total,
+        report:         homeMissionAttempts.report,
+        createdAt:      homeMissionAttempts.createdAt,
+      })
+      .from(homeMissionAttempts)
+      .where(eq(homeMissionAttempts.childProfileId, profile.id))
+      .orderBy(desc(homeMissionAttempts.createdAt))
+      .limit(20)
+
+    return reply.send({ attempts })
   })
 }

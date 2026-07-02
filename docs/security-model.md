@@ -279,14 +279,24 @@ invariants:
   any state change; every change writes an audit event;
 - the entitlement module never touches scoring or answer keys (source check).
 
+`backend/src/routes/home-club.test.ts` protects the paid Club practice flow
+(written before the route code):
+
+- missing, expired or revoked entitlement blocks paid mission submissions
+  (403) and writes nothing; `active` past its period end also blocks;
+- the entitlement gate runs before any row is written, and scoring itself is
+  identical regardless of entitlement state (shared practice-pool scorer);
+- paid mission responses expose no answer keys or explanations; progress
+  listings return reports and aggregates only, never raw events;
+- Home routes never touch School tables and School routes never accept lead
+  tokens (source check — no school-to-home identity path).
+
 Remaining Home Mode security regression tests **[PLANNED]** (must land before
 the corresponding feature code):
 
 - payment callback/webhook verification before entitlement changes;
-- Home Mode answer keys do not reach the browser for paid, demo report or
-  diploma-generating missions;
-- School Mode never exposes individual classroom results through a parent
-  recovery path.
+- diploma-generating Home missions keep answer keys off the browser (same rule
+  already enforced for demo and paid practice missions).
 
 AIG/security regression tests **[PLANNED]** should cover before an AIG engine
 is used for paid, official or diploma-generating flows:

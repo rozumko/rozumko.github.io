@@ -192,9 +192,13 @@ grant access until the period end, past_due adds a 7-day grace window,
 expired/revoked block immediately, and a missing period end fails closed.
 Admins manage state manually via `PUT /api/admin/home-entitlements/:leadId`;
 parents read their state via `GET /api/home/leads/:id/entitlement`
-(lead-token). Payment-provider checkout and verified webhooks are the next
-slice and will write through the same `applyEntitlementChange` path with
-`actor: 'provider'`._
+(lead-token). The entitlement already unlocks real paid content: Club practice
+missions (`GET /api/home/leads/:id/club`, `POST .../mission-report`,
+`GET .../mission-reports`) are repeatable, server-scored and gated by
+`hasHomeAccess` before any row is written (migration 0019,
+`home_mission_attempts`). Payment-provider checkout and verified webhooks are
+the next slice and will write through the same `applyEntitlementChange` path
+with `actor: 'provider'`._
 
 Payment state unlocks access. It must not decide scores or alter answer
 evaluation.
@@ -301,6 +305,7 @@ Current implemented tables **[IMPLEMENTED]**:
 - `home_demo_reports`
 - `home_entitlements` (paid access state, one per lead)
 - `home_entitlement_events` (entitlement audit trail)
+- `home_mission_attempts` (repeatable Club practice attempts, gated by entitlement)
 
 Remaining Home Mode concepts **[PLANNED]** would use tables or equivalent
 storage for:

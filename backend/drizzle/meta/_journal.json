@@ -134,6 +134,13 @@
       "when": 1782999600000,
       "tag": "0018_add_home_entitlements",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1783003200000,
+      "tag": "0019_add_home_mission_attempts",
+      "breakpoints": true
     }
   ]
 }

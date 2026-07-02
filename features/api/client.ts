@@ -328,6 +328,49 @@ export async function getHomeEntitlement(leadId: string, leadToken: string): Pro
   })
 }
 
+export interface HomeClubState {
+  status: HomeEntitlementStatus
+  hasAccess: boolean
+  currentPeriodEnd: string | null
+  tracks: HomeDemoTrack[]
+}
+
+export async function getHomeClub(leadId: string, leadToken: string): Promise<HomeClubState> {
+  return request(`/api/home/leads/${leadId}/club`, {
+    headers: { 'X-Lead-Token': leadToken },
+  })
+}
+
+/** Платна practice-місія Club: гейт entitlement вирішує бекенд (403 без доступу). */
+export async function submitHomeMissionReport(
+  leadId: string,
+  leadToken: string,
+  payload: HomeDemoAttemptPayload,
+): Promise<{ report: HomeDemoReport }> {
+  return request(`/api/home/leads/${leadId}/mission-report`, {
+    method: 'POST',
+    headers: { 'X-Lead-Token': leadToken },
+    body: JSON.stringify(payload),
+  })
+}
+
+export interface HomeMissionAttemptSummary {
+  missionId: string
+  missionVersion: number
+  track: HomeDemoTrack
+  grade: number
+  correct: number
+  total: number
+  report: HomeDemoReport
+  createdAt: string
+}
+
+export async function listHomeMissionReports(leadId: string, leadToken: string): Promise<{ attempts: HomeMissionAttemptSummary[] }> {
+  return request(`/api/home/leads/${leadId}/mission-reports`, {
+    headers: { 'X-Lead-Token': leadToken },
+  })
+}
+
 // ─── Teacher Auth (Supabase) ───────────────────────────────────────────────
 
 export async function loginTeacher(email: string, password: string): Promise<any> {
