@@ -123,10 +123,10 @@ _No AIG JSON-template generation engine exists yet. Binding once it is built._
 Automatic Item Generation may create many task variants from one item model,
 but trust boundaries stay unchanged:
 
-- public practice/demo variants may expose local-feedback answer keys only when
+- public practice variants may expose local-feedback answer keys only when
   explicitly marked as practice;
-- paid, official, diploma-generating or parent-reporting variants must keep
-  answer evaluation on the backend;
+- Home Demo, paid, official, diploma-generating or parent-reporting variants
+  must keep answer evaluation on the backend;
 - generated task versions used for reports or diplomas must be versioned enough
   to explain what the child completed;
 - client-side generation, random seeds or cached task state must not be treated
@@ -185,9 +185,10 @@ Backend:
 - Render adds one reverse-proxy hop. Fastify must use `trustProxy: 1`, never
   `trustProxy: true`, so clients cannot spoof `X-Forwarded-For` and bypass
   rate limits.
-- No-code practice/demo UIs load the static practice bundle from GitHub Pages.
-  `GET /api/questions` remains a practice-only guard/compatibility endpoint.
-  Official olympiad questions are issued only by `POST /api/student/exchange-code`.
+- No-code practice UIs load the static practice bundle from GitHub Pages.
+  Home Demo uses `GET /api/questions` with `hideAnswers=true` so keys do not
+  reach the browser. Official olympiad questions are issued only by
+  `POST /api/student/exchange-code`.
 - Public question query parameters are allowlisted. `count` must be an integer
   from `1` to `50`.
 - UUID request parameters are validated before database access.
@@ -242,14 +243,27 @@ invariants:
   creating a participant (409);
 - avatars outside the allowlist are rejected (400).
 
-Home Mode security regression tests **[PLANNED]** should cover (these must land
-before any Home Mode feature code):
+`backend/src/routes/home-flow.test.ts` protects the Home demo/lead slice
+(see `docs/home-demo-contract.md`):
+
+- demo-report without a stored lead/consent record is rejected and writes
+  nothing (consent-gate);
+- lead-token forgery is rejected, including attempt-domain tokens for the
+  same UUID (HMAC domain separation);
+- report scoring is recomputed server-side; client-submitted correctness
+  fields are stripped before the handler and never stored;
+- School session identifiers sent to `/api/home` are stripped, never stored;
+- demo events are accepted only for practice-pool (`isOlympiad=false`)
+  questions; responses expose no answer keys or explanations.
+
+Remaining Home Mode security regression tests **[PLANNED]** (must land before
+the corresponding feature code):
 
 - payment callback verification before entitlement changes;
 - expired entitlement blocks paid content;
 - revoked entitlement blocks paid content;
-- Home Mode answer keys do not reach the browser for paid or diploma-generating
-  missions;
+- Home Mode answer keys do not reach the browser for paid, demo report or
+  diploma-generating missions;
 - School Mode never exposes individual classroom results through a parent
   recovery path.
 

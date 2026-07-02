@@ -2,8 +2,9 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import Fastify from 'fastify'
+import cors from '@fastify/cors'
 import rateLimit from '@fastify/rate-limit'
-import { FASTIFY_SECURITY_OPTIONS } from './lib/security-config.js'
+import { FASTIFY_SECURITY_OPTIONS, CORS_OPTIONS } from './lib/security-config.js'
 
 process.env.SUPABASE_URL = 'https://test.supabase.co'
 
@@ -44,6 +45,44 @@ test('rate-limit не довіряє підробленому лівому X-For
   assert.equal(first.json().ip, '198.51.100.7')
   assert.equal(second.statusCode, 200)
   assert.equal(third.statusCode, 429)
+
+  await app.close()
+})
+
+test('CORS preflight дозволяє кастомні токен-заголовки з дозволеного origin', async () => {
+  const app = Fastify()
+  await app.register(cors, CORS_OPTIONS)
+  app.post('/probe', async () => ({ ok: true }))
+  await app.ready()
+
+  // Браузер шле preflight перед POST із кастомним заголовком.
+  // inject-тести роутів його не роблять, тому пропущений заголовок
+  // в allowedHeaders ламає продакшен непомітно для CI.
+  for (const header of ['x-attempt-token', 'x-participant-token', 'x-lead-token']) {
+    const preflight = await app.inject({
+      method: 'OPTIONS',
+      url: '/probe',
+      headers: {
+        origin: 'https://rozumko.github.io',
+        'access-control-request-method': 'POST',
+        'access-control-request-headers': header,
+      },
+    })
+    assert.equal(preflight.statusCode, 204, header)
+    const allowed = String(preflight.headers['access-control-allow-headers'] ?? '').toLowerCase()
+    assert.ok(allowed.includes(header), `${header} відсутній у access-control-allow-headers`)
+  }
+
+  const forbidden = await app.inject({
+    method: 'OPTIONS',
+    url: '/probe',
+    headers: {
+      origin: 'https://evil.example',
+      'access-control-request-method': 'POST',
+      'access-control-request-headers': 'x-participant-token',
+    },
+  })
+  assert.equal(forbidden.statusCode, 403)
 
   await app.close()
 })

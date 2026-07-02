@@ -2,7 +2,7 @@ import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import rateLimit from '@fastify/rate-limit'
 import 'dotenv/config'
-import { FASTIFY_SECURITY_OPTIONS } from './lib/security-config.js'
+import { FASTIFY_SECURITY_OPTIONS, CORS_OPTIONS } from './lib/security-config.js'
 import { getFastifyRateLimitOptions } from './lib/rate-limit-config.js'
 import { healthRoutes } from './routes/health.js'
 
@@ -18,24 +18,8 @@ if (missing.length) {
 // trustProxy: true дозволив би клієнту підробити X-Forwarded-For і обійти rate-limit.
 const app = Fastify({ logger: true, ...FASTIFY_SECURITY_OPTIONS })
 
-// CORS — дозволяємо тільки GitHub Pages та localhost для розробки
-const allowedOrigins = [
-  'https://rozumko.github.io',
-  'http://localhost:5173',
-  'http://localhost:4173',
-]
-await app.register(cors, {
-  origin: (origin, cb) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      cb(null, true)
-    } else {
-      const err = Object.assign(new Error('Not allowed by CORS'), { statusCode: 403 })
-      cb(err as Error, false)
-    }
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Attempt-Token'],
-})
+// CORS-конфіг спільний із security-regression тестами — див. lib/security-config.ts
+await app.register(cors, CORS_OPTIONS)
 
 // Rate limiting — глобально: 100 запитів / хвилину з однієї IP.
 // ⚠ Лічильник живе в памʼяті процесу → коректний ЛИШЕ на одному інстансі.
@@ -83,12 +67,14 @@ import { teacherRoutes } from './routes/teacher.js'
 import { questionsRoutes } from './routes/questions.js'
 import { adminRoutes } from './routes/admin.js'
 import { schoolRoutes } from './routes/school.js'
+import { homeRoutes } from './routes/home.js'
 await app.register(studentRoutes,  { prefix: '/api/student' })
 await app.register(attemptRoutes,  { prefix: '/api/attempt' })
 await app.register(teacherRoutes,  { prefix: '/api/teacher' })
 await app.register(questionsRoutes,{ prefix: '/api/questions' })
 await app.register(adminRoutes,    { prefix: '/api/admin' })
 await app.register(schoolRoutes,   { prefix: '/api/school' })
+await app.register(homeRoutes,     { prefix: '/api/home' })
 
 const port = Number(process.env.PORT) || 3000
 

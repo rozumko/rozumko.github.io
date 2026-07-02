@@ -55,13 +55,14 @@ The platform includes these student-facing event and practice modes:
 | Mode | Code | Questions | Scoring |
 |---|---|---|---|
 | Practice | No | Static practice bundle generated from `isOlympiad=false` (`public/questions/grade-N.json`) | Local feedback; answer keys are intentionally bundled |
-| Demo | No | Same static practice bundle, `difficulty=hard`; keys are stripped before rendering | No score; neutral feedback |
+| Home Demo | No | `GET /api/questions` with `hideAnswers=true`; temporary track selection by difficulty/keywords | No child score; parent report is server-scored after consent |
 | Official olympiad | Yes | Fixed event selection from the backend | Server-side only |
 
-`student.html` and `/school` self-serve no-code missions load the static bundle
-from GitHub Pages, so children do not wait for backend cold starts and anonymous
-classes do not consume backend rate-limit budget. `GET /api/questions` remains a
-practice-only backend guard/compatibility endpoint; official olympiad questions
+`student.html` and `/school` self-serve no-code practice missions load the
+static bundle from GitHub Pages, so children do not wait for backend cold starts
+and anonymous classes do not consume backend rate-limit budget. Home Demo uses
+`GET /api/questions?isOlympiad=false&hideAnswers=true` so answer keys do not
+reach the browser before the parent-reporting flow. Official olympiad questions
 are still issued only through code exchange.
 
 ## Content Goals
@@ -79,8 +80,8 @@ The planned content engine is Automatic Item Generation through JSON templates:
 item models describe parameters, constraints, answer computation and
 distractor generation so one mechanic can produce many variants. Practice-only
 public variants may still expose local-feedback keys when explicitly treated as
-practice; paid, official, diploma-generating and parent-reporting variants must
-keep trusted scoring on the backend.
+practice; Home Demo, paid, official, diploma-generating and parent-reporting
+variants must keep trusted scoring on the backend.
 
 ## Surface Architecture — School **[IMPLEMENTED]**, Home **[PLANNED]**, Olympiad **[IMPLEMENTED]/[PLANNED]**
 
@@ -120,7 +121,9 @@ Backend:
   lifecycle (create/start/finish/state+leaderboard, scoped to the owning
   teacher) and anonymous student join/answer with server-side scoring;
 - explicit Home Mode routes for parent profile, consent, attempts, reports and
-  entitlement checks are planned;
+  entitlement checks are planned; the first slice (demo mission, parent lead,
+  behavioral report) is specified in
+  [home-demo-contract.md](./home-demo-contract.md);
 - subscription-aware seasonal event access is planned and must not reuse
   anonymous School identity;
 - all frontend HTTP calls continue to go through `features/api/client.ts`.
@@ -278,15 +281,14 @@ Current implemented tables **[IMPLEMENTED]**:
 - `school_session_questions`
 - `school_participants`
 - `school_answers`
+- `home_leads` (parent email + consent record)
+- `home_child_profiles`
+- `home_demo_attempts` (raw events + telemetry, mission id/version)
+- `home_demo_reports`
 
-Home Mode concepts **[PLANNED]** would use tables or equivalent storage for:
+Remaining Home Mode concepts **[PLANNED]** would use tables or equivalent
+storage for:
 
-- parent identity/profile;
-- child profile created by a parent;
-- consent records;
-- mission and mission version;
-- mission attempt;
-- result report;
 - paid access entitlement;
 - payment provider event/audit record.
 

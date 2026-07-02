@@ -208,3 +208,58 @@ export const schoolAnswers = pgTable('school_answers', {
 }))
 
 export type SchoolAnswer = typeof schoolAnswers.$inferSelect
+
+// ── Home Mode (parent-led, consent-based) ─────────────────────────────────────
+// Контракт: docs/home-demo-contract.md. Лід = батьківський email + згода.
+// Дитячі дані пишуться ЛИШЕ після створення ліда (consent-gate на бекенді).
+// Жодного звʼязку зі шкільними сесіями чи їх токенами.
+
+export const homeLeads = pgTable('home_leads', {
+  id:                   uuid('id').primaryKey().defaultRandom(),
+  parentEmail:          text('parent_email').notNull(),
+  consentPolicyVersion: text('consent_policy_version').notNull(),
+  // Клієнтський час згоди — інформаційний; довірений час — created_at сервера.
+  consentAcceptedAt:    timestamp('consent_accepted_at', { withTimezone: true }).notNull(),
+  createdAt:            timestamp('created_at', { withTimezone: true }).defaultNow(),
+})
+
+export type HomeLead = typeof homeLeads.$inferSelect
+
+export const homeChildProfiles = pgTable('home_child_profiles', {
+  id:          uuid('id').primaryKey().defaultRandom(),
+  leadId:      uuid('lead_id').notNull().references(() => homeLeads.id, { onDelete: 'cascade' }),
+  displayName: text('display_name'),          // опційне, ніколи не вимагається
+  grade:       integer('grade').notNull(),
+  createdAt:   timestamp('created_at', { withTimezone: true }).defaultNow(),
+})
+
+export type HomeChildProfile = typeof homeChildProfiles.$inferSelect
+
+// Сирі події демо-спроби (телеметрія в jsonb). Скоринг — на сервері при прийомі.
+export const homeDemoAttempts = pgTable('home_demo_attempts', {
+  id:              uuid('id').primaryKey().defaultRandom(),
+  childProfileId:  uuid('child_profile_id').notNull().references(() => homeChildProfiles.id, { onDelete: 'cascade' }),
+  missionId:       text('mission_id').notNull(),
+  missionVersion:  integer('mission_version').notNull(),
+  track:           text('track').notNull(),   // informatics | computational-thinking | ai-basics
+  grade:           integer('grade').notNull(),
+  events:          jsonb('events').notNull(),
+  clientStartedAt:  timestamp('client_started_at', { withTimezone: true }),
+  clientFinishedAt: timestamp('client_finished_at', { withTimezone: true }),
+  createdAt:       timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (t) => ({
+  // Idempotent per lead+mission: одна демо-спроба на місію для профілю.
+  uniqProfileMission: unique('home_demo_attempts_profile_mission_uq').on(t.childProfileId, t.missionId),
+}))
+
+export type HomeDemoAttempt = typeof homeDemoAttempts.$inferSelect
+
+export const homeDemoReports = pgTable('home_demo_reports', {
+  id:            uuid('id').primaryKey().defaultRandom(),
+  attemptId:     uuid('attempt_id').notNull().references(() => homeDemoAttempts.id, { onDelete: 'cascade' }),
+  report:        jsonb('report').notNull(),
+  reportVersion: integer('report_version').notNull().default(1),
+  createdAt:     timestamp('created_at', { withTimezone: true }).defaultNow(),
+})
+
+export type HomeDemoReport = typeof homeDemoReports.$inferSelect
