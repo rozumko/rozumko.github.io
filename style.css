@@ -1346,6 +1346,85 @@ button {
   --game-pink-text: #be185d;
 }
 
+html.mission-active,
+body.mission-active {
+  overflow: hidden;
+}
+
+body.mission-active #mission-quiz:not(.hidden) {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  gap: clamp(var(--sp-3), 1.4vw, var(--sp-5));
+  width: 100vw;
+  max-width: none;
+  min-height: 100dvh;
+  margin: 0;
+  padding: clamp(var(--sp-3), 2vw, var(--sp-8));
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(250, 204, 21, .34), transparent 24rem),
+    radial-gradient(circle at 88% 14%, rgba(45, 212, 191, .28), transparent 22rem),
+    radial-gradient(circle at 16% 88%, rgba(244, 114, 182, .2), transparent 24rem),
+    linear-gradient(135deg, #fff7ed 0%, #eff6ff 44%, #f5f3ff 100%);
+}
+
+body.mission-active #mission-quiz .quiz-progress-header,
+body.mission-active #mission-quiz .quiz-progress-bar-wrap,
+body.mission-active #mission-quiz .quiz-question-card,
+body.mission-active #mission-quiz .quiz-code,
+body.mission-active #mission-quiz .quiz-options,
+body.mission-active #mission-quiz .quiz-feedback-wrap {
+  width: min(100%, 86rem);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+body.mission-active #mission-quiz .quiz-progress-header {
+  margin-bottom: 0 !important;
+}
+
+body.mission-active #mission-quiz .quiz-question-card {
+  align-self: stretch;
+  min-height: 0;
+  margin-bottom: 0;
+}
+
+body.mission-active #mission-quiz .quiz-question-text {
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+  font-size: clamp(1.6rem, 2.8vw, 3.2rem);
+  line-height: 1.16;
+}
+
+body.mission-active #mission-quiz .quiz-options {
+  align-self: stretch;
+  min-height: 0;
+  margin-bottom: 0;
+}
+
+body.mission-active #mission-quiz .quiz-options--grid,
+body.mission-active #mission-quiz .quiz-options--two {
+  height: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: stretch;
+}
+
+body.mission-active #mission-quiz .quiz-option,
+body.mission-active #mission-quiz .quiz-options--two > button {
+  min-height: 0;
+  height: 100%;
+}
+
+body.mission-active #mission-quiz .quiz-feedback-wrap {
+  min-height: 0;
+  max-height: 18vh;
+  margin-bottom: 0;
+  overflow: auto;
+}
+
 .quiz-overlay {
   background:
     radial-gradient(circle at 12% 12%, rgba(250, 204, 21, .34), transparent 24rem),
@@ -1638,8 +1717,28 @@ button {
     max-height: 12rem;
   }
   .quiz-overlay .quiz-options--two,
-  #mission-quiz .quiz-options--two {
+  #mission-quiz .quiz-options--two,
+  body.mission-active #mission-quiz .quiz-options--grid {
     grid-template-columns: 1fr;
+  }
+
+  body.mission-active #mission-quiz:not(.hidden) {
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+    padding: var(--sp-3);
+  }
+
+  body.mission-active #mission-quiz .quiz-question-card {
+    padding: var(--sp-4);
+  }
+
+  body.mission-active #mission-quiz .quiz-question-text {
+    font-size: clamp(1.15rem, 5.6vw, 2.1rem);
+  }
+
+  body.mission-active #mission-quiz .quiz-option,
+  body.mission-active #mission-quiz .quiz-options--two > button {
+    padding: var(--sp-4);
+    font-size: clamp(1rem, 4.6vw, 1.45rem);
   }
 }
 
