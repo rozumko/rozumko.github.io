@@ -11,7 +11,7 @@
  * ─────────────────────────────────────────────────────────────
  */
 
-const CACHE_NAME = 'rozumko-v2';
+const CACHE_NAME = 'rozumko-v3';
 
 /**
  * Статичні ресурси що кешуються при першому завантаженні.
@@ -40,6 +40,8 @@ const PRECACHE_URLS = [
  * Backend API, Supabase, Google Fonts, CDN — вони мають власну надійність.
  */
 const BYPASS_HOSTS = [
+  // Backend API (Render) — стан entitlement/звітів/питань має бути завжди свіжим
+  'onrender.com',
   // Supabase (Auth + PostgreSQL API)
   'supabase.co',
   'supabase.com',
@@ -96,6 +98,13 @@ self.addEventListener('fetch', (event) => {
 
   // Пропускаємо зовнішні API — вони не мають бути в кеші
   if (BYPASS_HOSTS.some(host => url.hostname.includes(host))) return;
+
+  // Будь-який бекенд-шлях (у т.ч. localhost:3000 у розробці): ніколи не кешуємо.
+  // Cache-first для /api означав би вічно застиглий стан entitlement/звітів.
+  if (url.pathname.startsWith('/api/')) return;
+
+  // Dev-сервер Vite: перехоплення модулів ламає HMR і підсовує старий код.
+  if (url.port === '5173' || url.port === '3000') return;
 
   // Пропускаємо POST/PUT/DELETE — тільки GET кешуємо
   if (event.request.method !== 'GET') return;
