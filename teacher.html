@@ -166,6 +166,9 @@
       <button data-tab="results" class="teacher-tab">
         <i class="fas fa-poll" aria-hidden="true"></i> Результати
       </button>
+      <button data-tab="school" class="teacher-tab">
+        <i class="fas fa-gamepad" aria-hidden="true"></i> Класна гра
+      </button>
     </nav>
 
     <main class="dashboard-main" tabindex="-1">
@@ -306,6 +309,57 @@
             <p class="empty-state__title">Результатів ще немає</p>
             <p class="empty-state__sub">Тут з'являться результати після проведення олімпіади.</p>
           </div>
+        </div>
+      </section>
+
+      <!-- Вкладка: Класна гра (просунутий School Mode) -->
+      <section id="tab-school" class="tab-panel hidden">
+        <h2 class="tab-panel__heading" style="margin-bottom: var(--sp-4);">Класна гра</h2>
+        <p style="margin-bottom:16px; color:#64748b;">Створіть гру — учні приєднаються за кодом на сторінці «Шкільний режим». Без ПІБ та реєстрації дітей.</p>
+
+        <!-- Створення гри -->
+        <div id="school-create" style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; margin-bottom:24px;">
+          <label style="display:flex; flex-direction:column; gap:4px; font-weight:600;">Клас
+            <select id="school-grade" style="padding:10px 14px; border:2px solid #cbd5e1; border-radius:12px;">
+              <option value="1">1 клас</option>
+              <option value="2">2 клас</option>
+              <option value="3">3 клас</option>
+              <option value="4">4 клас</option>
+            </select>
+          </label>
+          <label style="display:flex; flex-direction:column; gap:4px; font-weight:600;">Складність
+            <select id="school-difficulty" style="padding:10px 14px; border:2px solid #cbd5e1; border-radius:12px;">
+              <option value="">Будь-яка</option>
+              <option value="easy">Легка</option>
+              <option value="medium">Середня</option>
+              <option value="hard">Складна</option>
+            </select>
+          </label>
+          <label style="display:flex; flex-direction:column; gap:4px; font-weight:600;">Питань
+            <select id="school-count" style="padding:10px 14px; border:2px solid #cbd5e1; border-radius:12px;">
+              <option value="5">5</option>
+              <option value="10" selected>10</option>
+              <option value="15">15</option>
+            </select>
+          </label>
+          <button id="school-create-btn" class="btn">Створити гру</button>
+        </div>
+        <p id="school-error" class="quiz-feedback quiz-feedback--incorrect" aria-live="polite"></p>
+
+        <!-- Активна гра -->
+        <div id="school-live" class="hidden">
+          <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin-bottom:16px;">
+            <div style="background:#eff6ff; border:2px solid #3b82f6; border-radius:16px; padding:12px 24px;">
+              <p style="font-size:0.8rem; font-weight:700; color:#64748b; margin:0;">КОД ГРИ</p>
+              <p id="school-join-code" style="font-size:2rem; font-weight:800; letter-spacing:6px; margin:0;"></p>
+            </div>
+            <span id="school-status" style="font-weight:700;"></span>
+            <button id="school-start-btn" class="btn">▶ Почати гру</button>
+            <button id="school-finish-btn" class="btn hidden">■ Завершити</button>
+            <button id="school-new-btn" class="btn hidden">Нова гра</button>
+          </div>
+          <h3 style="font-weight:700; margin-bottom:8px;">Учасники</h3>
+          <div id="school-leaderboard"></div>
         </div>
       </section>
 

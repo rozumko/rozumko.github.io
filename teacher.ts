@@ -6,8 +6,10 @@ import {
   getTeacherRegistrationEvents, getTeacherRegistrations, getTeacherResults,
   cancelTeacherRegistration,
   getClassStudents, addClassStudent, updateClassStudent, deleteClassStudent,
+  createSchoolSession, startSchoolSession, finishSchoolSession, getSchoolSession,
   TURNSTILE_SITE_KEY,
   type TeacherClass, type ClassStudent, type EventRegistration, type TeacherEvent, type Attempt,
+  type SchoolSessionInfo,
 } from './features/api/client.js'
 import { esc, friendlyError, showConfirm, showModal } from './utils/ui.js'
 import { openCertModal, awardLabel, percent, getAward } from './utils/certificate.js'
@@ -936,3 +938,122 @@ function showAuth(message?: string) {
   loginSubmitBtn.textContent = 'Увійти'
   loginError.textContent = message ?? ''
 }
+
+// ── Класна гра (просунутий School Mode) ──────────────────────────────────────
+// Вчитель створює сесію, показує код класу, бачить лідерборд (анонімні
+// нік+аватар, без ПІБ). Поки гра активна — лідерборд оновлюється поллінгом.
+
+let schoolSession: SchoolSessionInfo | null = null
+let schoolPollTimer: ReturnType<typeof setInterval> | null = null
+
+const schoolError = $maybe('school-error')
+
+function schoolSetError(msg: string) {
+  if (schoolError) schoolError.textContent = msg
+}
+
+function renderSchoolStatus() {
+  if (!schoolSession) return
+  const statusEl = $maybe('school-status')
+  // Учні можуть приєднатися лише ПІСЛЯ старту (join у lobby сервер відхиляє).
+  const labels: Record<string, string> = {
+    lobby: '⏳ Натисніть «Почати гру» — тоді учні зможуть ввести код',
+    active: '🟢 Гра триває — диктуйте код учням',
+    finished: '🏁 Завершено',
+  }
+  if (statusEl) statusEl.textContent = labels[schoolSession.status] ?? schoolSession.status
+  $maybe('school-start-btn')?.classList.toggle('hidden', schoolSession.status !== 'lobby')
+  $maybe('school-finish-btn')?.classList.toggle('hidden', schoolSession.status !== 'active')
+  $maybe('school-new-btn')?.classList.toggle('hidden', schoolSession.status !== 'finished')
+}
+
+function renderSchoolLeaderboard(participants: { avatar: string; nickname: string; score: number }[]) {
+  const board = $maybe('school-leaderboard')
+  if (!board) return
+  if (!participants.length) {
+    board.innerHTML = '<p style="color:#64748b;">Поки нікого. Учні вводять код на сторінці «Шкільний режим».</p>'
+    return
+  }
+  board.innerHTML = participants.map((p, i) => `
+    <div style="display:flex; align-items:center; gap:12px; padding:8px 12px; border-bottom:1px solid #e2e8f0;">
+      <span style="font-weight:800; width:24px;">${i + 1}</span>
+      <span style="font-size:1.4rem;">${esc(p.avatar)}</span>
+      <span style="flex:1; font-weight:600;">${esc(p.nickname)}</span>
+      <span style="font-weight:800;">${p.score}</span>
+    </div>`).join('')
+}
+
+async function refreshSchoolSession() {
+  if (!schoolSession) return
+  try {
+    const { session, participants } = await getSchoolSession(schoolSession.id)
+    schoolSession = session
+    renderSchoolStatus()
+    renderSchoolLeaderboard(participants)
+    if (session.status === 'finished' && schoolPollTimer) {
+      clearInterval(schoolPollTimer)
+      schoolPollTimer = null
+    }
+  } catch {
+    // тихий поллінг: транзієнтну помилку ігноруємо, наступний тік повторить
+  }
+}
+
+function startSchoolPolling() {
+  if (schoolPollTimer) clearInterval(schoolPollTimer)
+  schoolPollTimer = setInterval(refreshSchoolSession, 5000)
+}
+
+$maybe<HTMLButtonElement>('school-create-btn')?.addEventListener('click', async () => {
+  schoolSetError('')
+  const grade = Number($<HTMLSelectElement>('school-grade').value)
+  const difficulty = $<HTMLSelectElement>('school-difficulty').value
+  const questionsCount = Number($<HTMLSelectElement>('school-count').value)
+  try {
+    const { session } = await createSchoolSession({
+      grade,
+      ...(difficulty ? { difficulty } : {}),
+      questionsCount,
+    })
+    schoolSession = session
+    $('school-join-code').textContent = session.joinCode
+    $maybe('school-live')?.classList.remove('hidden')
+    renderSchoolStatus()
+    renderSchoolLeaderboard([])
+    startSchoolPolling()
+  } catch (err) {
+    schoolSetError(friendlyError((err as Error).message))
+  }
+})
+
+$maybe<HTMLButtonElement>('school-start-btn')?.addEventListener('click', async () => {
+  if (!schoolSession) return
+  schoolSetError('')
+  try {
+    await startSchoolSession(schoolSession.id)
+    schoolSession.status = 'active'
+    renderSchoolStatus()
+  } catch (err) {
+    schoolSetError(friendlyError((err as Error).message))
+  }
+})
+
+$maybe<HTMLButtonElement>('school-finish-btn')?.addEventListener('click', async () => {
+  if (!schoolSession) return
+  schoolSetError('')
+  try {
+    await finishSchoolSession(schoolSession.id)
+    schoolSession.status = 'finished'
+    renderSchoolStatus()
+    await refreshSchoolSession()
+  } catch (err) {
+    schoolSetError(friendlyError((err as Error).message))
+  }
+})
+
+$maybe<HTMLButtonElement>('school-new-btn')?.addEventListener('click', () => {
+  schoolSession = null
+  if (schoolPollTimer) { clearInterval(schoolPollTimer); schoolPollTimer = null }
+  $maybe('school-live')?.classList.add('hidden')
+  schoolSetError('')
+})

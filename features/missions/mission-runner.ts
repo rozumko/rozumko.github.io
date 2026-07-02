@@ -20,6 +20,13 @@ export interface MissionElements {
 export interface MissionOptions {
   showExplanation?: boolean
   onComplete: (summary: MissionSummary) => void
+  /**
+   * Live-режим (просунутий School): ключі відповідей вирізані сервером, тож
+   * renderer повертає сиру відповідь (number | string | number[]), а правильність
+   * каже сервер. Якщо задано — сирі відповіді надсилаються сюди, і фідбек
+   * будується з результату. Без submitAnswer сирі відповіді ігноруються.
+   */
+  submitAnswer?: (questionId: string, answer: number | string | number[]) => Promise<boolean>
 }
 
 export function runMission(
@@ -63,11 +70,29 @@ export function runMission(
 
     renderQuestion(q, els.options, {
       onAnswer: (result) => {
-        // practice-пул → renderQuestion завжди дає boolean. Інші типи ігноруємо
-        // захисно (School Mode не використовує олімпіадний пул).
-        const isCorrect = result === true
-        if (isCorrect) correct++
-        showFeedback(isCorrect, q)
+        // practice: ключі на клієнті → renderer дає boolean, оцінюємо локально.
+        if (typeof result === 'boolean') {
+          if (result) correct++
+          showFeedback(result, q)
+          return
+        }
+        // live: ключі вирізані → сира відповідь іде на сервер, він каже правильність.
+        if (opts.submitAnswer) {
+          els.feedback.textContent = 'Перевіряємо…'
+          els.feedback.className = 'quiz-feedback'
+          opts.submitAnswer(String(q.id), result)
+            .then(isCorrect => {
+              if (isCorrect) correct++
+              showFeedback(isCorrect, q)
+            })
+            .catch(err => {
+              // Не блокуємо дитину: показуємо помилку і даємо йти далі.
+              els.feedback.textContent = (err as Error).message
+              els.feedback.className = 'quiz-feedback quiz-feedback--incorrect'
+              els.nextBtn.classList.remove('hidden')
+              els.nextBtn.textContent = currentIdx + 1 < questions.length ? 'Далі →' : 'Завершити місію'
+            })
+        }
       },
     })
   }
