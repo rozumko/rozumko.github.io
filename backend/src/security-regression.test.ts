@@ -58,7 +58,7 @@ test('CORS preflight дозволяє кастомні токен-заголов
   // Браузер шле preflight перед POST із кастомним заголовком.
   // inject-тести роутів його не роблять, тому пропущений заголовок
   // в allowedHeaders ламає продакшен непомітно для CI.
-  for (const header of ['x-attempt-token', 'x-participant-token']) {
+  for (const header of ['x-attempt-token', 'x-participant-token', 'x-lead-token']) {
     const preflight = await app.inject({
       method: 'OPTIONS',
       url: '/probe',

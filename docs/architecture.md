@@ -120,7 +120,9 @@ Backend:
   lifecycle (create/start/finish/state+leaderboard, scoped to the owning
   teacher) and anonymous student join/answer with server-side scoring;
 - explicit Home Mode routes for parent profile, consent, attempts, reports and
-  entitlement checks are planned;
+  entitlement checks are planned; the first slice (demo mission, parent lead,
+  behavioral report) is specified in
+  [home-demo-contract.md](./home-demo-contract.md);
 - subscription-aware seasonal event access is planned and must not reuse
   anonymous School identity;
 - all frontend HTTP calls continue to go through `features/api/client.ts`.
@@ -278,15 +280,14 @@ Current implemented tables **[IMPLEMENTED]**:
 - `school_session_questions`
 - `school_participants`
 - `school_answers`
+- `home_leads` (parent email + consent record)
+- `home_child_profiles`
+- `home_demo_attempts` (raw events + telemetry, mission id/version)
+- `home_demo_reports`
 
-Home Mode concepts **[PLANNED]** would use tables or equivalent storage for:
+Remaining Home Mode concepts **[PLANNED]** would use tables or equivalent
+storage for:
 
-- parent identity/profile;
-- child profile created by a parent;
-- consent records;
-- mission and mission version;
-- mission attempt;
-- result report;
 - paid access entitlement;
 - payment provider event/audit record.
 

@@ -67,12 +67,14 @@ import { teacherRoutes } from './routes/teacher.js'
 import { questionsRoutes } from './routes/questions.js'
 import { adminRoutes } from './routes/admin.js'
 import { schoolRoutes } from './routes/school.js'
+import { homeRoutes } from './routes/home.js'
 await app.register(studentRoutes,  { prefix: '/api/student' })
 await app.register(attemptRoutes,  { prefix: '/api/attempt' })
 await app.register(teacherRoutes,  { prefix: '/api/teacher' })
 await app.register(questionsRoutes,{ prefix: '/api/questions' })
 await app.register(adminRoutes,    { prefix: '/api/admin' })
 await app.register(schoolRoutes,   { prefix: '/api/school' })
+await app.register(homeRoutes,     { prefix: '/api/home' })
 
 const port = Number(process.env.PORT) || 3000
 

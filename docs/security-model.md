@@ -242,8 +242,21 @@ invariants:
   creating a participant (409);
 - avatars outside the allowlist are rejected (400).
 
-Home Mode security regression tests **[PLANNED]** should cover (these must land
-before any Home Mode feature code):
+`backend/src/routes/home-flow.test.ts` protects the Home demo/lead slice
+(see `docs/home-demo-contract.md`):
+
+- demo-report without a stored lead/consent record is rejected and writes
+  nothing (consent-gate);
+- lead-token forgery is rejected, including attempt-domain tokens for the
+  same UUID (HMAC domain separation);
+- report scoring is recomputed server-side; client-submitted correctness
+  fields are stripped before the handler and never stored;
+- School session identifiers sent to `/api/home` are stripped, never stored;
+- demo events are accepted only for practice-pool (`isOlympiad=false`)
+  questions; responses expose no answer keys or explanations.
+
+Remaining Home Mode security regression tests **[PLANNED]** (must land before
+the corresponding feature code):
 
 - payment callback verification before entitlement changes;
 - expired entitlement blocks paid content;

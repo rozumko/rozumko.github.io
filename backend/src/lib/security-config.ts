@@ -24,5 +24,5 @@ export const CORS_OPTIONS = {
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Attempt-Token', 'X-Participant-Token'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Attempt-Token', 'X-Participant-Token', 'X-Lead-Token'],
 }
