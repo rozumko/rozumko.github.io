@@ -16,9 +16,11 @@ _Updated: 2026-07-02_
 > and **School Mode** (basic self-serve missions on `/school` plus the
 > advanced anonymous classroom-game backend: sessions, join codes,
 > participants, server-scored answers, teacher leaderboard).
-> **Home Mode, payments, subscriptions, entitlements, parent/child/consent
-> data and AIG JSON-template content generation are [PLANNED] and not
-> implemented.**
+> The **Home demo slice** (parent lead + consent, server-scored demo report,
+> demo UI on `/home`) and the **entitlement model** (backend access state with
+> admin manual control and audit trail) are also implemented. **Payment
+> provider integration (checkout, webhooks), subscription UI and AIG
+> JSON-template content generation remain [PLANNED].**
 
 ## Overview
 
@@ -125,10 +127,10 @@ Backend:
 - School Mode routes are implemented under `/api/school`: teacher session
   lifecycle (create/start/finish/state+leaderboard, scoped to the owning
   teacher) and anonymous student join/answer with server-side scoring;
-- explicit Home Mode routes for parent profile, consent, attempts, reports and
-  entitlement checks are planned; the first slice (demo mission, parent lead,
-  behavioral report) is specified in
-  [home-demo-contract.md](./home-demo-contract.md);
+- Home Mode routes are implemented under `/api/home` for the first slice
+  (parent lead + consent, demo attempt/report, entitlement check), specified
+  in [home-demo-contract.md](./home-demo-contract.md); further parent-profile
+  and paid-content routes are planned;
 - subscription-aware seasonal event access is planned and must not reuse
   anonymous School identity;
 - all frontend HTTP calls continue to go through `features/api/client.ts`.
@@ -177,15 +179,19 @@ Do not fork business logic into a mobile app. A tablet or phone app may cache UI
 state and non-secret progress metadata, but official/paid scoring and access
 decisions must still come from the backend.
 
-## Paid Access Direction **[PLANNED]**
+## Paid Access — Entitlement **[IMPLEMENTED]**, Provider **[PLANNED]**
 
-_Entitlement/payment state is design intent. No entitlement or payment-provider
-tables or webhook handlers exist yet; `event_registrations.payment_status` is the
-only payment-related field in the schema and has no provider integration. The
-**Official olympiad flow** subsection below, by contrast, is **[IMPLEMENTED]**._
-
-Home access is represented by backend entitlement state. The data model should
-be able to represent active, expired and revoked access.
+_The entitlement model is implemented (migration 0018): `home_entitlements`
+(one per lead, statuses `active | past_due | canceled | expired | revoked`,
+`current_period_end`) plus the `home_entitlement_events` audit trail. The
+backend is the single access decision point (`hasHomeAccess`): active/canceled
+grant access until the period end, past_due adds a 7-day grace window,
+expired/revoked block immediately, and a missing period end fails closed.
+Admins manage state manually via `PUT /api/admin/home-entitlements/:leadId`;
+parents read their state via `GET /api/home/leads/:id/entitlement`
+(lead-token). Payment-provider checkout and verified webhooks are the next
+slice and will write through the same `applyEntitlementChange` path with
+`actor: 'provider'`._
 
 Payment state unlocks access. It must not decide scores or alter answer
 evaluation.
@@ -290,12 +296,13 @@ Current implemented tables **[IMPLEMENTED]**:
 - `home_child_profiles`
 - `home_demo_attempts` (raw events + telemetry, mission id/version)
 - `home_demo_reports`
+- `home_entitlements` (paid access state, one per lead)
+- `home_entitlement_events` (entitlement audit trail)
 
 Remaining Home Mode concepts **[PLANNED]** would use tables or equivalent
 storage for:
 
-- paid access entitlement;
-- payment provider event/audit record.
+- payment provider transaction/webhook records (provider integration slice).
 
 AIG/content-generation concepts **[PLANNED]** would use tables or equivalent
 versioned storage for:

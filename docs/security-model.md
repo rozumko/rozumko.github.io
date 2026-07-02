@@ -11,10 +11,12 @@ _Updated: 2026-07-02_
 >   feature does not exist.
 >
 > As of _2026-07-02_ the enforced surfaces are the **official olympiad flow**,
-> **teacher/admin auth** and **School Mode** (self-serve missions and the
-> anonymous classroom game). **Home Mode, payments/entitlement, subscription
-> access, AIG JSON-template generation and multi-client session rules are
-> [PLANNED].**
+> **teacher/admin auth**, **School Mode** (self-serve missions and the
+> anonymous classroom game), the **Home demo/lead slice** (consent-gated
+> demo attempts and reports) and the **entitlement model** (backend access
+> state, admin manual control, audit trail). **Payment provider integration
+> (checkout, verified webhooks), AIG JSON-template generation and
+> multi-client session rules are [PLANNED].**
 
 ## Core Rules
 
@@ -132,19 +134,28 @@ but trust boundaries stay unchanged:
 - client-side generation, random seeds or cached task state must not be treated
   as trusted scoring evidence.
 
-## Payment And Entitlement Boundaries **[PLANNED]**
+## Payment And Entitlement Boundaries — Entitlement **[IMPLEMENTED]**, Provider **[PLANNED]**
 
-_No payment or entitlement code exists yet. Binding once payments are built._
+_The entitlement model is enforced by `home-entitlement.ts` and
+`home-entitlement.test.ts` (migration 0018). Payment-provider rules are
+binding once checkout/webhooks are built._
 
 Payment card data must stay with the payment provider. Rozumko may store only
 the minimum payment-provider references and entitlement state needed to grant or
 revoke access.
 
-Paid Home access is represented by backend entitlement state. Payment callbacks
-or webhooks must be verified before they change entitlement state.
+Paid Home access is represented by backend entitlement state
+(`active | past_due | canceled | expired | revoked`). `hasHomeAccess` is the
+single decision point and fails closed: expired/revoked always block, a
+missing period end blocks even `active`, `past_due` gets a bounded grace
+window. Every status change writes an audit event with the actor
+(`admin` today, `provider` for future webhooks). Payment callbacks or
+webhooks must be verified before they change entitlement state and must go
+through the same `applyEntitlementChange` path.
 
 Entitlement state can unlock missions, reports, finals or diplomas. It must not
-change answer keys, scoring rules or stored attempt answers.
+change answer keys, scoring rules or stored attempt answers — the entitlement
+module is source-checked by a regression test to never touch scoring.
 
 ## Multi-Client Security Boundaries **[PLANNED]**
 
@@ -257,12 +268,21 @@ invariants:
 - demo events are accepted only for practice-pool (`isOlympiad=false`)
   questions; responses expose no answer keys or explanations.
 
+`backend/src/routes/home-entitlement.test.ts` protects the entitlement model
+(written before the route code):
+
+- expired and revoked entitlements block access even with a future period end;
+- a missing period end fails closed for every status;
+- `past_due` grace is bounded; `canceled` keeps access only until period end;
+- entitlement reads require a valid lead token (403 otherwise);
+- admin entitlement routes validate UUIDs before auth and require auth before
+  any state change; every change writes an audit event;
+- the entitlement module never touches scoring or answer keys (source check).
+
 Remaining Home Mode security regression tests **[PLANNED]** (must land before
 the corresponding feature code):
 
-- payment callback verification before entitlement changes;
-- expired entitlement blocks paid content;
-- revoked entitlement blocks paid content;
+- payment callback/webhook verification before entitlement changes;
 - Home Mode answer keys do not reach the browser for paid, demo report or
   diploma-generating missions;
 - School Mode never exposes individual classroom results through a parent

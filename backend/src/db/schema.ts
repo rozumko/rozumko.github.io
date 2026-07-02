@@ -265,3 +265,31 @@ export const homeDemoReports = pgTable('home_demo_reports', {
 })
 
 export type HomeDemoReport = typeof homeDemoReports.$inferSelect
+
+// Платний доступ Home (Rozumko Club). Один entitlement на лід; статус вирішує
+// доступ (active | past_due | canceled | expired | revoked), картки — у
+// провайдера. Entitlement не впливає на скоринг (docs/security-model.md).
+export const homeEntitlements = pgTable('home_entitlements', {
+  id:               uuid('id').primaryKey().defaultRandom(),
+  leadId:           uuid('lead_id').notNull().references(() => homeLeads.id, { onDelete: 'cascade' }).unique(),
+  status:           text('status').notNull().$type<'active' | 'past_due' | 'canceled' | 'expired' | 'revoked'>(),
+  currentPeriodEnd: timestamp('current_period_end', { withTimezone: true }),
+  providerRef:      text('provider_ref'),   // ідентифікатор підписки у провайдера (пізніше)
+  createdAt:        timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt:        timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
+export type HomeEntitlement = typeof homeEntitlements.$inferSelect
+
+// Audit-журнал змін entitlement-у: хто, з якого статусу в який і чому.
+export const homeEntitlementEvents = pgTable('home_entitlement_events', {
+  id:            uuid('id').primaryKey().defaultRandom(),
+  entitlementId: uuid('entitlement_id').notNull().references(() => homeEntitlements.id, { onDelete: 'cascade' }),
+  actor:         text('actor').notNull(),        // admin | provider
+  fromStatus:    text('from_status'),
+  toStatus:      text('to_status').notNull(),
+  reason:        text('reason'),
+  createdAt:     timestamp('created_at', { withTimezone: true }).defaultNow(),
+})
+
+export type HomeEntitlementEvent = typeof homeEntitlementEvents.$inferSelect

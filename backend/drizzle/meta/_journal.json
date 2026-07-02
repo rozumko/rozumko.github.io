@@ -127,6 +127,13 @@
       "when": 1782996000000,
       "tag": "0017_enable_home_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1782999600000,
+      "tag": "0018_add_home_entitlements",
+      "breakpoints": true
     }
   ]
 }

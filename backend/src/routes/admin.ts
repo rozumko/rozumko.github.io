@@ -1,7 +1,8 @@
 import type { FastifyInstance } from 'fastify'
 import { eq, desc, count, and, asc, inArray } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { questions, accessCodes, attempts, attemptQuestions, appUsers, olympiadEvents, eventQuestions, schoolSessions, schoolSessionQuestions, type QuestionTrack } from '../db/schema.js'
+import { questions, accessCodes, attempts, attemptQuestions, appUsers, olympiadEvents, eventQuestions, schoolSessions, schoolSessionQuestions, homeLeads, homeEntitlements, homeEntitlementEvents, type QuestionTrack } from '../db/schema.js'
+import { ENTITLEMENT_STATUSES, normalizeEntitlementStatus, applyEntitlementChange } from './home-entitlement.js'
 import { requireAdmin } from '../lib/auth.js'
 import { assertQuestionsBelongToGrade, normalizeEventQuestionSelection } from './event-questions-validation.js'
 import { validateQuestionShape, type QuestionType } from './question-input-validation.js'
@@ -602,4 +603,69 @@ export async function adminRoutes(app: FastifyInstance) {
       return reply.code(204).send()
     }
   )
+
+  // ── Home entitlements: ручне керування доступом (до платіжного провайдера) ─
+  // Кожна зміна статусу пише audit-подію. Entitlement відкриває доступ, але
+  // ніколи не змінює скоринг чи відповіді (docs/security-model.md).
+
+  const leadUuidParam = {
+    type: 'object',
+    required: ['leadId'],
+    properties: { leadId: { type: 'string', format: 'uuid' } },
+  } as const
+
+  // GET /api/admin/home-entitlements/:leadId — стан + журнал змін
+  app.get<{ Params: { leadId: string } }>('/home-entitlements/:leadId', {
+    preHandler: requireAdmin,
+    schema: { params: leadUuidParam },
+  }, async (req, reply) => {
+    const [ent] = await db.select().from(homeEntitlements)
+      .where(eq(homeEntitlements.leadId, req.params.leadId)).limit(1)
+    if (!ent) return reply.code(404).send({ error: 'Entitlement не знайдено' })
+
+    const events = await db.select().from(homeEntitlementEvents)
+      .where(eq(homeEntitlementEvents.entitlementId, ent.id))
+      .orderBy(desc(homeEntitlementEvents.createdAt))
+      .limit(20)
+
+    return reply.send({ entitlement: ent, events })
+  })
+
+  // PUT /api/admin/home-entitlements/:leadId — grant/зміна статусу (upsert)
+  app.put<{ Params: { leadId: string }; Body: { status: string; currentPeriodEnd?: string; reason?: string } }>('/home-entitlements/:leadId', {
+    preHandler: requireAdmin,
+    schema: {
+      params: leadUuidParam,
+      body: {
+        type: 'object',
+        required: ['status'],
+        additionalProperties: false,
+        properties: {
+          status:           { type: 'string', enum: [...ENTITLEMENT_STATUSES] },
+          currentPeriodEnd: { type: 'string', format: 'date-time' },
+          reason:           { type: 'string', maxLength: 200 },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    const [lead] = await db.select({ id: homeLeads.id }).from(homeLeads)
+      .where(eq(homeLeads.id, req.params.leadId)).limit(1)
+    if (!lead) return reply.code(404).send({ error: 'Лід не знайдено' })
+
+    const periodEnd = req.body.currentPeriodEnd ? new Date(req.body.currentPeriodEnd) : null
+    if (periodEnd && Number.isNaN(periodEnd.getTime())) {
+      return reply.code(400).send({ error: 'Невірна дата кінця періоду' })
+    }
+
+    try {
+      const result = await applyEntitlementChange(db, lead.id, {
+        status: normalizeEntitlementStatus(req.body.status),
+        currentPeriodEnd: periodEnd,
+        reason: req.body.reason ?? null,
+      }, 'admin')
+      return reply.send({ entitlement: result })
+    } catch (err) {
+      return reply.code(400).send({ error: (err as Error).message })
+    }
+  })
 }

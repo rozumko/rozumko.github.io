@@ -315,6 +315,19 @@ export async function getHomeDemoReport(leadId: string, leadToken: string): Prom
   })
 }
 
+export type HomeEntitlementStatus = 'none' | 'active' | 'past_due' | 'canceled' | 'expired' | 'revoked'
+
+/** Стан платного доступу вирішує бекенд; клієнт лише відображає hasAccess. */
+export async function getHomeEntitlement(leadId: string, leadToken: string): Promise<{
+  status: HomeEntitlementStatus
+  hasAccess: boolean
+  currentPeriodEnd: string | null
+}> {
+  return request(`/api/home/leads/${leadId}/entitlement`, {
+    headers: { 'X-Lead-Token': leadToken },
+  })
+}
+
 // ─── Teacher Auth (Supabase) ───────────────────────────────────────────────
 
 export async function loginTeacher(email: string, password: string): Promise<any> {
