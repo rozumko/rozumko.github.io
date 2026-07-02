@@ -1,9 +1,10 @@
 import type { FastifyInstance } from 'fastify'
-import { and, desc, eq, inArray } from 'drizzle-orm'
+import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { questions, homeLeads, homeChildProfiles, homeDemoAttempts, homeDemoReports, homeEntitlements, homeMissionAttempts } from '../db/schema.js'
 import { hasHomeAccess } from './home-entitlement.js'
 import { scoreAttempt, type AnswerValue } from './attempt-validation.js'
+import { stripOptionKeys } from './question-sanitize.js'
 import {
   HOME_DEMO_TRACKS, DEMO_REPORT_VERSION,
   normalizeParentEmail, normalizeChildDisplayName, validateConsent,
@@ -21,6 +22,18 @@ const uuidParam = {
   type: 'object',
   required: ['id'],
   properties: { id: { type: 'string', format: 'uuid' } },
+} as const
+
+const clubQuestionsQuery = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['grade', 'track'],
+  properties: {
+    grade:      { type: 'string', enum: ['1', '2', '3', '4'] },
+    track:      { type: 'string', enum: [...HOME_DEMO_TRACKS] },
+    difficulty: { type: 'string', enum: ['easy', 'medium', 'hard'] },
+    count:      { type: 'string', pattern: '^(?:[1-9]|[1-4][0-9]|50)$' },
+  },
 } as const
 
 const leadBody = {
@@ -101,6 +114,54 @@ interface DemoReportBody {
 
 function requireLeadToken(leadId: string, header: unknown): boolean {
   return typeof header === 'string' && verifyLeadToken(leadId, header)
+}
+
+async function getEntitlementAccess(leadId: string): Promise<{ status: string; currentPeriodEnd: Date | null; hasAccess: boolean }> {
+  const [ent] = await db
+    .select({ status: homeEntitlements.status, currentPeriodEnd: homeEntitlements.currentPeriodEnd })
+    .from(homeEntitlements)
+    .where(eq(homeEntitlements.leadId, leadId))
+    .limit(1)
+
+  return {
+    status: ent?.status ?? 'none',
+    currentPeriodEnd: ent?.currentPeriodEnd ?? null,
+    hasAccess: ent ? hasHomeAccess(ent.status, ent.currentPeriodEnd) : false,
+  }
+}
+
+async function loadSanitizedPracticeQuestions(options: {
+  grade: number
+  count: number
+  track?: HomeDemoTrack
+  difficulty?: string
+}) {
+  const filters = [eq(questions.isOlympiad, false), eq(questions.grade, options.grade)]
+  if (options.track && !options.difficulty) filters.push(eq(questions.track, options.track))
+  if (options.difficulty) filters.push(eq(questions.difficulty, options.difficulty))
+
+  const rows = await db
+    .select({
+      id:          questions.id,
+      q:           questions.q,
+      code:        questions.code,
+      type:        questions.type,
+      options:     questions.options,
+      correct:     questions.correct,
+      explanation: questions.explanation,
+      difficulty:  questions.difficulty,
+      track:       questions.track,
+      grade:       questions.grade,
+    })
+    .from(questions)
+    .where(and(...filters))
+    .orderBy(sql`random()`)
+    .limit(options.count)
+
+  return rows.map(({ correct: _c, explanation: _e, options, ...rest }) => ({
+    ...rest,
+    options: stripOptionKeys(options),
+  }))
 }
 
 /**
@@ -301,18 +362,41 @@ export async function homeRoutes(app: FastifyInstance) {
       return reply.code(403).send({ error: 'Невірний токен' })
     }
 
-    const [ent] = await db
-      .select({ status: homeEntitlements.status, currentPeriodEnd: homeEntitlements.currentPeriodEnd })
-      .from(homeEntitlements)
-      .where(eq(homeEntitlements.leadId, req.params.id))
-      .limit(1)
+    const access = await getEntitlementAccess(req.params.id)
 
     return reply.send({
-      status: ent?.status ?? 'none',
-      hasAccess: ent ? hasHomeAccess(ent.status, ent.currentPeriodEnd) : false,
-      currentPeriodEnd: ent?.currentPeriodEnd ?? null,
-      tracks: [...HOME_DEMO_TRACKS],
+      status: access.status,
+      hasAccess: access.hasAccess,
+      currentPeriodEnd: access.currentPeriodEnd,
+      tracks: access.hasAccess ? [...HOME_DEMO_TRACKS] : [],
     })
+  })
+
+  // ── Club: видати платну місію. Питання віддаються тільки після entitlement gate,
+  // без ключів; скоринг усе одно перераховується на POST /mission-report.
+  app.get<{ Params: { id: string }; Querystring: { grade: string; track: HomeDemoTrack; difficulty?: string; count?: string } }>('/leads/:id/club/questions', {
+    config: { rateLimit: { max: 30, timeWindow: '1 minute' } },
+    schema: { params: uuidParam, querystring: clubQuestionsQuery },
+  }, async (req, reply) => {
+    if (!requireLeadToken(req.params.id, req.headers['x-lead-token'])) {
+      return reply.code(403).send({ error: 'Невірний токен' })
+    }
+
+    const access = await getEntitlementAccess(req.params.id)
+    if (!access.hasAccess) {
+      return reply.code(403).send({ error: 'Потрібна активна підписка Rozumko Club' })
+    }
+
+    const grade = Number(req.query.grade)
+    const count = req.query.count ? Number(req.query.count) : 6
+    const qs = await loadSanitizedPracticeQuestions({
+      grade,
+      count,
+      track: req.query.track,
+      difficulty: req.query.difficulty,
+    })
+
+    return reply.send({ questions: qs })
   })
 
   // ── Club: практична місія (ПЛАТНИЙ контент, гейт entitlement) ─────────────
@@ -326,12 +410,8 @@ export async function homeRoutes(app: FastifyInstance) {
       return reply.code(403).send({ error: 'Невірний токен' })
     }
 
-    const [ent] = await db
-      .select({ status: homeEntitlements.status, currentPeriodEnd: homeEntitlements.currentPeriodEnd })
-      .from(homeEntitlements)
-      .where(eq(homeEntitlements.leadId, req.params.id))
-      .limit(1)
-    if (!ent || !hasHomeAccess(ent.status, ent.currentPeriodEnd)) {
+    const access = await getEntitlementAccess(req.params.id)
+    if (!access.hasAccess) {
       return reply.code(403).send({ error: 'Потрібна активна підписка Rozumko Club' })
     }
 
@@ -378,6 +458,11 @@ export async function homeRoutes(app: FastifyInstance) {
   }, async (req, reply) => {
     if (!requireLeadToken(req.params.id, req.headers['x-lead-token'])) {
       return reply.code(403).send({ error: 'Невірний токен' })
+    }
+
+    const access = await getEntitlementAccess(req.params.id)
+    if (!access.hasAccess) {
+      return reply.code(403).send({ error: 'Потрібна активна підписка Rozumko Club' })
     }
 
     const [profile] = await db.select({ id: homeChildProfiles.id }).from(homeChildProfiles)

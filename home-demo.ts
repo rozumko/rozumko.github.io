@@ -2,6 +2,7 @@ import { $, $maybe } from './utils/dom.js'
 import { runMission, type MissionElements } from './features/missions/mission-runner.js'
 import {
   createHomeLead, loadQuestions, submitHomeDemoReport, getHomeClub, submitHomeMissionReport,
+  loadHomeClubQuestions,
   type Question, type HomeDemoTrack, type HomeDemoEvent, type HomeDemoReport, type HomeClubState,
 } from './features/api/client.js'
 
@@ -111,6 +112,24 @@ async function loadDemoQuestions(preset: TrackPreset): Promise<Question[]> {
   return fallback.map(stripKeys)
 }
 
+async function loadClubQuestions(preset: TrackPreset): Promise<Question[]> {
+  if (!lead) throw new Error('Потрібно спершу розблокувати батьківський звіт')
+  const byTrack = await loadHomeClubQuestions(lead.id, lead.token, {
+    grade: selectedGrade,
+    count: DEMO_COUNT,
+    track: preset.track,
+  })
+  if (byTrack.length >= Math.min(DEMO_COUNT, 3)) return byTrack.slice(0, DEMO_COUNT).map(stripKeys)
+
+  const fallback = await loadHomeClubQuestions(lead.id, lead.token, {
+    grade: selectedGrade,
+    count: DEMO_COUNT,
+    track: preset.track,
+    difficulty: preset.difficulty,
+  })
+  return fallback.map(stripKeys)
+}
+
 // ── Телеметрія ────────────────────────────────────────────────
 // Контракт вимагає timeToAnswerMs і answerChangeCount у кожній події з першого
 // релізу. Поточний renderer блокує choice-типи після першого кліку, тож
@@ -155,7 +174,9 @@ async function startDemo(preset: TrackPreset, mode: 'demo' | 'club' = 'demo') {
   els.nextBtn.classList.add('hidden')
 
   try {
-    const questions = await loadDemoQuestions(preset)
+    const questions = mode === 'club'
+      ? await loadClubQuestions(preset)
+      : await loadDemoQuestions(preset)
 
     questionShownAt = Date.now()
     selectTouches = 0

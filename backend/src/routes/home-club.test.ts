@@ -32,7 +32,7 @@ function createState() {
     missionAttempts: [] as any[],
     practiceQuestions: [
       { id: ids.q1, type: 'choice', options: ['4', '5'], correct: 0, explanation: null },
-      { id: ids.q2, type: 'choice', options: ['так', 'ні'], correct: 1, explanation: null },
+      { id: ids.q2, type: 'sort', options: { items: ['A', 'B'], correctOrder: [1, 0] }, correct: null, explanation: 'secret' },
     ],
   }
 }
@@ -241,8 +241,72 @@ test('club: GET /club повертає стан доступу і треки; б
   } finally { restore() }
 })
 
-test('club: GET /mission-reports — список спроб лише за валідним токеном', async () => {
+test('club: GET /club без доступу не повертає напрями платної практики', async () => {
   const state = createState()
+  const restore = installFakeDb(state)
+  try {
+    await withApp(async (app) => {
+      const url = `/api/home/leads/${ids.lead}/club`
+      const res = await app.inject({ method: 'GET', url, headers: headers() })
+      assert.equal(res.statusCode, 200, res.body)
+      const body = res.json()
+      assert.equal(body.hasAccess, false)
+      assert.deepEqual(body.tracks, [])
+    })
+  } finally { restore() }
+})
+
+test('club: GET /club/questions блокується без active entitlement', async () => {
+  const state = createState()
+  state.entitlement = { id: ids.entitlement, leadId: ids.lead, status: 'revoked', currentPeriodEnd: FUTURE }
+  const restore = installFakeDb(state)
+  try {
+    await withApp(async (app) => {
+      const url = `/api/home/leads/${ids.lead}/club/questions?grade=2&track=computational-thinking&count=2`
+      const res = await app.inject({ method: 'GET', url, headers: headers() })
+      assert.equal(res.statusCode, 403)
+    })
+  } finally { restore() }
+})
+
+test('club: GET /club/questions active повертає питання без ключів', async () => {
+  const state = createState()
+  state.entitlement = { id: ids.entitlement, leadId: ids.lead, status: 'active', currentPeriodEnd: FUTURE }
+  const restore = installFakeDb(state)
+  try {
+    await withApp(async (app) => {
+      const url = `/api/home/leads/${ids.lead}/club/questions?grade=2&track=computational-thinking&count=2`
+      const res = await app.inject({ method: 'GET', url, headers: headers() })
+      assert.equal(res.statusCode, 200, res.body)
+      const body = res.json()
+      assert.equal(body.questions.length, 2)
+      assert.equal('correct' in body.questions[0], false)
+      assert.equal('explanation' in body.questions[0], false)
+      assert.equal('correctOrder' in body.questions[1].options, false)
+    })
+  } finally { restore() }
+})
+
+test('club: GET /mission-reports expired entitlement блокує прогрес', async () => {
+  const state = createState()
+  state.entitlement = { id: ids.entitlement, leadId: ids.lead, status: 'expired', currentPeriodEnd: FUTURE }
+  state.missionAttempts = [{
+    childProfileId: ids.profile, missionId: 'practice-x', missionVersion: 1, track: 'ai-basics',
+    grade: 2, correct: 2, total: 2, report: { correct: 2, total: 2 }, createdAt: new Date(),
+  }]
+  const restore = installFakeDb(state)
+  try {
+    await withApp(async (app) => {
+      const url = `/api/home/leads/${ids.lead}/mission-reports`
+      const res = await app.inject({ method: 'GET', url, headers: headers() })
+      assert.equal(res.statusCode, 403)
+    })
+  } finally { restore() }
+})
+
+test('club: GET /mission-reports — список спроб лише за валідним токеном і active entitlement', async () => {
+  const state = createState()
+  state.entitlement = { id: ids.entitlement, leadId: ids.lead, status: 'active', currentPeriodEnd: FUTURE }
   state.missionAttempts = [{
     childProfileId: ids.profile, missionId: 'practice-x', missionVersion: 1, track: 'ai-basics',
     grade: 2, correct: 2, total: 2, report: { correct: 2, total: 2 }, createdAt: new Date(),

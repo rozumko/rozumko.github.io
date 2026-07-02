@@ -341,6 +341,22 @@ export async function getHomeClub(leadId: string, leadToken: string): Promise<Ho
   })
 }
 
+export async function loadHomeClubQuestions(
+  leadId: string,
+  leadToken: string,
+  params: { grade: number; count?: number; track: HomeDemoTrack; difficulty?: string },
+): Promise<Question[]> {
+  const p = new URLSearchParams()
+  p.set('grade', String(params.grade))
+  p.set('track', params.track)
+  if (params.count != null) p.set('count', String(params.count))
+  if (params.difficulty) p.set('difficulty', params.difficulty)
+  const data = await request(`/api/home/leads/${leadId}/club/questions?${p}`, {
+    headers: { 'X-Lead-Token': leadToken },
+  })
+  return data.questions.map(normalizeQuestion)
+}
+
 /** Платна practice-місія Club: гейт entitlement вирішує бекенд (403 без доступу). */
 export async function submitHomeMissionReport(
   leadId: string,

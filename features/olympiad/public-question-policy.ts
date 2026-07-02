@@ -7,8 +7,9 @@ export function getPublicQuestionRequest(mode: string, difficulty: string | null
     throw new Error('Офіційні питання можна отримати лише через код доступу.')
   }
 
-  // Публічний API видає лише тренувальні питання. У demo ховаємо ключі відповідей.
-  const hideAnswers = mode === 'demo'
+  // Публічний API видає лише тренувальні питання без ключів. Local feedback
+  // для practice живе у static bundle, а не в цьому endpoint.
+  const hideAnswers = true
   const diff = mode === 'demo' ? 'hard' : (difficulty ?? undefined)
   return { isOlympiad: false, difficulty: diff, hideAnswers }
 }
