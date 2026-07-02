@@ -216,6 +216,37 @@ export async function finishAttempt(attemptId: string, attemptToken: string): Pr
   })
 }
 
+// ─── School Mode (просунутий, анонімний учень) ─────────────────────────────
+
+export async function joinSchoolSession(code: string, avatar: string, nickname: string): Promise<{
+  participantId: string
+  participantToken: string
+  status: string
+  grade: number
+  questions: Question[]
+  questionsCount: number
+}> {
+  const data = await request('/api/school/join', {
+    method: 'POST',
+    body: JSON.stringify({ code, avatar, nickname }),
+  })
+  data.questions = data.questions.map(normalizeQuestion)
+  return data
+}
+
+export async function submitSchoolAnswer(
+  participantId: string,
+  participantToken: string,
+  questionId: string,
+  answer: number | string | number[],
+): Promise<{ correct: boolean }> {
+  return request(`/api/school/participants/${participantId}/answer`, {
+    method: 'POST',
+    headers: { 'X-Participant-Token': participantToken },
+    body: JSON.stringify({ questionId, answer }),
+  })
+}
+
 // ─── Teacher Auth (Supabase) ───────────────────────────────────────────────
 
 export async function loginTeacher(email: string, password: string): Promise<any> {
