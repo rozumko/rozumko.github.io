@@ -441,6 +441,43 @@ export function getTeacherResults(): Promise<{ results: Attempt[] }> {
   return authRequest('/api/teacher/results')
 }
 
+// ─── School Mode (просунутий, вчитель) ─────────────────────────────────────
+
+export interface SchoolSessionInfo {
+  id: string
+  joinCode: string
+  grade: number
+  difficulty: string | null
+  questionsCount: number
+  status: 'lobby' | 'active' | 'finished'
+}
+
+export interface SchoolParticipantRow {
+  id: string
+  avatar: string
+  nickname: string
+  score: number
+}
+
+export function createSchoolSession(data: { grade: number; difficulty?: string; questionsCount?: number }): Promise<{ session: SchoolSessionInfo }> {
+  return authRequest('/api/school/sessions', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export function startSchoolSession(id: string): Promise<{ status: string }> {
+  return authRequest(`/api/school/sessions/${encodeURIComponent(id)}/start`, { method: 'POST', body: JSON.stringify({}) })
+}
+
+export function finishSchoolSession(id: string): Promise<{ status: string }> {
+  return authRequest(`/api/school/sessions/${encodeURIComponent(id)}/finish`, { method: 'POST', body: JSON.stringify({}) })
+}
+
+export function getSchoolSession(id: string): Promise<{ session: SchoolSessionInfo; participants: SchoolParticipantRow[] }> {
+  return authRequest(`/api/school/sessions/${encodeURIComponent(id)}`)
+}
+
 // ─── Admin API ─────────────────────────────────────────────────────────────
 
 export function getAdminStats(): Promise<{ teachers: number; codes: number; results: number; events?: number }> {
