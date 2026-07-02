@@ -68,6 +68,23 @@ Run this checklist before a real pilot.
 - [ ] Attempt appears in results
 - [ ] Briefly disconnect network during answer save and confirm retry/error UX
 
+## 6a. School Classroom Game (advanced School Mode)
+
+- [ ] Teacher: dashboard -> "Класна гра" -> create a game (grade, difficulty,
+      count); a 6-digit join code appears with status "lobby"
+- [ ] Student (incognito): `/school` -> "Є код від вчителя?" -> the code is
+      rejected with "Вчитель ще не розпочав гру" while the game is in lobby
+- [ ] Teacher presses "Почати гру"; student joins with the code, an avatar and
+      a nickname
+- [ ] Student answers a question; the join response and network traffic contain
+      no `correct`, `correctOrder`, `pairs` or `answer` keys
+- [ ] Teacher leaderboard shows the participant (avatar + nickname + score)
+      within ~5 seconds
+- [ ] Teacher presses "Завершити"; further answers are rejected and the
+      leaderboard freezes
+- [ ] Admin cannot edit or delete a question while it belongs to the running
+      game (409)
+
 ## 7. Browser Security
 
 > Most of §7 and §8 are automated by `scripts/smoke-security.ps1`:

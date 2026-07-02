@@ -1,6 +1,6 @@
 # Architecture - Rozumko
 
-_Updated: 2026-07-01_
+_Updated: 2026-07-02_
 
 > **Implementation status legend.** This document mixes shipped design with
 > forward-looking direction. Sections are tagged:
@@ -11,10 +11,13 @@ _Updated: 2026-07-01_
 >   schema, routes and the security regression tests listed in
 >   `security-model.md`.
 >
-> As of _2026-07-01_ the shipped core is the **official olympiad flow**
-> (events, access codes, attempts, server-side scoring, teacher/admin panels).
-> **Home Mode, payments, entitlements, parent/child/consent data and a dedicated
-> anonymous School-mode backend are [PLANNED] and not implemented.**
+> As of _2026-07-02_ the shipped surfaces are the **official olympiad flow**
+> (events, access codes, attempts, server-side scoring, teacher/admin panels)
+> and **School Mode** (basic self-serve missions on `/school` plus the
+> advanced anonymous classroom-game backend: sessions, join codes,
+> participants, server-scored answers, teacher leaderboard).
+> **Home Mode, payments, entitlements and parent/child/consent data are
+> [PLANNED] and not implemented.**
 
 ## Overview
 
@@ -59,12 +62,15 @@ Mission content is organized around:
 - parent-readable outcomes: attention, logic, following instructions,
   confidence with tasks and useful screen time.
 
-## School/Home Architecture **[PLANNED]**
+## School/Home Architecture — School **[IMPLEMENTED]**, Home **[PLANNED]**
 
-_The School/Home split below is design intent. The listed `features/missions/`,
-`features/school/`, `features/home/` directories and Home/School backend routes
-do not exist yet. A public School entry page exists, but there is no anonymous
-classroom backend or mission mode._
+_School Mode is shipped: `/school` runs self-serve missions (grade +
+difficulty presets, local feedback) through the reusable `features/missions/`
+runner, and the advanced classroom game is live — a teacher creates a session
+in the dashboard ("Класна гра" tab), students join anonymously by a 6-digit
+code with an avatar + nickname label, answers are scored server-side and the
+teacher sees an anonymous leaderboard (`/api/school`, migration 0014). Home
+Mode (`features/home/`, parent routes, consent, payments) does not exist yet._
 
 School mode and Home missions stay decoupled. School mode may send users to a
 Home URL as a neutral brand path, but it does not transfer individual classroom
@@ -81,17 +87,34 @@ results into parent accounts.
 
 Frontend structure:
 
-- `features/missions/` for reusable mission runner logic;
-- `features/school/` for anonymous classroom UX;
-- `features/home/` for parent-led Home Mode UX.
+- `features/missions/` — reusable mission runner (implemented; used by
+  `/school` for both self-serve practice and live classroom games);
+- `features/home/` for parent-led Home Mode UX (planned).
 
-Backend direction:
+Backend:
 
+- School Mode routes are implemented under `/api/school`: teacher session
+  lifecycle (create/start/finish/state+leaderboard, scoped to the owning
+  teacher) and anonymous student join/answer with server-side scoring;
 - explicit Home Mode routes for parent profile, consent, attempts, reports and
-  entitlement checks;
-- explicit School Mode routes only if anonymous classroom aggregate support
-  requires backend state;
+  entitlement checks are planned;
 - all frontend HTTP calls continue to go through `features/api/client.ts`.
+
+### School classroom game integrity **[IMPLEMENTED]**
+
+- Students never receive answer keys: session questions are sanitized with the
+  same stripper as olympiad questions, and correctness comes only from the
+  server response.
+- Participants are ephemeral: an HMAC participant token scoped to one session,
+  an avatar from a fixed allowlist and a free nickname label. No child PII, no
+  per-child recovery path.
+- One answer per participant per question (DB UNIQUE), answers are accepted
+  only for active sessions and only for questions issued to that session.
+- Students can join only after the teacher starts the game, so a lobby session
+  cannot be "burned" by answering into 409s.
+- A question that belongs to a lobby/active school session is locked against
+  admin edit/delete; questions referenced by finished-game history refuse
+  deletion with 409 instead of an FK error.
 
 ## Multi-Platform Direction **[PLANNED]**
 
@@ -226,6 +249,10 @@ Current implemented tables **[IMPLEMENTED]**:
 - `teacher_classes`
 - `class_students`
 - `event_registrations`
+- `school_sessions`
+- `school_session_questions`
+- `school_participants`
+- `school_answers`
 
 Home Mode concepts **[PLANNED]** would use tables or equivalent storage for:
 
