@@ -16,19 +16,26 @@ _Updated: 2026-07-02_
 > and **School Mode** (basic self-serve missions on `/school` plus the
 > advanced anonymous classroom-game backend: sessions, join codes,
 > participants, server-scored answers, teacher leaderboard).
-> **Home Mode, payments, entitlements and parent/child/consent data are
-> [PLANNED] and not implemented.**
+> **Home Mode, payments, subscriptions, entitlements, parent/child/consent
+> data and AIG JSON-template content generation are [PLANNED] and not
+> implemented.**
 
 ## Overview
 
 Rozumko is an educational platform for grades 1-4 built around short missions
-that develop computational thinking and age-appropriate AI literacy. The public
-product surfaces are:
+that develop informatics foundations, computational thinking and
+age-appropriate AI literacy. The product turns screen time into useful
+10-15 minute practice for attention, logic, algorithms, patterns,
+step-by-step thinking, safe AI basics and confidence with tasks.
+
+The product architecture is split into three autonomous surfaces:
 
 - **School Mode**: a free classroom mode for trust and awareness, with no parent
   accounts, payments or child personal data.
-- **Home missions**: parent-led home practice with consented child progress and
-  parent-readable results.
+- **Home Mode / Rozumko Club**: parent-led home practice with a limited demo,
+  consented child progress, parent-readable results and paid access.
+- **Olympiad / Seasonal Events**: time-bound events, finals, diplomas and
+  one-off access moments that may be included for active Home subscribers.
 
 The frontend is static, while all database access and official or
 diploma-generating scoring go through the backend.
@@ -68,7 +75,14 @@ Mission content is organized around:
 - parent-readable outcomes: attention, logic, following instructions,
   confidence with tasks and useful screen time.
 
-## School/Home Architecture — School **[IMPLEMENTED]**, Home **[PLANNED]**
+The planned content engine is Automatic Item Generation through JSON templates:
+item models describe parameters, constraints, answer computation and
+distractor generation so one mechanic can produce many variants. Practice-only
+public variants may still expose local-feedback keys when explicitly treated as
+practice; paid, official, diploma-generating and parent-reporting variants must
+keep trusted scoring on the backend.
+
+## Surface Architecture — School **[IMPLEMENTED]**, Home **[PLANNED]**, Olympiad **[IMPLEMENTED]/[PLANNED]**
 
 _School Mode is shipped: `/school` runs self-serve missions (grade +
 difficulty presets, local feedback) from the static practice bundle through the
@@ -79,18 +93,20 @@ code with an avatar + nickname label, answers are scored server-side and the
 teacher sees an anonymous leaderboard (`/api/school`, migration 0014). Home
 Mode (`features/home/`, parent routes, consent, payments) does not exist yet._
 
-School mode and Home missions stay decoupled. School mode may send users to a
-Home URL as a neutral brand path, but it does not transfer individual classroom
-results into parent accounts.
+School, Home and Olympiad surfaces stay decoupled at the identity/data level.
+School Mode may send users to a Home URL as a neutral brand path, but it does
+not transfer individual classroom results into parent accounts. Olympiad events
+may share themes and mechanics with School/Home content, but official event
+attempt state is separate from anonymous School sessions.
 
-| Area | School Mode | Home Mode |
-|---|---|---|
-| Entry | `/school` or classroom entry | `/home` or seasonal mission landing |
-| Identity | Anonymous or temporary classroom session | Parent-led account/profile |
-| Child data | No child personal data | Stored only after parent consent |
-| Results | Aggregate/class-level only | Individual progress and reports |
-| Payments | None | Paid access handled in Home |
-| Scoring | Server-side for official/diploma results | Server-side for paid/diploma results |
+| Area | School Mode | Home Mode | Olympiad / Seasonal Events |
+|---|---|---|---|
+| Entry | `/school` or classroom entry | `/home` or seasonal mission landing | `olympiad-enter.html` today; future seasonal routes planned |
+| Identity | Anonymous or temporary classroom session | Parent-led account/profile | Access code today; subscription or one-off access planned |
+| Child data | No child personal data | Stored only after parent consent | Event participation data only as required for scoring/support |
+| Results | Aggregate/class-level only | Individual progress and reports | Official score and certificate/diploma |
+| Payments | None | Paid access handled in Home | Included for subscribers or one-off transaction planned |
+| Scoring | Server-side for live classroom game | Server-side for paid/diploma results | Server-side official scoring |
 
 Frontend structure:
 
@@ -105,6 +121,8 @@ Backend:
   teacher) and anonymous student join/answer with server-side scoring;
 - explicit Home Mode routes for parent profile, consent, attempts, reports and
   entitlement checks are planned;
+- subscription-aware seasonal event access is planned and must not reuse
+  anonymous School identity;
 - all frontend HTTP calls continue to go through `features/api/client.ts`.
 
 ### School classroom game integrity **[IMPLEMENTED]**
@@ -271,6 +289,17 @@ Home Mode concepts **[PLANNED]** would use tables or equivalent storage for:
 - result report;
 - paid access entitlement;
 - payment provider event/audit record.
+
+AIG/content-generation concepts **[PLANNED]** would use tables or equivalent
+versioned storage for:
+
+- item model;
+- item model version;
+- parameter schema and constraints;
+- generator profile / seed metadata;
+- scoring profile;
+- distractor-generation profile;
+- rendered task version used in a mission, Home report or event.
 
 App support **[PLANNED]** may use:
 

@@ -12,8 +12,9 @@ _Updated: 2026-07-02_
 >
 > As of _2026-07-02_ the enforced surfaces are the **official olympiad flow**,
 > **teacher/admin auth** and **School Mode** (self-serve missions and the
-> anonymous classroom game). **Home Mode, payments/entitlement and
-> multi-client session rules are [PLANNED].**
+> anonymous classroom game). **Home Mode, payments/entitlement, subscription
+> access, AIG JSON-template generation and multi-client session rules are
+> [PLANNED].**
 
 ## Core Rules
 
@@ -23,9 +24,12 @@ _Updated: 2026-07-02_
 4. Students have no accounts; official access is code-based.
 5. JWT proves teacher identity, while the database decides role and status.
 6. All database access goes through the backend API.
-7. School Mode and Home Mode must not be linked by individual child identifiers
-   or claim tokens.
+7. School Mode, Home Mode and Olympiad surfaces must not be linked by
+   individual child identifiers or claim tokens unless the identity flow is
+   explicit, parent-led and audited for that surface.
 8. Payment state may unlock access, but it must not decide scoring.
+9. AIG/client-generated variants must not become the authority for paid,
+   official, diploma-generating or parent-reporting scores.
 
 ## Student Attempt Protection
 
@@ -71,7 +75,7 @@ The backend is the only component that accesses application tables. Row Level
 Security is enabled for application data. No frontend code may call Supabase
 Data API tables directly.
 
-## School And Home Data Boundaries — School **[IMPLEMENTED]**, Home **[PLANNED]**
+## Surface Data Boundaries — School **[IMPLEMENTED]**, Home **[PLANNED]**, Olympiad **[IMPLEMENTED]/[PLANNED]**
 
 _The School side is enforced by the shipped classroom-game backend
 (`/api/school`, `school-flow.test.ts`). The Home side is binding once Home
@@ -92,7 +96,7 @@ School Mode is the low-risk classroom surface:
   questions issued to that session;
 - a teacher sees only their own sessions and an anonymous leaderboard.
 
-Home Mode is the parent-led surface:
+Home Mode is the parent-led commercial surface:
 
 - parent consent is required before storing child progress;
 - child profiles are created by the parent or responsible adult;
@@ -100,9 +104,33 @@ Home Mode is the parent-led surface:
   from anonymous classroom sessions;
 - paid access is checked by backend entitlement state.
 
+Olympiad / Seasonal Events are event surfaces:
+
+- official event attempts use code-based access today;
+- future subscriber access must verify entitlement on the backend;
+- one-off seasonal access must keep card data with the payment provider;
+- event scoring remains server-side and separate from anonymous School
+  session identity.
+
 Do not build a flow where a classroom code, avatar, printed QR, child memory or
 other school-session token becomes the way to recover a child's individual
 result in a parent account.
+
+## AIG Content Boundaries **[PLANNED]**
+
+_No AIG JSON-template generation engine exists yet. Binding once it is built._
+
+Automatic Item Generation may create many task variants from one item model,
+but trust boundaries stay unchanged:
+
+- public practice/demo variants may expose local-feedback answer keys only when
+  explicitly marked as practice;
+- paid, official, diploma-generating or parent-reporting variants must keep
+  answer evaluation on the backend;
+- generated task versions used for reports or diplomas must be versioned enough
+  to explain what the child completed;
+- client-side generation, random seeds or cached task state must not be treated
+  as trusted scoring evidence.
 
 ## Payment And Entitlement Boundaries **[PLANNED]**
 
@@ -224,6 +252,14 @@ before any Home Mode feature code):
   missions;
 - School Mode never exposes individual classroom results through a parent
   recovery path.
+
+AIG/security regression tests **[PLANNED]** should cover before an AIG engine
+is used for paid, official or diploma-generating flows:
+
+- generated variants are tied to immutable item model/scoring versions;
+- paid/official generated variants do not expose answer keys to the browser;
+- server scoring recomputes or verifies the generated correct answer from
+  trusted versioned data, not from client-submitted keys.
 
 GitHub Pages also runs frontend typecheck, tests and build inside its deployment
 workflow. Render Blueprint uses `autoDeployTrigger: checksPass`.
