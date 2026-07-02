@@ -36,7 +36,7 @@ function createState() {
 }
 
 function installFakeDb(state: ReturnType<typeof createState>) {
-  const original = { select: db.select, insert: db.insert, update: db.update }
+  const original = { select: db.select, insert: db.insert, update: db.update, transaction: db.transaction }
   const isTable = (a: unknown, b: unknown) => a === b
 
   class SelectQuery {
@@ -95,8 +95,14 @@ function installFakeDb(state: ReturnType<typeof createState>) {
 
   db.select = (() => new SelectQuery()) as unknown as typeof db.select
   db.insert = ((t: unknown) => new InsertQuery(t)) as unknown as typeof db.insert
+  db.transaction = (async (fn: (tx: typeof db) => unknown) => fn(db)) as unknown as typeof db.transaction
 
-  return () => { db.select = original.select; db.insert = original.insert; db.update = original.update }
+  return () => {
+    db.select = original.select
+    db.insert = original.insert
+    db.update = original.update
+    db.transaction = original.transaction
+  }
 }
 
 async function withApp(fn: (app: ReturnType<typeof Fastify>) => Promise<void>) {

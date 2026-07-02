@@ -46,3 +46,8 @@ CREATE TABLE IF NOT EXISTS public.home_demo_reports (
 CREATE INDEX IF NOT EXISTS "home_child_profiles_lead_id_idx" ON public.home_child_profiles ("lead_id");
 CREATE INDEX IF NOT EXISTS "home_demo_attempts_child_profile_id_idx" ON public.home_demo_attempts ("child_profile_id");
 CREATE INDEX IF NOT EXISTS "home_demo_reports_attempt_id_idx" ON public.home_demo_reports ("attempt_id");
+
+ALTER TABLE public.home_leads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.home_child_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.home_demo_attempts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.home_demo_reports ENABLE ROW LEVEL SECURITY;

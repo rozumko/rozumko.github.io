@@ -1,6 +1,6 @@
 # Database Migrations - Rozumko
 
-_Updated: 2026-05-31_
+_Updated: 2026-07-02_
 
 ## Source Of Truth
 
@@ -27,6 +27,9 @@ environments receive the same schema.
 | `0010_drop_dead_columns` | Remove obsolete columns |
 | `0011_add_question_type` | Six question types and nullable `correct` |
 | `0012_add_olympiad_event_limits` | Event duration and question count |
+| `0013_app_users_status_default_pending` | Default teacher/admin status to `pending` |
+| `0014_add_school_sessions` | Anonymous classroom sessions |
+| `0015_add_home_leads` | Home demo parent lead, child profile, attempt and report tables |
 
 `0012` is intentionally idempotent: production received the columns manually
 before the SQL was incorporated into Drizzle history.
@@ -35,6 +38,11 @@ The production database also received `0009`-`0011` manually before their
 journal timestamps were corrected. Existing production therefore may not list
 those three historical entries in `drizzle.__drizzle_migrations`, even though
 the schema is present. New environments apply the full ordered history.
+
+The migration history after `0003` is maintained as hand-written SQL plus
+`meta/_journal.json` entries. Snapshot JSON files are intentionally not
+maintained for every manual migration in this repo; review `schema.ts`, the SQL
+file, and this document together when adding schema changes.
 
 ## Development Workflow
 

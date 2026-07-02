@@ -23,10 +23,10 @@ export interface MissionOptions {
   /**
    * Live-режим (просунутий School): ключі відповідей вирізані сервером, тож
    * renderer повертає сиру відповідь (number | string | number[]), а правильність
-   * каже сервер. Якщо задано — сирі відповіді надсилаються сюди, і фідбек
-   * будується з результату. Без submitAnswer сирі відповіді ігноруються.
+   * каже сервер. Home demo може повернути null: відповідь прийнята, але
+   * correctness не показується дитині до батьківського серверного звіту.
    */
-  submitAnswer?: (questionId: string, answer: number | string | number[]) => Promise<boolean>
+  submitAnswer?: (questionId: string, answer: number | string | number[]) => Promise<boolean | null>
 }
 
 export function runMission(
@@ -82,6 +82,10 @@ export function runMission(
           els.feedback.className = 'quiz-feedback'
           opts.submitAnswer(String(q.id), result)
             .then(isCorrect => {
+              if (isCorrect == null) {
+                showNeutralFeedback()
+                return
+              }
               if (isCorrect) correct++
               showFeedback(isCorrect, q)
             })
@@ -108,6 +112,13 @@ export function runMission(
       els.explanation.classList.remove('hidden')
     }
 
+    els.nextBtn.classList.remove('hidden')
+    els.nextBtn.textContent = currentIdx + 1 < questions.length ? 'Далі →' : 'Завершити місію'
+  }
+
+  function showNeutralFeedback() {
+    els.feedback.textContent = '✓ Відповідь збережено'
+    els.feedback.className = 'quiz-feedback quiz-feedback--correct'
     els.nextBtn.classList.remove('hidden')
     els.nextBtn.textContent = currentIdx + 1 < questions.length ? 'Далі →' : 'Завершити місію'
   }

@@ -8,7 +8,7 @@ _Updated: 2026-07-02_
 > `home-validation.ts`, security regression tests in `home-flow.test.ts`
 > written before the route code per `security-model.md`), typed client
 > functions in `features/api/client.ts`, and the demo UI on `home.html`
-> (`home-demo.ts`: track/grade intro, local-feedback mission via the shared
+> (`home-demo.ts`: track/grade intro, keyless mission via the shared
 > `#mission-quiz` markup, emotional completion, consent-gated parent report).
 > Demo events live in page memory only until consent; the child sees no
 > numeric score — numbers appear only in the parent report.
@@ -16,8 +16,9 @@ _Updated: 2026-07-02_
 > Known v1 limitation: `answerChangeCount` undercounts by design — the shared
 > question renderer locks most answer types after the first commit, so only
 > repeated `select` changes (match) are counted. Safe direction: the
-> "attention" pattern cannot fire falsely. Tracks share one practice pool
-> until a topic taxonomy exists.
+> "attention" pattern cannot fire falsely. Track-specific demo selection is a
+> temporary keyword/difficulty layer over the practice pool until item-model
+> taxonomy exists in the AIG engine.
 
 This document fixes the minimal data and API contract for the first Home Mode
 slice: a free demo mission, a parent lead with consent, and a parent-readable
@@ -30,10 +31,10 @@ correct/incorrect makes the behavioral report impossible later.
 ```text
 /home (landing)
   -> child plays a demo mission (one short block per track)
-  -> emotional completion screen for the child (local feedback, practice-style)
+  -> emotional completion screen for the child (no correctness shown)
   -> report is LOCKED behind a parent action
   -> parent enters email + consent            POST /api/home/leads
-  -> raw demo events are submitted            POST /api/home/demo-report
+  -> raw demo events are submitted            POST /api/home/leads/:id/demo-report
   -> backend re-scores server-side, persists attempt + report
   -> parent sees the behavioral report
 ```
@@ -41,9 +42,10 @@ correct/incorrect makes the behavioral report impossible later.
 Trust boundaries (binding, from `security-model.md`):
 
 - **Nothing individual is persisted before consent.** The demo runs on the
-  client; raw events live in memory/`sessionStorage` only.
-- **The child-facing completion is local feedback** (practice-style, untrusted,
-  same rule as the static practice bundle).
+  client; raw events live in page memory only.
+- **The child-facing completion is emotional progress only.** Demo questions
+  are loaded without answer keys; correctness and analytics are reserved for
+  the parent-facing backend report.
 - **The parent-facing report is parent-reporting scoring** and is therefore
   computed on the backend, from the backend's own answer keys and the submitted
   raw answers — never from client-computed correctness.

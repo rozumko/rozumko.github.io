@@ -205,24 +205,30 @@ export async function homeRoutes(app: FastifyInstance) {
       track: req.body.track,
     })
 
-    const [attempt] = await db.insert(homeDemoAttempts).values({
-      childProfileId:   profile.id,
-      missionId:        req.body.missionId,
-      missionVersion:   req.body.missionVersion,
-      track:            req.body.track,
-      grade:            req.body.grade,
-      events:           req.body.events,
-      clientStartedAt:  Number.isNaN(Date.parse(req.body.startedAt)) ? null : new Date(req.body.startedAt),
-      clientFinishedAt: Number.isNaN(Date.parse(req.body.finishedAt)) ? null : new Date(req.body.finishedAt),
-    }).onConflictDoNothing().returning({ id: homeDemoAttempts.id })
+    const attempt = await db.transaction(async (tx) => {
+      const [created] = await tx.insert(homeDemoAttempts).values({
+        childProfileId:   profile.id,
+        missionId:        req.body.missionId,
+        missionVersion:   req.body.missionVersion,
+        track:            req.body.track,
+        grade:            req.body.grade,
+        events:           req.body.events,
+        clientStartedAt:  Number.isNaN(Date.parse(req.body.startedAt)) ? null : new Date(req.body.startedAt),
+        clientFinishedAt: Number.isNaN(Date.parse(req.body.finishedAt)) ? null : new Date(req.body.finishedAt),
+      }).onConflictDoNothing().returning({ id: homeDemoAttempts.id })
+
+      if (!created) return null
+
+      await tx.insert(homeDemoReports).values({
+        attemptId:     created.id,
+        report,
+        reportVersion: DEMO_REPORT_VERSION,
+      })
+
+      return created
+    })
     // Гонка двох одночасних подач: UNIQUE переміг інший запит → його звіт уже є/буде.
     if (!attempt) return reply.code(409).send({ error: 'Звіт для цієї місії вже формується' })
-
-    await db.insert(homeDemoReports).values({
-      attemptId:     attempt.id,
-      report,
-      reportVersion: DEMO_REPORT_VERSION,
-    })
 
     return reply.code(201).send({ report })
   })

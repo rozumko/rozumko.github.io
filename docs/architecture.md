@@ -55,13 +55,14 @@ The platform includes these student-facing event and practice modes:
 | Mode | Code | Questions | Scoring |
 |---|---|---|---|
 | Practice | No | Static practice bundle generated from `isOlympiad=false` (`public/questions/grade-N.json`) | Local feedback; answer keys are intentionally bundled |
-| Demo | No | Same static practice bundle, `difficulty=hard`; keys are stripped before rendering | No score; neutral feedback |
+| Home Demo | No | `GET /api/questions` with `hideAnswers=true`; temporary track selection by difficulty/keywords | No child score; parent report is server-scored after consent |
 | Official olympiad | Yes | Fixed event selection from the backend | Server-side only |
 
-`student.html` and `/school` self-serve no-code missions load the static bundle
-from GitHub Pages, so children do not wait for backend cold starts and anonymous
-classes do not consume backend rate-limit budget. `GET /api/questions` remains a
-practice-only backend guard/compatibility endpoint; official olympiad questions
+`student.html` and `/school` self-serve no-code practice missions load the
+static bundle from GitHub Pages, so children do not wait for backend cold starts
+and anonymous classes do not consume backend rate-limit budget. Home Demo uses
+`GET /api/questions?isOlympiad=false&hideAnswers=true` so answer keys do not
+reach the browser before the parent-reporting flow. Official olympiad questions
 are still issued only through code exchange.
 
 ## Content Goals
@@ -79,8 +80,8 @@ The planned content engine is Automatic Item Generation through JSON templates:
 item models describe parameters, constraints, answer computation and
 distractor generation so one mechanic can produce many variants. Practice-only
 public variants may still expose local-feedback keys when explicitly treated as
-practice; paid, official, diploma-generating and parent-reporting variants must
-keep trusted scoring on the backend.
+practice; Home Demo, paid, official, diploma-generating and parent-reporting
+variants must keep trusted scoring on the backend.
 
 ## Surface Architecture — School **[IMPLEMENTED]**, Home **[PLANNED]**, Olympiad **[IMPLEMENTED]/[PLANNED]**
 

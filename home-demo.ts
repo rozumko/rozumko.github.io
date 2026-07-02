@@ -1,17 +1,15 @@
 import { $, $maybe } from './utils/dom.js'
-import { loadStaticQuestions } from './features/missions/static-questions.js'
 import { runMission, type MissionElements } from './features/missions/mission-runner.js'
-import { encouragement, starRating, type MissionSummary } from './features/missions/mission-result.js'
 import {
-  createHomeLead, submitHomeDemoReport,
+  createHomeLead, loadQuestions, submitHomeDemoReport,
   type Question, type HomeDemoTrack, type HomeDemoEvent, type HomeDemoReport,
 } from './features/api/client.js'
 
 // Home Demo (зріз 2 контракту docs/home-demo-contract.md).
-// Дитина проходить демо-місію ЛОКАЛЬНО: питання зі статичного practice-бандла,
-// фідбек рахується у браузері (untrusted, як у practice). Сирі відповіді +
-// телеметрія збираються В ПАМʼЯТІ і йдуть на бекенд лише після згоди батька —
-// там сервер перераховує все сам і повертає звіт. До згоди — жодного запису.
+// Дитина проходить демо-місію без облікового запису: питання приходять із
+// публічного backend API без ключів відповідей. Сирі відповіді + телеметрія
+// збираються В ПАМʼЯТІ і йдуть на бекенд лише після згоди батька — там сервер
+// перераховує все сам і повертає звіт. До згоди — жодного запису.
 
 const POLICY_VERSION = 'privacy-2026-07'
 const MISSION_VERSION = 1
@@ -20,12 +18,29 @@ const DEMO_COUNT = 6
 interface TrackPreset {
   track: HomeDemoTrack
   label: string
+  difficulty: 'easy' | 'medium' | 'hard'
+  keywords: string[]
 }
 
 const TRACKS: Record<string, TrackPreset> = {
-  'informatics':            { track: 'informatics',            label: 'Інформатика' },
-  'computational-thinking': { track: 'computational-thinking', label: 'Обчислювальне мислення' },
-  'ai-basics':              { track: 'ai-basics',              label: 'Основи ШІ' },
+  'informatics': {
+    track: 'informatics',
+    label: 'Інформатика',
+    difficulty: 'easy',
+    keywords: ['комп', 'ноут', 'клавіат', 'миша', 'файл', 'екран', 'програма', 'код'],
+  },
+  'computational-thinking': {
+    track: 'computational-thinking',
+    label: 'Обчислювальне мислення',
+    difficulty: 'medium',
+    keywords: ['алгоритм', 'патерн', 'закономір', 'послідов', 'умова', 'команд', 'робот', 'маршрут'],
+  },
+  'ai-basics': {
+    track: 'ai-basics',
+    label: 'Основи ШІ',
+    difficulty: 'hard',
+    keywords: ['штуч', 'інтелект', 'дан', 'модель', 'приклад', 'ознака', 'розпізна', 'класиф'],
+  },
 }
 
 // ── DOM ───────────────────────────────────────────────────────
@@ -60,10 +75,6 @@ let startedAtIso = ''
 let questionShownAt = 0
 let selectTouches = 0 // повторні зміни select-ів (match) — сигнал невпевненості
 
-// ── Локальний фідбек: ключі лишаються в памʼяті сторінки ─────────────────────
-// Це practice-оцінка ДЛЯ ДИТИНИ (емоційне завершення). Довірений скоринг для
-// батьківського звіту робить бекенд із сирих відповідей — див. home.ts (routes).
-
 type RawAnswer = number | string | number[]
 
 const KEY_FIELDS = ['correct', 'explanation', 'correctOrder', 'pairs', 'answer'] as const
@@ -79,28 +90,22 @@ function stripKeys(q: Question): Question {
   return copy as Question
 }
 
-function evaluateLocally(q: Question, raw: RawAnswer): boolean {
-  const type = (q.type as string) ?? 'choice'
-  if (type === 'sort' || type === 'algorithm') {
-    const key = q.correctOrder as number[] | undefined
-    return Array.isArray(key) && Array.isArray(raw) && key.length === raw.length
-      && key.every((v, i) => v === (raw as number[])[i])
-  }
-  if (type === 'match') {
-    const key = q.pairs as number[] | undefined
-    return Array.isArray(key) && Array.isArray(raw) && key.length === raw.length
-      && key.every((v, i) => v === (raw as number[])[i])
-  }
-  if (type === 'input') {
-    const key = (q.answer ?? q.correct) as string | number | undefined
-    if (key == null) return false
-    const isNum = q.inputType === 'number' || typeof key === 'number'
-    return isNum
-      ? Math.abs(Number(raw) - Number(key)) < 0.001
-      : String(raw).trim().toLowerCase() === String(key).trim().toLowerCase()
-  }
-  // choice / truefalse / sequence — індекс
-  return q.correct != null && Number(raw) === Number(q.correct)
+function scoreTrack(q: Question, preset: TrackPreset): number {
+  const haystack = [q.q, q.code, ...(Array.isArray(q.options) ? q.options : [])]
+    .filter(Boolean).join(' ').toLowerCase()
+  return preset.keywords.reduce((sum, keyword) => sum + (haystack.includes(keyword) ? 1 : 0), 0)
+}
+
+async function loadDemoQuestions(preset: TrackPreset): Promise<Question[]> {
+  const pool = await loadQuestions({
+    grade: selectedGrade,
+    isOlympiad: false,
+    count: 50,
+    difficulty: preset.difficulty,
+    hideAnswers: true,
+  })
+  const ranked = [...pool].sort((a, b) => scoreTrack(b, preset) - scoreTrack(a, preset))
+  return ranked.slice(0, DEMO_COUNT).map(stripKeys)
 }
 
 // ── Телеметрія ────────────────────────────────────────────────
@@ -146,21 +151,18 @@ async function startDemo(preset: TrackPreset) {
   els.nextBtn.classList.add('hidden')
 
   try {
-    const questions = await loadStaticQuestions(selectedGrade, { count: DEMO_COUNT })
-    const byId = new Map(questions.map(q => [String(q.id), q]))
-    const rendered = questions.map(stripKeys)
+    const questions = await loadDemoQuestions(preset)
 
     questionShownAt = Date.now()
     selectTouches = 0
 
-    runMission(els, rendered, {
-      showExplanation: false, // ключі й пояснення вирізані з render-копій
-      // Ключі стрипнуті → renderer віддає сиру відповідь. Оцінюємо локально
-      // (фідбек дитині) і записуємо сиру подію для серверного звіту.
+    runMission(els, questions, {
+      showExplanation: false,
+      // Ключів у браузері немає → renderer віддає сиру відповідь. Дитині
+      // показуємо нейтральний прогрес, а correctness рахує серверний звіт.
       submitAnswer: (questionId, answer) => {
         recordEvent(questionId, answer)
-        const original = byId.get(questionId)
-        return Promise.resolve(original ? evaluateLocally(original, answer) : false)
+        return Promise.resolve(null)
       },
       onComplete: showCompletion,
     })
@@ -173,15 +175,14 @@ async function startDemo(preset: TrackPreset) {
 }
 
 // ── Емоційне завершення + parent gate ─────────────────────────
-function showCompletion(summary: MissionSummary) {
+function showCompletion() {
   setMissionActive(false)
   hide(quizEl)
   els.progressBar.style.width = '100%'
 
-  const stars = starRating(summary.percent)
   $('result-track-label').textContent = currentTrack ? `${currentTrack.label} • ${selectedGrade} клас` : 'Місію завершено!'
-  $('result-stars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars)
-  $('result-message').textContent = encouragement(summary.percent)
+  $('result-stars').textContent = '🏆'
+  $('result-message').textContent = 'Місію завершено! Розгорнутий результат чекає у звіті для батьків.'
 
   // Свідомо без цифр для дитини: рахунок і аналіз — у батьківському звіті.
   hide($('demo-report'))
