@@ -8,8 +8,8 @@ import './register-sw.js'
 // Інформаційні сторінки (Для учнів/батьків/вчителів, Правила, Приватність)
 // живуть тільки у футері, щоб не перевантажувати навігацію.
 const NAV = [
-  { href: 'home.html', label: 'Домашні місії' },
-  { href: 'school.html', label: 'Шкільний режим' },
+  { href: 'home.html', label: 'Я вдома' },
+  { href: 'school.html', label: 'Я в класі' },
 ]
 
 function activePage(): string {
@@ -34,7 +34,7 @@ function injectHeader(): void {
           <span></span><span></span><span></span>
         </button>
         <nav id="site-nav" class="site-header__nav" aria-label="Навігація сайтом">${links}</nav>
-        <a href="home.html" class="site-header__cta">Почати вдома →</a>
+        <a href="home.html" class="site-header__cta">Почати гру →</a>
       </div>
     </header>`
 

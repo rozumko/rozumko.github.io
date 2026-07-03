@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="uk">
 
 <head>
@@ -32,15 +32,7 @@
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#3b82f6">
 
-  <!-- Шрифти -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet" />
-
-  <!-- Іконки -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
-
-  <!-- Стилі проєкту (без Tailwind) -->
+  <!-- Стилі проєкту (шрифти self-hosted у style.css, іконки — інлайн SVG, без CDN) -->
   <link rel="stylesheet" href="tokens.css"/>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -49,67 +41,94 @@
   <a href="#main-content" class="skip-link">Перейти до основного контенту</a>
   <div id="site-header"></div>
 
-  <main id="main-content" class="index-main" tabindex="-1">
-    <div class="index-inner">
-      <div class="hero-card">
+  <main id="main-content" class="vitrina" tabindex="-1">
 
-        <!-- Заголовок -->
-        <header class="hero-header">
-          <span class="badge-pill">
-            <i class="fas fa-star" aria-hidden="true"></i>
-            Обчислювальне мислення та основи ШІ
-          </span>
-          <h1 class="hero-title">
-            Розумко<br>для майбутнього мислення
-          </h1>
-        </header>
+    <!-- HERO: маскот + одне речення цінності -->
+    <section class="vitrina-hero">
+      <span class="mascot" aria-hidden="true">
+        <svg viewBox="0 0 96 96" width="88" height="88" aria-hidden="true" focusable="false">
+          <circle cx="48" cy="9" r="5" fill="var(--clr-mascot)"/>
+          <rect x="45" y="11" width="6" height="11" rx="3" fill="var(--clr-mascot)"/>
+          <rect x="6" y="42" width="9" height="20" rx="4.5" fill="var(--clr-mascot)"/>
+          <rect x="81" y="42" width="9" height="20" rx="4.5" fill="var(--clr-mascot)"/>
+          <rect x="14" y="22" width="68" height="60" rx="20" fill="var(--clr-amber)"/>
+          <rect x="24" y="34" width="48" height="36" rx="13" fill="#fffbeb"/>
+          <circle cx="38" cy="49" r="5" fill="var(--clr-text)"/>
+          <circle cx="58" cy="49" r="5" fill="var(--clr-text)"/>
+          <path d="M37 59 Q48 68 59 59" stroke="var(--clr-text)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <h1 class="vitrina-title">Місії для розумників<br>1–4 класів</h1>
+      <p class="vitrina-tagline">10–15 хвилин гри: логіка, алгоритми й перші безпечні ідеї про ШІ</p>
+    </section>
 
-        <!-- Кнопки вибору ролі -->
-        <div class="role-grid">
-          <a href="home.html" class="role-btn role-btn--student">
-            <i class="fas fa-home role-btn__icon" aria-hidden="true"></i>
-            <span class="role-btn__title">Домашні місії</span>
-            <span class="role-btn__desc">10–15 хвилин логіки, алгоритмів і безпечних ШІ-ідей</span>
-          </a>
-          <a href="school.html" class="role-btn role-btn--teacher">
-            <i class="fas fa-chalkboard-teacher role-btn__icon" aria-hidden="true"></i>
-            <span class="role-btn__title">Шкільний режим</span>
-            <span class="role-btn__desc">Безкоштовна активність для класу про мислення, алгоритми й безпеку</span>
-          </a>
-        </div>
+    <!-- EVENT BANNER SLOT: порожній = невидимий; наповнює index-vitrina.ts -->
+    <section id="event-banner" class="event-banner hidden" aria-live="polite"></section>
 
-        <!-- Ключові переваги -->
-        <div class="features-grid">
-          <div class="feature-chip">
-            <p class="feature-chip__title">
-              <i class="fas fa-shield-alt feature-chip__icon--brand" aria-hidden="true"></i>
-              Обчислювальне мислення
-            </p>
-            <p class="feature-chip__desc">Алгоритми, закономірності й задачі крок за кроком</p>
-          </div>
-          <div class="feature-chip">
-            <p class="feature-chip__title">
-              <i class="fas fa-lock feature-chip__icon--success" aria-hidden="true"></i>
-              Безпечні межі
-            </p>
-            <p class="feature-chip__desc">Шкільний режим не збирає дитячі персональні дані</p>
-          </div>
-          <div class="feature-chip">
-            <p class="feature-chip__title">
-              <i class="fas fa-book-open feature-chip__icon--warning" aria-hidden="true"></i>
-              Основи ШІ
-            </p>
-            <p class="feature-chip__desc">Прості поняття, етика, безпека й перевірка відповідей</p>
-          </div>
-        </div>
-
-      </div>
+    <!-- ДВЕРІ: дитина впізнає свою ситуацію, а не обирає «режим» -->
+    <div class="mode-doors">
+      <a href="home.html" class="mode-door mode-door--home">
+        <span class="mode-door__icon" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="44" height="44" aria-hidden="true" focusable="false">
+            <path d="M8 22 L24 8 L40 22 V40 a2 2 0 0 1 -2 2 H10 a2 2 0 0 1 -2 -2 Z" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"/>
+            <rect x="20" y="28" width="8" height="14" rx="1.5" fill="currentColor"/>
+          </svg>
+        </span>
+        <span class="mode-door__title">Я вдома</span>
+        <span class="mode-door__desc">Обери місію і грай</span>
+        <span class="mode-door__cta">Почати гру</span>
+      </a>
+      <a href="school.html" class="mode-door mode-door--school">
+        <span class="mode-door__icon" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="44" height="44" aria-hidden="true" focusable="false">
+            <rect x="5"  y="12" width="11" height="11" rx="3" fill="currentColor"/>
+            <rect x="19" y="12" width="11" height="11" rx="3" fill="currentColor"/>
+            <rect x="33" y="12" width="11" height="11" rx="3" fill="currentColor"/>
+            <rect x="5"  y="26" width="11" height="11" rx="3" fill="currentColor" opacity="0.45"/>
+            <rect x="19" y="26" width="11" height="11" rx="3" fill="currentColor" opacity="0.45"/>
+            <rect x="33" y="26" width="11" height="11" rx="3" fill="currentColor" opacity="0.45"/>
+          </svg>
+        </span>
+        <span class="mode-door__title">Я в класі</span>
+        <span class="mode-door__desc">Є код від вчителя?</span>
+        <span class="mode-door__cta">Ввести код</span>
+      </a>
     </div>
+
+    <!-- TRUST STRIP: 5 секунд довіри для дорослого -->
+    <ul class="trust-strip" aria-label="Чому Розумко безпечний">
+      <li class="trust-chip">Без збору дитячих даних</li>
+      <li class="trust-chip">Місія — 10–15 хвилин</li>
+      <li class="trust-chip">Школа — безкоштовно</li>
+    </ul>
+
+    <!-- LIVE PREVIEW: справжнє тренувальне питання — показуємо, а не розповідаємо -->
+    <section class="preview-block" aria-labelledby="preview-heading">
+      <p id="preview-heading" class="preview-block__label">Так виглядає завдання</p>
+      <div class="preview-card">
+        <p id="preview-question" class="preview-card__q"></p>
+        <div id="preview-options" class="preview-card__options" role="group" aria-label="Варіанти відповіді"></div>
+        <p id="preview-feedback" class="preview-card__feedback" aria-live="polite"></p>
+        <div id="preview-actions" class="preview-card__actions hidden">
+          <button id="preview-again" class="btn-ghost" type="button">Ще питання</button>
+          <a href="home.html" class="btn-cta">Більше місій →</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ADULT NOTE: дитина бачить гру, дорослий бачить користь -->
+    <p class="adult-note">
+      Ви дорослий? Розумко для <a href="for-parents.html">батьків</a> ·
+      <a href="for-teachers.html">вчителів</a> — шкільний режим безкоштовний
+      і не збирає дитячих персональних даних.
+    </p>
+
   </main>
 
   <div id="site-footer"></div>
 
   <script type="module" src="layout.js"></script>
+  <script type="module" src="index-vitrina.js"></script>
 </body>
 
 </html>

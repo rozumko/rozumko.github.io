@@ -86,6 +86,28 @@
   --font-size-5xl:      3rem;
   --font-size-hero:     clamp(2.75rem, 7vw, 4.5rem);  /* новий — для hero-заголовків */
 
+  /* ── APP SHELL — дитячий шар (вітрина, home, school) ────────── */
+  /* Маскот Розумко */
+  --clr-mascot:         #f59e0b;
+  --clr-mascot-light:   #fef3c7;
+
+  /* Кольори напрямів: колір означає напрям, не декор.
+     Один акцент на екран, нейтральна база лишається спокійною. */
+  --track-inf:          #0d9488;   /* Інформатика — teal */
+  --track-inf-light:    #ccfbf1;
+  --track-inf-dark:     #115e59;
+  --track-think:        #7c3aed;   /* Мислення — violet */
+  --track-think-light:  #ede9fe;
+  --track-think-dark:   #5b21b6;
+  --track-ai:           #ea580c;   /* Основи ШІ — coral */
+  --track-ai-light:     #ffedd5;
+  --track-ai-dark:      #9a3412;
+
+  /* Дитяча типографіка й тап-зони (mobile-first) */
+  --kid-text:           1.125rem;  /* 18px — базовий текст дитячих екранів */
+  --kid-tap:            3.5rem;    /* 56px — мінімальна висота дії */
+  --kid-tap-lg:         4.5rem;    /* 72px — головна дія екрана */
+
   /* ── Акценти: сторінка учня (student.html) ──────────────────── */
   --student-bg-from:    #3730a3;   /* було #4c1d95 — indigo замість violet */
   --student-bg-to:      #1e40af;   /* було #1e40af — без змін */
