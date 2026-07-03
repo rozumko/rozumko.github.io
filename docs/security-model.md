@@ -14,10 +14,10 @@ _Updated: 2026-07-02_
 > **teacher/admin auth**, **School Mode** (self-serve missions and the
 > anonymous classroom game), the **Home demo/lead slice** (consent-gated
 > demo attempts and reports), the **entitlement model** (backend access state,
-> admin manual control, audit trail) and gated **Club practice missions**.
-> **Payment provider integration (checkout, verified webhooks), full
-> subscription UI, AIG JSON-template generation and multi-client session rules
-> are [PLANNED].**
+> admin manual control, audit trail), gated **Club practice missions** and the
+> provider-neutral **payment webhook verification boundary**.
+> **Provider checkout, provider-specific webhook adapters, full subscription UI,
+> AIG JSON-template generation and multi-client session rules are [PLANNED].**
 
 ## Core Rules
 
@@ -79,13 +79,14 @@ The backend is the only component that accesses application tables. Row Level
 Security is enabled for application data. No frontend code may call Supabase
 Data API tables directly.
 
-## Surface Data Boundaries — School **[IMPLEMENTED]**, Home Demo/Entitlement/Club Practice **[IMPLEMENTED]**, Payments **[PLANNED]**, Olympiad **[IMPLEMENTED]/[PLANNED]**
+## Surface Data Boundaries — School **[IMPLEMENTED]**, Home Demo/Entitlement/Club Practice **[IMPLEMENTED]**, Payment Webhook Boundary **[IMPLEMENTED]**, Provider Checkout **[PLANNED]**, Olympiad **[IMPLEMENTED]/[PLANNED]**
 
 _The School side is enforced by the shipped classroom-game backend
 (`/api/school`, `school-flow.test.ts`). Home demo, parent lead/consent,
 entitlement and Club practice are enforced by `/api/home`,
-`home-flow.test.ts`, `home-entitlement.test.ts` and `home-club.test.ts`.
-Checkout/webhook payment-provider rules are binding once payments are built._
+`home-flow.test.ts`, `home-entitlement.test.ts`, `home-club.test.ts` and
+`home-payment-webhook.test.ts`. Provider checkout and provider-specific
+adapters are binding once payments are built._
 
 School Mode is the low-risk classroom surface:
 
@@ -138,11 +139,13 @@ but trust boundaries stay unchanged:
 - client-side generation, random seeds or cached task state must not be treated
   as trusted scoring evidence.
 
-## Payment And Entitlement Boundaries — Entitlement **[IMPLEMENTED]**, Provider **[PLANNED]**
+## Payment And Entitlement Boundaries — Entitlement/Webhook Boundary **[IMPLEMENTED]**, Provider Checkout **[PLANNED]**
 
 _The entitlement model is enforced by `home-entitlement.ts` and
-`home-entitlement.test.ts` (migration 0018). Payment-provider rules are
-binding once checkout/webhooks are built._
+`home-entitlement.test.ts` (migration 0018). The provider-neutral webhook
+boundary is enforced by `home-payment-webhook.ts` and
+`home-payment-webhook.test.ts` (migration 0020). Provider-specific checkout and
+webhook adapters remain planned._
 
 Payment card data must stay with the payment provider. Rozumko may store only
 the minimum payment-provider references and entitlement state needed to grant or
@@ -152,10 +155,15 @@ Paid Home access is represented by backend entitlement state
 (`active | past_due | canceled | expired | revoked`). `hasHomeAccess` is the
 single decision point and fails closed: expired/revoked always block, a
 missing period end blocks even `active`, `past_due` gets a bounded grace
-window. Every status change writes an audit event with the actor
-(`admin` today, `provider` for future webhooks). Payment callbacks or
-webhooks must be verified before they change entitlement state and must go
-through the same `applyEntitlementChange` path.
+window. Every status change writes an audit event with the actor (`admin` for
+manual control, `provider` for verified payment events). Payment callbacks or
+webhooks must be verified before they change entitlement state. The current
+provider-neutral boundary requires `HOME_PAYMENT_WEBHOOK_SECRET`, validates an
+HMAC signature, records a unique `(provider, provider_event_id)` event for
+idempotency and changes entitlement in the same transaction through the same
+`applyEntitlementChange` path. Without a configured secret, with an invalid
+signature, with an unknown `leadId`, or with an invalid entitlement period,
+the route fails closed and writes nothing.
 
 Entitlement state can unlock missions, reports, finals or diplomas. It must not
 change answer keys, scoring rules or stored attempt answers — the entitlement
@@ -300,10 +308,25 @@ invariants:
 - Home routes never touch School tables and School routes never accept lead
   tokens (source check — no school-to-home identity path).
 
+`backend/src/routes/home-payment-webhook.test.ts` protects the payment
+verification boundary (written before the route code):
+
+- missing `HOME_PAYMENT_WEBHOOK_SECRET`, invalid signatures and unknown
+  `leadId` values do not write payment events or entitlement changes;
+- entitlement states that require `currentPeriodEnd` roll back completely when
+  the period is missing or invalid;
+- valid verified events write an idempotency row and update entitlement through
+  `actor = provider` audit events in one transaction;
+- duplicate provider event IDs are idempotent and do not write a second audit
+  event;
+- the webhook module never touches scoring, question issuing or answer keys
+  (source check).
+
 Remaining Home Mode security regression tests **[PLANNED]** (must land before
 the corresponding feature code):
 
-- payment callback/webhook verification before entitlement changes;
+- provider-specific checkout adapters map their signed callbacks into the
+  provider-neutral webhook contract before entitlement changes;
 - diploma-generating Home missions keep answer keys off the browser (same rule
   already enforced for demo and paid practice missions).
 

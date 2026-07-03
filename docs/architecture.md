@@ -19,9 +19,9 @@ _Updated: 2026-07-02_
 > The **Home demo slice** (parent lead + consent, server-scored demo report,
 > demo UI on `/home`), the **entitlement model** (backend access state with
 > admin manual control and audit trail) and the first gated Club practice
-> mission slice are also implemented. **Payment
-> provider integration (checkout, webhooks), subscription UI and AIG
-> JSON-template content generation remain [PLANNED].**
+> mission slice are also implemented, along with a provider-neutral verified
+> payment webhook boundary. **Provider checkout/adapters, subscription UI and
+> AIG JSON-template content generation remain [PLANNED].**
 
 ## Overview
 
@@ -95,7 +95,7 @@ directions (`informatics`, `computational-thinking`, `ai-basics`). AIG item
 models should emit the same track values plus more granular skill/topic metadata
 when that engine lands.
 
-## Surface Architecture — School **[IMPLEMENTED]**, Home Demo/Entitlement/Club Practice **[IMPLEMENTED]**, Payments **[PLANNED]**, Olympiad **[IMPLEMENTED]/[PLANNED]**
+## Surface Architecture — School **[IMPLEMENTED]**, Home Demo/Entitlement/Club Practice **[IMPLEMENTED]**, Payment Webhook Boundary **[IMPLEMENTED]**, Provider Checkout **[PLANNED]**, Olympiad **[IMPLEMENTED]/[PLANNED]**
 
 _School Mode is shipped: `/school` runs self-serve missions (grade +
 difficulty presets, local feedback) from the static practice bundle through the
@@ -106,8 +106,9 @@ code with an avatar + nickname label, answers are scored server-side and the
 teacher sees an anonymous leaderboard (`/api/school`, migration 0014). Home
 Mode has implemented slices: `/home`, parent lead + consent, server-scored
 demo reports, backend entitlement state and repeatable Club practice missions
-gated by entitlement. Checkout/webhooks and richer parent account flows are
-still planned._
+gated by entitlement. The provider-neutral payment webhook boundary is
+implemented under `/api/home/payment/webhook`; checkout/provider adapters and
+richer parent account flows are still planned._
 
 School, Home and Olympiad surfaces stay decoupled at the identity/data level.
 School Mode may send users to a Home URL as a neutral brand path, but it does
@@ -137,8 +138,9 @@ Backend:
   teacher) and anonymous student join/answer with server-side scoring;
 - Home Mode routes are implemented under `/api/home` for parent lead + consent,
   demo attempt/report, entitlement check and gated Club practice, specified in
-  [home-demo-contract.md](./home-demo-contract.md); further parent-profile and
-  payment-provider routes are planned;
+  [home-demo-contract.md](./home-demo-contract.md); the provider-neutral
+  webhook boundary is also under `/api/home`; further parent-profile and
+  payment-provider checkout routes are planned;
 - subscription-aware seasonal event access is planned and must not reuse
   anonymous School identity;
 - all frontend HTTP calls continue to go through `features/api/client.ts`.
@@ -187,7 +189,7 @@ Do not fork business logic into a mobile app. A tablet or phone app may cache UI
 state and non-secret progress metadata, but official/paid scoring and access
 decisions must still come from the backend.
 
-## Paid Access — Entitlement **[IMPLEMENTED]**, Provider **[PLANNED]**
+## Paid Access — Entitlement/Webhook Boundary **[IMPLEMENTED]**, Provider Checkout **[PLANNED]**
 
 _The entitlement model is implemented (migration 0018): `home_entitlements`
 (one per lead, statuses `active | past_due | canceled | expired | revoked`,
@@ -203,9 +205,12 @@ issue paid mission questions, `POST .../mission-report` to score/store an
 attempt and `GET .../mission-reports` for progress. Question issuing, mission
 submission and progress reads are gated by `hasHomeAccess`; mission questions
 and responses never include answer keys (migration 0019,
-`home_mission_attempts`). Payment-provider checkout and verified webhooks are
-the next slice and will write through the same `applyEntitlementChange` path
-with `actor: 'provider'`._
+`home_mission_attempts`). The provider-neutral webhook boundary is implemented
+as `POST /api/home/payment/webhook`: it requires `HOME_PAYMENT_WEBHOOK_SECRET`,
+verifies an HMAC signature, records unique `(provider, provider_event_id)`
+events in `home_payment_events` (migration 0020) and changes entitlement in
+the same transaction with `actor: 'provider'`. Provider-specific checkout and
+callback adapters are the next slice and must map into this boundary._
 
 Payment state unlocks access. It must not decide scores or alter answer
 evaluation.
@@ -313,11 +318,13 @@ Current implemented tables **[IMPLEMENTED]**:
 - `home_entitlements` (paid access state, one per lead)
 - `home_entitlement_events` (entitlement audit trail)
 - `home_mission_attempts` (repeatable Club practice attempts, gated by entitlement)
+- `home_payment_events` (verified provider event idempotency/audit boundary)
 
 Remaining Home Mode concepts **[PLANNED]** would use tables or equivalent
 storage for:
 
-- payment provider transaction/webhook records (provider integration slice).
+- provider-specific checkout/session records if the chosen provider requires
+  them.
 
 AIG/content-generation concepts **[PLANNED]** would use tables or equivalent
 versioned storage for:
