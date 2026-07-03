@@ -51,15 +51,17 @@ export interface EntitlementChange {
   status: EntitlementStatus
   currentPeriodEnd: Date | null
   reason: string | null
+  providerRef?: string | null
 }
 
+type EntitlementClient = Pick<typeof DbType, 'select' | 'insert' | 'update'>
+
 /**
- * Upsert entitlement-у ліда + audit-подія. Actor фіксується в події:
- * 'admin' (ручне керування) сьогодні, 'provider' — коли зʼявляться webhook-и.
- * Логіка винесена з роуту, щоб тестуватись без мокання requireAdmin.
+ * Та сама зміна, але всередині вже відкритої транзакції. Використовується
+ * webhook-роутом, щоб idempotency marker і entitlement audit комітились разом.
  */
-export async function applyEntitlementChange(
-  db: typeof DbType,
+export async function applyEntitlementChangeInTransaction(
+  tx: EntitlementClient,
   leadId: string,
   change: EntitlementChange,
   actor: 'admin' | 'provider',
@@ -68,35 +70,58 @@ export async function applyEntitlementChange(
     throw new Error(`Статус ${change.status} потребує дати кінця періоду`)
   }
 
-  return db.transaction(async (tx) => {
-    const [existing] = await tx
-      .select({ id: homeEntitlements.id, status: homeEntitlements.status })
-      .from(homeEntitlements)
-      .where(eq(homeEntitlements.leadId, leadId))
-      .limit(1)
+  const [existing] = await tx
+    .select({ id: homeEntitlements.id, status: homeEntitlements.status })
+    .from(homeEntitlements)
+    .where(eq(homeEntitlements.leadId, leadId))
+    .limit(1)
 
-    let row: { id: string }
-    if (existing) {
-      const [updated] = await tx.update(homeEntitlements)
-        .set({ status: change.status, currentPeriodEnd: change.currentPeriodEnd, updatedAt: new Date() })
-        .where(eq(homeEntitlements.id, existing.id))
-        .returning({ id: homeEntitlements.id })
-      row = updated
-    } else {
-      const [inserted] = await tx.insert(homeEntitlements)
-        .values({ leadId, status: change.status, currentPeriodEnd: change.currentPeriodEnd })
-        .returning({ id: homeEntitlements.id })
-      row = inserted
+  let row: { id: string }
+  if (existing) {
+    const patch: Record<string, unknown> = {
+      status: change.status,
+      currentPeriodEnd: change.currentPeriodEnd,
+      updatedAt: new Date(),
     }
+    if (change.providerRef !== undefined) patch.providerRef = change.providerRef
+    const [updated] = await tx.update(homeEntitlements)
+      .set(patch)
+      .where(eq(homeEntitlements.id, existing.id))
+      .returning({ id: homeEntitlements.id })
+    row = updated
+  } else {
+    const [inserted] = await tx.insert(homeEntitlements)
+      .values({
+        leadId,
+        status: change.status,
+        currentPeriodEnd: change.currentPeriodEnd,
+        providerRef: change.providerRef ?? null,
+      })
+      .returning({ id: homeEntitlements.id })
+    row = inserted
+  }
 
-    await tx.insert(homeEntitlementEvents).values({
-      entitlementId: row.id,
-      actor,
-      fromStatus: existing?.status ?? null,
-      toStatus: change.status,
-      reason: change.reason,
-    })
-
-    return { id: row.id, status: change.status, currentPeriodEnd: change.currentPeriodEnd }
+  await tx.insert(homeEntitlementEvents).values({
+    entitlementId: row.id,
+    actor,
+    fromStatus: existing?.status ?? null,
+    toStatus: change.status,
+    reason: change.reason,
   })
+
+  return { id: row.id, status: change.status, currentPeriodEnd: change.currentPeriodEnd }
+}
+
+/**
+ * Upsert entitlement-у ліда + audit-подія. Actor фіксується в події:
+ * 'admin' (ручне керування) сьогодні, 'provider' — верифіковані webhook-и.
+ * Логіка винесена з роуту, щоб тестуватись без мокання requireAdmin.
+ */
+export async function applyEntitlementChange(
+  db: typeof DbType,
+  leadId: string,
+  change: EntitlementChange,
+  actor: 'admin' | 'provider',
+): Promise<{ id: string; status: EntitlementStatus; currentPeriodEnd: Date | null }> {
+  return db.transaction(async (tx) => applyEntitlementChangeInTransaction(tx, leadId, change, actor))
 }

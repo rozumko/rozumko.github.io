@@ -294,6 +294,23 @@ export const homeEntitlementEvents = pgTable('home_entitlement_events', {
 
 export type HomeEntitlementEvent = typeof homeEntitlementEvents.$inferSelect
 
+// Ідемпотентний журнал верифікованих webhook-подій провайдера. Платіжний
+// provider ще не обраний; контракт фіксує fail-closed межу до інтеграції.
+export const homePaymentEvents = pgTable('home_payment_events', {
+  id:              uuid('id').primaryKey().defaultRandom(),
+  provider:        text('provider').notNull(),
+  providerEventId: text('provider_event_id').notNull(),
+  leadId:          uuid('lead_id').notNull().references(() => homeLeads.id, { onDelete: 'cascade' }),
+  eventType:       text('event_type').notNull(),
+  providerRef:     text('provider_ref'),
+  payload:         jsonb('payload').notNull(),
+  createdAt:       timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (t) => ({
+  uniqProviderEvent: unique('home_payment_events_provider_event_uq').on(t.provider, t.providerEventId),
+}))
+
+export type HomePaymentEvent = typeof homePaymentEvents.$inferSelect
+
 // Club practice-місії (платний контент). На відміну від демо — повторювані:
 // без UNIQUE на (profile, mission). Кожна спроба зберігає сирі події і
 // серверний звіт. Доступ вирішує hasHomeAccess ДО запису (гейт у роуті).

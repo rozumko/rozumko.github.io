@@ -19,5 +19,9 @@ services:
         sync: false
       - key: ATTEMPT_SECRET
         sync: false
+      # Опційний до вибору провайдера: без нього webhook відповідає 503
+      # (fail-closed), тож деплой без значення безпечний.
+      - key: HOME_PAYMENT_WEBHOOK_SECRET
+        sync: false
       - key: NODE_ENV
         value: production

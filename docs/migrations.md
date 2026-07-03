@@ -34,6 +34,7 @@ environments receive the same schema.
 | `0017_enable_home_rls` | Safety re-apply of RLS on Home tables (0015 was edited after merge) |
 | `0018_add_home_entitlements` | Home paid-access entitlement + audit events (no provider yet) |
 | `0019_add_home_mission_attempts` | Repeatable Club practice attempts gated by entitlement |
+| `0020_add_home_payment_events` | Idempotent verified payment webhook events for future provider integration |
 
 `0012` is intentionally idempotent: production received the columns manually
 before the SQL was incorporated into Drizzle history.
