@@ -3526,6 +3526,7 @@ body.teacher-dashboard-active {
 .doc-btn:hover { filter: brightness(.9); }
 .doc-btn--sky     { background: #0284c7; color: #fff; }
 .doc-btn--emerald { background: #059669; color: #fff; }
+.doc-btn--slate   { background: #475569; color: #fff; }
 
 
 /* ───────────────────────────────────────────────────────────────

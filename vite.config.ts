@@ -110,6 +110,7 @@ export default defineConfig({
         'for-parents':    resolve(__dirname, 'for-parents.html'),
         privacy:          resolve(__dirname, 'privacy.html'),
         terms:            resolve(__dirname, 'terms.html'),
+        transparency:     resolve(__dirname, 'transparency.html'),
       },
     },
   },

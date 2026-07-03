@@ -100,6 +100,7 @@ function injectFooter(): void {
             <ul class="footer-col__list">
               <li><a href="privacy.html">Конфіденційність</a></li>
               <li><a href="terms.html">Правила та умови</a></li>
+              <li><a href="transparency.html">Прозорість</a></li>
             </ul>
           </div>
           <div class="footer-col--wide">
