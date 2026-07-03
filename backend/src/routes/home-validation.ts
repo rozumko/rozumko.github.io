@@ -10,6 +10,30 @@ export function isValidTrack(raw: unknown): raw is HomeDemoTrack {
   return typeof raw === 'string' && (HOME_DEMO_TRACKS as readonly string[]).includes(raw)
 }
 
+// ── План фільтрів тренувального пулу (Club/демо) ───────────────
+// Уся умовна логіка вибору фільтрів живе ТУТ, у чистій функції, щоб її
+// покривав regression-тест. Інваріант: track фільтрується ЗАВЖДИ, коли
+// заданий — навіть разом із difficulty. Club — це вибір напряму, тож
+// змішувати треки не можна. Раніше маршрут мав баг `track && !difficulty`,
+// який мовчки віддавав питання з чужих треків.
+export type PracticeFilter =
+  | { column: 'isOlympiad'; value: boolean }
+  | { column: 'grade';      value: number }
+  | { column: 'track';      value: string }
+  | { column: 'difficulty'; value: string }
+
+export function practiceFilterPlan(
+  options: { grade: number; track?: string | null; difficulty?: string | null },
+): PracticeFilter[] {
+  const plan: PracticeFilter[] = [
+    { column: 'isOlympiad', value: false },
+    { column: 'grade',      value: options.grade },
+  ]
+  if (options.track)      plan.push({ column: 'track',      value: options.track })
+  if (options.difficulty) plan.push({ column: 'difficulty', value: options.difficulty })
+  return plan
+}
+
 // ── Parent lead ───────────────────────────────────────────────
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 

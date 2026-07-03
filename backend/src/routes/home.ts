@@ -9,6 +9,7 @@ import {
   HOME_DEMO_TRACKS, DEMO_REPORT_VERSION,
   normalizeParentEmail, normalizeChildDisplayName, validateConsent,
   generateLeadToken, verifyLeadToken, validateDemoEvents, buildDemoReport,
+  practiceFilterPlan,
   type DemoAttemptEvent, type HomeDemoTrack, type ScoredDemoItem,
 } from './home-validation.js'
 
@@ -136,9 +137,15 @@ async function loadSanitizedPracticeQuestions(options: {
   track?: HomeDemoTrack
   difficulty?: string
 }) {
-  const filters = [eq(questions.isOlympiad, false), eq(questions.grade, options.grade)]
-  if (options.track && !options.difficulty) filters.push(eq(questions.track, options.track))
-  if (options.difficulty) filters.push(eq(questions.difficulty, options.difficulty))
+  // Уся умовна логіка фільтрів — у practiceFilterPlan (чиста, покрита тестами).
+  // Маршрут лише механічно перекладає план у Drizzle-умови, без власних if.
+  const practiceColumns = {
+    isOlympiad: questions.isOlympiad,
+    grade:      questions.grade,
+    track:      questions.track,
+    difficulty: questions.difficulty,
+  } as const
+  const filters = practiceFilterPlan(options).map(f => eq(practiceColumns[f.column], f.value))
 
   const rows = await db
     .select({
