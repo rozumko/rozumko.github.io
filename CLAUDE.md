@@ -13,6 +13,7 @@
 - Виконувати `find`, `grep`, `tree` по всьому проєкту без дозволу
 - Читати файли "для контексту" якщо я не просив
 - Копіювати великий обсяг коду в контекст
+- **Використовувати `Set-Content` або `Out-File` PowerShell для запису HTML/CSS/JS/TS файлів** — PowerShell 5.1 пише UTF-8 з BOM, що ламає Vite (parse5 `control-character-in-input-stream`) і зіпсовує кирилицю. Для редагування файлів — тільки інструменти Edit/Write. Щоб тригернути CI без змін у коді — `git commit --allow-empty`.
 
 ## Дозволено
 
