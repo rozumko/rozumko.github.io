@@ -3,9 +3,10 @@ import { randomInt } from 'crypto'
 // ── Просунутий School Mode: валідація вводу (чисті функції, без I/O) ──────────
 
 // Allowlist аватарів. Аватар — суто візуальна мітка сесії, НЕ ідентифікатор дитини.
+// Слаги мапляться на ілюстрації public/avatars/<slug>.png (див. optimize-images).
 export const SCHOOL_AVATARS = [
-  '\u{1F98A}', '\u{1F431}', '\u{1F43C}', '\u{1F435}', '\u{1F438}', '\u{1F427}',
-  '\u{1F984}', '\u{1F42F}', '\u{1F436}', '\u{1F428}', '\u{1F981}', '\u{1F430}',
+  'astronaut', 'wizard', 'detective', 'explorer', 'gamer',
+  'hero', 'ninja', 'pirat', 'princess', 'artist',
 ] as const
 
 export function isValidAvatar(avatar: unknown): avatar is string {

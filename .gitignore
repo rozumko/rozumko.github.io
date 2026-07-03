@@ -54,3 +54,8 @@ dist/
 build/
 .cache/
 scripts/questions.json
+
+# ── Сирі ілюстрації маскота/аватарів (джерело, ~1.2МБ кожна) ──────────────
+# Оптимізовані версії у public/ (avatars/, mascot-*.png) — вони й деплояться.
+# Перегенерувати: npm run optimize:images
+images/

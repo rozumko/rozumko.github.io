@@ -4,6 +4,7 @@ import { loadStaticQuestions } from './features/missions/static-questions.js'
 import { joinSchoolSession, submitSchoolAnswer } from './features/api/client.js'
 import { runMission, type MissionElements } from './features/missions/mission-runner.js'
 import { encouragement, starRating, type MissionSummary } from './features/missions/mission-result.js'
+import { AVATARS, avatarLabel, avatarSrc } from './avatars.js'
 
 // School Mode — анонімна класна місія. Тренувальний пул, локальне оцінювання,
 // жодних записів у БД чи дитячих даних. Уся логіка на клієнті.
@@ -129,29 +130,32 @@ document.querySelectorAll<HTMLElement>('.school-mission-btn').forEach(btn => {
 $maybe('mission-retry-btn')?.addEventListener('click', showIntro)
 
 // ── Просунутий режим: приєднання за кодом вчителя ───────────────────────────
-// Дзеркало backend SCHOOL_AVATARS (allowlist). Аватар — візуальна мітка, не ідентифікатор.
-const AVATARS = ['🦊', '🐱', '🐼', '🐵', '🐸', '🐧', '🦄', '🐯', '🐶', '🐨', '🦁', '🐰']
-let selectedAvatar = AVATARS[0]
+// Дзеркало backend SCHOOL_AVATARS (allowlist). Слаг → ілюстрація public/avatars/<slug>.png.
+// Аватар — візуальна мітка сесії, не ідентифікатор дитини.
+let selectedAvatar: string = AVATARS[0]
 
 const avatarWrap = $maybe('avatar-select')
 if (avatarWrap) {
-  AVATARS.forEach(av => {
+  AVATARS.forEach(slug => {
     const btn = document.createElement('button')
     btn.type = 'button'
-    btn.textContent = av
-    btn.setAttribute('aria-label', `Аватар ${av}`)
-    btn.setAttribute('aria-pressed', String(av === selectedAvatar))
-    btn.style.cssText = 'font-size:1.6rem; padding:6px 10px; border:2px solid #cbd5e1; border-radius:12px; background:#fff; cursor:pointer;'
+    btn.className = 'avatar-btn'
+    btn.setAttribute('aria-label', avatarLabel(slug))
+    btn.setAttribute('aria-pressed', String(slug === selectedAvatar))
+    const img = document.createElement('img')
+    img.src = avatarSrc(slug)
+    img.alt = ''
+    img.width = 56
+    img.height = 56
+    img.loading = 'lazy'
+    btn.appendChild(img)
     btn.addEventListener('click', () => {
-      selectedAvatar = av
-      avatarWrap.querySelectorAll('button').forEach(b => {
-        const active = b.textContent === av
-        b.setAttribute('aria-pressed', String(active))
-        b.style.borderColor = active ? '#3b82f6' : '#cbd5e1'
-        b.style.background = active ? '#eff6ff' : '#fff'
+      selectedAvatar = slug
+      avatarWrap.querySelectorAll<HTMLButtonElement>('button').forEach(b => {
+        b.setAttribute('aria-pressed', String(b === btn))
       })
     })
-    if (av === selectedAvatar) { btn.style.borderColor = '#3b82f6'; btn.style.background = '#eff6ff' }
+    if (slug === selectedAvatar) btn.setAttribute('aria-pressed', 'true')
     avatarWrap.appendChild(btn)
   })
 }
@@ -173,7 +177,7 @@ $maybe<HTMLButtonElement>('join-btn')?.addEventListener('click', async () => {
 
   try {
     const joined = await joinSchoolSession(code, selectedAvatar, nickname)
-    currentMissionLabel = `Класна гра • ${selectedAvatar} ${nickname}`
+    currentMissionLabel = `Класна гра • ${avatarLabel(selectedAvatar)} ${nickname}`
     runMission(els, joined.questions, {
       showExplanation: false, // пояснення вирізані сервером разом із ключами
       submitAnswer: (questionId, answer) =>

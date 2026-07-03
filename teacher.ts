@@ -19,6 +19,7 @@ function isPendingError(msg: string): boolean {
   return msg.includes('ACCOUNT_PENDING') || msg.includes('очікує підтвердження')
 }
 import { $, $maybe } from './utils/dom.js'
+import { avatarSrc, avatarLabel } from './avatars.js'
 
 // --- DOM ---
 const authSection      = $('auth-section')
@@ -978,7 +979,7 @@ function renderSchoolLeaderboard(participants: { avatar: string; nickname: strin
   board.innerHTML = participants.map((p, i) => `
     <div style="display:flex; align-items:center; gap:12px; padding:8px 12px; border-bottom:1px solid #e2e8f0;">
       <span style="font-weight:800; width:24px;">${i + 1}</span>
-      <span style="font-size:1.4rem;">${esc(p.avatar)}</span>
+      <img src="${esc(avatarSrc(p.avatar))}" alt="${esc(avatarLabel(p.avatar))}" width="32" height="32" style="border-radius:8px;" />
       <span style="flex:1; font-weight:600;">${esc(p.nickname)}</span>
       <span style="font-weight:800;">${p.score}</span>
     </div>`).join('')
