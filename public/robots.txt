@@ -16,4 +16,6 @@ Disallow: /safe_replace.ps1
 Disallow: /server.ps1
 Disallow: /script_base64.txt
 
-Sitemap: https://rozumko.github.io/sitemap.xml
+Content-Signal: ai-train=no, search=yes, ai-input=no
+
+Sitemap: https://rozumko.com/sitemap.xml
