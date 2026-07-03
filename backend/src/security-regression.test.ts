@@ -198,6 +198,8 @@ test('критичні UUID-параметри відхиляються до з�
     { method: 'POST', url: '/api/teacher/classes/not-a-uuid/students', payload: { label: 'Учень' } },
     { method: 'PUT', url: '/api/teacher/students/not-a-uuid', payload: { label: 'Учень' } },
     { method: 'DELETE', url: '/api/teacher/students/not-a-uuid' },
+    { method: 'GET', url: '/api/admin/questions?grade=not-a-grade' },
+    { method: 'GET', url: '/api/admin/events/00000000-0000-4000-8000-000000000001/questions?grade=9' },
   ]
 
   for (const request of cases) {

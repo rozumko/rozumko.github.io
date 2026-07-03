@@ -257,8 +257,9 @@ export async function adminRoutes(app: FastifyInstance) {
       },
       querystring: {
         type: 'object',
+        additionalProperties: false,
         required: ['grade'],
-        properties: { grade: { type: 'string' } },
+        properties: { grade: { type: 'string', enum: ['1', '2', '3', '4'] } },
       },
     },
   }, async (req, reply) => {
@@ -401,7 +402,21 @@ export async function adminRoutes(app: FastifyInstance) {
   // GET /api/admin/questions?grade=&isOlympiad=&difficulty=&track=
   app.get<{
     Querystring: { grade?: string; isOlympiad?: string; difficulty?: string; track?: string }
-  }>('/questions', { preHandler: requireAdmin }, async (req, reply) => {
+  }>('/questions', {
+    preHandler: requireAdmin,
+    schema: {
+      querystring: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          grade:      { type: 'string', enum: ['1', '2', '3', '4'] },
+          isOlympiad: { type: 'string', enum: ['true', 'false'] },
+          difficulty: { type: 'string', enum: ['easy', 'medium', 'hard'] },
+          track:      { type: 'string', enum: ['informatics', 'computational-thinking', 'ai-basics'] },
+        },
+      },
+    },
+  }, async (req, reply) => {
     const { grade, isOlympiad, difficulty } = req.query
     let track: QuestionTrack | null
     try {

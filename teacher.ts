@@ -1,3 +1,4 @@
+import './frontend-security.js'
 import './register-sw.js'
 import {
   loginTeacher, logoutTeacher, getTeacherSession, registerTeacher,

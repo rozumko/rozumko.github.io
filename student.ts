@@ -1,3 +1,4 @@
+import './frontend-security.js'
 import './register-sw.js'
 import { getModeConfig } from './features/olympiad/quiz-engine.js'
 import { loadStaticQuestions } from './features/missions/static-questions.js'

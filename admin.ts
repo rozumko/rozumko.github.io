@@ -1,3 +1,4 @@
+import './frontend-security.js'
 import {
   loginTeacher, logoutTeacher, getTeacherSession, getTeacherMe, getAdminStats,
 } from './features/api/client.js'

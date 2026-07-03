@@ -1,3 +1,4 @@
+import './frontend-security.js'
 import { validateCode, exchangeCode } from './features/api/client.js'
 
 // --- DOM ---

@@ -1,3 +1,4 @@
+import './frontend-security.js'
 import { $, $maybe } from './utils/dom.js'
 import { loadStaticQuestions } from './features/missions/static-questions.js'
 import { joinSchoolSession, submitSchoolAnswer } from './features/api/client.js'

@@ -1,3 +1,4 @@
+import './frontend-security.js'
 import { $, $maybe } from './utils/dom.js'
 import { runMission, type MissionElements } from './features/missions/mission-runner.js'
 import {
