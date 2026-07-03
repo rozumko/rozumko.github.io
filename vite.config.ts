@@ -2,9 +2,9 @@ import { defineConfig, type Plugin } from 'vite'
 import { resolve } from 'path'
 
 // ── Content-Security-Policy ──────────────────────────────────────────────────
+// Шрифти (Nunito) self-hosted у public/fonts — жодних зовнішніх font-джерел.
 // Дозволені зовнішні джерела:
-//   - Google Fonts:    fonts.googleapis.com (CSS) + fonts.gstatic.com (шрифти)
-//   - Font Awesome:    cdnjs.cloudflare.com (CSS + webfonts)
+//   - Font Awesome:    cdnjs.cloudflare.com (CSS + webfonts, лише doc-сторінки)
 //   - API бекенду:     rozumko-github-io.onrender.com
 //   - Supabase Auth:   ivcufigpmamgkfxwulzl.supabase.co (логін/реєстрація вчителя)
 // script-src 'self' — увесь JS лише з власного домену (модулі Vite). Інлайн-скриптів
@@ -12,10 +12,10 @@ import { resolve } from 'path'
 // вимкнено нижче. style-src має 'unsafe-inline' через inline style-атрибути в розмітці.
 const BASE_CSP = [
   "default-src 'self'",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com",
-  "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
+  "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com",
+  "font-src 'self' https://cdnjs.cloudflare.com",
   "img-src 'self' data:",
-  "connect-src 'self' https://rozumko-github-io.onrender.com https://ivcufigpmamgkfxwulzl.supabase.co https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com",
+  "connect-src 'self' https://rozumko-github-io.onrender.com https://ivcufigpmamgkfxwulzl.supabase.co https://cdnjs.cloudflare.com",
   "manifest-src 'self'",
   "worker-src 'self'",
   "object-src 'none'",
@@ -34,10 +34,10 @@ const TURNSTILE_ORIGIN = 'https://challenges.cloudflare.com'
 const TEACHER_CSP = [
   `script-src 'self' ${TURNSTILE_ORIGIN}`,
   "default-src 'self'",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com",
-  "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
+  "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com",
+  "font-src 'self' https://cdnjs.cloudflare.com",
   "img-src 'self' data:",
-  `connect-src 'self' https://rozumko-github-io.onrender.com https://ivcufigpmamgkfxwulzl.supabase.co https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com ${TURNSTILE_ORIGIN}`,
+  `connect-src 'self' https://rozumko-github-io.onrender.com https://ivcufigpmamgkfxwulzl.supabase.co https://cdnjs.cloudflare.com ${TURNSTILE_ORIGIN}`,
   `frame-src ${TURNSTILE_ORIGIN}`,
   "manifest-src 'self'",
   "worker-src 'self'",
