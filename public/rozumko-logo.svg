@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 420" role="img" aria-label="Розумко logo">
+  <defs>
+    <linearGradient id="blueGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#60A5FA"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+    <linearGradient id="yellowGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFD84D"/>
+      <stop offset="1" stop-color="#F59E0B"/>
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(20,20) scale(0.7)">
+    <g stroke="#07122E" stroke-width="12">
+      <circle cx="96" cy="256" r="62" fill="url(#blueGrad)"/>
+      <circle cx="416" cy="256" r="62" fill="url(#blueGrad)"/>
+      <circle cx="96" cy="256" r="40" fill="none" stroke="#FFC928"/>
+      <circle cx="416" cy="256" r="40" fill="none" stroke="#FFC928"/>
+    </g>
+    <rect x="225" y="68" width="62" height="26" rx="8" fill="url(#blueGrad)" stroke="#07122E" stroke-width="10"/>
+    <rect x="244" y="40" width="24" height="34" rx="10" fill="url(#blueGrad)" stroke="#07122E" stroke-width="10"/>
+    <circle cx="256" cy="37" r="24" fill="url(#yellowGrad)" stroke="#07122E" stroke-width="10"/>
+    <circle cx="246" cy="28" r="6" fill="#fff" opacity="0.95"/>
+    <rect x="96" y="88" width="320" height="300" rx="92" fill="#FFFFFF" stroke="#07122E" stroke-width="12"/>
+    <rect x="132" y="136" width="248" height="204" rx="62" fill="url(#blueGrad)" stroke="#07122E" stroke-width="9"/>
+    <rect x="148" y="152" width="216" height="172" rx="48" fill="#07122E"/>
+    <g>
+      <ellipse cx="220" cy="238" rx="42" ry="50" fill="#FFFFFF"/>
+      <ellipse cx="292" cy="238" rx="42" ry="50" fill="#FFFFFF"/>
+      <ellipse cx="222" cy="245" rx="24" ry="30" fill="url(#blueGrad)"/>
+      <ellipse cx="294" cy="245" rx="24" ry="30" fill="url(#blueGrad)"/>
+      <ellipse cx="224" cy="250" rx="14" ry="19" fill="#07122E"/>
+      <ellipse cx="296" cy="250" rx="14" ry="19" fill="#07122E"/>
+      <circle cx="210" cy="220" r="9" fill="#FFFFFF"/>
+      <circle cx="282" cy="220" r="9" fill="#FFFFFF"/>
+    </g>
+  </g>
+
+  <text x="420" y="250" font-family="Arial Rounded MT Bold, Nunito, DejaVu Sans, sans-serif" font-size="210" font-weight="700" fill="#07122E">Розумко</text>
+</svg>

@@ -136,6 +136,9 @@ function answer(
 }
 
 renderEventBanner()
-renderQuestion()
-document.getElementById('preview-again')?.addEventListener('click', renderQuestion)
-void loadPool()
+// Прев'ю опційне: якщо картки немає на сторінці — нічого не робимо (і не тягнемо пул).
+if (document.getElementById('preview-question')) {
+  renderQuestion()
+  document.getElementById('preview-again')?.addEventListener('click', renderQuestion)
+  void loadPool()
+}

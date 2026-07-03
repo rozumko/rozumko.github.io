@@ -25,12 +25,12 @@
   <meta property="twitter:description" content="10–15 хвилин корисного екранного часу для логіки, алгоритмів, основ ШІ, етики й безпеки." />
   <meta property="twitter:image"       content="https://rozumko.com/android-chrome-512x512.png" />
 
-  <!-- Іконки та PWA -->
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+  <!-- Іконки та PWA (бренд-набір) -->
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#3b82f6">
+  <meta name="theme-color" content="#2563EB">
 
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-DR4YL3J2RE"></script>
@@ -52,14 +52,16 @@
 
   <main id="main-content" class="vitrina" tabindex="-1">
 
-    <!-- HERO: маскот + одне речення цінності -->
+    <!-- HERO: маскот збоку + заголовок (компактний) -->
     <section class="vitrina-hero">
       <span class="mascot" aria-hidden="true">
-        <img src="/mascot-greeting.png" width="176" height="264" alt=""
+        <img src="/mascot-greeting.png" width="150" height="225" alt=""
              decoding="async" fetchpriority="high" />
       </span>
-      <h1 class="vitrina-title">Місії для розумників<br>1–4 класів</h1>
-      <p class="vitrina-tagline">10–15 хвилин гри: логіка, алгоритми й перші безпечні ідеї про ШІ</p>
+      <div class="vitrina-hero__text">
+        <h1 class="vitrina-title">Місії для розумників 1–4 класів</h1>
+        <p class="vitrina-tagline">10–15 хвилин гри: логіка, алгоритми й перші безпечні ідеї про ШІ</p>
+      </div>
     </section>
 
     <!-- EVENT BANNER SLOT: порожній = невидимий; наповнює index-vitrina.ts -->
@@ -95,33 +97,35 @@
       </a>
     </div>
 
-    <!-- TRUST STRIP: 5 секунд довіри для дорослого -->
-    <ul class="trust-strip" aria-label="Чому Розумко безпечний">
-      <li class="trust-chip">Без збору дитячих даних</li>
-      <li class="trust-chip">Місія — 10–15 хвилин</li>
-      <li class="trust-chip">Школа — безкоштовно</li>
-    </ul>
-
-    <!-- LIVE PREVIEW: справжнє тренувальне питання — показуємо, а не розповідаємо -->
-    <section class="preview-block" aria-labelledby="preview-heading">
-      <p id="preview-heading" class="preview-block__label">Так виглядає завдання</p>
-      <div class="preview-card">
-        <p id="preview-question" class="preview-card__q"></p>
-        <div id="preview-options" class="preview-card__options" role="group" aria-label="Варіанти відповіді"></div>
-        <p id="preview-feedback" class="preview-card__feedback" aria-live="polite"></p>
-        <div id="preview-actions" class="preview-card__actions hidden">
-          <button id="preview-again" class="btn-ghost" type="button">Ще питання</button>
-          <a href="home.html" class="btn-cta">Більше місій →</a>
-        </div>
+    <!-- ПРО СЕРВІС: текст + маскот праворуч -->
+    <section class="info-section" aria-labelledby="about-heading">
+      <div class="info-section__text">
+        <h2 id="about-heading" class="info-section__title">Що таке Розумко?</h2>
+        <p>Розумко — освітня платформа для учнів 1–4 класів. Через короткі ігрові
+           місії діти розвивають обчислювальне мислення й логіку та знайомляться
+           з основами штучного інтелекту — простими словами й на прикладах.</p>
+        <p>Ми створили Розумко, щоб екранний час ставав корисним: замість
+           безкінечної стрічки — 10–15 хвилин, після яких дитина думає трохи інакше.</p>
       </div>
+      <img class="info-section__art" src="/mascot-idea.png" width="230" height="347"
+           alt="" loading="lazy" decoding="async" />
     </section>
 
-    <!-- ADULT NOTE: дитина бачить гру, дорослий бачить користь -->
-    <p class="adult-note">
-      Ви дорослий? Розумко для <a href="for-parents.html">батьків</a> ·
-      <a href="for-teachers.html">вчителів</a> — шкільний режим безкоштовний
-      і не збирає дитячих персональних даних.
-    </p>
+    <!-- БЕЗПЕКА: маскот зі щитом ліворуч + текст -->
+    <section class="info-section safety-section" aria-labelledby="safety-heading">
+      <img class="info-section__art" src="/mascot-shield.png" width="230" height="325"
+           alt="" loading="lazy" decoding="async" />
+      <div class="info-section__text">
+        <h2 id="safety-heading" class="info-section__title">Безпечно для дітей</h2>
+        <p>Ми проєктували Розумко з думкою про найменших — жодних ризиків
+           за кожним кліком.</p>
+        <ul class="safety-list">
+          <li>Без реєстрації дитини та збору персональних даних</li>
+          <li>Жодної реклами й сторонніх трекерів у дитячому режимі</li>
+          <li>Відповіді й оцінювання — на сервері; шкільний режим безкоштовний</li>
+        </ul>
+      </div>
+    </section>
 
   </main>
 

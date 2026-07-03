@@ -19,31 +19,32 @@
    2. RESET / BASE
    ─────────────────────────────────────────────────────────────── */
 
-/* Self-hosted Montserrat (варіативний, wght 400–800).
+/* Self-hosted Nunito (варіативний, wght 400–800). Округлий, дружній до дітей,
+   із повним українським покриттям (ї U+0457 у cyrillic-підмножині).
    Файли в public/fonts/ — без Google Fonts CDN: працює офлайн через SW
    і не залежить від зовнішніх origin-ів (app-first). */
 @font-face {
-  font-family: 'Montserrat';
+  font-family: 'Nunito';
   font-style: normal;
   font-weight: 400 800;
   font-display: swap;
-  src: url('/fonts/montserrat-cyrillic.woff2') format('woff2');
+  src: url('/fonts/nunito-cyrillic.woff2') format('woff2');
   unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 @font-face {
-  font-family: 'Montserrat';
+  font-family: 'Nunito';
   font-style: normal;
   font-weight: 400 800;
   font-display: swap;
-  src: url('/fonts/montserrat-cyrillic-ext.woff2') format('woff2');
+  src: url('/fonts/nunito-cyrillic-ext.woff2') format('woff2');
   unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
 }
 @font-face {
-  font-family: 'Montserrat';
+  font-family: 'Nunito';
   font-style: normal;
   font-weight: 400 800;
   font-display: swap;
-  src: url('/fonts/montserrat-latin.woff2') format('woff2');
+  src: url('/fonts/nunito-latin.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
@@ -241,14 +242,17 @@ button {
   gap: var(--sp-4);
 }
 .site-header__logo {
-  font-weight: 800;
-  font-size: 1.1rem;
-  color: var(--clr-text);
+  display: flex;
+  align-items: center;
   text-decoration: none;
-  white-space: nowrap;
   flex-shrink: 0;
 }
-.site-header__logo:hover { color: var(--clr-primary); }
+.site-header__logo img {
+  display: block;
+  height: 34px;
+  width: auto;
+}
+.site-header__logo:hover { opacity: .85; }
 
 /* ── Десктоп-навігація ─── */
 .site-header__nav {
@@ -289,6 +293,28 @@ button {
   box-shadow: 0 4px 12px rgba(59,130,246,.45);
 }
 
+/* ── Праві дії хедера: «Для вчителя» + CTA ─── */
+.site-header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-shrink: 0;
+}
+.site-header__teacher {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--clr-primary);
+  text-decoration: none;
+  padding: 5px var(--sp-4);
+  border-radius: var(--r-full);
+  border: 2px solid var(--clr-primary);
+  white-space: nowrap;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.site-header__teacher:hover { background: var(--clr-primary); color: #fff; }
+/* Дублер «Для вчителя» лише в мобільному меню-дропдауні */
+.site-header__mobile-only { display: none; }
+
 /* ── Бургер-кнопка (тільки мобілка) ─── */
 .site-header__burger {
   display: none;
@@ -314,8 +340,10 @@ button {
 @media (max-width: 640px) {
   .site-header { padding: var(--sp-3) var(--sp-4); }
 
-  .site-header__burger { display: flex; }
-  .site-header__cta    { display: none; }
+  .site-header__burger  { display: flex; }
+  .site-header__cta     { display: none; }
+  .site-header__actions { display: none; }
+  .site-header__mobile-only { display: block; }
 
   /* Nav — прихований за замовчуванням */
   .site-header__nav {
@@ -3524,13 +3552,17 @@ body.teacher-dashboard-active {
   }
 }
 
-/* ── Hero: маскот + одне речення ── */
+/* ── Hero: маскот збоку + заголовок (компактний, не з'їдає екран) ── */
 .vitrina-hero {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(var(--sp-3), 4vw, var(--sp-8));
+  text-align: left;
 }
 .mascot {
+  flex-shrink: 0;
   display: inline-block;
-  margin-bottom: var(--sp-2);
   animation: mascot-bob 3s ease-in-out infinite;
 }
 @keyframes mascot-bob {
@@ -3542,12 +3574,12 @@ body.teacher-dashboard-active {
 }
 .mascot img {
   display: block;
-  width: clamp(128px, 34vw, 176px);
+  width: clamp(96px, 24vw, 150px);
   height: auto;
   filter: drop-shadow(0 10px 18px rgba(15, 23, 42, .14));
 }
 .vitrina-title {
-  font-size: clamp(2rem, 6vw, 3.25rem);
+  font-size: clamp(1.75rem, 5.5vw, 3rem);
   font-weight: 800;
   line-height: 1.08;
   letter-spacing: -0.02em;
@@ -3557,6 +3589,74 @@ body.teacher-dashboard-active {
   font-size: clamp(1rem, 2.5vw, 1.25rem);
   color: var(--clr-text-muted);
   margin-top: var(--sp-3);
+}
+@media (max-width: 480px) {
+  .vitrina-hero { gap: var(--sp-3); }
+  .vitrina-title { font-size: clamp(1.6rem, 8vw, 2rem); }
+}
+
+/* ── Інформаційні секції: текст + ілюстрація маскота збоку ── */
+.info-section {
+  display: flex;
+  align-items: center;
+  gap: clamp(var(--sp-4), 4vw, var(--sp-10));
+}
+.info-section__text { flex: 1; min-width: 0; }
+.info-section__title {
+  font-size: clamp(1.4rem, 4vw, 2rem);
+  font-weight: 800;
+  color: var(--clr-text);
+  margin-bottom: var(--sp-3);
+}
+.info-section__text p {
+  color: var(--clr-text-muted);
+  line-height: 1.6;
+  font-size: var(--font-size-lg);
+}
+.info-section__text p + p { margin-top: var(--sp-3); }
+.info-section__art {
+  flex-shrink: 0;
+  width: clamp(150px, 30vw, 230px);
+  height: auto;
+  filter: drop-shadow(0 12px 22px rgba(15, 23, 42, .12));
+}
+.safety-section {
+  background: #eff6ff;
+  border-radius: var(--r-2xl, 24px);
+  padding: clamp(var(--sp-5), 4vw, var(--sp-8));
+}
+.safety-list {
+  list-style: none;
+  margin-top: var(--sp-4);
+  display: grid;
+  gap: var(--sp-3);
+}
+.safety-list li {
+  position: relative;
+  padding-left: 2rem;
+  color: var(--clr-text-muted);
+  line-height: 1.5;
+  font-size: var(--font-size-lg);
+}
+.safety-list li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  top: -1px;
+  width: 1.4rem;
+  height: 1.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-full);
+  background: var(--clr-brand);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+@media (max-width: 640px) {
+  .info-section { flex-direction: column; text-align: center; gap: var(--sp-4); }
+  .safety-list { text-align: left; max-width: 24rem; margin-inline: auto; }
 }
 
 /* ── Банер сезонної події: порожній слот невидимий ── */

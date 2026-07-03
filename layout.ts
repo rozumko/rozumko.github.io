@@ -29,12 +29,17 @@ function injectHeader(): void {
   el.outerHTML = `
     <header class="site-header">
       <div class="site-header__inner">
-        <a href="index.html" class="site-header__logo" aria-label="Розумко — на головну">Розумко</a>
+        <a href="index.html" class="site-header__logo" aria-label="Розумко — на головну">
+          <img src="/rozumko-logo.svg" alt="Розумко" height="34" width="150" />
+        </a>
         <button class="site-header__burger" aria-label="Відкрити меню" aria-expanded="false" aria-controls="site-nav">
           <span></span><span></span><span></span>
         </button>
-        <nav id="site-nav" class="site-header__nav" aria-label="Навігація сайтом">${links}</nav>
-        <a href="home.html" class="site-header__cta">Почати гру →</a>
+        <nav id="site-nav" class="site-header__nav" aria-label="Навігація сайтом">${links}<a href="teacher.html" class="site-header__link site-header__mobile-only">Для вчителя</a></nav>
+        <div class="site-header__actions">
+          <a href="teacher.html" class="site-header__teacher">Для вчителя</a>
+          <a href="home.html" class="site-header__cta">Почати гру →</a>
+        </div>
       </div>
     </header>`
 

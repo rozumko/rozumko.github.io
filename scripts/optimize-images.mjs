@@ -62,16 +62,24 @@ async function optimizeAvatars() {
   }
 }
 
-async function optimizeMascot() {
-  const dst = join(OUT, 'mascot-greeting.png')
-  const cut = await whiteToTransparent(join(SRC, 'roozumk_greatings.png'))
-  const info = await cut
-    .resize(null, 440, { fit: 'inside' })
-    .png(pngOpts)
-    .toFile(dst)
-  console.log(`mascot greeting → ${(info.size / 1024).toFixed(1)} KB`)
+// Повнорозмірні маскоти vitrina: білий фон прибираємо flood-fill, висота 440px.
+const MASCOTS = [
+  { src: 'roozumk_greatings.png', out: 'mascot-greeting.png' },
+  { src: 'rozumko_shield.png', out: 'mascot-shield.png' },
+  { src: 'rozumko_ideo.png', out: 'mascot-idea.png' },
+]
+
+async function optimizeMascots() {
+  for (const { src, out } of MASCOTS) {
+    const cut = await whiteToTransparent(join(SRC, src))
+    const info = await cut
+      .resize(null, 440, { fit: 'inside' })
+      .png(pngOpts)
+      .toFile(join(OUT, out))
+    console.log(`mascot ${out.padEnd(20)} → ${(info.size / 1024).toFixed(1)} KB`)
+  }
 }
 
 await optimizeAvatars()
-await optimizeMascot()
+await optimizeMascots()
 console.log('Done.')

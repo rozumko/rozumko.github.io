@@ -59,3 +59,7 @@ scripts/questions.json
 # Оптимізовані версії у public/ (avatars/, mascot-*.png) — вони й деплояться.
 # Перегенерувати: npm run optimize:images
 images/
+
+# ── Бренд-кіт (джерело: лого, фавікони, badge). Потрібні файли скопійовані
+# в public/ (favicon.svg/ico, apple-touch-icon.png, rozumko-logo.svg) — вони й деплояться.
+rozumko_brand_assets/
