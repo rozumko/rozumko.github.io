@@ -32,6 +32,37 @@
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#2563EB">
 
+  <!-- Структуровані дані (schema.org): організація + сайт -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "EducationalOrganization",
+        "@id": "https://rozumko.com/#organization",
+        "name": "Розумко",
+        "url": "https://rozumko.com/",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://rozumko.com/android-chrome-512x512.png",
+          "width": 512,
+          "height": 512
+        },
+        "description": "Освітня платформа для учнів 1–4 класів: короткі ігрові місії з обчислювального мислення, логіки та основ штучного інтелекту.",
+        "inLanguage": "uk"
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://rozumko.com/#website",
+        "name": "Розумко",
+        "url": "https://rozumko.com/",
+        "publisher": { "@id": "https://rozumko.com/#organization" },
+        "inLanguage": "uk"
+      }
+    ]
+  }
+  </script>
+
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-DR4YL3J2RE"></script>
   <script>
