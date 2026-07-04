@@ -13,7 +13,7 @@
 // Всі імпортовані питання: isOlympiad=false. Походження — у meta.source.
 
 import { createRequire } from 'module'
-import { readFileSync } from 'fs'
+import { readFileSync, readdirSync } from 'fs'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import vm from 'vm'
@@ -173,9 +173,12 @@ interface AiBasicsQuestion {
 }
 
 function loadAiBasics(): NewQuestion[] {
-  const { questions: items } = JSON.parse(
-    readFileSync(join(__dirname, '../../temp/ai_basics/questions.json'), 'utf8')
-  ) as { questions: AiBasicsQuestion[] }
+  // Усі файли questions*.json у теці — щоб нові порції додавались файлами.
+  const dir = join(__dirname, '../../temp/ai_basics')
+  const files = readdirSync(dir).filter(f => /^questions.*\.json$/.test(f)).sort()
+  const items: AiBasicsQuestion[] = files.flatMap(f =>
+    (JSON.parse(readFileSync(join(dir, f), 'utf8')) as { questions: AiBasicsQuestion[] }).questions
+  )
   return items.map(item => {
     const { options, correct } = shuffleOptions(item.options, item.correct)
     return {
