@@ -180,6 +180,24 @@
   "grade": 1
  },
  {
+  "id": "19766415-90de-498a-ad47-b9dfcdad02b7",
+  "q": "Намисто: 🔴🔵🔴🔵🔴… Яка намистина далі?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "🟢",
+   "🟡",
+   "🔵",
+   "🔴"
+  ],
+  "correct": 2,
+  "explanation": "Закономірність — червона й синя чергуються. Після червоної йде синя.",
+  "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "patterns",
+  "grade": 1
+ },
+ {
   "id": "19bedb46-410e-41bc-8ec5-6d5da2e3d42e",
   "q": "На чому ми бачимо зображення?",
   "code": null,
@@ -213,6 +231,24 @@
   "difficulty": "easy",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "grade": 1
+ },
+ {
+  "id": "1e42edf7-3516-40de-a549-81665a9aef8d",
+  "q": "Що треба зробити ПЕРШИМ, щоб намалювати сонечко?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Взяти олівець",
+   "Показати друзям",
+   "Повісити малюнок на стіну",
+   "Прибрати олівці"
+  ],
+  "correct": 0,
+  "explanation": "Алгоритм — це порядок дій. Спочатку беремо олівець, а вже потім малюємо.",
+  "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "algorithms",
   "grade": 1
  },
  {
@@ -612,6 +648,24 @@
   "grade": 1
  },
  {
+  "id": "69f4c6ec-1ff1-4139-93c7-9912bf3449f2",
+  "q": "Правило: «Якщо йде дощ — бери парасолю». Надворі дощ. Що взяти?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Парасолю",
+   "Нічого",
+   "Санки",
+   "М'яч"
+  ],
+  "correct": 0,
+  "explanation": "Умова «якщо дощ» справдилась, тож виконуємо дію — беремо парасолю.",
+  "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "logic",
+  "grade": 1
+ },
+ {
   "id": "6e3c9a4f-5473-4685-8d53-99567c38847c",
   "q": "Що НЕ є алгоритмом?",
   "code": null,
@@ -810,6 +864,24 @@
   "grade": 1
  },
  {
+  "id": "951bfaca-a749-4436-ba4e-858de95f7244",
+  "q": "Щоб піднятися сходами, ти повторюєш ту саму дію. Яку?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Сісти й чекати",
+   "Заплющити очі",
+   "Ступити на наступну сходинку",
+   "Стрибнути з даху"
+  ],
+  "correct": 2,
+  "explanation": "Повторення — одна дія (крок на сходинку) повторюється, поки не піднімешся.",
+  "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "repetition",
+  "grade": 1
+ },
+ {
   "id": "9afef4ec-943a-483c-affb-d32190f43520",
   "q": "Равлик дивиться вправо. Він зробив три повороти ліворуч. Куди він тепер дивиться?",
   "code": null,
@@ -969,6 +1041,24 @@
   "difficulty": "easy",
   "track": "ai-basics",
   "topic": "ai-ethics-safety",
+  "grade": 1
+ },
+ {
+  "id": "b235022d-b0a5-4987-af04-32fb6a667461",
+  "q": "Велике завдання «прибрати кімнату» простіше зробити, якщо…",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Не робити взагалі",
+   "Заплющити очі",
+   "Робити все одночасно",
+   "Розбити на маленькі: іграшки, книжки, одяг"
+  ],
+  "correct": 3,
+  "explanation": "Декомпозиція — це поділ великої справи на маленькі зрозумілі частини.",
+  "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "decomposition",
   "grade": 1
  },
  {
@@ -1332,6 +1422,24 @@
   "grade": 1
  },
  {
+  "id": "e4e7967b-5a95-4d4a-95ba-671c00272ba2",
+  "q": "Як швидше зібрати розсипані кубики?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Рахувати кожен вголос",
+   "Не збирати",
+   "Складати по кілька в руку",
+   "Носити по одному через усю кімнату"
+  ],
+  "correct": 2,
+  "explanation": "Кілька кубиків за раз — швидше, ніж по одному. Це вибір ефективнішого способу.",
+  "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "efficiency",
+  "grade": 1
+ },
+ {
   "id": "e87939ed-1a19-44f3-bd7e-602f09e1a3cf",
   "q": "Що це: маленький пристрій для перенесення інформації?",
   "code": null,
@@ -1458,6 +1566,24 @@
   "grade": 1
  },
  {
+  "id": "ef9a6ef5-33d1-4ac0-8d80-3de3cb0da5f0",
+  "q": "Ти будуєш вежу, а вона падає. Що зробити?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Заплющити очі",
+   "Знайти, який кубик стоїть криво, і поправити",
+   "Кинути будувати назавжди",
+   "Штовхнути ще раз"
+  ],
+  "correct": 1,
+  "explanation": "Знайти й виправити причину помилки — це і є налагодження.",
+  "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "debugging",
+  "grade": 1
+ },
+ {
   "id": "f01c1c60-e610-4e1a-ac2f-b08061425a6a",
   "q": "Після мультика застосунок пропонує «схожі мультики». Хто підбирає ці підказки?",
   "code": null,
@@ -1548,6 +1674,24 @@
   "grade": 1
  },
  {
+  "id": "f8cdcfae-1388-45ea-a340-39038d5c144d",
+  "q": "Що спільне у кота, собаки й корови?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Однаковий розмір",
+   "Живуть у морі",
+   "Однаковий колір",
+   "Це тварини"
+  ],
+  "correct": 3,
+  "explanation": "Спільна головна ознака — усі вони тварини. Це і є абстрагування.",
+  "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "abstraction",
+  "grade": 1
+ },
+ {
   "id": "fcb630a8-52dd-47d3-8b0f-391886239b72",
   "q": "Рецепт: замісити тісто (5 хв) → дати підійти (30 хв) → спекти (20 хв). Скільки хвилин займе весь процес?",
   "code": null,
@@ -1563,6 +1707,24 @@
   "difficulty": "hard",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "grade": 1
+ },
+ {
+  "id": "fd72ecd5-66a4-45ea-a4db-83deba783ccf",
+  "q": "До якої групи покласти банан?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Іграшки",
+   "Фрукти",
+   "Меблі",
+   "Одяг"
+  ],
+  "correct": 1,
+  "explanation": "Класифікація — складати за спільною ознакою. Банан — це фрукт.",
+  "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "classification",
   "grade": 1
  }
 ]

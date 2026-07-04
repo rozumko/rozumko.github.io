@@ -288,6 +288,24 @@
   "grade": 2
  },
  {
+  "id": "1e2cb6e9-815b-441f-a8a7-23f5508a983f",
+  "q": "Треба роздати 10 однакових листівок. Що швидше?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Роздати всім по черзі одразу",
+   "Робити перерву після кожної",
+   "Питати щоразу колір",
+   "Малювати кожну листівку заново"
+  ],
+  "correct": 0,
+  "explanation": "Ефективність — обрати найкоротший спосіб. Готові листівки просто роздати по черзі.",
+  "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "efficiency",
+  "grade": 2
+ },
+ {
   "id": "1f9a868e-fc05-479a-a679-ef097dd733b9",
   "q": "Де в домі може «жити» штучний інтелект?",
   "code": null,
@@ -357,6 +375,24 @@
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "repetition",
+  "grade": 2
+ },
+ {
+  "id": "2ad260da-6c01-42ef-acd8-c78d87f4222d",
+  "q": "Ти готуєш день народження. На які частини зручно поділити підготовку?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Запросити гостей, прикрасити, спекти торт",
+   "Лягти спати",
+   "Все одразу без плану",
+   "Просто чекати"
+  ],
+  "correct": 0,
+  "explanation": "Велику справу ділимо на частини — так нічого не забудеш і легше зробити.",
+  "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "decomposition",
   "grade": 2
  },
  {
@@ -684,6 +720,24 @@
   "grade": 2
  },
  {
+  "id": "5341b92c-ceba-4b17-9461-1c0c3267d269",
+  "q": "Числа: 2, 4, 6, 8, … Яке наступне?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "7",
+   "9",
+   "12",
+   "10"
+  ],
+  "correct": 3,
+  "explanation": "Закономірність — щоразу +2. Після 8 буде 10.",
+  "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "patterns",
+  "grade": 2
+ },
+ {
   "id": "5799f54a-e39c-45cb-ace1-937dd99eb11a",
   "q": "Книжка містить...",
   "code": null,
@@ -753,6 +807,24 @@
   "difficulty": "easy",
   "track": "informatics",
   "topic": "information",
+  "grade": 2
+ },
+ {
+  "id": "65d20d7a-f82b-4d52-a9d0-a5670c912815",
+  "q": "«Плесни в долоні 3 рази». Скільки разів повторюється дія «плесни»?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "1",
+   "3",
+   "2",
+   "0"
+  ],
+  "correct": 1,
+  "explanation": "Цикл повторює дію задану кількість разів — тут «плесни» повторюється 3 рази.",
+  "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "repetition",
   "grade": 2
  },
  {
@@ -915,6 +987,24 @@
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "ai-tools",
+  "grade": 2
+ },
+ {
+  "id": "773b7318-bf64-4bb4-89cb-f109aae3da1f",
+  "q": "Порядок дій, щоб полити квітку: 1) набрати воду, 2) …, 3) полити. Що пропущено?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Підійти до квітки з водою",
+   "Вимкнути світло",
+   "Лягти спати",
+   "З'їсти яблуко"
+  ],
+  "correct": 0,
+  "explanation": "Кроки алгоритму мають вести до мети: між набором води й поливом треба підійти до квітки.",
+  "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "algorithms",
   "grade": 2
  },
  {
@@ -1221,6 +1311,24 @@
   "difficulty": "easy",
   "track": "informatics",
   "topic": "information",
+  "grade": 2
+ },
+ {
+  "id": "a928e0da-6f22-45fc-9665-3a2a34c76c1b",
+  "q": "Морозиво дають, якщо прибрав іграшки І помив руки. Ти лише помив руки. Дадуть морозиво?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Так",
+   "Ніколи",
+   "Тільки половину",
+   "Ні, треба виконати обидві умови"
+  ],
+  "correct": 3,
+  "explanation": "Правило «І» вимагає обох умов. Одна виконана — цього замало.",
+  "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "logic",
   "grade": 2
  },
  {
@@ -1584,6 +1692,24 @@
   "grade": 2
  },
  {
+  "id": "d537d6e4-07cf-44a1-adc2-bade174ed870",
+  "q": "Щоб намалювати будь-який будинок, що НАЙВАЖЛИВІШЕ показати?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Колір фіранок",
+   "Ім'я господаря",
+   "Марку меблів",
+   "Стіни, дах і двері"
+  ],
+  "correct": 3,
+  "explanation": "Абстрагування — залишити головні ознаки (стіни, дах, двері) і відкинути дрібниці.",
+  "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "abstraction",
+  "grade": 2
+ },
+ {
   "id": "d574e4c9-4294-40b6-9fc5-19979a26229a",
   "q": "Куди дивиться Равлик після програми? Початковий напрямок — вгору.",
   "code": "праворуч 45\nправоруч 45\nправоруч 45\nправоруч 45",
@@ -1674,6 +1800,24 @@
   "grade": 2
  },
  {
+  "id": "dce570e2-7a5b-452e-b372-b2805a98475a",
+  "q": "Алгоритм одягання: «взути черевики → одягнути шкарпетки». У чому помилка?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Шкарпетки треба вдягати ДО черевиків",
+   "Помилки немає",
+   "Черевиків не існує",
+   "Треба двоє шкарпеток"
+  ],
+  "correct": 0,
+  "explanation": "Налагодження — знайти неправильний крок. Спершу шкарпетки, потім черевики.",
+  "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "debugging",
+  "grade": 2
+ },
+ {
   "id": "e6020171-4950-4c0e-add3-555a85d21d64",
   "q": "Ти намалював картинку на комп'ютері. Що зробити, щоб вона не зникла?",
   "code": null,
@@ -1689,6 +1833,24 @@
   "difficulty": "easy",
   "track": "informatics",
   "topic": "digital-tools",
+  "grade": 2
+ },
+ {
+  "id": "e63c6674-5c03-41e8-b2c5-423ce09712d8",
+  "q": "Що зайве у групі: яблуко, груша, м'яч, слива?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Яблуко",
+   "М'яч",
+   "Груша",
+   "Слива"
+  ],
+  "correct": 1,
+  "explanation": "Решта — фрукти, а м'яч — іграшка. Він не підходить під спільну ознаку.",
+  "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "classification",
   "grade": 2
  },
  {

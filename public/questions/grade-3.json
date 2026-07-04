@@ -216,6 +216,24 @@
   "grade": 3
  },
  {
+  "id": "1e689a13-2c74-4f81-8c8a-a05b1b560ac6",
+  "q": "Який поділ задачі «зробити доповідь про кота» найкорисніший?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Кіт, кіт, кіт",
+   "Знайти факти, написати, намалювати кота",
+   "Ніякий",
+   "Одне велике речення"
+  ],
+  "correct": 1,
+  "explanation": "Корисний поділ — на змістовні кроки, а не просто перелік слів.",
+  "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "decomposition",
+  "grade": 3
+ },
+ {
   "id": "2145e575-3e23-4883-8b1d-c634d071d3e5",
   "q": "Алгоритм приготування чаю починається з...",
   "code": null,
@@ -360,6 +378,24 @@
   "grade": 3
  },
  {
+  "id": "31f153fb-30dd-41ac-918b-90b57ac827b5",
+  "q": "Робот малює квадрат, повторюючи: «лінія, поворот». Скільки разів повторити для 4 сторін?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "2",
+   "4",
+   "1",
+   "8"
+  ],
+  "correct": 1,
+  "explanation": "Квадрат має 4 сторони, тож пару «лінія + поворот» повторюємо 4 рази.",
+  "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "repetition",
+  "grade": 3
+ },
+ {
   "id": "32e69fc9-db98-488e-b48e-bb04a9f4b7fe",
   "q": "Скільки разів виконається тіло циклу?",
   "code": "створити і = 1\nповторити 4 (\n  і = і + 1\n)",
@@ -414,6 +450,24 @@
   "grade": 3
  },
  {
+  "id": "35f3525e-a3b7-49be-a0bf-24a06471db66",
+  "q": "На гру пускають, якщо тобі 7 років АБО ти з дорослим. Тобі 6, але ти з мамою. Пустять?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Треба чекати 7 років",
+   "Так, друга умова виконана",
+   "Ні",
+   "Тільки маму"
+  ],
+  "correct": 1,
+  "explanation": "Правило «АБО» справджується, якщо виконана хоча б одна умова — ти з дорослим.",
+  "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "logic",
+  "grade": 3
+ },
+ {
   "id": "367b0409-fa27-456f-91df-772bf6b73d64",
   "q": "Чому голосовий помічник іноді НЕ розуміє команду?",
   "code": null,
@@ -429,6 +483,24 @@
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "ai-perception",
+  "grade": 3
+ },
+ {
+  "id": "37087f2c-6f0d-4f51-bded-5eac92d5ef06",
+  "q": "За якою ознакою зручно поділити тварин на дві групи?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "За першою буквою настрою",
+   "Ніяк",
+   "Ті, чиї назви довші",
+   "Свійські й дикі"
+  ],
+  "correct": 3,
+  "explanation": "Хороша основа для класифікації — суттєва ознака, наприклад свійські/дикі.",
+  "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "classification",
   "grade": 3
  },
  {
@@ -555,6 +627,24 @@
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "what-is-ai",
+  "grade": 3
+ },
+ {
+  "id": "5269da96-318f-40e7-bbfd-a28ff80ea9d9",
+  "q": "На мапі метро прибрали вулиці й будинки. Навіщо?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Бо забули намалювати",
+   "Щоб залишити головне — станції та лінії",
+   "Щоб було нудно",
+   "Щоб заплутати"
+  ],
+  "correct": 1,
+  "explanation": "Мапа абстрагує: показує лише те, що потрібно для поїздки, без зайвих деталей.",
+  "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "abstraction",
   "grade": 3
  },
  {
@@ -756,6 +846,24 @@
   "grade": 3
  },
  {
+  "id": "62a594a8-8546-4414-b50b-bd8cbb7f4305",
+  "q": "Рецепт бутерброда переплутали. Який крок має бути ОСТАННІМ?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "З'їсти бутерброд",
+   "Намазати масло",
+   "Покласти сир",
+   "Відрізати хліб"
+  ],
+  "correct": 0,
+  "explanation": "Порядок кроків важливий: з'їсти можна лише готовий бутерброд — це останній крок.",
+  "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "algorithms",
+  "grade": 3
+ },
+ {
   "id": "70d94e6d-9871-42c9-93e0-3563b0cd662c",
   "q": "Блок \"Коли прапорець натиснуто\" означає...",
   "code": null,
@@ -846,6 +954,24 @@
   "grade": 3
  },
  {
+  "id": "7a34d0d2-fdd7-44a4-bcb9-36ea51ae8462",
+  "q": "Знайти слово у словнику швидше, якщо…",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Гортати навмання",
+   "Почати з кінця щоразу",
+   "Читати всі сторінки поспіль",
+   "Шукати за абеткою"
+  ],
+  "correct": 3,
+  "explanation": "Словник упорядкований за абеткою — це найшвидший спосіб знайти слово.",
+  "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "efficiency",
+  "grade": 3
+ },
+ {
   "id": "7e26521a-7ed1-4b54-9f80-d95891ca9830",
   "q": "Яку загальну відстань пройде Равлик?",
   "code": "створити крок = 5\nповторити 4 (\n  вперед крок\n  крок = крок * 2\n)",
@@ -861,6 +987,24 @@
   "difficulty": "hard",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "grade": 3
+ },
+ {
+  "id": "7fb40ca7-565d-48bc-b140-b6fce8e89dfc",
+  "q": "Робот мав намалювати квадрат, а вийшов трикутник. Де шукати помилку?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "У назві робота",
+   "У кольорі олівця",
+   "У кількості сторін чи поворотів",
+   "У розмірі аркуша"
+  ],
+  "correct": 2,
+  "explanation": "Помилку шукають там, де результат розходиться з метою: замість 4 сторін вийшло 3.",
+  "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "debugging",
   "grade": 3
  },
  {
@@ -1419,6 +1563,24 @@
   "difficulty": "hard",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "grade": 3
+ },
+ {
+  "id": "b68c5a7f-057f-4f55-8987-9e1f5a2fa6e8",
+  "q": "Фігури: △▲△▲△… Що буде на 6-му місці?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "⬛",
+   "△",
+   "⚪",
+   "▲"
+  ],
+  "correct": 3,
+  "explanation": "Порожній і зафарбований трикутники чергуються; на парних місцях — зафарбований ▲.",
+  "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "patterns",
   "grade": 3
  },
  {

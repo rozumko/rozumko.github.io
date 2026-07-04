@@ -191,7 +191,8 @@ function loadTypedSource(folder: string, track: NewQuestion['track']): NewQuesti
       difficulty:  item.difficulty,
       track,
       topic:       item.topic,
-      conceptKey:  null,
+      // Для ЦТ осі збігаються: concept_key = topic (docs/content-taxonomy.md)
+      conceptKey:  track === 'computational-thinking' ? item.topic : null,
       progressionBand: item.progressionBand as NewQuestion['progressionBand'],
       grade:       item.grade,
       isOlympiad:  false,
@@ -206,12 +207,14 @@ const ctRows   = loadCtQuiz()
 const altRows  = loadAltCs()
 const aiRows   = loadTypedSource('ai_basics', 'ai-basics')
 const infoRows = loadTypedSource('informatics_extra', 'informatics')
-const all = [...ctRows, ...altRows, ...aiRows, ...infoRows]
+const ctExtra  = loadTypedSource('ct_extra', 'computational-thinking')
+const all = [...ctRows, ...altRows, ...aiRows, ...infoRows, ...ctExtra]
 
 console.log(`ct_quiz:           ${ctRows.length} питань (2–4 кл., computational-thinking)`)
 console.log(`alt_cs:            ${altRows.length} питань (1–4 кл., informatics)`)
 console.log(`ai_basics:         ${aiRows.length} питань (1–4 кл., ai-basics)`)
 console.log(`informatics_extra: ${infoRows.length} питань (1–4 кл., informatics)`)
+console.log(`ct_extra:          ${ctExtra.length} питань (1–4 кл., computational-thinking)`)
 
 const byTopic = new Map<string, number>()
 for (const r of all) byTopic.set(`${r.track}/${r.topic ?? '∅'}`, (byTopic.get(`${r.track}/${r.topic ?? '∅'}`) ?? 0) + 1)
