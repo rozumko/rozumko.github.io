@@ -30,6 +30,8 @@ const rows = await db
     correct:     questions.correct,
     explanation: questions.explanation,
     difficulty:  questions.difficulty,
+    track:       questions.track,
+    topic:       questions.topic,
     grade:       questions.grade,
     isOlympiad:  questions.isOlympiad,
   })

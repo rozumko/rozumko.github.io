@@ -13,6 +13,8 @@
   "correct": 1,
   "explanation": "Перед першою лінією — червоний. Перед другою — колір змінюється на синій. Друга лінія синя.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 2
  },
  {
@@ -29,6 +31,8 @@
   "correct": 1,
   "explanation": "Людина вміє фантазувати, дружити і вигадувати нове. Програми поки лише повторюють вивчене.",
   "difficulty": "medium",
+  "track": "ai-basics",
+  "topic": "human-vs-ai",
   "grade": 2
  },
  {
@@ -45,6 +49,8 @@
   "correct": 1,
   "explanation": "Пошук стає швидшим, коли ти одразу відкидаєш зайве за важливою ознакою. Тут такою ознакою є колір рюкзака.",
   "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "efficiency",
   "grade": 2
  },
  {
@@ -61,6 +67,8 @@
   "correct": 2,
   "explanation": "Одноманітну роботу з великою кількістю картинок програма робить швидше за людину.",
   "difficulty": "medium",
+  "track": "ai-basics",
+  "topic": "human-vs-ai",
   "grade": 2
  },
  {
@@ -77,6 +85,8 @@
   "correct": 2,
   "explanation": "Малюються: жовта лінія, синя лінія, червона лінія. Остання — червона.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 2
  },
  {
@@ -93,6 +103,8 @@
   "correct": 2,
   "explanation": "1 лінія до циклу + 3 лінії в циклі + 1 лінія після = 5 ліній.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 2
  },
  {
@@ -109,6 +121,8 @@
   "correct": 2,
   "explanation": "Кислий смак лимона — це приклад смакової інформації.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "information",
   "grade": 2
  },
  {
@@ -125,6 +139,8 @@
   "correct": 1,
   "explanation": "Два відрізки по 50 і два по 30, три повороти по 90° — три сторони прямокутника (незамкненого, бо 4-ї сторони немає).",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 2
  },
  {
@@ -141,6 +157,8 @@
   "correct": 2,
   "explanation": "Правило «І» вимагає виконання обох умов, щоб отримати результат.",
   "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "logic",
   "grade": 2
  },
  {
@@ -157,6 +175,8 @@
   "correct": 3,
   "explanation": "Спершу звук стає текстом, потім програма розуміє запитання і готує відповідь.",
   "difficulty": "easy",
+  "track": "ai-basics",
+  "topic": "ai-perception",
   "grade": 2
  },
  {
@@ -173,6 +193,8 @@
   "correct": 1,
   "explanation": "Музику ми чуємо, тому її сприймають вуха.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "information",
   "grade": 2
  },
  {
@@ -189,6 +211,8 @@
   "correct": 0,
   "explanation": "Коли одна й та сама дія повторюється багато разів, зручно записати це як повторення, а не дублювати однакову команду.",
   "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "repetition",
   "grade": 2
  },
  {
@@ -205,6 +229,8 @@
   "correct": 3,
   "explanation": "20 + (4 × 30) + 20 = 20 + 120 + 20 = 160 кроків.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 2
  },
  {
@@ -221,6 +247,8 @@
   "correct": 1,
   "explanation": "4 сторони по 60 кроків з поворотами 90° утворюють квадрат.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 2
  },
  {
@@ -237,6 +265,8 @@
   "correct": 1,
   "explanation": "Це приклад налагодження алгоритму: потрібно знайти крок, який стоїть не на своєму місці, і виправити порядок.",
   "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "debugging",
   "grade": 2
  },
  {
@@ -253,6 +283,8 @@
   "correct": 2,
   "explanation": "Цикл «повторити 3» виконує команду «вперед 30» рівно три рази.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 2
  },
  {
@@ -269,6 +301,8 @@
   "correct": 1,
   "explanation": "Це умовний оператор: «Якщо полив — то росте», «інакше — в'яне».",
   "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "algorithms",
   "grade": 2
  },
  {
@@ -285,6 +319,8 @@
   "correct": 2,
   "explanation": "В кожній ітерації: 15+25+10 = 50 кроків. 3 × 50 = 150 кроків.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 2
  },
  {
@@ -301,6 +337,8 @@
   "correct": 1,
   "explanation": "ШІ знає лише те, що бачив у прикладах. Якщо чорних собак не показували — він може розгубитися.",
   "difficulty": "medium",
+  "track": "ai-basics",
+  "topic": "how-ai-learns",
   "grade": 2
  },
  {
@@ -317,6 +355,8 @@
   "correct": 1,
   "explanation": "ШІ може помилятися, а думати — твоя робота. Помічник підказує, але не вчиться замість тебе.",
   "difficulty": "medium",
+  "track": "ai-basics",
+  "topic": "ai-ethics-safety",
   "grade": 2
  },
  {
@@ -333,6 +373,8 @@
   "correct": 0,
   "explanation": "Програма шукає на зображенні знайомі форми — так вона «впізнає» людину на переході.",
   "difficulty": "medium",
+  "track": "ai-basics",
+  "topic": "ai-perception",
   "grade": 2
  },
  {
@@ -349,6 +391,8 @@
   "correct": 1,
   "explanation": "Запис у зошиті допомагає зберегти інформацію, щоб не забути.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "information",
   "grade": 2
  },
  {
@@ -365,6 +409,8 @@
   "correct": 3,
   "explanation": "В Інтернеті є помилки та обман, тому інформацію треба перевіряти.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "information",
   "grade": 2
  },
  {
@@ -381,6 +427,8 @@
   "correct": 2,
   "explanation": "Перекладач аналізує слова і речення — для цього потрібна «розумна» програма.",
   "difficulty": "easy",
+  "track": "ai-basics",
+  "topic": "what-is-ai",
   "grade": 2
  },
  {
@@ -397,6 +445,8 @@
   "correct": 0,
   "explanation": "Після навчання на прикладах програма впізнає схожі речі навіть на фото, яких не бачила.",
   "difficulty": "medium",
+  "track": "ai-basics",
+  "topic": "how-ai-learns",
   "grade": 2
  },
  {
@@ -413,6 +463,8 @@
   "correct": 1,
   "explanation": "До циклу колір синій. В 1-й ітерації малюється синя сторона, потім одразу встановлюється червоний. Наступні 3 сторони — червоні. Разом: 1 синя сторона.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 2
  },
  {
@@ -429,6 +481,8 @@
   "correct": 3,
   "explanation": "Ми дивимося на кольори світлофора очима, тому це зорова інформація.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "information",
   "grade": 2
  },
  {
@@ -445,6 +499,8 @@
   "correct": 0,
   "explanation": "6 × 60° = 360°. Повне коло — Равлик знову дивиться вгору.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 2
  },
  {
@@ -461,6 +517,8 @@
   "correct": 1,
   "explanation": "У книзі є текст і малюнки — це текстова та графічна інформація.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "information",
   "grade": 2
  },
  {
@@ -477,6 +535,8 @@
   "correct": 3,
   "explanation": "Калькулятор завжди робить одне й те саме за правилами, а ШІ може навчатися і покращуватися.",
   "difficulty": "medium",
+  "track": "ai-basics",
+  "topic": "what-is-ai",
   "grade": 2
  },
  {
@@ -493,6 +553,8 @@
   "correct": 1,
   "explanation": "Налагодження — це коли ти повертаєшся до своїх дій і крок за кроком перевіряєш, де саме сталася помилка.",
   "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "debugging",
   "grade": 2
  },
  {
@@ -509,6 +571,8 @@
   "correct": 2,
   "explanation": "Коли говоримо вголос, ми передаємо те, що знаємо, іншим.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "information",
   "grade": 2
  },
  {
@@ -525,6 +589,8 @@
   "correct": 3,
   "explanation": "4 повторення × 25 кроків = 100 кроків.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 2
  },
  {
@@ -541,6 +607,8 @@
   "correct": 1,
   "explanation": "ШІ — добрий помічник для ідей та підказок, але подарунок, зроблений твоїми руками, — найцінніший.",
   "difficulty": "medium",
+  "track": "ai-basics",
+  "topic": "ai-tools",
   "grade": 2
  },
  {
@@ -557,6 +625,8 @@
   "correct": 2,
   "explanation": "До циклу і після нього — червоні лінії. В циклі 4 рази «вперед 30» з кольором синій = 4 сині лінії.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 2
  },
  {
@@ -573,6 +643,8 @@
   "correct": 1,
   "explanation": "Класифікація (сортування за категоріями) допомагає швидше знаходити потрібну річ.",
   "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "classification",
   "grade": 2
  },
  {
@@ -589,6 +661,8 @@
   "correct": 0,
   "explanation": "Сон може підказувати відчуття чи думки, але це не надійне джерело фактів, як книга або вчитель.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "information",
   "grade": 2
  },
  {
@@ -605,6 +679,8 @@
   "correct": 2,
   "explanation": "В кожній ітерації: 10 + 20 = 30 кроків. 3 ітерації × 30 = 90 кроків.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 2
  },
  {
@@ -621,6 +697,8 @@
   "correct": 3,
   "explanation": "Навігатор збирає дані від багатьох машин і обчислює, де дорога вільніша.",
   "difficulty": "medium",
+  "track": "ai-basics",
+  "topic": "ai-tools",
   "grade": 2
  },
  {
@@ -637,6 +715,8 @@
   "correct": 1,
   "explanation": "Перший поворот праворуч: вгору → вправо. Другий: вправо → вниз.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 2
  },
  {
@@ -653,6 +733,8 @@
   "correct": 0,
   "explanation": "Інформація — це будь-які відомості, які ми отримуємо, зберігаємо чи передаємо.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "information",
   "grade": 2
  },
  {
@@ -669,6 +751,8 @@
   "correct": 1,
   "explanation": "Програми підказують комп'ютеру, що саме робити з інформацією.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "information",
   "grade": 2
  },
  {
@@ -685,6 +769,8 @@
   "correct": 2,
   "explanation": "Колір футболки — це несуттєва деталь, яка не впливає на успішність виконання завдання.",
   "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "abstraction",
   "grade": 2
  },
  {
@@ -701,6 +787,8 @@
   "correct": 0,
   "explanation": "Якщо послідовність повторюється, за нею можна передбачити наступний крок. Після червоного тут знову йде зелене.",
   "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "patterns",
   "grade": 2
  },
  {
@@ -717,6 +805,8 @@
   "correct": 1,
   "explanation": "Ми можемо передавати інформацію голосом або через текст — це усні й письмові повідомлення.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "information",
   "grade": 2
  },
  {
@@ -733,6 +823,8 @@
   "correct": 3,
   "explanation": "Коли говоримо по телефону, ми передаємо інформацію на відстань.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "information",
   "grade": 2
  },
  {
@@ -749,6 +841,8 @@
   "correct": 2,
   "explanation": "3 сторони по 60 кроків з поворотами 120° утворюють рівносторонній трикутник.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 2
  },
  {
@@ -765,6 +859,8 @@
   "correct": 1,
   "explanation": "Перші два «вперед» — синій колір (2 сині сторони). Потім колір змінюється на червоний — ще 2 сторони червоні. Разом: 2+2.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 2
  },
  {
@@ -781,6 +877,8 @@
   "correct": 0,
   "explanation": "Абстрагування допомагає помітити головне. Усі ці предмети різні на вигляд і смак, але мають спільну важливу ознаку: це фрукти.",
   "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "abstraction",
   "grade": 2
  },
  {
@@ -797,6 +895,8 @@
   "correct": 1,
   "explanation": "Ти не зможеш подивитися мультик, якщо жодна з двох умов («уроки» і «допомога») не виконана.",
   "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "logic",
   "grade": 2
  },
  {
@@ -813,6 +913,8 @@
   "correct": 0,
   "explanation": "Ми чуємо дощ, тому це слухова інформація.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "information",
   "grade": 2
  },
  {
@@ -829,6 +931,8 @@
   "correct": 3,
   "explanation": "І люди, і техніка можуть надсилати й отримувати інформацію.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "information",
   "grade": 2
  },
  {
@@ -845,6 +949,8 @@
   "correct": 2,
   "explanation": "Кожна команда «вперед» малює одну лінію. Три команди — три лінії.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 2
  },
  {
@@ -861,6 +967,8 @@
   "correct": 1,
   "explanation": "Цикл виконується 5 разів, кожного разу — 1 поворот праворуч. Разом 5 поворотів.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 2
  },
  {
@@ -877,6 +985,8 @@
   "correct": 1,
   "explanation": "Коли відчуваємо запах, ми сприймаємо нюхову інформацію.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "information",
   "grade": 2
  },
  {
@@ -893,6 +1003,8 @@
   "correct": 1,
   "explanation": "Ефективність — це вибір найшвидшого та найзручнішого способу виконати дію (пачками швидше, ніж по одній).",
   "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "efficiency",
   "grade": 2
  },
  {
@@ -909,6 +1021,8 @@
   "correct": 3,
   "explanation": "Хибна інформація — це така, що не відповідає дійсності.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "information",
   "grade": 2
  },
  {
@@ -925,6 +1039,8 @@
   "correct": 1,
   "explanation": "Декомпозиція допомагає поділити велику справу на частини-результати. Для замку це частини самого замку, а не інструменти чи випадкові ознаки.",
   "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "decomposition",
   "grade": 2
  },
  {
@@ -941,6 +1057,8 @@
   "correct": 1,
   "explanation": "Надійний план має зрозумілий порядок кроків. Коли дії йдуть послідовно, менше шансів щось пропустити.",
   "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "algorithms",
   "grade": 2
  },
  {
@@ -957,6 +1075,8 @@
   "correct": 1,
   "explanation": "Фото — це особиста інформація. Її не можна надсилати без дозволу батьків нікому, навіть «роботу».",
   "difficulty": "medium",
+  "track": "ai-basics",
+  "topic": "ai-ethics-safety",
   "grade": 2
  },
  {
@@ -973,6 +1093,8 @@
   "correct": 2,
   "explanation": "Цикл виконується 5 разів, кожного разу малюється 1 лінія (вперед 20). Разом 5 ліній.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 2
  },
  {
@@ -989,6 +1111,8 @@
   "correct": 0,
   "explanation": "Числа й приклади — це числова інформація.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "information",
   "grade": 2
  },
  {
@@ -1005,6 +1129,8 @@
   "correct": 2,
   "explanation": "8 сторін по 40 кроків з поворотами 45° (8 × 45° = 360°) — правильний восьмикутник.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 2
  },
  {
@@ -1021,6 +1147,8 @@
   "correct": 2,
   "explanation": "5 сторін по 50 кроків з поворотами 72° (5 × 72° = 360°) — правильний п'ятикутник.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 2
  },
  {
@@ -1037,6 +1165,8 @@
   "correct": 1,
   "explanation": "Фільтрація — це коли ти залишаєш лише те, що відповідає умові (тут — тільки сині фішки).",
   "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "classification",
   "grade": 2
  },
  {
@@ -1053,6 +1183,8 @@
   "correct": 0,
   "explanation": "Тут чіткий шаблон чергування: ⭐, 🔵, ⭐, 🔵... Тому після ⭐ йде 🔵.",
   "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "patterns",
   "grade": 2
  },
  {
@@ -1069,6 +1201,8 @@
   "correct": 1,
   "explanation": "3 жовті сторони по 60 кроків з поворотами 90°, потім зелена четверта сторона — утворюється замкнений квадрат: три жовті сторони і одна зелена.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 2
  },
  {
@@ -1085,6 +1219,8 @@
   "correct": 0,
   "explanation": "Фотографія, малюнок чи схема — це графічна інформація.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "information",
   "grade": 2
  },
  {
@@ -1101,6 +1237,8 @@
   "correct": 1,
   "explanation": "В кожній ітерації: 1-ша лінія червона (колір червоний → вперед), 2-га синя (колір синій → вперед). іт1: л1=червона, л2=синя. іт2: л3=червона, л4=синя. 4-та лінія — синя.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 2
  },
  {
@@ -1117,6 +1255,8 @@
   "correct": 2,
   "explanation": "Перед командою «вперед» встановлено зелений колір — лінія буде зеленою.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 2
  },
  {
@@ -1133,6 +1273,8 @@
   "correct": 2,
   "explanation": "Зовнішній цикл виконується 3 рази. Кожного разу внутрішній цикл малює повний квадрат (4 сторони × 90°). Разом 3 квадрати.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 2
  },
  {
@@ -1149,6 +1291,8 @@
   "correct": 2,
   "explanation": "За одну ітерацію: 5+10+15 = 30 кроків.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 2
  },
  {
@@ -1165,6 +1309,8 @@
   "correct": 1,
   "explanation": "4 × 45° = 180°. Поворот на 180° від «вгору» дає напрямок «вниз».",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 2
  },
  {
@@ -1181,6 +1327,8 @@
   "correct": 1,
   "explanation": "Ми повторюємо дію знову і знову, поки не станеться щось важливе — і тоді зупиняємось. Тут зупинка відбувається, коли чашка стає повною.",
   "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "repetition",
   "grade": 2
  },
  {
@@ -1197,6 +1345,8 @@
   "correct": 1,
   "explanation": "Жест показує, що людина вітається — це теж повідомлення, тобто інформація.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "information",
   "grade": 2
  },
  {
@@ -1213,6 +1363,8 @@
   "correct": 2,
   "explanation": "Закономірність — це чергування трьох кольорів: зелений, червоний, жовтий. Після червоного має йти жовтий.",
   "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "patterns",
   "grade": 2
  },
  {
@@ -1229,6 +1381,8 @@
   "correct": 1,
   "explanation": "Щоб виконати будь-який план, треба спершу зібрати все необхідне — те, що потрібно «до старту».",
   "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "algorithms",
   "grade": 2
  },
  {
@@ -1245,6 +1399,8 @@
   "correct": 1,
   "explanation": "Те, що ти отримуєш після виконання всіх кроків — це результат. Усі дії в рецепті зроблені заради готового торта.",
   "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "algorithms",
   "grade": 2
  },
  {
@@ -1261,6 +1417,8 @@
   "correct": 2,
   "explanation": "Якщо ми щось записали або намалювали — це можна переглянути пізніше.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "information",
   "grade": 2
  }
 ]

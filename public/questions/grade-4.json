@@ -13,6 +13,8 @@
   "correct": 0,
   "explanation": "При номер=6: 6 % 2 = 0, тому виконується гілка «якщо» — колір червоний. 6-та лінія червона.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 4
  },
  {
@@ -29,6 +31,8 @@
   "correct": 1,
   "explanation": "Пошуковик веде до джерел, а чат генерує текст сам — іноді правдоподібний, але хибний.",
   "difficulty": "hard",
+  "track": "ai-basics",
+  "topic": "what-is-ai",
   "grade": 4
  },
  {
@@ -45,6 +49,8 @@
   "correct": 2,
   "explanation": "Абстрагування допомагає відкинути деталі, які не впливають на розв'язання задачі. Для маршруту важливі напрямки й місце призначення, а не випадкові кольори будинків.",
   "difficulty": "hard",
+  "track": "computational-thinking",
+  "topic": "abstraction",
   "grade": 4
  },
  {
@@ -61,6 +67,8 @@
   "correct": 1,
   "explanation": "Команда разом обирає, який крок виконати зараз за спільним планом. Це й є прийняття рішення про наступний крок алгоритму.",
   "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": null,
   "grade": 4
  },
  {
@@ -77,6 +85,8 @@
   "correct": 1,
   "explanation": "Антивірусна програма знаходить і блокує шкідливі файли.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "digital-safety",
   "grade": 4
  },
  {
@@ -93,6 +103,8 @@
   "correct": 1,
   "explanation": "Коли бачиш повторюваний шаблон, можна передбачити наступну частину. Тут після повороту знову йдуть два кроки вперед.",
   "difficulty": "hard",
+  "track": "computational-thinking",
+  "topic": "patterns",
   "grade": 4
  },
  {
@@ -109,6 +121,8 @@
   "correct": 1,
   "explanation": "Цикл «Поки» повторює дію доти, доки умова лишається правдивою. Коли вода набирається до потрібного рівня, повторення зупиняється.",
   "difficulty": "hard",
+  "track": "computational-thinking",
+  "topic": "algorithms",
   "grade": 4
  },
  {
@@ -125,6 +139,8 @@
   "correct": 3,
   "explanation": "Спам — це купа небажаних листів, часто рекламних або підозрілих.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "digital-safety",
   "grade": 4
  },
  {
@@ -141,6 +157,8 @@
   "correct": 0,
   "explanation": "Рефлексія — це коли ти не лише виконуєш завдання, а й осмислюєш, як саме діяв і чому цей спосіб виявився вдалим або невдалим.",
   "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": null,
   "grade": 4
  },
  {
@@ -157,6 +175,8 @@
   "correct": 0,
   "explanation": "Питання справедливості й стосунків потребують людського розуміння і відповідальності.",
   "difficulty": "hard",
+  "track": "ai-basics",
+  "topic": "human-vs-ai",
   "grade": 4
  },
  {
@@ -173,6 +193,8 @@
   "correct": 1,
   "explanation": "% — залишок від ділення. 7 ÷ 2 = 3 і залишок 1. Отже 7 % 2 = 1.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 4
  },
  {
@@ -189,6 +211,8 @@
   "correct": 1,
   "explanation": "Пароль знаєш тільки ти — він захищає твій акаунт від інших.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "digital-safety",
   "grade": 4
  },
  {
@@ -205,6 +229,8 @@
   "correct": 1,
   "explanation": "Логін — це ім'я користувача, за яким система тебе впізнає.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "digital-safety",
   "grade": 4
  },
  {
@@ -221,6 +247,8 @@
   "correct": 2,
   "explanation": "1-ша лінія: крок=20, після: крок=30. 2-га лінія: крок=30, після: крок=40. 3-тя лінія: крок=40.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 4
  },
  {
@@ -237,6 +265,8 @@
   "correct": 0,
   "explanation": "У листах від незнайомців можуть бути віруси або обман.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "digital-safety",
   "grade": 4
  },
  {
@@ -253,6 +283,8 @@
   "correct": 3,
   "explanation": "Перший виклик: результат = 3×2 = 6. Другий виклик: результат = 6×2 = 12.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 4
  },
  {
@@ -269,6 +301,8 @@
   "correct": 3,
   "explanation": "Пароль не можна нікому говорити, навіть друзям.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "digital-safety",
   "grade": 4
  },
  {
@@ -285,6 +319,8 @@
   "correct": 3,
   "explanation": "Правильно спочатку закрити програми, а потім вимкнути комп'ютер.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "digital-safety",
   "grade": 4
  },
  {
@@ -301,6 +337,8 @@
   "correct": 2,
   "explanation": "10 + 20 + 30 + 40 = 100 кроків.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 4
  },
  {
@@ -317,6 +355,8 @@
   "correct": 1,
   "explanation": "Заперечення виразу «пізно АБО йде дощ» означає, що обидві небажані частини мають бути хибними: і не пізно, і дощу немає.",
   "difficulty": "hard",
+  "track": "computational-thinking",
+  "topic": "logic",
   "grade": 4
  },
  {
@@ -333,6 +373,8 @@
   "correct": 0,
   "explanation": "Однобокі дані — однобокий ШІ. Щоб програма працювала для всіх, приклади мають бути різноманітними.",
   "difficulty": "hard",
+  "track": "ai-basics",
+  "topic": "how-ai-learns",
   "grade": 4
  },
  {
@@ -349,6 +391,8 @@
   "correct": 1,
   "explanation": "Надійний пароль містить букви, цифри й символи та складно вгадується.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "digital-safety",
   "grade": 4
  },
  {
@@ -365,6 +409,8 @@
   "correct": 1,
   "explanation": "Початок: вгору (0°). Кожен поворот +45°. Горизонтальні напрямки: 90° (після 2 поворотів = 3-тя лінія) та 270° (після 6 поворотів = 7-ма лінія). Номери 3 і 7 непарні → колір синій.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 4
  },
  {
@@ -381,6 +427,8 @@
   "correct": 2,
   "explanation": "Сума квадратів: 1²+2²+3²+4²+5² = 1+4+9+16+25 = 55.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 4
  },
  {
@@ -397,6 +445,8 @@
   "correct": 0,
   "explanation": "Фішинг намагається виманити логіни й паролі через фальшиві сторінки.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "digital-safety",
   "grade": 4
  },
  {
@@ -413,6 +463,8 @@
   "correct": 1,
   "explanation": "Коли ти створюєш схему або модель, важливо залишити тільки те, що допомагає виконати завдання. Тут головне — шлях і потрібні орієнтири, а не випадкові деталі.",
   "difficulty": "hard",
+  "track": "computational-thinking",
+  "topic": "abstraction",
   "grade": 4
  },
  {
@@ -429,6 +481,8 @@
   "correct": 0,
   "explanation": "Декомпозиція полягає не просто в командній роботі, а саме в поділі великої задачі на окремі частини, за які можна відповідати окремо.",
   "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "decomposition",
   "grade": 4
  },
  {
@@ -445,6 +499,8 @@
   "correct": 2,
   "explanation": "Цикл «повторити 3» виконується три рази, кожного разу викликається «крапка». Разом 3 виклики.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 4
  },
  {
@@ -461,6 +517,8 @@
   "correct": 1,
   "explanation": "Домашня адреса — це конфіденційна інформація, її не можна писати у відкритих чатах.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "digital-safety",
   "grade": 4
  },
  {
@@ -477,6 +535,8 @@
   "correct": 1,
   "explanation": "Нікнейм — вигадане ім'я, яке ти використовуєш в Інтернеті.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "digital-safety",
   "grade": 4
  },
  {
@@ -493,6 +553,8 @@
   "correct": 3,
   "explanation": "Кожен виклик «зиг(20)»: 20+20=40 кроків. 4 виклики × 40 = 160 кроків.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 4
  },
  {
@@ -509,6 +571,8 @@
   "correct": 1,
   "explanation": "і=1: сума=1, і=3. і=3: сума=4, і=5. і=5: сума=9, і=7. і=7: сума=16. Результат: 16.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 4
  },
  {
@@ -525,6 +589,8 @@
   "correct": 0,
   "explanation": "Авторське право означає, що не можна просто так копіювати й видавати чужі твори за свої.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "digital-safety",
   "grade": 4
  },
  {
@@ -541,6 +607,8 @@
   "correct": 2,
   "explanation": "Узагальнення — це знаходження спільного, «верхнього» правила для групи схожих дій.",
   "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": null,
   "grade": 4
  },
  {
@@ -557,6 +625,8 @@
   "correct": 0,
   "explanation": "Тривале сидіння за комп'ютером шкідливе для очей і здоров'я, потрібні перерви.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "digital-safety",
   "grade": 4
  },
  {
@@ -573,6 +643,8 @@
   "correct": 1,
   "explanation": "Налагодження — це не лише знайти помилку, а й змінити потрібний крок та перевірити, чи проблема справді зникла.",
   "difficulty": "hard",
+  "track": "computational-thinking",
+  "topic": "debugging",
   "grade": 4
  },
  {
@@ -589,6 +661,8 @@
   "correct": 2,
   "explanation": "Вірус — це програма, яка шкодить комп'ютеру або викрадає дані.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "digital-safety",
   "grade": 4
  },
  {
@@ -605,6 +679,8 @@
   "correct": 2,
   "explanation": "ШІ — інструмент, як пензель чи фотоапарат. Чесність — у відкритості та власному внеску автора.",
   "difficulty": "hard",
+  "track": "ai-basics",
+  "topic": "ai-tools",
   "grade": 4
  },
  {
@@ -621,6 +697,8 @@
   "correct": 3,
   "explanation": "Навіть точні моделі помиляються. Тому у важливих справах рішення ШІ перевіряє людина.",
   "difficulty": "hard",
+  "track": "ai-basics",
+  "topic": "ai-perception",
   "grade": 4
  },
  {
@@ -637,6 +715,8 @@
   "correct": 3,
   "explanation": "Фейки навмисно роблять «сенсаційними». Лайки і фото — не доказ: перевіряй джерела.",
   "difficulty": "hard",
+  "track": "ai-basics",
+  "topic": "ai-ethics-safety",
   "grade": 4
  },
  {
@@ -653,6 +733,8 @@
   "correct": 1,
   "explanation": "Слова у словнику розміщені за абеткою, тому зручно відкрити його приблизно посередині й одразу відкинути половину сторінок.",
   "difficulty": "hard",
+  "track": "computational-thinking",
+  "topic": "efficiency",
   "grade": 4
  },
  {
@@ -669,6 +751,8 @@
   "correct": 3,
   "explanation": "Процедура «риска» малює 2 лінії (два «вперед»). Два виклики × 2 лінії = 4 лінії.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 4
  },
  {
@@ -685,6 +769,8 @@
   "correct": 1,
   "explanation": "У таблиці найшвидше працює фільтрація за потрібними умовами. Тут важливо одразу врахувати і день, і вік.",
   "difficulty": "hard",
+  "track": "computational-thinking",
+  "topic": null,
   "grade": 4
  },
  {
@@ -701,6 +787,8 @@
   "correct": 1,
   "explanation": "Сильна декомпозиція не просто ділить справу на частини, а робить ці частини керованими: окрема перевірка розкладу, окремий добір основних речей, окрема перевірка особливих потреб.",
   "difficulty": "hard",
+  "track": "computational-thinking",
+  "topic": "decomposition",
   "grade": 4
  },
  {
@@ -717,6 +805,8 @@
   "correct": 1,
   "explanation": "Умова «І» вимагає, щоб обидві частини були правдиві. Відсутність взуття зупиняє виконання дії.",
   "difficulty": "hard",
+  "track": "computational-thinking",
+  "topic": "logic",
   "grade": 4
  },
  {
@@ -733,6 +823,8 @@
   "correct": 1,
   "explanation": "Кожен виклик «пелюстка» малює одну пелюстку (два повороти по 60 кроків). Три виклики = три пелюстки = квітка.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 4
  },
  {
@@ -749,6 +841,8 @@
   "correct": 0,
   "explanation": "Творчість, вибір тем і перевірка — за людьми; ШІ пришвидшує чорнову роботу.",
   "difficulty": "medium",
+  "track": "ai-basics",
+  "topic": "human-vs-ai",
   "grade": 4
  },
  {
@@ -765,6 +859,8 @@
   "correct": 1,
   "explanation": "Налагодження означає знайти конкретне місце, де план дає збій, і змінити саме його. Тут проблема пов'язана з особливими днями розкладу.",
   "difficulty": "hard",
+  "track": "computational-thinking",
+  "topic": "debugging",
   "grade": 4
  },
  {
@@ -781,6 +877,8 @@
   "correct": 1,
   "explanation": "Ти узагальнюєш і використовуєш одне правило, бо всі ці дії мають спільну мету — «відкрити».",
   "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": null,
   "grade": 4
  },
  {
@@ -797,6 +895,8 @@
   "correct": 1,
   "explanation": "Тестування на різних прикладах показує, чи алгоритм працює стабільно, а не лише в одному випадку.",
   "difficulty": "hard",
+  "track": "computational-thinking",
+  "topic": null,
   "grade": 4
  },
  {
@@ -813,6 +913,8 @@
   "correct": 2,
   "explanation": "Класифікація — це впорядкування елементів за спільними ознаками (категоріями).",
   "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "classification",
   "grade": 4
  },
  {
@@ -829,6 +931,8 @@
   "correct": 2,
   "explanation": "Три виклики: вперед 50, праворуч 120 — три рази. 3 × 120° = 360°. Це рівносторонній трикутник.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 4
  },
  {
@@ -845,6 +949,8 @@
   "correct": 2,
   "explanation": "Особисті дані, введені в онлайн-сервіси, можуть зберігатися. Правило: приватне — не для чатів.",
   "difficulty": "hard",
+  "track": "ai-basics",
+  "topic": "ai-ethics-safety",
   "grade": 4
  },
  {
@@ -861,6 +967,8 @@
   "correct": 1,
   "explanation": "Патерн корисний тим, що дозволяє передбачити наступний крок. У шаблоні після чашок ідуть прибори.",
   "difficulty": "hard",
+  "track": "computational-thinking",
+  "topic": "patterns",
   "grade": 4
  },
  {
@@ -877,6 +985,8 @@
   "correct": 0,
   "explanation": "Інформація корисна тоді, коли допомагає прийняти наступне рішення. Тут число показує стан героя й підказує, що робити далі.",
   "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": null,
   "grade": 4
  },
  {
@@ -893,6 +1003,8 @@
   "correct": 2,
   "explanation": "3 сторони по 70 кроків з поворотами 120° (3 × 120° = 360°) — рівносторонній трикутник.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 4
  },
  {
@@ -909,6 +1021,8 @@
   "correct": 1,
   "explanation": "Оцінювати спосіб варто не за однією ознакою. Іноді важливі не лише секунди, а й те, наскільки легко виконати маршрут без помилок.",
   "difficulty": "hard",
+  "track": "computational-thinking",
+  "topic": null,
   "grade": 4
  },
  {
@@ -925,6 +1039,8 @@
   "correct": 3,
   "explanation": "Телефон, адреса й паролі — це персональні дані, їх не можна розголошувати.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "digital-safety",
   "grade": 4
  },
  {
@@ -941,6 +1057,8 @@
   "correct": 1,
   "explanation": "Фільтрація допомагає відбирати лише те, що відповідає потрібним умовам. Тут треба врахувати одразу дві ознаки: клас і жанр.",
   "difficulty": "hard",
+  "track": "computational-thinking",
+  "topic": "classification",
   "grade": 4
  },
  {
@@ -957,6 +1075,8 @@
   "correct": 0,
   "explanation": "Коли ти перебираєш варіанти по черзі, у гіршому випадку доводиться пройти майже весь список. Тому іноді варто спершу подумати, чи можна звузити пошук.",
   "difficulty": "hard",
+  "track": "computational-thinking",
+  "topic": "efficiency",
   "grade": 4
  },
  {
@@ -973,6 +1093,8 @@
   "correct": 1,
   "explanation": "іт1: 0%2=0→к=3. іт2: 3%2=1→к=4. іт3: 4%2=0→к=7. іт4: 7%2=1→к=8. іт5: 8%2=0→к=11. іт6: 11%2=1→к=12. Результат: 12.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 4
  },
  {
@@ -989,6 +1111,8 @@
   "correct": 1,
   "explanation": "Мережевий етикет — це повага до інших, культурне спілкування онлайн.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "digital-safety",
   "grade": 4
  },
  {
@@ -1005,6 +1129,8 @@
   "correct": 3,
   "explanation": "Зовнішній цикл × внутрішній цикл = 3 × 4 = 12 виконань.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 4
  },
  {
@@ -1021,6 +1147,8 @@
   "correct": 2,
   "explanation": "спіраль(20): вперед 20 + вперед 30 = 50 кроків. спіраль(40): вперед 40 + вперед 50 = 90 кроків. Разом: 50+90=140.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 4
  },
  {
@@ -1037,6 +1165,8 @@
   "correct": 1,
   "explanation": "Ти ділиш велике завдання на незалежні модулі, щоб легше було керувати процесом.",
   "difficulty": "hard",
+  "track": "computational-thinking",
+  "topic": "decomposition",
   "grade": 4
  },
  {
@@ -1053,6 +1183,8 @@
   "correct": 1,
   "explanation": "Процедура «бік» малює одну сторону квадрату (вперед 60, праворуч 90). Чотири виклики — чотири сторони — квадрат.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 4
  },
  {
@@ -1069,6 +1201,8 @@
   "correct": 0,
   "explanation": "Безкоштовне скачування платних ігор без дозволу — це порушення закону.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "digital-safety",
   "grade": 4
  },
  {
@@ -1085,6 +1219,8 @@
   "correct": 1,
   "explanation": "Google допомагає шукати інформацію в Інтернеті.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "digital-safety",
   "grade": 4
  },
  {
@@ -1101,6 +1237,8 @@
   "correct": 0,
   "explanation": "ШІ — помічник у навчанні: пояснює і підказує. Але знання стають твоїми, лише коли працюєш сам.",
   "difficulty": "medium",
+  "track": "ai-basics",
+  "topic": "ai-tools",
   "grade": 4
  },
  {
@@ -1117,6 +1255,8 @@
   "correct": 0,
   "explanation": "Авто збирає дані з камер і датчиків, а навчена модель розпізнає розмітку, знаки й пішоходів.",
   "difficulty": "medium",
+  "track": "ai-basics",
+  "topic": "ai-perception",
   "grade": 4
  },
  {
@@ -1133,6 +1273,8 @@
   "correct": 0,
   "explanation": "галузь(1) = 1 лінія + галузь(0) + галузь(0). галузь(0) нічого не робить. Тому галузь(1) = 1 лінія. галузь(2) = 1 лінія + галузь(1) + галузь(1) = 1+1+1 = 3 лінії.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 4
  },
  {
@@ -1149,6 +1291,8 @@
   "correct": 3,
   "explanation": "Чат добирає найімовірніше продовження тексту. Звучить переконливо, але перевірки фактів усередині немає.",
   "difficulty": "hard",
+  "track": "ai-basics",
+  "topic": "how-ai-learns",
   "grade": 4
  },
  {
@@ -1165,6 +1309,8 @@
   "correct": 1,
   "explanation": "Іноді план записують не спеціальними командами, а звичайними словами. Головне, щоб кроки йшли у правильному порядку.",
   "difficulty": "hard",
+  "track": "computational-thinking",
+  "topic": "algorithms",
   "grade": 4
  },
  {
@@ -1181,6 +1327,8 @@
   "correct": 1,
   "explanation": "Непарні від 1 до 6: 1, 3, 5. Сума: 1+3+5 = 9.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 4
  },
  {
@@ -1197,6 +1345,8 @@
   "correct": 2,
   "explanation": "Механічний годинник — це механізм без навчання і даних. Решта прикладів використовують моделі, навчені на прикладах.",
   "difficulty": "medium",
+  "track": "ai-basics",
+  "topic": "what-is-ai",
   "grade": 4
  },
  {
@@ -1213,6 +1363,8 @@
   "correct": 1,
   "explanation": "іт1: а=5+3=8, б=3-1=2. іт2: а=8+2=10, б=2-1=1. Результат: а=10.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 4
  },
  {
@@ -1229,6 +1381,8 @@
   "correct": 2,
   "explanation": "Процедура «зигзаг» малює 2 лінії. 4 виклики × 2 = 8 ліній.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 4
  },
  {
@@ -1245,6 +1399,8 @@
   "correct": 2,
   "explanation": "Зовнішній цикл виконується 5 разів, кожного разу викликається «квадрат». Разом 5 квадратів.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 4
  },
  {
@@ -1261,6 +1417,8 @@
   "correct": 1,
   "explanation": "Послідовність Фібоначчі: а=1,б=1. іт1: т=2,а=1,б=2. іт2: т=3,а=2,б=3. іт3: т=5,а=3,б=5. іт4: т=8,а=5,б=8. іт5: т=13,а=8,б=13. іт6: т=21,а=13,б=21. Результат: а=13.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 4
  },
  {
@@ -1277,6 +1435,8 @@
   "correct": 1,
   "explanation": "Коли одна й та сама частина роботи повторюється в різних місцях, її зручно винести в окремий підплан. Так менше дублювання і легше щось змінювати.",
   "difficulty": "hard",
+  "track": "computational-thinking",
+  "topic": null,
   "grade": 4
  },
  {
@@ -1293,6 +1453,8 @@
   "correct": 1,
   "explanation": "В Інтернеті можуть бути вигадки, тому важливо перевіряти інформацію з кількох джерел.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "digital-safety",
   "grade": 4
  },
  {
@@ -1309,6 +1471,8 @@
   "correct": 1,
   "explanation": "Процедура «квадрат» містить цикл з 4 повторень: вперед 50, праворуч 90 — це класичний квадрат.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 4
  },
  {
@@ -1325,6 +1489,8 @@
   "correct": 0,
   "explanation": "іт1: 8%2=0 → ф=4. іт2: 4%2=0 → ф=2. іт3: 2%2=0 → ф=1. Результат: 1.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 4
  },
  {
@@ -1341,6 +1507,8 @@
   "correct": 0,
   "explanation": "Початок: вгору (0°). Вертикальні напрямки: 0° (вгору) і 180° (вниз). Лінія 1: 0° (вгору, вертикальна). Лінія 5: 4×45°=180° (вниз, вертикальна). 1-ша і 5-та.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 4
  },
  {
@@ -1357,6 +1525,8 @@
   "correct": 1,
   "explanation": "Оптимізація — це коли ти порівнюєш кілька можливих варіантів і свідомо обираєш найкращий із них.",
   "difficulty": "hard",
+  "track": "computational-thinking",
+  "topic": "efficiency",
   "grade": 4
  },
  {
@@ -1373,6 +1543,8 @@
   "correct": 1,
   "explanation": "У такій ситуації важливо не мовчати і розповісти дорослим.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "digital-safety",
   "grade": 4
  }
 ]

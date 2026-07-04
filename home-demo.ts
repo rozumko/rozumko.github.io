@@ -98,18 +98,23 @@ async function loadDemoQuestions(preset: TrackPreset): Promise<Question[]> {
   // дитина грає, навіть коли сервер спить (Render cold start). Ключі знімаємо —
   // home-контракт: локально correctness не показуємо, її рахує серверний звіт
   // із телеметрії вже після згоди батька. Бандл і так публічний (School practice).
+  // Поступове послаблення фільтрів: спершу точний напрям+складність, далі лише
+  // напрям, і як останній засіб — будь-які питання класу (дитина завжди отримує
+  // місію, навіть якщо напрям у бандлі ще бідний).
+  const MIN = Math.min(DEMO_COUNT, 3)
+  const attempts: Array<Parameters<typeof loadStaticQuestions>[1]> = [
+    { count: DEMO_COUNT, track: preset.track, difficulty: preset.difficulty },
+    { count: DEMO_COUNT, track: preset.track },
+    { count: DEMO_COUNT },
+  ]
   let picked: Question[] = []
-  try {
-    picked = await loadStaticQuestions(selectedGrade, {
-      count: DEMO_COUNT,
-      difficulty: preset.difficulty,
-    })
-  } catch {
-    picked = []
-  }
-  // Замало питань цієї складності (бандл ще не розмічений за track) — беремо будь-які.
-  if (picked.length < Math.min(DEMO_COUNT, 3)) {
-    picked = await loadStaticQuestions(selectedGrade, { count: DEMO_COUNT })
+  for (const pick of attempts) {
+    try {
+      picked = await loadStaticQuestions(selectedGrade, pick)
+    } catch {
+      picked = []
+    }
+    if (picked.length >= MIN) break
   }
   return picked.map(stripKeys)
 }

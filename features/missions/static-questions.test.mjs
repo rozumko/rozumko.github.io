@@ -12,15 +12,30 @@ const BUNDLE_DIR = join(__dirname, '../../public/questions')
 // ── pickMissionQuestions (чиста логіка) ──────────────────────────────────────
 
 const pool = [
-  { id: 'a', difficulty: 'easy' },
-  { id: 'b', difficulty: 'easy' },
-  { id: 'c', difficulty: 'hard' },
-  { id: 'd', difficulty: 'medium' },
+  { id: 'a', difficulty: 'easy', track: 'informatics', topic: 'information' },
+  { id: 'b', difficulty: 'easy', track: 'informatics', topic: 'computer-systems' },
+  { id: 'c', difficulty: 'hard', track: 'ai-basics', topic: 'what-is-ai' },
+  { id: 'd', difficulty: 'medium', track: 'informatics', topic: 'information' },
 ]
 
 test('pickMissionQuestions: фільтрує за складністю', () => {
   const picked = pickMissionQuestions(pool, { count: 10, difficulty: 'easy' })
   assert.deepEqual(picked.map(q => q.difficulty), ['easy', 'easy'])
+})
+
+test('pickMissionQuestions: фільтрує за напрямом (track)', () => {
+  const picked = pickMissionQuestions(pool, { count: 10, track: 'informatics' })
+  assert.deepEqual(picked.map(q => q.id).sort(), ['a', 'b', 'd'])
+})
+
+test('pickMissionQuestions: фільтрує за темою (topic)', () => {
+  const picked = pickMissionQuestions(pool, { count: 10, topic: 'information' })
+  assert.deepEqual(picked.map(q => q.id).sort(), ['a', 'd'])
+})
+
+test('pickMissionQuestions: track + topic + difficulty разом', () => {
+  const picked = pickMissionQuestions(pool, { count: 10, track: 'informatics', topic: 'information', difficulty: 'easy' })
+  assert.deepEqual(picked.map(q => q.id), ['a'])
 })
 
 test('pickMissionQuestions: обрізає до count', () => {

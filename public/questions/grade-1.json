@@ -13,6 +13,8 @@
   "correct": 1,
   "explanation": "Рівлик йде вправо 3 кроки, повертає вниз і йде ще 3 кроки — утворюється кут, схожий на літеру Г.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -29,6 +31,8 @@
   "correct": 2,
   "explanation": "Між поворотами та на початку/кінці: вперед-вперед (1 ділянка до 1-го повороту), вперед (між поворотами), вперед (після 2-го повороту). Але кожен «вперед» — окрема команда, разом 4 команди «вперед» = 4 ділянки.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -45,6 +49,8 @@
   "correct": 1,
   "explanation": "Усі програми записані в пам'яті комп'ютера, яка знаходиться в системному блоці.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "computer-systems",
   "grade": 1
  },
  {
@@ -61,6 +67,8 @@
   "correct": 1,
   "explanation": "Один поворот праворуч: вгору → вправо. Другий поворот праворуч: вправо → вниз.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -77,6 +85,8 @@
   "correct": 1,
   "explanation": "Спочатку треба одягнути шкарпетки, а потім взуття — інакше взуття не налізе поверх шкарпеток.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -93,6 +103,8 @@
   "correct": 0,
   "explanation": "Мишка допомагає обирати об'єкти на екрані та керувати програмами.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "computer-systems",
   "grade": 1
  },
  {
@@ -109,6 +121,8 @@
   "correct": 1,
   "explanation": "Чайник — це побутовий прилад, він не відноситься до комп'ютера.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "computer-systems",
   "grade": 1
  },
  {
@@ -125,6 +139,8 @@
   "correct": 1,
   "explanation": "Смартфон має процесор, пам'ять і програми, як і комп'ютер.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "computer-systems",
   "grade": 1
  },
  {
@@ -141,6 +157,8 @@
   "correct": 2,
   "explanation": "Монітор — це екран, на якому відображається все, що робить комп'ютер.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "computer-systems",
   "grade": 1
  },
  {
@@ -157,6 +175,8 @@
   "correct": 1,
   "explanation": "Алгоритм — це послідовність кроків у правильному порядку. Наприклад, рецепт або інструкція.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -173,6 +193,8 @@
   "correct": 0,
   "explanation": "Датчики допомагають пилососу «бачити» перешкоди, а програма вирішує, куди їхати.",
   "difficulty": "easy",
+  "track": "ai-basics",
+  "topic": "what-is-ai",
   "grade": 1
  },
  {
@@ -189,6 +211,8 @@
   "correct": 0,
   "explanation": "Помічник добре пам'ятає і нагадує, але руки й ноги в нього немає — прибирати доведеться самому!",
   "difficulty": "easy",
+  "track": "ai-basics",
+  "topic": "ai-tools",
   "grade": 1
  },
  {
@@ -205,6 +229,8 @@
   "correct": 2,
   "explanation": "Команда «вперед» зустрічається тричі: два рази поспіль, потім поворот, і ще раз вперед.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -221,6 +247,8 @@
   "correct": 1,
   "explanation": "Алгоритм — це послідовність кроків у правильному порядку. Наприклад, рецепт або інструкція.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -237,6 +265,8 @@
   "correct": 2,
   "explanation": "Команда «вперед» зустрічається тричі: два рази поспіль, потім поворот, і ще раз вперед.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -253,6 +283,8 @@
   "correct": 3,
   "explanation": "Вгору → праворуч → вправо. Вперед 5 (дивиться вправо). Ліворуч → вгору. Вперед 3... Стоп: ліворуч від «вправо» = вгору. Але потім не було ще повороту. Після ліворуч Равлик дивиться вгору.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -269,6 +301,8 @@
   "correct": 1,
   "explanation": "Щоб зайти у кімнату, треба спочатку відчинити двері — цей крок пропущений.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -285,6 +319,8 @@
   "correct": 3,
   "explanation": "Поворот праворуч на 90° від напрямку «вгору» дає напрямок «вправо».",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -301,6 +337,8 @@
   "correct": 2,
   "explanation": "Навушники передають звук тільки тобі, щоб іншим не заважати.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "computer-systems",
   "grade": 1
  },
  {
@@ -317,6 +355,8 @@
   "correct": 1,
   "explanation": "Рівлик йде вправо 3 кроки, повертає вниз і йде ще 3 кроки — утворюється кут, схожий на літеру Г.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -333,6 +373,8 @@
   "correct": 2,
   "explanation": "Рахуємо: 1-крок, 2-крок, 3-поворот. Перший поворот — третя команда.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -349,6 +391,8 @@
   "correct": 0,
   "explanation": "Кнопка Power зображена як кружечок з рискою — це стандартний знак увімкнення.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "computer-systems",
   "grade": 1
  },
  {
@@ -365,6 +409,8 @@
   "correct": 1,
   "explanation": "Програми навчаються не як люди на уроках, а на великій кількості прикладів.",
   "difficulty": "easy",
+  "track": "ai-basics",
+  "topic": "how-ai-learns",
   "grade": 1
  },
  {
@@ -381,6 +427,8 @@
   "correct": 1,
   "explanation": "Правильний порядок: відкрити кран → намилити руки → змити мило → витерти руки.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -397,6 +445,8 @@
   "correct": 2,
   "explanation": "Рахуємо: 1-крок, 2-крок, 3-поворот. Перший поворот — третя команда.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -413,6 +463,8 @@
   "correct": 0,
   "explanation": "Програма може вдавати емоції словами, але справжні почуття є тільки в людей і тварин.",
   "difficulty": "easy",
+  "track": "ai-basics",
+  "topic": "human-vs-ai",
   "grade": 1
  },
  {
@@ -429,6 +481,8 @@
   "correct": 3,
   "explanation": "Комп'ютери рахують у мільйони разів швидше за людей — це їхня найсильніша сторона.",
   "difficulty": "easy",
+  "track": "ai-basics",
+  "topic": "human-vs-ai",
   "grade": 1
  },
  {
@@ -445,6 +499,8 @@
   "correct": 3,
   "explanation": "Курсор показує, де саме на екрані буде дія — клік або набір тексту.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "computer-systems",
   "grade": 1
  },
  {
@@ -461,6 +517,8 @@
   "correct": 3,
   "explanation": "Ноутбук має всі частини комп'ютера, але в одному корпусі та працює від батареї.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "computer-systems",
   "grade": 1
  },
  {
@@ -477,6 +535,8 @@
   "correct": 1,
   "explanation": "Від «вправо»: ліворуч → вгору → вліво → вниз. Три повороти ліворуч від «вправо» = напрямок «вниз».",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -493,6 +553,8 @@
   "correct": 2,
   "explanation": "Алгоритм має чіткий порядок. Купа випадкових слів не має ані порядку, ані мети — це не алгоритм.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -509,6 +571,8 @@
   "correct": 2,
   "explanation": "Від «вгору»: +90°→вправо, +90°→вниз, +90°→вліво. Три повороти праворуч = 270° = напрямок вліво.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -525,6 +589,8 @@
   "correct": 2,
   "explanation": "Мікрофон — це «вуха» колонки: він перетворює звук на сигнал, який розуміє програма.",
   "difficulty": "easy",
+  "track": "ai-basics",
+  "topic": "ai-perception",
   "grade": 1
  },
  {
@@ -541,6 +607,8 @@
   "correct": 2,
   "explanation": "Алгоритм має чіткий порядок. Купа випадкових слів не має ані порядку, ані мети — це не алгоритм.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -557,6 +625,8 @@
   "correct": 2,
   "explanation": "2 + 3 + 1 = 6 кроків.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -573,6 +643,8 @@
   "correct": 2,
   "explanation": "Процесор виконує всі обчислення та керує роботою інших частин.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "computer-systems",
   "grade": 1
  },
  {
@@ -589,6 +661,8 @@
   "correct": 1,
   "explanation": "Спочатку треба одягнути шкарпетки, а потім взуття — інакше взуття не налізе поверх шкарпеток.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -605,6 +679,8 @@
   "correct": 1,
   "explanation": "Від «вправо»: ліворуч → вгору → вліво → вниз. Три повороти ліворуч від «вправо» = напрямок «вниз».",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -621,6 +697,8 @@
   "correct": 3,
   "explanation": "Навіть розумні програми помиляються. Важливе краще перевірити з дорослими.",
   "difficulty": "easy",
+  "track": "ai-basics",
+  "topic": "ai-ethics-safety",
   "grade": 1
  },
  {
@@ -637,6 +715,8 @@
   "correct": 0,
   "explanation": "Це ноутбук, портативний комп'ютер",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -653,6 +733,8 @@
   "correct": 0,
   "explanation": "Принтер переносить зображення та текст із комп'ютера на папір.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "computer-systems",
   "grade": 1
  },
  {
@@ -669,6 +751,8 @@
   "correct": 3,
   "explanation": "Рівна постава допомагає не перевантажувати спину та очі.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "computer-systems",
   "grade": 1
  },
  {
@@ -685,6 +769,8 @@
   "correct": 3,
   "explanation": "Комп'ютерна мишка отримала назву через свою форму та «хвостик»-дріт.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "computer-systems",
   "grade": 1
  },
  {
@@ -701,6 +787,8 @@
   "correct": 2,
   "explanation": "Від «вправо» ліворуч: вправо→вгору→вліво→вниз. Три повороти ліворуч від «вправо» = вниз.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -717,6 +805,8 @@
   "correct": 2,
   "explanation": "Своє ім'я, адресу й телефон не можна нікому писати в інтернеті без дозволу батьків.",
   "difficulty": "easy",
+  "track": "ai-basics",
+  "topic": "ai-ethics-safety",
   "grade": 1
  },
  {
@@ -733,6 +823,8 @@
   "correct": 0,
   "explanation": "Чотири сторони по 4 кроки з поворотами ліворуч 90° — це квадрат. Четверта сторона повертає Равлика на старт.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -749,6 +841,8 @@
   "correct": 1,
   "explanation": "5 кроків мінус 1 пропущений = 4 кроки.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -765,6 +859,8 @@
   "correct": 1,
   "explanation": "Іконка — це маленький малюнок, який запускає програму або відкриває файл.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "computer-systems",
   "grade": 1
  },
  {
@@ -781,6 +877,8 @@
   "correct": 3,
   "explanation": "Поворот праворуч на 90° від напрямку «вгору» дає напрямок «вправо».",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -797,6 +895,8 @@
   "correct": 1,
   "explanation": "Камера — це «очі» телефона: вона знімає обличчя, а програма порівнює його зі збереженим.",
   "difficulty": "easy",
+  "track": "ai-basics",
+  "topic": "ai-perception",
   "grade": 1
  },
  {
@@ -813,6 +913,8 @@
   "correct": 1,
   "explanation": "Послідовний перенос ніг по черзі вперед — це опис ходьби.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -829,6 +931,8 @@
   "correct": 1,
   "explanation": "Крихти та напої можуть зіпсувати клавіатуру й інші частини комп'ютера.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "computer-systems",
   "grade": 1
  },
  {
@@ -845,6 +949,8 @@
   "correct": 1,
   "explanation": "Щоб зайти у кімнату, треба спочатку відчинити двері — цей крок пропущений.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -861,6 +967,8 @@
   "correct": 1,
   "explanation": "Якщо умова «риба клює» хибна — алгоритм повертається до кроку «чекати».",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -877,6 +985,8 @@
   "correct": 3,
   "explanation": "4 × 90° = 360° — повне коло. Після 4-го повороту Равлик знову дивиться вгору.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -893,6 +1003,8 @@
   "correct": 2,
   "explanation": "Мокрі руки й електрика — дуже небезпечно для здоров'я.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "computer-systems",
   "grade": 1
  },
  {
@@ -909,6 +1021,8 @@
   "correct": 0,
   "explanation": "Через очі ми сприймаємо зорову інформацію з монітора.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "computer-systems",
   "grade": 1
  },
  {
@@ -925,6 +1039,8 @@
   "correct": 2,
   "explanation": "4 кроки: взяти хліб, намазати маслом, покласти сир, з'їсти.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -941,6 +1057,8 @@
   "correct": 1,
   "explanation": "Умова «дощ» хибна, тому виконується гілка «інакше» — беремо сонцезахисні окуляри.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -957,6 +1075,8 @@
   "correct": 1,
   "explanation": "Один поворот праворуч: вгору → вправо. Другий поворот праворуч: вправо → вниз.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -973,6 +1093,8 @@
   "correct": 1,
   "explanation": "Клавіатура має багато клавіш і спеціально призначена для набору тексту.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "computer-systems",
   "grade": 1
  },
  {
@@ -989,6 +1111,8 @@
   "correct": 3,
   "explanation": "ШІ навчається на прикладах: що більше фото котів він побачив, то краще їх упізнає.",
   "difficulty": "easy",
+  "track": "ai-basics",
+  "topic": "how-ai-learns",
   "grade": 1
  },
  {
@@ -1005,6 +1129,8 @@
   "correct": 0,
   "explanation": "Флешку легко переносити, і вона може зберігати багато файлів.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "computer-systems",
   "grade": 1
  },
  {
@@ -1021,6 +1147,8 @@
   "correct": 1,
   "explanation": "Якщо умова «риба клює» хибна — алгоритм повертається до кроку «чекати».",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -1037,6 +1165,8 @@
   "correct": 2,
   "explanation": "2 + 3 + 1 = 6 кроків.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -1053,6 +1183,8 @@
   "correct": 2,
   "explanation": "Комп'ютер — електричний пристрій, тому йому потрібне живлення від електромережі.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "computer-systems",
   "grade": 1
  },
  {
@@ -1069,6 +1201,8 @@
   "correct": 3,
   "explanation": "Розумна колонка має програму-помічника, яка розуміє запитання і відповідає голосом.",
   "difficulty": "easy",
+  "track": "ai-basics",
+  "topic": "what-is-ai",
   "grade": 1
  },
  {
@@ -1085,6 +1219,8 @@
   "correct": 0,
   "explanation": "Програма запам'ятовує, що ти дивишся, і підбирає схоже. Це теж робота ШІ.",
   "difficulty": "easy",
+  "track": "ai-basics",
+  "topic": "ai-tools",
   "grade": 1
  },
  {
@@ -1101,6 +1237,8 @@
   "correct": 2,
   "explanation": "Послідовність: 1-вперед, 2-вперед, 3-вперед, 4-стоп. Третя команда — третій «вперед».",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -1117,6 +1255,8 @@
   "correct": 1,
   "explanation": "Перевірка 1: перша полиця — не знайшов. Перевірка 2: друга полиця — знайшов. Разом 2 перевірки.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  },
  {
@@ -1133,6 +1273,8 @@
   "correct": 3,
   "explanation": "5 + 30 + 20 = 55 хвилин.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 1
  }
 ]

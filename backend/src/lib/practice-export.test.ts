@@ -5,7 +5,8 @@ import { sanitizeForStaticBundle, groupByGrade, type ExportableQuestionRow } fro
 function row(overrides: Partial<ExportableQuestionRow> = {}): ExportableQuestionRow {
   return {
     id: 'q-1', q: '2+2?', code: null, type: 'choice', options: ['4', '5'],
-    correct: 0, explanation: null, difficulty: 'easy', grade: 1, isOlympiad: false,
+    correct: 0, explanation: null, difficulty: 'easy', track: null, topic: null,
+    grade: 1, isOlympiad: false,
     ...overrides,
   }
 }

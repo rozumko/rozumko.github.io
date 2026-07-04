@@ -13,6 +13,8 @@
   "correct": 3,
   "explanation": "Зовнішній цикл виконується 2 рази, внутрішній — 3 рази кожен. Разом: 2 × 3 = 6 ліній.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -29,6 +31,8 @@
   "correct": 2,
   "explanation": "Коли ти впорядковуєш предмети за однією ознакою, наприклад за розміром, це сортування.",
   "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "classification",
   "grade": 3
  },
  {
@@ -45,6 +49,8 @@
   "correct": 1,
   "explanation": "3 жовті сторони + поворот 90° кожна, потім зелена 4-та сторона замикає квадрат. Разом: квадрат з 3 жовтими і 1 зеленою стороною.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -61,6 +67,8 @@
   "correct": 2,
   "explanation": "і пробігає: 0,1,2,3,4,5,6,7. Парні: 0,2,4,6 — 4 значення. Умова істинна 4 рази.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -77,6 +85,8 @@
   "correct": 0,
   "explanation": "Команди у Scratch схожі на кольорові блоки, які з'єднуються одна з одною.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -93,6 +103,8 @@
   "correct": 2,
   "explanation": "В першій ітерації: крок=30, вперед 30, поворот, вперед 30. Разом 30+30=60 кроків. Потім крок стає 40.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -109,6 +121,8 @@
   "correct": 1,
   "explanation": "Налагодження — це пошук конкретного місця збою. Тут ти перевіряєш кроки по черзі, щоб знайти причину запізнення.",
   "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "debugging",
   "grade": 3
  },
  {
@@ -125,6 +139,8 @@
   "correct": 0,
   "explanation": "Комп'ютер сам не вигадує дії, він виконує те, що ми йому наказали програмою.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -141,6 +157,8 @@
   "correct": 3,
   "explanation": "Блок-схема показує кроки алгоритму за допомогою фігур та стрілок.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -157,6 +175,8 @@
   "correct": 0,
   "explanation": "Якщо у прикладах не було жовтих помідорів, програма може вирішити, що це не помідор. Якість навчання залежить від різноманіття прикладів.",
   "difficulty": "hard",
+  "track": "ai-basics",
+  "topic": "how-ai-learns",
   "grade": 3
  },
  {
@@ -173,6 +193,8 @@
   "correct": 1,
   "explanation": "Спочатку потрібна вода — без неї чай не звариш.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -189,6 +211,8 @@
   "correct": 2,
   "explanation": "Виконавець — це хтось (або щось), хто виконує задані команди.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -205,6 +229,8 @@
   "correct": 1,
   "explanation": "Складне завдання («Зробити салат») розбивається на простіші підзавдання для зручності виконання.",
   "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "decomposition",
   "grade": 3
  },
  {
@@ -221,6 +247,8 @@
   "correct": 0,
   "explanation": "Ти розбиваєш одну велику справу на менші частини, з якими легше працювати окремо. Це і є декомпозиція.",
   "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "decomposition",
   "grade": 3
  },
  {
@@ -237,6 +265,8 @@
   "correct": 3,
   "explanation": "ШІ допомагає з рутиною — підбір матеріалів, ідеї завдань. А вчить і оцінює людина.",
   "difficulty": "medium",
+  "track": "ai-basics",
+  "topic": "ai-tools",
   "grade": 3
  },
  {
@@ -253,6 +283,8 @@
   "correct": 1,
   "explanation": "План краще перевіряти на кількох прикладах. Тоді видно, чи працює він не лише в одній простій ситуації.",
   "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": null,
   "grade": 3
  },
  {
@@ -269,6 +301,8 @@
   "correct": 2,
   "explanation": "«Повторити 4» означає виконати тіло рівно 4 рази, незалежно від змінної «і».",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -285,6 +319,8 @@
   "correct": 2,
   "explanation": "Алгоритм — це чіткий план, що робити крок за кроком.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -301,6 +337,8 @@
   "correct": 2,
   "explanation": "Програма порівнює звук зі зразками. Шум, нечітка вимова чи рідкісні слова ускладнюють розпізнавання.",
   "difficulty": "medium",
+  "track": "ai-basics",
+  "topic": "ai-perception",
   "grade": 3
  },
  {
@@ -317,6 +355,8 @@
   "correct": 1,
   "explanation": "Людина теж може виконувати чіткі команди за алгоритмом.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -333,6 +373,8 @@
   "correct": 2,
   "explanation": "6 сторін по 50 кроків з поворотами 60° (6 × 60° = 360°) утворюють правильний шестикутник.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -349,6 +391,8 @@
   "correct": 2,
   "explanation": "4 × 3 = 12 виконань команди «вперед».",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -365,6 +409,8 @@
   "correct": 2,
   "explanation": "10 + 5 = 15, потім 15 + 5 = 20. Значення — 20.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -381,6 +427,8 @@
   "correct": 2,
   "explanation": "Ромб у блок-схемі — це перевірка умови: «так» чи «ні».",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -397,6 +445,8 @@
   "correct": 3,
   "explanation": "Якщо змінити порядок кроків, результат може виявитися неправильним.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -413,6 +463,8 @@
   "correct": 1,
   "explanation": "Під час перевірки плану важливо помітити пропущені кроки. Якщо інгредієнти не підготувати, наступні дії виконати коректно не вийде.",
   "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "debugging",
   "grade": 3
  },
  {
@@ -429,6 +481,8 @@
   "correct": 0,
   "explanation": "Програма працює зі словами, а жарт часто тримається на прихованому змісті й культурі — це людям вдається краще.",
   "difficulty": "hard",
+  "track": "ai-basics",
+  "topic": "human-vs-ai",
   "grade": 3
  },
  {
@@ -445,6 +499,8 @@
   "correct": 1,
   "explanation": "Пральна машина виконує програму прання — це теж виконавець.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -461,6 +517,8 @@
   "correct": 2,
   "explanation": "1×2=2, 2×2=4, 4×2=8, 8×2=16. Після 4 ітерацій результат = 16.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -477,6 +535,8 @@
   "correct": 1,
   "explanation": "Це патерн (закономірність), що повторюється: «Ліворуч, ліворуч, праворуч».",
   "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "patterns",
   "grade": 3
  },
  {
@@ -493,6 +553,8 @@
   "correct": 0,
   "explanation": "Помилку найкраще шукати, коли перевіряєш план крок за кроком і бачиш, на якому місці виникає збій.",
   "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "debugging",
   "grade": 3
  },
  {
@@ -509,6 +571,8 @@
   "correct": 0,
   "explanation": "У лінійному алгоритмі кожна команда йде строго за попередньою.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -525,6 +589,8 @@
   "correct": 1,
   "explanation": "Умова «колір_фону == 1» істинна, виконується перша гілка: колір синій, вперед 50 — малюється синя лінія.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -541,6 +607,8 @@
   "correct": 1,
   "explanation": "Коли натискають зелений прапорець, усі скрипти з цим блоком запускаються.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -557,6 +625,8 @@
   "correct": 2,
   "explanation": "Абстрагування допомагає залишити тільки те, що справді потрібне для виконання завдання. Колір чужого рюкзака тут не допомагає знайти шлях.",
   "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "abstraction",
   "grade": 3
  },
  {
@@ -573,6 +643,8 @@
   "correct": 1,
   "explanation": "Умовний оператор дозволяє приймати рішення і змінювати послідовність дій залежно від умови.",
   "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "algorithms",
   "grade": 3
  },
  {
@@ -589,6 +661,8 @@
   "correct": 2,
   "explanation": "Розгалуження означає: якщо умова виконується — робимо одну дію, інакше — іншу.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -605,6 +679,8 @@
   "correct": 2,
   "explanation": "Синій колір встановлюється при і=2, 4, 6. Отже малюються 3 синіх лінії (2-га, 4-та, 6-та).",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -621,6 +697,8 @@
   "correct": 2,
   "explanation": "іт1: вперед 5, крок=10. іт2: вперед 10, крок=20. іт3: вперед 20, крок=40. іт4: вперед 40. Разом: 5+10+20+40=75.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -637,6 +715,8 @@
   "correct": 1,
   "explanation": "Налагодження — це коли ти покроково перевіряєш свій план і знаходиш, на якому саме кроці виникла помилка.",
   "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "debugging",
   "grade": 3
  },
  {
@@ -653,6 +733,8 @@
   "correct": 2,
   "explanation": "іт1: вперед 10, д=20. іт2: вперед 20, д=30. іт3: вперед 30, д=40. іт4: вперед 40. Разом: 10+20+30+40=100.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -669,6 +751,8 @@
   "correct": 1,
   "explanation": "Умова зупинки — це той стан, який завершує повторення (цикл).",
   "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "repetition",
   "grade": 3
  },
  {
@@ -685,6 +769,8 @@
   "correct": 1,
   "explanation": "Ефективніше спочатку звузити пошук за важливою ознакою. Тут такою ознакою є зелений колір.",
   "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "efficiency",
   "grade": 3
  },
  {
@@ -701,6 +787,8 @@
   "correct": 1,
   "explanation": "Одне й те саме правило («Помити руки») ти застосовуєш у різних ситуаціях — це й є узагальнення.",
   "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": null,
   "grade": 3
  },
  {
@@ -717,6 +805,8 @@
   "correct": 1,
   "explanation": "Повторення шаблону (патерну) зручно записувати як цикл — замість того, щоб перераховувати кожну дію окремо.",
   "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "patterns",
   "grade": 3
  },
  {
@@ -733,6 +823,8 @@
   "correct": 3,
   "explanation": "Впевнена відповідь — не означає правильна. Перевіряй важливе в надійних джерелах.",
   "difficulty": "medium",
+  "track": "ai-basics",
+  "topic": "ai-ethics-safety",
   "grade": 3
  },
  {
@@ -749,6 +841,8 @@
   "correct": 2,
   "explanation": "іт1: а=3+7=10, б=10-7=3. іт2: а=10+3=13, б=13-3=10. Результат: б=10.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -765,6 +859,8 @@
   "correct": 3,
   "explanation": "Будильник і калькулятор працюють за точними правилами. Впізнавання співу потребує навчання на прикладах — це ШІ.",
   "difficulty": "medium",
+  "track": "ai-basics",
+  "topic": "what-is-ai",
   "grade": 3
  },
  {
@@ -781,6 +877,8 @@
   "correct": 3,
   "explanation": "Scratch — це спеціальна програма, де діти вчаться створювати власні проєкти з командами.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -797,6 +895,8 @@
   "correct": 2,
   "explanation": "і ділиться на 3 при і=3 та і=6. Тобто умова спрацьовує двічі → прапорець=2.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -813,6 +913,8 @@
   "correct": 0,
   "explanation": "ШІ швидко обробляє багато знімків, але відповідальне рішення завжди ухвалює людина.",
   "difficulty": "medium",
+  "track": "ai-basics",
+  "topic": "human-vs-ai",
   "grade": 3
  },
  {
@@ -829,6 +931,8 @@
   "correct": 1,
   "explanation": "Добрий поділ розбиває велику задачу на зрозумілі підзадачі, які можна виконувати окремо й потім поєднати.",
   "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "decomposition",
   "grade": 3
  },
  {
@@ -845,6 +949,8 @@
   "correct": 0,
   "explanation": "«Штучний» означає створений людьми. Люди пишуть програми і дають їм дані для навчання.",
   "difficulty": "medium",
+  "track": "ai-basics",
+  "topic": "what-is-ai",
   "grade": 3
  },
  {
@@ -861,6 +967,8 @@
   "correct": 0,
   "explanation": "Спрайт — це персонаж або об'єкт, який рухається та виконує команди.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -877,6 +985,8 @@
   "correct": 2,
   "explanation": "Під час навчання програма запам'ятовує характерні ознаки котів і шукає їх на новому фото.",
   "difficulty": "medium",
+  "track": "ai-basics",
+  "topic": "ai-perception",
   "grade": 3
  },
  {
@@ -893,6 +1003,8 @@
   "correct": 1,
   "explanation": "іт1: підсумок=0+1=1, крок=2. іт2: підсумок=1+2=3, крок=3. іт3: підсумок=3+3=6, крок=4. іт4: підсумок=6+4=10. Результат: 10.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -909,6 +1021,8 @@
   "correct": 3,
   "explanation": "Команда має бути точною: робот має знати, скільки саме кроків зробити.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -925,6 +1039,8 @@
   "correct": 3,
   "explanation": "10+10=20, 20+20=40, 40+40=80. Після 3 ітерацій х = 80.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -941,6 +1057,8 @@
   "correct": 2,
   "explanation": "Кожна наступна сторона довша попередньої (30, 40, 50, 60). Фігура не замикається — утворюється спіраль.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -957,6 +1075,8 @@
   "correct": 3,
   "explanation": "Кожен виконавець має свій набір команд, які він може виконати.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -973,6 +1093,8 @@
   "correct": 1,
   "explanation": "Кожна ітерація: перевіряємо значення змінної «сторона» і обираємо колір. 1→червоний, 2→зелений, 3→синій, 4→жовтий.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -989,6 +1111,8 @@
   "correct": 1,
   "explanation": "Умова «І» вимагає обидві потрібні частини одночасно. Якщо бракує хоча б однієї, правило не виконується.",
   "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "logic",
   "grade": 3
  },
  {
@@ -1005,6 +1129,8 @@
   "correct": 2,
   "explanation": "До 1-ї ітерації: крок=20, після: крок=30. До 2-ї: крок=30, після: крок=40. Після 2-ї ітерації — 40.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -1021,6 +1147,8 @@
   "correct": 3,
   "explanation": "Змінна починається з 0. Після кожної ітерації збільшується на 1: 0→1→2→3→4. Після 4 ітерацій = 4.",
   "difficulty": "easy",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -1037,6 +1165,8 @@
   "correct": 1,
   "explanation": "Лінії малюються в напрямках: 0°, 60°, 0°, 60°. Перша лінія — 0°, остання (4-та) — 60°. Кут між ними = 60°.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -1053,6 +1183,8 @@
   "correct": 2,
   "explanation": "Сцена — це фон, на якому розгортаються події.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -1069,6 +1201,8 @@
   "correct": 1,
   "explanation": "Ефективний спосіб виконує ту саму справу швидше й без зайвих дій. Тут швидше працювати невеликими пачками.",
   "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "efficiency",
   "grade": 3
  },
  {
@@ -1085,6 +1219,8 @@
   "correct": 2,
   "explanation": "Коли в тебе вже є готовий план, не треба щоразу заново розбирати кожен маленький крок. Можна просто скористатися цим планом і отримати результат.",
   "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "abstraction",
   "grade": 3
  },
  {
@@ -1101,6 +1237,8 @@
   "correct": 2,
   "explanation": "ШІ — джерело ідей, а не заміна твоєї творчості. Найцікавіші історії — твої власні.",
   "difficulty": "medium",
+  "track": "ai-basics",
+  "topic": "ai-tools",
   "grade": 3
  },
  {
@@ -1117,6 +1255,8 @@
   "correct": 1,
   "explanation": "розмір=50 > 30, тому виконується перша гілка: 4 сторони по 50 з поворотами 90° = квадрат зі стороною 50.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -1133,6 +1273,8 @@
   "correct": 1,
   "explanation": "Умова «АБО» спрацьовує вже тоді, коли виконується хоча б одна з потрібних умов.",
   "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "logic",
   "grade": 3
  },
  {
@@ -1149,6 +1291,8 @@
   "correct": 3,
   "explanation": "Зовнішній × внутрішній = 3 × 2 = 6 виконань. Кожне додає 5. 6 × 5 = 30.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -1165,6 +1309,8 @@
   "correct": 2,
   "explanation": "іт1: і=5>0 → макс=5, і=3. іт2: і=3<5 → макс залишається 5, і=1. іт3: і=1<5 → макс=5, і=-1. іт4: і=-1<5 → макс=5. Результат: макс=5.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -1181,6 +1327,8 @@
   "correct": 1,
   "explanation": "Дані — це приклади: фото, тексти, звуки. З них програма вчиться знаходити закономірності.",
   "difficulty": "medium",
+  "track": "ai-basics",
+  "topic": "how-ai-learns",
   "grade": 3
  },
  {
@@ -1197,6 +1345,8 @@
   "correct": 1,
   "explanation": "Сучасні програми вміють підробляти відео й голос. Перш ніж вірити чи ділитися — перевір, звідки воно.",
   "difficulty": "hard",
+  "track": "ai-basics",
+  "topic": "ai-ethics-safety",
   "grade": 3
  },
  {
@@ -1213,6 +1363,8 @@
   "correct": 1,
   "explanation": "Щоб перейти дорогу безпечно, спочатку треба зупинитися й подивитися по сторонах.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -1229,6 +1381,8 @@
   "correct": 1,
   "explanation": "Фільтрація допомагає залишити лише ті елементи, що відповідають потрібній умові. Тут умова — життя у воді.",
   "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "classification",
   "grade": 3
  },
  {
@@ -1245,6 +1399,8 @@
   "correct": 1,
   "explanation": "Результат перевірки має допомагати прийняти рішення. Тут корисним результатом є чітка відповідь, чи вистачає грошей на покупку.",
   "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "algorithms",
   "grade": 3
  },
  {
@@ -1261,6 +1417,8 @@
   "correct": 1,
   "explanation": "Цикл дозволяє виконати одну й ту саму дію багато разів.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -1277,6 +1435,8 @@
   "correct": 0,
   "explanation": "У повторенні важливо щоразу перевіряти умову зупинки. Тут треба зупинитися тоді, коли книжок у коробці більше не залишилося.",
   "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "repetition",
   "grade": 3
  },
  {
@@ -1293,6 +1453,8 @@
   "correct": 3,
   "explanation": "Кожна ітерація додає 2: 0→2→4→6→8→10. Після 5 ітерацій сума = 10.",
   "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  },
  {
@@ -1309,6 +1471,8 @@
   "correct": 2,
   "explanation": "2→4→8→16→32→64. Після 5 ітерацій: 2×2=4, 4×2=8... ні, н=н+н подвоює: 2,4,8,16,32,64. Після 5 ітерацій н=64.",
   "difficulty": "hard",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 3
  }
 ]

@@ -14,6 +14,8 @@ export interface ExportableQuestionRow {
   correct: number | null
   explanation: string | null
   difficulty: string | null
+  track: string | null
+  topic: string | null
   grade: number | null
   isOlympiad: boolean | null
 }
