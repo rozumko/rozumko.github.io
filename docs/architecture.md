@@ -119,7 +119,9 @@ classroom game is live — a teacher creates a session
 in the dashboard ("Класна гра" tab, with the same optional track/topic
 filtering), students join anonymously by a 6-digit
 code with an avatar + nickname label, answers are scored server-side and the
-teacher sees an anonymous leaderboard (`/api/school`, migration 0014). Home
+teacher sees an anonymous leaderboard plus an aggregate per-topic correctness
+breakdown ("що варто повторити") — aggregate only, no answer keys or child PII
+beyond the leaderboard (`/api/school`, migration 0014). Home
 Mode has implemented slices: `/home`, parent lead + consent, server-scored
 demo reports, backend entitlement state and repeatable Club practice missions
 gated by entitlement. The provider-neutral payment webhook boundary is
