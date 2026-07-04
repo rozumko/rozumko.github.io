@@ -97,9 +97,11 @@ skill). Extra columns: `progression_band`, `version` (bumped by the backend on
 material edits), `meta jsonb`. Validation is fail-closed in
 `backend/src/lib/taxonomy.ts` (`TOPICS_BY_TRACK`). The static practice bundle now
 carries `track` and `topic`, so `pickMissionQuestions` filters by
-track/topic/difficulty and direction selection is real (Home Demo and the School
-free-mission track picker). AIG item models should emit the same taxonomy fields
-when that engine lands.
+track/topic/difficulty and direction selection is real (Home Demo by track; the
+School free-mission flow adds a track picker plus optional per-topic chips).
+Shared taxonomy UI copy lives in `features/missions/topics.ts` (public pages) and
+is re-exported by `features/admin/taxonomy.ts`. AIG item models should emit the
+same taxonomy fields when that engine lands.
 
 A missions registry (`missions` table, migration 0022) records logical missions
 by stable slug: `kind` (`question-set` today, `sorting-game` for the built-in
