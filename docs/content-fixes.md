@@ -72,11 +72,15 @@
 ## 4. Розмітка `track`
 
 Колонка `track` вже підтримується API (`GET /api/questions?track=…`), але старі
-питання не розмічені — `home-demo.ts` живе на fallback за difficulty. План:
+питання не розмічені. Home-демо тепер вантажить питання зі статичного бандла
+(`loadStaticQuestions`, не з API), а `pickMissionQuestions` фільтрує лише за
+`difficulty` — тож зараз вибір напряму на home.html фактично мапиться на
+складність, а не на реальний track. План:
 
 1. Розмітити наявні питання в БД: `code != null` → `informatics`;
    алгоритми-рухи-закономірності без коду → `computational-thinking`;
    питання про дані/ШІ → `ai-basics` (зараз таких майже немає — див. п. 3).
-2. Перегенерувати статичний бандл (`npm run export:questions`).
-3. Після розмітки прибрати fallback у `home-demo.ts` (коментар «Тимчасовий
-   fallback…» у `loadDemoQuestions`).
+2. Перегенерувати статичний бандл (`npm run export:questions`), щоб `track`
+   потрапив у `public/questions/grade-N.json`.
+3. Додати `track` у `MissionPick`/`pickMissionQuestions` і використати його в
+   `home-demo.ts` `loadDemoQuestions` (зараз там difficulty + any-fallback).
