@@ -112,11 +112,12 @@ management/visibility layer (read-only admin "Місії" tab, `GET /api/admin/m
 
 ## Surface Architecture — School **[IMPLEMENTED]**, Home Demo/Entitlement/Club Practice **[IMPLEMENTED]**, Payment Webhook Boundary **[IMPLEMENTED]**, Provider Checkout **[PLANNED]**, Olympiad **[IMPLEMENTED]/[PLANNED]**
 
-_School Mode is shipped: `/school` runs self-serve missions (grade +
-difficulty presets, local feedback) from the static practice bundle through the
-reusable `features/missions/` runner, and the advanced classroom game is live —
-a teacher creates a session
-in the dashboard ("Класна гра" tab), students join anonymously by a 6-digit
+_School Mode is shipped: `/school` runs self-serve missions (grade, optional
+track + per-topic, and difficulty; local feedback) from the static practice
+bundle through the reusable `features/missions/` runner, and the advanced
+classroom game is live — a teacher creates a session
+in the dashboard ("Класна гра" tab, with the same optional track/topic
+filtering), students join anonymously by a 6-digit
 code with an avatar + nickname label, answers are scored server-side and the
 teacher sees an anonymous leaderboard (`/api/school`, migration 0014). Home
 Mode has implemented slices: `/home`, parent lead + consent, server-scored
