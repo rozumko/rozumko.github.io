@@ -12,5 +12,5 @@
     "isolatedModules": true
   },
   "include": ["**/*.ts", "**/*.js"],
-  "exclude": ["node_modules", "dist", "backend"]
+  "exclude": ["node_modules", "dist", "backend", "temp"]
 }

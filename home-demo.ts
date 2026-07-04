@@ -2,10 +2,11 @@ import './frontend-security.js'
 import { $, $maybe } from './utils/dom.js'
 import { runMission, type MissionElements } from './features/missions/mission-runner.js'
 import {
-  createHomeLead, loadQuestions, submitHomeDemoReport, getHomeClub, submitHomeMissionReport,
+  createHomeLead, submitHomeDemoReport, getHomeClub, submitHomeMissionReport,
   loadHomeClubQuestions,
   type Question, type HomeDemoTrack, type HomeDemoEvent, type HomeDemoReport, type HomeClubState,
 } from './features/api/client.js'
+import { loadStaticQuestions } from './features/missions/static-questions.js'
 
 // Home Demo (зріз 2 контракту docs/home-demo-contract.md).
 // Дитина проходить демо-місію без облікового запису: питання приходять із
@@ -93,24 +94,24 @@ function stripKeys(q: Question): Question {
 }
 
 async function loadDemoQuestions(preset: TrackPreset): Promise<Question[]> {
-  const byTrack = await loadQuestions({
-    grade: selectedGrade,
-    isOlympiad: false,
-    count: DEMO_COUNT,
-    track: preset.track,
-    hideAnswers: true,
-  })
-  if (byTrack.length >= Math.min(DEMO_COUNT, 3)) return byTrack.slice(0, DEMO_COUNT).map(stripKeys)
-
-  // Тимчасовий fallback для наявної БД до розмітки старих питань `track`.
-  const fallback = await loadQuestions({
-    grade: selectedGrade,
-    isOlympiad: false,
-    count: DEMO_COUNT,
-    difficulty: preset.difficulty,
-    hideAnswers: true,
-  })
-  return fallback.map(stripKeys)
+  // Демо-питання беремо зі статичного бандла (public/questions), а не з бекенду:
+  // дитина грає, навіть коли сервер спить (Render cold start). Ключі знімаємо —
+  // home-контракт: локально correctness не показуємо, її рахує серверний звіт
+  // із телеметрії вже після згоди батька. Бандл і так публічний (School practice).
+  let picked: Question[] = []
+  try {
+    picked = await loadStaticQuestions(selectedGrade, {
+      count: DEMO_COUNT,
+      difficulty: preset.difficulty,
+    })
+  } catch {
+    picked = []
+  }
+  // Замало питань цієї складності (бандл ще не розмічений за track) — беремо будь-які.
+  if (picked.length < Math.min(DEMO_COUNT, 3)) {
+    picked = await loadStaticQuestions(selectedGrade, { count: DEMO_COUNT })
+  }
+  return picked.map(stripKeys)
 }
 
 async function loadClubQuestions(preset: TrackPreset): Promise<Question[]> {
