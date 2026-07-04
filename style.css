@@ -4328,3 +4328,28 @@ body.teacher-dashboard-active {
   font-weight: 700;
   color: var(--clr-text);
 }
+
+/* Гра-сортування: серія правильних відповідей + зірковий рейтинг */
+.sg__meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+.sg__streak {
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  color: #ea580c;
+  background: #fff7ed;
+  border-radius: var(--r-full, 999px);
+  padding: 2px var(--sp-3);
+}
+.sg__streak--bump { animation: sg-pop 0.25s ease; }
+.sg__bin--3 { background: #f3e8ff; color: #7e22ce; border-color: #d8b4fe; }
+.sg__bin--4 { background: #fef9c3; color: #a16207; border-color: #fde047; }
+.sg__done-stars {
+  font-size: 2.5rem;
+  letter-spacing: 0.25rem;
+  margin-bottom: var(--sp-2);
+}

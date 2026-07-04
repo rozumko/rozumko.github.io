@@ -72,6 +72,88 @@ export const INFO_SORT_LEVELS: SortingLevel[] = [
   },
 ]
 
+// «Мульти-Сортування» (джерело: temp/sort.html). Родзинка механіки: той самий
+// предмет має кілька ознак і в різних рівнях потрапляє в різні кошики. Це
+// тренує абстрагування — вибір ознаки, яка зараз важлива. Кошики = теги;
+// правильний кошик предмета обчислюється зіставленням його тегів із тегами рівня.
+const MULTISORT_DB: Record<string, { emoji: string; label: string; tags: string[] }> = {
+  apple:     { emoji: '🍎', label: 'Яблуко',     tags: ['red', 'food', 'round', 'nature'] },
+  chili:     { emoji: '🌶️', label: 'Перець',     tags: ['red', 'food', 'nature'] },
+  firetruck: { emoji: '🚒', label: 'Пожежна',    tags: ['red', 'machine'] },
+  balloon:   { emoji: '🎈', label: 'Кулька',     tags: ['red', 'round'] },
+  banana:    { emoji: '🍌', label: 'Банан',      tags: ['yellow', 'food', 'nature'] },
+  lemon:     { emoji: '🍋', label: 'Лимон',      tags: ['yellow', 'food', 'round', 'nature'] },
+  cheese:    { emoji: '🧀', label: 'Сир',        tags: ['yellow', 'food'] },
+  leaf:      { emoji: '🍃', label: 'Листок',     tags: ['green', 'nature'] },
+  broccoli:  { emoji: '🥦', label: 'Броколі',    tags: ['green', 'food', 'nature'] },
+  frog:      { emoji: '🐸', label: 'Жаба',       tags: ['green', 'animal', 'nature'] },
+  turtle:    { emoji: '🐢', label: 'Черепаха',   tags: ['green', 'animal'] },
+  sun:       { emoji: '☀️', label: 'Сонце',      tags: ['yellow', 'nature', 'round'] },
+  water:     { emoji: '💧', label: 'Крапля',     tags: ['blue', 'nature'] },
+  whale:     { emoji: '🐋', label: 'Кит',        tags: ['blue', 'animal'] },
+  jeans:     { emoji: '👖', label: 'Джинси',     tags: ['blue', 'clothing'] },
+  car:       { emoji: '🚗', label: 'Авто',       tags: ['red', 'machine'] },
+  plane:     { emoji: '✈️', label: 'Літак',      tags: ['machine'] },
+  cat:       { emoji: '🐱', label: 'Кіт',        tags: ['animal'] },
+  dog:       { emoji: '🐕', label: 'Пес',        tags: ['animal'] },
+  donut:     { emoji: '🍩', label: 'Пончик',     tags: ['food', 'round'] },
+  clock:     { emoji: '⏰', label: 'Годинник',   tags: ['round', 'machine'] },
+  shirt:     { emoji: '👕', label: 'Футболка',   tags: ['clothing'] },
+  socks:     { emoji: '🧦', label: 'Шкарпетки',  tags: ['clothing', 'red'] },
+}
+
+interface MultiSortLevelDef {
+  instruction: string
+  bins: SortingBin[]     // bin.id має збігатися з тегом у MULTISORT_DB
+  pool: string[]         // ключі MULTISORT_DB
+}
+
+/** Розв'язує теги предметів у конкретні кошики рівня. Кидає, якщо предмет
+ *  не підходить рівно до одного кошика — захист від помилок у даних. */
+function buildMultiSort(defs: MultiSortLevelDef[]): SortingLevel[] {
+  return defs.map(def => {
+    const binIds = def.bins.map(b => b.id)
+    const items: SortingItem[] = def.pool.map(key => {
+      const entry = MULTISORT_DB[key]
+      if (!entry) throw new Error(`MULTISORT_DB: немає предмета «${key}»`)
+      const matches = entry.tags.filter(t => binIds.includes(t))
+      if (matches.length !== 1) {
+        throw new Error(`«${key}» підходить до ${matches.length} кошиків рівня «${def.instruction}» (очікувався 1)`)
+      }
+      return { emoji: entry.emoji, label: entry.label, bin: matches[0] }
+    })
+    return { instruction: def.instruction, bins: def.bins, items }
+  })
+}
+
+export const MULTISORT_LEVELS: SortingLevel[] = buildMultiSort([
+  {
+    instruction: 'Спочатку — за кольором',
+    bins: [
+      { id: 'red',   label: '🔴 Червоне' },
+      { id: 'green', label: '🟢 Зелене' },
+    ],
+    pool: ['apple', 'chili', 'firetruck', 'balloon', 'leaf', 'broccoli', 'frog', 'turtle', 'car', 'socks'],
+  },
+  {
+    instruction: 'Ті самі речі — тепер їжа чи тварини?',
+    bins: [
+      { id: 'food',   label: '🍔 Їжа' },
+      { id: 'animal', label: '🐾 Тварини' },
+    ],
+    pool: ['apple', 'banana', 'cheese', 'donut', 'cat', 'dog', 'whale', 'frog', 'broccoli', 'lemon'],
+  },
+  {
+    instruction: 'А тепер — природа, техніка чи одяг?',
+    bins: [
+      { id: 'nature',   label: '🌿 Природа' },
+      { id: 'machine',  label: '⚙️ Техніка' },
+      { id: 'clothing', label: '👕 Одяг' },
+    ],
+    pool: ['leaf', 'sun', 'water', 'frog', 'car', 'clock', 'plane', 'jeans', 'firetruck', 'shirt', 'socks'],
+  },
+])
+
 export const SORTING_ATTRIBUTES_LEVELS: SortingLevel[] = [
   {
     instruction: 'Що можна їсти?',
