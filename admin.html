@@ -230,6 +230,9 @@
             <option value="computational-thinking">Обчислювальне мислення</option>
             <option value="ai-basics">Основи ШІ</option>
           </select>
+          <select id="q-filter-topic" class="adm-input adm-input--sm" style="width:auto" disabled>
+            <option value="">Всі теми</option>
+          </select>
           <button id="q-filter-apply" class="btn-adm-sky" style="padding: var(--sp-2) var(--sp-4); font-size: var(--font-size-sm);">Фільтрувати</button>
           <span id="q-count" class="admin-filter-count"></span>
         </div>
@@ -347,6 +350,36 @@
               <option value="informatics">Інформатика</option>
               <option value="computational-thinking">Обчислювальне мислення</option>
               <option value="ai-basics">Основи ШІ</option>
+            </select>
+          </div>
+          <div>
+            <label class="adm-label">Тема</label>
+            <select id="qf-topic" class="adm-input adm-input--sm" disabled>
+              <option value="">Без теми</option>
+            </select>
+          </div>
+          <div>
+            <label class="adm-label">CT-навичка</label>
+            <select id="qf-concept" class="adm-input adm-input--sm">
+              <option value="">Без навички</option>
+              <option value="algorithms">Алгоритми</option>
+              <option value="decomposition">Декомпозиція</option>
+              <option value="abstraction">Абстрагування</option>
+              <option value="patterns">Закономірності</option>
+              <option value="repetition">Повторення</option>
+              <option value="logic">Логіка</option>
+              <option value="efficiency">Ефективність</option>
+              <option value="classification">Класифікація</option>
+              <option value="debugging">Налагодження</option>
+            </select>
+          </div>
+          <div>
+            <label class="adm-label">Рівень дії</label>
+            <select id="qf-band" class="adm-input adm-input--sm">
+              <option value="">Не вказано</option>
+              <option value="recognize">Впізнавання</option>
+              <option value="apply">Застосування</option>
+              <option value="reason">Міркування</option>
             </select>
           </div>
           <div class="adm-checkbox-row" style="align-items: flex-end; padding-bottom: var(--sp-2);">

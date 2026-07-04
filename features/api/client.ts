@@ -22,6 +22,10 @@ export interface Question {
   explanation?: string | null
   difficulty?: string
   track?: QuestionTrack | null
+  topic?: string | null           // предметна тема в межах track (docs/content-taxonomy.md)
+  conceptKey?: string | null      // CT-навичка (крос-напрямкова)
+  progressionBand?: 'recognize' | 'apply' | 'reason' | null
+  version?: number
   grade?: number
   isOlympiad?: boolean
   a?: string[]                    // normalized alias для question-renderer (choice/truefalse)
@@ -686,11 +690,12 @@ export function deleteQuestion(id: string): Promise<void> {
   return authRequest(`/api/admin/questions/${id}`, { method: 'DELETE' })
 }
 
-export function getAdminQuestions(params: { grade?: number | string; isOlympiad?: boolean | string; difficulty?: string; track?: QuestionTrack | string } = {}): Promise<{ questions: Question[] }> {
+export function getAdminQuestions(params: { grade?: number | string; isOlympiad?: boolean | string; difficulty?: string; track?: QuestionTrack | string; topic?: string } = {}): Promise<{ questions: Question[] }> {
   const p = new URLSearchParams()
   if (params.grade      != null) p.set('grade',      String(params.grade))
   if (params.isOlympiad != null) p.set('isOlympiad', String(params.isOlympiad))
   if (params.difficulty)         p.set('difficulty', params.difficulty)
   if (params.track)              p.set('track',      String(params.track))
+  if (params.topic)              p.set('topic',      params.topic)
   return authRequest(`/api/admin/questions?${p}`)
 }

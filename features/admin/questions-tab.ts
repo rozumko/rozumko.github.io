@@ -3,6 +3,7 @@ import { createFocusTrap } from '../../utils/focus-trap.js'
 import { renderQuestion }  from '../../utils/question-renderer.js'
 import { esc, showModal, showConfirm }  from './ui.js'
 import { $, $maybe } from '../../utils/dom.js'
+import { TOPIC_LABELS, fillTopicSelect } from './taxonomy.js'
 
 let currentQuestions: Question[] = []
 
@@ -50,6 +51,13 @@ export function initQuestionsTab() {
     applyTypeUI((e.target as HTMLSelectElement).value)
   })
   $<HTMLButtonElement>('q-filter-apply').addEventListener('click', () => loadQuestionsTab())
+  // Тема залежить від напряму — і у фільтрі, і у формі
+  $<HTMLSelectElement>('q-filter-track').addEventListener('change', (e) => {
+    fillTopicSelect($<HTMLSelectElement>('q-filter-topic'), (e.target as HTMLSelectElement).value, 'Всі теми')
+  })
+  $<HTMLSelectElement>('qf-track').addEventListener('change', (e) => {
+    fillTopicSelect($<HTMLSelectElement>('qf-topic'), (e.target as HTMLSelectElement).value, 'Без теми')
+  })
   $<HTMLInputElement>('qf-img').addEventListener('input', (e) => {
     const prev = $maybe<HTMLImageElement>('qf-img-preview')
     const url  = (e.target as HTMLInputElement).value.trim()
@@ -71,8 +79,9 @@ export async function loadQuestionsTab() {
     const isOlympiad = typeRaw !== '' ? typeRaw === 'true' : undefined
     const difficulty = $<HTMLSelectElement>('q-filter-difficulty').value || undefined
     const track      = $<HTMLSelectElement>('q-filter-track').value || undefined
+    const topic      = $<HTMLSelectElement>('q-filter-topic').value || undefined
 
-    const { questions } = await getAdminQuestions({ grade, isOlympiad, difficulty, track })
+    const { questions } = await getAdminQuestions({ grade, isOlympiad, difficulty, track, topic })
     currentQuestions = questions
 
     $('q-count').textContent = `${questions.length} питань`
@@ -113,6 +122,7 @@ function buildQuestionCard(q: Question): HTMLElement {
         <span class="qi-badge qi-badge--type">${esc(TYPE_LABELS[type] ?? type)}</span>
         <span class="qi-badge qi-badge--${q.difficulty ?? 'medium'}">${esc(diffLabel)}</span>
         ${trackLabel ? `<span class="qi-badge qi-badge--practice">${esc(trackLabel)}</span>` : ''}
+        ${q.topic ? `<span class="qi-badge qi-badge--type">${esc(TOPIC_LABELS[q.topic] ?? q.topic)}</span>` : ''}
         ${q.isOlympiad
           ? '<span class="qi-badge qi-badge--olympiad">Олімпіада</span>'
           : '<span class="qi-badge qi-badge--practice">Тренування</span>'}
@@ -152,6 +162,10 @@ export function openQuestionModal(q: Question | null) {
   $<HTMLSelectElement>('qf-grade').value                = String(q?.grade ?? '1')
   $<HTMLSelectElement>('qf-difficulty').value           = q?.difficulty ?? 'medium'
   $<HTMLSelectElement>('qf-track').value                = q?.track ?? ''
+  fillTopicSelect($<HTMLSelectElement>('qf-topic'), q?.track ?? '', 'Без теми')
+  $<HTMLSelectElement>('qf-topic').value                = q?.topic ?? ''
+  $<HTMLSelectElement>('qf-concept').value              = q?.conceptKey ?? ''
+  $<HTMLSelectElement>('qf-band').value                 = q?.progressionBand ?? ''
   ;($<HTMLInputElement>('qf-olympiad')).checked         = q?.isOlympiad ?? false
   $<HTMLTextAreaElement>('qf-q').value                  = q?.q ?? ''
   $<HTMLTextAreaElement>('qf-explanation').value        = q?.explanation ?? ''
@@ -208,6 +222,9 @@ async function handleSubmit(e: Event) {
     grade:       Number($<HTMLSelectElement>('qf-grade').value),
     difficulty:  $<HTMLSelectElement>('qf-difficulty').value,
     track:       $<HTMLSelectElement>('qf-track').value || null,
+    topic:       $<HTMLSelectElement>('qf-topic').value || null,
+    conceptKey:  $<HTMLSelectElement>('qf-concept').value || null,
+    progressionBand: ($<HTMLSelectElement>('qf-band').value || null) as 'recognize' | 'apply' | 'reason' | null,
     isOlympiad:  $<HTMLInputElement>('qf-olympiad').checked,
     explanation: $<HTMLTextAreaElement>('qf-explanation').value.trim(),
     code:        $<HTMLTextAreaElement>('qf-code').value.trim() || undefined,
