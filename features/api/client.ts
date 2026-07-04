@@ -603,6 +603,12 @@ export interface SchoolParticipantRow {
   score: number
 }
 
+export interface SchoolTopicStat {
+  topic: string | null
+  total: number
+  correct: number
+}
+
 export function createSchoolSession(data: { grade: number; difficulty?: string; questionsCount?: number; track?: string; topic?: string }): Promise<{ session: SchoolSessionInfo }> {
   return authRequest('/api/school/sessions', {
     method: 'POST',
@@ -618,7 +624,7 @@ export function finishSchoolSession(id: string): Promise<{ status: string }> {
   return authRequest(`/api/school/sessions/${encodeURIComponent(id)}/finish`, { method: 'POST', body: JSON.stringify({}) })
 }
 
-export function getSchoolSession(id: string): Promise<{ session: SchoolSessionInfo; participants: SchoolParticipantRow[] }> {
+export function getSchoolSession(id: string): Promise<{ session: SchoolSessionInfo; participants: SchoolParticipantRow[]; topicStats: SchoolTopicStat[] }> {
   return authRequest(`/api/school/sessions/${encodeURIComponent(id)}`)
 }
 

@@ -147,12 +147,27 @@ export async function schoolRoutes(app: FastifyInstance) {
       .where(eq(schoolParticipants.sessionId, session.id))
       .orderBy(desc(schoolParticipants.score))
 
+    // Агрегат правильності за темою (лише зведене — жодних ключів чи дитячих
+    // даних понад лідерборд). Дає вчителю бачити, що варто повторити.
+    const topicStats = await db
+      .select({
+        topic:   questions.topic,
+        total:   sql<number>`cast(count(*) as int)`,
+        correct: sql<number>`cast(sum(case when ${schoolAnswers.isCorrect} then 1 else 0 end) as int)`,
+      })
+      .from(schoolAnswers)
+      .innerJoin(schoolParticipants, eq(schoolAnswers.participantId, schoolParticipants.id))
+      .innerJoin(questions, eq(schoolAnswers.questionId, questions.id))
+      .where(eq(schoolParticipants.sessionId, session.id))
+      .groupBy(questions.topic)
+
     return reply.send({
       session: {
         id: session.id, joinCode: session.joinCode, grade: session.grade,
         difficulty: session.difficulty, questionsCount: session.questionsCount, status: session.status,
       },
       participants,
+      topicStats,
     })
   })
 

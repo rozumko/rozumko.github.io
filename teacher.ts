@@ -15,6 +15,7 @@ import {
 import { esc, friendlyError, showConfirm, showModal } from './utils/ui.js'
 import { openCertModal, awardLabel, percent, getAward } from './utils/certificate.js'
 import { TOPICS_BY_TRACK, TOPIC_LABELS } from './features/missions/topics.js'
+import type { SchoolTopicStat } from './features/api/client.js'
 
 function isPendingError(msg: string): boolean {
   return msg.includes('ACCOUNT_PENDING') || msg.includes('очікує підтвердження')
@@ -986,13 +987,39 @@ function renderSchoolLeaderboard(participants: { avatar: string; nickname: strin
     </div>`).join('')
 }
 
+// Зведення за темами: слабші зверху, колірний індикатор засвоєння.
+function renderSchoolTopicStats(topicStats: SchoolTopicStat[]) {
+  const wrap = $maybe('school-topic-stats-wrap')
+  const box  = $maybe('school-topic-stats')
+  if (!wrap || !box) return
+  const rows = topicStats.filter(s => s.total > 0)
+  if (!rows.length) { wrap.classList.add('hidden'); box.innerHTML = ''; return }
+
+  rows.sort((a, b) => (a.correct / a.total) - (b.correct / b.total))
+  box.innerHTML = rows.map(s => {
+    const pct = Math.round((s.correct / s.total) * 100)
+    const color = pct < 50 ? '#ef4444' : pct < 75 ? '#f59e0b' : '#22c55e'
+    const label = s.topic ? (TOPIC_LABELS[s.topic] ?? s.topic) : 'Без теми'
+    return `
+      <div style="display:flex; align-items:center; gap:12px; padding:6px 0;">
+        <span style="flex:1; font-weight:600;">${esc(label)}</span>
+        <div style="flex:1.4; height:10px; background:#e2e8f0; border-radius:6px; overflow:hidden;">
+          <div style="width:${pct}%; height:100%; background:${color};"></div>
+        </div>
+        <span style="width:88px; text-align:right; color:#64748b; font-size:0.85rem;">${pct}% · ${s.correct}/${s.total}</span>
+      </div>`
+  }).join('')
+  wrap.classList.remove('hidden')
+}
+
 async function refreshSchoolSession() {
   if (!schoolSession) return
   try {
-    const { session, participants } = await getSchoolSession(schoolSession.id)
+    const { session, participants, topicStats } = await getSchoolSession(schoolSession.id)
     schoolSession = session
     renderSchoolStatus()
     renderSchoolLeaderboard(participants)
+    renderSchoolTopicStats(topicStats)
     if (session.status === 'finished' && schoolPollTimer) {
       clearInterval(schoolPollTimer)
       schoolPollTimer = null
