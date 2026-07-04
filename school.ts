@@ -23,7 +23,14 @@ const PRESETS: Record<string, MissionPreset> = {
 }
 
 let selectedGrade = 1
+let selectedTrack: string | null = null   // null = усі напрями
 let currentMissionLabel = ''
+
+const TRACK_LABELS: Record<string, string> = {
+  informatics: 'Інформатика',
+  'computational-thinking': 'Мислення',
+  'ai-basics': 'Основи ШІ',
+}
 
 const introEl  = $('mission-intro')
 const quizEl    = $('mission-quiz')
@@ -67,11 +74,29 @@ function highlightGrade(grade: number) {
   })
 }
 
+async function loadMissionQuestions(preset: MissionPreset) {
+  // Поступове послаблення фільтрів, щоб місія завжди набралась: спершу
+  // напрям+складність, далі лише напрям, далі лише складність, врешті будь-які.
+  const MIN = Math.min(preset.count, 3)
+  const attempts = [
+    { count: preset.count, track: selectedTrack, difficulty: preset.difficulty },
+    { count: preset.count, track: selectedTrack },
+    { count: preset.count, difficulty: preset.difficulty },
+    { count: preset.count },
+  ]
+  let picked = await loadStaticQuestions(selectedGrade, attempts[0])
+  for (let i = 1; i < attempts.length && picked.length < MIN; i++) {
+    try { picked = await loadStaticQuestions(selectedGrade, attempts[i]) } catch { /* далі */ }
+  }
+  return picked
+}
+
 async function startMission(preset: MissionPreset) {
   hide(introEl)
   hide(resultEl)
   errorEl.textContent = ''
-  currentMissionLabel = `${preset.label} • ${selectedGrade} клас`
+  const trackNote = selectedTrack ? ` • ${TRACK_LABELS[selectedTrack]}` : ''
+  currentMissionLabel = `${preset.label}${trackNote} • ${selectedGrade} клас`
 
   show(quizEl)
   setMissionActive(true)
@@ -83,7 +108,7 @@ async function startMission(preset: MissionPreset) {
     // Самостійні місії — зі статичного бандла (GitHub Pages), без бекенду:
     // немає cold start і анонімного трафіку в rate-limit. Класна гра за кодом
     // лишається на API (там сервер рахує бали).
-    const questions = await loadStaticQuestions(selectedGrade, { count: preset.count, difficulty: preset.difficulty })
+    const questions = await loadMissionQuestions(preset)
     runMission(els, questions, {
       showExplanation: true, // practice завжди показує пояснення
       onComplete: showResult,
@@ -117,6 +142,22 @@ document.querySelectorAll<HTMLElement>('.school-grade-btn').forEach(btn => {
       selectedGrade = grade
       highlightGrade(grade)
     }
+  })
+})
+
+function highlightTrack(track: string | null) {
+  document.querySelectorAll<HTMLElement>('.school-track-btn').forEach(btn => {
+    const active = (btn.dataset['track'] || null) === track
+    btn.setAttribute('aria-pressed', String(active))
+    btn.style.outline = active ? '3px solid #3b82f6' : ''
+    btn.style.outlineOffset = active ? '2px' : ''
+  })
+}
+
+document.querySelectorAll<HTMLElement>('.school-track-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    selectedTrack = btn.dataset['track'] || null
+    highlightTrack(selectedTrack)
   })
 })
 
@@ -194,3 +235,4 @@ $maybe<HTMLButtonElement>('join-btn')?.addEventListener('click', async () => {
 })
 
 highlightGrade(selectedGrade)
+highlightTrack(selectedTrack)
