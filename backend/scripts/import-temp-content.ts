@@ -165,19 +165,20 @@ function loadAltCs(): NewQuestion[] {
   return rows
 }
 
-// ── ai_basics → ai-basics ────────────────────────────────────────────────────
+// ── Типізовані JSON-джерела (topic заданий явно) ──────────────────────────────
 
-interface AiBasicsQuestion {
+interface TypedQuestion {
   grade: number; topic: string; difficulty: string; progressionBand: string
   q: string; options: string[]; correct: number; explanation: string
 }
 
-function loadAiBasics(): NewQuestion[] {
-  // Усі файли questions*.json у теці — щоб нові порції додавались файлами.
-  const dir = join(__dirname, '../../temp/ai_basics')
+/** Читає всі questions*.json у теці temp/<folder> і мапить на NewQuestion під
+ *  заданий track. topic береться з файлу як є (валідність гарантує CHECK у БД). */
+function loadTypedSource(folder: string, track: NewQuestion['track']): NewQuestion[] {
+  const dir = join(__dirname, '../../temp', folder)
   const files = readdirSync(dir).filter(f => /^questions.*\.json$/.test(f)).sort()
-  const items: AiBasicsQuestion[] = files.flatMap(f =>
-    (JSON.parse(readFileSync(join(dir, f), 'utf8')) as { questions: AiBasicsQuestion[] }).questions
+  const items: TypedQuestion[] = files.flatMap(f =>
+    (JSON.parse(readFileSync(join(dir, f), 'utf8')) as { questions: TypedQuestion[] }).questions
   )
   return items.map(item => {
     const { options, correct } = shuffleOptions(item.options, item.correct)
@@ -188,27 +189,29 @@ function loadAiBasics(): NewQuestion[] {
       correct,
       explanation: item.explanation,
       difficulty:  item.difficulty,
-      track:       'ai-basics' as const,
+      track,
       topic:       item.topic,
       conceptKey:  null,
       progressionBand: item.progressionBand as NewQuestion['progressionBand'],
       grade:       item.grade,
       isOlympiad:  false,
-      meta: { source: 'ai_basics' },
+      meta: { source: folder },
     }
   })
 }
 
 // ── Main ─────────────────────────────────────────────────────────────────────
 
-const ctRows  = loadCtQuiz()
-const altRows = loadAltCs()
-const aiRows  = loadAiBasics()
-const all = [...ctRows, ...altRows, ...aiRows]
+const ctRows   = loadCtQuiz()
+const altRows  = loadAltCs()
+const aiRows   = loadTypedSource('ai_basics', 'ai-basics')
+const infoRows = loadTypedSource('informatics_extra', 'informatics')
+const all = [...ctRows, ...altRows, ...aiRows, ...infoRows]
 
-console.log(`ct_quiz:   ${ctRows.length} питань (2–4 кл., computational-thinking)`)
-console.log(`alt_cs:    ${altRows.length} питань (1–4 кл., informatics)`)
-console.log(`ai_basics: ${aiRows.length} питань (1–4 кл., ai-basics)`)
+console.log(`ct_quiz:           ${ctRows.length} питань (2–4 кл., computational-thinking)`)
+console.log(`alt_cs:            ${altRows.length} питань (1–4 кл., informatics)`)
+console.log(`ai_basics:         ${aiRows.length} питань (1–4 кл., ai-basics)`)
+console.log(`informatics_extra: ${infoRows.length} питань (1–4 кл., informatics)`)
 
 const byTopic = new Map<string, number>()
 for (const r of all) byTopic.set(`${r.track}/${r.topic ?? '∅'}`, (byTopic.get(`${r.track}/${r.topic ?? '∅'}`) ?? 0) + 1)

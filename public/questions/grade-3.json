@@ -378,6 +378,24 @@
   "grade": 3
  },
  {
+  "id": "3313565d-8bcd-497c-ab68-957b51a9634b",
+  "q": "Ти шукаєш в Інтернеті малюнок динозавра. Що ввести у пошук?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "пароль від планшета",
+   "«динозавр малюнок»",
+   "нічого",
+   "своє ім'я і адресу"
+  ],
+  "correct": 1,
+  "explanation": "У пошук пишуть, що хочуть знайти. Особисті дані в пошук вводити не можна.",
+  "difficulty": "medium",
+  "track": "informatics",
+  "topic": "networks-internet",
+  "grade": 3
+ },
+ {
   "id": "3508a0d7-ce24-479e-acd4-765b4e0c3185",
   "q": "Що таке алгоритм?",
   "code": null,
@@ -447,6 +465,24 @@
   "difficulty": "medium",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "grade": 3
+ },
+ {
+  "id": "3fcd3993-97ea-4c69-86c1-8bd478c47924",
+  "q": "На стовпчиковій діаграмі стовпчик «понеділок» найвищий. Що це означає?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "У понеділок значення найбільше",
+   "Нічого",
+   "У понеділок найменше",
+   "Понеділок пропущено"
+  ],
+  "correct": 0,
+  "explanation": "На діаграмі вищий стовпчик — більше значення. Найвищий = найбільше.",
+  "difficulty": "medium",
+  "track": "informatics",
+  "topic": "data",
   "grade": 3
  },
  {
@@ -591,6 +627,24 @@
   "difficulty": "hard",
   "track": "ai-basics",
   "topic": "human-vs-ai",
+  "grade": 3
+ },
+ {
+  "id": "5a5eae91-70aa-4694-bcf6-2f2526f73f8b",
+  "q": "Ти хочеш скопіювати речення й вставити його нижче. Які дії допоможуть?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Видалити все",
+   "Вимкнути екран",
+   "Намалювати заново",
+   "Копіювати, а потім вставити"
+  ],
+  "correct": 3,
+  "explanation": "«Копіювати» запам'ятовує текст, «вставити» — розміщує його в новому місці.",
+  "difficulty": "medium",
+  "track": "informatics",
+  "topic": "digital-tools",
   "grade": 3
  },
  {
@@ -972,6 +1026,24 @@
   "grade": 3
  },
  {
+  "id": "8bda9bcd-ae06-4a5c-ace4-3f9b58c7608d",
+  "q": "Ти знайшов в Інтернеті цікавий, але дивний факт. Що зробити?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Одразу повірити",
+   "Перевірити ще в одному надійному джерелі",
+   "Розказати всім як правду",
+   "Забути"
+  ],
+  "correct": 1,
+  "explanation": "Не все в Інтернеті правда. Важливе краще перевірити в кількох джерелах.",
+  "difficulty": "medium",
+  "track": "informatics",
+  "topic": "networks-internet",
+  "grade": 3
+ },
+ {
   "id": "8c9039f4-3b9a-409a-b420-60eda5f2b302",
   "q": "Яка з програм — приклад штучного інтелекту?",
   "code": null,
@@ -1167,6 +1239,24 @@
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "ai-perception",
+  "grade": 3
+ },
+ {
+  "id": "a1963bbe-cc4d-4680-aad7-a0d567df7901",
+  "q": "Ти зібрав, хто скільки книжок прочитав. Як найкраще це показати класу?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Ніяк",
+   "Таблицею або діаграмою",
+   "На пам'ять",
+   "Довгим текстом"
+  ],
+  "correct": 1,
+  "explanation": "Таблиця чи діаграма роблять дані наочними — їх легко порівняти з першого погляду.",
+  "difficulty": "medium",
+  "track": "informatics",
+  "topic": "data",
   "grade": 3
  },
  {
@@ -1545,6 +1635,24 @@
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "how-ai-learns",
+  "grade": 3
+ },
+ {
+  "id": "dc528506-167e-4139-b4a7-86c69eb9c3a5",
+  "q": "Файли на комп'ютері зручно складати у…",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Одну купу без назв",
+   "Кошик",
+   "Папки за темами",
+   "Нікуди"
+  ],
+  "correct": 2,
+  "explanation": "Папки впорядковують файли, як полички, — і потрібне легко знайти.",
+  "difficulty": "medium",
+  "track": "informatics",
+  "topic": "digital-tools",
   "grade": 3
  },
  {

@@ -72,6 +72,42 @@
   "grade": 2
  },
  {
+  "id": "09b3aa97-5a90-49c5-96b5-dff9d35a01c9",
+  "q": "Навіщо люди записують дані у таблицю?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Щоб було гарно",
+   "Просто так",
+   "Щоб заплутати",
+   "Щоб зручно порівнювати й не забути"
+  ],
+  "correct": 3,
+  "explanation": "Таблиця впорядковує дані, і їх легко порівнювати й знаходити.",
+  "difficulty": "easy",
+  "track": "informatics",
+  "topic": "data",
+  "grade": 2
+ },
+ {
+  "id": "09d1875c-e65c-4a97-8d54-0a94c92fbcaa",
+  "q": "Що потрібно, щоб відкрити сайт у планшеті?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Ліхтарик",
+   "Олівець",
+   "Ножиці",
+   "З'єднання з Інтернетом"
+  ],
+  "correct": 3,
+  "explanation": "Сайти живуть в Інтернеті, тож потрібне з'єднання з мережею.",
+  "difficulty": "easy",
+  "track": "informatics",
+  "topic": "networks-internet",
+  "grade": 2
+ },
+ {
   "id": "0a5ade2a-cb38-4155-9637-fe78a751a3c6",
   "q": "Перед тобою 100 рюкзаків 🎒 різних кольорів, і ти знаєш, що твій рюкзак червоний. Який спосіб пошуку буде найшвидшим?",
   "code": null,
@@ -105,6 +141,24 @@
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "human-vs-ai",
+  "grade": 2
+ },
+ {
+  "id": "0ddb404a-9c8c-429d-b245-ea9b8c36a788",
+  "q": "Що таке Інтернет?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Велика мережа, що з'єднує комп'ютери по всьому світу",
+   "Телевізор",
+   "Один великий комп'ютер удома",
+   "Гра"
+  ],
+  "correct": 0,
+  "explanation": "Інтернет — це мережа, яка з'єднує безліч комп'ютерів і дозволяє їм обмінюватися інформацією.",
+  "difficulty": "easy",
+  "track": "informatics",
+  "topic": "networks-internet",
   "grade": 2
  },
  {
@@ -213,6 +267,24 @@
   "difficulty": "easy",
   "track": "ai-basics",
   "topic": "ai-perception",
+  "grade": 2
+ },
+ {
+  "id": "1cc415ff-098c-4fa5-a014-1f5a845d75a9",
+  "q": "У таблиці: котів — 4, собак — 2, рибок — 6. Кого найбільше?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Порівну",
+   "Собак",
+   "Котів",
+   "Рибок"
+  ],
+  "correct": 3,
+  "explanation": "Таблиця зберігає дані. Найбільше число — 6, отже рибок найбільше.",
+  "difficulty": "medium",
+  "track": "informatics",
+  "topic": "data",
   "grade": 2
  },
  {
@@ -753,6 +825,24 @@
   "difficulty": "hard",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "grade": 2
+ },
+ {
+  "id": "6eaebdd0-efbd-4f8e-be44-1e8fc5b6e221",
+  "q": "Тобі треба написати листа бабусі на комп'ютері. Яка програма підійде?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Калькулятор",
+   "Для написання тексту",
+   "Годинник",
+   "Для малювання ліній"
+  ],
+  "correct": 1,
+  "explanation": "Для тексту є текстовий редактор — саме він підходить для листа.",
+  "difficulty": "medium",
+  "track": "informatics",
+  "topic": "digital-tools",
   "grade": 2
  },
  {
@@ -1581,6 +1671,24 @@
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "algorithms",
+  "grade": 2
+ },
+ {
+  "id": "e6020171-4950-4c0e-add3-555a85d21d64",
+  "q": "Ти намалював картинку на комп'ютері. Що зробити, щоб вона не зникла?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Зберегти її",
+   "Вимкнути комп'ютер",
+   "Заплющити очі",
+   "Нічого"
+  ],
+  "correct": 0,
+  "explanation": "Роботу треба зберегти — інакше вона зникне після закриття програми.",
+  "difficulty": "easy",
+  "track": "informatics",
+  "topic": "digital-tools",
   "grade": 2
  },
  {
