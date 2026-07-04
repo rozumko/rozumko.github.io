@@ -5,6 +5,7 @@ import { joinSchoolSession, submitSchoolAnswer } from './features/api/client.js'
 import { runMission, type MissionElements } from './features/missions/mission-runner.js'
 import { encouragement, starRating, type MissionSummary } from './features/missions/mission-result.js'
 import { AVATARS, avatarLabel, avatarSrc } from './avatars.js'
+import { TOPICS_BY_TRACK, TOPIC_SHORT } from './features/missions/topics.js'
 
 // School Mode — анонімна класна місія. Тренувальний пул, локальне оцінювання,
 // жодних записів у БД чи дитячих даних. Уся логіка на клієнті.
@@ -24,6 +25,7 @@ const PRESETS: Record<string, MissionPreset> = {
 
 let selectedGrade = 1
 let selectedTrack: string | null = null   // null = усі напрями
+let selectedTopic: string | null = null   // null = усі теми напряму
 let currentMissionLabel = ''
 
 const TRACK_LABELS: Record<string, string> = {
@@ -75,12 +77,16 @@ function highlightGrade(grade: number) {
 }
 
 async function loadMissionQuestions(preset: MissionPreset) {
-  // Поступове послаблення фільтрів, щоб місія завжди набралась: спершу
-  // напрям+складність, далі лише напрям, далі лише складність, врешті будь-які.
+  // Поступове послаблення фільтрів, щоб місія завжди набралась: від найвужчого
+  // (тема+складність) до найширшого (будь-які питання класу).
   const MIN = Math.min(preset.count, 3)
+  const t = selectedTrack
+  const tp = selectedTopic
   const attempts = [
-    { count: preset.count, track: selectedTrack, difficulty: preset.difficulty },
-    { count: preset.count, track: selectedTrack },
+    { count: preset.count, track: t, topic: tp, difficulty: preset.difficulty },
+    { count: preset.count, track: t, topic: tp },
+    { count: preset.count, track: t, difficulty: preset.difficulty },
+    { count: preset.count, track: t },
     { count: preset.count, difficulty: preset.difficulty },
     { count: preset.count },
   ]
@@ -91,12 +97,42 @@ async function loadMissionQuestions(preset: MissionPreset) {
   return picked
 }
 
+// Чипи тем залежать від напряму. «Усі теми» = null. Тема без напряму не має сенсу.
+function renderTopicChips() {
+  const box = $('topic-select')
+  if (!selectedTrack) {
+    box.classList.add('hidden')
+    box.innerHTML = ''
+    selectedTopic = null
+    return
+  }
+  const topics = (TOPICS_BY_TRACK as Record<string, readonly string[]>)[selectedTrack] ?? []
+  const chips = [`<button class="school-topic-btn grade-chip" data-topic="" aria-pressed="true">Усі теми</button>`]
+    .concat(topics.map(tp =>
+      `<button class="school-topic-btn grade-chip" data-topic="${tp}" aria-pressed="false">${TOPIC_SHORT[tp] ?? tp}</button>`
+    ))
+  box.innerHTML = chips.join('')
+  box.classList.remove('hidden')
+  box.querySelectorAll<HTMLElement>('.school-topic-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedTopic = btn.dataset['topic'] || null
+      box.querySelectorAll<HTMLElement>('.school-topic-btn').forEach(b => {
+        const active = b === btn
+        b.setAttribute('aria-pressed', String(active))
+        b.style.outline = active ? '3px solid #3b82f6' : ''
+        b.style.outlineOffset = active ? '2px' : ''
+      })
+    })
+  })
+}
+
 async function startMission(preset: MissionPreset) {
   hide(introEl)
   hide(resultEl)
   errorEl.textContent = ''
   const trackNote = selectedTrack ? ` • ${TRACK_LABELS[selectedTrack]}` : ''
-  currentMissionLabel = `${preset.label}${trackNote} • ${selectedGrade} клас`
+  const topicNote = selectedTopic ? ` • ${TOPIC_SHORT[selectedTopic] ?? selectedTopic}` : ''
+  currentMissionLabel = `${preset.label}${trackNote}${topicNote} • ${selectedGrade} клас`
 
   show(quizEl)
   setMissionActive(true)
@@ -157,7 +193,9 @@ function highlightTrack(track: string | null) {
 document.querySelectorAll<HTMLElement>('.school-track-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     selectedTrack = btn.dataset['track'] || null
+    selectedTopic = null            // зміна напряму скидає тему
     highlightTrack(selectedTrack)
+    renderTopicChips()
   })
 })
 
