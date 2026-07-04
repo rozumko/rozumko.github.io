@@ -603,7 +603,7 @@ export interface SchoolParticipantRow {
   score: number
 }
 
-export function createSchoolSession(data: { grade: number; difficulty?: string; questionsCount?: number }): Promise<{ session: SchoolSessionInfo }> {
+export function createSchoolSession(data: { grade: number; difficulty?: string; questionsCount?: number; track?: string; topic?: string }): Promise<{ session: SchoolSessionInfo }> {
   return authRequest('/api/school/sessions', {
     method: 'POST',
     body: JSON.stringify(data),

@@ -7,6 +7,10 @@ import { sanitizeOlympiadQuestion } from './question-sanitize.js'
 import { scoreAttempt, type AnswerValue } from './attempt-validation.js'
 import { generateAttemptToken, verifyAttemptToken } from './student-validation.js'
 import { isValidAvatar, normalizeNickname, validateJoinCodeFormat, generateJoinCode, normalizeDifficulty } from './school-validation.js'
+import { ALL_TOPICS, normalizeTopic } from '../lib/taxonomy.js'
+import type { QuestionTrack } from '../db/schema.js'
+
+const QUESTION_TRACKS = ['informatics', 'computational-thinking', 'ai-basics'] as const
 
 // Просунутий School Mode (Kahoot-стиль). Ключі відповідей учням не віддаються,
 // скоринг — на сервері. Учасник анонімний, ідентифікується HMAC-токеном.
@@ -39,7 +43,7 @@ function isUniqueViolation(e: unknown): boolean {
 
 export async function schoolRoutes(app: FastifyInstance) {
   // ── Вчитель: створити сесію ──────────────────────────────────────────────
-  app.post<{ Body: { grade: number; difficulty?: string; questionsCount?: number } }>('/sessions', {
+  app.post<{ Body: { grade: number; difficulty?: string; questionsCount?: number; track?: string; topic?: string } }>('/sessions', {
     preHandler: requireAuth,
     schema: {
       body: {
@@ -50,16 +54,24 @@ export async function schoolRoutes(app: FastifyInstance) {
           grade:          { type: 'integer', minimum: 1, maximum: 4 },
           difficulty:     { type: 'string', enum: ['easy', 'medium', 'hard'] },
           questionsCount: { type: 'integer', minimum: 1, maximum: 30 },
+          track:          { type: 'string', enum: [...QUESTION_TRACKS] },
+          topic:          { type: 'string', enum: ALL_TOPICS as string[] },
         },
       },
     },
   }, async (req, reply) => {
     let difficulty: 'easy' | 'medium' | 'hard' | null
     try { difficulty = normalizeDifficulty(req.body.difficulty) } catch (e) { return reply.code(400).send({ error: (e as Error).message }) }
+    const track = (req.body.track ?? null) as QuestionTrack | null
+    // topic валідний лише в парі зі своїм track (fail-closed, як в адмінці)
+    let topic: string | null
+    try { topic = normalizeTopic(req.body.topic, track) } catch (e) { return reply.code(400).send({ error: (e as Error).message }) }
     const wanted = req.body.questionsCount ?? 10
 
     const filters = [eq(questions.isOlympiad, false), eq(questions.grade, req.body.grade)]
     if (difficulty) filters.push(eq(questions.difficulty, difficulty))
+    if (track)      filters.push(eq(questions.track, track))
+    if (topic)      filters.push(eq(questions.topic, topic))
 
     const picked = await db
       .select({ id: questions.id })

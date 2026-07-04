@@ -14,6 +14,7 @@ import {
 } from './features/api/client.js'
 import { esc, friendlyError, showConfirm, showModal } from './utils/ui.js'
 import { openCertModal, awardLabel, percent, getAward } from './utils/certificate.js'
+import { TOPICS_BY_TRACK, TOPIC_LABELS } from './features/missions/topics.js'
 
 function isPendingError(msg: string): boolean {
   return msg.includes('ACCOUNT_PENDING') || msg.includes('очікує підтвердження')
@@ -1006,15 +1007,30 @@ function startSchoolPolling() {
   schoolPollTimer = setInterval(refreshSchoolSession, 5000)
 }
 
+// Тема залежить від напряму (той самий словник, що й публічні сторінки).
+$maybe<HTMLSelectElement>('school-track')?.addEventListener('change', (e) => {
+  const track = (e.target as HTMLSelectElement).value
+  const topicSel = $maybe<HTMLSelectElement>('school-topic')
+  if (!topicSel) return
+  const topics = (TOPICS_BY_TRACK as Record<string, readonly string[]>)[track] ?? []
+  topicSel.innerHTML = '<option value="">Будь-яка</option>' +
+    topics.map(t => `<option value="${t}">${TOPIC_LABELS[t] ?? t}</option>`).join('')
+  topicSel.disabled = topics.length === 0
+})
+
 $maybe<HTMLButtonElement>('school-create-btn')?.addEventListener('click', async () => {
   schoolSetError('')
   const grade = Number($<HTMLSelectElement>('school-grade').value)
   const difficulty = $<HTMLSelectElement>('school-difficulty').value
+  const track = $<HTMLSelectElement>('school-track').value
+  const topic = $<HTMLSelectElement>('school-topic').value
   const questionsCount = Number($<HTMLSelectElement>('school-count').value)
   try {
     const { session } = await createSchoolSession({
       grade,
       ...(difficulty ? { difficulty } : {}),
+      ...(track ? { track } : {}),
+      ...(topic ? { topic } : {}),
       questionsCount,
     })
     schoolSession = session
