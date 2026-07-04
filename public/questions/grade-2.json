@@ -180,6 +180,24 @@
   "grade": 2
  },
  {
+  "id": "11828f79-cb39-4702-af6e-61a005a7ecdb",
+  "q": "Ти рахуєш машини за кольором рисочками: червоні |||, сині |. Яких більше?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Жодних",
+   "Червоних",
+   "Порівну",
+   "Синіх"
+  ],
+  "correct": 1,
+  "explanation": "Рисочки — простий спосіб рахувати дані. Три рисочки більше за одну.",
+  "difficulty": "medium",
+  "track": "informatics",
+  "topic": "data",
+  "grade": 2
+ },
+ {
   "id": "12a2f363-d1ca-46b8-a12e-399873c11e18",
   "q": "Скільки ліній ВСЬОГО намалює програма?",
   "code": "вперед 30\nповторити 3 (\n  праворуч 45\n  вперед 30\n)\nвперед 30",
@@ -267,6 +285,24 @@
   "difficulty": "easy",
   "track": "ai-basics",
   "topic": "ai-perception",
+  "grade": 2
+ },
+ {
+  "id": "1ab3dacc-0cd0-458e-bfc4-2437527fd70c",
+  "q": "Ти хочеш подивитися мультик онлайн, але немає Інтернету. Що станеться?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Мультик не завантажиться",
+   "Комп'ютер зламається",
+   "Зникне екран",
+   "Мультик усе одно піде"
+  ],
+  "correct": 0,
+  "explanation": "Онлайн-відео живе в Інтернеті — без з'єднання його не відкрити.",
+  "difficulty": "medium",
+  "track": "informatics",
+  "topic": "networks-internet",
   "grade": 2
  },
  {
@@ -465,6 +501,24 @@
   "difficulty": "easy",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "grade": 2
+ },
+ {
+  "id": "310c6ad0-a9a0-4ffb-8593-95fc2cd895cc",
+  "q": "У таблиці улюблених фруктів: яблуко — 5, банан — 5, груша — 2. Що обрали найменше?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Яблуко",
+   "Банан",
+   "Усе порівну",
+   "Грушу"
+  ],
+  "correct": 3,
+  "explanation": "Найменше число у таблиці — 2, отже грушу обрали найрідше.",
+  "difficulty": "medium",
+  "track": "informatics",
+  "topic": "data",
   "grade": 2
  },
  {
@@ -738,6 +792,24 @@
   "grade": 2
  },
  {
+  "id": "56a2b6c2-a57c-4a79-9d18-537a23772e6d",
+  "q": "Іконка на екрані — це…",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Смачне печиво",
+   "Кнопка гучності",
+   "Мишка",
+   "Маленька картинка, що відкриває програму"
+  ],
+  "correct": 3,
+  "explanation": "Іконка — маленький значок; натиснувши на нього, відкриваєш програму чи файл.",
+  "difficulty": "easy",
+  "track": "informatics",
+  "topic": "digital-tools",
+  "grade": 2
+ },
+ {
   "id": "5799f54a-e39c-45cb-ace1-937dd99eb11a",
   "q": "Книжка містить...",
   "code": null,
@@ -825,6 +897,24 @@
   "difficulty": "medium",
   "track": "computational-thinking",
   "topic": "repetition",
+  "grade": 2
+ },
+ {
+  "id": "667e603f-40d4-4b24-bce7-4912e6800426",
+  "q": "Якщо в Інтернеті вискочило дивне вікно з подарунком, варто…",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Натиснути якнайшвидше",
+   "Не натискати й покликати дорослого",
+   "Погодитись на все",
+   "Ввести своє ім'я"
+  ],
+  "correct": 1,
+  "explanation": "Несподівані «подарунки» часто пастка. Безпечно — не клікати й спитати дорослих.",
+  "difficulty": "easy",
+  "track": "informatics",
+  "topic": "networks-internet",
   "grade": 2
  },
  {
@@ -1062,6 +1152,24 @@
   "grade": 2
  },
  {
+  "id": "7fe8540f-2949-4c52-97f8-9c9b49c83866",
+  "q": "Тобі треба порахувати суму чисел на комп'ютері. Що обрати?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Калькулятор",
+   "Годинник",
+   "Плеєр музики",
+   "Програму для малювання"
+  ],
+  "correct": 0,
+  "explanation": "Для обчислень є калькулятор — правильний інструмент під задачу.",
+  "difficulty": "medium",
+  "track": "informatics",
+  "topic": "digital-tools",
+  "grade": 2
+ },
+ {
   "id": "8032acf5-c292-4390-a67d-6686d31379cc",
   "q": "Комп'ютер обробляє інформацію за допомогою...",
   "code": null,
@@ -1185,6 +1293,24 @@
   "difficulty": "hard",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "grade": 2
+ },
+ {
+  "id": "8e531cbb-aa1b-4d9d-8cf0-340896e284a2",
+  "q": "Ти закінчив роботу й хочеш забрати її на флешку. Що спершу зробити з файлом?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Перейменувати сусідній",
+   "Роздрукувати",
+   "Видалити",
+   "Зберегти"
+  ],
+  "correct": 3,
+  "explanation": "Спершу файл зберігають, і аж тоді копіюють на флешку.",
+  "difficulty": "medium",
+  "track": "informatics",
+  "topic": "digital-tools",
   "grade": 2
  },
  {
@@ -1365,6 +1491,24 @@
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "how-ai-learns",
+  "grade": 2
+ },
+ {
+  "id": "b220d776-9098-4ead-9a5b-ee9a0831fdc9",
+  "q": "Навіщо збирати дані, скільки днів був дощ?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Просто так",
+   "Щоб забути",
+   "Щоб порівнювати місяці й помічати, коли дощів більше",
+   "Щоб намокнути"
+  ],
+  "correct": 2,
+  "explanation": "Зібрані дані допомагають порівнювати й помічати закономірності.",
+  "difficulty": "easy",
+  "track": "informatics",
+  "topic": "data",
   "grade": 2
  },
  {
@@ -1743,6 +1887,24 @@
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "repetition",
+  "grade": 2
+ },
+ {
+  "id": "d73e7068-5365-4b34-afab-da956017b22c",
+  "q": "Сайт — це…",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Сторінки в Інтернеті, які можна відкрити",
+   "Гра на вулиці",
+   "Малюнок на папері",
+   "Смачна страва"
+  ],
+  "correct": 0,
+  "explanation": "Сайт — це сторінки в Інтернеті з текстом, картинками чи відео.",
+  "difficulty": "easy",
+  "track": "informatics",
+  "topic": "networks-internet",
   "grade": 2
  },
  {

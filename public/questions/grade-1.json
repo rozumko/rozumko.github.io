@@ -612,6 +612,24 @@
   "grade": 1
  },
  {
+  "id": "65a64396-4b1f-473a-859e-66ea5aae9215",
+  "q": "Ти складаєш ґудзики за розміром. Куди покласти великий ґудзик?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "До маленьких",
+   "Куди завгодно",
+   "Викинути",
+   "До великих"
+  ],
+  "correct": 3,
+  "explanation": "Групування за ознакою: великий ґудзик — до групи великих.",
+  "difficulty": "easy",
+  "track": "informatics",
+  "topic": "data",
+  "grade": 1
+ },
+ {
   "id": "68f375a6-39ae-43b8-835e-39039612dcd0",
   "q": "Ноутбук - це...",
   "code": null,
@@ -720,6 +738,42 @@
   "grade": 1
  },
  {
+  "id": "788fbbf9-b7b7-4ce3-be40-5ac9c157d956",
+  "q": "Перш ніж заходити в Інтернет, малюкові варто…",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Спитати дорослого",
+   "Нічого нікому не казати й піти самому",
+   "Вимкнути світло",
+   "Заплющити очі"
+  ],
+  "correct": 0,
+  "explanation": "В Інтернет безпечніше заходити разом із дорослим, який допоможе й підстрахує.",
+  "difficulty": "easy",
+  "track": "informatics",
+  "topic": "networks-internet",
+  "grade": 1
+ },
+ {
+  "id": "7bee053d-9d05-4344-aff9-d8f232e7fa83",
+  "q": "Коли комп'ютери з'єднані разом, щоб обмінюватися інформацією, це називають…",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Тишею",
+   "Кашею",
+   "Мережею",
+   "Купою"
+  ],
+  "correct": 2,
+  "explanation": "Мережа — це з'єднані пристрої, які можуть передавати одне одному інформацію.",
+  "difficulty": "easy",
+  "track": "informatics",
+  "topic": "networks-internet",
+  "grade": 1
+ },
+ {
   "id": "7e4b6340-fcb9-42ca-b145-e7dae92b9cdd",
   "q": "Чим на комп'ютері набирають текст?",
   "code": null,
@@ -810,6 +864,24 @@
   "grade": 1
  },
  {
+  "id": "8422fc46-51f9-498f-808e-23ecf4ccdcb4",
+  "q": "Ти помилився під час малювання на комп'ютері. Що допоможе прибрати останню дію?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Ніщо",
+   "Кнопка гучності",
+   "Кнопка «Вимкнути»",
+   "Кнопка «Скасувати»"
+  ],
+  "correct": 3,
+  "explanation": "Кнопка «Скасувати» (undo) прибирає останню дію — помилку легко виправити.",
+  "difficulty": "easy",
+  "track": "informatics",
+  "topic": "digital-tools",
+  "grade": 1
+ },
+ {
   "id": "8599105d-a717-4a37-bfc0-3782d25111b1",
   "q": "В алгоритмі є помилка: «одягнути взуття → одягнути шкарпетки → вийти». Що не так?",
   "code": null,
@@ -825,6 +897,42 @@
   "difficulty": "medium",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "grade": 1
+ },
+ {
+  "id": "8843f4f5-b36c-46c6-a7a6-6d74515387ac",
+  "q": "Щоб зробити літери більшими у програмі, зазвичай натискають кнопку зі значком…",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "М'яча",
+   "Більшої літери (розмір шрифту)",
+   "Хмарки",
+   "Кота"
+  ],
+  "correct": 1,
+  "explanation": "Розмір тексту змінюють спеціальною кнопкою розміру шрифту.",
+  "difficulty": "easy",
+  "track": "informatics",
+  "topic": "digital-tools",
+  "grade": 1
+ },
+ {
+  "id": "8ab1e82b-9079-4fa6-963a-30e57fde43a9",
+  "q": "Чим на екрані наводять і натискають кнопки?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Ложкою",
+   "Виделкою",
+   "Мишкою або пальцем",
+   "Олівцем по столу"
+  ],
+  "correct": 2,
+  "explanation": "Керують курсором за допомогою мишки, а на сенсорному екрані — пальцем.",
+  "difficulty": "easy",
+  "track": "informatics",
+  "topic": "digital-tools",
   "grade": 1
  },
  {
@@ -933,6 +1041,24 @@
   "difficulty": "easy",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "grade": 1
+ },
+ {
+  "id": "a18ecb7b-1f8b-4cef-b23a-a20cde5c8174",
+  "q": "Щоб дізнатися, скільки в класі хлопчиків, треба їх…",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Заспівати",
+   "Порахувати",
+   "Пропустити",
+   "Намалювати"
+  ],
+  "correct": 1,
+  "explanation": "Кількість дізнаються лічбою — це збирання даних.",
+  "difficulty": "easy",
+  "track": "informatics",
+  "topic": "data",
   "grade": 1
  },
  {
@@ -1419,6 +1545,24 @@
   "difficulty": "easy",
   "track": "ai-basics",
   "topic": "how-ai-learns",
+  "grade": 1
+ },
+ {
+  "id": "e1dc540b-e52c-490f-8b68-2c44d35b8444",
+  "q": "У кошику 2 сині кульки і 4 жовті. Яких менше?",
+  "code": null,
+  "type": "choice",
+  "options": [
+   "Немає кульок",
+   "Порівну",
+   "Жовтих",
+   "Синіх"
+  ],
+  "correct": 3,
+  "explanation": "Порівнюємо числа: 2 менше за 4, тож синіх менше.",
+  "difficulty": "easy",
+  "track": "informatics",
+  "topic": "data",
   "grade": 1
  },
  {

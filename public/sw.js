@@ -11,7 +11,7 @@
  * ─────────────────────────────────────────────────────────────
  */
 
-const CACHE_NAME = 'rozumko-v3';
+const CACHE_NAME = 'rozumko-v4';
 
 /**
  * Статичні ресурси що кешуються при першому завантаженні.
@@ -115,6 +115,11 @@ self.addEventListener('fetch', (event) => {
     // Навігаційні запити (HTML-сторінки): network-first
     // Якщо мережі немає — показуємо offline.html
     event.respondWith(networkFirstWithOfflineFallback(event.request));
+  } else if (url.pathname.startsWith('/questions/')) {
+    // Бандли питань — контент, що оновлюється частіше за код. Network-first:
+    // онлайн завжди свіжі питання (cache-first підсовував би старий бандл до
+    // зміни CACHE_NAME), офлайн — остання відома версія з кешу.
+    event.respondWith(networkFirstWithCacheFallback(event.request));
   } else {
     // Статичні ресурси (JS, CSS, зображення): cache-first
     // Якщо немає в кеші — завантажуємо і кешуємо
@@ -160,5 +165,23 @@ async function cacheFirstWithNetworkFallback(request) {
     return networkResponse;
   } catch {
     return new Response('Ресурс недоступний офлайн', { status: 503 });
+  }
+}
+
+/**
+ * Network-first для контенту, що оновлюється (бандли питань).
+ * Онлайн: свіжа версія з мережі + оновлення кешу. Офлайн: остання з кешу.
+ */
+async function networkFirstWithCacheFallback(request) {
+  try {
+    const networkResponse = await fetch(request);
+    if (networkResponse.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, networkResponse.clone());
+    }
+    return networkResponse;
+  } catch {
+    const cached = await caches.match(request);
+    return cached || new Response('Ресурс недоступний офлайн', { status: 503 });
   }
 }
