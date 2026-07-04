@@ -16,7 +16,7 @@ export interface SortingGameOptions {
 
 export function mountSortingGame(root: HTMLElement, levels: SortingLevel[], opts: SortingGameOptions = {}) {
   let levelIdx = 0
-  let queue: { emoji: string; bin: string }[] = []
+  let queue: { emoji: string; bin: string; label?: string }[] = []
   let mistakes = 0
   let locked = false
   const totalItems = levels.reduce((n, l) => n + l.items.length, 0)
@@ -27,7 +27,7 @@ export function mountSortingGame(root: HTMLElement, levels: SortingLevel[], opts
         <p class="sg__instruction" aria-live="polite"></p>
         <p class="sg__progress"></p>
       </div>
-      <div class="sg__item-wrap"><div class="sg__item" aria-live="polite"></div></div>
+      <div class="sg__item-wrap"><div class="sg__item" aria-live="polite"><span class="sg__item-emoji"></span><span class="sg__item-label hidden"></span></div></div>
       <p class="sg__hint">Куди належить цей предмет? Натисни кошик!</p>
       <div class="sg__bins" role="group" aria-label="Кошики для сортування"></div>
       <div class="sg__done hidden">
@@ -43,6 +43,8 @@ export function mountSortingGame(root: HTMLElement, levels: SortingLevel[], opts
     progress:    root.querySelector<HTMLElement>('.sg__progress')!,
     itemWrap:    root.querySelector<HTMLElement>('.sg__item-wrap')!,
     item:        root.querySelector<HTMLElement>('.sg__item')!,
+    itemEmoji:   root.querySelector<HTMLElement>('.sg__item-emoji')!,
+    itemLabel:   root.querySelector<HTMLElement>('.sg__item-label')!,
     hint:        root.querySelector<HTMLElement>('.sg__hint')!,
     bins:        root.querySelector<HTMLElement>('.sg__bins')!,
     done:        root.querySelector<HTMLElement>('.sg__done')!,
@@ -74,7 +76,7 @@ export function mountSortingGame(root: HTMLElement, levels: SortingLevel[], opts
 
   function startLevel() {
     const level = levels[levelIdx]
-    queue = shuffle(level.items.map(i => ({ emoji: i.emoji, bin: i.bin })))
+    queue = shuffle(level.items.map(i => ({ emoji: i.emoji, bin: i.bin, label: i.label })))
     el.instruction.textContent = level.instruction
     el.bins.innerHTML = ''
     level.bins.forEach((bin, i) => {
@@ -89,7 +91,9 @@ export function mountSortingGame(root: HTMLElement, levels: SortingLevel[], opts
 
   function showItem() {
     el.progress.textContent = `Рівень ${levelIdx + 1} з ${levels.length} · залишилось ${queue.length}`
-    el.item.textContent = queue[0]?.emoji ?? ''
+    el.itemEmoji.textContent = queue[0]?.emoji ?? ''
+    el.itemLabel.textContent = queue[0]?.label ?? ''
+    el.itemLabel.classList.toggle('hidden', !queue[0]?.label)
     el.item.classList.remove('sg__item--pop')
     void el.item.offsetWidth  // перезапуск CSS-анімації
     el.item.classList.add('sg__item--pop')

@@ -4316,3 +4316,15 @@ body.teacher-dashboard-active {
   color: var(--clr-text-muted);
   margin-bottom: var(--sp-5);
 }
+.sg__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.sg__item-emoji { font-size: 4.5rem; line-height: 1; }
+.sg__item-label {
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  color: var(--clr-text);
+}
