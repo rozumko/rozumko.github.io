@@ -4232,3 +4232,87 @@ body.teacher-dashboard-active {
     max-height: 24vh;
   }
 }
+
+/* ── Гра «Розумне сортування» (features/games) ──────────────────────────── */
+.sg {
+  max-width: 34rem;
+  margin: 0 auto;
+  text-align: center;
+}
+.sg__top {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-4);
+}
+.sg__instruction {
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  color: var(--clr-text);
+}
+.sg__progress {
+  font-size: var(--font-size-sm);
+  color: var(--clr-text-muted);
+}
+.sg__item-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--sp-2);
+}
+.sg__item {
+  font-size: 4.5rem;
+  line-height: 1;
+  padding: var(--sp-4);
+  background: var(--clr-surface, #fff);
+  border-radius: var(--r-2xl, 1.25rem);
+  box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.25);
+}
+.sg__item--pop { animation: sg-pop 0.25s ease; }
+.sg__item--shake { animation: sg-shake 0.4s ease; }
+@keyframes sg-pop {
+  from { transform: scale(0.6); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+@keyframes sg-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+.sg__hint {
+  font-size: var(--font-size-sm);
+  color: var(--clr-text-muted);
+  margin-bottom: var(--sp-4);
+}
+.sg__bins {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-3);
+}
+.sg__bin {
+  min-width: 9rem;
+  padding: var(--sp-4) var(--sp-5);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  border-radius: var(--r-xl, 1rem);
+  border: 3px dashed transparent;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.sg__bin:hover { transform: translateY(-2px); }
+.sg__bin--0 { background: #dcfce7; color: #15803d; border-color: #86efac; }
+.sg__bin--1 { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+.sg__bin--2 { background: #e0f2fe; color: #0369a1; border-color: #7dd3fc; }
+.sg__bin--correct { transform: scale(1.08); border-style: solid; }
+.sg__bin--wrong   { animation: sg-shake 0.4s ease; }
+.sg__done { padding: var(--sp-6) 0; }
+.sg__done-emoji { font-size: 4rem; margin-bottom: var(--sp-2); }
+.sg__done-title {
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  margin-bottom: var(--sp-2);
+}
+.sg__done-sub {
+  color: var(--clr-text-muted);
+  margin-bottom: var(--sp-5);
+}

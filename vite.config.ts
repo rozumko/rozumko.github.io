@@ -104,6 +104,7 @@ export default defineConfig({
         admin:            resolve(__dirname, 'admin.html'),
         offline:          resolve(__dirname, 'offline.html'),
         home:             resolve(__dirname, 'home.html'),
+        games:            resolve(__dirname, 'games.html'),
         school:           resolve(__dirname, 'school.html'),
         'for-teachers':   resolve(__dirname, 'for-teachers.html'),
         'for-students':   resolve(__dirname, 'for-students.html'),
