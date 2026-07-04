@@ -57,7 +57,7 @@ The platform includes these student-facing event and practice modes:
 
 | Mode | Code | Questions | Scoring |
 |---|---|---|---|
-| Practice | No | Static practice bundle generated from `isOlympiad=false` (`public/questions/grade-N.json`) | Local feedback; answer keys are intentionally bundled |
+| Practice | No | Static practice bundle generated from `isOlympiad=false` (`public/questions/grade-N.json`, carries `track`/`topic`) | Local feedback; answer keys are intentionally bundled |
 | Home Demo | No | `GET /api/questions` with safe answer stripping and `track=<direction>` | No child score; parent report is server-scored after consent |
 | Home Club Practice | Parent lead token + active entitlement | `GET /api/home/leads/:id/club/questions` | Server-side report after each paid practice mission |
 | Official olympiad | Yes | Fixed event selection from the backend | Server-side only |
@@ -90,10 +90,23 @@ generated as practice assets; public API, Home Demo, paid, official,
 diploma-generating and parent-reporting variants must keep trusted scoring on
 the backend.
 
-`questions.track` is the current taxonomy bridge for the three product
-directions (`informatics`, `computational-thinking`, `ai-basics`). AIG item
-models should emit the same track values plus more granular skill/topic metadata
+Content taxonomy (migration 0021, see `docs/content-taxonomy.md`): every question
+carries `track` (`informatics` / `computational-thinking` / `ai-basics`), `topic`
+(subject theme within a track), and optional `concept_key` (a cross-track CT
+skill). Extra columns: `progression_band`, `version` (bumped by the backend on
+material edits), `meta jsonb`. Validation is fail-closed in
+`backend/src/lib/taxonomy.ts` (`TOPICS_BY_TRACK`). The static practice bundle now
+carries `track` and `topic`, so `pickMissionQuestions` filters by
+track/topic/difficulty and direction selection is real (Home Demo and the School
+free-mission track picker). AIG item models should emit the same taxonomy fields
 when that engine lands.
+
+A missions registry (`missions` table, migration 0022) records logical missions
+by stable slug: `kind` (`question-set` today, `sorting-game` for the built-in
+games), `track`, `grade`, `version`, `status`, `config jsonb`. It is deliberately
+**not** FK-linked from `home_demo_attempts` / `home_mission_attempts` — `missionId`
+there stays a logical identifier per the Home contract; the registry is a
+management/visibility layer (read-only admin "Місії" tab, `GET /api/admin/missions`).
 
 ## Surface Architecture — School **[IMPLEMENTED]**, Home Demo/Entitlement/Club Practice **[IMPLEMENTED]**, Payment Webhook Boundary **[IMPLEMENTED]**, Provider Checkout **[PLANNED]**, Olympiad **[IMPLEMENTED]/[PLANNED]**
 
@@ -129,6 +142,12 @@ Frontend structure:
 
 - `features/missions/` — reusable mission runner (implemented; used by
   `/school` for both self-serve practice and live classroom games);
+- `features/games/` — shared client-side sorting-game engine
+  (`sorting-game.ts`: tap-based, stars + streak) and data
+  (`sorting-data.ts`); three games served from `games.html`, linked from
+  `home.html` and `school.html`;
+- `features/admin/` — admin tabs incl. `missions-tab.ts` (registry) and
+  `taxonomy.ts` (topic/concept UI copy);
 - `features/home/` for parent-led Home Mode UX (planned).
 
 Backend:

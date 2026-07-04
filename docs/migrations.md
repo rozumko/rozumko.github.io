@@ -35,6 +35,11 @@ environments receive the same schema.
 | `0018_add_home_entitlements` | Home paid-access entitlement + audit events (no provider yet) |
 | `0019_add_home_mission_attempts` | Repeatable Club practice attempts gated by entitlement |
 | `0020_add_home_payment_events` | Idempotent verified payment webhook events for future provider integration |
+| `0021_add_question_taxonomy` | Question taxonomy: topic, concept_key, progression_band, version, meta jsonb (CHECK-constrained per track) |
+| `0022_add_missions` | Missions registry (kind/track/grade/version/status/config); seeds 24 logical Home missions |
+| `0023_add_sorting_game_mission` | Registers built-in game «Розумне сортування» (kind=sorting-game) |
+| `0024_add_infosort_mission` | Registers built-in game «ІнфоСорт» (informatics/information) |
+| `0025_add_multisort_mission` | Registers built-in game «Мульти-Сортування» (computational-thinking/abstraction) |
 
 `0012` is intentionally idempotent: production received the columns manually
 before the SQL was incorporated into Drizzle history.

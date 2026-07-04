@@ -16,9 +16,10 @@ _Updated: 2026-07-02_
 > Known v1 limitation: `answerChangeCount` undercounts by design — the shared
 > question renderer locks most answer types after the first commit, so only
 > repeated `select` changes (match) are counted. Safe direction: the
-> "attention" pattern cannot fire falsely. Track-specific demo selection now
-> uses `questions.track`; Home Demo keeps a temporary difficulty fallback only
-> for legacy rows that have not been tagged yet.
+> "attention" pattern cannot fire falsely. Track-specific demo selection is
+> real: the static practice bundle carries `track`/`topic`, and `loadDemoQuestions`
+> progressively relaxes filters (track+difficulty -> track -> any) so the child
+> always gets a mission even when a direction is still thin.
 
 This document fixes the minimal data and API contract for the first Home Mode
 slice: a free demo mission, a parent lead with consent, and a parent-readable
@@ -66,9 +67,10 @@ One short demo block per direction, 5-7 items each:
 | `computational-thinking` | Обчислювальне мислення |
 | `ai-basics` | Основи ШІ |
 
-`questions.track` is nullable for legacy content, but every new Home Demo item
-must set one of these values. The UI may temporarily fall back to difficulty
-while old rows are being tagged; the product contract is track-based selection.
+`questions.track` is nullable in the schema for legacy content, but the whole
+bank is now tagged (informatics 200, computational-thinking 70, ai-basics 48).
+Track-based selection is the product contract and is live end-to-end; the
+progressive filter relaxation is a safety net for thin slices, not the norm.
 
 ## Mission Versioning
 

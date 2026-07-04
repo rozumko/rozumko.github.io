@@ -71,6 +71,16 @@ only the access state needed to provide the service.
 
 ## Content Direction
 
+Current state (2026-07): the platform pivoted from an olympiad to an educational
+platform across three directions — `informatics`, `computational-thinking`,
+`ai-basics`. The question bank is 318 items, fully tagged by a two-axis taxonomy
+(`topic` + `concept_key`, see `docs/content-taxonomy.md`), aligned to НУШ and
+Cambridge Primary Computing 0059 / Digital Literacy 0072. Direction selection is
+live in Home Demo and the School free-mission picker. Three sorting games
+(classification, information, multi-attribute abstraction) run on a shared engine
+and are registered in the `missions` table. Next content gaps: broaden ai-basics
+and per-topic depth, curate mission question sets, then the AIG engine below.
+
 Mission content should be repeatable, parameterized and versioned. A mission
 mechanic can be reused in different contexts when the data and scoring
 boundaries are respected:

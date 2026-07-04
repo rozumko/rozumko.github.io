@@ -50,12 +50,22 @@
 
 ```
 features/api/client.ts   ← всі API-запити (типізовані)
-features/admin/          ← вкладки адмін-панелі
+features/admin/          ← вкладки адмін-панелі (+ missions-tab, taxonomy)
 features/olympiad/       ← quiz-engine
+features/missions/       ← спільний mission-runner + відбір питань (pickMissionQuestions)
+features/games/          ← движок ігор-сортування (sorting-game/-data) → games.html
 utils/                   ← question-renderer, focus-trap, ui
 backend/src/routes/      ← student, attempt, teacher, admin, questions
 backend/src/lib/auth.ts  ← requireAuth, requireAdmin middleware
+backend/src/lib/taxonomy.ts ← TOPICS_BY_TRACK, валідація тем/концептів (fail-closed)
 backend/src/db/          ← Drizzle schema + migration runner
-backend/drizzle/         ← SQL-міграції
+backend/drizzle/         ← SQL-міграції (таксономія 0021, missions 0022, ігри 0023–0025)
+backend/scripts/         ← import-temp-content, export-practice-questions
+public/questions/        ← статичний practice-бандл (track/topic; npm run export:questions)
 public/                  ← sw.js, manifest, favicon (статичні assets)
 ```
+
+Контент-таксономія: `docs/content-taxonomy.md`. Дві осі — `topic` (тема в межах
+`track`) + `concept_key` (CT-навичка). Режим (Дім/Школа/Олімпіада) — канал
+доставки, НЕ поле питання. `isOlympiad` не перейменовувати без окремого аудиту
+(захищено security-тестами).

@@ -1,12 +1,20 @@
 # Таксономія навчального вмісту
 
-Статус: чернетка на погодження (2026-07-04).
+Статус: **впроваджено** (2026-07-04). Схема — міграція 0021; серверна валідація
+— `backend/src/lib/taxonomy.ts`; UI-копія — `features/admin/taxonomy.ts`.
+Банк: 318 розмічених питань (informatics 200, computational-thinking 70,
+ai-basics 48). Джерела імпорту — `backend/scripts/import-temp-content.ts`.
 
 Дві незалежні осі класифікації питання:
 
-- **`topic`** — предметна тема в межах напрямку (`track`). Обов'язкове поле.
+- **`topic`** — предметна тема в межах напрямку (`track`). Обов'язкове для нового
+  вмісту (адмінка/API), nullable у схемі для legacy.
 - **`concept_key`** — CT-навичка, яку тренує питання (опційне для informatics/ai-basics,
   обов'язкове для computational-thinking). Дає крос-напрямковий «профіль мислення».
+
+Супутні колонки (0021): `progression_band` (recognize/apply/reason), `version`
+(інкремент бекендом при змістовній правці), `meta jsonb` (редакційні дані:
+reviewStatus, isCore, джерело імпорту).
 
 Джерела: типова програма НУШ (інформатична освітня галузь, 1–4 кл.),
 Cambridge Primary Computing 0059 (strands: Computational Thinking, Programming,
