@@ -148,6 +148,20 @@
       "when": 1783006800000,
       "tag": "0020_add_home_payment_events",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1783010400000,
+      "tag": "0021_add_question_taxonomy",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1783014000000,
+      "tag": "0022_add_missions",
+      "breakpoints": true
     }
   ]
 }

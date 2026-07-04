@@ -22,6 +22,15 @@ export const questions = pgTable('questions', {
   explanation: text('explanation'),
   difficulty:  text('difficulty'),
   track:       text('track').$type<QuestionTrack>(),
+  // Таксономія вмісту (docs/content-taxonomy.md):
+  //   topic — предметна тема в межах track; conceptKey — CT-навичка (крос-напрямкова)
+  topic:       text('topic'),
+  conceptKey:  text('concept_key'),
+  progressionBand: text('progression_band').$type<'recognize' | 'apply' | 'reason'>(),
+  // Інкрементується бекендом при змістовних правках (q/options/correct/type)
+  version:     integer('version').notNull().default(1),
+  // Редакційні метадані без окремих колонок (reviewStatus, isCore, джерело імпорту…)
+  meta:        jsonb('meta').$type<Record<string, unknown>>(),
   grade:       integer('grade'),
   isOlympiad:  boolean('is_olympiad').default(false),
   createdAt:   timestamp('created_at', { withTimezone: true }).defaultNow(),
@@ -210,6 +219,28 @@ export const schoolAnswers = pgTable('school_answers', {
 }))
 
 export type SchoolAnswer = typeof schoolAnswers.$inferSelect
+
+// ── Missions registry ─────────────────────────────────────────────────────────
+// Реєстр місій (question-set сьогодні, ігри/симуляції далі). Движок місії живе
+// у коді фронтенду; БД знає id, призначення і версію. Свідомо БЕЗ FK від
+// home_demo_attempts/home_mission_attempts: контракт Home фіксує missionId як
+// логічний ідентифікатор (docs/home-demo-contract.md), реєстр — management-шар.
+
+export const missions = pgTable('missions', {
+  id:        text('id').primaryKey(),                 // slug: demo-informatics-grade2
+  title:     text('title').notNull(),
+  kind:      text('kind').notNull().default('question-set'), // question-set | sorting-game | …
+  track:     text('track').notNull().$type<QuestionTrack>(),
+  grade:     integer('grade').notNull(),
+  version:   integer('version').notNull().default(1),
+  status:    text('status').notNull().default('active'),     // draft | active | archived
+  config:    jsonb('config').$type<Record<string, unknown>>(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
+export type Mission = typeof missions.$inferSelect
+export type NewMission = typeof missions.$inferInsert
 
 // ── Home Mode (parent-led, consent-based) ─────────────────────────────────────
 // Контракт: docs/home-demo-contract.md. Лід = батьківський email + згода.

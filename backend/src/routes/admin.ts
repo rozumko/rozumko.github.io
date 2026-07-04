@@ -1,11 +1,12 @@
 import type { FastifyInstance } from 'fastify'
 import { eq, desc, count, and, asc, inArray } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { questions, accessCodes, attempts, attemptQuestions, appUsers, olympiadEvents, eventQuestions, schoolSessions, schoolSessionQuestions, homeLeads, homeEntitlements, homeEntitlementEvents, type QuestionTrack } from '../db/schema.js'
+import { questions, accessCodes, attempts, attemptQuestions, appUsers, olympiadEvents, eventQuestions, schoolSessions, schoolSessionQuestions, homeLeads, homeEntitlements, homeEntitlementEvents, missions, type QuestionTrack } from '../db/schema.js'
 import { ENTITLEMENT_STATUSES, normalizeEntitlementStatus, applyEntitlementChange } from './home-entitlement.js'
 import { requireAdmin } from '../lib/auth.js'
 import { assertQuestionsBelongToGrade, normalizeEventQuestionSelection } from './event-questions-validation.js'
 import { validateQuestionShape, type QuestionType } from './question-input-validation.js'
+import { ALL_TOPICS, normalizeTopic, normalizeConceptKey, normalizeProgressionBand, type ConceptKey, type ProgressionBand } from '../lib/taxonomy.js'
 import {
   EVENT_STATUSES,
   assertEventDateOrder,
@@ -399,9 +400,9 @@ export async function adminRoutes(app: FastifyInstance) {
     return reply.send({ results: allAttempts })
   })
 
-  // GET /api/admin/questions?grade=&isOlympiad=&difficulty=&track=
+  // GET /api/admin/questions?grade=&isOlympiad=&difficulty=&track=&topic=
   app.get<{
-    Querystring: { grade?: string; isOlympiad?: string; difficulty?: string; track?: string }
+    Querystring: { grade?: string; isOlympiad?: string; difficulty?: string; track?: string; topic?: string }
   }>('/questions', {
     preHandler: requireAdmin,
     schema: {
@@ -413,11 +414,12 @@ export async function adminRoutes(app: FastifyInstance) {
           isOlympiad: { type: 'string', enum: ['true', 'false'] },
           difficulty: { type: 'string', enum: ['easy', 'medium', 'hard'] },
           track:      { type: 'string', enum: ['informatics', 'computational-thinking', 'ai-basics'] },
+          topic:      { type: 'string', enum: ALL_TOPICS as string[] },
         },
       },
     },
   }, async (req, reply) => {
-    const { grade, isOlympiad, difficulty } = req.query
+    const { grade, isOlympiad, difficulty, topic } = req.query
     let track: QuestionTrack | null
     try {
       track = normalizeQuestionTrack(req.query.track)
@@ -429,6 +431,7 @@ export async function adminRoutes(app: FastifyInstance) {
     if (isOlympiad) filters.push(eq(questions.isOlympiad, isOlympiad === 'true'))
     if (difficulty) filters.push(eq(questions.difficulty, difficulty))
     if (track)      filters.push(eq(questions.track,      track))
+    if (topic)      filters.push(eq(questions.topic,      topic))
 
     const list = await db
       .select()
@@ -442,6 +445,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post<{
     Body: {
       q: string; grade: number; difficulty: string; track?: QuestionTrack | null; isOlympiad: boolean
+      topic?: string | null; conceptKey?: string | null; progressionBand?: string | null
       type?: string; options: string[] | Record<string, unknown>
       correct?: number; explanation?: string; code?: string
     }
@@ -457,6 +461,9 @@ export async function adminRoutes(app: FastifyInstance) {
           difficulty:  { type: 'string', enum: ['easy', 'medium', 'hard'] },
           track:       { oneOf: [{ type: 'string', enum: ['informatics', 'computational-thinking', 'ai-basics'] }, { type: 'null' }] },
           isOlympiad:  { type: 'boolean' },
+          topic:           { oneOf: [{ type: 'string', enum: ALL_TOPICS as string[] }, { type: 'null' }] },
+          conceptKey:      { oneOf: [{ type: 'string' }, { type: 'null' }] },
+          progressionBand: { oneOf: [{ type: 'string', enum: ['recognize', 'apply', 'reason'] }, { type: 'null' }] },
           type:        { type: 'string', enum: ['choice', 'truefalse', 'input', 'sort', 'sequence', 'match'] },
           options:     {},   // jsonb — будь-яка структура залежно від type
           correct:     { oneOf: [{ type: 'integer', minimum: 0 }, { type: 'null' }] },
@@ -469,8 +476,14 @@ export async function adminRoutes(app: FastifyInstance) {
     const { q, grade, difficulty, isOlympiad = false, options, correct, explanation, code } = req.body
     const type = (req.body.type ?? 'choice') as QuestionType
     let track: QuestionTrack | null
+    let topic: string | null
+    let conceptKey: ConceptKey | null
+    let progressionBand: ProgressionBand | null
     try {
-      track = normalizeQuestionTrack(req.body.track)
+      track           = normalizeQuestionTrack(req.body.track)
+      topic           = normalizeTopic(req.body.topic, track)
+      conceptKey      = normalizeConceptKey(req.body.conceptKey)
+      progressionBand = normalizeProgressionBand(req.body.progressionBand)
     } catch (err) {
       return reply.code(400).send({ error: (err as Error).message })
     }
@@ -485,7 +498,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
     const [inserted] = await db
       .insert(questions)
-      .values({ q, grade, difficulty, track, isOlympiad, type, options: shape.options as any, correct: shape.correct, explanation: explanation ?? null, code: code ?? null })
+      .values({ q, grade, difficulty, track, topic, conceptKey, progressionBand, isOlympiad, type, options: shape.options as any, correct: shape.correct, explanation: explanation ?? null, code: code ?? null })
       .returning({ id: questions.id })
     return reply.code(201).send({ id: inserted.id })
   })
@@ -495,6 +508,7 @@ export async function adminRoutes(app: FastifyInstance) {
     Params: { id: string }
     Body: {
       q?: string; grade?: number; difficulty?: string; track?: QuestionTrack | null; isOlympiad?: boolean
+      topic?: string | null; conceptKey?: string | null; progressionBand?: string | null
       type?: string; options?: string[] | Record<string, unknown>
       correct?: number; explanation?: string; code?: string
     }
@@ -514,6 +528,9 @@ export async function adminRoutes(app: FastifyInstance) {
           difficulty:  { type: 'string', enum: ['easy', 'medium', 'hard'] },
           track:       { oneOf: [{ type: 'string', enum: ['informatics', 'computational-thinking', 'ai-basics'] }, { type: 'null' }] },
           isOlympiad:  { type: 'boolean' },
+          topic:           { oneOf: [{ type: 'string', enum: ALL_TOPICS as string[] }, { type: 'null' }] },
+          conceptKey:      { oneOf: [{ type: 'string' }, { type: 'null' }] },
+          progressionBand: { oneOf: [{ type: 'string', enum: ['recognize', 'apply', 'reason'] }, { type: 'null' }] },
           type:        { type: 'string', enum: ['choice', 'truefalse', 'input', 'sort', 'sequence', 'match'] },
           options:     {},
           correct:     { oneOf: [{ type: 'integer', minimum: 0 }, { type: 'null' }] },
@@ -527,19 +544,35 @@ export async function adminRoutes(app: FastifyInstance) {
     const { id } = req.params
     const b = req.body
     let track: QuestionTrack | null | undefined
+    let conceptKey: ConceptKey | null | undefined
+    let progressionBand: ProgressionBand | null | undefined
     try {
-      track = b.track !== undefined ? normalizeQuestionTrack(b.track) : undefined
+      track           = b.track           !== undefined ? normalizeQuestionTrack(b.track) : undefined
+      conceptKey      = b.conceptKey      !== undefined ? normalizeConceptKey(b.conceptKey) : undefined
+      progressionBand = b.progressionBand !== undefined ? normalizeProgressionBand(b.progressionBand) : undefined
     } catch (err) {
       return reply.code(400).send({ error: (err as Error).message })
     }
 
     // Завантажити поточний стан питання для merge-валідації
     const [current] = await db
-      .select({ type: questions.type, correct: questions.correct, options: questions.options })
+      .select({ type: questions.type, correct: questions.correct, options: questions.options, track: questions.track, topic: questions.topic, version: questions.version })
       .from(questions)
       .where(eq(questions.id, id))
       .limit(1)
     if (!current) return reply.code(404).send({ error: 'Питання не знайдено' })
+
+    // Пара track+topic валідується у майбутньому (merged) стані: зміна track
+    // без topic не може лишити тему чужого напряму
+    const nextTrack = track !== undefined ? track : current.track
+    const nextTopicRaw = b.topic !== undefined ? b.topic : current.topic
+    let topic: string | null | undefined
+    try {
+      const validated = normalizeTopic(nextTopicRaw, nextTrack)
+      topic = (b.topic !== undefined || validated !== current.topic) ? validated : undefined
+    } catch (err) {
+      return reply.code(400).send({ error: (err as Error).message })
+    }
     if (await questionIsLocked(id)) {
       return reply.code(409).send({ error: 'Не можна редагувати питання активної олімпіади або питання, яке вже було видане учню' })
     }
@@ -564,6 +597,9 @@ export async function adminRoutes(app: FastifyInstance) {
     if (b.grade       !== undefined) updates.grade       = b.grade
     if (b.difficulty  !== undefined) updates.difficulty  = b.difficulty
     if (track         !== undefined) updates.track       = track
+    if (topic         !== undefined) updates.topic       = topic
+    if (conceptKey      !== undefined) updates.conceptKey      = conceptKey
+    if (progressionBand !== undefined) updates.progressionBand = progressionBand
     if (b.isOlympiad  !== undefined) updates.isOlympiad  = b.isOlympiad
     if (b.type        !== undefined) updates.type        = b.type
     // options/correct беремо з провалідованої форми (нормалізовані)
@@ -571,6 +607,11 @@ export async function adminRoutes(app: FastifyInstance) {
     if (b.correct !== undefined || b.type !== undefined) updates.correct = shape.correct  // null очищає
     if (b.explanation !== undefined) updates.explanation = b.explanation
     if (b.code        !== undefined) updates.code        = b.code
+
+    // Змістовна правка (текст/варіанти/відповідь/тип) → нова версія питання
+    if (b.q !== undefined || b.options !== undefined || b.correct !== undefined || b.type !== undefined) {
+      updates.version = current.version + 1
+    }
 
     const [updated] = await db
       .update(questions)
@@ -682,5 +723,14 @@ export async function adminRoutes(app: FastifyInstance) {
     } catch (err) {
       return reply.code(400).send({ error: (err as Error).message })
     }
+  })
+
+  // GET /api/admin/missions — реєстр місій (read-only, редагування — пізніше)
+  app.get('/missions', { preHandler: requireAdmin }, async (_req, reply) => {
+    const list = await db
+      .select()
+      .from(missions)
+      .orderBy(asc(missions.track), asc(missions.grade), asc(missions.id))
+    return reply.send({ missions: list })
   })
 }
