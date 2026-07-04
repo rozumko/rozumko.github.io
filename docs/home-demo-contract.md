@@ -68,7 +68,7 @@ One short demo block per direction, 5-7 items each:
 | `ai-basics` | Основи ШІ |
 
 `questions.track` is nullable in the schema for legacy content, but the whole
-bank is now tagged (informatics 200, computational-thinking 70, ai-basics 48).
+bank is now tagged (informatics 223, computational-thinking 106, ai-basics 96).
 Track-based selection is the product contract and is live end-to-end; the
 progressive filter relaxation is a safety net for thin slices, not the norm.
 
