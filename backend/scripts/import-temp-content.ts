@@ -1,8 +1,9 @@
 // Одноразовий імпорт напрацювань із temp/ у банк питань.
 //
 // Джерела:
-//   temp/ct_quiz/questions.js  → track computational-thinking (70 питань, 2–4 кл.)
-//   temp/alt_cs/index.html     → track informatics (тести 1–4 кл.)
+//   temp/ct_quiz/questions.js       → track computational-thinking (70 питань, 2–4 кл.)
+//   temp/alt_cs/index.html          → track informatics (тести 1–4 кл.)
+//   temp/ai_basics/questions.json   → track ai-basics (48 питань, 1–4 кл.)
 //
 // Запуск:  cd backend && npx tsx scripts/import-temp-content.ts --dry-run   (без БД)
 //          cd backend && npx tsx scripts/import-temp-content.ts             (пише в БД)
@@ -121,9 +122,9 @@ function loadAltCsDb(): Record<string, AltCsGrade> {
   return vm.runInNewContext(`(${html.slice(objStart, end)})`) as Record<string, AltCsGrade>
 }
 
-/** В alt_cs правильна відповідь завжди перша — перемішуємо варіанти при імпорті. */
-function shuffleOptions(item: AltCsQuestion): { options: string[]; correct: number } {
-  const indexed = item.a.map((text, i) => ({ text, isCorrect: i === item.c }))
+/** Перемішує варіанти, зберігаючи позицію правильної відповіді. */
+function shuffleOptions(a: string[], c: number): { options: string[]; correct: number } {
+  const indexed = a.map((text, i) => ({ text, isCorrect: i === c }))
   for (let i = indexed.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
     ;[indexed[i], indexed[j]] = [indexed[j], indexed[i]]
@@ -142,7 +143,7 @@ function loadAltCs(): NewQuestion[] {
       const slug = ALT_CS_TOPIC_MAP[topic.title] ?? null
       if (!slug) console.warn(`  [alt_cs] невідома тема «${topic.title}» → topic=null`)
       for (const item of topic.questions ?? []) {
-        const { options, correct } = shuffleOptions(item)
+        const { options, correct } = shuffleOptions(item.a, item.c)
         rows.push({
           q:           item.q,
           type:        'choice',
@@ -164,14 +165,47 @@ function loadAltCs(): NewQuestion[] {
   return rows
 }
 
+// ── ai_basics → ai-basics ────────────────────────────────────────────────────
+
+interface AiBasicsQuestion {
+  grade: number; topic: string; difficulty: string; progressionBand: string
+  q: string; options: string[]; correct: number; explanation: string
+}
+
+function loadAiBasics(): NewQuestion[] {
+  const { questions: items } = JSON.parse(
+    readFileSync(join(__dirname, '../../temp/ai_basics/questions.json'), 'utf8')
+  ) as { questions: AiBasicsQuestion[] }
+  return items.map(item => {
+    const { options, correct } = shuffleOptions(item.options, item.correct)
+    return {
+      q:           item.q,
+      type:        'choice' as const,
+      options,
+      correct,
+      explanation: item.explanation,
+      difficulty:  item.difficulty,
+      track:       'ai-basics' as const,
+      topic:       item.topic,
+      conceptKey:  null,
+      progressionBand: item.progressionBand as NewQuestion['progressionBand'],
+      grade:       item.grade,
+      isOlympiad:  false,
+      meta: { source: 'ai_basics' },
+    }
+  })
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 const ctRows  = loadCtQuiz()
 const altRows = loadAltCs()
-const all = [...ctRows, ...altRows]
+const aiRows  = loadAiBasics()
+const all = [...ctRows, ...altRows, ...aiRows]
 
-console.log(`ct_quiz: ${ctRows.length} питань (2–4 кл., computational-thinking)`)
-console.log(`alt_cs:  ${altRows.length} питань (1–4 кл., informatics)`)
+console.log(`ct_quiz:   ${ctRows.length} питань (2–4 кл., computational-thinking)`)
+console.log(`alt_cs:    ${altRows.length} питань (1–4 кл., informatics)`)
+console.log(`ai_basics: ${aiRows.length} питань (1–4 кл., ai-basics)`)
 
 const byTopic = new Map<string, number>()
 for (const r of all) byTopic.set(`${r.track}/${r.topic ?? '∅'}`, (byTopic.get(`${r.track}/${r.topic ?? '∅'}`) ?? 0) + 1)
