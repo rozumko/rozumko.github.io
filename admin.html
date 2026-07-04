@@ -74,6 +74,7 @@
       <button data-tab="teachers"   class="admin-tab"><i class="fas fa-chalkboard-teacher" aria-hidden="true"></i> Вчителі</button>
       <button data-tab="results"    class="admin-tab"><i class="fas fa-poll" aria-hidden="true"></i> Результати</button>
       <button data-tab="questions"  class="admin-tab"><i class="fas fa-question" aria-hidden="true"></i> Питання</button>
+      <button data-tab="missions"   class="admin-tab"><i class="fas fa-rocket" aria-hidden="true"></i> Місії</button>
     </nav>
 
     <main id="main-content" class="admin-main">
@@ -191,6 +192,30 @@
             </div>
           </div>
         </div>
+      </section>
+
+      <!-- Вкладка: Місії -->
+      <section id="tab-missions" class="tab-panel hidden">
+        <div class="admin-section-header">
+          <h2 class="admin-section-title">Реєстр місій</h2>
+        </div>
+        <div class="admin-filter-bar">
+          <select id="m-filter-track" class="adm-input adm-input--sm" style="width:auto">
+            <option value="">Всі напрями</option>
+            <option value="informatics">Інформатика</option>
+            <option value="computational-thinking">Обчислювальне мислення</option>
+            <option value="ai-basics">Основи ШІ</option>
+          </select>
+          <select id="m-filter-grade" class="adm-input adm-input--sm" style="width:auto">
+            <option value="">Всі класи</option>
+            <option value="1">1 клас</option>
+            <option value="2">2 клас</option>
+            <option value="3">3 клас</option>
+            <option value="4">4 клас</option>
+          </select>
+          <span id="m-count" class="admin-filter-count"></span>
+        </div>
+        <div id="missions-list" class="admin-list admin-list--sm"></div>
       </section>
 
       <!-- Вкладка: Питання -->

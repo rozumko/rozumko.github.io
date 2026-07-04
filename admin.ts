@@ -6,6 +6,7 @@ import { initEventsTab,    loadEvents        } from './features/admin/events-tab
 import { initTeachersTab,  loadTeachers      } from './features/admin/teachers-tab.js'
 import { initResultsTab,   loadResults       } from './features/admin/results-tab.js'
 import { initQuestionsTab, loadQuestionsTab  } from './features/admin/questions-tab.js'
+import { initMissionsTab,  loadMissionsTab   } from './features/admin/missions-tab.js'
 import { friendlyError } from './features/admin/ui.js'
 import { $, $maybe } from './utils/dom.js'
 
@@ -100,6 +101,7 @@ document.querySelectorAll<HTMLElement>('.admin-tab').forEach(tab => {
     if (tabName === 'teachers')  loadTeachers()
     if (tabName === 'results')   loadResults()
     if (tabName === 'questions') loadQuestionsTab()
+    if (tabName === 'missions')  loadMissionsTab()
   })
 })
 
@@ -138,3 +140,4 @@ initEventsTab({ refreshStats })
 initTeachersTab()
 initResultsTab()
 initQuestionsTab()
+initMissionsTab()

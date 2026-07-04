@@ -690,6 +690,23 @@ export function deleteQuestion(id: string): Promise<void> {
   return authRequest(`/api/admin/questions/${id}`, { method: 'DELETE' })
 }
 
+export interface Mission {
+  id: string
+  title: string
+  kind: string
+  track: QuestionTrack
+  grade: number
+  version: number
+  status: 'draft' | 'active' | 'archived'
+  config: Record<string, unknown> | null
+  createdAt: string | null
+  updatedAt: string | null
+}
+
+export function getAdminMissions(): Promise<{ missions: Mission[] }> {
+  return authRequest('/api/admin/missions')
+}
+
 export function getAdminQuestions(params: { grade?: number | string; isOlympiad?: boolean | string; difficulty?: string; track?: QuestionTrack | string; topic?: string } = {}): Promise<{ questions: Question[] }> {
   const p = new URLSearchParams()
   if (params.grade      != null) p.set('grade',      String(params.grade))
