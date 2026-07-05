@@ -45,6 +45,7 @@ function highlightPuzzleGrade(grade: number) {
 document.getElementById('puzzles-pick-btn')!.addEventListener('click', () => {
   menu.classList.add('hidden')
   puzzleArea.classList.remove('hidden')
+  document.body.classList.add('puzzle-active')   // fixed-оверлей: один екран без прокрутки
   highlightPuzzleGrade(puzzleGrade)
   mountPuzzles(puzzleRoot, puzzleGrade)
 })
@@ -59,6 +60,7 @@ document.querySelectorAll<HTMLElement>('.puzzle-grade-btn').forEach(btn => {
 
 document.getElementById('puzzle-back-btn')!.addEventListener('click', () => {
   puzzleArea.classList.add('hidden')
+  document.body.classList.remove('puzzle-active')
   puzzleRoot.innerHTML = ''
   menu.classList.remove('hidden')
 })

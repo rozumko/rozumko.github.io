@@ -26,7 +26,8 @@ export interface Puzzle {
   lines?: PuzzleLine[]
   grid?: GridSpec
   answers: Record<string, string>   // answerId → правильне значення (рядок)
-  solution: string
+  hint: string       // одна коротка підказка (не розкриває відповідь)
+  solution: string   // повний розв'язок — показується лише в самому кінці
 }
 
 interface Profile {
@@ -112,6 +113,7 @@ function createSequence(i: number, p: Profile): Puzzle {
     id: `sequence-${i}`, type: 'sequence', title: 'Числовий ланцюжок', concept: 'patterns',
     instruction: 'Знайди правило й заповни пропуски.',
     lines: [{ tokens }], answers,
+    hint: 'Порівняй два сусідні відомі числа — на скільки вони змінюються щоразу?',
     solution: `Правило: щоразу ${descending ? 'віднімаємо' : 'додаємо'} ${step}. Ланцюжок: ${seq.join(' → ')}.`,
   }
 }
@@ -144,6 +146,7 @@ function createMachine(i: number, p: Profile): Puzzle {
     id: `machine-${i}`, type: 'machine', title: 'Математична машина', concept: 'algorithms',
     instruction: 'Виконай дії машини зліва направо й запиши результат.',
     lines: [{ tokens }], answers: { [id]: String(result) },
+    hint: `Виконуй дії по черзі. Почни з числа ${start}.`,
     solution: `Починаємо з ${start}: ${steps.map(s => s.label).join(' → ')}. Результат: ${result}.`,
   }
 }
@@ -162,6 +165,7 @@ function createBalance(i: number, p: Profile): Puzzle {
     instruction: 'Обери число, щоб ліва і права частини стали рівними.',
     lines: [{ tokens: [val(leftKnown), val('+'), { t: 'choice', id, options }, val('='), val(rightA), val('+'), val(rightB)] }],
     answers: { [id]: String(unknown) },
+    hint: `Спочатку порахуй праву частину: ${rightA} + ${rightB}.`,
     solution: `Права частина: ${rightA} + ${rightB} = ${rightA + rightB}. Тому невідоме: ${rightA + rightB} − ${leftKnown} = ${unknown}.`,
   }
 }
@@ -186,6 +190,7 @@ function createSymbols(i: number, p: Profile): Puzzle {
     id: `symbols-${i}`, type: 'symbols', title: 'Символьна логіка', concept: 'abstraction',
     instruction: 'Знайди, що означає кожен символ, і розвʼяжи останній приклад.',
     lines, answers: { [id]: String(answer) },
+    hint: `Почни з першого рядка: два однакові ${glyphs[0]} дають відому суму.`,
     solution: single
       ? `${glyphs[0]} = ${values[0]}, тому ${glyphs[1]} = ${values[1]}.`
       : `${glyphs.map((g, k) => `${g} = ${values[k]}`).join(', ')}. Сума = ${answer}.`,
@@ -247,6 +252,7 @@ function createMagic(i: number, p: Profile): Puzzle {
     id: `magic-${i}`, type: 'magic', title: 'Магічний квадрат', concept: 'logic',
     instruction: `Заповни клітинки так, щоб у кожному рядку, стовпчику й діагоналі сума була ${target}.`,
     grid: { size, cells }, answers,
+    hint: `Знайди рядок або стовпчик, де невідоме лише одне число. Від суми ${target} відніми відомі.`,
     solution: `Магічна сума — ${target}. Повний квадрат: ${square.map(r => r.join(', ')).join(' / ')}.`,
   }
 }
@@ -273,6 +279,7 @@ function createLatin(i: number, p: Profile): Puzzle {
     id: `latin-${i}`, type: 'latin', title: 'Квадрат-загадка', concept: 'logic',
     instruction: 'Постав картинки так, щоб у кожному рядку й стовпчику всі були різні.',
     grid: { size, cells }, answers,
+    hint: 'У кожному рядку й стовпчику кожна картинка трапляється лише раз.',
     solution: `Правильний квадрат: ${grid.map(r => r.join(' ')).join(' / ')}.`,
   }
 }
