@@ -47,6 +47,11 @@
           <span class="mission-card__title">Мульти-Сортування</span>
           <span class="mission-card__meta">Той самий предмет — різні ознаки · 3 рівні</span>
         </button>
+        <button id="puzzles-pick-btn" class="mission-card mission-card--think">
+          <span class="mission-card__icon" aria-hidden="true">🧩</span>
+          <span class="mission-card__title">Логічні головоломки</span>
+          <span class="mission-card__meta">Ланцюжки, машина, терези, квадрати · 1–4 клас</span>
+        </button>
       </div>
     </section>
 
@@ -55,6 +60,21 @@
         <button id="game-back-btn" class="btn-ghost">← До списку ігор</button>
       </div>
       <div id="sorting-game" aria-label="Ігрове поле"></div>
+    </section>
+
+    <section id="puzzle-area" class="hidden">
+      <div class="app-actions" style="justify-content:flex-start; margin-bottom: var(--sp-4);">
+        <button id="puzzle-back-btn" class="btn-ghost">← До списку ігор</button>
+      </div>
+      <h1 class="app-title">Логічні головоломки</h1>
+      <p class="app-subtitle">Обери клас — і розвʼязуй закономірності, машину, терези та квадрати.</p>
+      <div id="puzzle-grade-select" class="grade-picker" role="group" aria-label="Вибір класу">
+        <button class="puzzle-grade-btn grade-chip" data-grade="1" aria-pressed="true">1 клас</button>
+        <button class="puzzle-grade-btn grade-chip" data-grade="2" aria-pressed="false">2 клас</button>
+        <button class="puzzle-grade-btn grade-chip" data-grade="3" aria-pressed="false">3 клас</button>
+        <button class="puzzle-grade-btn grade-chip" data-grade="4" aria-pressed="false">4 клас</button>
+      </div>
+      <div id="puzzles-root" aria-label="Головоломки"></div>
     </section>
 
   </main>

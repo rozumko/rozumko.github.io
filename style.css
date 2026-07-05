@@ -4353,3 +4353,64 @@ body.teacher-dashboard-active {
   letter-spacing: 0.25rem;
   margin-bottom: var(--sp-2);
 }
+
+/* ── Логічні головоломки (features/games/puzzle-*) ───────────────────────── */
+.pz { max-width: 40rem; margin: 0 auto; }
+.pz__list { display: flex; flex-direction: column; gap: var(--sp-4); }
+.pz-card {
+  background: var(--clr-surface, #fff);
+  border-radius: var(--r-2xl, 1.25rem);
+  padding: var(--sp-5);
+  box-shadow: 0 8px 24px -14px rgba(0,0,0,.25);
+  border: 2px solid transparent;
+}
+.pz-card--ok  { border-color: #86efac; }
+.pz-card--bad { border-color: #fca5a5; }
+.pz-card__head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); margin-bottom: var(--sp-1); }
+.pz-card__title { font-size: var(--font-size-lg); font-weight: 800; color: var(--clr-text); }
+.pz-card__concept {
+  font-size: var(--font-size-xs, .75rem); font-weight: 700; color: #7e22ce;
+  background: #f3e8ff; border-radius: var(--r-full, 999px); padding: 2px var(--sp-2);
+}
+.pz-card__instruction { color: var(--clr-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--sp-4); }
+.pz-card__feedback { margin-top: var(--sp-3); font-weight: 700; min-height: 1.2em; }
+
+.pz-line { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--sp-2); margin: var(--sp-2) 0; }
+.pz-tok--val {
+  min-width: 2.6rem; text-align: center; font-size: var(--font-size-xl); font-weight: 800;
+  background: #eff6ff; color: #1d4ed8; border-radius: var(--r-lg, .75rem); padding: var(--sp-2) var(--sp-3);
+}
+.pz-tok--op { font-size: var(--font-size-xl); font-weight: 800; color: var(--clr-text-muted); }
+.pz-input {
+  width: 3.4rem; height: 3rem; text-align: center; font-size: var(--font-size-xl); font-weight: 800;
+  border: 3px dashed #93c5fd; border-radius: var(--r-lg, .75rem); background: #f8fafc; color: var(--clr-text);
+}
+.pz-input:focus { outline: none; border-style: solid; border-color: #3b82f6; }
+
+.pz-choice { display: inline-flex; flex-direction: column; align-items: center; gap: var(--sp-2); }
+.pz-slot {
+  min-width: 2.6rem; height: 3rem; display: inline-flex; align-items: center; justify-content: center;
+  font-size: var(--font-size-xl); font-weight: 800; border: 3px dashed #93c5fd;
+  border-radius: var(--r-lg, .75rem); background: #f8fafc;
+}
+.pz-opts { display: flex; flex-wrap: wrap; gap: var(--sp-2); justify-content: center; }
+.pz-opt {
+  min-width: 2.8rem; padding: var(--sp-2) var(--sp-3); font-size: var(--font-size-lg); font-weight: 700;
+  border-radius: var(--r-lg, .75rem); border: 2px solid #cbd5e1; background: #fff; cursor: pointer;
+}
+.pz-opt--on { background: #dbeafe; border-color: #3b82f6; }
+
+.pz-grid { display: grid; grid-template-columns: repeat(var(--pz-size), 1fr); gap: var(--sp-2); max-width: 22rem; margin: 0 auto; }
+.pz-cell {
+  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  background: #eff6ff; border-radius: var(--r-lg, .75rem); font-size: var(--font-size-xl); font-weight: 800; color: #1d4ed8;
+}
+.pz-cell .pz-input { width: 90%; height: 82%; }
+.pz-cycle {
+  width: 90%; height: 82%; font-size: var(--font-size-xl); font-weight: 800;
+  border: 3px dashed #93c5fd; border-radius: var(--r-lg, .75rem); background: #f8fafc; cursor: pointer;
+}
+.pz-cycle--set { border-style: solid; border-color: #3b82f6; background: #dbeafe; }
+
+.pz__actions { display: flex; gap: var(--sp-3); justify-content: center; margin-top: var(--sp-5); flex-wrap: wrap; }
+.pz__result { text-align: center; font-size: var(--font-size-lg); font-weight: 800; margin-top: var(--sp-4); }
