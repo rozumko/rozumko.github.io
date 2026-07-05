@@ -17,6 +17,8 @@ export interface RenderableQuestion {
   pairs?: number[]
   // input
   inputType?: string
+  // опційне зображення до питання
+  img?: string | null
   [key: string]: unknown
 }
 

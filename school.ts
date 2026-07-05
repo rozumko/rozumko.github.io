@@ -43,6 +43,7 @@ const els: MissionElements = {
   progressText: $('quiz-progress-text'),
   progressBar:  $('quiz-progress-bar'),
   questionText: $('quiz-question-text'),
+  image:        $maybe<HTMLImageElement>('quiz-image'),
   codeBlock:    $maybe('quiz-code-block'),
   options:      $('quiz-options'),
   feedback:     $('quiz-feedback'),

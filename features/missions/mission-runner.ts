@@ -10,6 +10,7 @@ export interface MissionElements {
   progressText: HTMLElement
   progressBar:  HTMLElement
   questionText: HTMLElement
+  image?:       HTMLImageElement | null
   codeBlock:    HTMLElement | null
   options:      HTMLElement
   feedback:     HTMLElement
@@ -44,6 +45,13 @@ export function runMission(
     els.progressText.textContent = `${currentIdx + 1} / ${questions.length}`
     els.progressBar.style.width = `${(currentIdx / questions.length) * 100}%`
     els.questionText.textContent = String(q.q ?? '')
+
+    // Зображення до питання (опційне поле q.img). Однакова поведінка з олімпіадою.
+    if (els.image) {
+      const img = q.img as string | undefined
+      if (img) { els.image.src = img; els.image.classList.remove('hidden') }
+      else     { els.image.src = ''; els.image.classList.add('hidden') }
+    }
 
     if (els.codeBlock) {
       if (q.code) {
