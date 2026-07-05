@@ -1208,6 +1208,80 @@ button {
 .quiz-check:hover:not(:disabled) { background: var(--clr-violet-dark); }
 .quiz-check:disabled { opacity: 0.6; cursor: not-allowed; }
 
+/* ── Семантичні класи механік (truefalse/input/sort/sequence/match) ──────────
+   Раніше ці типи використовували Tailwind-утиліти, яких у білді немає. */
+
+/* truefalse — по центру, крупніше за choice */
+.quiz-option--tf { justify-content: center; font-size: var(--font-size-lg); font-weight: 800; padding: var(--sp-4); }
+
+/* input */
+.quiz-input {
+  width: 100%; text-align: center; padding: var(--sp-4) var(--sp-5);
+  border-radius: var(--r-xl); border: 2px solid var(--clr-border); background: #fff;
+  color: var(--clr-text); font-family: var(--font-family); font-weight: 700; font-size: var(--font-size-lg);
+}
+.quiz-input:focus { outline: none; border-color: #a78bfa; box-shadow: 0 0 0 3px rgba(124,58,237,.25); }
+.quiz-input--placeholder { color: var(--clr-text-muted); font-weight: 600; }
+.quiz-input--correct   { border-color: #34d399 !important; background: #ecfdf5 !important; }
+.quiz-input--incorrect { border-color: #f87171 !important; background: #fff1f2 !important; }
+.quiz-hint { text-align: center; font-size: var(--font-size-sm); color: var(--clr-text-muted); margin-top: var(--sp-1); font-weight: 600; }
+.quiz-hint--correct { color: #059669; }
+
+/* sort */
+.quiz-sort-row { display: flex; align-items: center; gap: var(--sp-3); }
+.quiz-sort-num { color: var(--clr-text-muted); font-weight: 800; width: 1.6rem; text-align: right; flex-shrink: 0; }
+.quiz-sort-item {
+  flex: 1; background: #fff; border: 2px solid var(--clr-border); border-radius: var(--r-xl);
+  padding: var(--sp-3) var(--sp-4); color: var(--clr-text); font-weight: 600; font-size: var(--font-size-base);
+}
+.quiz-sort-item--correct   { background: #ecfdf5; border-color: #34d399; color: #065f46; }
+.quiz-sort-item--incorrect { background: #fff1f2; border-color: #f87171; color: #9f1239; }
+.quiz-sort-icon { font-size: var(--font-size-xl); flex-shrink: 0; }
+.quiz-move-group { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+.quiz-move {
+  width: 2.5rem; height: 2.5rem; border: none; border-radius: var(--r-lg); background: #f1f5f9;
+  color: var(--clr-text-muted); font-weight: 800; font-size: var(--font-size-lg); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.quiz-move:hover { background: #ede9fe; color: var(--clr-violet); }
+.quiz-move--hidden { visibility: hidden; }
+.quiz-sort-solution {
+  margin-top: var(--sp-2); padding: var(--sp-3); background: #ecfdf5;
+  border: 1px solid #a7f3d0; border-radius: var(--r-xl); font-size: var(--font-size-sm); color: #065f46;
+}
+.quiz-sort-solution__title { font-weight: 700; margin-bottom: var(--sp-1); }
+
+/* sequence */
+.quiz-seq {
+  display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; justify-content: center;
+  background: #f8fafc; border: 1px solid var(--clr-border); border-radius: var(--r-xl);
+  padding: var(--sp-4); margin-bottom: var(--sp-4);
+}
+.quiz-seq-chip { font-size: 2rem; }
+.quiz-seq-arrow { color: var(--clr-text-muted); font-weight: 800; font-size: var(--font-size-lg); }
+.quiz-seq-qmark {
+  width: 3rem; height: 3rem; display: flex; align-items: center; justify-content: center;
+  border-radius: var(--r-xl); background: #ede9fe; border: 2px solid #c4b5fd; color: var(--clr-violet);
+  font-weight: 800; font-size: var(--font-size-xl);
+}
+
+/* match */
+.quiz-match-row { display: flex; align-items: center; gap: var(--sp-3); }
+.quiz-match-left {
+  flex: 1; background: #fff; border: 2px solid var(--clr-border); border-radius: var(--r-xl);
+  padding: var(--sp-3) var(--sp-4); color: var(--clr-text); font-weight: 600; font-size: var(--font-size-base);
+}
+.quiz-match-left--correct   { background: #ecfdf5; border-color: #34d399; color: #065f46; }
+.quiz-match-left--incorrect { background: #fff1f2; border-color: #f87171; color: #9f1239; }
+.quiz-match-arrow { color: var(--clr-text-muted); font-weight: 800; font-size: var(--font-size-xl); flex-shrink: 0; }
+.quiz-select {
+  flex: 1; padding: var(--sp-3) var(--sp-4); border-radius: var(--r-xl); border: 2px solid var(--clr-border);
+  background: #fff; color: var(--clr-text); font-family: var(--font-family); font-weight: 600; font-size: var(--font-size-base);
+}
+.quiz-select:focus { outline: none; border-color: #a78bfa; }
+.quiz-select--correct   { border-color: #34d399; }
+.quiz-select--incorrect { border-color: #f87171; }
+
 /* Child-first mission surface: scoped to student quiz + school no-code mission.
    Admin previews still use the original compact renderer styles. */
 .quiz-overlay,

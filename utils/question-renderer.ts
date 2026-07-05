@@ -108,7 +108,7 @@ function renderTrueFalse(q, container, onAnswer, preview) {
 
   OPTIONS.forEach(({ label, value }) => {
     const btn = document.createElement('button');
-    btn.className = 'btn w-full py-6 rounded-2xl border-2 border-slate-200 bg-white text-slate-800 font-bold text-xl hover:border-violet-400 hover:bg-violet-50 transition-all';
+    btn.className = 'quiz-option quiz-option--tf';
     btn.textContent = label;
     // Так=0, Ні=1 — узгоджено з БД де correct зберігається як integer-індекс
     const answerIndex = value ? 0 : 1;
@@ -155,11 +155,11 @@ function renderInput(q, container, onAnswer, preview) {
 
   if (preview) {
     const placeholder = document.createElement('div');
-    placeholder.className = 'w-full px-5 py-4 rounded-2xl border-2 border-slate-200 bg-white text-slate-400 text-center font-semibold text-lg';
+    placeholder.className = 'quiz-input quiz-input--placeholder';
     placeholder.textContent = isNum ? 'Введи число…' : 'Введи відповідь…';
     container.appendChild(placeholder);
     const hint = document.createElement('p');
-    hint.className = 'text-center text-sm font-semibold text-emerald-600 mt-2';
+    hint.className = 'quiz-hint quiz-hint--correct';
     hint.textContent = `Правильна відповідь: ${answerKey}`;
     container.appendChild(hint);
     return;
@@ -168,7 +168,7 @@ function renderInput(q, container, onAnswer, preview) {
   const inp = document.createElement('input');
   inp.type = isNum ? 'number' : 'text';
   inp.placeholder = isNum ? 'Введи число…' : 'Введи відповідь…';
-  inp.className = 'w-full px-5 py-4 rounded-2xl border-2 border-slate-200 bg-white text-slate-800 font-semibold text-lg focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400 text-center';
+  inp.className = 'quiz-input';
   inp.setAttribute('autocomplete', 'off');
   inp.setAttribute('autocorrect', 'off');
   inp.setAttribute('spellcheck', 'false');
@@ -190,12 +190,11 @@ function renderInput(q, container, onAnswer, preview) {
         ? Math.abs(Number(raw) - Number(answerKey)) < 0.001
         : raw.toLowerCase() === String(answerKey).trim().toLowerCase();
 
-      inp.classList.remove('border-slate-200');
-      inp.classList.add(isCorrect ? 'border-emerald-400' : 'border-rose-400');
+      inp.classList.add(isCorrect ? 'quiz-input--correct' : 'quiz-input--incorrect');
 
       if (!isCorrect) {
         const hint = document.createElement('p');
-        hint.className = 'text-center text-sm font-semibold text-slate-500 mt-1';
+        hint.className = 'quiz-hint';
         hint.textContent = `Правильна відповідь: ${answerKey}`;
         container.appendChild(hint);
       }
@@ -220,12 +219,12 @@ function renderSort(q, container, onAnswer, preview) {
   if (preview) {
     q.correctOrder.forEach((itemIdx, pos) => {
       const row = document.createElement('div');
-      row.className = 'flex items-center gap-3';
+      row.className = 'quiz-sort-row';
       const num = document.createElement('span');
-      num.className = 'text-slate-400 font-bold w-6 text-right flex-shrink-0';
+      num.className = 'quiz-sort-num';
       num.textContent = (pos + 1) + '.';
       const block = document.createElement('div');
-      block.className = 'flex-1 border-2 rounded-2xl px-5 py-4 font-semibold text-base bg-emerald-50 border-emerald-300 text-emerald-800';
+      block.className = 'quiz-sort-item quiz-sort-item--correct';
       block.textContent = q.items[itemIdx];
       row.appendChild(num); row.appendChild(block);
       container.appendChild(row);
@@ -241,31 +240,31 @@ function renderSort(q, container, onAnswer, preview) {
 
     order.forEach((itemIdx, pos) => {
       const row = document.createElement('div');
-      row.className = 'flex items-center gap-3';
+      row.className = 'quiz-sort-row';
 
       const num = document.createElement('span');
-      num.className = 'text-slate-400 font-bold w-6 text-right flex-shrink-0 text-base';
+      num.className = 'quiz-sort-num';
       num.textContent = (pos + 1) + '.';
 
       const block = document.createElement('div');
-      block.className = 'flex-1 bg-white border-2 border-slate-200 rounded-2xl px-5 py-4 text-slate-800 font-semibold text-base';
+      block.className = 'quiz-sort-item';
       block.textContent = q.items[itemIdx];
 
       const arrows = document.createElement('div');
-      arrows.className = 'flex flex-col gap-1 flex-shrink-0';
+      arrows.className = 'quiz-move-group';
 
       const up = document.createElement('button');
-      up.className = 'w-10 h-10 rounded-xl bg-slate-100 hover:bg-violet-100 hover:text-violet-600 text-slate-500 font-bold text-lg flex items-center justify-center';
+      up.className = 'quiz-move';
       up.textContent = '↑';
       up.setAttribute('aria-label', `Перемістити "${q.items[itemIdx]}" вгору`);
-      if (pos === 0) up.classList.add('invisible');
+      if (pos === 0) up.classList.add('quiz-move--hidden');
       up.addEventListener('click', () => { [order[pos], order[pos-1]] = [order[pos-1], order[pos]]; rebuild(); });
 
       const dn = document.createElement('button');
-      dn.className = 'w-10 h-10 rounded-xl bg-slate-100 hover:bg-violet-100 hover:text-violet-600 text-slate-500 font-bold text-lg flex items-center justify-center';
+      dn.className = 'quiz-move';
       dn.textContent = '↓';
       dn.setAttribute('aria-label', `Перемістити "${q.items[itemIdx]}" вниз`);
-      if (pos === order.length - 1) dn.classList.add('invisible');
+      if (pos === order.length - 1) dn.classList.add('quiz-move--hidden');
       dn.addEventListener('click', () => { [order[pos], order[pos+1]] = [order[pos+1], order[pos]]; rebuild(); });
 
       arrows.appendChild(up); arrows.appendChild(dn);
@@ -297,25 +296,25 @@ function renderSort(q, container, onAnswer, preview) {
       order.forEach((itemIdx, pos) => {
         const ok = q.correctOrder[pos] === itemIdx;
         const row = document.createElement('div');
-        row.className = 'flex items-center gap-3';
+        row.className = 'quiz-sort-row';
         const num = document.createElement('span');
-        num.className = 'text-slate-400 font-bold w-6 text-right flex-shrink-0 text-base';
+        num.className = 'quiz-sort-num';
         num.textContent = (pos + 1) + '.';
         const block = document.createElement('div');
-        block.className = `flex-1 border-2 rounded-2xl px-5 py-4 font-semibold text-base ${ok ? 'bg-emerald-50 border-emerald-400 text-emerald-800' : 'bg-rose-50 border-rose-400 text-rose-800'}`;
+        block.className = `quiz-sort-item ${ok ? 'quiz-sort-item--correct' : 'quiz-sort-item--incorrect'}`;
         block.textContent = q.items[itemIdx];
         const icon = document.createElement('span');
         icon.textContent = ok ? '✓' : '✗';
-        icon.className = 'text-xl flex-shrink-0';
+        icon.className = 'quiz-sort-icon';
         row.appendChild(num); row.appendChild(block); row.appendChild(icon);
         container.appendChild(row);
       });
 
       if (!isCorrect) {
         const correctRow = document.createElement('div');
-        correctRow.className = 'mt-2 p-3 bg-emerald-50 border border-emerald-200 rounded-2xl';
-        correctRow.innerHTML = '<p class="text-xs text-emerald-700 font-semibold mb-1">Правильний порядок:</p>' +
-          q.correctOrder.map((idx, pos) => `<span class="text-xs text-emerald-800">${pos+1}. ${_esc(q.items[idx])}</span>`).join('<br>');
+        correctRow.className = 'quiz-sort-solution';
+        correctRow.innerHTML = '<p class="quiz-sort-solution__title">Правильний порядок:</p>' +
+          q.correctOrder.map((idx, pos) => `<span>${pos+1}. ${_esc(q.items[idx])}</span>`).join('<br>');
         container.appendChild(correctRow);
       }
 
@@ -332,19 +331,19 @@ function renderSort(q, container, onAnswer, preview) {
 function renderSequence(q, container, onAnswer, preview) {
   // Рядок із заданою послідовністю
   const seq = document.createElement('div');
-  seq.className = 'flex items-center gap-2 flex-wrap justify-center bg-slate-50 border border-slate-200 rounded-2xl px-4 py-4 mb-4';
+  seq.className = 'quiz-seq';
   q.given.forEach(item => {
     const chip = document.createElement('span');
-    chip.className = 'text-3xl';
+    chip.className = 'quiz-seq-chip';
     chip.textContent = item;
     seq.appendChild(chip);
     const arrow = document.createElement('span');
-    arrow.className = 'text-slate-400 font-bold text-lg';
+    arrow.className = 'quiz-seq-arrow';
     arrow.textContent = '→';
     seq.appendChild(arrow);
   });
   const qmark = document.createElement('span');
-  qmark.className = 'w-12 h-12 rounded-2xl bg-violet-100 border-2 border-violet-300 text-violet-600 font-extrabold text-2xl flex items-center justify-center';
+  qmark.className = 'quiz-seq-qmark';
   qmark.textContent = '?';
   seq.appendChild(qmark);
   container.appendChild(seq);
@@ -393,8 +392,8 @@ function renderMatch(q, container, onAnswer, preview) {
   if (preview) {
     q.left.forEach((l, i) => {
       const row = document.createElement('div');
-      row.className = 'flex items-center gap-3';
-      row.innerHTML = `<span class="flex-1 px-3 py-2 rounded-xl bg-white border-2 border-slate-200 font-semibold text-sm text-slate-800">${_esc(l)}</span><span class="text-slate-400">→</span><span class="flex-1 px-3 py-2 rounded-xl bg-emerald-50 border-2 border-emerald-300 text-sm font-semibold text-emerald-800">${_esc(q.right[q.pairs[i]] ?? '?')}</span>`;
+      row.className = 'quiz-match-row';
+      row.innerHTML = `<span class="quiz-match-left">${_esc(l)}</span><span class="quiz-match-arrow">→</span><span class="quiz-match-left quiz-match-left--correct">${_esc(q.right[q.pairs[i]] ?? '?')}</span>`;
       container.appendChild(row);
     });
     return;
@@ -405,18 +404,18 @@ function renderMatch(q, container, onAnswer, preview) {
 
   q.left.forEach((leftItem) => {
     const row = document.createElement('div');
-    row.className = 'flex items-center gap-3';
+    row.className = 'quiz-match-row';
 
     const leftEl = document.createElement('div');
-    leftEl.className = 'flex-1 bg-white border-2 border-slate-200 rounded-2xl px-4 py-3 font-semibold text-base text-slate-800';
+    leftEl.className = 'quiz-match-left';
     leftEl.textContent = leftItem;
 
     const arrow = document.createElement('span');
-    arrow.className = 'text-slate-400 font-bold text-xl flex-shrink-0';
+    arrow.className = 'quiz-match-arrow';
     arrow.textContent = '→';
 
     const select = document.createElement('select');
-    select.className = 'flex-1 px-4 py-3 rounded-2xl border-2 border-slate-200 bg-white text-slate-800 font-semibold text-sm focus:outline-none focus:border-violet-400';
+    select.className = 'quiz-select';
     select.setAttribute('aria-label', `Пара для "${leftItem}"`);
 
     const placeholder = document.createElement('option');
@@ -461,12 +460,9 @@ function renderMatch(q, container, onAnswer, preview) {
       if (!ok) allCorrect = false;
       sel.disabled = true;
       const leftEl = sel.parentElement.querySelector('div');
-      leftEl.classList.remove('border-slate-200');
-      leftEl.classList.add(ok ? 'border-emerald-400' : 'border-rose-400');
-      sel.classList.remove('border-slate-200');
-      sel.classList.add(ok ? 'border-emerald-400' : 'border-rose-400');
+      leftEl.classList.add(ok ? 'quiz-match-left--correct' : 'quiz-match-left--incorrect');
+      sel.classList.add(ok ? 'quiz-select--correct' : 'quiz-select--incorrect');
     });
-    if (allCorrect) container.querySelectorAll('div').forEach(d => d.classList.add('bg-emerald-50'));
     onAnswer?.(allCorrect);
   });
   container.appendChild(checkBtn);
