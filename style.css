@@ -1375,6 +1375,32 @@ body.mission-active #mission-quiz .quiz-feedback-wrap {
   overflow: auto;
 }
 
+/* Після відповіді: варіанти вже відповіли — обмежуємо їх і віддаємо простір
+   поясненню (щоб дитина спокійно прочитала його без внутрішнього скролу). */
+body.mission-active.mission-answered #mission-quiz .quiz-options--grid,
+body.mission-active.mission-answered #mission-quiz .quiz-options--two {
+  height: auto;
+  align-content: start;
+}
+body.mission-active.mission-answered #mission-quiz .quiz-option,
+body.mission-active.mission-answered #mission-quiz .quiz-options--two > button {
+  height: auto;
+  min-height: 3.2rem;
+}
+body.mission-active.mission-answered #mission-quiz .quiz-options {
+  max-height: 46vh;
+  overflow: auto;
+}
+body.mission-active.mission-answered #mission-quiz .quiz-feedback-wrap {
+  max-height: none;
+  overflow: visible;
+  align-self: center;
+}
+body.mission-active.mission-answered #mission-quiz .quiz-explanation {
+  font-size: clamp(var(--font-size-sm), 1.4vw, var(--font-size-lg));
+  line-height: 1.4;
+}
+
 .quiz-overlay {
   background:
     radial-gradient(circle at 12% 12%, rgba(250, 204, 21, .34), transparent 24rem),

@@ -68,6 +68,8 @@ export function runMission(
     els.explanation.classList.add('hidden')
     els.nextBtn.classList.add('hidden')
     els.options.innerHTML = ''
+    // Стан «до відповіді»: варіанти тримають екран, фідбек мінімальний.
+    document.body.classList.remove('mission-answered')
 
     const type = (q.type as string) ?? 'choice'
     els.options.className = type === 'choice'
@@ -120,6 +122,8 @@ export function runMission(
       els.explanation.classList.remove('hidden')
     }
 
+    // Після відповіді: варіанти віддають місце фідбеку/поясненню (див. style.css).
+    document.body.classList.add('mission-answered')
     els.nextBtn.classList.remove('hidden')
     els.nextBtn.textContent = currentIdx + 1 < questions.length ? 'Далі →' : 'Завершити місію'
   }
@@ -127,6 +131,7 @@ export function runMission(
   function showNeutralFeedback() {
     els.feedback.textContent = '✓ Відповідь збережено'
     els.feedback.className = 'quiz-feedback quiz-feedback--correct'
+    document.body.classList.add('mission-answered')
     els.nextBtn.classList.remove('hidden')
     els.nextBtn.textContent = currentIdx + 1 < questions.length ? 'Далі →' : 'Завершити місію'
   }
