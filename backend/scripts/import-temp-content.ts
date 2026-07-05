@@ -18,6 +18,7 @@ import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import vm from 'vm'
 import type { NewQuestion } from '../src/db/schema.js'
+import { validateQuestionShape } from '../src/routes/question-input-validation.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const require = createRequire(import.meta.url)
@@ -201,6 +202,60 @@ function loadTypedSource(folder: string, track: NewQuestion['track']): NewQuesti
   })
 }
 
+// ── mixed_mechanics → різні типи (sort/match/sequence/input/truefalse) ───────
+
+interface MixedQuestion {
+  type: 'choice' | 'truefalse' | 'input' | 'sort' | 'sequence' | 'match'
+  track: NewQuestion['track']; topic: string; grade: number
+  difficulty: string; progressionBand: string; q: string; explanation: string
+  // поля під тип
+  options?: string[]; correct?: number
+  given?: string[]; choices?: string[]
+  items?: string[]; correctOrder?: number[]
+  left?: string[]; right?: string[]; pairs?: number[]
+  answer?: string | number; inputType?: 'text' | 'number'
+}
+
+/** Будує options/correct під кожен тип (структури — question-input-validation.ts). */
+function shapeMixed(m: MixedQuestion): { options: unknown; correct: number | null } {
+  switch (m.type) {
+    case 'choice':    return { options: m.options!, correct: m.correct! }
+    case 'truefalse': return { options: ['Так', 'Ні'], correct: m.correct! }
+    case 'sequence':  return { options: { given: m.given!, choices: m.choices! }, correct: m.correct! }
+    case 'sort':      return { options: { items: m.items!, correctOrder: m.correctOrder! }, correct: null }
+    case 'match':     return { options: { left: m.left!, right: m.right!, pairs: m.pairs! }, correct: null }
+    case 'input':     return { options: { answer: m.answer!, inputType: m.inputType ?? 'text' }, correct: null }
+  }
+}
+
+function loadMixedMechanics(): NewQuestion[] {
+  const dir = join(__dirname, '../../temp/mixed_mechanics')
+  const files = readdirSync(dir).filter(f => /^questions.*\.json$/.test(f)).sort()
+  const items: MixedQuestion[] = files.flatMap(f =>
+    (JSON.parse(readFileSync(join(dir, f), 'utf8')) as { questions: MixedQuestion[] }).questions
+  )
+  return items.map(m => {
+    const raw = shapeMixed(m)
+    // Прогін через реальну валідацію адмінки — гарантує коректні структури.
+    const shape = validateQuestionShape(m.type, raw.options, raw.correct)
+    return {
+      q:           m.q,
+      type:        m.type,
+      options:     shape.options as any,
+      correct:     shape.correct,
+      explanation: m.explanation,
+      difficulty:  m.difficulty,
+      track:       m.track,
+      topic:       m.topic,
+      conceptKey:  m.track === 'computational-thinking' ? m.topic : null,
+      progressionBand: m.progressionBand as NewQuestion['progressionBand'],
+      grade:       m.grade,
+      isOlympiad:  false,
+      meta: { source: 'mixed_mechanics' },
+    }
+  })
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 const ctRows   = loadCtQuiz()
@@ -208,13 +263,18 @@ const altRows  = loadAltCs()
 const aiRows   = loadTypedSource('ai_basics', 'ai-basics')
 const infoRows = loadTypedSource('informatics_extra', 'informatics')
 const ctExtra  = loadTypedSource('ct_extra', 'computational-thinking')
-const all = [...ctRows, ...altRows, ...aiRows, ...infoRows, ...ctExtra]
+const mixed    = loadMixedMechanics()
+const all = [...ctRows, ...altRows, ...aiRows, ...infoRows, ...ctExtra, ...mixed]
 
 console.log(`ct_quiz:           ${ctRows.length} питань (2–4 кл., computational-thinking)`)
 console.log(`alt_cs:            ${altRows.length} питань (1–4 кл., informatics)`)
 console.log(`ai_basics:         ${aiRows.length} питань (1–4 кл., ai-basics)`)
 console.log(`informatics_extra: ${infoRows.length} питань (1–4 кл., informatics)`)
 console.log(`ct_extra:          ${ctExtra.length} питань (1–4 кл., computational-thinking)`)
+console.log(`mixed_mechanics:   ${mixed.length} питань (різні механіки)`)
+const byType = new Map<string, number>()
+for (const r of mixed) byType.set(r.type as string, (byType.get(r.type as string) ?? 0) + 1)
+console.log('  типи:', [...byType.entries()].map(([t, n]) => `${t}=${n}`).join(', '))
 
 const byTopic = new Map<string, number>()
 for (const r of all) byTopic.set(`${r.track}/${r.topic ?? '∅'}`, (byTopic.get(`${r.track}/${r.topic ?? '∅'}`) ?? 0) + 1)

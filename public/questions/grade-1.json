@@ -72,6 +72,22 @@
   "grade": 1
  },
  {
+  "id": "0b9ac42b-55e4-4ace-95e2-9ef87d00415e",
+  "q": "Монітор показує зображення. Це правда?",
+  "code": null,
+  "type": "truefalse",
+  "options": [
+   "Так",
+   "Ні"
+  ],
+  "correct": 0,
+  "explanation": "Так, монітор — це екран, на якому ми бачимо зображення.",
+  "difficulty": "easy",
+  "track": "informatics",
+  "topic": "computer-systems",
+  "grade": 1
+ },
+ {
   "id": "0c5ffa4a-bdb0-4ec8-83b2-53b209fb6f1d",
   "q": "Де зберігаються всі програми?",
   "code": null,
@@ -267,6 +283,32 @@
   "difficulty": "easy",
   "track": "ai-basics",
   "topic": "what-is-ai",
+  "grade": 1
+ },
+ {
+  "id": "228f129c-bd13-4a34-badf-b3eeba7046ae",
+  "q": "Продовж ряд: яка фігура далі?",
+  "code": null,
+  "type": "sequence",
+  "options": {
+   "given": [
+    "🔴",
+    "🔵",
+    "🔴",
+    "🔵"
+   ],
+   "choices": [
+    "🔴",
+    "🔵",
+    "🟢",
+    "🟡"
+   ]
+  },
+  "correct": 0,
+  "explanation": "Червона й синя чергуються, після синьої йде червона.",
+  "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "patterns",
   "grade": 1
  },
  {
@@ -810,6 +852,32 @@
   "grade": 1
  },
  {
+  "id": "81d5fa19-74bc-4c40-b462-9e2202fce621",
+  "q": "Розстав кроки миття рук по порядку.",
+  "code": null,
+  "type": "sort",
+  "options": {
+   "items": [
+    "Відкрити воду",
+    "Намилити руки",
+    "Змити мило",
+    "Витерти руки"
+   ],
+   "correctOrder": [
+    0,
+    1,
+    2,
+    3
+   ]
+  },
+  "correct": null,
+  "explanation": "Спочатку вода, потім мило, змиваємо і витираємо — саме в такому порядку.",
+  "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "algorithms",
+  "grade": 1
+ },
+ {
   "id": "81e29b4f-cf3f-4cbc-9d82-e59815ea0c15",
   "q": "Що НЕ є алгоритмом?",
   "code": null,
@@ -933,6 +1001,22 @@
   "difficulty": "easy",
   "track": "informatics",
   "topic": "digital-tools",
+  "grade": 1
+ },
+ {
+  "id": "8dd5e901-633b-429b-9e65-9d350bf20b6c",
+  "q": "Скільки кроків в алгоритмі: «взяти хліб → намазати масло → з'їсти»?",
+  "code": null,
+  "type": "input",
+  "options": {
+   "answer": 3,
+   "inputType": "number"
+  },
+  "correct": null,
+  "explanation": "Три дії — три кроки.",
+  "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "algorithms",
   "grade": 1
  },
  {
@@ -1494,6 +1578,31 @@
   "grade": 1
  },
  {
+  "id": "d9b2aec6-0bd8-44dc-88cc-eecc7a9229f8",
+  "q": "Світлофор перемикається по колу. Що після зеленого?",
+  "code": null,
+  "type": "sequence",
+  "options": {
+   "given": [
+    "🔴",
+    "🟡",
+    "🟢"
+   ],
+   "choices": [
+    "🔴",
+    "🟢",
+    "🟡",
+    "⚫"
+   ]
+  },
+  "correct": 0,
+  "explanation": "Порядок повторюється: після зеленого знову червоний.",
+  "difficulty": "easy",
+  "track": "informatics",
+  "topic": "information",
+  "grade": 1
+ },
+ {
   "id": "de118dc7-686e-4269-bd72-38a663d75878",
   "q": "Равлик дивиться вгору. Він виконав два повороти праворуч. Куди він тепер дивиться?",
   "code": null,
@@ -1635,6 +1744,35 @@
   "difficulty": "easy",
   "track": "ai-basics",
   "topic": "ai-ethics-safety",
+  "grade": 1
+ },
+ {
+  "id": "ea5e77e0-018b-4343-9278-763676ed58ae",
+  "q": "З'єднай орган чуття з тим, що ним сприймають.",
+  "code": null,
+  "type": "match",
+  "options": {
+   "left": [
+    "Очі",
+    "Вуха",
+    "Ніс"
+   ],
+   "pairs": [
+    0,
+    1,
+    2
+   ],
+   "right": [
+    "Колір",
+    "Звук",
+    "Запах"
+   ]
+  },
+  "correct": null,
+  "explanation": "Очима бачимо колір, вухами чуємо звук, носом відчуваємо запах.",
+  "difficulty": "easy",
+  "track": "informatics",
+  "topic": "information",
   "grade": 1
  },
  {
@@ -1815,6 +1953,22 @@
   "difficulty": "easy",
   "track": "ai-basics",
   "topic": "what-is-ai",
+  "grade": 1
+ },
+ {
+  "id": "f781b9db-baa3-4308-8b39-84b9bca60bab",
+  "q": "Мишкою набирають текст. Це правда?",
+  "code": null,
+  "type": "truefalse",
+  "options": [
+   "Так",
+   "Ні"
+  ],
+  "correct": 1,
+  "explanation": "Ні. Текст набирають клавіатурою, а мишкою керують курсором.",
+  "difficulty": "easy",
+  "track": "informatics",
+  "topic": "computer-systems",
   "grade": 1
  },
  {

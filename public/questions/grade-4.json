@@ -666,6 +666,32 @@
   "grade": 4
  },
  {
+  "id": "4608ee73-eaa6-4cbe-b500-8c7b20d2455a",
+  "q": "Розстав кроки, як ШІ вчиться впізнавати котів.",
+  "code": null,
+  "type": "sort",
+  "options": {
+   "items": [
+    "Показати багато фото котів",
+    "Програма запам'ятовує ознаки",
+    "Дати нове фото",
+    "Програма вгадує: кіт чи ні"
+   ],
+   "correctOrder": [
+    0,
+    1,
+    2,
+    3
+   ]
+  },
+  "correct": null,
+  "explanation": "Спершу приклади, потім навчання, і лише тоді впізнавання нового фото.",
+  "difficulty": "hard",
+  "track": "ai-basics",
+  "topic": "how-ai-learns",
+  "grade": 4
+ },
+ {
   "id": "46ac2430-6da9-484a-a6f3-475e7a542f93",
   "q": "Яку загальну кількість кроків пройде Равлик?",
   "code": "процедура зиг (н) (\n  вперед н\n  праворуч 45\n  вперед н\n  ліворуч 45\n)\n\nповторити 4 (\n  зиг(20)\n)",
@@ -969,6 +995,22 @@
   "difficulty": "easy",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "grade": 4
+ },
+ {
+  "id": "6d4e1b10-632c-4de6-86de-46eb1fd558b4",
+  "q": "У коробці 10 кульок. 3 червоні, решта сині. Скільки синіх?",
+  "code": null,
+  "type": "input",
+  "options": {
+   "answer": 7,
+   "inputType": "number"
+  },
+  "correct": null,
+  "explanation": "10 − 3 = 7 синіх кульок.",
+  "difficulty": "hard",
+  "track": "computational-thinking",
+  "topic": "logic",
   "grade": 4
  },
  {

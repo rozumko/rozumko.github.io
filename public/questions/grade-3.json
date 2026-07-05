@@ -900,6 +900,38 @@
   "grade": 3
  },
  {
+  "id": "5f696f4c-ab46-4648-92cf-3bb5ba1105ac",
+  "q": "Свій пароль можна казати незнайомцям в Інтернеті. Це правда?",
+  "code": null,
+  "type": "truefalse",
+  "options": [
+   "Так",
+   "Ні"
+  ],
+  "correct": 1,
+  "explanation": "Ні. Пароль — це секрет, його не можна нікому казати.",
+  "difficulty": "medium",
+  "track": "informatics",
+  "topic": "digital-safety",
+  "grade": 3
+ },
+ {
+  "id": "5f976f26-7ec1-476b-8c45-3fab55ac15be",
+  "q": "Робот зробив 4 кроки вперед і 4 назад. На скільки кроків він змістився?",
+  "code": null,
+  "type": "input",
+  "options": {
+   "answer": 0,
+   "inputType": "number"
+  },
+  "correct": null,
+  "explanation": "4 вперед і 4 назад повертають на місце — зміщення 0.",
+  "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "efficiency",
+  "grade": 3
+ },
+ {
   "id": "603862fd-abbb-49d0-9ec1-478a9ecd7153",
   "q": "Що виконає Равлик, якщо значення «колір_фону» = 1?",
   "code": "якщо (колір_фону == 1) (\n  колір синій\n  вперед 50\n)\nінакше (\n  колір червоний\n  вперед 50\n)",
@@ -933,6 +965,32 @@
   "difficulty": "medium",
   "track": "computational-thinking",
   "topic": "algorithms",
+  "grade": 3
+ },
+ {
+  "id": "6cd5c72a-1542-4e05-92a3-2be14c05b00a",
+  "q": "Розстав числа від найменшого до найбільшого.",
+  "code": null,
+  "type": "sort",
+  "options": {
+   "items": [
+    "3",
+    "7",
+    "12",
+    "20"
+   ],
+   "correctOrder": [
+    0,
+    1,
+    2,
+    3
+   ]
+  },
+  "correct": null,
+  "explanation": "Найменше — 3, далі 7, 12 і найбільше 20.",
+  "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "efficiency",
   "grade": 3
  },
  {
@@ -1077,6 +1135,22 @@
   "difficulty": "hard",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "grade": 3
+ },
+ {
+  "id": "7e47a3b6-bbbe-477c-b5f2-8e6c48404d98",
+  "q": "Штучний інтелект ніколи не помиляється. Це правда?",
+  "code": null,
+  "type": "truefalse",
+  "options": [
+   "Так",
+   "Ні"
+  ],
+  "correct": 1,
+  "explanation": "Ні. ШІ теж помиляється, тому важливе варто перевіряти.",
+  "difficulty": "medium",
+  "track": "ai-basics",
+  "topic": "ai-ethics-safety",
   "grade": 3
  },
  {
@@ -1854,6 +1928,35 @@
   "grade": 3
  },
  {
+  "id": "cafeb84c-401a-4bd2-890b-87ad96e6ffc9",
+  "q": "З'єднай помічника з його роботою.",
+  "code": null,
+  "type": "match",
+  "options": {
+   "left": [
+    "Перекладач",
+    "Навігатор",
+    "Розумна колонка"
+   ],
+   "pairs": [
+    0,
+    1,
+    2
+   ],
+   "right": [
+    "Перекладає мову",
+    "Показує дорогу",
+    "Відповідає на голос"
+   ]
+  },
+  "correct": null,
+  "explanation": "Кожен ШІ-помічник створений для своєї задачі.",
+  "difficulty": "medium",
+  "track": "ai-basics",
+  "topic": "what-is-ai",
+  "grade": 3
+ },
+ {
   "id": "cb955f62-7f03-43d4-9ff7-f5f6bcddc352",
   "q": "У комп'ютерну гру можна грати, якщо ти виконав уроки АБО вже настав вихідний. У якій ситуації правило точно дозволяє грати?",
   "code": null,
@@ -1941,6 +2044,31 @@
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "how-ai-learns",
+  "grade": 3
+ },
+ {
+  "id": "da36b724-55f0-47c9-b284-9af56c8d4d18",
+  "q": "Продовж ряд: яка фаза Місяця далі?",
+  "code": null,
+  "type": "sequence",
+  "options": {
+   "given": [
+    "🌑",
+    "🌒",
+    "🌓"
+   ],
+   "choices": [
+    "🌔",
+    "🌑",
+    "🌒",
+    "☀️"
+   ]
+  },
+  "correct": 0,
+  "explanation": "Місяць поступово «росте», після 🌓 йде 🌔.",
+  "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "patterns",
   "grade": 3
  },
  {

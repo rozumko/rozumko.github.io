@@ -54,6 +54,32 @@
   "grade": 2
  },
  {
+  "id": "08ef5a09-8791-4296-adba-62d39da705e5",
+  "q": "Продовж ряд чисел: що далі?",
+  "code": null,
+  "type": "sequence",
+  "options": {
+   "given": [
+    "2",
+    "4",
+    "6",
+    "8"
+   ],
+   "choices": [
+    "9",
+    "10",
+    "12",
+    "7"
+   ]
+  },
+  "correct": 1,
+  "explanation": "Щоразу додаємо 2, після 8 буде 10.",
+  "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "patterns",
+  "grade": 2
+ },
+ {
   "id": "099118ca-f585-43f0-acd9-f16f82100817",
   "q": "Що людина робить КРАЩЕ за комп'ютерну програму?",
   "code": null,
@@ -141,6 +167,32 @@
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "human-vs-ai",
+  "grade": 2
+ },
+ {
+  "id": "0b552021-b1de-408e-b5a2-3cc16e9735a9",
+  "q": "Розстав кроки, щоб намалювати квадрат Равликом.",
+  "code": null,
+  "type": "sort",
+  "options": {
+   "items": [
+    "Вперед",
+    "Поворот",
+    "Вперед",
+    "Поворот"
+   ],
+   "correctOrder": [
+    0,
+    1,
+    2,
+    3
+   ]
+  },
+  "correct": null,
+  "explanation": "Щоб малювати сторони квадрата, чергуємо «вперед» і «поворот».",
+  "difficulty": "medium",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 2
  },
  {
@@ -396,6 +448,22 @@
   "grade": 2
  },
  {
+  "id": "289c20b4-06f1-438e-b0bc-c5aafb72ded4",
+  "q": "Равлик повторив команду «вперед» 3 рази, потім ще 2. Скільки разів усього?",
+  "code": null,
+  "type": "input",
+  "options": {
+   "answer": 5,
+   "inputType": "number"
+  },
+  "correct": null,
+  "explanation": "3 + 2 = 5 разів.",
+  "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "repetition",
+  "grade": 2
+ },
+ {
   "id": "28bc08e7-576f-446f-896c-47eaade0e5d2",
   "q": "Треба 10 разів підстрибнути на одній нозі. Як найзручніше записати цю команду коротко?",
   "code": null,
@@ -519,6 +587,22 @@
   "difficulty": "medium",
   "track": "informatics",
   "topic": "data",
+  "grade": 2
+ },
+ {
+  "id": "36355aad-8f98-4e12-b3a6-f6c416fead72",
+  "q": "Алгоритм — це чіткий порядок дій. Це правда?",
+  "code": null,
+  "type": "truefalse",
+  "options": [
+   "Так",
+   "Ні"
+  ],
+  "correct": 0,
+  "explanation": "Так, алгоритм — це послідовність кроків, які ведуть до мети.",
+  "difficulty": "easy",
+  "track": "computational-thinking",
+  "topic": "algorithms",
   "grade": 2
  },
  {
@@ -807,6 +891,22 @@
   "difficulty": "easy",
   "track": "informatics",
   "topic": "digital-tools",
+  "grade": 2
+ },
+ {
+  "id": "56c8f4f4-34ec-4bee-8457-5a0a1e816fa9",
+  "q": "Скільки сторін у квадрата, який малює Равлик?",
+  "code": null,
+  "type": "input",
+  "options": {
+   "answer": 4,
+   "inputType": "number"
+  },
+  "correct": null,
+  "explanation": "У квадрата 4 сторони.",
+  "difficulty": "easy",
+  "track": "informatics",
+  "topic": "algorithms-programming",
   "grade": 2
  },
  {
@@ -1206,6 +1306,22 @@
   "grade": 2
  },
  {
+  "id": "86843f88-cb8e-419b-9722-d404be2eb3c0",
+  "q": "Розумна колонка чує голос мікрофоном. Це правда?",
+  "code": null,
+  "type": "truefalse",
+  "options": [
+   "Так",
+   "Ні"
+  ],
+  "correct": 0,
+  "explanation": "Так, мікрофон — це «вуха» колонки: він вловлює звук голосу.",
+  "difficulty": "easy",
+  "track": "ai-basics",
+  "topic": "ai-perception",
+  "grade": 2
+ },
+ {
   "id": "86b03b51-c3e6-4a3a-a2cc-498c19dcc8ee",
   "q": "Ти помічаєш, що світлофор 🚦 перемикається так: зелене → жовте → червоне → знову зелене. Зараз горить червоне. Що найімовірніше буде далі?",
   "code": null,
@@ -1440,6 +1556,22 @@
   "grade": 2
  },
  {
+  "id": "a2f83af6-8494-4456-8c8f-902df6defc2f",
+  "q": "Інтернет з'єднує комп'ютери по всьому світу. Це правда?",
+  "code": null,
+  "type": "truefalse",
+  "options": [
+   "Так",
+   "Ні"
+  ],
+  "correct": 0,
+  "explanation": "Так, Інтернет — це велика мережа, що з'єднує безліч комп'ютерів.",
+  "difficulty": "easy",
+  "track": "informatics",
+  "topic": "networks-internet",
+  "grade": 2
+ },
+ {
   "id": "a928e0da-6f22-45fc-9665-3a2a34c76c1b",
   "q": "Морозиво дають, якщо прибрав іграшки І помив руки. Ти лише помив руки. Дадуть морозиво?",
   "code": null,
@@ -1473,6 +1605,38 @@
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "efficiency",
+  "grade": 2
+ },
+ {
+  "id": "b05df5ce-7a48-4cc1-9f29-e41e30e6f66e",
+  "q": "З'єднай пристрій із тим, що він робить.",
+  "code": null,
+  "type": "match",
+  "options": {
+   "left": [
+    "Клавіатура",
+    "Мишка",
+    "Монітор",
+    "Принтер"
+   ],
+   "pairs": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "right": [
+    "Набір тексту",
+    "Керування курсором",
+    "Показ зображення",
+    "Друк на папері"
+   ]
+  },
+  "correct": null,
+  "explanation": "Клавіатура — текст, мишка — курсор, монітор — зображення, принтер — друк.",
+  "difficulty": "medium",
+  "track": "informatics",
+  "topic": "computer-systems",
   "grade": 2
  },
  {
@@ -2013,6 +2177,32 @@
   "difficulty": "medium",
   "track": "computational-thinking",
   "topic": "classification",
+  "grade": 2
+ },
+ {
+  "id": "e7d74e61-5f16-431b-8f96-04f74ada1eaf",
+  "q": "Розстав кроки, щоб посадити квітку.",
+  "code": null,
+  "type": "sort",
+  "options": {
+   "items": [
+    "Викопати ямку",
+    "Покласти насінину",
+    "Засипати землею",
+    "Полити водою"
+   ],
+   "correctOrder": [
+    0,
+    1,
+    2,
+    3
+   ]
+  },
+  "correct": null,
+  "explanation": "Спершу ямка, потім насінина, засипаємо і поливаємо.",
+  "difficulty": "medium",
+  "track": "computational-thinking",
+  "topic": "algorithms",
   "grade": 2
  },
  {
