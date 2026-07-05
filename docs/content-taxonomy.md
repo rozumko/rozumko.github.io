@@ -2,9 +2,10 @@
 
 Статус: **впроваджено** (2026-07-04). Схема — міграція 0021; серверна валідація
 — `backend/src/lib/taxonomy.ts`; UI-копія — `features/admin/taxonomy.ts`.
-Банк: 458 розмічених питань (informatics 256, computational-thinking 106,
-ai-basics 96). Джерела імпорту — `backend/scripts/import-temp-content.ts`
-(ct_quiz, alt_cs, ai_basics, informatics_extra, ct_extra).
+Банк: 482 розмічених питання (informatics 265, computational-thinking 117,
+ai-basics 100). Механіки: choice + truefalse/sort/sequence/match/input (не лише
+вибір). Джерела імпорту — `backend/scripts/import-temp-content.ts`
+(ct_quiz, alt_cs, ai_basics, informatics_extra, ct_extra, mixed_mechanics).
 
 Дві незалежні осі класифікації питання:
 

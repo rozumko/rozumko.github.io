@@ -73,7 +73,8 @@ only the access state needed to provide the service.
 
 Current state (2026-07): the platform pivoted from an olympiad to an educational
 platform across three directions — `informatics`, `computational-thinking`,
-`ai-basics`. The question bank is 458 items, fully tagged by a two-axis taxonomy
+`ai-basics`. The question bank is 482 items (choice plus truefalse/sort/
+sequence/match/input mechanics), fully tagged by a two-axis taxonomy
 (`topic` + `concept_key`, see `docs/content-taxonomy.md`), aligned to НУШ and
 Cambridge Primary Computing 0059 / Digital Literacy 0072. Direction selection is
 live in Home Demo and the School free-mission picker. Three sorting games
