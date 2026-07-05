@@ -1345,8 +1345,10 @@ body.mission-active #mission-quiz .quiz-question-card {
 body.mission-active #mission-quiz .quiz-question-text {
   overflow-wrap: anywhere;
   text-wrap: balance;
-  font-size: clamp(1.6rem, 2.8vw, 3.2rem);
-  line-height: 1.16;
+  /* Менший максимум і гальмованіше vw-масштабування — щоб на великих екранах
+     питання не роздувалось і завжди лишалось місце для варіантів + фідбека. */
+  font-size: clamp(1.4rem, 1.9vw, 2.4rem);
+  line-height: 1.18;
 }
 
 body.mission-active #mission-quiz .quiz-options {
