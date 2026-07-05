@@ -40,6 +40,7 @@ environments receive the same schema.
 | `0023_add_sorting_game_mission` | Registers built-in game «Розумне сортування» (kind=sorting-game) |
 | `0024_add_infosort_mission` | Registers built-in game «ІнфоСорт» (informatics/information) |
 | `0025_add_multisort_mission` | Registers built-in game «Мульти-Сортування» (computational-thinking/abstraction) |
+| `0026_add_puzzle_missions` | Registers 5 logic puzzles (sequence/machine/balance/magic/symbols) as kind=puzzle under computational-thinking |
 
 `0012` is intentionally idempotent: production received the columns manually
 before the SQL was incorporated into Drizzle history.

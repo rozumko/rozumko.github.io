@@ -147,10 +147,11 @@ Frontend structure:
 
 - `features/missions/` — reusable mission runner (implemented; used by
   `/school` for both self-serve practice and live classroom games);
-- `features/games/` — shared client-side sorting-game engine
-  (`sorting-game.ts`: tap-based, stars + streak) and data
-  (`sorting-data.ts`); three games served from `games.html`, linked from
-  `home.html` and `school.html`;
+- `features/games/` — client-side game engines: sorting (`sorting-game.ts`:
+  tap-based, stars + streak; `sorting-data.ts`) and logic puzzles
+  (`puzzle-engine.ts` + `puzzle-data.ts`: 5 parametric CT puzzle types by grade,
+  emoji/tap for grade 1, numbers for 2+). Served from `games.html`, linked from
+  `home.html` and `school.html`; registered in the `missions` table;
 - `features/admin/` — admin tabs incl. `missions-tab.ts` (registry) and
   `taxonomy.ts` (topic/concept UI copy);
 - `features/home/` for parent-led Home Mode UX (planned).
