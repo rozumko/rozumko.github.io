@@ -145,6 +145,13 @@ attempt state is separate from anonymous School sessions.
 
 Frontend structure:
 
+- `utils/question-renderer.ts` — shared question renderer for all mechanics
+  (choice, truefalse, input, sort, sequence, match) + optional per-question
+  image; used by trainings, School (`mission-runner`) and Olympiad. Uses
+  semantic `.quiz-*` classes (no Tailwind). The one-screen mission layout
+  (`body.mission-active #mission-quiz`) fits question + image + options in a
+  fixed viewport; after answering, `body.mission-answered` gives the
+  explanation room without an inner scroll;
 - `features/missions/` — reusable mission runner (implemented; used by
   `/school` for both self-serve practice and live classroom games);
 - `features/games/` — client-side game engines: sorting (`sorting-game.ts`:
