@@ -2,9 +2,10 @@ import './frontend-security.js'
 import './register-sw.js'
 import { getModeConfig } from './features/olympiad/quiz-engine.js'
 import { loadStaticQuestions } from './features/missions/static-questions.js'
-import { saveAnswer, finishAttempt } from './features/api/client.js'
+import { saveAnswer, finishAttempt, sendHeartbeat } from './features/api/client.js'
+import { createAnswerQueue, type AnswerQueue } from './features/olympiad/answer-queue.js'
 import { renderQuestion, type RenderableQuestion } from './utils/question-renderer.js'
-import { showModal } from './utils/ui.js'
+import { showModal, showConfirm } from './utils/ui.js'
 import { $, $maybe } from './utils/dom.js'
 
 // --- DOM: тренування ---
@@ -76,7 +77,9 @@ const quizOptionsEl   = $('quiz-options')
 const quizFeedback    = $('quiz-feedback')
 const quizExplanation = $('quiz-explanation')
 const quizNextBtn     = $<HTMLButtonElement>('quiz-next-btn')
+const quizSkipBtn     = $<HTMLButtonElement>('quiz-skip-btn')
 const quizQuitBtn     = $<HTMLButtonElement>('quiz-quit-btn')
+const quizNav         = $('quiz-nav')
 
 // --- Lightbox ---
 const quizImage     = $maybe<HTMLImageElement>('quiz-image')
@@ -172,14 +175,18 @@ let currentIdx        = 0
 let score             = 0
 let answered          = false
 let timerInterval:    ReturnType<typeof setInterval> | null = null
+let heartbeatInterval: ReturnType<typeof setInterval> | null = null
+let finishing         = false                       // guard від подвійного finishQuiz
 let secondsLeft       = 0
 let startedAt:        number | null = null
 let currentMode:      string | null = null
 
 let currentAttemptId:    string | null = null
 let currentAttemptToken: string | null = null
-let failedAnswers:       Set<string> = new Set()    // questionId-и, які не вдалось зберегти
-let pendingSaves:        Promise<void>[] = []       // активні збереження відповідей
+let answerQueue:         AnswerQueue | null = null  // offline-стійка черга відповідей (олімпіада)
+let answeredIds:         Set<string> = new Set()    // questionId-и, на які вже відповіли (для навігатора)
+let savedAnswers:        Map<string, unknown> = new Map() // сирі відповіді учня (для підсвічування при поверненні)
+let navEnabled           = false                    // пропуск+повернення лише для olympiad/demo
 
 // ===================== FULLSCREEN =====================
 
@@ -268,6 +275,7 @@ function hasFreshQuizBackup(): boolean {
     startQuiz(pending.questions, 'olympiad', cfg, { grade: pending.grade, code: pending.code }, {
       currentIdx: firstUnanswered === -1 ? Math.max(0, pending.questions.length - 1) : firstUnanswered,
       secondsLeft: pending.remainingSeconds,
+      answeredIds: [...answeredIds],
     })
   } catch {
     if (hasFreshQuizBackup()) window.location.replace('olympiad-enter.html')
@@ -317,7 +325,7 @@ startPracticeBtn.addEventListener('click', async () => {
 // ===================== QUIZ ENGINE =====================
 
 interface QuizMeta { code?: string; grade?: number | null; [k: string]: unknown }
-interface QuizStartState { currentIdx?: number; secondsLeft?: number }
+interface QuizStartState { currentIdx?: number; secondsLeft?: number; answeredIds?: string[] }
 
 function stripAnswerKeysForDemo(q: RenderableQuestion): RenderableQuestion {
   const safe = { ...q } as RenderableQuestion & Record<string, unknown>
@@ -345,9 +353,23 @@ function startQuiz(qs: RenderableQuestion[], mode: string, cfg: any, meta: QuizM
   answered      = false
   currentMode   = mode
   startedAt     = Date.now()
-  failedAnswers = new Set()
-  pendingSaves  = []
+  answeredIds   = new Set(restore.answeredIds ?? [])
+  savedAnswers  = new Map()
+  finishing     = false
+  navEnabled    = mode === 'olympiad' || mode === 'demo'
+  quizNav.classList.toggle('hidden', !navEnabled)
   ;(startQuiz as any).meta = meta
+
+  // Offline-черга: лише олімпіада (demo не зберігає на сервер). Читає токен
+  // ліниво, тож переживає resume з новим токеном після перезавантаження.
+  answerQueue?.destroy()
+  answerQueue = null
+  if (mode === 'olympiad' && currentAttemptId && currentAttemptToken) {
+    answerQueue = createAnswerQueue(currentAttemptId, {
+      send: (qId, ans) => saveAnswer(currentAttemptId!, currentAttemptToken!, qId, ans),
+    })
+    void answerQueue.flushOnce() // дошле відповіді, що лишились з попередньої сесії (reload/блекаут)
+  }
 
   const labels:     Record<string, string> = { practice: 'Тренування', demo: 'Демо', olympiad: 'Олімпіада' }
   const badgeColor: Record<string, string> = { practice: '#fef3c7', demo: '#e0f2fe', olympiad: '#ffe4e6' }
@@ -362,14 +384,20 @@ function startQuiz(qs: RenderableQuestion[], mode: string, cfg: any, meta: QuizM
     secondsLeft = restore.secondsLeft ?? cfg.timeMinutes * 60
     quizTimer.classList.add('visible')
     updateTimerDisplay()
+    // Локальний тік — лише для показу. Рішення «час вийшов» ухвалює сервер через
+    // heartbeat (олімпіада) або дедлайн-перевірку в answer/finish, тож блекаут не
+    // завершить квіз передчасно: пауза зараховується й таймер ресинкається.
     timerInterval = setInterval(() => {
-      secondsLeft--
+      secondsLeft = Math.max(0, secondsLeft - 1)
       updateTimerDisplay()
-      if (secondsLeft <= 0) finishQuiz(true)
+      if (currentMode === 'demo' && secondsLeft <= 0) finishQuiz(true)
     }, 1000)
   } else {
     quizTimer.classList.remove('visible')
   }
+
+  // Heartbeat лише для олімпіади (demo не має серверної спроби).
+  if (mode === 'olympiad' && currentAttemptId && currentAttemptToken) startHeartbeat()
 
   saveQuizBackup()
   hideLoading()
@@ -410,6 +438,20 @@ function showQuestion() {
   quizNextBtn.classList.add('hidden')
   quizOptionsEl.innerHTML     = ''
 
+  // Навігатор + кнопка "Пропустити" (olympiad/demo). На останньому питанні
+  // скіп перетворюється на "Завершити" (Крок 3 додасть попередження про пропущені).
+  if (navEnabled) {
+    renderNav()
+    // Вже відповів → "Далі" (лише перегляд); ще ні → "Пропустити"; останнє → "Завершити".
+    const isAnswered = answeredIds.has(questions[currentIdx].id as string)
+    quizSkipBtn.textContent = currentIdx + 1 < questions.length
+      ? (isAnswered ? 'Далі →' : 'Пропустити →')
+      : 'Завершити'
+    quizSkipBtn.classList.remove('hidden')
+  } else {
+    quizSkipBtn.classList.add('hidden')
+  }
+
   const type = q.type ?? 'choice'
   quizOptionsEl.className = type === 'choice'
     ? 'quiz-options quiz-options--grid'
@@ -417,7 +459,9 @@ function showQuestion() {
     ? 'quiz-options quiz-options--two'
     : 'quiz-options quiz-options--stack'
 
+  const prev = navEnabled ? savedAnswers.get(q.id as string) : undefined
   renderQuestion(q, quizOptionsEl as HTMLElement, {
+    preselect: (prev ?? null) as boolean | number | number[] | string | null,
     onAnswer: (result) => {
       answered = true
       // boolean → practice (correct відомий клієнту, локальне оцінювання).
@@ -431,17 +475,12 @@ function showQuestion() {
         return
       }
 
-      // Olympiad: зберігаємо сиру відповідь на сервері. Demo: лише нейтральний feedback.
-      if (currentMode === 'olympiad' && currentAttemptId && currentAttemptToken) {
-        const qId = q.id as string
-        // Зберігаємо promise — finishQuiz чекатиме його завершення
-        const save = saveAnswer(currentAttemptId, currentAttemptToken, qId, result)
-          .catch(() => new Promise<void>(r => setTimeout(r, 2000)).then(
-            () => saveAnswer(currentAttemptId!, currentAttemptToken!, qId, result)
-          ))
-          .then(() => { failedAnswers.delete(qId) })
-          .catch(() => { failedAnswers.add(qId) })
-        pendingSaves.push(save)
+      answeredIds.add(q.id as string) // для навігатора (olympiad + demo)
+      savedAnswers.set(q.id as string, result) // для підсвічування при поверненні
+
+      // Olympiad: у offline-стійку чергу (дошле сама при звʼязку). Demo: лише feedback.
+      if (currentMode === 'olympiad') {
+        answerQueue?.enqueue(q.id as string, result)
       }
       showFeedbackOlympiad() // нейтральний feedback: "збережено" для olympiad, "прийнято" для demo
     },
@@ -453,6 +492,8 @@ function showFeedbackOlympiad() {
   quizFeedback.textContent = currentMode === 'olympiad' ? '✓ Відповідь збережено' : '✓ Відповідь прийнято'
   quizFeedback.className   = 'quiz-feedback'
   quizExplanation.classList.add('hidden')
+  quizSkipBtn.classList.add('hidden')
+  if (navEnabled) renderNav()
   quizNextBtn.classList.remove('hidden')
   quizNextBtn.textContent  = currentIdx + 1 < questions.length ? 'Далі' : 'Завершити'
   saveQuizBackup()
@@ -476,11 +517,94 @@ function showFeedback(isCorrect: boolean, q: RenderableQuestion) {
 quizNextBtn.addEventListener('click', () => {
   currentIdx++
   if (currentIdx < questions.length) showQuestion()
-  else finishQuiz(false)
+  else attemptFinish()
 })
 
+// Пропустити: на непослідньому — вперед на 1 без відповіді; на останньому — завершити.
+// Повернутись до пропущеного можна через чипи навігатора.
+quizSkipBtn.addEventListener('click', () => {
+  if (currentIdx + 1 < questions.length) { currentIdx++; showQuestion() }
+  else attemptFinish()
+})
+
+// Український відмінок для слова "питання": 1/2/3/4 → питання, 5+/11-14 → питань.
+function pytannyaWord(n: number): string {
+  const mod100 = n % 100
+  if (mod100 >= 11 && mod100 <= 14) return 'питань'
+  const mod10 = n % 10
+  return mod10 >= 1 && mod10 <= 4 ? 'питання' : 'питань'
+}
+
+// Перед завершенням (olympiad/demo) — м'яке нагадування про пропущені питання.
+function attemptFinish() {
+  if (navEnabled) {
+    const remaining = questions.filter(q => !answeredIds.has(q.id as string)).length
+    if (remaining > 0) {
+      showConfirm(
+        `Залишилось ${remaining} ${pytannyaWord(remaining)} без відповіді 🙂 Точно завершити?`,
+        () => finishQuiz(false),
+      )
+      return
+    }
+  }
+  finishQuiz(false)
+}
+
+function goToQuestion(i: number) {
+  if (i < 0 || i >= questions.length || i === currentIdx) return
+  currentIdx = i
+  showQuestion()
+}
+
+// Стрічка чипів: 3 стани — відповів (зелений) / поточне (синій) / решта (сірий).
+function renderNav() {
+  quizNav.innerHTML = ''
+  questions.forEach((q, i) => {
+    const chip = document.createElement('button')
+    chip.className = 'quiz-nav-chip'
+    chip.textContent = String(i + 1)
+    const isAnswered = answeredIds.has(q.id as string)
+    if (isAnswered)     chip.classList.add('quiz-nav-chip--answered')
+    if (i === currentIdx) chip.classList.add('quiz-nav-chip--current')
+    chip.setAttribute('aria-label', `Питання ${i + 1}${isAnswered ? ' — відповів' : ''}${i === currentIdx ? ' — поточне' : ''}`)
+    if (i === currentIdx) chip.setAttribute('aria-current', 'true')
+    chip.addEventListener('click', () => goToQuestion(i))
+    quizNav.appendChild(chip)
+  })
+}
+
+// ===================== HEARTBEAT (пауза таймера) =====================
+// Пульс щосекунд*15: сервер кредитує паузу при блекаутах і повертає авторитетний
+// залишок часу. Локальний таймер лише показує — сервер вирішує «час вийшов».
+async function doHeartbeat() {
+  if (currentMode !== 'olympiad' || !currentAttemptId || !currentAttemptToken) return
+  try {
+    const hb = await sendHeartbeat(currentAttemptId, currentAttemptToken)
+    if (typeof hb.remainingSeconds === 'number') {
+      secondsLeft = hb.remainingSeconds        // ресинк із серверною правдою (враховує паузу)
+      updateTimerDisplay()
+      if (secondsLeft <= 0) finishQuiz(true)
+    }
+  } catch (e) {
+    // 410 — сервер каже, що час вичерпано (навіть з паузою). Інші (офлайн) — чекаємо звʼязку.
+    if ((e as { status?: number })?.status === 410) finishQuiz(true)
+  }
+}
+function startHeartbeat() {
+  stopHeartbeat()
+  heartbeatInterval = setInterval(doHeartbeat, 15_000)
+  window.addEventListener('online', doHeartbeat) // миттєвий пульс щойно зʼявився інтернет
+}
+function stopHeartbeat() {
+  if (heartbeatInterval) { clearInterval(heartbeatInterval); heartbeatInterval = null }
+  window.removeEventListener('online', doHeartbeat)
+}
+
 async function finishQuiz(timeUp: boolean) {
+  if (finishing) return
+  finishing = true
   clearInterval(timerInterval!)
+  stopHeartbeat()
   const elapsed = Math.round((Date.now() - startedAt!) / 1000)
   hideOverlay(quizOverlay)
   if (currentMode === 'olympiad') exitFullscreen()
@@ -516,14 +640,13 @@ async function finishQuiz(timeUp: boolean) {
   // Для олімпіади — спершу відправляємо на сервер, потім показуємо його score
   if (currentAttemptId && currentAttemptToken) {
     const meta = (startQuiz as any).meta as QuizMeta
-    // Чекаємо всі pending saves (включно з retry) перед фінішем
-    await Promise.allSettled(pendingSaves)
-    pendingSaves = []
+    // Дочищаємо offline-чергу (з ретраями) перед фінішем.
+    const undelivered = answerQueue ? await answerQueue.flushAll() : 0
 
-    // Попереджаємо якщо є відповіді що не дійшли до сервера після retry
-    if (failedAnswers.size > 0) {
+    // Попереджаємо якщо частина відповідей так і не дійшла до сервера.
+    if (undelivered > 0) {
       resultErrorMsg.innerHTML =
-        `⚠️ ${failedAnswers.size} відповід${failedAnswers.size === 1 ? 'ь' : 'і'} не збережено через проблеми з мережею. Результат може бути нижчим від реального.`
+        `⚠️ ${undelivered} відповід${undelivered === 1 ? 'ь' : undelivered >= 2 && undelivered <= 4 ? 'і' : 'ей'} не збережено через проблеми з мережею. Результат може бути нижчим від реального.`
       resultErrorMsg.classList.remove('hidden')
     }
     // Показуємо оверлей з плейсхолдером поки сервер рахує
@@ -543,6 +666,7 @@ async function finishQuiz(timeUp: boolean) {
         : finalScore >= total * 0.5 ? 'Добре!'
         : 'Спробуй ще!'
       clearQuizBackup()
+      answerQueue?.clear() // спробу завершено — черга більше не потрібна
       resultSavedMsg.classList.remove('hidden')
     } catch {
       // Сервер недоступний — не показуємо score (в official mode він не рахується локально)
@@ -557,6 +681,10 @@ async function finishQuiz(timeUp: boolean) {
          <span style="font-size:0.8em;opacity:0.7">Коли з'явиться інтернет — оновлення сторінки може відновити збереження.</span>`
       resultErrorMsg.classList.remove('hidden')
     }
+    // Знімаємо автотригери. На успіху чергу вже очищено; на збої залишаємо
+    // збережені items у localStorage — reload + повторний код їх дошле.
+    answerQueue?.destroy()
+    answerQueue         = null
     currentAttemptId    = null
     currentAttemptToken = null
   }
@@ -571,6 +699,10 @@ quitConfirmYes.addEventListener('click', () => {
   hideOverlay(quitConfirm)
   hideOverlay(quizOverlay)
   if (currentMode === 'olympiad') exitFullscreen()
+  clearInterval(timerInterval!)
+  stopHeartbeat()
+  answerQueue?.destroy()
+  answerQueue         = null
   currentAttemptId    = null
   currentAttemptToken = null
 })

@@ -1142,6 +1142,58 @@ button {
 .btn-next:hover { background: var(--clr-violet-dark); }
 .btn-next.hidden { display: none !important; }
 
+/* Кнопка "Пропустити" (olympiad/demo) */
+.btn-skip {
+  background: #fff;
+  color: var(--clr-violet);
+  font-weight: 800;
+  font-size: var(--font-size-lg);
+  padding: var(--sp-3) var(--sp-8);
+  border-radius: var(--r-xl);
+  margin-top: var(--sp-2);
+  border: 2px solid var(--clr-violet);
+  display: inline-block;
+  cursor: pointer;
+  transition: background-color var(--transition-base), color var(--transition-base);
+}
+.btn-skip:hover { background: #ede9fe; }
+.btn-skip.hidden { display: none !important; }
+
+/* ── Навігатор питань (стрічка чипів) ──────────────────────────── */
+.quiz-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  justify-content: center;
+  padding: var(--sp-3) var(--sp-4) 0;
+}
+.quiz-nav.hidden { display: none !important; }
+.quiz-nav-chip {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  border: 2px solid #cbd5e1;
+  background: #f1f5f9;
+  color: #64748b;
+  font-weight: 800;
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  transition: background-color var(--transition-base), border-color var(--transition-base), transform var(--transition-base);
+}
+.quiz-nav-chip:hover { transform: translateY(-2px); }
+.quiz-nav-chip--answered {
+  background: var(--clr-emerald);
+  border-color: var(--clr-emerald);
+  color: #fff;
+}
+.quiz-nav-chip--current {
+  border-color: var(--clr-violet);
+  box-shadow: 0 0 0 3px var(--clr-violet-light);
+}
+.quiz-nav-chip--answered.quiz-nav-chip--current {
+  border-color: var(--clr-violet);
+}
+
 /* ── Варіанти відповідей (з question-renderer.js) ───────────── */
 
 /* Кнопка варіанту (choice, sequence, sort, match) */
@@ -1513,6 +1565,10 @@ body.mission-active.mission-answered #mission-quiz .quiz-explanation {
   border: 2px solid rgba(125, 211, 252, .35);
   box-shadow: 0 16px 36px rgba(15,23,42,.16);
   font-size: clamp(.95rem, 1.4vw, 1.2rem);
+  /* pre має overflow → у grid його min-size = 0 і трек стискає блок.
+     Забороняємо стискатися нижче фактичного вмісту коду. */
+  min-height: max-content;
+  align-self: start;
 }
 
 .quiz-overlay .quiz-options,

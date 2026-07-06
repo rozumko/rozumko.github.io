@@ -223,6 +223,16 @@ export async function finishAttempt(attemptId: string, attemptToken: string): Pr
   })
 }
 
+// Пульс: сервер кредитує паузу (блекаути) і повертає авторитетний залишок часу.
+// Кидає ApiError зі status 410, коли час вичерпано.
+export async function sendHeartbeat(attemptId: string, attemptToken: string): Promise<{ pausedSeconds: number; remainingSeconds: number | null }> {
+  return request(`/api/attempt/${attemptId}/heartbeat`, {
+    method: 'POST',
+    headers: { 'X-Attempt-Token': attemptToken },
+    body: JSON.stringify({}),
+  })
+}
+
 // ─── School Mode (просунутий, анонімний учень) ─────────────────────────────
 
 export async function joinSchoolSession(code: string, avatar: string, nickname: string): Promise<{

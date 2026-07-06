@@ -33,17 +33,23 @@ export interface RenderableQuestion {
 export function renderQuestion(
   q: RenderableQuestion,
   container: HTMLElement,
-  { onAnswer = null as ((result: boolean | number | number[] | string) => void) | null, preview = false } = {}
+  {
+    onAnswer = null as ((result: boolean | number | number[] | string) => void) | null,
+    preview = false,
+    // preselect — попередня відповідь учня (olympiad/demo) для підсвічування при
+    // поверненні. Візуальна підказка; питання лишається інтерактивним (можна змінити).
+    preselect = null as boolean | number | number[] | string | null,
+  } = {}
 ) {
   container.innerHTML = '';
   const type = q.type ?? 'choice';
 
-  if      (type === 'choice')                  renderChoice(q, container, onAnswer, preview);
-  else if (type === 'truefalse')               renderTrueFalse(q, container, onAnswer, preview);
-  else if (type === 'input')                   renderInput(q, container, onAnswer, preview);
-  else if (type === 'sort' || type === 'algorithm') renderSort(q, container, onAnswer, preview);
-  else if (type === 'sequence')                renderSequence(q, container, onAnswer, preview);
-  else if (type === 'match')                   renderMatch(q, container, onAnswer, preview);
+  if      (type === 'choice')                  renderChoice(q, container, onAnswer, preview, preselect);
+  else if (type === 'truefalse')               renderTrueFalse(q, container, onAnswer, preview, preselect);
+  else if (type === 'input')                   renderInput(q, container, onAnswer, preview, preselect);
+  else if (type === 'sort' || type === 'algorithm') renderSort(q, container, onAnswer, preview, preselect);
+  else if (type === 'sequence')                renderSequence(q, container, onAnswer, preview, preselect);
+  else if (type === 'match')                   renderMatch(q, container, onAnswer, preview, preselect);
 }
 
 // ── CSS-константи ──────────────────────────────────────────────────────────
@@ -62,7 +68,7 @@ function markIncorrect(el) { el.classList.add('quiz-option--incorrect'); }
 
 // ── choice ─────────────────────────────────────────────────────────────────
 
-function renderChoice(q, container, onAnswer, preview) {
+function renderChoice(q, container, onAnswer, preview, preselect = null) {
   let answered = false;
   const opts = q.options ?? q.a ?? [];
   // correct може бути відсутнім (олімпіадний режим — сервер перевіряє)
@@ -100,11 +106,16 @@ function renderChoice(q, container, onAnswer, preview) {
 
     container.appendChild(btn);
   });
+
+  // Повернення: підсвітити раніше обраний варіант (лишається клікабельним).
+  if (!preview && preselect != null && btns[Number(preselect)]) {
+    btns[Number(preselect)].classList.add('quiz-option--selected');
+  }
 }
 
 // ── truefalse ──────────────────────────────────────────────────────────────
 
-function renderTrueFalse(q, container, onAnswer, preview) {
+function renderTrueFalse(q, container, onAnswer, preview, preselect = null) {
   let answered = false;
   const OPTIONS = [{ label: '✅ Так', value: true }, { label: '❌ Ні', value: false }];
 
@@ -146,11 +157,18 @@ function renderTrueFalse(q, container, onAnswer, preview) {
 
     container.appendChild(btn);
   });
+
+  // Повернення: підсвітити раніше обраний варіант (Так=0 / Ні=1).
+  if (!preview && preselect != null) {
+    container.querySelectorAll('button').forEach(b => {
+      if (Number((b as HTMLElement).dataset.tfIndex) === Number(preselect)) b.classList.add('quiz-option--selected');
+    });
+  }
 }
 
 // ── input ──────────────────────────────────────────────────────────────────
 
-function renderInput(q, container, onAnswer, preview) {
+function renderInput(q, container, onAnswer, preview, preselect = null) {
   const answerKey = q.answer ?? q.correct;
   const isNum = q.inputType === 'number' || typeof answerKey === 'number';
   let answered = false;
@@ -174,6 +192,7 @@ function renderInput(q, container, onAnswer, preview) {
   inp.setAttribute('autocomplete', 'off');
   inp.setAttribute('autocorrect', 'off');
   inp.setAttribute('spellcheck', 'false');
+  if (preselect != null) inp.value = String(preselect); // повернення: відновити введене
 
   const checkBtn = document.createElement('button');
   checkBtn.className = CLS.checkBtn;
@@ -217,7 +236,7 @@ function renderInput(q, container, onAnswer, preview) {
 
 // ── sort / algorithm ───────────────────────────────────────────────────────
 
-function renderSort(q, container, onAnswer, preview) {
+function renderSort(q, container, onAnswer, preview, preselect = null) {
   if (preview) {
     q.correctOrder.forEach((itemIdx, pos) => {
       const row = document.createElement('div');
@@ -235,7 +254,10 @@ function renderSort(q, container, onAnswer, preview) {
   }
 
   let answered = false;
-  const order = [...q.items.keys()].sort(() => Math.random() - 0.5);
+  // Повернення: відновити раніше складений порядок; інакше — випадковий.
+  const order = Array.isArray(preselect) && preselect.length === q.items.length
+    ? [...preselect]
+    : [...q.items.keys()].sort(() => Math.random() - 0.5);
 
   const rebuild = () => {
     container.innerHTML = '';
@@ -330,7 +352,7 @@ function renderSort(q, container, onAnswer, preview) {
 
 // ── sequence ───────────────────────────────────────────────────────────────
 
-function renderSequence(q, container, onAnswer, preview) {
+function renderSequence(q, container, onAnswer, preview, preselect = null) {
   // Рядок із заданою послідовністю
   const seq = document.createElement('div');
   seq.className = 'quiz-seq';
@@ -386,11 +408,16 @@ function renderSequence(q, container, onAnswer, preview) {
 
     container.appendChild(btn);
   });
+
+  // Повернення: підсвітити раніше обраний варіант.
+  if (!preview && preselect != null && seqBtns[Number(preselect)]) {
+    seqBtns[Number(preselect)].classList.add('quiz-option--selected');
+  }
 }
 
 // ── match ──────────────────────────────────────────────────────────────────
 
-function renderMatch(q, container, onAnswer, preview) {
+function renderMatch(q, container, onAnswer, preview, preselect = null) {
   if (preview) {
     q.left.forEach((l, i) => {
       const row = document.createElement('div');
@@ -434,6 +461,12 @@ function renderMatch(q, container, onAnswer, preview) {
     row.appendChild(leftEl); row.appendChild(arrow); row.appendChild(select);
     container.appendChild(row);
   });
+
+  // Повернення: відновити раніше обрані пари.
+  if (!preview && Array.isArray(preselect)) {
+    const selects = container.querySelectorAll('select');
+    preselect.forEach((val, i) => { if (selects[i]) (selects[i] as HTMLSelectElement).value = String(val); });
+  }
 
   const checkBtn = document.createElement('button');
   checkBtn.className = CLS.checkBtn;

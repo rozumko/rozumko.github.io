@@ -94,6 +94,10 @@ export const attempts = pgTable('attempts', {
   totalQ:      integer('total_q'),
   startedAt:   timestamp('started_at', { withTimezone: true }).defaultNow(),
   finishedAt:  timestamp('finished_at', { withTimezone: true }),
+  // Пауза таймера для блекаутів: накопичена «прощена» пауза (сек) і час
+  // останнього heartbeat. Сервер міряє розрив між heartbeat-ами.
+  pausedSeconds: integer('paused_seconds').notNull().default(0),
+  lastSeenAt:    timestamp('last_seen_at', { withTimezone: true }),
 })
 
 export type Attempt = typeof attempts.$inferSelect

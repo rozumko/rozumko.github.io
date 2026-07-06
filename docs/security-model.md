@@ -45,8 +45,22 @@ _Updated: 2026-07-02_
 - Finishing an official attempt returns only the aggregate result, never
   per-question correctness.
 - After the server deadline, late answers are rejected and saved answers are graded.
+- Attempt time can be paused for connectivity loss (blackouts). A client
+  heartbeat lets the **server** measure the gap between pulses and credit capped
+  grace pause (`GRACE_CAP_SECONDS`, currently 10 min per attempt); the client
+  cannot fabricate extra time because it does not report the pause itself. The
+  hard event end (`ends_at`) is never extended by pause. Known bounded tradeoff:
+  a student can withhold heartbeats to bank thinking time, capped by the grace
+  limit and with no ability to answer while offline — acceptable for the 1–4
+  grade low-stakes surface.
 
-For crash recovery, the browser stores only non-secret attempt metadata.
+For crash recovery, the browser stores only non-secret attempt metadata. To
+survive blackouts and reloads, the browser may also queue the student's own raw
+answers (option index / text / order) in `localStorage` and re-send them when
+connectivity returns. These queued values are the student's submissions, not
+answer keys and not server-trusted scores, so they stay within the offline-state
+boundary. The attempt token is never persisted: on resume the student re-enters
+the physical code to obtain a fresh token before the queue can flush.
 
 ## Answer-Key Handling
 

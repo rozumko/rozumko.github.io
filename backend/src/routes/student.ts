@@ -148,7 +148,7 @@ export async function studentRoutes(app: FastifyInstance) {
     // а повертаємо ту саму спробу з новим токеном і її зафіксованими питаннями.
     // Це безпечно: токен усе одно генерує сервер, а доступ вимагає фізичний код.
     const [existing] = await db
-      .select({ id: attempts.id, grade: attempts.grade, startedAt: attempts.startedAt, answers: attempts.answers })
+      .select({ id: attempts.id, grade: attempts.grade, startedAt: attempts.startedAt, answers: attempts.answers, pausedSeconds: attempts.pausedSeconds })
       .from(attempts)
       .where(and(eq(attempts.codeId, accessCode.id), eq(attempts.status, 'in_progress')))
       .orderBy(desc(attempts.startedAt))
@@ -159,7 +159,7 @@ export async function studentRoutes(app: FastifyInstance) {
     // до коду, а не до дитини — тож відновлення віддало б другій дитині спробу першої (hijack).
     // У такому разі йдемо звичайним шляхом і створюємо нову спробу.
     if (existing && accessCode.maxUses === 1) {
-      const remainingSeconds = getRemainingSeconds(existing.startedAt, event.timeMinutes, event.endsAt)
+      const remainingSeconds = getRemainingSeconds(existing.startedAt, event.timeMinutes, event.endsAt, new Date(), existing.pausedSeconds)
       if (remainingSeconds === 0) {
         await finalizeAttemptFromSavedAnswers(existing.id)
         return reply.code(410).send({ error: 'Час спроби вичерпано' })

@@ -166,6 +166,9 @@
       <div id="quiz-progress-bar" class="quiz-progress-bar" style="width:0%"></div>
     </div>
 
+    <!-- Навігатор питань (олімпіада/демо) — чипи генерує student.ts -->
+    <nav id="quiz-nav" class="quiz-nav hidden" aria-label="Навігація по питаннях"></nav>
+
     <!-- Тіло квізу -->
     <div class="quiz-body">
       <div class="quiz-inner">
@@ -188,6 +191,7 @@
         <div class="quiz-feedback-wrap">
           <p id="quiz-feedback"    class="quiz-feedback"    aria-live="polite"></p>
           <p id="quiz-explanation" class="quiz-explanation hidden"></p>
+          <button id="quiz-skip-btn" class="btn-skip hidden">Пропустити →</button>
           <button id="quiz-next-btn" class="btn-next">Далі →</button>
         </div>
 
@@ -242,7 +246,10 @@
        role="dialog" aria-modal="true" aria-labelledby="modal-message">
     <div class="app-modal-card">
       <p id="modal-message" class="app-modal-msg"></p>
-      <button id="modal-ok-btn" class="btn-modal-ok">OK</button>
+      <div class="modal-actions">
+        <button id="modal-ok-btn" class="btn-modal-ok">OK</button>
+        <button id="modal-cancel-btn" class="btn-modal-cancel hidden">Повернутись</button>
+      </div>
     </div>
   </div>
 
