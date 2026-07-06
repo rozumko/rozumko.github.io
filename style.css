@@ -4000,7 +4000,7 @@ body.teacher-dashboard-active {
 .app-main {
   flex: 1;
   width: 100%;
-  max-width: 44rem;
+  max-width: 52rem;
   margin: 0 auto;
   padding: var(--sp-8) var(--sp-4) var(--sp-16);
 }
@@ -4205,14 +4205,21 @@ body.teacher-dashboard-active {
   outline-offset: 3px;
 }
 .mission-card__icon  { font-size: 2rem; line-height: 1; }
+.mission-card__img   { width: auto; height: 5.5rem; object-fit: contain; }
 .mission-card__title {
   font-size: var(--kid-text);
   font-weight: 800;
   color: var(--clr-text);
 }
-.mission-card__meta {
+.mission-card__desc {
   font-size: var(--font-size-sm);
   color: var(--clr-text-muted);
+  line-height: 1.3;
+}
+.mission-card__meta {
+  font-size: var(--font-size-xs, 0.75rem);
+  color: var(--clr-text-muted);
+  opacity: 0.85;
 }
 /* Напрями (home) */
 .mission-card--inf { border-color: var(--track-inf); background: var(--track-inf-light); }

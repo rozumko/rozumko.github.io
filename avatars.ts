@@ -5,6 +5,7 @@
 export const AVATARS = [
   'astronaut', 'wizard', 'detective', 'explorer', 'gamer',
   'hero', 'ninja', 'pirat', 'princess', 'artist',
+  'emo', 'terminator',
 ] as const
 
 export type Avatar = (typeof AVATARS)[number]
@@ -20,6 +21,8 @@ const LABELS: Record<Avatar, string> = {
   pirat: 'Пірат',
   princess: 'Принцеса',
   artist: 'Художник',
+  emo: 'Емо',
+  terminator: 'Термінатор',
 }
 
 const AVATAR_SET = new Set<string>(AVATARS)

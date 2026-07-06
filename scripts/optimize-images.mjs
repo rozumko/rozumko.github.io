@@ -15,6 +15,15 @@ const OUT = join(root, 'public')
 const AVATAR_SLUGS = [
   'astronaut', 'wizard', 'detective', 'explorer', 'gamer',
   'hero', 'ninja', 'pirat', 'princess', 'artist',
+  'emo', 'terminator',
+]
+
+// Ілюстрації-маскоти для карток напрямів на home ("Я вдома"). Джерела вже з
+// прозорим фоном (images/half/rozumko_hulf_*.png). Показ ~88px висотою → 2.5x.
+const CARD_IMAGES = [
+  { src: 'half/rozumko_hulf_laptop.png', out: 'cards/track-inf.png' },   // Інформатика
+  { src: 'half/rozumko_hulf_puzzle.png', out: 'cards/track-think.png' }, // Мислення
+  { src: 'half/rozumko_hulf_greetings.png', out: 'cards/track-ai.png' }, // Основи ШІ
 ]
 
 const pngOpts = { compressionLevel: 9, quality: 80, palette: true, effort: 10 }
@@ -80,6 +89,19 @@ async function optimizeMascots() {
   }
 }
 
+async function optimizeCardImages() {
+  await mkdir(join(OUT, 'cards'), { recursive: true })
+  for (const { src, out } of CARD_IMAGES) {
+    const info = await sharp(join(SRC, src))
+      .trim()
+      .resize(null, 220, { fit: 'inside' })
+      .png(pngOpts)
+      .toFile(join(OUT, out))
+    console.log(`card ${out.padEnd(24)} → ${(info.size / 1024).toFixed(1)} KB`)
+  }
+}
+
 await optimizeAvatars()
 await optimizeMascots()
+await optimizeCardImages()
 console.log('Done.')

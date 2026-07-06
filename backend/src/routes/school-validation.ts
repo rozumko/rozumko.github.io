@@ -7,6 +7,7 @@ import { randomInt } from 'crypto'
 export const SCHOOL_AVATARS = [
   'astronaut', 'wizard', 'detective', 'explorer', 'gamer',
   'hero', 'ninja', 'pirat', 'princess', 'artist',
+  'emo', 'terminator',
 ] as const
 
 export function isValidAvatar(avatar: unknown): avatar is string {
