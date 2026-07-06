@@ -124,7 +124,9 @@ docs/
 
 ## Документація
 
+- [Onboarding (перший день розробника)](./docs/onboarding.md)
 - [Architecture](./docs/architecture.md)
+- [Architecture Decision Records (чому так вирішили)](./docs/adr/README.md)
 - [Security model](./docs/security-model.md)
 - [Security policy](./SECURITY.md)
 - [Product direction](./docs/product-roadmap.md)
