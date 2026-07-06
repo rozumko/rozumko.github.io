@@ -4163,13 +4163,16 @@ body.teacher-dashboard-active {
   font-size: var(--kid-text);
   font-weight: 700;
   color: var(--clr-text);
-  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+  transition: border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
 }
 .grade-chip:hover { border-color: var(--clr-brand); }
 .grade-chip[aria-pressed="true"] {
-  border-color: var(--clr-brand);
-  background: #eff6ff;
+  border-color: var(--clr-brand) !important;
+  background-color: var(--clr-brand) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, .35);
 }
+.grade-chip[aria-pressed="true"]:hover { border-color: var(--clr-brand); }
 
 /* Сітка великих карток місій. Колір = напрям (home) або складність (school) */
 .mission-grid {
@@ -4180,6 +4183,7 @@ body.teacher-dashboard-active {
   .mission-grid { grid-template-columns: repeat(3, 1fr); }
 }
 .mission-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -4220,6 +4224,43 @@ body.teacher-dashboard-active {
   font-size: var(--font-size-xs, 0.75rem);
   color: var(--clr-text-muted);
   opacity: 0.85;
+}
+/* Преміум-активність: бейдж «замок» у кутку + приглушена картка */
+.mission-card[data-locked] { opacity: 0.9; }
+.mission-card__lock {
+  position: absolute;
+  top: var(--sp-2);
+  right: var(--sp-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-xs, 0.75rem);
+  font-weight: 800;
+  color: #78350f;
+  background: var(--clr-amber, #fbbf24);
+  border-radius: var(--r-full);
+  padding: 3px 9px;
+  box-shadow: var(--shadow-sm);
+}
+/* CTA-модалка підписки (games) */
+.premium-card {
+  width: 100%;
+  max-width: 26rem;
+  margin: var(--sp-4);
+  padding: var(--sp-6);
+  background: var(--clr-surface);
+  border-radius: var(--r-xl);
+  box-shadow: 0 25px 60px rgba(0,0,0,0.25);
+  text-align: center;
+}
+.premium-card__emoji { font-size: 2.5rem; line-height: 1; }
+.premium-card h2 { margin: var(--sp-3) 0 var(--sp-2); font-size: var(--font-size-lg); }
+.premium-card p  { color: var(--clr-text-muted); margin-bottom: var(--sp-5); }
+.premium-card__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  align-items: stretch;
 }
 /* Напрями (home) */
 .mission-card--inf { border-color: var(--track-inf); background: var(--track-inf-light); }
@@ -4538,7 +4579,7 @@ body.teacher-dashboard-active {
 /* Один екран: головоломки як fixed-оверлей (як mission-active) */
 body.puzzle-active { overflow: hidden; }
 body.puzzle-active #puzzle-area:not(.hidden) {
-  position: fixed; inset: 0; z-index: 90;
+  position: fixed; inset: 0; z-index: 110; /* над sticky-хедером (z-100), щоб «До списку ігор» не ховалась */
   display: flex; flex-direction: column; align-items: center;
   gap: clamp(var(--sp-2), 1.4vw, var(--sp-4));
   padding: clamp(var(--sp-3), 2.4vw, var(--sp-6));

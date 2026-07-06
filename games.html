@@ -37,12 +37,14 @@
           <span class="mission-card__title">Розумне сортування</span>
           <span class="mission-card__meta">Розклади предмети за ознакою · 5 рівнів</span>
         </button>
-        <button class="game-pick-btn mission-card mission-card--inf" data-game="infosort">
+        <button class="game-pick-btn mission-card mission-card--inf" data-game="infosort" data-locked="1">
+          <span class="mission-card__lock">🔒 Підписка</span>
           <span class="mission-card__icon" aria-hidden="true">📡</span>
           <span class="mission-card__title">ІнфоСорт</span>
           <span class="mission-card__meta">Як ми отримуємо інформацію · 2 рівні</span>
         </button>
-        <button class="game-pick-btn mission-card mission-card--ai" data-game="multisort">
+        <button class="game-pick-btn mission-card mission-card--ai" data-game="multisort" data-locked="1">
+          <span class="mission-card__lock">🔒 Підписка</span>
           <span class="mission-card__icon" aria-hidden="true">🔀</span>
           <span class="mission-card__title">Мульти-Сортування</span>
           <span class="mission-card__meta">Той самий предмет — різні ознаки · 3 рівні</span>
@@ -78,6 +80,19 @@
     </section>
 
   </main>
+
+  <div id="premium-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="premium-title">
+    <div class="modal-content premium-card">
+      <span class="premium-card__emoji" aria-hidden="true">🔒</span>
+      <h2 id="premium-title">Ця гра — у підписці</h2>
+      <p>Безкоштовно вже відкриті «Розумне сортування» та «Логічні головоломки».
+         Повний набір ігор і рівнів — у підписці Rozumko Club.</p>
+      <div class="premium-card__actions">
+        <a href="for-parents.html" class="btn btn-violet">Дізнатися про підписку</a>
+        <button id="premium-close" class="btn-ghost" type="button">Пізніше</button>
+      </div>
+    </div>
+  </div>
 
   <div id="site-footer"></div>
   <script type="module" src="layout.js"></script>

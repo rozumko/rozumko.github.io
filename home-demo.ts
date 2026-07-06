@@ -7,6 +7,7 @@ import {
   type Question, type HomeDemoTrack, type HomeDemoEvent, type HomeDemoReport, type HomeClubState,
 } from './features/api/client.js'
 import { loadStaticQuestions } from './features/missions/static-questions.js'
+import { getSavedGrade, saveGrade } from './utils/grade.js'
 
 // Home Demo (зріз 2 контракту docs/home-demo-contract.md).
 // Дитина проходить демо-місію без облікового запису: питання приходять із
@@ -68,7 +69,7 @@ function setMissionActive(active: boolean) {
 }
 
 // ── Стан демо-спроби (лише памʼять — до згоди нічого не зберігається) ────────
-let selectedGrade = 1
+let selectedGrade = getSavedGrade()
 let currentTrack: TrackPreset | null = null
 let events: HomeDemoEvent[] = []
 let startedAtIso = ''
@@ -391,6 +392,7 @@ document.querySelectorAll<HTMLElement>('.home-grade-btn').forEach(btn => {
     const grade = Number(btn.dataset['grade'])
     if (grade >= 1 && grade <= 4) {
       selectedGrade = grade
+      saveGrade(grade)
       highlightGrade(grade)
     }
   })

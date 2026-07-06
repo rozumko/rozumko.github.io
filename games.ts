@@ -1,6 +1,7 @@
 import { mountSortingGame } from './features/games/sorting-game.js'
 import { SORTING_ATTRIBUTES_LEVELS, INFO_SORT_LEVELS, MULTISORT_LEVELS, type SortingLevel } from './features/games/sorting-data.js'
 import { mountPuzzles } from './features/games/puzzle-engine.js'
+import { getSavedGrade, saveGrade } from './utils/grade.js'
 
 const GAMES: Record<string, SortingLevel[]> = {
   attributes: SORTING_ATTRIBUTES_LEVELS,
@@ -14,8 +15,17 @@ const gameRoot   = document.getElementById('sorting-game')!
 const puzzleArea = document.getElementById('puzzle-area')!
 const puzzleRoot = document.getElementById('puzzles-root')!
 
+// Преміум-модалка: локнуті ігри показують CTA замість запуску (гейт лише
+// візуальний — вдома користувач анонімний; реальне enforcement прийде з оплатою).
+const premiumModal = document.getElementById('premium-modal')!
+function openPremiumModal() { premiumModal.classList.remove('hidden') }
+function closePremiumModal() { premiumModal.classList.add('hidden') }
+document.getElementById('premium-close')!.addEventListener('click', closePremiumModal)
+premiumModal.addEventListener('click', (e) => { if (e.target === premiumModal) closePremiumModal() })
+
 document.querySelectorAll<HTMLButtonElement>('.game-pick-btn').forEach(btn => {
   btn.addEventListener('click', () => {
+    if (btn.dataset['locked']) { openPremiumModal(); return }
     const levels = GAMES[btn.dataset['game'] ?? '']
     if (!levels) return
     menu.classList.add('hidden')
@@ -31,7 +41,8 @@ document.getElementById('game-back-btn')!.addEventListener('click', () => {
 })
 
 // ── Логічні головоломки ──────────────────────────────────────────────────────
-let puzzleGrade = 1
+// Клас підхоплюємо з вибору на «Я вдома» (localStorage) — без повторного кліку.
+let puzzleGrade = getSavedGrade()
 
 function highlightPuzzleGrade(grade: number) {
   document.querySelectorAll<HTMLElement>('.puzzle-grade-btn').forEach(btn => {
@@ -53,6 +64,7 @@ document.getElementById('puzzles-pick-btn')!.addEventListener('click', () => {
 document.querySelectorAll<HTMLElement>('.puzzle-grade-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     puzzleGrade = Number(btn.dataset['grade'])
+    saveGrade(puzzleGrade)
     highlightPuzzleGrade(puzzleGrade)
     mountPuzzles(puzzleRoot, puzzleGrade)
   })
