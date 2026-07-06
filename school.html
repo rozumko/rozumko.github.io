@@ -34,7 +34,7 @@
 
   <main id="main-content" class="app-main" tabindex="-1">
 
-    <!-- INTRO: код гри — головна дія; вільні місії — другий шлях -->
+    <!-- INTRO: введи код від вчителя, обери аватар — і в гру -->
     <section id="mission-intro">
       <h1 class="app-title">Я в класі</h1>
       <p class="app-subtitle">Вчитель дав код? Введи його — і грай разом з класом.</p>
@@ -45,64 +45,17 @@
                maxlength="6" placeholder="Код гри — 6 цифр" />
         <input id="join-nickname" class="field-input" autocomplete="off" maxlength="20"
                placeholder="Твоє прізвисько (не справжнє імʼя)" aria-label="Прізвисько" />
-        <div id="avatar-select" class="avatar-row" role="group" aria-label="Обери аватар"></div>
+        <div id="avatar-select" class="avatar-row hidden" role="group" aria-label="Обери аватар"></div>
         <button id="join-btn" class="kid-action">Приєднатися до гри</button>
       </div>
 
       <p id="mission-error" class="quiz-feedback quiz-feedback--incorrect app-error" aria-live="polite"></p>
 
-      <p class="app-section-label">Немає коду? Обери вільну місію</p>
-
-      <div id="grade-select" class="grade-picker" role="group" aria-label="Вибір класу">
-        <button class="school-grade-btn grade-chip" data-grade="1" aria-pressed="true">1 клас</button>
-        <button class="school-grade-btn grade-chip" data-grade="2" aria-pressed="false">2 клас</button>
-        <button class="school-grade-btn grade-chip" data-grade="3" aria-pressed="false">3 клас</button>
-        <button class="school-grade-btn grade-chip" data-grade="4" aria-pressed="false">4 клас</button>
+      <div class="info-card info-card--center" style="margin-top: var(--sp-6);">
+        Немає коду? Спробуй <a href="home.html">вільні місії вдома →</a>
       </div>
 
-      <p class="app-section-label" style="margin-top: var(--sp-4);">Напрям (необов'язково)</p>
-      <div id="track-select" class="grade-picker" role="group" aria-label="Вибір напряму">
-        <button class="school-track-btn grade-chip" data-track="" aria-pressed="true">Усі</button>
-        <button class="school-track-btn grade-chip" data-track="informatics" aria-pressed="false">💻 Інформатика</button>
-        <button class="school-track-btn grade-chip" data-track="computational-thinking" aria-pressed="false">🧩 Мислення</button>
-        <button class="school-track-btn grade-chip" data-track="ai-basics" aria-pressed="false">🤖 ШІ</button>
-      </div>
-
-      <div id="topic-select" class="grade-picker hidden" role="group" aria-label="Вибір теми"></div>
-
-      <div id="mission-select" class="mission-grid" role="group" aria-label="Вибір місії">
-        <button class="school-mission-btn mission-card mission-card--warmup" data-mission="warmup">
-          <span class="mission-card__icon" aria-hidden="true">🔥</span>
-          <span class="mission-card__title">Розминка</span>
-          <span class="mission-card__meta">5 легких питань</span>
-        </button>
-        <button class="school-mission-btn mission-card mission-card--training" data-mission="training">
-          <span class="mission-card__icon" aria-hidden="true">⭐</span>
-          <span class="mission-card__title">Тренування</span>
-          <span class="mission-card__meta">10 питань</span>
-        </button>
-        <button class="school-mission-btn mission-card mission-card--challenge" data-mission="challenge">
-          <span class="mission-card__icon" aria-hidden="true">🚀</span>
-          <span class="mission-card__title">Виклик</span>
-          <span class="mission-card__meta">10 складних питань</span>
-        </button>
-      </div>
-
-      <p class="app-section-label" style="margin-top: var(--sp-6);">Або просто пограй</p>
-      <div class="mission-grid">
-        <a href="games.html" class="mission-card mission-card--think" style="text-decoration:none;">
-          <span class="mission-card__icon" aria-hidden="true">🧺</span>
-          <span class="mission-card__title">Ігри-сортування</span>
-          <span class="mission-card__meta">Класифікація, інформація, абстрагування · без коду</span>
-        </a>
-      </div>
-
-      <p class="adult-note" style="margin-top: var(--sp-8);">
-        Без реєстрації, без оплати й без збору дитячих персональних даних —
-        усе відбувається у браузері.
-      </p>
-
-      <div class="info-card info-card--center" style="margin-top: var(--sp-4);">
+      <div class="info-card info-card--center" style="margin-top: var(--sp-3);">
         Ви вчитель? <a href="teacher.html">Створити гру для класу →</a>
       </div>
     </section>
@@ -110,6 +63,10 @@
     <!-- QUIZ: сама місія (розмітка й ID — спільний контракт з mission-runner) -->
     <section id="mission-quiz" class="hidden">
       <div class="quiz-progress-header" style="margin-bottom:8px;">
+        <div id="student-identity" class="student-identity hidden" aria-label="Твій аватар і нікнейм">
+          <img id="student-avatar-display" src="" alt="" class="student-identity__avatar" />
+          <span id="student-nickname-display" class="student-identity__name"></span>
+        </div>
         <span id="quiz-progress-text" class="quiz-progress-text"></span>
       </div>
       <div class="quiz-progress-bar-wrap" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">

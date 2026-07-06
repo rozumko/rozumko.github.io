@@ -1336,6 +1336,13 @@ body.mission-active #mission-quiz .quiz-progress-header {
   margin-bottom: 0 !important;
 }
 
+.quiz-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
 body.mission-active #mission-quiz .quiz-question-card {
   align-self: stretch;
   min-height: 0;
@@ -4109,8 +4116,8 @@ body.teacher-dashboard-active {
 }
 .avatar-btn img {
   display: block;
-  width: 56px;
-  height: 56px;
+  width: 80px;
+  height: 80px;
   border-radius: var(--r-md);
 }
 .avatar-btn:hover { transform: translateY(-2px); }
@@ -4118,6 +4125,32 @@ body.teacher-dashboard-active {
 .avatar-btn[aria-pressed="true"] {
   border-color: var(--clr-brand);
   background: var(--track-inf-light, #e0f2fe);
+}
+
+/* Аватар + нікнейм учня у хедері квізу */
+.student-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  background: var(--clr-surface-2, #f1f5f9);
+  border-radius: var(--r-full, 9999px);
+  padding: 4px 12px 4px 4px;
+  flex-shrink: 0;
+}
+.student-identity__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: contain;
+}
+.student-identity__name {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--clr-text);
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Головна дитяча кнопка */
