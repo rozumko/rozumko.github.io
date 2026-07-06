@@ -4058,7 +4058,7 @@ body.teacher-dashboard-active {
   display: flex;
   flex-direction: column;
   gap: var(--sp-3);
-  max-width: 26rem;
+  max-width: 38rem;
   margin: 0 auto;
 }
 .code-input-lg {
@@ -4099,10 +4099,10 @@ body.teacher-dashboard-active {
   border-color: var(--clr-brand);
 }
 .avatar-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-2);
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-3);
+  justify-items: center;
 }
 /* Аватар-кнопка: ілюстрація маскота у ролі. Вибір — рамка бренду. */
 .avatar-btn {

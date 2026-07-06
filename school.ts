@@ -60,16 +60,6 @@ const joinBtn    = $maybe<HTMLButtonElement>('join-btn')
 const codeInput  = $maybe<HTMLInputElement>('join-code')
 const nickInput  = $maybe<HTMLInputElement>('join-nickname')
 
-function updateFormVisibility() {
-  const codeOk = /^\d{6}$/.test(codeInput?.value.trim() ?? '')
-  const nickOk = (nickInput?.value.trim().length ?? 0) > 0
-  if (codeOk && nickOk) {
-    avatarWrap?.classList.remove('hidden')
-  } else {
-    avatarWrap?.classList.add('hidden')
-  }
-}
-
 if (avatarWrap) {
   AVATARS.forEach(slug => {
     const btn = document.createElement('button')
@@ -93,9 +83,6 @@ if (avatarWrap) {
     avatarWrap.appendChild(btn)
   })
 }
-
-codeInput?.addEventListener('input', updateFormVisibility)
-nickInput?.addEventListener('input', updateFormVisibility)
 
 // ── Приєднання до гри ────────────────────────────────────────────────────────
 
