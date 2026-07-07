@@ -10,7 +10,6 @@
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
   <link rel="stylesheet" href="tokens.css"/>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -18,13 +17,11 @@
 
   <div class="student-screen" style="max-width: 480px;">
 
-    <a href="student.html" class="student-back">
-      <i class="fas fa-arrow-left" aria-hidden="true"></i> Назад
-    </a>
+    <a href="student.html" class="student-back">← Назад</a>
 
     <!-- Логотип -->
     <div class="entry-logo">
-      <span class="entry-logo__icon" aria-hidden="true">🏆</span>
+      <span class="entry-logo__icon" aria-hidden="true"><img src="images/half/rozumko_hulf_wins.png" alt="" width="80" height="80" /></span>
       <h1 class="entry-logo__title">Олімпіада</h1>
       <p class="entry-logo__sub">Введи код і прочитай правила</p>
     </div>
@@ -58,9 +55,7 @@
 
       <!-- Правила -->
       <div class="oe-rules">
-        <p class="oe-rules__heading">
-          <i class="fas fa-list-ul" aria-hidden="true"></i> Крок 2 — Прочитай правила
-        </p>
+        <p class="oe-rules__heading">Крок 2 — Прочитай правила</p>
         <ul class="oe-rules__list">
           <li>Виконуй завдання <strong>самостійно</strong> — без підказок і без інтернету.</li>
           <li>Не давай свій код іншим і не передавай відповіді.</li>
@@ -79,14 +74,10 @@
         </span>
       </label>
 
-      <button id="start-btn" class="btn btn-violet" disabled>
-        <i class="fas fa-flag-checkered" aria-hidden="true"></i> Почати олімпіаду
-      </button>
+      <button id="start-btn" class="btn btn-violet" disabled>Почати олімпіаду</button>
       <p id="start-error" class="code-status" role="alert" aria-live="assertive"></p>
 
-      <button id="change-code-btn" class="btn-text" style="margin-top: var(--sp-2)">
-        <i class="fas fa-arrow-left" aria-hidden="true"></i> Змінити код
-      </button>
+      <button id="change-code-btn" class="btn-text" style="margin-top: var(--sp-2)">← Змінити код</button>
     </div>
 
     <!-- Футер -->

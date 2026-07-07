@@ -26,8 +26,6 @@
 
   <!-- Шрифти -->
 
-  <!-- Іконки -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
 
   <!-- Стилі проєкту (без Tailwind) -->
   <link rel="stylesheet" href="tokens.css"/>
@@ -42,12 +40,12 @@
   <div id="screen-entry" class="student-screen">
 
     <a href="index.html" class="student-back">
-      <i class="fas fa-arrow-left" aria-hidden="true"></i> На головну
+      ← На головну
     </a>
 
     <!-- Логотип -->
     <div class="entry-logo">
-      <span class="entry-logo__icon" aria-hidden="true"><i class="fas fa-brain"></i></span>
+      <span class="entry-logo__icon" aria-hidden="true"><img src="images/half/rozumko_hulf_thinks.png" alt="" width="80" height="80" /></span>
       <h1 class="entry-logo__title">Розумко</h1>
       <p class="entry-logo__sub">Обчислювальне мислення, логіка та основи ШІ</p>
     </div>
@@ -55,12 +53,12 @@
     <!-- Головне меню — видно коли жодна панель не відкрита -->
     <div id="hub-menu">
       <button id="show-practice-btn" class="hub-btn hub-btn--primary">
-        <i class="fas fa-dumbbell" aria-hidden="true"></i>
+        <img src="images/half/rozumko_hulf_exercise.png" alt="" aria-hidden="true" width="64" height="64" />
         <span class="hub-btn__label">Тренування</span>
         <span class="hub-btn__sub">Обери клас і складність</span>
       </button>
       <button id="show-demo-btn" class="hub-btn hub-btn--demo">
-        <i class="fas fa-star" aria-hidden="true"></i>
+        <img src="images/half/rozumko_hulf_laptop.png" alt="" aria-hidden="true" width="64" height="64" />
         <span class="hub-btn__label">Демо-олімпіада</span>
         <span class="hub-btn__sub">Спробуй без реєстрації</span>
       </button>
@@ -73,9 +71,7 @@
     <div id="practice-section" class="student-card hidden" style="margin-top: 0;">
       <div class="practice-header">
         <p class="practice-header__title">Обери клас і складність</p>
-        <button id="hide-practice-btn" class="practice-header__close" aria-label="Закрити тренування">
-          <i class="fas fa-times" aria-hidden="true"></i>
-        </button>
+        <button id="hide-practice-btn" class="practice-header__close" aria-label="Закрити тренування">×</button>
       </div>
       <div id="practice-grade-buttons" class="selector-grid selector-grid--grade"
            role="group" aria-label="Клас">
@@ -86,9 +82,9 @@
       </div>
       <div id="practice-difficulty-buttons" class="selector-grid selector-grid--diff"
            role="group" aria-label="Складність">
-        <button data-difficulty="easy"   class="selector-btn selector-btn--diff" aria-pressed="false"><i class="fas fa-seedling" aria-hidden="true"></i> Легкий</button>
-        <button data-difficulty="medium" class="selector-btn selector-btn--diff" aria-pressed="false"><i class="fas fa-route" aria-hidden="true"></i> Середній</button>
-        <button data-difficulty="hard"   class="selector-btn selector-btn--diff" aria-pressed="false"><i class="fas fa-bolt" aria-hidden="true"></i> Важкий</button>
+        <button data-difficulty="easy"   class="selector-btn selector-btn--diff" aria-pressed="false">Легкий</button>
+        <button data-difficulty="medium" class="selector-btn selector-btn--diff" aria-pressed="false">Середній</button>
+        <button data-difficulty="hard"   class="selector-btn selector-btn--diff" aria-pressed="false">Важкий</button>
       </div>
       <button id="start-practice-btn" class="btn btn-start" disabled>
         Почати тренування
@@ -99,9 +95,7 @@
     <div id="demo-section" class="student-card hidden" style="margin-top: 0;">
       <div class="practice-header">
         <p class="practice-header__title">Демо-олімпіада — обери клас</p>
-        <button id="hide-demo-btn" class="practice-header__close" aria-label="Закрити демо">
-          <i class="fas fa-times" aria-hidden="true"></i>
-        </button>
+        <button id="hide-demo-btn" class="practice-header__close" aria-label="Закрити демо">×</button>
       </div>
       <p class="practice-header__sub">Складні олімпіадні питання · без коду · результат не зберігається</p>
       <div id="demo-grade-buttons" class="selector-grid selector-grid--grade"
@@ -154,7 +148,6 @@
       </div>
       <div class="quiz-header__right">
         <div id="quiz-timer" class="quiz-timer" role="timer" aria-live="off">
-          <i class="fas fa-stopwatch" aria-hidden="true"></i>
           <span id="quiz-timer-display">15:00</span>
         </div>
         <button id="quiz-quit-btn" class="btn btn-quiz-quit">Вийти</button>
@@ -206,7 +199,7 @@
        ═══════════════════════════════════════════════════════════ -->
   <div id="result-overlay" class="result-overlay" role="dialog" aria-modal="true" aria-label="Результат">
     <div class="result-card">
-      <span class="result-emoji" aria-hidden="true"><i class="fas fa-trophy"></i></span>
+      <span class="result-emoji" aria-hidden="true"><img src="images/half/rozumko_hulf_wins.png" alt="" width="120" height="120" /></span>
       <p  id="result-mode-label" class="result-mode-label"></p>
       <h2 id="result-title"      class="result-title"></h2>
       <p class="result-score-label">Правильних відповідей</p>
@@ -228,7 +221,7 @@
        ═══════════════════════════════════════════════════════════ -->
   <div id="quit-confirm" class="quit-overlay" role="alertdialog" aria-modal="true" aria-labelledby="quit-title">
     <div class="quit-card">
-      <span class="quit-card__icon" aria-hidden="true"><i class="fas fa-sign-out-alt"></i></span>
+      <span class="quit-card__icon" aria-hidden="true">↩</span>
       <h3 id="quit-title" class="quit-card__title">Вийти з тесту?</h3>
       <p class="quit-card__text">Прогрес не збережеться.</p>
       <div class="quit-card__actions">
@@ -260,9 +253,7 @@
   <div id="img-lightbox" class="lightbox hidden"
        role="dialog" aria-modal="true" aria-label="Збільшене зображення">
     <img id="img-lightbox-img" src="" alt="" class="lightbox__img" />
-    <button id="img-lightbox-close" class="lightbox__close" aria-label="Закрити зображення">
-      <i class="fas fa-times" aria-hidden="true"></i>
-    </button>
+    <button id="img-lightbox-close" class="lightbox__close" aria-label="Закрити зображення">×</button>
   </div>
 
 
@@ -272,13 +263,13 @@
   <div id="error-boundary" class="error-boundary hidden"
        role="alertdialog" aria-modal="true" aria-labelledby="error-boundary-title">
     <div class="error-boundary__card">
-      <span class="error-boundary__icon" aria-hidden="true"><i class="fas fa-exclamation-triangle"></i></span>
+      <span class="error-boundary__icon" aria-hidden="true">⚠</span>
       <h2 id="error-boundary-title" class="error-boundary__title">Щось пішло не так</h2>
       <p id="error-boundary-msg" class="error-boundary__msg">
         Виникла неочікувана помилка. Перезавантаж сторінку.
       </p>
       <div id="error-boundary-backup" class="error-boundary__backup hidden">
-        <p class="error-boundary__backup-label"><i class="fas fa-clipboard-list" aria-hidden="true"></i> Скажи вчителю:</p>
+        <p class="error-boundary__backup-label">Скажи вчителю:</p>
         <p id="error-boundary-backup-text" class="error-boundary__backup-text"></p>
       </div>
       <button id="error-boundary-reload" class="btn-reload">Перезавантажити</button>

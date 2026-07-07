@@ -10,6 +10,7 @@ import './register-sw.js'
 const NAV = [
   { href: 'home.html', label: 'Я вдома' },
   { href: 'school.html', label: 'Я в класі' },
+  { href: 'student.html', label: 'Олімпіада' },
 ]
 
 function activePage(): string {
