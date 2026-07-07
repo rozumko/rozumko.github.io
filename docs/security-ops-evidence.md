@@ -8,6 +8,31 @@ personal data or private console URLs. Store completed evidence in the private
 operations folder or ticket system and link only to non-sensitive public docs
 from this repository.
 
+## MVP / Free-Tier Priority
+
+For the current MVP, treat these controls as **blocking before a public pilot**:
+
+- Supabase Auth Turnstile enforcement for teacher signup.
+- Supabase Auth rate-limit review, documented with the limits available on the
+  current plan.
+- Database migration `0028` applied and RLS verified on application tables.
+- `main` protected from direct/force pushes, with CI checks required before
+  merge where the current GitHub plan allows it.
+- Render backend synced from `backend/render.yaml`, running a single instance
+  while `RATE_LIMIT_STORE=memory`, with `/health` configured.
+- Post-deploy smoke for `/health`, `/ready`, `/ping`, answer-key stripping,
+  rate-limit behavior, iframe blocking and teacher session storage.
+
+These controls are **not pilot blockers on free tiers**, but should stay on the
+backlog before higher traffic, paid campaigns or production-grade operations:
+
+- Full restore drill on a separate non-production database.
+- Centralized SIEM/audit export beyond GitHub, Supabase and Render logs.
+- Multi-instance backend scaling.
+- Shared rate-limit store such as Redis or Valkey.
+- Moving authenticated frontend pages behind a host that can send HTTP
+  `Content-Security-Policy: frame-ancestors`.
+
 ## Evidence Header
 
 | Field | Value |
@@ -36,8 +61,8 @@ from this repository.
 | Migrations | Latest migration applied, including RLS migration `0028` | Migration output or schema migration table |  |
 | RLS | Application tables have RLS enabled with no browser-facing permissive policies | SQL verification result |  |
 | Direct table access | Frontend does not use Supabase Data API tables | Code review / CI evidence |  |
-| Backups | Recent backup exists after final event setup | Backup timestamp |  |
-| Restore drill | Restore passed on non-production database | Restore drill result and timestamp |  |
+| Backup/export | Recent backup or manual export exists after final event setup, according to the current Supabase plan | Backup/export timestamp |  |
+| Restore drill | Deferred for MVP free-tier pilot; required before higher-risk production operations | Restore drill result and timestamp | deferred |
 
 Suggested RLS verification query:
 
@@ -86,4 +111,3 @@ curl.exe -i https://rozumko-github-io.onrender.com/ping
 | Answer keys | Public/demo/official responses expose no answer keys | Network capture or smoke output |  |
 | Teacher session | Refresh works, but refresh token is not in `localStorage` | Browser storage screenshot after login |  |
 | Incident contacts | Operator has current incident contacts | Private contact list location |  |
-

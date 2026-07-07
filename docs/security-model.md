@@ -1,6 +1,6 @@
 # Security Model - Rozumko
 
-_Updated: 2026-07-02_
+_Updated: 2026-07-07_
 
 > **Implementation status legend.**
 >
@@ -384,19 +384,33 @@ evidence private and attach it to the release or pilot checklist.
 
 ## Operational Security Checklist
 
+MVP/free-tier pilot blockers:
+
 - [x] Keep teacher self-registration enabled for the pilot with email
       confirmation, administrator approval and Turnstile bot protection.
 - [ ] Supabase Auth -> Bot and Abuse Protection: Turnstile is enabled and
       enforced for signup.
-- [ ] Supabase Auth -> Rate Limits: review password login and signup limits.
-- [ ] Render: backend service is synced from `backend/render.yaml` and deploys
-      only after CI checks pass.
+- [ ] Supabase Auth -> Rate Limits: review password login and signup limits
+      using the controls available on the current Supabase plan.
+- [ ] Supabase Database: apply migration `0028` and verify RLS is enabled on
+      application tables with no browser-facing permissive policies.
+- [ ] Render: backend service is synced from `backend/render.yaml`.
 - [ ] Render: keep one backend instance while `RATE_LIMIT_STORE=memory`.
-- [ ] GitHub: protect `main` and require the Project CI backend/frontend jobs
-      before merge.
+- [ ] Render: `/health` is configured and live checks for `/health`, `/ready`
+      and `/ping` pass after deploy.
+- [ ] GitHub: protect `main` from direct pushes, force pushes and deletions;
+      require Project CI, Pages and Supply Chain checks before merge where the
+      current GitHub plan exposes those controls.
 - [ ] After backend deployment, run the security section in `docs/smoke-test.md`.
 - [ ] Before a pilot/release, complete a private copy of
       `docs/security-ops-evidence.md`.
-- [ ] Periodically remove stale pending teacher accounts.
+
+Deferred until higher traffic, paid campaigns or production-grade operations:
+
+- [ ] Add a shared rate-limit store before increasing backend instances.
+- [ ] Move authenticated frontend pages behind a host that can enforce HTTP
+      `Content-Security-Policy: frame-ancestors`.
+- [ ] Run and record a restore drill on a non-production database.
 - [ ] Maintain a private operational checklist for secrets, backups and incident
       contacts outside the public repository.
+- [ ] Periodically remove stale pending teacher accounts.
