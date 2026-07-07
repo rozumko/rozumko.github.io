@@ -7,6 +7,8 @@ export const FASTIFY_SECURITY_OPTIONS = {
 
 // CORS — дозволяємо тільки GitHub Pages та localhost для розробки
 export const CORS_ALLOWED_ORIGINS = [
+  'https://rozumko.com',
+  'https://www.rozumko.com',
   'https://rozumko.github.io',
   'http://localhost:5173',
   'http://localhost:4173',

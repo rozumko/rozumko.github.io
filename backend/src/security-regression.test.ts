@@ -73,6 +73,17 @@ test('CORS preflight дозволяє кастомні токен-заголов
     assert.ok(allowed.includes(header), `${header} відсутній у access-control-allow-headers`)
   }
 
+  const customDomainPreflight = await app.inject({
+    method: 'OPTIONS',
+    url: '/probe',
+    headers: {
+      origin: 'https://rozumko.com',
+      'access-control-request-method': 'POST',
+      'access-control-request-headers': 'x-lead-token',
+    },
+  })
+  assert.equal(customDomainPreflight.statusCode, 204)
+
   const forbidden = await app.inject({
     method: 'OPTIONS',
     url: '/probe',
