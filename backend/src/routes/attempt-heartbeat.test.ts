@@ -89,14 +89,19 @@ const token = () => generateAttemptToken(ids.attempt)
 
 test('heartbeat: великий розрив кредитує паузу і повертає залишок', async () => {
   const state = createState()
-  state.attempt.lastSeenAt = new Date(Date.now() - 300_000) // 5 хв офлайн
   const restore = installFakeDb(state)
   try {
     await withApp(async (app) => {
+      const lastSeenAt = new Date(Date.now() - 300_000)
+      state.attempt.lastSeenAt = lastSeenAt
+      const before = Date.now()
       const res = await app.inject({ method: 'POST', url, headers: { 'X-Attempt-Token': token() }, payload: {} })
+      const after = Date.now()
       assert.equal(res.statusCode, 200, res.body)
       const body = res.json()
-      assert.ok(body.pausedSeconds >= 299 && body.pausedSeconds <= 301, `paused=${body.pausedSeconds}`)
+      const minPaused = Math.floor((before - lastSeenAt.getTime()) / 1000)
+      const maxPaused = Math.floor((after - lastSeenAt.getTime()) / 1000)
+      assert.ok(body.pausedSeconds >= minPaused && body.pausedSeconds <= maxPaused, `paused=${body.pausedSeconds}`)
       assert.ok(body.remainingSeconds > 0)
       assert.ok(state.attempt.lastSeenAt instanceof Date) // last_seen_at оновлено
     })
