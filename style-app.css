@@ -384,6 +384,9 @@
   margin: 0 auto;
   padding: var(--sp-8) var(--sp-4) var(--sp-16);
 }
+.app-main:has(#join-code) {
+  padding-top: var(--sp-6);
+}
 .app-title {
   font-size: clamp(1.75rem, 5vw, 2.5rem);
   font-weight: 800;
@@ -397,6 +400,9 @@
   color: var(--clr-text-muted);
   text-align: center;
   margin: var(--sp-2) 0 var(--sp-8);
+}
+.app-main:has(#join-code) .app-subtitle {
+  margin-bottom: var(--sp-6);
 }
 .app-section-label {
   font-size: var(--font-size-lg);
@@ -427,22 +433,30 @@
   border: 1px solid var(--clr-border);
   border-radius: var(--r-2xl);
   box-shadow: var(--shadow-card);
-  padding: var(--sp-6);
+  padding: clamp(var(--sp-5), 3vw, var(--sp-6));
   display: flex;
   flex-direction: column;
-  gap: var(--sp-3);
+  align-items: stretch;
+  gap: clamp(var(--sp-2), 1.5vw, var(--sp-3));
   max-width: 38rem;
   margin: 0 auto;
 }
-.code-input-lg {
+.code-entry .kid-action {
   width: 100%;
   min-height: var(--kid-tap-lg);
-  padding: var(--sp-3) var(--sp-4);
+  line-height: 1.2;
+}
+.code-input-lg {
+  width: 100%;
+  height: var(--kid-tap-lg);
+  min-height: var(--kid-tap-lg);
+  padding: 0 var(--sp-4);
   border: 3px solid var(--clr-border);
   border-radius: var(--r-lg);
   font-family: inherit;
   font-size: 2rem;
   font-weight: 800;
+  line-height: 1.2;
   letter-spacing: .3em;
   text-align: center;
   color: var(--clr-text);
@@ -459,12 +473,14 @@
 }
 .field-input {
   width: 100%;
-  min-height: var(--kid-tap);
-  padding: var(--sp-3) var(--sp-4);
+  height: var(--kid-tap-lg);
+  min-height: var(--kid-tap-lg);
+  padding: 0 var(--sp-4);
   border: 2px solid var(--clr-border);
   border-radius: var(--r-md);
   font-family: inherit;
   font-size: var(--font-size-base);
+  line-height: 1.2;
   color: var(--clr-text);
 }
 .field-input:focus {
