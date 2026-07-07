@@ -476,6 +476,7 @@ button {
   justify-content: center;
   padding: var(--sp-5);
   position: relative;
+  margin-inline: auto;   /* якщо задано max-width (olympiad-enter) — центрує контейнер */
 }
 
 /* Кнопка «← На головну» */
