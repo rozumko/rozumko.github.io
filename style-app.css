@@ -1,0 +1,988 @@
+/* ───────────────────────────────────────────────────────────────
+   9. APP SHELL — дитячі продуктові поверхні
+   Вітрина (index.html); далі сюди переїдуть home/school.
+   Принципи: mobile-first, тап-зони ≥ var(--kid-tap), мінімум тексту,
+   колір = напрям (не декор), doc-* лишається тільки для документів.
+   ─────────────────────────────────────────────────────────────── */
+
+/* ── Вітрина: контейнер ── */
+.vitrina {
+  width: 100%;
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: var(--sp-8) var(--sp-4) var(--sp-16);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+}
+@media (min-width: 640px) {
+  .vitrina {
+    padding-top: var(--sp-12);
+    gap: var(--sp-10);
+  }
+}
+
+/* ── Hero: маскот збоку + заголовок (компактний, не з'їдає екран) ── */
+.vitrina-hero {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(var(--sp-3), 4vw, var(--sp-8));
+  text-align: left;
+}
+.mascot {
+  flex-shrink: 0;
+  display: inline-block;
+  animation: mascot-bob 3s ease-in-out infinite;
+}
+@keyframes mascot-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mascot { animation: none; }
+}
+.mascot img {
+  display: block;
+  width: clamp(96px, 24vw, 150px);
+  height: auto;
+  filter: drop-shadow(0 10px 18px rgba(15, 23, 42, .14));
+}
+.vitrina-title {
+  font-size: clamp(1.75rem, 5.5vw, 3rem);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: var(--clr-text);
+}
+.vitrina-tagline {
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  color: var(--clr-text-muted);
+  margin-top: var(--sp-3);
+}
+@media (max-width: 480px) {
+  .vitrina-hero { gap: var(--sp-3); }
+  .vitrina-title { font-size: clamp(1.6rem, 8vw, 2rem); }
+}
+
+/* ── Інформаційні секції: текст + ілюстрація маскота збоку ── */
+.info-section {
+  display: flex;
+  align-items: center;
+  gap: clamp(var(--sp-4), 4vw, var(--sp-10));
+}
+.info-section__text { flex: 1; min-width: 0; }
+.info-section__title {
+  font-size: clamp(1.4rem, 4vw, 2rem);
+  font-weight: 800;
+  color: var(--clr-text);
+  margin-bottom: var(--sp-3);
+}
+.info-section__text p {
+  color: var(--clr-text-muted);
+  line-height: 1.6;
+  font-size: var(--font-size-lg);
+}
+.info-section__text p + p { margin-top: var(--sp-3); }
+.info-section__art {
+  flex-shrink: 0;
+  width: clamp(150px, 30vw, 230px);
+  height: auto;
+  filter: drop-shadow(0 12px 22px rgba(15, 23, 42, .12));
+}
+.safety-section {
+  background: #eff6ff;
+  border-radius: var(--r-2xl, 24px);
+  padding: clamp(var(--sp-5), 4vw, var(--sp-8));
+}
+.safety-list {
+  list-style: none;
+  margin-top: var(--sp-4);
+  display: grid;
+  gap: var(--sp-3);
+}
+.safety-list li {
+  position: relative;
+  padding-left: 2rem;
+  color: var(--clr-text-muted);
+  line-height: 1.5;
+  font-size: var(--font-size-lg);
+}
+.safety-list li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  top: -1px;
+  width: 1.4rem;
+  height: 1.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-full);
+  background: var(--clr-brand);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+@media (max-width: 640px) {
+  .info-section { flex-direction: column; text-align: center; gap: var(--sp-4); }
+  .safety-list { text-align: left; max-width: 24rem; margin-inline: auto; }
+}
+
+/* ── Банер сезонної події: порожній слот невидимий ── */
+.event-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  background: var(--clr-mascot-light);
+  border: 2px solid var(--clr-amber);
+  border-radius: var(--r-xl);
+  padding: var(--sp-4) var(--sp-6);
+}
+.event-banner__title {
+  font-weight: 700;
+  color: #78350f;
+}
+.event-banner__cta {
+  font-weight: 700;
+  color: #fff;
+  background: var(--clr-amber-dark);
+  padding: var(--sp-2) var(--sp-5);
+  border-radius: var(--r-full);
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+}
+.event-banner__cta:hover { filter: brightness(.94); }
+
+/* ── Двері режимів ── */
+.mode-doors {
+  display: grid;
+  gap: var(--sp-4);
+}
+@media (min-width: 640px) {
+  .mode-doors {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-6);
+  }
+}
+.mode-door {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-8) var(--sp-6);
+  border-radius: var(--r-2xl);
+  text-align: center;
+  box-shadow: var(--shadow-md);
+  transition:
+    transform  var(--transition-fast),
+    box-shadow var(--transition-base);
+}
+.mode-door:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+.mode-door:active { transform: translateY(-1px); }
+.mode-door:focus-visible {
+  outline: 3px solid var(--clr-brand);
+  outline-offset: 3px;
+}
+.mode-door--home {
+  background: linear-gradient(165deg, #fef3c7 0%, #ffedd5 100%);
+  border: 2px solid #fcd34d;
+  color: #7c2d12;
+}
+.mode-door--school {
+  background: linear-gradient(165deg, #dbeafe 0%, #e0f2fe 100%);
+  border: 2px solid #93c5fd;
+  color: var(--clr-primary-dark);
+}
+.mode-door__icon { margin-bottom: var(--sp-2); }
+.mode-door__title {
+  font-size: var(--font-size-2xl);
+  font-weight: 800;
+}
+.mode-door__desc {
+  font-size: var(--kid-text);
+  opacity: .85;
+  margin-bottom: var(--sp-4);
+}
+.mode-door__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--kid-tap);
+  padding: var(--sp-2) var(--sp-8);
+  border-radius: var(--r-full);
+  font-size: var(--kid-text);
+  font-weight: 700;
+  color: #fff;
+  margin-top: auto;
+}
+.mode-door--home   .mode-door__cta { background: var(--clr-amber-dark); }
+.mode-door--school .mode-door__cta { background: var(--clr-brand); }
+.mode-door:hover .mode-door__cta { filter: brightness(.94); }
+
+/* ── Смуга довіри для дорослого ── */
+.trust-strip {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-2);
+  list-style: none;
+}
+.trust-chip {
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-full);
+  padding: var(--sp-2) var(--sp-4);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--clr-text-muted);
+}
+
+/* ── Живе прев'ю питання ── */
+.preview-block__label {
+  text-align: center;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--clr-text-faint);
+  margin-bottom: var(--sp-4);
+}
+.preview-card {
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-card);
+  padding: var(--sp-6);
+  max-width: 36rem;
+  margin: 0 auto;
+  width: 100%;
+}
+.preview-card__q {
+  font-size: var(--kid-text);
+  font-weight: 700;
+  color: var(--clr-text);
+  margin-bottom: var(--sp-4);
+  min-height: 2.5rem;
+}
+.preview-option {
+  display: block;
+  width: 100%;
+  min-height: var(--kid-tap);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-2);
+  border: 2px solid var(--clr-border);
+  border-radius: var(--r-md);
+  background: var(--clr-surface);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--clr-text);
+  text-align: left;
+  transition:
+    border-color var(--transition-fast),
+    background-color var(--transition-fast);
+}
+.preview-option:hover:not(:disabled) {
+  border-color: var(--clr-brand);
+  background: var(--clr-surface-muted);
+}
+.preview-option:focus-visible {
+  outline: 3px solid var(--clr-brand);
+  outline-offset: 2px;
+}
+.preview-option:disabled { cursor: default; }
+.preview-option--correct {
+  border-color: var(--clr-success);
+  background: #ecfdf5;
+}
+.preview-option--incorrect {
+  border-color: var(--clr-danger);
+  background: #fef2f2;
+}
+.preview-card__feedback {
+  font-weight: 700;
+  min-height: 1.5rem;
+  margin-top: var(--sp-2);
+}
+.preview-card__feedback--correct   { color: #047857; }
+.preview-card__feedback--incorrect { color: var(--fb-err-soft); }
+.preview-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+}
+.btn-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--kid-tap);
+  padding: var(--sp-2) var(--sp-6);
+  border-radius: var(--r-full);
+  background: var(--clr-brand);
+  color: #fff;
+  font-size: var(--font-size-base);
+  font-weight: 700;
+}
+.btn-cta:hover { background: var(--clr-brand-dark); }
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--kid-tap);
+  padding: var(--sp-2) var(--sp-6);
+  border-radius: var(--r-full);
+  border: 2px solid var(--clr-border);
+  background: var(--clr-surface);
+  color: var(--clr-text);
+  font-size: var(--font-size-base);
+  font-weight: 700;
+}
+.btn-ghost:hover { border-color: var(--clr-brand); }
+
+/* ── Дорослий рядок унизу вітрини ── */
+.adult-note {
+  text-align: center;
+  font-size: var(--font-size-sm);
+  color: var(--clr-text-faint);
+}
+.adult-note a {
+  color: var(--clr-primary);
+  text-decoration: underline;
+}
+
+/* ── App shell: сторінки режимів (home.html, school.html) ── */
+.app-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(160deg, #e8eeff 0%, #f0f4ff 50%, #dbeafe 100%);
+}
+.app-main {
+  flex: 1;
+  width: 100%;
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: var(--sp-8) var(--sp-4) var(--sp-16);
+}
+.app-title {
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--clr-text);
+  text-align: center;
+}
+.app-subtitle {
+  font-size: var(--kid-text);
+  color: var(--clr-text-muted);
+  text-align: center;
+  margin: var(--sp-2) 0 var(--sp-8);
+}
+.app-section-label {
+  font-size: var(--font-size-lg);
+  font-weight: 800;
+  color: var(--clr-text);
+  text-align: center;
+  margin: var(--sp-10) 0 var(--sp-4);
+}
+.app-error {
+  text-align: center;
+  margin-top: var(--sp-3);
+  min-height: 1.5rem;
+}
+.app-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.app-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--sp-2);
+}
+
+/* Картка вводу коду гри — головна дія School Mode */
+.code-entry {
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-2xl);
+  box-shadow: var(--shadow-card);
+  padding: var(--sp-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  max-width: 38rem;
+  margin: 0 auto;
+}
+.code-input-lg {
+  width: 100%;
+  min-height: var(--kid-tap-lg);
+  padding: var(--sp-3) var(--sp-4);
+  border: 3px solid var(--clr-border);
+  border-radius: var(--r-lg);
+  font-family: inherit;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: .3em;
+  text-align: center;
+  color: var(--clr-text);
+}
+.code-input-lg:focus {
+  outline: none;
+  border-color: var(--clr-brand);
+}
+.code-input-lg::placeholder {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  color: var(--clr-text-faint);
+}
+.field-input {
+  width: 100%;
+  min-height: var(--kid-tap);
+  padding: var(--sp-3) var(--sp-4);
+  border: 2px solid var(--clr-border);
+  border-radius: var(--r-md);
+  font-family: inherit;
+  font-size: var(--font-size-base);
+  color: var(--clr-text);
+}
+.field-input:focus {
+  outline: none;
+  border-color: var(--clr-brand);
+}
+.avatar-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-3);
+  justify-items: center;
+}
+/* Аватар-кнопка: ілюстрація маскота у ролі. Вибір — рамка бренду. */
+.avatar-btn {
+  padding: 4px;
+  border: 3px solid transparent;
+  border-radius: var(--r-lg);
+  background: var(--clr-surface-subtle);
+  cursor: pointer;
+  line-height: 0;
+  transition: border-color .12s ease, transform .12s ease;
+}
+.avatar-btn img {
+  display: block;
+  width: 80px;
+  height: 80px;
+  border-radius: var(--r-md);
+}
+.avatar-btn:hover { transform: translateY(-2px); }
+.avatar-btn:focus-visible { outline: 3px solid var(--clr-brand); outline-offset: 2px; }
+.avatar-btn[aria-pressed="true"] {
+  border-color: var(--clr-brand);
+  background: var(--track-inf-light);
+}
+
+/* Аватар + нікнейм учня у хедері квізу */
+.student-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  background: var(--clr-surface-subtle);
+  border-radius: var(--r-full);
+  padding: 4px 12px 4px 4px;
+  flex-shrink: 0;
+}
+.student-identity__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: contain;
+}
+.student-identity__name {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--clr-text);
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Головна дитяча кнопка */
+.kid-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--kid-tap);
+  padding: var(--sp-3) var(--sp-8);
+  border-radius: var(--r-full);
+  font-size: var(--kid-text);
+  font-weight: 700;
+  color: #fff;
+  background: var(--clr-brand);
+  box-shadow: var(--shadow-btn);
+  transition:
+    transform var(--transition-fast),
+    filter    var(--transition-fast);
+}
+.kid-action:hover  { filter: brightness(1.06); transform: translateY(-2px); }
+.kid-action:active { transform: translateY(0); }
+.kid-action:focus-visible {
+  outline: 3px solid var(--clr-brand);
+  outline-offset: 3px;
+}
+.kid-action:disabled { opacity: .6; transform: none; }
+
+/* Вибір класу */
+.grade-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  justify-content: center;
+  margin-bottom: var(--sp-5);
+}
+.grade-chip {
+  min-width: var(--kid-tap);
+  min-height: var(--kid-tap);
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-full);
+  border: 2px solid var(--clr-border);
+  background: var(--clr-surface);
+  font-size: var(--kid-text);
+  font-weight: 700;
+  color: var(--clr-text);
+  transition: border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+}
+.grade-chip:hover { border-color: var(--clr-brand); }
+.grade-chip[aria-pressed="true"] {
+  border-color: var(--clr-brand) !important;
+  background-color: var(--clr-brand) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, .35);
+}
+.grade-chip[aria-pressed="true"]:hover { border-color: var(--clr-brand); }
+
+/* Сітка великих карток місій. Колір = напрям (home) або складність (school) */
+.mission-grid {
+  display: grid;
+  gap: var(--sp-3);
+}
+@media (min-width: 640px) {
+  .mission-grid { grid-template-columns: repeat(3, 1fr); }
+}
+.mission-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  min-height: 8rem;
+  padding: var(--sp-5) var(--sp-4);
+  border: 2px solid var(--clr-border);
+  border-radius: var(--r-xl);
+  background: var(--clr-surface);
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+  transition:
+    transform  var(--transition-fast),
+    box-shadow var(--transition-base);
+}
+.mission-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+.mission-card:focus-visible {
+  outline: 3px solid var(--clr-brand);
+  outline-offset: 3px;
+}
+.mission-card__icon  { font-size: 2rem; line-height: 1; }
+.mission-card__img   { width: auto; height: 5.5rem; object-fit: contain; }
+.mission-card__title {
+  font-size: var(--kid-text);
+  font-weight: 800;
+  color: var(--clr-text);
+}
+.mission-card__desc {
+  font-size: var(--font-size-sm);
+  color: var(--clr-text-muted);
+  line-height: 1.3;
+}
+.mission-card__meta {
+  font-size: var(--font-size-xs, 0.75rem);
+  color: var(--clr-text-muted);
+  opacity: 0.85;
+}
+/* Преміум-активність: бейдж «замок» у кутку + приглушена картка */
+.mission-card[data-locked] { opacity: 0.9; }
+.mission-card__lock {
+  position: absolute;
+  top: var(--sp-2);
+  right: var(--sp-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-xs, 0.75rem);
+  font-weight: 800;
+  color: #78350f;
+  background: var(--clr-amber, #fbbf24);
+  border-radius: var(--r-full);
+  padding: 3px 9px;
+  box-shadow: var(--shadow-sm);
+}
+/* CTA-модалка підписки (games) */
+.premium-card {
+  width: 100%;
+  max-width: 26rem;
+  /* Відступ від країв дає padding оверлея; auto — скрол замість обрізання
+     верху, коли картка вища за вьюпорт */
+  margin: auto;
+  padding: var(--sp-6);
+  background: var(--clr-surface);
+  border-radius: var(--r-xl);
+  box-shadow: 0 25px 60px rgba(0,0,0,0.25);
+  text-align: center;
+}
+.premium-card__emoji { font-size: 2.5rem; line-height: 1; }
+.premium-card h2 { margin: var(--sp-3) 0 var(--sp-2); font-size: var(--font-size-lg); }
+.premium-card p  { color: var(--clr-text-muted); margin-bottom: var(--sp-5); }
+.premium-card__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  align-items: stretch;
+}
+/* Напрями (home) */
+.mission-card--inf { border-color: var(--track-inf); background: var(--track-inf-light); }
+.mission-card--inf .mission-card__title { color: var(--track-inf-dark); }
+.mission-card--inf .mission-card__meta  { color: var(--track-inf); }
+.mission-card--think { border-color: var(--track-think); background: var(--track-think-light); }
+.mission-card--think .mission-card__title { color: var(--track-think-dark); }
+.mission-card--think .mission-card__meta  { color: var(--track-think); }
+.mission-card--ai { border-color: var(--track-ai); background: var(--track-ai-light); }
+.mission-card--ai .mission-card__title { color: var(--track-ai-dark); }
+.mission-card--ai .mission-card__meta  { color: var(--track-ai); }
+/* Складність (school) */
+.mission-card--warmup { border-color: var(--clr-amber); background: #fffbeb; }
+.mission-card--warmup .mission-card__title { color: #78350f; }
+.mission-card--training { border-color: #93c5fd; background: #eff6ff; }
+.mission-card--training .mission-card__title { color: var(--clr-primary-dark); }
+.mission-card--challenge { border-color: #c4b5fd; background: #f5f3ff; }
+.mission-card--challenge .mission-card__title { color: var(--clr-violet-dark); }
+
+/* Дорослі інформаційні картки (звіт, club, містки) */
+.info-card {
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-xl);
+  padding: var(--sp-5);
+  color: var(--clr-text-muted);
+  line-height: 1.6;
+}
+.info-card__heading {
+  font-weight: 800;
+  color: var(--clr-text);
+  margin-bottom: var(--sp-2);
+}
+.info-card--center { text-align: center; }
+.info-card a { color: var(--clr-primary); font-weight: 700; }
+.info-card a:hover { text-decoration: underline; }
+
+/* Дитячий фінал місії */
+.finish-card {
+  background: var(--clr-surface);
+  border-radius: var(--r-2xl);
+  box-shadow: var(--shadow-card);
+  padding: var(--sp-8) var(--sp-6);
+  text-align: center;
+}
+.finish-card__label {
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  color: var(--clr-text);
+}
+.finish-card__stars {
+  font-size: 2.6rem;
+  letter-spacing: .1em;
+  margin: var(--sp-3) 0;
+}
+.finish-card__score {
+  font-size: var(--kid-text);
+  color: var(--clr-text);
+}
+.finish-card__message {
+  font-size: var(--kid-text);
+  color: var(--clr-text-muted);
+  margin-top: var(--sp-2);
+}
+
+/* Батьківський gate після місії */
+.gate-card {
+  background: #ecfdf5;
+  border: 2px solid #a7f3d0;
+  border-radius: var(--r-xl);
+  padding: var(--sp-5);
+  color: #064e3b;
+  line-height: 1.6;
+}
+.gate-card__heading {
+  font-weight: 800;
+  margin-bottom: var(--sp-2);
+}
+.gate-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  max-width: 26rem;
+  margin-top: var(--sp-3);
+}
+.gate-consent {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: flex-start;
+  font-size: var(--font-size-sm);
+}
+.gate-consent input {
+  margin-top: 3px;
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+}
+.gate-card a { color: #047857; text-decoration: underline; }
+
+.club-tracks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-top: var(--sp-2);
+}
+
+/* Фокус-режим місії на мобільному: «Далі» — на всю ширину й під палець.
+   sticky всередині скрольного quiz-feedback-wrap: пояснення гортається,
+   кнопка лишається біля нижнього краю. */
+@media (max-width: 640px) {
+  body.mission-active #mission-quiz .btn-next {
+    display: block;
+    width: 100%;
+    min-height: var(--kid-tap-lg);
+    position: sticky;
+    bottom: 0;
+  }
+  body.mission-active #mission-quiz .quiz-feedback-wrap {
+    max-height: 24vh;
+  }
+}
+
+/* ── Гра «Розумне сортування» (features/games) ──────────────────────────── */
+.sg {
+  max-width: 34rem;
+  margin: 0 auto;
+  text-align: center;
+}
+.sg__top {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-4);
+}
+.sg__instruction {
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  color: var(--clr-text);
+}
+.sg__progress {
+  font-size: var(--font-size-sm);
+  color: var(--clr-text-muted);
+}
+.sg__item-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--sp-2);
+}
+.sg__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+  background: var(--clr-surface, #fff);
+  border-radius: var(--r-2xl, 1.25rem);
+  box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.25);
+}
+.sg__item--pop { animation: sg-pop 0.25s ease; }
+.sg__item--shake { animation: sg-shake 0.4s ease; }
+@keyframes sg-pop {
+  from { transform: scale(0.6); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+@keyframes sg-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+.sg__hint {
+  font-size: var(--font-size-sm);
+  color: var(--clr-text-muted);
+  margin-bottom: var(--sp-4);
+}
+.sg__bins {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-3);
+}
+.sg__bin {
+  min-width: 9rem;
+  padding: var(--sp-4) var(--sp-5);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  border-radius: var(--r-xl, 1rem);
+  border: 3px dashed transparent;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.sg__bin:hover { transform: translateY(-2px); }
+.sg__bin--0 { background: #dcfce7; color: var(--fb-ok-soft); border-color: #86efac; }
+.sg__bin--1 { background: #fee2e2; color: var(--fb-err-soft); border-color: #fca5a5; }
+.sg__bin--2 { background: #e0f2fe; color: #0369a1; border-color: #7dd3fc; }
+.sg__bin--correct { transform: scale(1.08); border-style: solid; }
+.sg__bin--wrong   { animation: sg-shake 0.4s ease; }
+.sg__done { padding: var(--sp-6) 0; }
+.sg__done-emoji { font-size: 4rem; margin-bottom: var(--sp-2); }
+.sg__done-title {
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  margin-bottom: var(--sp-2);
+}
+.sg__done-sub {
+  color: var(--clr-text-muted);
+  margin-bottom: var(--sp-5);
+}
+.sg__item-emoji { font-size: 4.5rem; line-height: 1; }
+.sg__item-label {
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  color: var(--clr-text);
+}
+
+/* Гра-сортування: серія правильних відповідей + зірковий рейтинг */
+.sg__meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+.sg__streak {
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  color: #ea580c;
+  background: #fff7ed;
+  border-radius: var(--r-full, 999px);
+  padding: 2px var(--sp-3);
+}
+.sg__streak--bump { animation: sg-pop 0.25s ease; }
+.sg__bin--3 { background: #f3e8ff; color: #7e22ce; border-color: #d8b4fe; }
+.sg__bin--4 { background: #fef9c3; color: #a16207; border-color: #fde047; }
+.sg__done-stars {
+  font-size: 2.5rem;
+  letter-spacing: 0.25rem;
+  margin-bottom: var(--sp-2);
+}
+
+/* ── Логічні головоломки (features/games/puzzle-*) — один екран ───────────── */
+.pz { max-width: 40rem; margin: 0 auto; display: flex; flex-direction: column; gap: var(--sp-4); }
+.pz__top { display: flex; align-items: center; gap: var(--sp-3); }
+.pz__progress { font-weight: 800; color: var(--clr-text-muted); font-size: var(--font-size-sm); white-space: nowrap; }
+.pz__bar { flex: 1; height: 10px; background: #e2e8f0; border-radius: 6px; overflow: hidden; }
+.pz__bar-fill { height: 100%; background: #3b82f6; border-radius: 6px; transition: width .25s ease; }
+
+.pz-card {
+  background: var(--clr-surface, #fff);
+  border-radius: var(--r-2xl, 1.25rem);
+  padding: var(--sp-6);
+  box-shadow: 0 8px 24px -14px rgba(0,0,0,.25);
+  text-align: center;
+}
+.pz-card__head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); margin-bottom: var(--sp-1); }
+.pz-card__title { font-size: var(--font-size-lg); font-weight: 800; color: var(--clr-text); }
+.pz-card__concept {
+  font-size: var(--font-size-xs, .75rem); font-weight: 700; color: #7e22ce;
+  background: #f3e8ff; border-radius: var(--r-full, 999px); padding: 2px var(--sp-2); white-space: nowrap;
+}
+.pz-card__instruction { color: var(--clr-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--sp-5); }
+.pz-card__body { display: flex; flex-direction: column; gap: var(--sp-2); align-items: center; }
+.pz-card__answer { margin-top: var(--sp-5); padding-top: var(--sp-4); border-top: 1px dashed #e2e8f0; }
+
+.pz-line { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--sp-2); }
+.pz-tok--val {
+  min-width: 2.8rem; text-align: center; font-size: var(--font-size-2xl, 1.5rem); font-weight: 800;
+  background: #eff6ff; color: #1d4ed8; border-radius: var(--r-lg, .75rem); padding: var(--sp-2) var(--sp-3);
+}
+.pz-tok--op { font-size: var(--font-size-2xl, 1.5rem); font-weight: 800; color: var(--clr-text-muted); }
+.pz-input {
+  width: 3.6rem; height: 3.2rem; text-align: center; font-size: var(--font-size-2xl, 1.5rem); font-weight: 800;
+  border: 3px dashed #93c5fd; border-radius: var(--r-lg, .75rem); background: #f8fafc; color: var(--clr-text);
+}
+.pz-input:focus { outline: none; border-style: solid; border-color: #3b82f6; }
+
+/* inline «?» слот — заповнюється варіантом із ряду під рівнянням */
+.pz-slot {
+  min-width: 2.8rem; height: 3.2rem; display: inline-flex; align-items: center; justify-content: center;
+  font-size: var(--font-size-2xl, 1.5rem); font-weight: 800; border: 3px dashed #93c5fd;
+  border-radius: var(--r-lg, .75rem); background: #f8fafc; color: var(--clr-text);
+}
+.pz-slot--set { border-style: solid; border-color: #3b82f6; background: #dbeafe; }
+
+.pz-opts { display: flex; flex-wrap: wrap; gap: var(--sp-3); justify-content: center; }
+.pz-opt {
+  min-width: 3.2rem; padding: var(--sp-3) var(--sp-4); font-size: var(--font-size-xl); font-weight: 800;
+  border-radius: var(--r-lg, .75rem); border: 2px solid #cbd5e1; background: #fff; cursor: pointer;
+}
+.pz-opt--on { background: #dbeafe; border-color: #3b82f6; }
+
+.pz-grid { display: grid; grid-template-columns: repeat(var(--pz-size), 1fr); gap: var(--sp-2); max-width: 20rem; margin: 0 auto; }
+.pz-cell {
+  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  background: #eff6ff; border-radius: var(--r-lg, .75rem); font-size: var(--font-size-2xl, 1.5rem); font-weight: 800; color: #1d4ed8;
+}
+.pz-cell .pz-input { width: 90%; height: 82%; }
+.pz-cycle {
+  width: 90%; height: 82%; font-size: var(--font-size-2xl, 1.5rem); font-weight: 800;
+  border: 3px dashed #93c5fd; border-radius: var(--r-lg, .75rem); background: #f8fafc; cursor: pointer;
+}
+.pz-cycle--set { border-style: solid; border-color: #3b82f6; background: #dbeafe; }
+
+.pz__feedback { text-align: center; font-weight: 700; min-height: 1.4em; margin: 0; }
+.pz__feedback--ok  { color: var(--fb-ok-soft); }
+.pz__feedback--bad { color: var(--fb-err-soft); }
+.pz__actions { display: flex; gap: var(--sp-3); justify-content: center; flex-wrap: wrap; }
+
+.pz-done { text-align: center; padding: var(--sp-6) 0; }
+.pz-done__stars { font-size: 2.75rem; letter-spacing: .25rem; margin-bottom: var(--sp-2); }
+.pz-done__title { font-size: var(--font-size-xl); font-weight: 800; margin-bottom: var(--sp-5); }
+
+/* Один екран: головоломки як fixed-оверлей (як mission-active) */
+body.puzzle-active { overflow: hidden; }
+body.puzzle-active #puzzle-area:not(.hidden) {
+  position: fixed; inset: 0; z-index: 110; /* над sticky-хедером (z-100), щоб «До списку ігор» не ховалась */
+  display: flex; flex-direction: column; align-items: center;
+  gap: clamp(var(--sp-2), 1.4vw, var(--sp-4));
+  padding: clamp(var(--sp-3), 2.4vw, var(--sp-6));
+  overflow: auto;
+  background:
+    radial-gradient(circle at 14% 12%, rgba(250, 204, 21, .28), transparent 22rem),
+    radial-gradient(circle at 86% 16%, rgba(45, 212, 191, .24), transparent 20rem),
+    linear-gradient(135deg, #fff7ed 0%, #eff6ff 46%, #f5f3ff 100%);
+}
+/* На оверлеї герой прибрано (картка має власний заголовок) — поле по центру */
+body.puzzle-active #puzzle-area .app-title,
+body.puzzle-active #puzzle-area .app-subtitle { display: none; }
+body.puzzle-active #puzzle-area #puzzle-grade-select { margin: 0; }
+body.puzzle-active #puzzle-area #puzzles-root { width: min(100%, 40rem); margin: auto 0; }
+body.puzzle-active #puzzle-area .app-actions { margin: 0; width: 100%; }

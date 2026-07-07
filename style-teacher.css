@@ -1,0 +1,835 @@
+/* ───────────────────────────────────────────────────────────────
+   7. TEACHER PAGE  (teacher.html)
+   ─────────────────────────────────────────────────────────────── */
+
+/* ── Auth-сторінка ──────────────────────────────────────────── */
+
+.teacher-auth-page {
+  background: linear-gradient(180deg, #f1f5ff 0%, #f8fafc 60%, #f1f5ff 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: var(--sp-4);
+  padding-top: var(--sp-8);
+}
+@media (min-width: 640px) {
+  .teacher-auth-page { padding-top: var(--sp-12); }
+}
+
+.auth-page-wrap  { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; min-height: 100vh; padding: var(--sp-4); padding-top: var(--sp-8); }
+@media (min-width: 640px) { .auth-page-wrap { padding-top: var(--sp-12); } }
+.auth-page-inner { width: 100%; max-width: 28rem; }
+
+/* Картка входу */
+.auth-card {
+  background: rgba(255,255,255,0.97);
+  border-radius: var(--r-2xl);
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(255,255,255,0.7);
+  overflow: hidden;
+  margin-bottom: var(--sp-4);
+}
+
+/* Кольорова шапка картки */
+.auth-card__header {
+  background: var(--clr-sky);
+  color: #fff;
+  padding: var(--sp-6) var(--sp-8);
+}
+.auth-card__label,
+.auth-card__eyebrow {
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: rgba(186,230,253,0.9);
+  margin-bottom: var(--sp-2);
+}
+.auth-card__title {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  margin-bottom: var(--sp-2);
+}
+@media (min-width: 640px) {
+  .auth-card__title { font-size: var(--font-size-3xl); }
+}
+.auth-card__sub {
+  font-size: var(--font-size-sm);
+  color: rgba(224,242,254,0.9);
+}
+
+/* Тіло картки */
+.auth-card__body {
+  padding: var(--sp-6) var(--sp-8);
+}
+
+/* Форма */
+.form-fields  { display: flex; flex-direction: column; gap: var(--sp-4); margin-bottom: var(--sp-6); }
+.form-group   { display: flex; flex-direction: column; }
+.form-label   { display: block; font-size: var(--font-size-sm); font-weight: 600; color: var(--clr-text-muted); margin-bottom: var(--sp-2); }
+.form-input   { width: 100%; padding: var(--sp-3) var(--sp-4); border-radius: var(--r-lg); border: 1px solid var(--clr-border); font-family: var(--font-family); font-size: var(--font-size-base); color: var(--clr-text); background: #fff; transition: border-color var(--transition-fast), box-shadow var(--transition-fast); }
+.form-input:focus-visible { outline: none; border-color: var(--clr-sky); box-shadow: 0 0 0 3px rgba(14,165,233,0.15); }
+.form-input--sm        { padding: var(--sp-2) var(--sp-3); font-size: var(--font-size-sm); }
+.form-input--count     { width: 6rem; text-align: center; font-weight: 700; font-size: var(--font-size-lg); }
+.form-privacy-note     { font-size: var(--font-size-xs); color: var(--clr-text-faint); margin-bottom: var(--sp-4); }
+.auth-register__title  { font-size: var(--font-size-xl); font-weight: 700; color: var(--clr-text); margin-bottom: var(--sp-5); }
+
+.form-error {
+  color: #e11d48;
+  font-size: var(--font-size-sm);
+  min-height: 1.25rem;
+  margin-bottom: var(--sp-4);
+}
+
+/* Кнопки */
+.btn-sky     { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); background: var(--clr-sky); color: #fff; font-weight: 700; padding: var(--sp-3) var(--sp-5); border-radius: var(--r-lg); font-family: var(--font-family); font-size: var(--font-size-base); cursor: pointer; border: none; transition: background-color var(--transition-base); }
+.btn-sky:hover:not(:disabled) { background: var(--clr-sky-dark); }
+.btn-sky:disabled { opacity: 0.65; cursor: not-allowed; }
+.btn-emerald { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); background: var(--clr-emerald); color: #fff; font-weight: 700; padding: var(--sp-3) var(--sp-5); border-radius: var(--r-lg); font-family: var(--font-family); font-size: var(--font-size-base); cursor: pointer; border: none; transition: background-color var(--transition-base); }
+.btn-emerald:hover:not(:disabled) { background: var(--clr-emerald-dark); }
+.btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); background: var(--clr-surface-subtle); color: var(--clr-text-muted); font-weight: 500; padding: var(--sp-2) var(--sp-4); border-radius: var(--r-lg); font-family: var(--font-family); font-size: var(--font-size-sm); cursor: pointer; border: none; transition: background-color var(--transition-fast); }
+.btn-secondary:hover { background: var(--clr-border); }
+.btn--full { width: 100%; }
+
+/* Розділювач «Ще немає кабінету?» */
+.auth-divider {
+  margin-top: var(--sp-6);
+  padding-top: var(--sp-6);
+  border-top: 1px solid var(--clr-border);
+  text-align: center;
+}
+.auth-divider__text {
+  font-size: var(--font-size-sm);
+  color: var(--clr-text-muted);
+  margin-bottom: var(--sp-3);
+}
+
+/* Перемикач login ↔ register */
+.auth-switch-hint {
+  margin-top: var(--sp-5);
+  padding-top: var(--sp-5);
+  border-top: 1px solid var(--clr-border);
+  text-align: center;
+  font-size: var(--font-size-sm);
+  color: var(--clr-text-muted);
+}
+.auth-switch-link {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-left: var(--sp-1);
+  color: var(--clr-primary);
+  font-size: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.auth-switch-link:hover { color: var(--clr-primary-dark); }
+
+/* Футер auth-сторінки */
+.teacher-auth-footer {
+  margin-top: var(--sp-8);
+  padding: var(--sp-6) 0;
+  text-align: center;
+  color: var(--clr-text-faint);
+  font-size: var(--font-size-xs);
+}
+.teacher-auth-footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-2);
+}
+.teacher-auth-footer__links a {
+  color: var(--clr-text-faint);
+  transition: color var(--transition-fast);
+}
+.teacher-auth-footer__links a:hover { color: var(--clr-text-muted); }
+
+/* ── Dashboard ──────────────────────────────────────────────── */
+
+/* Коли дашборд активний — скасовуємо flex-центрування auth-page на body */
+body.teacher-dashboard-active {
+  display: block !important;
+  padding: 0 !important;
+  background: var(--clr-surface-muted) !important;
+}
+
+.teacher-dashboard {
+  min-height: 100vh;
+  background: var(--clr-surface-muted);
+  width: 100%;
+}
+
+/* Шапка дашборду */
+.dashboard-header {
+  background: #fff;
+  border-bottom: 1px solid var(--clr-border);
+  padding: var(--sp-4) var(--sp-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+}
+.dashboard-header__left  { display: flex; align-items: center; gap: var(--sp-3); }
+.dashboard-header__right { display: flex; align-items: center; gap: var(--sp-4); }
+.dashboard-home-link     { color: var(--clr-text-faint); font-size: var(--font-size-base); text-decoration: none; transition: color var(--transition-fast); margin-right: var(--sp-1); }
+.dashboard-home-link:hover { color: var(--clr-text); }
+.dashboard-brand         { font-weight: 700; font-size: var(--font-size-lg); color: var(--clr-text); }
+.dashboard-role-badge    { background: var(--clr-sky-light); color: var(--clr-sky-dark); font-size: var(--font-size-xs); font-weight: 600; padding: 2px var(--sp-2); border-radius: var(--r-full); }
+.dashboard-email         { color: var(--clr-text-faint); font-size: var(--font-size-sm); }
+@media (max-width: 639px) { .dashboard-email { display: none; } }
+
+/* Навігація вкладок */
+.dashboard-tabs {
+  background: #fff;
+  border-bottom: 1px solid var(--clr-border);
+  padding: 0 var(--sp-6);
+  display: flex;
+  gap: 0;
+  /* 4 вкладки не влазять на вузьких екранах — скрол усередині бару,
+     а не горизонтальний скрол сторінки (як у .admin-tabs) */
+  overflow-x: auto;
+}
+.teacher-tab { white-space: nowrap; }
+.teacher-tab {
+  color: var(--clr-text-faint);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  padding: var(--sp-4) var(--sp-5);
+  border-bottom: 2px solid transparent;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  cursor: pointer;
+  font-family: var(--font-family);
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+.teacher-tab:hover { color: var(--clr-text-muted); }
+.teacher-tab:focus-visible { outline: 3px solid var(--clr-sky); outline-offset: -2px; border-radius: 4px; }
+.teacher-tab.tab-active,
+.teacher-tab.teacher-tab--active {
+  color: var(--clr-sky-dark);
+  border-bottom-color: var(--clr-sky-dark);
+}
+
+/* Основний контент дашборду */
+.dashboard-main {
+  padding: var(--sp-4);
+  max-width: 72rem;
+  margin: 0 auto;
+}
+@media (min-width: 640px) {
+  .dashboard-main { padding: var(--sp-6); }
+}
+
+/* Вкладки-панелі */
+.tab-panel { /* показується/ховається через .hidden */ }
+
+/* Tab panel header */
+.tab-panel__top     { display: flex; flex-direction: column; gap: var(--sp-4); margin-bottom: var(--sp-6); }
+@media (min-width: 640px) { .tab-panel__top { flex-direction: row; align-items: center; justify-content: space-between; } }
+.tab-panel__heading { font-size: var(--font-size-xl); font-weight: 700; color: var(--clr-text); margin-bottom: var(--sp-4); }
+
+/* Форма нового класу */
+/* Базова картка (light) — спільні властивості */
+/* Двоколонковий grid вкладки "Класи" */
+.classes-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-6);
+  align-items: start;
+}
+.classes-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+@media (max-width: 900px) {
+  .classes-grid { grid-template-columns: 1fr; }
+}
+
+.class-form-card,
+.class-card,
+.empty-state,
+.result-row {
+  background: var(--clr-surface);
+  border-radius: var(--r-xl);
+  border: 1px solid var(--clr-border);
+}
+
+.class-form-card {
+  box-shadow: var(--shadow-sm);
+  padding: var(--sp-5);
+  margin-bottom: var(--sp-5);
+}
+.class-form-card__title {
+  font-weight: 700;
+  color: var(--clr-text);
+  margin-bottom: var(--sp-4);
+}
+/* Рядки форми класу */
+.class-form__row     { display: flex; flex-direction: column; gap: var(--sp-3); }
+@media (min-width: 640px) { .class-form__row { flex-direction: row; align-items: flex-end; } }
+.class-form__field   { flex: 1; }
+.class-form__grade   {}
+.class-form__actions { display: flex; align-items: flex-end; gap: var(--sp-2); }
+
+/* Списки */
+.classes-list { display: flex; flex-direction: column; gap: var(--sp-4); }
+.results-list { display: flex; flex-direction: column; gap: var(--sp-3); }
+.teacher-card-list { display: flex; flex-direction: column; gap: var(--sp-3); }
+.teacher-list-heading {
+  display: flex; justify-content: space-between; align-items: center;
+  margin: var(--sp-5) 0 var(--sp-2);
+}
+.teacher-info-card {
+  background: #fff;
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-xl);
+  padding: var(--sp-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  box-shadow: var(--shadow-sm);
+}
+.teacher-info-card__title {
+  color: var(--clr-text);
+  font-weight: 700;
+  font-size: var(--font-size-base);
+}
+.teacher-info-card__meta {
+  color: var(--clr-text-muted);
+  font-size: var(--font-size-sm);
+  margin-top: var(--sp-1);
+}
+.teacher-info-card__badge {
+  color: var(--clr-text-muted);
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-full);
+  padding: 0.2rem var(--sp-2);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Клікабельна картка класу */
+.teacher-info-card--clickable { transition: box-shadow .15s; }
+.teacher-info-card--clickable:hover { box-shadow: var(--shadow-md); }
+
+/* ─── Class detail: overlay + sidebar ─────────────────────── */
+.class-detail-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(0,0,0,.35);
+  opacity: 0;
+  transition: opacity .2s;
+}
+.class-detail-overlay--open { opacity: 1; }
+
+.class-detail-panel {
+  max-width: 480px;
+  width: 100%;
+  background: #fff;
+  height: 100%;
+  overflow-y: auto;
+  transform: translateX(40px);
+  transition: transform .25s cubic-bezier(.4,0,.2,1);
+  padding: var(--sp-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.class-detail-overlay--open .class-detail-panel { transform: translateX(0); }
+
+/* Full-screen on mobile */
+@media (max-width: 639px) {
+  .class-detail-panel {
+    max-width: 100%;
+    transform: translateY(40px);
+    border-radius: var(--r-2xl) var(--r-2xl) 0 0;
+    height: 92%;
+    margin-top: auto;
+  }
+  .class-detail-overlay--open .class-detail-panel {
+    transform: translateY(0);
+  }
+}
+
+.class-detail-panel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+.class-detail-panel__eyebrow {
+  font-size: var(--font-size-xs);
+  color: var(--clr-text-muted);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-bottom: .2rem;
+}
+.class-detail-panel__title {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--clr-text);
+}
+.class-detail-panel__hint {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: var(--r-lg);
+  padding: var(--sp-3) var(--sp-4);
+  font-size: var(--font-size-sm);
+  color: #0369a1;
+  line-height: 1.6;
+}
+.class-detail-panel__add-form {
+  display: flex;
+  gap: var(--sp-2);
+}
+.class-detail-panel__add-form .form-input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Список учнів */
+/* Students list — compact table */
+.students-list {
+  flex: 1;
+  overflow: hidden;
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-lg);
+}
+.students-list__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-8) var(--sp-4);
+  color: var(--clr-text-muted);
+  font-size: var(--font-size-sm);
+  text-align: center;
+}
+.students-list__empty i { font-size: 2rem; opacity: .4; }
+
+/* Sticky header row */
+.students-list__head {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto auto;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--clr-surface-muted);
+  border-bottom: 1px solid var(--clr-border);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--clr-text-muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+/* Scrollable body */
+.students-list__body {
+  max-height: 22rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.student-row {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto auto;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: 1px solid var(--clr-border);
+  background: #fff;
+  transition: background .1s;
+}
+.student-row:last-child { border-bottom: none; }
+.student-row:hover { background: var(--clr-surface-muted); }
+
+.student-row__num {
+  font-size: var(--font-size-xs);
+  color: var(--clr-text-faint);
+  text-align: right;
+}
+.student-row__label {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--clr-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Колонка "Код" — поки порожня, зарезервована для майбутнього */
+.student-row__code {
+  font-size: var(--font-size-xs);
+  color: var(--clr-text-muted);
+  font-family: monospace;
+  white-space: nowrap;
+  min-width: 5rem;
+  text-align: center;
+}
+.student-row__actions {
+  display: flex;
+  gap: var(--sp-1);
+  flex-shrink: 0;
+  justify-content: flex-end;
+}
+
+.student-edit-input {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  padding: var(--sp-1) var(--sp-2);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-sm);
+}
+/* .btn-adm-danger defined in admin section below */
+
+/* Порожній стан списку */
+.empty-state {
+  padding: var(--sp-10);
+  text-align: center;
+  color: var(--clr-text-faint);
+}
+.empty-state__icon {
+  font-size: 2.5rem;
+  margin-bottom: var(--sp-3);
+  display: block;
+}
+.empty-state__title { font-weight: 600; }
+.empty-state__sub { font-size: var(--font-size-sm); margin-top: var(--sp-1); }
+
+/* ── Картка класу ────────────────────────────────────────────── */
+
+.class-card {
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.class-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-5);
+  cursor: pointer;
+  user-select: none;
+}
+.class-card__meta { display: flex; align-items: baseline; gap: var(--sp-2); }
+.class-card__name { font-weight: 700; color: var(--clr-text); font-size: var(--font-size-base); }
+.class-card__grade { font-size: var(--font-size-sm); color: var(--clr-text-faint); }
+.class-card__right { display: flex; align-items: center; gap: var(--sp-3); }
+.class-card__count { font-size: var(--font-size-sm); color: var(--clr-text-muted); }
+.class-card__chevron {
+  color: var(--clr-text-faint);
+  font-size: var(--font-size-sm);
+  transition: transform var(--transition-base);
+}
+.class-card__chevron.open { transform: rotate(180deg); }
+
+.class-card__body {
+  border-top: 1px solid var(--clr-border);
+  padding: var(--sp-5);
+}
+.class-card__controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+}
+.class-card__generate-row {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: center;
+}
+
+/* Select вибору події */
+.event-select {
+  width: 100%;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--clr-border);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  color: var(--clr-text-muted);
+  background: #fff;
+}
+.event-select:focus-visible {
+  outline: none;
+  border-color: var(--clr-sky);
+  box-shadow: 0 0 0 3px rgba(14,165,233,0.15);
+}
+
+/* Інпут кількості кодів */
+.codes-count-input {
+  width: 6rem;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--clr-border);
+  font-family: var(--font-family);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  text-align: center;
+}
+.codes-count-input:focus-visible {
+  outline: none;
+  border-color: var(--clr-sky);
+  box-shadow: 0 0 0 3px rgba(14,165,233,0.15);
+}
+.codes-count-label {
+  font-size: var(--font-size-sm);
+  color: var(--clr-text-muted);
+  align-self: center;
+}
+
+/* Кнопка «Згенерувати коди» */
+.btn-generate {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  background: var(--clr-emerald);
+  color: #fff;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  padding: var(--sp-2) var(--sp-5);
+  border-radius: var(--r-lg);
+  font-family: var(--font-family);
+  cursor: pointer;
+  border: none;
+  transition: background-color var(--transition-base);
+}
+.btn-generate:hover { background: var(--clr-emerald-dark); }
+
+/* Кнопка «Копіювати всі» */
+.btn-copy-all {
+  background: var(--clr-surface-subtle);
+  color: var(--clr-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-lg);
+  font-family: var(--font-family);
+  cursor: pointer;
+  border: none;
+  transition: background-color var(--transition-fast);
+}
+.btn-copy-all:hover { background: var(--clr-border); }
+
+/* Статус генерації */
+.generate-status {
+  font-size: var(--font-size-sm);
+  min-height: 1.25rem;
+  margin-bottom: var(--sp-3);
+  color: var(--clr-text-faint);
+}
+.generate-status--ok      { color: var(--clr-emerald-dark); }
+.generate-status--err     { color: var(--fb-err-label); }
+.generate-status--neutral { color: var(--clr-text-faint); }
+.generate-status--info    { color: #0369a1; }
+
+/* Cold start banner */
+.cold-start-banner {
+  position: fixed;
+  bottom: var(--sp-4);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: var(--sp-3) var(--sp-5);
+  border-radius: var(--r-full);
+  font-size: var(--font-size-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  z-index: 9999;
+  box-shadow: 0 4px 24px rgba(0,0,0,.35);
+  animation: fadeInUp .3s ease;
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+.cold-start-banner__spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .8s linear infinite; /* @keyframes spin — у секції 6 */
+  flex-shrink: 0;
+}
+
+/* Event card highlight after creation */
+.event-card--highlight {
+  outline: 2px solid var(--clr-emerald);
+  animation: highlightPulse 3s ease forwards;
+}
+@keyframes highlightPulse {
+  0%,20% { outline-color: var(--clr-emerald); }
+  100%   { outline-color: transparent; }
+}
+
+/* Publish button */
+.btn-event-publish {
+  background: #f59e0b;
+  color: #fff;
+  border: none;
+  border-radius: var(--r-sm);
+  padding: var(--sp-2) var(--sp-4);
+  min-height: 2.25rem;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  transition: background-color var(--transition-fast);
+}
+.btn-event-publish:hover { background: #d97706; }
+.btn-event-publish:focus-visible { outline: 3px solid rgba(245,158,11,0.6); outline-offset: 2px; }
+.code-chip--inactive      { opacity: 0.5; }
+
+/* Список кодів */
+.codes-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+/* ── Чип коду учня ───────────────────────────────────────────── */
+
+.code-chip {
+  background: var(--clr-surface-muted);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-lg);
+  padding: var(--sp-2) var(--sp-3);
+}
+.code-chip__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+.code-value {
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: 700;
+  color: var(--clr-text);
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.05em;
+}
+.code-chip__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+/* Бейдж статусу коду */
+.code-status-badge {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  padding: 2px var(--sp-2);
+  border-radius: var(--r-full);
+}
+.code-status-badge--active {
+  background: var(--clr-emerald-light);
+  color: #065f46;
+}
+.code-status-badge--inactive {
+  background: var(--clr-surface-subtle);
+  color: var(--clr-text-faint);
+}
+
+/* Кнопка toggle активності коду */
+.code-toggle-btn {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  padding: 2px var(--sp-2);
+  border-radius: var(--r-sm);
+  font-family: var(--font-family);
+  cursor: pointer;
+  border: none;
+  transition: background-color var(--transition-fast);
+}
+.code-toggle-btn--deactivate {
+  background: #ffe4e6;
+  color: #be123c;
+}
+.code-toggle-btn--deactivate:hover { background: #fecdd3; }
+.code-toggle-btn--activate {
+  background: var(--clr-emerald-light);
+  color: #065f46;
+}
+.code-toggle-btn--activate:hover { background: #a7f3d0; }
+
+/* Поле імені учня */
+.code-name-input {
+  margin-top: var(--sp-2);
+  width: 100%;
+  padding: var(--sp-1) var(--sp-2);
+  font-size: var(--font-size-xs);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--clr-border);
+  color: var(--clr-text-muted);
+  font-family: var(--font-family);
+}
+.code-name-input:focus-visible {
+  outline: none;
+  border-color: var(--clr-sky);
+  box-shadow: 0 0 0 2px rgba(14,165,233,0.15);
+}
+.code-name-input::placeholder { color: var(--clr-text-faint); }
+
+/* ── Картка результату ───────────────────────────────────────── */
+
+.result-row {
+  padding: var(--sp-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+.result-row__code { font-weight: 700; color: var(--clr-text); }
+.result-row__meta { font-size: var(--font-size-sm); color: var(--clr-text-muted); }
+.result-row__date { font-size: var(--font-size-xs); color: var(--clr-text-faint); margin-top: 2px; }
+.result-row__score {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  color: var(--clr-sky-dark);
+  white-space: nowrap;
+}
+.result-row__score span { font-size: var(--font-size-base); color: var(--clr-text-faint); }
+.result-row__score-wrap { text-align: right; }
+.result-row__total      { font-size: var(--font-size-base); color: var(--clr-text-faint); }
+.result-row__time       { font-size: var(--font-size-xs); color: var(--clr-text-faint); }
+
+/* Бейдж нагороди у списку результатів вчителя */
+.result-award {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  background: var(--clr-violet-light);
+  color: var(--clr-violet-dark);
+}
+.result-award--diploma {
+  background: #fef3c7;
+  color: #b45309;
+}
+.btn-cert-teacher {
+  width: auto;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  font-size: var(--font-size-sm);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+

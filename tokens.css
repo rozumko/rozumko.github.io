@@ -23,6 +23,19 @@
   --clr-danger:         #ef4444;
   --clr-warning:        #f59e0b;
 
+  /* ── Feedback: стан картки quiz (correct/incorrect) ─────────── */
+  --fb-ok-bg:      #ecfdf5;   /* emerald-50  — фон правильної картки */
+  --fb-ok-border:  #34d399;   /* emerald-400 — рамка */
+  --fb-ok-text:    #065f46;   /* emerald-900 — текст на зеленому фоні */
+  --fb-err-bg:     #fff1f2;   /* rose-50     — фон неправильної картки */
+  --fb-err-border: #f87171;   /* red-400     — рамка */
+  --fb-err-text:   #9f1239;   /* rose-800    — текст на рожевому фоні */
+  /* Inline-мітки статусу (однорядковий текст без фону) */
+  --fb-err-label:  #e11d48;   /* rose-600    — "Помилка", code-status, generate-err */
+  /* М'які акценти: ігри, події, preview */
+  --fb-ok-soft:    #15803d;   /* green-700   — sg__bin--0, pz, events */
+  --fb-err-soft:   #b91c1c;   /* red-700     — sg__bin--1, pz, preview-card */
+
   /* ── Нейтральна палітра — з легким синім тінтом ────────────── */
   --clr-surface:        #ffffff;
   --clr-surface-muted:  #f0f4ff;   /* було #f8fafc — синій тінт */

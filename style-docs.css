@@ -1,0 +1,149 @@
+/* ───────────────────────────────────────────────────────────────
+   DOC PAGES  (for-students, for-parents, for-teachers, terms, privacy)
+   ─────────────────────────────────────────────────────────────── */
+
+.doc-page {
+  background: var(--clr-surface-muted);
+  color: var(--clr-text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.doc-main {
+  flex: 1;
+  width: 100%;
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: var(--sp-10) var(--sp-4);
+}
+@media (min-width: 640px) {
+  .doc-main { padding: var(--sp-12) var(--sp-6); }
+}
+
+.doc-article {
+  background: #fff;
+  border-radius: var(--r-3xl);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--clr-border);
+  padding: clamp(var(--sp-6), 5vw, var(--sp-12));
+}
+
+.doc-subtitle {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--clr-primary);
+  letter-spacing: 0.02em;
+  margin-bottom: var(--sp-2);
+}
+
+.doc-h1 {
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  font-weight: 800;
+  color: var(--clr-text);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin-bottom: var(--sp-3);
+}
+
+.doc-date {
+  font-size: var(--font-size-sm);
+  color: var(--clr-text-faint);
+  margin-bottom: var(--sp-8);
+}
+
+.doc-content {
+  color: #475569;
+  line-height: 1.7;
+  font-size: var(--font-size-base);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-10);
+}
+
+.doc-h2 {
+  font-size: var(--font-size-lg);
+  font-weight: 800;
+  color: var(--clr-text);
+  letter-spacing: -0.01em;
+  margin-bottom: var(--sp-4);
+}
+
+.doc-text-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.doc-list {
+  list-style: disc;
+  padding-left: var(--sp-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.doc-list--ordered { list-style: decimal; }
+
+/* Кольорові блоки-підказки */
+.doc-highlight {
+  border-radius: var(--r-2xl);
+  border: 1px solid;
+  padding: var(--sp-5);
+}
+.doc-highlight--amber  { background: #fffbeb; border-color: #fde68a; color: #78350f; }
+.doc-highlight--emerald{ background: #ecfdf5; border-color: #a7f3d0; color: #064e3b; }
+.doc-highlight--sky    { background: #eff6ff; border-color: #bfdbfe; color: #1e3a8a; }
+.doc-highlight--slate  { background: var(--clr-surface-muted); border-color: var(--clr-border); color: var(--clr-text-muted); }
+
+.doc-highlight__heading {
+  font-weight: 600;
+  margin-bottom: var(--sp-2);
+}
+
+/* Посилання у тексті */
+.doc-link { color: var(--clr-primary); text-decoration: none; }
+.doc-link:hover { text-decoration: underline; }
+
+/* Сірий info-box (контакти тощо) */
+.doc-info-box {
+  border-radius: var(--r-2xl);
+  background: var(--clr-surface-muted);
+  border: 1px solid var(--clr-border);
+  padding: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+/* 2-колонкова сітка (for-parents) */
+.doc-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-4);
+}
+@media (min-width: 640px) {
+  .doc-grid-2 { grid-template-columns: 1fr 1fr; }
+}
+
+/* Ряд кнопок (for-parents) */
+.doc-btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+}
+.doc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-weight: 700;
+  padding: var(--sp-3) var(--sp-5);
+  border-radius: var(--r-2xl);
+  text-decoration: none;
+  transition: filter var(--transition-fast);
+}
+.doc-btn:hover { filter: brightness(.9); }
+.doc-btn--sky     { background: #0284c7; color: #fff; }
+.doc-btn--emerald { background: #059669; color: #fff; }
+.doc-btn--slate   { background: #475569; color: #fff; }
+
+

@@ -1,0 +1,1787 @@
+/* ───────────────────────────────────────────────────────────────
+   6. STUDENT PAGE  (student.html)
+   ─────────────────────────────────────────────────────────────── */
+
+/* ── Загальний фон і екрани ─────────────────────────────────── */
+
+.student-page {
+  background: linear-gradient(135deg, var(--student-bg-from) 0%, var(--student-bg-to) 100%);
+  min-height: 100vh;
+}
+
+/* Контейнер-екран: центрує вміст вертикально */
+.student-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-5);
+  position: relative;
+  margin-inline: auto;   /* якщо задано max-width (olympiad-enter) — центрує контейнер */
+}
+
+/* Кнопка «← На головну» */
+.student-back {
+  position: absolute;
+  top: var(--sp-4);
+  left: var(--sp-4);
+  color: rgba(255,255,255,0.5);
+  font-size: var(--font-size-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  transition: color var(--transition-fast);
+  text-decoration: none;
+}
+.student-back:hover { color: rgba(255,255,255,0.85); }
+.student-back:focus-visible { outline: 3px solid rgba(255,255,255,0.6); outline-offset: 4px; border-radius: var(--r-sm); }
+
+/* На teacher-сторінці (світлий фон) — темний текст */
+.teacher-auth-page .student-back {
+  color: var(--clr-text-muted);
+}
+.teacher-auth-page .student-back:hover { color: var(--clr-text); }
+
+/* ── Логотип (трофей + назва) ───────────────────────────────── */
+
+.entry-logo {
+  text-align: center;
+  margin-bottom: var(--sp-8);
+}
+.entry-logo__icon {
+  font-size: 4.5rem;
+  margin-bottom: var(--sp-3);
+  display: block;
+  line-height: 1;
+}
+/* img глобально display:block → text-align не центрує; вирівнюємо через margin */
+.entry-logo__icon img { margin-inline: auto; }
+.entry-logo__title {
+  font-size: var(--font-size-4xl);
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+.entry-logo__sub {
+  color: rgba(255,255,255,0.6);
+  font-size: var(--font-size-sm);
+  margin-top: var(--sp-2);
+}
+
+/* ── Біла картка (код-форма і панель тренування) ────────────── */
+
+.student-card {
+  width: 100%;
+  max-width: 24rem;       /* ~384px */
+  background: #fff;
+  border-radius: var(--r-2xl);
+  box-shadow: 0 25px 60px -15px rgba(0,0,0,0.35);
+  padding: var(--sp-8) var(--sp-6);
+}
+
+.card-label {
+  text-align: center;
+  color: var(--clr-text-muted);
+  font-weight: 600;
+  font-size: var(--font-size-base);
+  margin-bottom: var(--sp-5);
+}
+
+/* ── Поле вводу коду ────────────────────────────────────────── */
+
+.code-input {
+  width: 100%;
+  padding: var(--sp-4);
+  border-radius: var(--r-xl);
+  border: 2px solid var(--clr-border);
+  font-family: var(--font-family);
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--clr-text);
+  margin-bottom: var(--sp-3);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+.code-input::placeholder {
+  font-size: var(--font-size-base);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--clr-text-faint);
+}
+.code-input:focus-visible {
+  outline: none;
+  border-color: var(--clr-violet);
+  box-shadow: 0 0 0 4px var(--clr-violet-light);
+}
+
+.code-status {
+  color: var(--fb-err-label);
+  font-size: var(--font-size-sm);
+  text-align: center;
+  min-height: 1.25rem;
+  margin-bottom: var(--sp-3);
+}
+.code-success {
+  color: var(--clr-emerald-dark);
+  font-size: var(--font-size-sm);
+  text-align: center;
+  min-height: 1.25rem;
+  margin-bottom: var(--sp-3);
+}
+
+/* ── Кнопки студент-сторінки ────────────────────────────────── */
+
+/* Фіолетова primary */
+.btn-violet {
+  width: 100%;
+  padding: var(--sp-5) var(--sp-4);
+  border-radius: var(--r-xl);
+  background: var(--clr-violet);
+  color: #fff;
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  transition: background-color var(--transition-base);
+}
+.btn-violet:hover:not(:disabled) { background: var(--clr-violet-dark); }
+.btn-violet:focus-visible { outline: 3px solid rgba(124,58,237,0.5); outline-offset: 2px; }
+
+/* Сіра допоміжна */
+.btn-slate {
+  width: 100%;
+  margin-top: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-xl);
+  background: var(--clr-surface-subtle);
+  color: var(--clr-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  transition: background-color var(--transition-fast);
+}
+.btn-slate:hover { background: var(--clr-border); }
+.btn-slate:focus-visible { outline: 3px solid rgba(100,116,139,0.4); outline-offset: 2px; }
+
+/* Обгортка для кнопок без коду */
+.no-code-btns {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+}
+
+/* Напівпрозорі кнопки «Тренування» / «Демо» */
+.btn-practice-toggle {
+  width: 100%;
+  max-width: 24rem;
+  margin-top: var(--sp-2);
+  padding: var(--sp-4);
+  border-radius: var(--r-xl);
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.28);
+  color: #fff;
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  transition: background-color var(--transition-fast);
+}
+.btn-practice-toggle:hover { background: rgba(255,255,255,0.28); }
+.btn-practice-toggle:focus-visible { outline: 3px solid rgba(255,255,255,0.6); outline-offset: 2px; }
+.btn-practice-toggle--demo  { background: rgba(251,191,36,0.22); border-color: rgba(251,191,36,0.4); }
+.btn-practice-toggle--demo:hover { background: rgba(251,191,36,0.35); }
+
+/* ── Hub-menu: нове головне меню student.html ───────────────── */
+#hub-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+}
+.hub-btn {
+  width: 100%;
+  max-width: 24rem;
+  padding: var(--sp-4) var(--sp-5);
+  border-radius: var(--r-2xl);
+  border: none;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  transition: filter var(--transition-fast), transform .1s;
+  cursor: pointer;
+  text-align: left;
+}
+.hub-btn:hover  { filter: brightness(1.08); }
+.hub-btn:active { transform: scale(.98); }
+.hub-btn:focus-visible { outline: 3px solid rgba(255,255,255,.7); outline-offset: 3px; }
+.hub-btn i { font-size: 1.5rem; flex-shrink: 0; }
+.hub-btn img { flex-shrink: 0; }
+.hub-btn__label { font-size: var(--font-size-lg); font-weight: 800; line-height: 1.2; }
+.hub-btn__sub   { font-size: var(--font-size-xs); opacity: .85; margin-top: 2px; }
+.hub-btn__label, .hub-btn__sub { display: block; }
+.hub-btn--primary { background: linear-gradient(135deg, #10b981, #059669); }
+.hub-btn--demo    { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.hub-olympiad-link {
+  margin-top: var(--sp-1);
+  color: rgba(255,255,255,.85);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255,255,255,.4);
+  padding-bottom: 1px;
+  transition: color var(--transition-fast);
+}
+.hub-olympiad-link:hover { color: #fff; border-color: #fff; }
+
+/* ── olympiad-enter.html ───────────────────────────────────── */
+.oe-event-confirm {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: var(--r-xl);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-4);
+}
+.oe-event-confirm__icon { font-size: 1.5rem; }
+.oe-event-confirm__title { font-weight: 700; color: #166534; font-size: var(--font-size-base); }
+.oe-event-confirm__meta  { font-size: var(--font-size-sm); color: var(--fb-ok-soft); margin-top: 2px; }
+.oe-rules {
+  background: #fafafa;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--r-xl);
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-4);
+}
+.oe-rules__heading {
+  font-weight: 700;
+  color: var(--clr-text);
+  margin-bottom: var(--sp-3);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.oe-rules__list {
+  list-style: disc;
+  padding-left: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  font-size: var(--font-size-sm);
+  color: var(--clr-text-muted);
+  line-height: 1.5;
+}
+.oe-rules__list li strong { color: var(--clr-text); }
+.oe-agree {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-xl);
+  border: 2px solid #e2e8f0;
+  background: #fff;
+  cursor: pointer;
+  margin-bottom: var(--sp-4);
+  transition: border-color var(--transition-fast);
+}
+.oe-agree:has(.oe-agree__checkbox:checked) { border-color: #7c3aed; background: #faf5ff; }
+.oe-agree__checkbox { width: 20px; height: 20px; accent-color: #7c3aed; flex-shrink: 0; margin-top: 2px; cursor: pointer; }
+.oe-agree__text { font-size: var(--font-size-sm); font-weight: 600; color: var(--clr-text); line-height: 1.5; }
+
+/* ── Панель тренування ──────────────────────────────────────── */
+
+.practice-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-5);
+}
+.practice-header__title {
+  font-weight: 700;
+  font-size: var(--font-size-base);
+  color: var(--clr-text);
+}
+.practice-header__close {
+  color: var(--clr-text-faint);
+  font-size: var(--font-size-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  transition: color var(--transition-fast);
+  padding: var(--sp-1);
+}
+.practice-header__close:hover { color: var(--clr-text-muted); }
+
+/* Сітка вибору класу (4 кнопки) */
+.selector-grid {
+  display: grid;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+}
+.selector-grid--grade { grid-template-columns: repeat(4, 1fr); }
+.selector-grid--diff  { grid-template-columns: repeat(3, 1fr); }
+
+/* Кнопка вибору (клас / складність) */
+.selector-btn {
+  padding: var(--sp-4) var(--sp-2);
+  border-radius: var(--r-lg);
+  background: var(--clr-surface-subtle);
+  color: var(--clr-text-muted);
+  font-family: var(--font-family);
+  font-weight: 800;
+  font-size: var(--font-size-xl);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+.selector-btn--diff {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  padding: var(--sp-3) var(--sp-2);
+}
+.selector-btn:hover { background: var(--clr-border); }
+/* Вибраний стан — amber, перекриває hover */
+.selector-btn[aria-pressed="true"] {
+  background: var(--clr-amber) !important;
+  color: #1e293b !important;
+  border-color: var(--clr-amber-dark) !important;
+}
+
+/* Кнопка «Почати тренування» */
+.btn-start {
+  width: 100%;
+  padding: var(--sp-4);
+  border-radius: var(--r-xl);
+  background: var(--clr-amber);
+  color: #1e293b;
+  font-size: var(--font-size-base);
+  font-weight: 800;
+  transition: background-color var(--transition-base);
+}
+.btn-start:hover:not(:disabled) { background: var(--clr-amber-dark); }
+.btn-start:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Футер сторінки учня ────────────────────────────────────── */
+
+.student-footer {
+  margin-top: auto;
+  padding: var(--sp-6) 0;
+  text-align: center;
+  color: rgba(255,255,255,0.4);
+  font-size: var(--font-size-xs);
+}
+.student-footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-2);
+}
+.student-footer__links a {
+  color: rgba(255,255,255,0.4);
+  transition: color var(--transition-fast);
+}
+.student-footer__links a:hover { color: rgba(255,255,255,0.7); }
+
+/* ── Екран вибору дії (після введення коду) ─────────────────── */
+
+.event-info-card {
+  width: 100%;
+  max-width: 28rem;
+  background: rgba(255,255,255,0.13);
+  border-radius: var(--r-xl);
+  padding: var(--sp-4) var(--sp-5);
+  margin-bottom: var(--sp-6);
+  text-align: center;
+}
+.event-info-card__title {
+  font-weight: 800;
+  color: #fff;
+  font-size: var(--font-size-lg);
+}
+.event-info-card__meta {
+  color: rgba(255,255,255,0.7);
+  font-size: var(--font-size-sm);
+  margin-top: var(--sp-1);
+}
+
+.actions-prompt {
+  color: rgba(255,255,255,0.8);
+  font-weight: 600;
+  text-align: center;
+  font-size: var(--font-size-base);
+  margin-bottom: var(--sp-2);
+}
+
+.action-list {
+  width: 100%;
+  max-width: 28rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+/* Велика кнопка дії */
+.action-card {
+  width: 100%;
+  padding: var(--sp-8) var(--sp-6);
+  border-radius: var(--r-2xl);
+  font-family: var(--font-family);
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  cursor: pointer;
+  border: none;
+  transition: transform var(--transition-fast), box-shadow var(--transition-base);
+}
+.action-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 40px rgba(0,0,0,0.2);
+}
+.action-card:active { transform: translateY(0); }
+.action-card__icon { font-size: 2.5rem; }
+.action-card__sub {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  opacity: 0.7;
+}
+.action-card--demo {
+  background: var(--clr-amber);
+  color: #1e293b;
+}
+.action-card--demo .action-card__sub { color: #44403c; }
+.action-card--olympiad {
+  background: #fff;
+  color: var(--clr-violet);
+}
+.action-card--olympiad .action-card__sub { color: #a78bfa; opacity: 1; }
+.action-card--olympiad.btn-disabled { opacity: 0.4; pointer-events: none; }
+
+/* Текстова кнопка «Змінити код» */
+.btn-text {
+  margin-top: var(--sp-8);
+  color: rgba(255,255,255,0.5);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  transition: color var(--transition-fast);
+}
+.btn-text:hover { color: rgba(255,255,255,0.85); }
+
+/* ── Quiz overlay ───────────────────────────────────────────── */
+
+.quiz-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: none;
+  flex-direction: column;
+  background: var(--clr-surface-muted);
+}
+.quiz-overlay.active {
+  display: flex;
+}
+/* Поки квіз або результат відкриті — фоновий екран за оверлеєм не має давати
+   скролбар. clip (не hidden): блокує і колесо, і програмний скрол. */
+html:has(.quiz-overlay.active),
+body:has(.quiz-overlay.active),
+html:has(.result-overlay.active),
+body:has(.result-overlay.active) {
+  overflow: clip;
+}
+/* Фоновий екран повністю перекритий оверлеєм — прибираємо його з потоку,
+   щоб він не створював прихованого overflow (page scrollHeight == viewport). */
+body:has(.quiz-overlay.active) .student-screen,
+body:has(.result-overlay.active) .student-screen {
+  display: none;
+}
+
+.quiz-header {
+  background: #fff;
+  border-bottom: 1px solid var(--clr-border);
+  padding: var(--sp-3) var(--sp-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+}
+.quiz-header__left,
+.quiz-header__right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.quiz-badge {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--r-full);
+}
+.quiz-progress-text {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--clr-text-muted);
+}
+
+.quiz-timer {
+  display: none;
+  align-items: center;
+  gap: var(--sp-2);
+  background: #ffedd5;
+  color: #c2410c;
+  font-weight: 700;
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--r-lg);
+  font-size: var(--font-size-base);
+}
+.quiz-timer.visible { display: flex; }
+.quiz-timer.urgent {
+  background: #ffe4e6;
+  color: #be123c;
+}
+
+.btn-quiz-quit {
+  background: var(--clr-surface-subtle);
+  color: var(--clr-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-lg);
+  transition: background-color var(--transition-fast);
+}
+.btn-quiz-quit:hover { background: var(--clr-border); }
+
+/* Прогрес-бар */
+.quiz-progress-bar-wrap {
+  width: 100%;
+  height: 0.5rem;
+  background: #e2e8f0;
+}
+.quiz-progress-bar {
+  height: 100%;
+  background: var(--clr-violet);
+  transition: width 300ms ease;
+}
+
+/* Тіло квізу */
+.quiz-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: var(--sp-4);
+}
+.quiz-inner {
+  width: 100%;
+  max-width: 32rem;
+}
+
+/* Картка питання */
+.quiz-question-card {
+  background: #fff;
+  border-radius: var(--r-2xl);
+  box-shadow: 0 4px 16px rgba(15,23,42,0.08);
+  border: 1px solid var(--clr-border);
+  padding: var(--sp-5);
+  margin-bottom: var(--sp-4);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+.quiz-question-text {
+  flex: 1;
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--clr-text);
+  line-height: 1.4;
+  /* Довге нерозривне слово з адмін-контенту не має переповнювати картку */
+  overflow-wrap: anywhere;
+}
+@media (min-width: 640px) {
+  .quiz-question-text { font-size: var(--font-size-2xl); }
+}
+
+/* Зображення до питання (праворуч) */
+.quiz-image {
+  width: 9rem;
+  flex-shrink: 0;
+  border-radius: var(--r-xl);
+  object-fit: contain;
+  cursor: zoom-in;
+  border: 1px solid var(--clr-border);
+  box-shadow: var(--shadow-sm);
+  transition: opacity var(--transition-fast);
+}
+.quiz-image:hover { opacity: 0.88; }
+@media (min-width: 640px) {
+  .quiz-image { width: 11rem; }
+}
+
+/* Блок псевдокоду */
+.quiz-code {
+  background: #0f172a;
+  color: #6ee7b7;
+  border-radius: var(--r-xl);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-3);
+  font-size: var(--font-size-sm);
+  font-family: 'Courier New', Courier, monospace;
+  line-height: 1.6;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+/* Зона варіантів відповідей */
+.quiz-options {
+  margin-bottom: var(--sp-4);
+}
+/* 2-колонки (choice) */
+.quiz-options--grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-3);
+}
+@media (min-width: 640px) {
+  .quiz-options--grid { grid-template-columns: 1fr 1fr; }
+}
+/* 2 рівні колонки (truefalse) */
+.quiz-options--two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-4);
+}
+/* Стек (sort, match, sequence, input) */
+.quiz-options--stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+/* Зона фідбеку */
+.quiz-feedback-wrap {
+  text-align: center;
+  min-height: 3rem;
+}
+.quiz-feedback {
+  font-weight: 700;
+  font-size: var(--font-size-lg);
+  margin-bottom: var(--sp-1);
+}
+.quiz-feedback--correct   { color: var(--clr-emerald-dark); }
+.quiz-feedback--incorrect { color: var(--fb-err-label); }
+.quiz-explanation {
+  font-size: var(--font-size-sm);
+  color: var(--clr-text-muted);
+}
+.btn-next {
+  background: var(--clr-violet);
+  color: #fff;
+  font-weight: 800;
+  font-size: var(--font-size-lg);
+  padding: var(--sp-3) var(--sp-10);
+  border-radius: var(--r-xl);
+  margin-top: var(--sp-2);
+  display: inline-block;
+  transition: background-color var(--transition-base);
+}
+.btn-next:hover { background: var(--clr-violet-dark); }
+.btn-next.hidden { display: none !important; }
+
+/* Кнопка "Пропустити" (olympiad/demo) */
+.btn-skip {
+  background: #fff;
+  color: var(--clr-violet);
+  font-weight: 800;
+  font-size: var(--font-size-lg);
+  padding: var(--sp-3) var(--sp-8);
+  border-radius: var(--r-xl);
+  margin-top: var(--sp-2);
+  border: 2px solid var(--clr-violet);
+  display: inline-block;
+  cursor: pointer;
+  transition: background-color var(--transition-base), color var(--transition-base);
+}
+.btn-skip:hover { background: #ede9fe; }
+.btn-skip.hidden { display: none !important; }
+
+/* ── Навігатор питань (стрічка чипів) ──────────────────────────── */
+.quiz-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  justify-content: center;
+  padding: var(--sp-3) var(--sp-4) 0;
+}
+.quiz-nav.hidden { display: none !important; }
+.quiz-nav-chip {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--r-full);
+  border: 2px solid #cbd5e1;
+  background: #f1f5f9;
+  color: #64748b;
+  font-weight: 800;
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  transition: background-color var(--transition-base), border-color var(--transition-base), transform var(--transition-base);
+}
+.quiz-nav-chip:hover { transform: translateY(-2px); }
+.quiz-nav-chip--answered {
+  background: var(--clr-emerald);
+  border-color: var(--clr-emerald);
+  color: #fff;
+}
+.quiz-nav-chip--current {
+  border-color: var(--clr-violet);
+  box-shadow: 0 0 0 3px var(--clr-violet-light);
+}
+.quiz-nav-chip--answered.quiz-nav-chip--current {
+  border-color: var(--clr-violet);
+}
+
+/* ── Варіанти відповідей (з question-renderer.js) ───────────── */
+
+/* Кнопка варіанту (choice, sequence, sort, match) */
+.quiz-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  text-align: left;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-xl);
+  border: 2px solid var(--clr-border);
+  background: #fff;
+  color: var(--clr-text);
+  font-family: var(--font-family);
+  font-weight: 600;
+  font-size: var(--font-size-base);
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    background-color var(--transition-fast),
+    color var(--transition-fast);
+}
+.quiz-option:hover:not(:disabled) {
+  border-color: #a78bfa;
+  background: #f5f3ff;
+}
+.quiz-option:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.4);
+}
+/* Стани після відповіді */
+.quiz-option--correct {
+  border-color: var(--fb-ok-border) !important;
+  background: var(--fb-ok-bg) !important;
+  color: var(--fb-ok-text) !important;
+}
+.quiz-option--incorrect {
+  border-color: var(--fb-err-border) !important;
+  background: var(--fb-err-bg) !important;
+  color: var(--fb-err-text) !important;
+}
+
+.quiz-option--selected {
+  border-color: #7c3aed !important;
+  background: #f5f3ff !important;
+  color: #4c1d95 !important;
+}
+/* Кнопка «Перевірити» (input, sort, match) */
+.quiz-check {
+  width: 100%;
+  padding: var(--sp-4) var(--sp-5);
+  border-radius: var(--r-xl);
+  background: #7c3aed;
+  color: #fff;
+  font-family: var(--font-family);
+  font-weight: 700;
+  font-size: var(--font-size-base);
+  margin-top: var(--sp-2);
+  transition: background-color var(--transition-base);
+  cursor: pointer;
+  border: none;
+}
+.quiz-check:hover:not(:disabled) { background: var(--clr-violet-dark); }
+.quiz-check:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ── Семантичні класи механік (truefalse/input/sort/sequence/match) ──────────
+   Раніше ці типи використовували Tailwind-утиліти, яких у білді немає. */
+
+/* truefalse — по центру, крупніше за choice */
+.quiz-option--tf { justify-content: center; font-size: var(--font-size-lg); font-weight: 800; padding: var(--sp-4); }
+
+/* input */
+.quiz-input {
+  width: 100%; text-align: center; padding: var(--sp-4) var(--sp-5);
+  border-radius: var(--r-xl); border: 2px solid var(--clr-border); background: #fff;
+  color: var(--clr-text); font-family: var(--font-family); font-weight: 700; font-size: var(--font-size-lg);
+}
+.quiz-input:focus { outline: none; border-color: #a78bfa; box-shadow: 0 0 0 3px rgba(124,58,237,.25); }
+.quiz-input--placeholder { color: var(--clr-text-muted); font-weight: 600; }
+.quiz-input--correct   { border-color: var(--fb-ok-border) !important; background: var(--fb-ok-bg) !important; }
+.quiz-input--incorrect { border-color: var(--fb-err-border) !important; background: var(--fb-err-bg) !important; }
+.quiz-hint { text-align: center; font-size: var(--font-size-sm); color: var(--clr-text-muted); margin-top: var(--sp-1); font-weight: 600; }
+.quiz-hint--correct { color: var(--clr-emerald-dark); }
+
+/* sort */
+.quiz-sort-row { display: flex; align-items: center; gap: var(--sp-3); }
+.quiz-sort-num { color: var(--clr-text-muted); font-weight: 800; width: 1.6rem; text-align: right; flex-shrink: 0; }
+.quiz-sort-item {
+  flex: 1; background: #fff; border: 2px solid var(--clr-border); border-radius: var(--r-xl);
+  padding: var(--sp-3) var(--sp-4); color: var(--clr-text); font-weight: 600; font-size: var(--font-size-base);
+}
+.quiz-sort-item--correct   { background: var(--fb-ok-bg); border-color: var(--fb-ok-border); color: var(--fb-ok-text); }
+.quiz-sort-item--incorrect { background: var(--fb-err-bg); border-color: var(--fb-err-border); color: var(--fb-err-text); }
+.quiz-sort-icon { font-size: var(--font-size-xl); flex-shrink: 0; }
+.quiz-move-group { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+.quiz-move {
+  width: 2.5rem; height: 2.5rem; border: none; border-radius: var(--r-lg); background: #f1f5f9;
+  color: var(--clr-text-muted); font-weight: 800; font-size: var(--font-size-lg); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.quiz-move:hover { background: #ede9fe; color: var(--clr-violet); }
+.quiz-move--hidden { visibility: hidden; }
+.quiz-sort-solution {
+  margin-top: var(--sp-2); padding: var(--sp-3); background: var(--fb-ok-bg);
+  border: 1px solid #a7f3d0; border-radius: var(--r-xl); font-size: var(--font-size-sm); color: var(--fb-ok-text);
+}
+.quiz-sort-solution__title { font-weight: 700; margin-bottom: var(--sp-1); }
+
+/* sequence */
+.quiz-seq {
+  display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; justify-content: center;
+  background: #f8fafc; border: 1px solid var(--clr-border); border-radius: var(--r-xl);
+  padding: var(--sp-4); margin-bottom: var(--sp-4);
+}
+.quiz-seq-chip { font-size: 2rem; }
+.quiz-seq-arrow { color: var(--clr-text-muted); font-weight: 800; font-size: var(--font-size-lg); }
+.quiz-seq-qmark {
+  width: 3rem; height: 3rem; display: flex; align-items: center; justify-content: center;
+  border-radius: var(--r-xl); background: #ede9fe; border: 2px solid #c4b5fd; color: var(--clr-violet);
+  font-weight: 800; font-size: var(--font-size-xl);
+}
+
+/* match */
+.quiz-match-row { display: flex; align-items: center; gap: var(--sp-3); }
+.quiz-match-left {
+  flex: 1; background: #fff; border: 2px solid var(--clr-border); border-radius: var(--r-xl);
+  padding: var(--sp-3) var(--sp-4); color: var(--clr-text); font-weight: 600; font-size: var(--font-size-base);
+}
+.quiz-match-left--correct   { background: var(--fb-ok-bg); border-color: var(--fb-ok-border); color: var(--fb-ok-text); }
+.quiz-match-left--incorrect { background: var(--fb-err-bg); border-color: var(--fb-err-border); color: var(--fb-err-text); }
+.quiz-match-arrow { color: var(--clr-text-muted); font-weight: 800; font-size: var(--font-size-xl); flex-shrink: 0; }
+.quiz-select {
+  flex: 1; padding: var(--sp-3) var(--sp-4); border-radius: var(--r-xl); border: 2px solid var(--clr-border);
+  background: #fff; color: var(--clr-text); font-family: var(--font-family); font-weight: 600; font-size: var(--font-size-base);
+}
+.quiz-select:focus { outline: none; border-color: #a78bfa; }
+.quiz-select--correct   { border-color: var(--fb-ok-border); }
+.quiz-select--incorrect { border-color: var(--fb-err-border); }
+
+/* Child-first mission surface: scoped to student quiz + school no-code mission.
+   Admin previews still use the original compact renderer styles. */
+.quiz-overlay,
+#mission-quiz {
+  --game-blue: #dbeafe;
+  --game-blue-text: #1d4ed8;
+  --game-yellow: #fef3c7;
+  --game-yellow-text: #b45309;
+  --game-green: #dcfce7;
+  --game-green-text: #15803d;
+  --game-pink: #fce7f3;
+  --game-pink-text: #be185d;
+
+  /* ── quiz-fit: контракт «один екран без прокрутки» ─────────────
+     Усі вертикальні розміри масштабуються від ВИСОТИ вьюпорта (vh),
+     не від ширини — інакше на широких коротких екранах (ноутбук)
+     контент роздувається і виштовхує кнопки за екран.
+     Інваріант (перевіряється Playwright-тестами tests/layout):
+     сторінка ніколи не скролиться; внутрішній скрол дозволений лише
+     в зоні варіантів (--stack: sort/match) та в картці питання. */
+  --qf-gap: clamp(var(--sp-2), 1.6vh, var(--sp-5));
+  --qf-font-question: clamp(1.25rem, 3.2vh, 2.5rem);
+  --qf-font-option: clamp(1rem, 2.3vh, 1.5rem);
+  --qf-option-min-h: clamp(3.25rem, 9vh, 7.5rem);
+  --qf-card-pad: clamp(var(--sp-4), 3vh, var(--sp-8));
+}
+
+/* clip (не hidden): блокує і колесо, і програмний/тач-скрол — як у .quiz-overlay */
+html.mission-active,
+body.mission-active {
+  overflow: clip;
+}
+/* Місія — fixed на весь екран; хедер/футер/сусідні секції за нею прибираємо
+   з потоку, інакше вони створюють прихований overflow і сторінку можна
+   зрушити програмно/тачем (clip на корені браузер трактує як hidden). */
+body.mission-active #site-header,
+body.mission-active #site-footer,
+body.mission-active .site-header,
+body.mission-active .site-footer,
+body.mission-active .skip-link,
+body.mission-active .app-main > :not(#mission-quiz) {
+  display: none;
+}
+
+body.mission-active #mission-quiz:not(.hidden) {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  /* Flex, не grid: позиційні grid-рядки з'їжджають, коли quiz-code прихований
+     (та сама причина, що й у .quiz-inner) — 1fr діставався не варіантам. */
+  display: flex;
+  flex-direction: column;
+  gap: clamp(var(--sp-3), 1.4vw, var(--sp-5));
+  /* inset: 0 вже розтягує на весь вьюпорт; 100vw включає ширину скролбара
+     і може дати горизонтальний overflow */
+  width: auto;
+  max-width: none;
+  min-height: 100dvh;
+  margin: 0;
+  padding: clamp(var(--sp-3), 2vw, var(--sp-8));
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(250, 204, 21, .34), transparent 24rem),
+    radial-gradient(circle at 88% 14%, rgba(45, 212, 191, .28), transparent 22rem),
+    radial-gradient(circle at 16% 88%, rgba(244, 114, 182, .2), transparent 24rem),
+    linear-gradient(135deg, #fff7ed 0%, #eff6ff 44%, #f5f3ff 100%);
+}
+
+body.mission-active #mission-quiz .quiz-progress-header,
+body.mission-active #mission-quiz .quiz-progress-bar-wrap,
+body.mission-active #mission-quiz .quiz-question-card,
+body.mission-active #mission-quiz .quiz-code,
+body.mission-active #mission-quiz .quiz-options,
+body.mission-active #mission-quiz .quiz-feedback-wrap {
+  width: min(100%, 86rem);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+body.mission-active #mission-quiz .quiz-progress-header {
+  margin-bottom: 0 !important;
+}
+
+.quiz-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+body.mission-active #mission-quiz .quiz-question-card {
+  align-self: stretch;
+  min-height: 0;
+  margin-bottom: 0;
+}
+
+body.mission-active #mission-quiz .quiz-question-text {
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+  font-size: var(--qf-font-question);
+  line-height: 1.18;
+}
+
+body.mission-active #mission-quiz .quiz-options {
+  align-self: stretch;
+  flex: 1 1 0;
+  min-height: 0;
+  margin-bottom: 0;
+}
+
+body.mission-active #mission-quiz .quiz-options--grid,
+body.mission-active #mission-quiz .quiz-options--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: stretch;
+}
+
+body.mission-active #mission-quiz .quiz-option,
+body.mission-active #mission-quiz .quiz-options--two > button {
+  min-height: var(--qf-option-min-h);
+}
+
+body.mission-active #mission-quiz .quiz-feedback-wrap {
+  min-height: 0;
+  margin-bottom: 0;
+}
+
+body.mission-active.mission-answered #mission-quiz .quiz-explanation {
+  font-size: clamp(var(--font-size-sm), 1.4vw, var(--font-size-lg));
+  line-height: 1.4;
+}
+
+.quiz-overlay {
+  background:
+    radial-gradient(circle at 12% 12%, rgba(250, 204, 21, .34), transparent 24rem),
+    radial-gradient(circle at 88% 18%, rgba(45, 212, 191, .28), transparent 22rem),
+    linear-gradient(135deg, #fff7ed 0%, #eff6ff 44%, #f5f3ff 100%);
+}
+
+.quiz-overlay .quiz-header {
+  background: rgba(255,255,255,.88);
+  border-bottom: 2px solid rgba(255,255,255,.7);
+  padding: var(--sp-3) clamp(var(--sp-4), 4vw, var(--sp-8));
+  backdrop-filter: blur(14px);
+}
+
+.quiz-overlay .quiz-header__left,
+.quiz-overlay .quiz-header__right {
+  flex-wrap: wrap;
+}
+
+.quiz-overlay .quiz-badge,
+#mission-quiz .quiz-progress-text {
+  box-shadow: 0 8px 20px rgba(15,23,42,.08);
+}
+
+.quiz-overlay .quiz-badge {
+  font-size: var(--font-size-sm);
+}
+
+.quiz-overlay .quiz-progress-text,
+#mission-quiz .quiz-progress-text {
+  font-size: var(--font-size-base);
+  color: #1e293b;
+}
+
+.quiz-overlay .quiz-timer,
+.quiz-overlay .btn-quiz-quit {
+  min-height: 2.75rem;
+  border-radius: var(--r-full);
+}
+
+.quiz-overlay .quiz-timer {
+  padding: var(--sp-2) var(--sp-4);
+  border: 2px solid #fed7aa;
+  box-shadow: 0 10px 24px rgba(234, 88, 12, .12);
+}
+
+.quiz-overlay .quiz-progress-bar-wrap,
+#mission-quiz .quiz-progress-bar-wrap {
+  height: .85rem;
+  background: rgba(255,255,255,.8);
+}
+
+.quiz-overlay .quiz-progress-bar,
+#mission-quiz .quiz-progress-bar {
+  background: linear-gradient(90deg, #22c55e, #06b6d4, #6366f1);
+  border-radius: 0 var(--r-full) var(--r-full) 0;
+}
+
+.quiz-overlay .quiz-body {
+  padding: clamp(var(--sp-3), 2vh, var(--sp-6)) clamp(var(--sp-4), 3vw, var(--sp-8));
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Flex, не grid: у grid позиційні рядки зсуваються, коли quiz-code прихований
+   (display:none), і 1fr діставався не варіантам. Flex просто пропускає їх. */
+.quiz-overlay .quiz-inner {
+  max-width: min(72rem, 100%);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--qf-gap);
+}
+
+.quiz-overlay .quiz-question-card,
+#mission-quiz .quiz-question-card {
+  min-height: clamp(6rem, 16vh, 12rem);
+  max-height: 34vh;
+  overflow-y: auto;
+  margin-bottom: 0;
+  padding: var(--qf-card-pad);
+  border: 3px solid rgba(255,255,255,.86);
+  border-radius: var(--r-3xl);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.98), rgba(255,255,255,.9)),
+    linear-gradient(135deg, #fef08a, #93c5fd);
+  box-shadow: 0 24px 70px rgba(37, 99, 235, .18);
+}
+
+.quiz-overlay .quiz-question-text,
+#mission-quiz .quiz-question-text {
+  font-size: var(--qf-font-question);
+  line-height: 1.22;
+  letter-spacing: 0;
+}
+
+.quiz-overlay .quiz-image {
+  width: clamp(8rem, 20vw, 16rem);
+  max-height: clamp(7rem, 24vh, 14rem);
+  background: #fff;
+  border: 3px solid #fff;
+}
+
+.quiz-overlay .quiz-code,
+#mission-quiz .quiz-code {
+  margin-bottom: 0;
+  border: 2px solid rgba(125, 211, 252, .35);
+  box-shadow: 0 16px 36px rgba(15,23,42,.16);
+  font-size: clamp(.95rem, 1.4vw, 1.2rem);
+  /* Довгий псевдокод не має виштовхувати варіанти за екран: обмежуємо
+     висоту і даємо внутрішній скрол (min-height: max-content з часів grid
+     забороняв стискання і ламав контракт quiz-fit на коротких екранах). */
+  flex-shrink: 0;
+  max-height: 30vh;
+  overflow-y: auto;
+}
+
+.quiz-overlay .quiz-options,
+#mission-quiz .quiz-options {
+  margin-bottom: 0;
+  min-height: 0;
+  /* Escape hatch контракту quiz-fit: якщо варіантів забагато для екрана
+     (довгий sort/match) — скролиться лише ця зона, не сторінка. */
+  overflow-y: auto;
+}
+
+/* Варіанти забирають увесь залишок висоти екрана */
+.quiz-overlay .quiz-options {
+  flex: 1 1 0;
+}
+
+.quiz-overlay .quiz-options--grid,
+.quiz-overlay .quiz-options--two {
+  align-content: stretch;
+}
+
+.quiz-overlay .quiz-options--grid,
+.quiz-overlay .quiz-options--two,
+#mission-quiz .quiz-options--grid,
+#mission-quiz .quiz-options--two {
+  gap: clamp(var(--sp-3), 1.6vh, var(--sp-5));
+}
+
+@media (min-width: 760px) {
+  .quiz-overlay .quiz-options--grid,
+  .quiz-overlay .quiz-options--two,
+  #mission-quiz .quiz-options--grid,
+  #mission-quiz .quiz-options--two {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.quiz-overlay .quiz-options--stack,
+#mission-quiz .quiz-options--stack {
+  gap: var(--sp-4);
+}
+
+.quiz-overlay .quiz-option,
+.quiz-overlay .quiz-options--two > button,
+#mission-quiz .quiz-option,
+#mission-quiz .quiz-options--two > button {
+  position: relative;
+  min-height: var(--qf-option-min-h);
+  padding: clamp(var(--sp-3), 2vh, var(--sp-6));
+  border: 3px solid rgba(255,255,255,.85);
+  border-radius: var(--r-2xl);
+  box-shadow: 0 16px 32px rgba(15,23,42,.10);
+  font-family: var(--font-family);
+  font-size: var(--qf-font-option);
+  font-weight: 800;
+  line-height: 1.25;
+  color: #111827;
+  overflow: hidden;
+}
+
+.quiz-overlay .quiz-option:nth-child(4n+1),
+.quiz-overlay .quiz-options--two > button:nth-child(1),
+#mission-quiz .quiz-option:nth-child(4n+1),
+#mission-quiz .quiz-options--two > button:nth-child(1) {
+  background: var(--game-blue);
+  color: var(--game-blue-text);
+}
+
+.quiz-overlay .quiz-option:nth-child(4n+2),
+.quiz-overlay .quiz-options--two > button:nth-child(2),
+#mission-quiz .quiz-option:nth-child(4n+2),
+#mission-quiz .quiz-options--two > button:nth-child(2) {
+  background: var(--game-yellow);
+  color: var(--game-yellow-text);
+}
+
+.quiz-overlay .quiz-option:nth-child(4n+3),
+#mission-quiz .quiz-option:nth-child(4n+3) {
+  background: var(--game-green);
+  color: var(--game-green-text);
+}
+
+.quiz-overlay .quiz-option:nth-child(4n+4),
+#mission-quiz .quiz-option:nth-child(4n+4) {
+  background: var(--game-pink);
+  color: var(--game-pink-text);
+}
+
+.quiz-overlay .quiz-option::before,
+.quiz-overlay .quiz-options--two > button::before,
+#mission-quiz .quiz-option::before,
+#mission-quiz .quiz-options--two > button::before {
+  content: '';
+  position: absolute;
+  inset: auto auto 0 0;
+  width: 5.5rem;
+  height: 5.5rem;
+  border-radius: 0 var(--r-full) 0 0;
+  opacity: .18;
+  background: currentColor;
+}
+
+.quiz-overlay .quiz-option:hover:not(:disabled),
+.quiz-overlay .quiz-options--two > button:hover:not(:disabled),
+#mission-quiz .quiz-option:hover:not(:disabled),
+#mission-quiz .quiz-options--two > button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: saturate(1.05);
+}
+
+.quiz-overlay .quiz-option--correct,
+#mission-quiz .quiz-option--correct {
+  border-color: #22c55e !important;
+  background: #dcfce7 !important;
+  color: #166534 !important;
+  box-shadow: 0 18px 40px rgba(34,197,94,.22) !important;
+}
+
+.quiz-overlay .quiz-option--incorrect,
+#mission-quiz .quiz-option--incorrect {
+  border-color: #fb7185 !important;
+  background: #ffe4e6 !important;
+  color: #be123c !important;
+  box-shadow: 0 18px 40px rgba(244,63,94,.18) !important;
+}
+
+.quiz-overlay .quiz-option--selected,
+#mission-quiz .quiz-option--selected {
+  border-color: #6366f1 !important;
+  background: #e0e7ff !important;
+  color: #3730a3 !important;
+}
+
+.quiz-overlay .quiz-options input,
+.quiz-overlay .quiz-options select,
+#mission-quiz .quiz-options input,
+#mission-quiz .quiz-options select {
+  width: 100%;
+  min-height: 4.75rem;
+  padding: var(--sp-4) var(--sp-5);
+  border: 3px solid #c7d2fe;
+  border-radius: var(--r-2xl);
+  background: #fff;
+  color: var(--clr-text);
+  font-family: var(--font-family);
+  font-size: clamp(1.15rem, 2vw, 1.5rem);
+  font-weight: 800;
+  text-align: center;
+  outline: none;
+}
+
+.quiz-overlay .quiz-check,
+.quiz-overlay .btn-next,
+#mission-quiz .quiz-check,
+#mission-quiz .btn-next {
+  min-height: 4.25rem;
+  border-radius: var(--r-full);
+  font-size: clamp(1.1rem, 2vw, 1.45rem);
+  box-shadow: 0 16px 36px rgba(79,70,229,.24);
+}
+
+/* До відповіді фідбек-зона майже порожня (лише «Пропустити» в олімпіаді) —
+   не резервуємо під неї висоту. */
+.quiz-overlay .quiz-feedback-wrap,
+#mission-quiz .quiz-feedback-wrap {
+  min-height: 0;
+}
+
+/* Після відповіді фідбек не стає рядком у потоці (який виштовхує все за екран),
+   а панеллю ПОВЕРХ нижньої частини варіантів. Стан вмикає JS:
+   .quiz-answered на .quiz-overlay (student.ts) / .mission-answered на body. */
+.quiz-overlay.quiz-answered .quiz-feedback-wrap,
+body.mission-active.mission-answered #mission-quiz .quiz-feedback-wrap {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(var(--sp-3), 3vh, var(--sp-6));
+  transform: translateX(-50%);
+  width: min(calc(100% - 2 * var(--sp-4)), 46rem);
+  max-height: min(52vh, 30rem);
+  overflow-y: auto;
+  z-index: 5;
+  padding: clamp(var(--sp-4), 2.5vh, var(--sp-6));
+  border-radius: var(--r-2xl);
+  border: 3px solid rgba(255,255,255,.9);
+  background: rgba(255,255,255,.96);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 24px 70px rgba(15,23,42,.28);
+  animation: quiz-panel-in 220ms ease-out;
+}
+
+@keyframes quiz-panel-in {
+  from { opacity: 0; transform: translate(-50%, 12px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quiz-overlay.quiz-answered .quiz-feedback-wrap,
+  body.mission-active.mission-answered #mission-quiz .quiz-feedback-wrap {
+    animation: none;
+  }
+}
+
+.quiz-overlay .quiz-feedback,
+#mission-quiz .quiz-feedback {
+  font-size: clamp(1.15rem, 2.2vw, 1.65rem);
+}
+
+.quiz-overlay .quiz-explanation,
+#mission-quiz .quiz-explanation {
+  max-width: 52rem;
+  margin: var(--sp-2) auto 0;
+  color: #334155;
+  font-size: clamp(1rem, 1.6vw, 1.2rem);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+  .quiz-overlay .quiz-header {
+    align-items: flex-start;
+    gap: var(--sp-2);
+  }
+  .quiz-overlay .quiz-header__right {
+    justify-content: space-between;
+    width: 100%;
+  }
+  .quiz-overlay .quiz-question-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .quiz-overlay .quiz-image {
+    width: 100%;
+    max-height: 12rem;
+  }
+  .quiz-overlay .quiz-options--two,
+  #mission-quiz .quiz-options--two,
+  body.mission-active #mission-quiz .quiz-options--grid {
+    grid-template-columns: 1fr;
+  }
+
+  body.mission-active #mission-quiz:not(.hidden) {
+    padding: var(--sp-3);
+  }
+
+  body.mission-active #mission-quiz .quiz-question-card {
+    padding: var(--sp-4);
+  }
+
+  body.mission-active #mission-quiz .quiz-question-text {
+    font-size: clamp(1.15rem, 5.6vw, 2.1rem);
+  }
+
+  body.mission-active #mission-quiz .quiz-option,
+  body.mission-active #mission-quiz .quiz-options--two > button {
+    padding: var(--sp-4);
+    font-size: clamp(1rem, 4.6vw, 1.45rem);
+  }
+}
+
+/* ── Результат overlay ──────────────────────────────────────── */
+
+.result-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-4);
+  background: rgba(76,29,149,0.85);
+  overflow-y: auto;
+}
+.result-overlay.active { display: flex; }
+
+.result-card {
+  margin: auto;
+  background: #fff;
+  border-radius: var(--r-2xl);
+  box-shadow: 0 30px 80px rgba(0,0,0,0.3);
+  width: 100%;
+  max-width: 28rem;
+  padding: var(--sp-8);
+  text-align: center;
+}
+.result-emoji { font-size: 3.75rem; margin-bottom: var(--sp-3); display: block; }
+.result-emoji img { margin-inline: auto; }
+.result-mode-label {
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--clr-text-faint);
+  margin-bottom: var(--sp-1);
+}
+.result-title {
+  font-size: var(--font-size-2xl);
+  font-weight: 800;
+  color: var(--clr-text);
+  margin-bottom: var(--sp-5);
+}
+.result-score-label {
+  color: var(--clr-text-muted);
+  font-weight: 600;
+  margin-bottom: var(--sp-2);
+}
+.result-score-wrap { margin-bottom: var(--sp-2); }
+.result-score {
+  font-size: var(--font-size-5xl);
+  font-weight: 800;
+  color: var(--clr-violet);
+  line-height: 1;
+}
+.result-total {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--clr-border);
+}
+.result-divider { color: var(--clr-border); font-size: 2.5rem; }
+.result-time {
+  font-size: var(--font-size-sm);
+  color: var(--clr-text-faint);
+  margin-bottom: var(--sp-6);
+}
+.result-saved {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: var(--fb-ok-soft);
+  font-size: var(--font-size-sm);
+  border-radius: var(--r-lg);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+.result-error {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  color: #be123c;
+  font-size: var(--font-size-sm);
+  border-radius: var(--r-lg);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+
+/* ── Quit confirm overlay ───────────────────────────────────── */
+
+.quit-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-4);
+  background: rgba(0,0,0,0.6);
+  overflow-y: auto;
+}
+.quit-overlay.active { display: flex; }
+
+.quit-card {
+  margin: auto;
+  background: #fff;
+  border-radius: var(--r-2xl);
+  box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+  padding: var(--sp-8);
+  max-width: 20rem;
+  width: 100%;
+  text-align: center;
+}
+.quit-card__icon { font-size: 3rem; margin-bottom: var(--sp-3); display: block; }
+.quit-card__title {
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  color: var(--clr-text);
+  margin-bottom: var(--sp-3);
+}
+.quit-card__text {
+  color: var(--clr-text-muted);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--sp-6);
+}
+.quit-card__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+}
+.btn-quit-yes {
+  padding: var(--sp-4);
+  border-radius: var(--r-xl);
+  background: #ef4444;
+  color: #fff;
+  font-weight: 700;
+  font-family: var(--font-family);
+  cursor: pointer;
+  border: none;
+  transition: background-color var(--transition-fast);
+}
+.btn-quit-yes:hover { background: #dc2626; }
+.btn-quit-no {
+  padding: var(--sp-4);
+  border-radius: var(--r-xl);
+  background: var(--clr-surface-subtle);
+  color: var(--clr-text-muted);
+  font-weight: 700;
+  font-family: var(--font-family);
+  cursor: pointer;
+  border: none;
+  transition: background-color var(--transition-fast);
+}
+.btn-quit-no:hover { background: var(--clr-border); }
+
+/* ── App modal (student) ────────────────────────────────────── */
+
+.app-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.6);
+  padding: var(--sp-4);
+  overflow-y: auto;
+}
+.app-modal-overlay:not(.hidden) { display: flex; }
+
+.app-modal-card {
+  margin: auto;
+  background: #fff;
+  border-radius: var(--r-2xl);
+  box-shadow: 0 25px 60px rgba(0,0,0,0.25);
+  max-width: 20rem;
+  width: 100%;
+  padding: var(--sp-8) var(--sp-6);
+  text-align: center;
+}
+.app-modal-msg {
+  color: var(--clr-text);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  margin-bottom: var(--sp-6);
+  line-height: 1.6;
+  white-space: pre-line;
+}
+.app-modal-card .modal-actions { display: flex; flex-direction: column; gap: var(--sp-3); }
+.btn-modal-ok {
+  background: var(--clr-violet);
+  color: #fff;
+  font-weight: 700;
+  font-size: var(--font-size-lg);
+  padding: var(--sp-4) var(--sp-10);
+  border-radius: var(--r-xl);
+  font-family: var(--font-family);
+  cursor: pointer;
+  border: none;
+  transition: background-color var(--transition-base);
+}
+.btn-modal-ok:hover { background: var(--clr-violet-dark); }
+
+/* Контейнер кнопок модалі — для showConfirm */
+.modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  width: 100%;
+}
+.btn-modal-cancel {
+  background: transparent;
+  color: var(--clr-text-muted);
+  font-weight: 600;
+  font-size: var(--font-size-base);
+  padding: var(--sp-3) var(--sp-6);
+  border-radius: var(--r-xl);
+  font-family: var(--font-family);
+  cursor: pointer;
+  border: 1px solid var(--clr-border);
+  transition: background-color var(--transition-base);
+}
+.btn-modal-cancel:hover { background: var(--clr-surface-subtle); }
+
+/* ── Lightbox ───────────────────────────────────────────────── */
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.85);
+  padding: var(--sp-4);
+  cursor: zoom-out;
+  animation: fadeIn 0.2s ease;
+}
+.lightbox:not(.hidden) { display: flex; }
+.lightbox__img {
+  max-width: min(90vw, 900px);
+  max-height: 90vh;
+  border-radius: var(--r-xl);
+  box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+  object-fit: contain;
+  user-select: none;
+  animation: slideUp 0.25s ease;
+}
+.lightbox__close {
+  position: absolute;
+  top: var(--sp-4);
+  right: var(--sp-4);
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--r-full);
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  font-size: var(--font-size-xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color var(--transition-fast);
+}
+.lightbox__close:hover { background: rgba(255,255,255,0.35); }
+
+/* ── Quiz loading overlay ───────────────────────────────────── */
+
+.quiz-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--student-bg-from) 0%, var(--student-bg-to) 100%);
+  animation: fadeIn 0.15s ease;
+}
+.quiz-loading-overlay.active { display: flex; }
+
+.quiz-loading-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-5);
+}
+
+.quiz-loading-spinner {
+  width: 3rem;
+  height: 3rem;
+  border: 4px solid rgba(255,255,255,0.25);
+  border-top-color: #fff;
+  border-radius: var(--r-full);
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.quiz-loading-text {
+  color: #fff;
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* ── Error boundary overlay ─────────────────────────────────── */
+
+.error-boundary {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-4);
+  background: linear-gradient(135deg, var(--student-bg-from) 0%, var(--student-bg-to) 100%);
+  overflow-y: auto;
+}
+.error-boundary:not(.hidden) { display: flex; }
+.error-boundary__card {
+  margin: auto;
+  width: 100%;
+  max-width: 20rem;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: var(--r-2xl);
+  padding: var(--sp-8);
+  text-align: center;
+  backdrop-filter: blur(8px);
+}
+.error-boundary__icon { font-size: 3rem; margin-bottom: var(--sp-4); display: block; }
+.error-boundary__title {
+  color: #fff;
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  margin-bottom: var(--sp-2);
+}
+.error-boundary__msg {
+  color: rgba(255,255,255,0.7);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--sp-6);
+  line-height: 1.6;
+}
+.error-boundary__backup {
+  background: rgba(255,255,255,0.1);
+  border-radius: var(--r-xl);
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-5);
+  text-align: left;
+}
+.error-boundary__backup-label {
+  color: #fcd34d;
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--sp-1);
+}
+.error-boundary__backup-text {
+  color: #fff;
+  font-size: var(--font-size-sm);
+}
+.btn-reload {
+  width: 100%;
+  background: #fff;
+  color: var(--clr-violet);
+  font-weight: 700;
+  padding: var(--sp-3) var(--sp-6);
+  border-radius: var(--r-xl);
+  font-family: var(--font-family);
+  cursor: pointer;
+  border: none;
+  margin-bottom: var(--sp-3);
+  transition: background-color var(--transition-fast);
+}
+.btn-reload:hover { background: rgba(255,255,255,0.9); }
+.btn-boundary-dismiss {
+  color: rgba(255,255,255,0.5);
+  font-size: var(--font-size-sm);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-family);
+  transition: color var(--transition-fast);
+}
+.btn-boundary-dismiss:hover { color: rgba(255,255,255,0.85); }
+
+
