@@ -1,0 +1,18 @@
+# Triaged gitleaks findings (full-history scan 2026-07-07).
+# All are public-by-design frontend values or non-credential PII already
+# removed from HEAD; none are usable secrets. See docs/security-model.md.
+#
+# Supabase publishable anon key (public frontend value):
+7b519bd12ecf882ce4c188c96bd0d3683722faf3:.env.example:generic-api-key:3
+1cfc8b34dff11890fa984c32a8a8f6f1dc3750c4:features/api/client.ts:generic-api-key:3
+ee6d3d2d842ac3a52aab967ca9178ee70f62f773:features/api/client.js:generic-api-key:3
+# Admin auth UUID in a since-removed one-off script (no credential):
+c63fe3d4e95b52d4fed60197944dfd43e0e6ecc5:backend/scripts/create-user.ts:generic-api-key:5
+# Legacy Firebase web config apiKey (public by design, project migrated away):
+7178daf5e350e9d3d4f4b4e22bc380c7e65bac3b:services/firebase.js:gcp-api-key:13
+61b1c15afb322088b143e7185ba6b40516106c0d:script.js:gcp-api-key:3
+# Legacy reCAPTCHA site keys (public by design):
+ad32b2f59f14f5407380d8379d764c8d148f36fd:script.js:generic-api-key:32
+ab6e07ca1df30d975e9a23d01f4d786d88527033:script.js:generic-api-key:39
+73347e68af8645b6a40a131507435ae8018b79e2:script.js:generic-api-key:32
+61b1c15afb322088b143e7185ba6b40516106c0d:script.js:generic-api-key:32

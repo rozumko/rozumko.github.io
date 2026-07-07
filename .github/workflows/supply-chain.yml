@@ -24,6 +24,20 @@ jobs:
         with:
           fail-on-severity: high
 
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # gitleaks scans the full commit history; triaged historical
+          # findings are pinned in .gitleaksignore.
+          fetch-depth: 0
+
+      - name: Scan git history for secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   npm-audit:
     runs-on: ubuntu-latest
     strategy:
