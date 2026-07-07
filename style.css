@@ -67,6 +67,8 @@ body {
   color: var(--clr-text);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  min-width: 320px;
+  overflow-x: clip;
 }
 
 a {
@@ -76,6 +78,7 @@ a {
 
 img {
   max-width: 100%;
+  height: auto;
   display: block;
 }
 
@@ -232,6 +235,7 @@ button {
 /* Фон сторінки */
 .index-page {
   min-height: 100vh;
+  min-height: 100dvh;
   background: linear-gradient(160deg, #e8eeff 0%, #f0f4ff 50%, #dbeafe 100%);
 }
 
@@ -253,6 +257,7 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-4);
+  min-width: 0;
 }
 .site-header__logo {
   display: flex;
@@ -275,6 +280,7 @@ button {
   justify-content: center;
   gap: var(--sp-1) var(--sp-4);
   flex: 1;
+  min-width: 0;
 }
 .site-header__link {
   font-size: var(--font-size-sm);
@@ -410,14 +416,14 @@ button {
 
 .site-footer__nav {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--sp-6);
   margin-bottom: var(--sp-6);
   text-align: center;
 }
 @media (min-width: 640px) {
   .site-footer__nav {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     text-align: left;
   }
 }
@@ -467,5 +473,4 @@ button {
   font-size: var(--font-size-xs);
   color: var(--clr-text-faint);
 }
-
 

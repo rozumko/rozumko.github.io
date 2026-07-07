@@ -6,6 +6,7 @@
   background: var(--clr-surface-muted);
   color: var(--clr-text);
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
 }
@@ -122,7 +123,7 @@
   gap: var(--sp-4);
 }
 @media (min-width: 640px) {
-  .doc-grid-2 { grid-template-columns: 1fr 1fr; }
+  .doc-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 /* Ряд кнопок (for-parents) */
@@ -145,5 +146,4 @@
 .doc-btn--sky     { background: #0284c7; color: #fff; }
 .doc-btn--emerald { background: #059669; color: #fff; }
 .doc-btn--slate   { background: #475569; color: #fff; }
-
 

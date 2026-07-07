@@ -7,6 +7,7 @@
 .teacher-auth-page {
   background: linear-gradient(180deg, #f1f5ff 0%, #f8fafc 60%, #f1f5ff 100%);
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -18,7 +19,7 @@
   .teacher-auth-page { padding-top: var(--sp-12); }
 }
 
-.auth-page-wrap  { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; min-height: 100vh; padding: var(--sp-4); padding-top: var(--sp-8); }
+.auth-page-wrap  { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; min-height: 100vh; min-height: 100dvh; padding: var(--sp-4); padding-top: var(--sp-8); }
 @media (min-width: 640px) { .auth-page-wrap { padding-top: var(--sp-12); } }
 .auth-page-inner { width: 100%; max-width: 28rem; }
 
@@ -160,6 +161,7 @@ body.teacher-dashboard-active {
 
 .teacher-dashboard {
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--clr-surface-muted);
   width: 100%;
 }
@@ -222,6 +224,7 @@ body.teacher-dashboard-active {
   padding: var(--sp-4);
   max-width: 72rem;
   margin: 0 auto;
+  width: 100%;
 }
 @media (min-width: 640px) {
   .dashboard-main { padding: var(--sp-6); }
@@ -240,7 +243,7 @@ body.teacher-dashboard-active {
 /* Двоколонковий grid вкладки "Класи" */
 .classes-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--sp-6);
   align-items: start;
 }
@@ -831,5 +834,4 @@ body.teacher-dashboard-active {
   flex-shrink: 0;
   white-space: nowrap;
 }
-
 

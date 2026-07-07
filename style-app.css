@@ -30,6 +30,9 @@
   gap: clamp(var(--sp-3), 4vw, var(--sp-8));
   text-align: left;
 }
+.vitrina-hero__text {
+  min-width: 0;
+}
 .mascot {
   flex-shrink: 0;
   display: inline-block;
@@ -141,6 +144,9 @@
   border-radius: var(--r-xl);
   padding: var(--sp-4) var(--sp-6);
 }
+.event-banner > * {
+  min-width: 0;
+}
 .event-banner__title {
   font-weight: 700;
   color: #78350f;
@@ -164,7 +170,7 @@
 }
 @media (min-width: 640px) {
   .mode-doors {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--sp-6);
   }
 }
@@ -176,6 +182,8 @@
   padding: var(--sp-8) var(--sp-6);
   border-radius: var(--r-2xl);
   text-align: center;
+  min-width: 0;
+  overflow-wrap: anywhere;
   box-shadow: var(--shadow-md);
   transition:
     transform  var(--transition-fast),
@@ -214,8 +222,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  max-width: 100%;
   min-height: var(--kid-tap);
-  padding: var(--sp-2) var(--sp-8);
+  padding: var(--sp-2) clamp(var(--sp-5), 5vw, var(--sp-8));
   border-radius: var(--r-full);
   font-size: var(--kid-text);
   font-weight: 700;
@@ -233,6 +242,9 @@
   justify-content: center;
   gap: var(--sp-2);
   list-style: none;
+}
+.trust-strip > li {
+  min-width: 0;
 }
 .trust-chip {
   background: var(--clr-surface);
@@ -360,6 +372,7 @@
 /* ── App shell: сторінки режимів (home.html, school.html) ── */
 .app-page {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   background: linear-gradient(160deg, #e8eeff 0%, #f0f4ff 50%, #dbeafe 100%);
@@ -460,7 +473,7 @@
 }
 .avatar-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--sp-3);
   justify-items: center;
 }
@@ -476,8 +489,8 @@
 }
 .avatar-btn img {
   display: block;
-  width: 80px;
-  height: 80px;
+  width: clamp(3.25rem, 17vw, 5rem);
+  height: clamp(3.25rem, 17vw, 5rem);
   border-radius: var(--r-md);
 }
 .avatar-btn:hover { transform: translateY(-2px); }
@@ -573,7 +586,7 @@
   gap: var(--sp-3);
 }
 @media (min-width: 640px) {
-  .mission-grid { grid-template-columns: repeat(3, 1fr); }
+  .mission-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 .mission-card {
   position: relative;
@@ -589,6 +602,8 @@
   background: var(--clr-surface);
   box-shadow: var(--shadow-sm);
   text-align: center;
+  min-width: 0;
+  overflow-wrap: anywhere;
   transition:
     transform  var(--transition-fast),
     box-shadow var(--transition-base);
@@ -607,16 +622,19 @@
   font-size: var(--kid-text);
   font-weight: 800;
   color: var(--clr-text);
+  max-width: 100%;
 }
 .mission-card__desc {
   font-size: var(--font-size-sm);
   color: var(--clr-text-muted);
   line-height: 1.3;
+  max-width: 100%;
 }
 .mission-card__meta {
   font-size: var(--font-size-xs, 0.75rem);
   color: var(--clr-text-muted);
   opacity: 0.85;
+  max-width: 100%;
 }
 /* Преміум-активність: бейдж «замок» у кутку + приглушена картка */
 .mission-card[data-locked] { opacity: 0.9; }

@@ -7,11 +7,13 @@
 .student-page {
   background: linear-gradient(135deg, var(--student-bg-from) 0%, var(--student-bg-to) 100%);
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* Контейнер-екран: центрує вміст вертикально */
 .student-screen {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -74,6 +76,7 @@
 .student-card {
   width: 100%;
   max-width: 24rem;       /* ~384px */
+  min-width: 0;
   background: #fff;
   border-radius: var(--r-2xl);
   box-shadow: 0 25px 60px -15px rgba(0,0,0,0.35);
@@ -326,8 +329,8 @@
   gap: var(--sp-2);
   margin-bottom: var(--sp-4);
 }
-.selector-grid--grade { grid-template-columns: repeat(4, 1fr); }
-.selector-grid--diff  { grid-template-columns: repeat(3, 1fr); }
+.selector-grid--grade { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.selector-grid--diff  { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
 /* Кнопка вибору (клас / складність) */
 .selector-btn {
@@ -659,12 +662,12 @@ body:has(.result-overlay.active) .student-screen {
   gap: var(--sp-3);
 }
 @media (min-width: 640px) {
-  .quiz-options--grid { grid-template-columns: 1fr 1fr; }
+  .quiz-options--grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 /* 2 рівні колонки (truefalse) */
 .quiz-options--two {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--sp-4);
 }
 /* Стек (sort, match, sequence, input) */
@@ -846,8 +849,9 @@ body:has(.result-overlay.active) .student-screen {
 .quiz-sort-row { display: flex; align-items: center; gap: var(--sp-3); }
 .quiz-sort-num { color: var(--clr-text-muted); font-weight: 800; width: 1.6rem; text-align: right; flex-shrink: 0; }
 .quiz-sort-item {
-  flex: 1; background: #fff; border: 2px solid var(--clr-border); border-radius: var(--r-xl);
+  flex: 1 1 0; min-width: 0; background: #fff; border: 2px solid var(--clr-border); border-radius: var(--r-xl);
   padding: var(--sp-3) var(--sp-4); color: var(--clr-text); font-weight: 600; font-size: var(--font-size-base);
+  overflow-wrap: anywhere;
 }
 .quiz-sort-item--correct   { background: var(--fb-ok-bg); border-color: var(--fb-ok-border); color: var(--fb-ok-text); }
 .quiz-sort-item--incorrect { background: var(--fb-err-bg); border-color: var(--fb-err-border); color: var(--fb-err-text); }
@@ -1178,7 +1182,7 @@ body.mission-active.mission-answered #mission-quiz .quiz-explanation {
   .quiz-overlay .quiz-options--two,
   #mission-quiz .quiz-options--grid,
   #mission-quiz .quiz-options--two {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -1525,7 +1529,7 @@ body.mission-active.mission-answered #mission-quiz .quiz-feedback-wrap {
 }
 .quit-card__actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--sp-3);
 }
 .btn-quit-yes {
@@ -1783,5 +1787,3 @@ body.mission-active.mission-answered #mission-quiz .quiz-feedback-wrap {
   transition: color var(--transition-fast);
 }
 .btn-boundary-dismiss:hover { color: rgba(255,255,255,0.85); }
-
-
