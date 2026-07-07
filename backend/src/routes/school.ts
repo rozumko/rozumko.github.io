@@ -7,6 +7,12 @@ import { sanitizeOlympiadQuestion } from './question-sanitize.js'
 import { scoreAttempt, type AnswerValue } from './attempt-validation.js'
 import { generateAttemptToken, verifyAttemptToken } from './student-validation.js'
 import { isValidAvatar, normalizeNickname, validateJoinCodeFormat, generateJoinCode, normalizeDifficulty } from './school-validation.js'
+import {
+  SCHOOL_JOIN_CODE_THROTTLE_SCOPE,
+  clearCodeThrottle,
+  getCodeThrottleStatus,
+  recordCodeFailure,
+} from './code-throttle.js'
 import { ALL_TOPICS, normalizeTopic } from '../lib/taxonomy.js'
 import type { QuestionTrack } from '../db/schema.js'
 
@@ -188,6 +194,13 @@ export async function schoolRoutes(app: FastifyInstance) {
     },
   }, async (req, reply) => {
     try { validateJoinCodeFormat(req.body.code) } catch (e) { return reply.code(400).send({ error: (e as Error).message }) }
+    const throttle = getCodeThrottleStatus(SCHOOL_JOIN_CODE_THROTTLE_SCOPE, req.body.code)
+    if (!throttle.allowed) {
+      return reply
+        .code(429)
+        .header('Retry-After', String(throttle.retryAfterSeconds))
+        .send({ error: 'Забагато невдалих спроб. Спробуй трохи пізніше.' })
+    }
     if (!isValidAvatar(req.body.avatar)) return reply.code(400).send({ error: 'Оберіть аватар зі списку' })
     let nickname: string
     try { nickname = normalizeNickname(req.body.nickname) } catch (e) { return reply.code(400).send({ error: (e as Error).message }) }
@@ -197,7 +210,11 @@ export async function schoolRoutes(app: FastifyInstance) {
       .from(schoolSessions)
       .where(eq(schoolSessions.joinCode, req.body.code))
       .limit(1)
-    if (!session) return reply.code(404).send({ error: 'Сесію не знайдено' })
+    if (!session) {
+      recordCodeFailure(SCHOOL_JOIN_CODE_THROTTLE_SCOPE, req.body.code)
+      return reply.code(404).send({ error: 'Сесію не знайдено' })
+    }
+    clearCodeThrottle(SCHOOL_JOIN_CODE_THROTTLE_SCOPE, req.body.code)
     if (session.status === 'finished') return reply.code(409).send({ error: 'Сесію вже завершено' })
     // Приєднання лише до активної гри: якщо пустити дитину в lobby, вона отримає
     // питання, але кожна відповідь ловитиме 409 до старту — і "спалить" гру нулем.

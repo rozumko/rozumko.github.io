@@ -1,7 +1,7 @@
 import './frontend-security.js'
 import './register-sw.js'
 import {
-  loginTeacher, logoutTeacher, getTeacherSession, registerTeacher,
+  loginTeacher, logoutTeacher, getTeacherSession, storeTeacherSession, registerTeacher,
   createTeacherClass, createTeacherRegistration,
   getTeacherMe, generateCodes, getTeacherClasses, getTeacherCodes,
   getTeacherRegistrationEvents, getTeacherRegistrations, getTeacherResults,
@@ -87,11 +87,11 @@ async function init() {
 
   if (accessToken && (type === 'signup' || type === 'magiclink' || type === 'recovery')) {
     // Зберігаємо сесію з токена в хеші
-    localStorage.setItem('teacher_session', JSON.stringify({
+    storeTeacherSession({
       accessToken,
       refreshToken: refreshToken ?? '',
       email: '',
-    }))
+    })
     // Очищаємо хеш з URL щоб токен не залишався в адресному рядку
     history.replaceState(null, '', window.location.pathname)
   }

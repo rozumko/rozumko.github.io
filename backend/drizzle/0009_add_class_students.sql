@@ -7,5 +7,4 @@ CREATE TABLE IF NOT EXISTS "class_students" (
   "updated_at" timestamp with time zone DEFAULT now()
 );
 
--- RLS: увімкнути одразу після міграції в Supabase SQL Editor
--- ALTER TABLE public.class_students ENABLE ROW LEVEL SECURITY;
+-- RLS is enabled by 0028_enable_rls_all_application_tables.sql.

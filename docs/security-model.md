@@ -40,7 +40,8 @@ _Updated: 2026-07-02_
 - Student access codes carry a TTL: they default to expiring at the event's
   `ends_at` and a teacher-supplied expiry is clamped to `ends_at`, so a code
   cannot outlive its event and the brute-force window stays bounded.
-- Sensitive student endpoints are rate-limited.
+- Sensitive student endpoints are rate-limited globally and repeated unknown
+  valid-format code attempts receive a short code-level cooldown.
 - Active attempts use server-verified tokens.
 - Finishing an official attempt returns only the aggregate result, never
   per-question correctness.
@@ -87,11 +88,18 @@ Nested answer keys are stripped for structured question types.
 The frontend limits third-party scripts around authenticated flows. Keep
 avoiding unsafe HTML interpolation.
 
+Teacher sessions are tab-scoped on the frontend: access and refresh tokens are
+stored in `sessionStorage` with an in-memory copy for the active page. A legacy
+`localStorage.teacher_session` value is migrated once and removed immediately,
+so long-lived browser storage is not the supported teacher-session boundary.
+
 ## Database And RLS
 
-The backend is the only component that accesses application tables. Row Level
-Security is enabled for application data. No frontend code may call Supabase
-Data API tables directly.
+The backend is the only component that accesses application tables. Migration
+`0028_enable_rls_all_application_tables` enables Row Level Security on every
+application table as defense-in-depth; no permissive browser-facing policies are
+created, so accidental Supabase Data API/grant exposure remains deny-by-default.
+No frontend code may call Supabase Data API tables directly.
 
 ## Surface Data Boundaries — School **[IMPLEMENTED]**, Home Demo/Entitlement/Club Practice **[IMPLEMENTED]**, Payment Webhook Boundary **[IMPLEMENTED]**, Provider Checkout **[PLANNED]**, Olympiad **[IMPLEMENTED]/[PLANNED]**
 
@@ -115,6 +123,9 @@ School Mode is the low-risk classroom surface:
   and scoring happens only on the server;
 - one answer per participant per question, only for active sessions, only for
   questions issued to that session;
+- repeated unknown valid-format classroom join codes receive a short
+  code-level cooldown; lobby retries for a real session are not counted so a
+  class is not locked out before the teacher starts the game;
 - a teacher sees only their own sessions and an anonymous leaderboard.
 
 Home Mode is the parent-led commercial surface:
@@ -264,6 +275,7 @@ npm test
 
 - spoofed `X-Forwarded-For` does not create a fresh rate-limit bucket;
 - unsupported shared rate-limit store modes fail closed;
+- every application table is covered by the RLS enablement migration;
 - public question query validation rejects unsafe values;
 - public questions are filtered to `isOlympiad=false`;
 - public questions strip answer keys by default; demo responses strip answer
@@ -272,6 +284,11 @@ npm test
 - attempt finalization rejects late answers and locks the attempt row while
   scoring saved answers;
 - Render backend auto-deploy waits for CI checks.
+- npm supply-chain guardrails are present for root and backend dependencies:
+  Dependabot, pull-request dependency review and scheduled/manual
+  `npm audit --audit-level=high`.
+- teacher refresh tokens are not persisted to `localStorage`; session writes go
+  through the frontend session helper.
 
 `backend/src/routes/school-flow.test.ts` protects the classroom-game
 invariants:
@@ -355,6 +372,10 @@ is used for paid, official or diploma-generating flows:
 GitHub Pages also runs frontend typecheck, tests and build inside its deployment
 workflow. Render Blueprint uses `autoDeployTrigger: checksPass`.
 
+External operational controls are not marked as complete from code review alone.
+Use `docs/security-ops-evidence.md` as the public-safe template, keep completed
+evidence private and attach it to the release or pilot checklist.
+
 ## Operational Security Checklist
 
 - [x] Keep teacher self-registration enabled for the pilot with email
@@ -368,6 +389,8 @@ workflow. Render Blueprint uses `autoDeployTrigger: checksPass`.
 - [ ] GitHub: protect `main` and require the Project CI backend/frontend jobs
       before merge.
 - [ ] After backend deployment, run the security section in `docs/smoke-test.md`.
+- [ ] Before a pilot/release, complete a private copy of
+      `docs/security-ops-evidence.md`.
 - [ ] Periodically remove stale pending teacher accounts.
 - [ ] Maintain a private operational checklist for secrets, backups and incident
       contacts outside the public repository.

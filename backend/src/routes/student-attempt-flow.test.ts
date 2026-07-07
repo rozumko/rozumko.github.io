@@ -10,11 +10,13 @@ const [
   { attemptRoutes },
   { db },
   schema,
+  { resetCodeThrottleForTests },
 ] = await Promise.all([
   import('./student.js'),
   import('./attempt.js'),
   import('../db/index.js'),
   import('../db/schema.js'),
+  import('./code-throttle.js'),
 ])
 
 const ids = {
@@ -39,6 +41,7 @@ function createState() {
       createdBy: 'teacher',
       createdAt: now,
     },
+    accessCodeExists: true,
     event: {
       id: ids.event,
       title: 'Test Olympiad',
@@ -104,7 +107,7 @@ function installFakeDb(state: ReturnType<typeof createState>) {
         return [{ endsAt: state.event.endsAt, timeMinutes: state.event.timeMinutes }]
       }
       if (isTable(this.table, schema.accessCodes)) {
-        return [state.accessCode]
+        return state.accessCodeExists ? [state.accessCode] : []
       }
       if (isTable(this.table, schema.olympiadEvents)) {
         return [state.event]
@@ -278,6 +281,40 @@ test('student can exchange a personal code, save an answer, and finish an attemp
     assert.equal(state.attempt?.status, 'finished')
     assert.equal(state.attempt?.answers[ids.question], 0)
   } finally {
+    restoreDb()
+    await app.close()
+  }
+})
+
+test('student code endpoints throttle repeated unknown valid-format codes', async () => {
+  resetCodeThrottleForTests()
+  const state = createState()
+  const missingCode = state.accessCode.code
+  state.accessCodeExists = false
+  const restoreDb = installFakeDb(state)
+  const app = Fastify()
+
+  try {
+    await app.register(studentRoutes, { prefix: '/api/student' })
+    await app.ready()
+
+    for (let i = 0; i < 5; i++) {
+      const miss = await app.inject({
+        method: 'GET',
+        url: `/api/student/validate-code?code=${encodeURIComponent(missingCode)}`,
+      })
+      assert.equal(miss.statusCode, 404, miss.body)
+    }
+
+    const throttled = await app.inject({
+      method: 'POST',
+      url: '/api/student/exchange-code',
+      payload: { code: missingCode },
+    })
+    assert.equal(throttled.statusCode, 429, throttled.body)
+    assert.ok(Number(throttled.headers['retry-after']) > 0)
+  } finally {
+    resetCodeThrottleForTests()
     restoreDb()
     await app.close()
   }

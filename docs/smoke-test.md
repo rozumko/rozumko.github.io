@@ -131,6 +131,8 @@ Run this checklist before a real pilot.
 
 ## 9. Operational
 
+- [ ] Create a completed private copy of `docs/security-ops-evidence.md` for
+      this release; do not commit screenshots, secrets or private console URLs
 - [ ] `docs/olympiad-day-runbook.md` is printed or open for the event operator
 - [ ] `docs/load-test.md` was run against staging at the planned concurrency
 - [ ] `docs/backup-restore.md` restore drill passed on a non-production database

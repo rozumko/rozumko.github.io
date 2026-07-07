@@ -5,11 +5,12 @@ import Fastify from 'fastify'
 process.env.ATTEMPT_SECRET = 'test-secret-for-school-flow'
 process.env.SUPABASE_URL = 'https://test.supabase.co'
 
-const [{ schoolRoutes }, { db }, schema, { SCHOOL_AVATARS }] = await Promise.all([
+const [{ schoolRoutes }, { db }, schema, { SCHOOL_AVATARS }, { resetCodeThrottleForTests }] = await Promise.all([
   import('./school.js'),
   import('../db/index.js'),
   import('../db/schema.js'),
   import('./school-validation.js'),
+  import('./code-throttle.js'),
 ])
 
 const ids = {
@@ -23,6 +24,7 @@ const AVATAR = SCHOOL_AVATARS[0]
 function createState() {
   return {
     session: { id: ids.session, joinCode: '123456', status: 'active', grade: 2, difficulty: 'easy', questionsCount: 1 },
+    sessionExists: true,
     question: { id: ids.question, q: '2+2?', code: null, type: 'choice', options: ['4', '5'], correct: 0, explanation: 'Additon' },
     participant: null as null | { id: string; sessionId: string; avatar: string; nickname: string; score: number },
     issuedContains: true, // чи належить питання сесії (membership select)
@@ -45,7 +47,7 @@ function installFakeDb(state: ReturnType<typeof createState>) {
 
     rows() {
       if (isTable(this.table, schema.schoolSessions)) {
-        return state.session ? [state.session] : []
+        return state.sessionExists ? [state.session] : []
       }
       if (isTable(this.table, schema.schoolParticipants)) {
         return state.participant ? [state.participant] : []
@@ -228,4 +230,26 @@ test('school: join rejects an avatar outside the allowlist (400)', async () => {
       assert.equal(res.statusCode, 400, res.body)
     })
   } finally { restore() }
+})
+
+test('school: join throttles repeated unknown valid-format codes', async () => {
+  resetCodeThrottleForTests()
+  const state = createState()
+  state.sessionExists = false
+  const restore = installFakeDb(state)
+  try {
+    await withApp(async (app) => {
+      for (let i = 0; i < 5; i++) {
+        const miss = await app.inject({ method: 'POST', url: '/api/school/join', payload: { code: '999999', avatar: AVATAR, nickname: 'Тест' } })
+        assert.equal(miss.statusCode, 404, miss.body)
+      }
+
+      const throttled = await app.inject({ method: 'POST', url: '/api/school/join', payload: { code: '999999', avatar: AVATAR, nickname: 'Тест' } })
+      assert.equal(throttled.statusCode, 429, throttled.body)
+      assert.ok(Number(throttled.headers['retry-after']) > 0)
+    })
+  } finally {
+    resetCodeThrottleForTests()
+    restore()
+  }
 })

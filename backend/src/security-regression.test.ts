@@ -215,6 +215,90 @@ test('Render деплоїть backend лише після проходження
   assert.match(blueprint, /^\s+autoDeployTrigger:\s+checksPass\s*$/m)
 })
 
+test('application tables have an RLS enablement migration', () => {
+  const migration = readFileSync(new URL('../drizzle/0028_enable_rls_all_application_tables.sql', import.meta.url), 'utf8')
+  const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')
+  const applicationTables = [
+    'questions',
+    'olympiad_events',
+    'event_questions',
+    'access_codes',
+    'attempts',
+    'attempt_questions',
+    'app_users',
+    'teacher_classes',
+    'class_students',
+    'event_registrations',
+    'school_sessions',
+    'school_session_questions',
+    'school_participants',
+    'school_answers',
+    'missions',
+    'home_leads',
+    'home_child_profiles',
+    'home_demo_attempts',
+    'home_demo_reports',
+    'home_entitlements',
+    'home_entitlement_events',
+    'home_mission_attempts',
+    'home_payment_events',
+  ]
+
+  for (const table of applicationTables) {
+    assert.match(
+      migration,
+      new RegExp(`ALTER TABLE public\\.${table} ENABLE ROW LEVEL SECURITY;`),
+      table,
+    )
+  }
+  assert.match(journal, /"tag": "0028_enable_rls_all_application_tables"/)
+})
+
+test('supply-chain guardrails are configured for npm dependencies', () => {
+  const dependabot = readFileSync(new URL('../../.github/dependabot.yml', import.meta.url), 'utf8')
+  const workflow = readFileSync(new URL('../../.github/workflows/supply-chain.yml', import.meta.url), 'utf8')
+
+  assert.match(dependabot, /package-ecosystem:\s*npm/)
+  assert.match(dependabot, /directory:\s*\/\s/)
+  assert.match(dependabot, /directory:\s*\/backend/)
+  assert.match(dependabot, /interval:\s*weekly/)
+
+  assert.match(workflow, /actions\/dependency-review-action@v4/)
+  assert.match(workflow, /fail-on-severity:\s*high/)
+  assert.match(workflow, /npm audit --audit-level=high/)
+  assert.match(workflow, /lockfile:\s*package-lock\.json/)
+  assert.match(workflow, /lockfile:\s*backend\/package-lock\.json/)
+})
+
+test('operational security evidence runbook covers external controls', () => {
+  const evidence = readFileSync(new URL('../../docs/security-ops-evidence.md', import.meta.url), 'utf8')
+  const smokeTest = readFileSync(new URL('../../docs/smoke-test.md', import.meta.url), 'utf8')
+  const securityModel = readFileSync(new URL('../../docs/security-model.md', import.meta.url), 'utf8')
+
+  for (const required of [
+    'Supabase Auth',
+    'Turnstile',
+    'Signup rate limits',
+    'Password login rate limits',
+    'Supabase Database',
+    'RLS',
+    'GitHub',
+    'Branch protection',
+    'Required checks',
+    'Render Backend',
+    'numInstances = 1',
+    'RATE_LIMIT_STORE=memory',
+    'Post-Deploy Security Smoke',
+    'Teacher session',
+  ]) {
+    assert.match(evidence, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), required)
+  }
+
+  assert.match(smokeTest, /docs\/security-ops-evidence\.md/)
+  assert.match(securityModel, /docs\/security-ops-evidence\.md/)
+  assert.match(evidence, /Do not commit screenshots, secrets, tokens/)
+})
+
 test('attempt finalization is protected against late answer races', () => {
   const answerRoute = readFileSync(new URL('./routes/attempt.ts', import.meta.url), 'utf8')
   const finalization = readFileSync(new URL('./routes/attempt-finalization.ts', import.meta.url), 'utf8')

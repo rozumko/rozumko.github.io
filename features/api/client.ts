@@ -1,11 +1,12 @@
-const API_URL = import.meta.env.VITE_API_URL || 'https://rozumko-github-io.onrender.com'
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://ivcufigpmamgkfxwulzl.supabase.co'
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_thaWciLcFJKxX3rcGbnGmg_2kLtAzNn'
+const ENV = (import.meta as any).env ?? {}
+const API_URL = ENV.VITE_API_URL || 'https://rozumko-github-io.onrender.com'
+const SUPABASE_URL = ENV.VITE_SUPABASE_URL || 'https://ivcufigpmamgkfxwulzl.supabase.co'
+const SUPABASE_ANON_KEY = ENV.VITE_SUPABASE_ANON_KEY || 'sb_publishable_thaWciLcFJKxX3rcGbnGmg_2kLtAzNn'
 
 // Cloudflare Turnstile SITE KEY (публічний — призначений для вставки у фронтенд).
 // SECRET KEY сюди НЕ кладемо: він живе лише в Supabase → Authentication →
 // Bot and Abuse Protection. Захист стає примусовим після увімкнення Turnstile там.
-export const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAADdbJzWWHyf-ABhd'
+export const TURNSTILE_SITE_KEY = ENV.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAADdbJzWWHyf-ABhd'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -49,6 +50,9 @@ export interface TeacherSession {
   refreshToken: string
   email: string
 }
+
+const TEACHER_SESSION_KEY = 'teacher_session'
+let teacherSessionMemory: TeacherSession | null = null
 
 export interface AccessCode {
   id: string
@@ -411,11 +415,11 @@ export async function loginTeacher(email: string, password: string): Promise<any
   })
   const data = await res.json()
   if (!res.ok) throw new Error(data.error_description ?? data.msg ?? 'Помилка входу')
-  localStorage.setItem('teacher_session', JSON.stringify({
+  storeTeacherSession({
     accessToken: data.access_token,
     refreshToken: data.refresh_token,
     email: data.user?.email,
-  }))
+  })
   return data
 }
 
@@ -438,13 +442,51 @@ export async function registerTeacher(email: string, password: string, school?: 
   return data
 }
 
+export function storeTeacherSession(session: TeacherSession): void {
+  teacherSessionMemory = {
+    accessToken: session.accessToken,
+    refreshToken: session.refreshToken ?? '',
+    email: session.email ?? '',
+  }
+  try { sessionStorage.setItem(TEACHER_SESSION_KEY, JSON.stringify(teacherSessionMemory)) } catch { /* sessionStorage unavailable */ }
+  try { localStorage.removeItem(TEACHER_SESSION_KEY) } catch { /* legacy storage unavailable */ }
+}
+
+function clearTeacherSession(): void {
+  teacherSessionMemory = null
+  try { sessionStorage.removeItem(TEACHER_SESSION_KEY) } catch { /* sessionStorage unavailable */ }
+  try { localStorage.removeItem(TEACHER_SESSION_KEY) } catch { /* legacy storage unavailable */ }
+}
+
 export function getTeacherSession(): TeacherSession | null {
-  try { return JSON.parse(localStorage.getItem('teacher_session') ?? 'null') } catch { return null }
+  if (teacherSessionMemory) return teacherSessionMemory
+
+  try {
+    const raw = sessionStorage.getItem(TEACHER_SESSION_KEY)
+    if (raw) {
+      teacherSessionMemory = JSON.parse(raw)
+      return teacherSessionMemory
+    }
+  } catch {
+    teacherSessionMemory = null
+    try { sessionStorage.removeItem(TEACHER_SESSION_KEY) } catch { /* sessionStorage unavailable */ }
+  }
+
+  try {
+    const raw = localStorage.getItem(TEACHER_SESSION_KEY)
+    if (!raw) return null
+    const legacySession = JSON.parse(raw) as TeacherSession
+    storeTeacherSession(legacySession)
+    return teacherSessionMemory
+  } catch {
+    clearTeacherSession()
+    return null
+  }
 }
 
 export async function logoutTeacher(): Promise<void> {
   const session = getTeacherSession()
-  localStorage.removeItem('teacher_session')
+  clearTeacherSession()
   if (session?.accessToken) {
     await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
       method: 'POST',
@@ -473,11 +515,11 @@ function refreshTeacherSession(): Promise<string | null> {
         if (!res.ok) return null
         const data = await res.json()
         if (!data.access_token) return null
-        localStorage.setItem('teacher_session', JSON.stringify({
+        storeTeacherSession({
           accessToken: data.access_token,
           refreshToken: data.refresh_token ?? session.refreshToken,
           email: data.user?.email ?? session.email,
-        }))
+        })
         return data.access_token as string
       } catch {
         return null
@@ -505,7 +547,7 @@ async function authRequest(path: string, options: RequestInit = {}): Promise<any
     if ((e as ApiError)?.status !== 401) throw e
     const freshToken = await refreshTeacherSession()
     if (!freshToken) {
-      localStorage.removeItem('teacher_session')
+      clearTeacherSession()
       throw new Error('Сесія завершилася. Увійдіть знову.')
     }
     return send(freshToken)

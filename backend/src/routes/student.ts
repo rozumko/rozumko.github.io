@@ -11,6 +11,12 @@ import {
   generateAttemptToken,
   verifyAttemptToken,
 } from './student-validation.js'
+import {
+  STUDENT_CODE_THROTTLE_SCOPE,
+  clearCodeThrottle,
+  getCodeThrottleStatus,
+  recordCodeFailure,
+} from './code-throttle.js'
 import { getRemainingSeconds } from './attempt-timing.js'
 
 export { generateAttemptToken, verifyAttemptToken }
@@ -33,6 +39,14 @@ export async function studentRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: e.message })
     }
 
+    const throttle = getCodeThrottleStatus(STUDENT_CODE_THROTTLE_SCOPE, normalized)
+    if (!throttle.allowed) {
+      return reply
+        .code(429)
+        .header('Retry-After', String(throttle.retryAfterSeconds))
+        .send({ error: 'Забагато невдалих спроб. Спробуйте трохи пізніше.' })
+    }
+
     const [accessCode] = await db
       .select({
         id:        accessCodes.id,
@@ -46,7 +60,11 @@ export async function studentRoutes(app: FastifyInstance) {
       .where(eq(accessCodes.code, normalized))
       .limit(1)
 
-    if (!accessCode) return reply.code(404).send({ error: 'Код не знайдено' })
+    if (!accessCode) {
+      recordCodeFailure(STUDENT_CODE_THROTTLE_SCOPE, normalized)
+      return reply.code(404).send({ error: 'Код не знайдено' })
+    }
+    clearCodeThrottle(STUDENT_CODE_THROTTLE_SCOPE, normalized)
     if (accessCode.expiresAt && accessCode.expiresAt < new Date())
       return reply.code(410).send({ error: 'Код застарів' })
     if (accessCode.usedCount >= accessCode.maxUses) {
@@ -100,6 +118,14 @@ export async function studentRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: e.message })
     }
 
+    const throttle = getCodeThrottleStatus(STUDENT_CODE_THROTTLE_SCOPE, normalized)
+    if (!throttle.allowed) {
+      return reply
+        .code(429)
+        .header('Retry-After', String(throttle.retryAfterSeconds))
+        .send({ error: 'Забагато невдалих спроб. Спробуйте трохи пізніше.' })
+    }
+
     // 1. Знайти код
     const [accessCode] = await db
       .select()
@@ -108,8 +134,10 @@ export async function studentRoutes(app: FastifyInstance) {
       .limit(1)
 
     if (!accessCode) {
+      recordCodeFailure(STUDENT_CODE_THROTTLE_SCOPE, normalized)
       return reply.code(404).send({ error: 'Код не знайдено' })
     }
+    clearCodeThrottle(STUDENT_CODE_THROTTLE_SCOPE, normalized)
 
     // 2. Перевірити термін дії
     if (accessCode.expiresAt && accessCode.expiresAt < new Date()) {

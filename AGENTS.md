@@ -68,3 +68,13 @@ backend/src/db/          ← Drizzle schema + migration runner
 backend/drizzle/         ← SQL-міграції
 public/                  ← sw.js, manifest, favicon (статичні assets)
 ```
+
+## Language Policy
+
+- Code comments, technical test names, internal runbooks, CI notes and
+  engineering documentation should be written in English.
+- Ukrainian text is reserved for user-facing UI, public pages, legal/privacy
+  documents and educational content.
+- Do not rewrite existing comments in bulk only to change language. When a file
+  is already being edited for a real code/security/product change, convert the
+  touched technical comments to English in the same focused diff.
