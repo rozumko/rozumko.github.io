@@ -119,6 +119,9 @@ Run this checklist before a real pilot.
       malformed id returns `400` — the script asserts "never 200")
 - [ ] Admin endpoint without authorization returns `401`
 - [ ] Production HTML has CSP and no inline `onclick`
+- [ ] Loading an app page inside an iframe shows `framing-blocked.html` instead
+      of the real app UI; keep this as defense-in-depth until authenticated
+      pages can use HTTP `frame-ancestors`
 
 ## 8. Backend Security
 

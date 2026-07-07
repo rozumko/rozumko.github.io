@@ -255,6 +255,12 @@ Frontend production build:
   unauthenticated registration flow.
 - Inline handlers are not allowed on normal pages.
 - The static offline page has a narrow documented exception for its offline script.
+- GitHub Pages cannot enforce HTTP `frame-ancestors`. The frontend therefore
+  ships a client-side guard as defense-in-depth: framed app pages redirect the
+  current frame to `framing-blocked.html` and stop module execution before the
+  page app continues. This is not equivalent to an HTTP framing policy, so
+  authenticated Pages surfaces keep a residual clickjacking risk until they
+  move behind a host that can send `Content-Security-Policy: frame-ancestors`.
 
 ## Automated Change Gates
 

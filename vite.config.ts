@@ -102,6 +102,7 @@ export default defineConfig({
         'olympiad-enter': resolve(__dirname, 'olympiad-enter.html'),
         teacher:          resolve(__dirname, 'teacher.html'),
         admin:            resolve(__dirname, 'admin.html'),
+        'framing-blocked': resolve(__dirname, 'framing-blocked.html'),
         offline:          resolve(__dirname, 'offline.html'),
         home:             resolve(__dirname, 'home.html'),
         games:            resolve(__dirname, 'games.html'),

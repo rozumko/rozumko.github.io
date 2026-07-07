@@ -1,39 +1,32 @@
-export function enforceTopLevelWindow(): void {
-  if (window.top === window.self) return
+const FRAMING_BLOCKED_PATH = '/framing-blocked.html'
 
+export function isFramed(win: Window = window): boolean {
   try {
-    window.top!.location.href = window.location.href
-    return
+    return win.top !== win.self
   } catch {
-    document.documentElement.innerHTML = ''
-    const body = document.createElement('body')
-    body.style.cssText = [
-      'margin:0',
-      'min-height:100vh',
-      'display:grid',
-      'place-items:center',
-      'font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif',
-      'background:#f8fafc',
-      'color:#0f172a',
-      'text-align:center',
-      'padding:24px',
-    ].join(';')
-
-    const message = document.createElement('main')
-    message.style.cssText = 'max-width:520px'
-
-    const title = document.createElement('h1')
-    title.textContent = 'Сторінку заблоковано'
-    title.style.cssText = 'font-size:24px;margin:0 0 12px'
-
-    const text = document.createElement('p')
-    text.textContent = 'Відкрийте Rozumko напряму у браузері.'
-    text.style.cssText = 'font-size:16px;margin:0'
-
-    message.append(title, text)
-    body.append(message)
-    document.documentElement.append(body)
+    return true
   }
 }
 
-enforceTopLevelWindow()
+function clearCurrentDocument(doc: Document): void {
+  doc.documentElement.replaceChildren()
+  const body = doc.createElement('body')
+  body.style.cssText = 'margin:0;min-height:100vh;background:#f8fafc'
+  doc.documentElement.append(body)
+}
+
+export function enforceTopLevelWindow(win: Window = window): boolean {
+  if (!isFramed(win)) return true
+
+  try {
+    win.location.replace(new URL(FRAMING_BLOCKED_PATH, win.location.href).href)
+  } catch {
+    clearCurrentDocument(win.document)
+  }
+
+  return false
+}
+
+if (typeof window !== 'undefined' && !enforceTopLevelWindow(window)) {
+  throw new Error('Rozumko page blocked inside a frame')
+}
