@@ -5,11 +5,13 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "node --test \"features/**/*.test.mjs\"",
+    "test:layout": "playwright test",
     "load:test": "node scripts/load-test-attempt-flow.mjs",
     "optimize:images": "node scripts/optimize-images.mjs",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@types/node": "^25.6.0",
     "sharp": "^0.35.3",
     "typescript": "^5.8.3",

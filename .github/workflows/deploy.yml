@@ -43,6 +43,12 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Layout tests (quiz-fit, без прокрутки)
+        run: npm run test:layout
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

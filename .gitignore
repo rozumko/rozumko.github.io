@@ -55,6 +55,10 @@ build/
 .cache/
 scripts/questions.json
 
+# ── Playwright (layout-тести) ──────────────────────────────────────────────
+test-results/
+playwright-report/
+
 # ── Локальні чернетки/експерименти (не частина проєкту) ──────────────────
 temp/
 

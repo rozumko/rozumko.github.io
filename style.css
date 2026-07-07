@@ -953,6 +953,20 @@ button {
 .quiz-overlay.active {
   display: flex;
 }
+/* Поки квіз або результат відкриті — фоновий екран за оверлеєм не має давати
+   скролбар. clip (не hidden): блокує і колесо, і програмний скрол. */
+html:has(.quiz-overlay.active),
+body:has(.quiz-overlay.active),
+html:has(.result-overlay.active),
+body:has(.result-overlay.active) {
+  overflow: clip;
+}
+/* Фоновий екран повністю перекритий оверлеєм — прибираємо його з потоку,
+   щоб він не створював прихованого overflow (page scrollHeight == viewport). */
+body:has(.quiz-overlay.active) .student-screen,
+body:has(.result-overlay.active) .student-screen {
+  display: none;
+}
 
 .quiz-header {
   background: #fff;
@@ -1350,19 +1364,46 @@ button {
   --game-green-text: #15803d;
   --game-pink: #fce7f3;
   --game-pink-text: #be185d;
+
+  /* ── quiz-fit: контракт «один екран без прокрутки» ─────────────
+     Усі вертикальні розміри масштабуються від ВИСОТИ вьюпорта (vh),
+     не від ширини — інакше на широких коротких екранах (ноутбук)
+     контент роздувається і виштовхує кнопки за екран.
+     Інваріант (перевіряється Playwright-тестами tests/layout):
+     сторінка ніколи не скролиться; внутрішній скрол дозволений лише
+     в зоні варіантів (--stack: sort/match) та в картці питання. */
+  --qf-gap: clamp(var(--sp-2), 1.6vh, var(--sp-5));
+  --qf-font-question: clamp(1.25rem, 3.2vh, 2.5rem);
+  --qf-font-option: clamp(1rem, 2.3vh, 1.5rem);
+  --qf-option-min-h: clamp(3.25rem, 9vh, 7.5rem);
+  --qf-card-pad: clamp(var(--sp-4), 3vh, var(--sp-8));
 }
 
+/* clip (не hidden): блокує і колесо, і програмний/тач-скрол — як у .quiz-overlay */
 html.mission-active,
 body.mission-active {
-  overflow: hidden;
+  overflow: clip;
+}
+/* Місія — fixed на весь екран; хедер/футер/сусідні секції за нею прибираємо
+   з потоку, інакше вони створюють прихований overflow і сторінку можна
+   зрушити програмно/тачем (clip на корені браузер трактує як hidden). */
+body.mission-active #site-header,
+body.mission-active #site-footer,
+body.mission-active .site-header,
+body.mission-active .site-footer,
+body.mission-active .skip-link,
+body.mission-active .app-main > :not(#mission-quiz) {
+  display: none;
 }
 
 body.mission-active #mission-quiz:not(.hidden) {
   position: fixed;
   inset: 0;
   z-index: 90;
-  display: grid;
-  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  /* Flex, не grid: позиційні grid-рядки з'їжджають, коли quiz-code прихований
+     (та сама причина, що й у .quiz-inner) — 1fr діставався не варіантам. */
+  display: flex;
+  flex-direction: column;
   gap: clamp(var(--sp-3), 1.4vw, var(--sp-5));
   width: 100vw;
   max-width: none;
@@ -1408,59 +1449,33 @@ body.mission-active #mission-quiz .quiz-question-card {
 body.mission-active #mission-quiz .quiz-question-text {
   overflow-wrap: anywhere;
   text-wrap: balance;
-  /* Менший максимум і гальмованіше vw-масштабування — щоб на великих екранах
-     питання не роздувалось і завжди лишалось місце для варіантів + фідбека. */
-  font-size: clamp(1.4rem, 1.9vw, 2.4rem);
+  font-size: var(--qf-font-question);
   line-height: 1.18;
 }
 
 body.mission-active #mission-quiz .quiz-options {
   align-self: stretch;
+  flex: 1 1 0;
   min-height: 0;
   margin-bottom: 0;
 }
 
 body.mission-active #mission-quiz .quiz-options--grid,
 body.mission-active #mission-quiz .quiz-options--two {
-  height: 100%;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-content: stretch;
 }
 
 body.mission-active #mission-quiz .quiz-option,
 body.mission-active #mission-quiz .quiz-options--two > button {
-  min-height: 0;
-  height: 100%;
+  min-height: var(--qf-option-min-h);
 }
 
 body.mission-active #mission-quiz .quiz-feedback-wrap {
   min-height: 0;
-  max-height: 18vh;
   margin-bottom: 0;
-  overflow: auto;
 }
 
-/* Після відповіді: варіанти вже відповіли — обмежуємо їх і віддаємо простір
-   поясненню (щоб дитина спокійно прочитала його без внутрішнього скролу). */
-body.mission-active.mission-answered #mission-quiz .quiz-options--grid,
-body.mission-active.mission-answered #mission-quiz .quiz-options--two {
-  height: auto;
-  align-content: start;
-}
-body.mission-active.mission-answered #mission-quiz .quiz-option,
-body.mission-active.mission-answered #mission-quiz .quiz-options--two > button {
-  height: auto;
-  min-height: 3.2rem;
-}
-body.mission-active.mission-answered #mission-quiz .quiz-options {
-  max-height: 46vh;
-  overflow: auto;
-}
-body.mission-active.mission-answered #mission-quiz .quiz-feedback-wrap {
-  max-height: none;
-  overflow: visible;
-  align-self: center;
-}
 body.mission-active.mission-answered #mission-quiz .quiz-explanation {
   font-size: clamp(var(--font-size-sm), 1.4vw, var(--font-size-lg));
   line-height: 1.4;
@@ -1525,22 +1540,30 @@ body.mission-active.mission-answered #mission-quiz .quiz-explanation {
 }
 
 .quiz-overlay .quiz-body {
-  padding: clamp(var(--sp-4), 3vw, var(--sp-8));
+  padding: clamp(var(--sp-3), 2vh, var(--sp-6)) clamp(var(--sp-4), 3vw, var(--sp-8));
+  overflow: hidden;
+  min-height: 0;
 }
 
+/* Flex, не grid: у grid позиційні рядки зсуваються, коли quiz-code прихований
+   (display:none), і 1fr діставався не варіантам. Flex просто пропускає їх. */
 .quiz-overlay .quiz-inner {
   max-width: min(72rem, 100%);
-  min-height: 100%;
-  display: grid;
-  grid-template-rows: auto auto 1fr auto;
-  gap: clamp(var(--sp-4), 2vw, var(--sp-6));
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--qf-gap);
 }
 
 .quiz-overlay .quiz-question-card,
 #mission-quiz .quiz-question-card {
-  min-height: clamp(8.5rem, 22vh, 15rem);
-  margin-bottom: clamp(var(--sp-4), 2vw, var(--sp-6));
-  padding: clamp(var(--sp-5), 4vw, var(--sp-10));
+  min-height: clamp(6rem, 16vh, 12rem);
+  max-height: 34vh;
+  overflow-y: auto;
+  margin-bottom: 0;
+  padding: var(--qf-card-pad);
   border: 3px solid rgba(255,255,255,.86);
   border-radius: var(--r-3xl);
   background:
@@ -1551,40 +1574,56 @@ body.mission-active.mission-answered #mission-quiz .quiz-explanation {
 
 .quiz-overlay .quiz-question-text,
 #mission-quiz .quiz-question-text {
-  font-size: clamp(1.55rem, 3.2vw, 3rem);
+  font-size: var(--qf-font-question);
   line-height: 1.22;
   letter-spacing: 0;
 }
 
 .quiz-overlay .quiz-image {
   width: clamp(8rem, 20vw, 16rem);
-  max-height: 14rem;
+  max-height: clamp(7rem, 24vh, 14rem);
   background: #fff;
   border: 3px solid #fff;
 }
 
 .quiz-overlay .quiz-code,
 #mission-quiz .quiz-code {
-  margin-bottom: clamp(var(--sp-3), 1.5vw, var(--sp-5));
+  margin-bottom: 0;
   border: 2px solid rgba(125, 211, 252, .35);
   box-shadow: 0 16px 36px rgba(15,23,42,.16);
   font-size: clamp(.95rem, 1.4vw, 1.2rem);
-  /* pre має overflow → у grid його min-size = 0 і трек стискає блок.
-     Забороняємо стискатися нижче фактичного вмісту коду. */
-  min-height: max-content;
-  align-self: start;
+  /* Довгий псевдокод не має виштовхувати варіанти за екран: обмежуємо
+     висоту і даємо внутрішній скрол (min-height: max-content з часів grid
+     забороняв стискання і ламав контракт quiz-fit на коротких екранах). */
+  flex-shrink: 0;
+  max-height: 30vh;
+  overflow-y: auto;
 }
 
 .quiz-overlay .quiz-options,
 #mission-quiz .quiz-options {
-  margin-bottom: clamp(var(--sp-4), 2vw, var(--sp-6));
+  margin-bottom: 0;
+  min-height: 0;
+  /* Escape hatch контракту quiz-fit: якщо варіантів забагато для екрана
+     (довгий sort/match) — скролиться лише ця зона, не сторінка. */
+  overflow-y: auto;
+}
+
+/* Варіанти забирають увесь залишок висоти екрана */
+.quiz-overlay .quiz-options {
+  flex: 1 1 0;
+}
+
+.quiz-overlay .quiz-options--grid,
+.quiz-overlay .quiz-options--two {
+  align-content: stretch;
 }
 
 .quiz-overlay .quiz-options--grid,
 .quiz-overlay .quiz-options--two,
 #mission-quiz .quiz-options--grid,
 #mission-quiz .quiz-options--two {
-  gap: clamp(var(--sp-3), 2vw, var(--sp-5));
+  gap: clamp(var(--sp-3), 1.6vh, var(--sp-5));
 }
 
 @media (min-width: 760px) {
@@ -1606,13 +1645,13 @@ body.mission-active.mission-answered #mission-quiz .quiz-explanation {
 #mission-quiz .quiz-option,
 #mission-quiz .quiz-options--two > button {
   position: relative;
-  min-height: clamp(5.5rem, 14vh, 8.5rem);
-  padding: clamp(var(--sp-4), 2.5vw, var(--sp-6));
+  min-height: var(--qf-option-min-h);
+  padding: clamp(var(--sp-3), 2vh, var(--sp-6));
   border: 3px solid rgba(255,255,255,.85);
   border-radius: var(--r-2xl);
   box-shadow: 0 16px 32px rgba(15,23,42,.10);
   font-family: var(--font-family);
-  font-size: clamp(1.15rem, 2vw, 1.65rem);
+  font-size: var(--qf-font-option);
   font-weight: 800;
   line-height: 1.25;
   color: #111827;
@@ -1720,13 +1759,45 @@ body.mission-active.mission-answered #mission-quiz .quiz-explanation {
   box-shadow: 0 16px 36px rgba(79,70,229,.24);
 }
 
+/* До відповіді фідбек-зона майже порожня (лише «Пропустити» в олімпіаді) —
+   не резервуємо під неї висоту. */
 .quiz-overlay .quiz-feedback-wrap,
 #mission-quiz .quiz-feedback-wrap {
-  min-height: 7.5rem;
-  padding: var(--sp-4);
+  min-height: 0;
+}
+
+/* Після відповіді фідбек не стає рядком у потоці (який виштовхує все за екран),
+   а панеллю ПОВЕРХ нижньої частини варіантів. Стан вмикає JS:
+   .quiz-answered на .quiz-overlay (student.ts) / .mission-answered на body. */
+.quiz-overlay.quiz-answered .quiz-feedback-wrap,
+body.mission-active.mission-answered #mission-quiz .quiz-feedback-wrap {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(var(--sp-3), 3vh, var(--sp-6));
+  transform: translateX(-50%);
+  width: min(calc(100% - 2 * var(--sp-4)), 46rem);
+  max-height: min(52vh, 30rem);
+  overflow-y: auto;
+  z-index: 5;
+  padding: clamp(var(--sp-4), 2.5vh, var(--sp-6));
   border-radius: var(--r-2xl);
-  background: rgba(255,255,255,.72);
-  box-shadow: 0 12px 32px rgba(15,23,42,.08);
+  border: 3px solid rgba(255,255,255,.9);
+  background: rgba(255,255,255,.96);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 24px 70px rgba(15,23,42,.28);
+  animation: quiz-panel-in 220ms ease-out;
+}
+
+@keyframes quiz-panel-in {
+  from { opacity: 0; transform: translate(-50%, 12px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quiz-overlay.quiz-answered .quiz-feedback-wrap,
+  body.mission-active.mission-answered #mission-quiz .quiz-feedback-wrap {
+    animation: none;
+  }
 }
 
 .quiz-overlay .quiz-feedback,
@@ -1768,7 +1839,6 @@ body.mission-active.mission-answered #mission-quiz .quiz-explanation {
   }
 
   body.mission-active #mission-quiz:not(.hidden) {
-    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
     padding: var(--sp-3);
   }
 

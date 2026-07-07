@@ -436,6 +436,7 @@ function showQuestion() {
   quizExplanation.textContent = ''
   quizExplanation.classList.add('hidden')
   quizNextBtn.classList.add('hidden')
+  quizOverlay.classList.remove('quiz-answered') // фідбек-панель ховається (style.css: quiz-fit)
   quizOptionsEl.innerHTML     = ''
 
   // Навігатор + кнопка "Пропустити" (olympiad/demo). На останньому питанні
@@ -496,6 +497,7 @@ function showFeedbackOlympiad() {
   if (navEnabled) renderNav()
   quizNextBtn.classList.remove('hidden')
   quizNextBtn.textContent  = currentIdx + 1 < questions.length ? 'Далі' : 'Завершити'
+  quizOverlay.classList.add('quiz-answered')
   saveQuizBackup()
 }
 
@@ -511,6 +513,7 @@ function showFeedback(isCorrect: boolean, q: RenderableQuestion) {
   }
   quizNextBtn.classList.remove('hidden')
   quizNextBtn.textContent = currentIdx + 1 < questions.length ? 'Далі' : 'Завершити'
+  quizOverlay.classList.add('quiz-answered')
   saveQuizBackup()
 }
 
