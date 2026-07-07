@@ -26,9 +26,10 @@ Run this checklist before a real pilot.
 - [ ] Decide whether pilot signup is public or invitation-only in Supabase Auth settings
 - [ ] If public: register a teacher, confirm `ACCOUNT_PENDING`, activate via admin, then log in
 - [ ] If invitation-only: verify an uninvited signup is rejected
-- [ ] Confirm an expired teacher access token auto-refreshes (the action
-      succeeds without a manual re-login); only a failed/absent refresh token
-      forces login again
+- [ ] Confirm an expired teacher access token auto-refreshes in the same tab
+      (the action succeeds without a manual re-login); `localStorage` contains
+      no `teacher_session`. The refresh token remains in `sessionStorage` for
+      the MVP and is still exposed to same-origin XSS.
 
 ## 3. Admin Setup
 
@@ -138,7 +139,10 @@ Run this checklist before a real pilot.
       this release; do not commit screenshots, secrets or private console URLs
 - [ ] `docs/olympiad-day-runbook.md` is printed or open for the event operator
 - [ ] `docs/load-test.md` was run against staging at the planned concurrency
-- [ ] `docs/backup-restore.md` restore drill passed on a non-production database
+- [ ] Before the first live event, a manual database export/import smoke test
+      passed against local or non-production PostgreSQL
+- [ ] `docs/backup-restore.md` full restore drill passed on a non-production
+      database before higher-risk production operations
 - [ ] PostgreSQL backup exists from after final event setup
 - [ ] `docs/monitoring.md` alert test was received by the event operator
 - [ ] `docs/render-operations.md` pre-event Render check passed

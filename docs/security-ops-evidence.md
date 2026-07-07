@@ -15,18 +15,21 @@ For the current MVP, treat these controls as **blocking before a public pilot**:
 - Supabase Auth Turnstile enforcement for teacher signup.
 - Supabase Auth rate-limit review, documented with the limits available on the
   current plan.
-- Database migration `0028` applied and RLS verified on application tables.
+- Database migrations applied through `0028`, with the backend database role
+  verified before enabling RLS and RLS verified on application tables.
 - `main` protected from direct/force pushes, with CI checks required before
   merge where the current GitHub plan allows it.
 - Render backend synced from `backend/render.yaml`, running a single instance
   while `RATE_LIMIT_STORE=memory`, with `/health` configured.
 - Post-deploy smoke for `/health`, `/ready`, `/ping`, answer-key stripping,
   rate-limit behavior, iframe blocking and teacher session storage.
+- Before the first live event, one manual database export/import smoke test.
 
 These controls are **not pilot blockers on free tiers**, but should stay on the
 backlog before higher traffic, paid campaigns or production-grade operations:
 
-- Full restore drill on a separate non-production database.
+- Full restore drill on a separate non-production database after the MVP smoke
+  export/import test.
 - Centralized SIEM/audit export beyond GitHub, Supabase and Render logs.
 - Multi-instance backend scaling.
 - Shared rate-limit store such as Redis or Valkey.
@@ -58,11 +61,30 @@ backlog before higher traffic, paid campaigns or production-grade operations:
 
 | Control | Expected state | Evidence to capture | Status |
 |---|---|---|---|
-| Migrations | Latest migration applied, including RLS migration `0028` | Migration output or schema migration table |  |
+| Migrations | Latest migrations applied through RLS migration `0028` | Migration output or schema migration table |  |
+| RLS role preflight | Backend `DATABASE_URL` role owns application tables or has `BYPASSRLS` before `0028` is applied | SQL verification result |  |
 | RLS | Application tables have RLS enabled with no browser-facing permissive policies | SQL verification result |  |
 | Direct table access | Frontend does not use Supabase Data API tables | Code review / CI evidence |  |
 | Backup/export | Recent backup or manual export exists after final event setup, according to the current Supabase plan | Backup/export timestamp |  |
-| Restore drill | Deferred for MVP free-tier pilot; required before higher-risk production operations | Restore drill result and timestamp | deferred |
+| Export/import smoke | Before the first live event, export and import into a local or non-production PostgreSQL database once | Smoke result and timestamp |  |
+| Full restore drill | Deferred for MVP free-tier pilot after export/import smoke; required before higher-risk production operations | Restore drill result and timestamp | deferred |
+
+Suggested backend role preflight before applying RLS migration `0028`:
+
+```sql
+select current_user, rolbypassrls
+from pg_roles
+where rolname = current_user;
+
+select tablename, tableowner
+from pg_tables
+where schemaname = 'public'
+order by tablename;
+```
+
+Expected result: the backend `DATABASE_URL` role is the owner of application
+tables, or `rolbypassrls = true`. If neither is true, applying `0028` without
+policies can make backend reads return no rows.
 
 Suggested RLS verification query:
 
@@ -109,5 +131,5 @@ curl.exe -i https://rozumko-github-io.onrender.com/ping
 | Security smoke | `docs/smoke-test.md` sections 7 and 8 passed | Filled checklist or script output |  |
 | Rate limit | Repeated invalid-code attempts return `429` | Smoke output, run off-peak/staging |  |
 | Answer keys | Public/demo/official responses expose no answer keys | Network capture or smoke output |  |
-| Teacher session | Refresh works, but refresh token is not in `localStorage` | Browser storage screenshot after login |  |
+| Teacher session | Refresh works, session is tab-scoped, `localStorage.teacher_session` is absent, and residual XSS exposure of `sessionStorage` is accepted for MVP | Browser storage screenshot after login |  |
 | Incident contacts | Operator has current incident contacts | Private contact list location |  |

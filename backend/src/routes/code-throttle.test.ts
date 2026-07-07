@@ -3,6 +3,8 @@ import assert from 'node:assert/strict'
 import {
   clearCodeThrottle,
   getCodeThrottleStatus,
+  getCodeThrottleBucketCountForTests,
+  MAX_CODE_THROTTLE_BUCKETS,
   recordCodeFailure,
   resetCodeThrottleForTests,
 } from './code-throttle.js'
@@ -38,4 +40,24 @@ test('code throttle is scoped and can be cleared after a valid code', () => {
 
   clearCodeThrottle('student', 'CODE1')
   assert.deepEqual(getCodeThrottleStatus('student', 'CODE1', now + 10), { allowed: true })
+})
+
+test('code throttle caps buckets and evicts the oldest key', () => {
+  resetCodeThrottleForTests()
+  const scope = 'cap-test'
+  const oldestCode = 'CODE-OLDEST'
+  const start = 3_000_000
+
+  for (let i = 0; i < 4; i++) recordCodeFailure(scope, oldestCode, start + i)
+
+  for (let i = 1; i < MAX_CODE_THROTTLE_BUCKETS; i++) {
+    recordCodeFailure(scope, `CODE-${i}`, start + 100 + i)
+  }
+
+  assert.equal(getCodeThrottleBucketCountForTests(), MAX_CODE_THROTTLE_BUCKETS)
+  recordCodeFailure(scope, 'CODE-NEW', start + 200 + MAX_CODE_THROTTLE_BUCKETS)
+  assert.equal(getCodeThrottleBucketCountForTests(), MAX_CODE_THROTTLE_BUCKETS)
+
+  recordCodeFailure(scope, oldestCode, start + 300 + MAX_CODE_THROTTLE_BUCKETS)
+  assert.deepEqual(getCodeThrottleStatus(scope, oldestCode, start + 301 + MAX_CODE_THROTTLE_BUCKETS), { allowed: true })
 })

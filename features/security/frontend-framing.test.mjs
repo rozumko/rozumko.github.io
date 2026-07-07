@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
+import { basename, resolve } from 'node:path'
 
 const frontendSecurity = await readFile(new URL('../../frontend-security.ts', import.meta.url), 'utf8')
 const viteConfig = await readFile(new URL('../../vite.config.ts', import.meta.url), 'utf8')
@@ -26,4 +27,29 @@ test('security model documents the GitHub Pages framing boundary', () => {
   assert.match(securityModel, /GitHub Pages cannot enforce HTTP `frame-ancestors`/)
   assert.match(securityModel, /client-side guard/)
   assert.match(securityModel, /residual clickjacking risk/)
+})
+
+test('every app HTML entry starts with a module that imports the framing guard', async () => {
+  const inputMatches = [...viteConfig.matchAll(/^\s+([A-Za-z0-9'_-]+):\s+resolve\(__dirname,\s+'([^']+\.html)'\)/gm)]
+
+  for (const [, entryName, htmlPath] of inputMatches) {
+    if (htmlPath === 'offline.html' || htmlPath === 'framing-blocked.html') continue
+
+    const html = await readFile(new URL(`../../${htmlPath}`, import.meta.url), 'utf8')
+    const firstModule = html.match(/<script\s+type="module"\s+src="([^"]+\.js)"><\/script>/)
+    assert.ok(firstModule, `${entryName} has no module script`)
+
+    const sourcePath = firstModule[1].replace(/\.js$/, '.ts')
+    const source = await readFile(new URL(`../../${sourcePath}`, import.meta.url), 'utf8')
+    const firstExecutableLine = source
+      .split(/\r?\n/)
+      .map(line => line.trim())
+      .find(line => line && !line.startsWith('//'))
+
+    assert.equal(
+      firstExecutableLine,
+      "import './frontend-security.js'",
+      `${basename(resolve(sourcePath))} must import frontend-security first for ${htmlPath}`,
+    )
+  }
 })

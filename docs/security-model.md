@@ -92,6 +92,9 @@ Teacher sessions are tab-scoped on the frontend: access and refresh tokens are
 stored in `sessionStorage` with an in-memory copy for the active page. A legacy
 `localStorage.teacher_session` value is migrated once and removed immediately,
 so long-lived browser storage is not the supported teacher-session boundary.
+This reduces persistence but does not remove XSS exposure: script execution in
+the teacher origin can still read `sessionStorage`. HttpOnly backend sessions
+or a stricter in-memory-only browser session remain a future hardening item.
 
 ## Database And RLS
 
@@ -393,7 +396,10 @@ MVP/free-tier pilot blockers:
 - [ ] Supabase Auth -> Rate Limits: review password login and signup limits
       using the controls available on the current Supabase plan.
 - [ ] Supabase Database: apply migration `0028` and verify RLS is enabled on
-      application tables with no browser-facing permissive policies.
+      application tables with no browser-facing permissive policies. Before
+      applying `0028`, verify the backend `DATABASE_URL` role owns application
+      tables or has `BYPASSRLS`, otherwise RLS without policies can break API
+      reads.
 - [ ] Render: backend service is synced from `backend/render.yaml`.
 - [ ] Render: keep one backend instance while `RATE_LIMIT_STORE=memory`.
 - [ ] Render: `/health` is configured and live checks for `/health`, `/ready`
@@ -404,6 +410,8 @@ MVP/free-tier pilot blockers:
 - [ ] After backend deployment, run the security section in `docs/smoke-test.md`.
 - [ ] Before a pilot/release, complete a private copy of
       `docs/security-ops-evidence.md`.
+- [ ] Before the first live event, run one database export/import smoke test
+      into a local or non-production PostgreSQL database.
 
 Deferred until higher traffic, paid campaigns or production-grade operations:
 

@@ -1,4 +1,4 @@
-const ENV = (import.meta as any).env ?? {}
+const ENV: Partial<ImportMetaEnv> = import.meta.env ?? {}
 const API_URL = ENV.VITE_API_URL || 'https://rozumko-github-io.onrender.com'
 const SUPABASE_URL = ENV.VITE_SUPABASE_URL || 'https://ivcufigpmamgkfxwulzl.supabase.co'
 const SUPABASE_ANON_KEY = ENV.VITE_SUPABASE_ANON_KEY || 'sb_publishable_thaWciLcFJKxX3rcGbnGmg_2kLtAzNn'
