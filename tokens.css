@@ -109,8 +109,8 @@
   --kid-tap-lg:         4.5rem;    /* 72px — головна дія екрана */
 
   /* ── Акценти: сторінка учня (student.html) ──────────────────── */
-  --student-bg-from:    #3730a3;   /* було #4c1d95 — indigo замість violet */
-  --student-bg-to:      #1e40af;   /* було #1e40af — без змін */
+  --student-bg-from:    #6366f1;   /* м'якший indigo-500 — ближче до загального стилю */
+  --student-bg-to:      #3b82f6;   /* брендовий blue-500 (theme-color сайту) */
   --clr-violet:         #4f46e5;   /* було #7c3aed */
   --clr-violet-dark:    #4338ca;   /* було #6d28d9 */
   --clr-violet-light:   #e0e7ff;   /* було #ede9fe */

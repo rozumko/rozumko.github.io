@@ -512,6 +512,8 @@ button {
   display: block;
   line-height: 1;
 }
+/* img глобально display:block → text-align не центрує; вирівнюємо через margin */
+.entry-logo__icon img { margin-inline: auto; }
 .entry-logo__title {
   font-size: var(--font-size-4xl);
   font-weight: 800;
@@ -677,6 +679,7 @@ button {
 .hub-btn:active { transform: scale(.98); }
 .hub-btn:focus-visible { outline: 3px solid rgba(255,255,255,.7); outline-offset: 3px; }
 .hub-btn i { font-size: 1.5rem; flex-shrink: 0; }
+.hub-btn img { flex-shrink: 0; }
 .hub-btn__label { font-size: var(--font-size-lg); font-weight: 800; line-height: 1.2; }
 .hub-btn__sub   { font-size: var(--font-size-xs); opacity: .85; margin-top: 2px; }
 .hub-btn__label, .hub-btn__sub { display: block; }
@@ -1807,6 +1810,7 @@ body.mission-active.mission-answered #mission-quiz .quiz-explanation {
   text-align: center;
 }
 .result-emoji { font-size: 3.75rem; margin-bottom: var(--sp-3); display: block; }
+.result-emoji img { margin-inline: auto; }
 .result-mode-label {
   font-size: var(--font-size-xs);
   text-transform: uppercase;
