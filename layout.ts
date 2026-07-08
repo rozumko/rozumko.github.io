@@ -92,6 +92,7 @@ function injectFooter(): void {
               <li><a href="for-students.html">Для учнів</a></li>
               <li><a href="for-parents.html">Для батьків</a></li>
               <li><a href="for-teachers.html">Для вчителів</a></li>
+              <li><a href="standards.html">Відповідність стандарту</a></li>
               <li><a href="home.html">Домашні місії</a></li>
               <li><a href="school.html">Шкільний режим</a></li>
             </ul>

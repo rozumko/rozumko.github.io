@@ -113,6 +113,7 @@ export default defineConfig({
         privacy:          resolve(__dirname, 'privacy.html'),
         terms:            resolve(__dirname, 'terms.html'),
         transparency:     resolve(__dirname, 'transparency.html'),
+        standards:        resolve(__dirname, 'standards.html'),
       },
     },
   },
