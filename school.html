@@ -36,7 +36,7 @@
 
   <main id="main-content" class="app-main" tabindex="-1">
 
-    <!-- INTRO: введи код від вчителя, обери аватар — і в гру -->
+    <!-- INTRO: enter teacher code and nickname, then go to the lobby -->
     <section id="mission-intro">
       <h1 class="app-title">Я в класі</h1>
       <p class="app-subtitle">Вчитель дав код? Введи його — і грай разом з класом.</p>
@@ -47,7 +47,6 @@
                maxlength="6" placeholder="Код гри — 6 цифр" />
         <input id="join-nickname" class="field-input" autocomplete="off" maxlength="20"
                placeholder="Твоє прізвисько (не справжнє імʼя)" aria-label="Прізвисько" />
-        <div id="avatar-select" class="avatar-row" role="group" aria-label="Обери аватар"></div>
         <button id="join-btn" class="kid-action">Приєднатися до гри</button>
       </div>
 
@@ -65,12 +64,16 @@
     <!-- WAITING: the student has joined, but the teacher has not started the game yet -->
     <section id="mission-waiting" class="hidden school-wait" aria-live="polite">
       <div class="school-wait-card">
-        <div class="school-wait-card__avatar-wrap">
-          <img id="waiting-avatar" src="" alt="" class="school-wait-card__avatar" />
+        <div class="school-wait-card__top">
+          <div class="school-wait-card__avatar-wrap">
+            <img id="waiting-avatar" src="" alt="" class="school-wait-card__avatar" />
+          </div>
+          <p id="waiting-name" class="school-wait-card__name"></p>
         </div>
-        <p id="waiting-name" class="school-wait-card__name"></p>
-        <h2 class="school-wait-card__title">Гра скоро почнеться</h2>
-        <p class="school-wait-card__text">Ти вже в команді. Дочекайся, поки вчитель натисне «Почати гру».</p>
+        <h2 class="school-wait-card__title">Обери свого героя</h2>
+        <p class="school-wait-card__text">Можеш змінити героя, поки вчитель готує гру. Якщо не обереш — залишиться випадковий.</p>
+        <div id="avatar-select" class="avatar-row avatar-row--lobby" role="group" aria-label="Обери свого героя"></div>
+        <p class="school-wait-card__start">Гра скоро почнеться</p>
         <div class="school-wait-dots" aria-hidden="true">
           <span></span><span></span><span></span>
         </div>

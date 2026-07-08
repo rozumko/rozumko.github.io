@@ -106,12 +106,22 @@ function installFakeDb(state: ReturnType<typeof createState>) {
 
   class UpdateQuery {
     table: unknown
+    patch: any
     constructor(t: unknown) { this.table = t }
-    set() { return this }
+    set(v: unknown) { this.patch = v; return this }
     where() { return this }
-    returning() { return [] }
+    // Аватар оновлюється атомарним UPDATE ... WHERE session in lobby → returning
+    returning() {
+      if (isTable(this.table, schema.schoolParticipants) && state.participant && this.patch?.avatar && state.session.status === 'lobby') {
+        state.participant.avatar = this.patch.avatar
+        return [{ id: state.participant.id }]
+      }
+      return []
+    }
     then(res: (v: unknown) => unknown, rej: (e: unknown) => unknown) {
-      if (isTable(this.table, schema.schoolParticipants) && state.participant) state.participant.score += 1
+      if (isTable(this.table, schema.schoolParticipants) && state.participant && !this.patch?.avatar) {
+        state.participant.score += 1
+      }
       return Promise.resolve([]).then(res, rej)
     }
   }
@@ -263,6 +273,55 @@ test('school: participant session polling issues questions only after teacher st
       assert.equal(body.questions.length, 1)
       assert.equal('correct' in body.questions[0], false)
       assert.equal('explanation' in body.questions[0], false)
+    })
+  } finally { restore() }
+})
+
+test('school: lobby participant can update avatar before start', async () => {
+  const state = createState()
+  state.session.status = 'lobby'
+  const restore = installFakeDb(state)
+  try {
+    await withApp(async (app) => {
+      const join = await app.inject({ method: 'POST', url: '/api/school/join', payload: { code: '123456', avatar: AVATAR, nickname: 'Герой' } })
+      assert.equal(join.statusCode, 201, join.body)
+      const token = join.json().participantToken
+      const nextAvatar = SCHOOL_AVATARS[1]
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/school/participants/${ids.participant}/avatar`,
+        headers: { 'X-Participant-Token': token },
+        payload: { avatar: nextAvatar },
+      })
+
+      assert.equal(res.statusCode, 200, res.body)
+      assert.deepEqual(res.json(), { avatar: nextAvatar })
+      assert.equal(state.participant?.avatar, nextAvatar)
+    })
+  } finally { restore() }
+})
+
+test('school: participant cannot update avatar after start', async () => {
+  const state = createState()
+  state.session.status = 'lobby'
+  const restore = installFakeDb(state)
+  try {
+    await withApp(async (app) => {
+      const join = await app.inject({ method: 'POST', url: '/api/school/join', payload: { code: '123456', avatar: AVATAR, nickname: 'Герой' } })
+      assert.equal(join.statusCode, 201, join.body)
+      const token = join.json().participantToken
+      state.session.status = 'active'
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/school/participants/${ids.participant}/avatar`,
+        headers: { 'X-Participant-Token': token },
+        payload: { avatar: SCHOOL_AVATARS[1] },
+      })
+
+      assert.equal(res.statusCode, 409, res.body)
+      assert.equal(state.participant?.avatar, AVATAR)
     })
   } finally { restore() }
 })

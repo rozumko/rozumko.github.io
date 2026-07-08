@@ -268,6 +268,18 @@ export async function getSchoolParticipantSession(participantId: string, partici
   return data
 }
 
+export function updateSchoolParticipantAvatar(
+  participantId: string,
+  participantToken: string,
+  avatar: string,
+): Promise<{ avatar: string }> {
+  return request(`/api/school/participants/${encodeURIComponent(participantId)}/avatar`, {
+    method: 'PATCH',
+    headers: { 'X-Participant-Token': participantToken },
+    body: JSON.stringify({ avatar }),
+  })
+}
+
 export async function submitSchoolAnswer(
   participantId: string,
   participantToken: string,

@@ -385,12 +385,12 @@
   padding: var(--sp-8) var(--sp-4) var(--sp-16);
 }
 .app-main:has(#join-code) {
-  padding-top: var(--sp-6);
+  padding-top: clamp(var(--sp-4), 4vh, var(--sp-7));
 }
 .app-title {
   font-size: clamp(1.75rem, 5vw, 2.5rem);
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   line-height: 1.1;
   color: var(--clr-text);
   text-align: center;
@@ -429,16 +429,17 @@
 
 /* Картка вводу коду гри — головна дія School Mode */
 .code-entry {
+  width: 100%;
   background: var(--clr-surface);
   border: 1px solid var(--clr-border);
   border-radius: var(--r-2xl);
   box-shadow: var(--shadow-card);
-  padding: clamp(var(--sp-5), 3vw, var(--sp-6));
+  padding: clamp(var(--sp-4), 3vw, var(--sp-6));
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: clamp(var(--sp-2), 1.5vw, var(--sp-3));
-  max-width: 38rem;
+  max-width: 34rem;
   margin: 0 auto;
 }
 .code-entry .kid-action {
@@ -493,6 +494,12 @@
   gap: var(--sp-3);
   justify-items: center;
 }
+.avatar-row--lobby {
+  width: min(100%, 31rem);
+  margin: 0 auto var(--sp-5);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--sp-2);
+}
 /* Аватар-кнопка: ілюстрація маскота у ролі. Вибір — рамка бренду. */
 .avatar-btn {
   padding: 4px;
@@ -524,9 +531,9 @@
 }
 
 .school-wait-card {
-  width: min(100%, 34rem);
+  width: min(100%, 38rem);
   margin: 0 auto;
-  padding: clamp(var(--sp-6), 6vw, var(--sp-10));
+  padding: clamp(var(--sp-5), 4vw, var(--sp-7));
   border-radius: var(--r-2xl);
   border: 2px solid rgba(59, 130, 246, .18);
   background:
@@ -535,10 +542,19 @@
   text-align: center;
 }
 
+.school-wait-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+}
+
 .school-wait-card__avatar-wrap {
-  width: clamp(7rem, 28vw, 10rem);
-  height: clamp(7rem, 28vw, 10rem);
-  margin: 0 auto var(--sp-4);
+  width: clamp(4.5rem, 18vw, 6rem);
+  height: clamp(4.5rem, 18vw, 6rem);
+  flex: 0 0 auto;
+  margin: 0;
   display: grid;
   place-items: center;
   border-radius: var(--r-2xl);
@@ -559,7 +575,7 @@
   min-height: 2.5rem;
   align-items: center;
   justify-content: center;
-  margin-bottom: var(--sp-4);
+  margin: 0;
   padding: var(--sp-2) var(--sp-5);
   border-radius: var(--r-full);
   background: #dbeafe;
@@ -571,18 +587,25 @@
 
 .school-wait-card__title {
   color: var(--clr-text);
-  font-size: clamp(1.6rem, 6vw, 2.5rem);
+  font-size: clamp(1.45rem, 5vw, 2rem);
   line-height: 1.1;
   font-weight: 800;
-  margin-bottom: var(--sp-3);
+  margin-bottom: var(--sp-2);
 }
 
 .school-wait-card__text {
   max-width: 25rem;
-  margin: 0 auto var(--sp-5);
+  margin: 0 auto var(--sp-4);
   color: var(--clr-text-muted);
   font-size: var(--kid-text);
   line-height: 1.5;
+}
+
+.school-wait-card__start {
+  margin: 0 0 var(--sp-3);
+  color: var(--clr-text);
+  font-size: var(--kid-text);
+  font-weight: 800;
 }
 
 .school-wait-card__status {
@@ -618,6 +641,23 @@
 
 @media (prefers-reduced-motion: reduce) {
   .school-wait-dots span { animation: none; }
+}
+
+@media (max-width: 640px) {
+  .avatar-row--lobby {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .school-wait-card__top {
+    flex-direction: column;
+    gap: var(--sp-2);
+  }
+
+  .avatar-row--lobby {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 /* Аватар + нікнейм учня у хедері квізу */

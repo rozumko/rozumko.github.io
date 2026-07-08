@@ -1,5 +1,5 @@
-import type { FastifyInstance } from 'fastify'
-import { and, asc, desc, eq, sql } from 'drizzle-orm'
+import type { FastifyInstance, FastifyReply } from 'fastify'
+import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { questions, schoolSessions, schoolSessionQuestions, schoolParticipants, schoolAnswers } from '../db/schema.js'
 import { requireAuth } from '../lib/auth.js'
@@ -43,6 +43,15 @@ const answerBody = {
   },
 } as const
 
+const avatarBody = {
+  type: 'object',
+  required: ['avatar'],
+  additionalProperties: false,
+  properties: {
+    avatar: { type: 'string', maxLength: 16 },
+  },
+} as const
+
 function isUniqueViolation(e: unknown): boolean {
   return typeof e === 'object' && e !== null && (e as { code?: string }).code === '23505'
 }
@@ -56,6 +65,35 @@ async function loadSessionQuestions(sessionId: string) {
     .orderBy(asc(schoolSessionQuestions.position))
 
   return qs.map(sanitizeOlympiadQuestion)
+}
+
+// Guard учасника: HMAC-токен у X-Participant-Token має відповідати :id.
+// Повертає false і сам відправляє 403, якщо токен невалідний.
+function requireParticipant(
+  req: { headers: Record<string, string | string[] | undefined>; params: { id: string } },
+  reply: FastifyReply,
+): boolean {
+  const token = req.headers['x-participant-token']
+  if (typeof token !== 'string' || !verifyAttemptToken(req.params.id, token)) {
+    reply.code(403).send({ error: 'Невірний токен учасника' })
+    return false
+  }
+  return true
+}
+
+async function loadParticipantWithSession(participantId: string) {
+  const [row] = await db
+    .select({
+      id: schoolParticipants.id,
+      sessionId: schoolParticipants.sessionId,
+      status: schoolSessions.status,
+      grade: schoolSessions.grade,
+    })
+    .from(schoolParticipants)
+    .innerJoin(schoolSessions, eq(schoolParticipants.sessionId, schoolSessions.id))
+    .where(eq(schoolParticipants.id, participantId))
+    .limit(1)
+  return row
 }
 
 export async function schoolRoutes(app: FastifyInstance) {
@@ -250,22 +288,9 @@ export async function schoolRoutes(app: FastifyInstance) {
     config: { rateLimit: { max: 30, timeWindow: '1 minute' } },
     schema: { params: uuidParam },
   }, async (req, reply) => {
-    const token = req.headers['x-participant-token']
-    if (typeof token !== 'string' || !verifyAttemptToken(req.params.id, token)) {
-      return reply.code(403).send({ error: 'Невірний токен учасника' })
-    }
+    if (!requireParticipant(req, reply)) return
 
-    const [participant] = await db
-      .select({
-        id: schoolParticipants.id,
-        sessionId: schoolParticipants.sessionId,
-        status: schoolSessions.status,
-        grade: schoolSessions.grade,
-      })
-      .from(schoolParticipants)
-      .innerJoin(schoolSessions, eq(schoolParticipants.sessionId, schoolSessions.id))
-      .where(eq(schoolParticipants.id, req.params.id))
-      .limit(1)
+    const participant = await loadParticipantWithSession(req.params.id)
     if (!participant) return reply.code(404).send({ error: 'Учасника не знайдено' })
 
     const questionsForPlayer = participant.status === 'active'
@@ -280,29 +305,45 @@ export async function schoolRoutes(app: FastifyInstance) {
     })
   })
 
+  app.patch<{ Params: { id: string }; Body: { avatar: string } }>('/participants/:id/avatar', {
+    config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
+    schema: { params: uuidParam, body: avatarBody },
+  }, async (req, reply) => {
+    if (!requireParticipant(req, reply)) return
+    if (!isValidAvatar(req.body.avatar)) return reply.code(400).send({ error: 'Оберіть аватар зі списку' })
+
+    // Атомарно: оновлюємо лише поки сесія в лобі — без вікна між перевіркою
+    // статусу і записом (вчитель може стартувати гру між ними).
+    const [updated] = await db.update(schoolParticipants)
+      .set({ avatar: req.body.avatar })
+      .where(and(
+        eq(schoolParticipants.id, req.params.id),
+        inArray(
+          schoolParticipants.sessionId,
+          db.select({ id: schoolSessions.id }).from(schoolSessions).where(eq(schoolSessions.status, 'lobby')),
+        ),
+      ))
+      .returning({ id: schoolParticipants.id })
+
+    if (!updated) {
+      const participant = await loadParticipantWithSession(req.params.id)
+      if (!participant) return reply.code(404).send({ error: 'Учасника не знайдено' })
+      return reply.code(409).send({ error: 'Гра вже стартувала. Герой зафіксований.' })
+    }
+
+    return reply.send({ avatar: req.body.avatar })
+  })
+
   // ── Учень: відповісти на питання (серверний скоринг) ──────────────────────
   app.post<{ Params: { id: string }; Body: { questionId: string; answer: AnswerValue } }>('/participants/:id/answer', {
     config: { rateLimit: { max: 60, timeWindow: '1 minute' } },
     schema: { params: uuidParam, body: answerBody },
   }, async (req, reply) => {
-    const token = req.headers['x-participant-token']
-    if (typeof token !== 'string' || !verifyAttemptToken(req.params.id, token)) {
-      return reply.code(403).send({ error: 'Невірний токен учасника' })
-    }
+    if (!requireParticipant(req, reply)) return
 
-    const [participant] = await db
-      .select({ id: schoolParticipants.id, sessionId: schoolParticipants.sessionId })
-      .from(schoolParticipants)
-      .where(eq(schoolParticipants.id, req.params.id))
-      .limit(1)
+    const participant = await loadParticipantWithSession(req.params.id)
     if (!participant) return reply.code(404).send({ error: 'Учасника не знайдено' })
-
-    const [session] = await db
-      .select({ status: schoolSessions.status })
-      .from(schoolSessions)
-      .where(eq(schoolSessions.id, participant.sessionId))
-      .limit(1)
-    if (!session || session.status !== 'active') {
+    if (participant.status !== 'active') {
       return reply.code(409).send({ error: 'Сесія неактивна' })
     }
 
