@@ -608,6 +608,9 @@ body:has(.result-overlay.active) .student-screen {
   align-items: center;
   gap: var(--sp-4);
 }
+.quiz-question-card:focus {
+  outline: none;
+}
 .quiz-question-text {
   flex: 1;
   font-size: var(--font-size-xl);
@@ -622,6 +625,21 @@ body:has(.result-overlay.active) .student-screen {
 }
 
 /* Зображення до питання (праворуч) */
+.quiz-image-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+}
+.quiz-image-btn:focus-visible {
+  outline: 3px solid var(--clr-primary);
+  outline-offset: 4px;
+  border-radius: var(--r-xl);
+}
 .quiz-image {
   width: 9rem;
   flex-shrink: 0;
@@ -1136,6 +1154,12 @@ body.mission-active.mission-answered #mission-quiz .quiz-explanation {
   background: #fff;
   border: 3px solid #fff;
 }
+.quiz-overlay .quiz-image-btn {
+  width: clamp(8rem, 20vw, 16rem);
+}
+.quiz-overlay .quiz-image-btn .quiz-image {
+  width: 100%;
+}
 
 .quiz-overlay .quiz-code,
 #mission-quiz .quiz-code {
@@ -1382,6 +1406,9 @@ body.mission-active.mission-answered #mission-quiz .quiz-feedback-wrap {
   .quiz-overlay .quiz-image {
     width: 100%;
     max-height: 12rem;
+  }
+  .quiz-overlay .quiz-image-btn {
+    width: 100%;
   }
   .quiz-overlay .quiz-options--two,
   #mission-quiz .quiz-options--two,
@@ -1787,3 +1814,26 @@ body.mission-active.mission-answered #mission-quiz .quiz-feedback-wrap {
   transition: color var(--transition-fast);
 }
 .btn-boundary-dismiss:hover { color: rgba(255,255,255,0.85); }
+
+#toast-notification {
+  position: fixed;
+  left: 50%;
+  bottom: var(--sp-6);
+  z-index: 260;
+  max-width: min(28rem, calc(100vw - 2rem));
+  padding: var(--sp-3) var(--sp-5);
+  border-radius: var(--r-xl);
+  background: #0f172a;
+  color: #fff;
+  font-weight: 700;
+  text-align: center;
+  box-shadow: 0 18px 48px rgba(15,23,42,.28);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, var(--sp-4));
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+#toast-notification.toast-notification--visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}

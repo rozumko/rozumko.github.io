@@ -1,4 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
+import AxeBuilder from '@axe-core/playwright'
+
+const AXE_PAGES = ['/', '/student.html', '/teacher.html', '/games.html', '/for-parents.html']
 
 const choiceQuestion = {
   id: 'choice-1',
@@ -58,6 +61,28 @@ test.describe('accessibility smoke: home and school missions', () => {
     await expect(page.locator('#quiz-next-btn')).toBeVisible()
   })
 
+  test('home choice radio group uses one tab stop and arrow-key roving focus', async ({ page }) => {
+    await startHomeMission(page, [choiceQuestion])
+
+    const radios = page.getByRole('radio')
+    await expect(radios).toHaveCount(3)
+    await expect(radios.nth(0)).toHaveAttribute('tabindex', '0')
+    await expect(radios.nth(1)).toHaveAttribute('tabindex', '-1')
+    await expect(radios.nth(2)).toHaveAttribute('tabindex', '-1')
+
+    await radios.first().focus()
+    await page.keyboard.press('ArrowDown')
+
+    await expect(radios.nth(0)).toHaveAttribute('tabindex', '-1')
+    await expect(radios.nth(1)).toHaveAttribute('tabindex', '0')
+    await expect(radios.nth(1)).toBeFocused()
+    await expect(radios.nth(1)).toHaveAttribute('aria-checked', 'false')
+
+    await page.keyboard.press('Enter')
+    await expect(radios.nth(1)).toHaveAttribute('aria-checked', 'true')
+    await expect(page.locator('#quiz-next-btn')).toBeVisible()
+  })
+
   test('home sort questions do not masquerade as radio groups', async ({ page }) => {
     await startHomeMission(page, [sortQuestion])
 
@@ -70,6 +95,23 @@ test.describe('accessibility smoke: home and school missions', () => {
       await expect(hiddenMoves.nth(i)).toBeDisabled()
       await expect(hiddenMoves.nth(i)).toHaveAttribute('aria-hidden', 'true')
     }
+  })
+
+  test('home sort movement keeps keyboard focus and announces the new position', async ({ page }) => {
+    await startHomeMission(page, [sortQuestion])
+
+    const movedItem = await page.locator('.quiz-sort-row').first().locator('.quiz-sort-item').textContent()
+    const moveDown = page.locator('.quiz-sort-row').first().locator('.quiz-move:not([disabled])').last()
+    await moveDown.focus()
+    await page.keyboard.press('Enter')
+
+    await expect(page.locator('.quiz-move:focus')).toHaveCount(1)
+    await expect(page.locator('[data-quiz-sort-live]')).toHaveText(`${movedItem} — тепер позиція 2`)
+
+    await page.keyboard.press('Enter')
+
+    await expect(page.locator('.quiz-move:focus')).toHaveCount(1)
+    await expect(page.locator('[data-quiz-sort-live]')).toHaveText(`${movedItem} — тепер позиція 3`)
   })
 
   test('school choice options keep radio semantics after mocked join', async ({ page }) => {
@@ -112,4 +154,18 @@ test.describe('accessibility smoke: home and school missions', () => {
     await expect(radios.first()).toHaveAttribute('aria-checked', 'true')
     await expect(page.locator('#quiz-next-btn')).toBeVisible()
   })
+})
+
+test.describe('axe accessibility scan', () => {
+  for (const path of AXE_PAGES) {
+    test(`axe: ${path}`, async ({ page }) => {
+      await page.goto(path)
+
+      const results = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+        .analyze()
+
+      expect(results.violations).toEqual([])
+    })
+  }
 })

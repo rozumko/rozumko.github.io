@@ -34,11 +34,12 @@
 </head>
 
 <body class="student-page">
+  <a href="#screen-entry" class="skip-link">Перейти до основного контенту</a>
 
   <!-- ═══════════════════════════════════════════════════════════
        ЕКРАН: ГОЛОВНЕ МЕНЮ
        ═══════════════════════════════════════════════════════════ -->
-  <div id="screen-entry" class="student-screen">
+  <main id="screen-entry" class="student-screen" tabindex="-1">
 
     <a href="index.html" class="student-back">
       ← На головну
@@ -122,7 +123,7 @@
       <p>&copy; 2024–2026 Розумко</p>
     </footer>
 
-  </div><!-- /screen-entry -->
+  </main><!-- /screen-entry -->
 
 
   <!-- ═══════════════════════════════════════════════════════════
@@ -139,7 +140,7 @@
   <!-- ═══════════════════════════════════════════════════════════
        QUIZ OVERLAY
        ═══════════════════════════════════════════════════════════ -->
-  <div id="quiz-overlay" class="quiz-overlay" role="main" aria-label="Квіз">
+  <div id="quiz-overlay" class="quiz-overlay" aria-label="Квіз">
 
     <!-- Шапка -->
     <header class="quiz-header">
@@ -156,7 +157,7 @@
     </header>
 
     <!-- Прогрес-бар -->
-    <div class="quiz-progress-bar-wrap" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+    <div class="quiz-progress-bar-wrap" aria-hidden="true">
       <div id="quiz-progress-bar" class="quiz-progress-bar" style="width:0%"></div>
     </div>
 
@@ -168,10 +169,12 @@
       <div class="quiz-inner">
 
         <!-- Картка питання -->
-        <div id="quiz-question-card" class="quiz-question-card">
+        <div id="quiz-question-card" class="quiz-question-card" tabindex="-1">
           <p id="quiz-question-text" class="quiz-question-text"></p>
-          <img id="quiz-image" src="" alt="Зображення до питання"
-            class="quiz-image hidden" />
+          <button id="quiz-image-btn" type="button" class="quiz-image-btn hidden"
+                  aria-label="Збільшити зображення до питання">
+            <img id="quiz-image" src="" alt="Зображення до питання" class="quiz-image" />
+          </button>
         </div>
 
         <!-- Псевдокод Равлика -->
@@ -251,7 +254,7 @@
   <!-- ═══════════════════════════════════════════════════════════
        LIGHTBOX
        ═══════════════════════════════════════════════════════════ -->
-  <div id="img-lightbox" class="lightbox hidden"
+  <div id="img-lightbox" class="lightbox hidden" tabindex="-1"
        role="dialog" aria-modal="true" aria-label="Збільшене зображення">
     <img id="img-lightbox-img" src="" alt="" class="lightbox__img" />
     <button id="img-lightbox-close" class="lightbox__close" aria-label="Закрити зображення">×</button>

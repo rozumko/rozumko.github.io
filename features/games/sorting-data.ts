@@ -162,10 +162,10 @@ export const SORTING_ATTRIBUTES_LEVELS: SortingLevel[] = [
       { id: 'no-eat', label: '🚫 Неїстівне' },
     ],
     items: [
-      { emoji: '🍕', bin: 'eat' }, { emoji: '🎩', bin: 'no-eat' },
-      { emoji: '🍓', bin: 'eat' }, { emoji: '🧱', bin: 'no-eat' },
-      { emoji: '🧀', bin: 'eat' }, { emoji: '⏰', bin: 'no-eat' },
-      { emoji: '🍎', bin: 'eat' }, { emoji: '⚽', bin: 'no-eat' },
+      { emoji: '🍕', label: 'Піца', bin: 'eat' }, { emoji: '🎩', label: 'Капелюх', bin: 'no-eat' },
+      { emoji: '🍓', label: 'Полуниця', bin: 'eat' }, { emoji: '🧱', label: 'Цеглина', bin: 'no-eat' },
+      { emoji: '🧀', label: 'Сир', bin: 'eat' }, { emoji: '⏰', label: 'Будильник', bin: 'no-eat' },
+      { emoji: '🍎', label: 'Яблуко', bin: 'eat' }, { emoji: '⚽', label: 'Мʼяч', bin: 'no-eat' },
     ],
   },
   {
@@ -176,9 +176,9 @@ export const SORTING_ATTRIBUTES_LEVELS: SortingLevel[] = [
       { id: 'land',  label: '🚗 Земля' },
     ],
     items: [
-      { emoji: '🚁', bin: 'air' }, { emoji: '🚢', bin: 'water' }, { emoji: '🚌', bin: 'land' },
-      { emoji: '🚀', bin: 'air' }, { emoji: '⛵', bin: 'water' }, { emoji: '🚲', bin: 'land' },
-      { emoji: '🚤', bin: 'water' }, { emoji: '🚂', bin: 'land' }, { emoji: '🦅', bin: 'air' },
+      { emoji: '🚁', label: 'Гелікоптер', bin: 'air' }, { emoji: '🚢', label: 'Корабель', bin: 'water' }, { emoji: '🚌', label: 'Автобус', bin: 'land' },
+      { emoji: '🚀', label: 'Ракета', bin: 'air' }, { emoji: '⛵', label: 'Вітрильник', bin: 'water' }, { emoji: '🚲', label: 'Велосипед', bin: 'land' },
+      { emoji: '🚤', label: 'Катер', bin: 'water' }, { emoji: '🚂', label: 'Потяг', bin: 'land' }, { emoji: '🦅', label: 'Орел', bin: 'air' },
     ],
   },
   {
@@ -188,9 +188,9 @@ export const SORTING_ATTRIBUTES_LEVELS: SortingLevel[] = [
       { id: 'square', label: '🟥 Кутасте' },
     ],
     items: [
-      { emoji: '⚽', bin: 'circle' }, { emoji: '📺', bin: 'square' },
-      { emoji: '🌕', bin: 'circle' }, { emoji: '🖼️', bin: 'square' },
-      { emoji: '🍕', bin: 'circle' }, { emoji: '🧊', bin: 'square' },
+      { emoji: '⚽', label: 'Мʼяч', bin: 'circle' }, { emoji: '📺', label: 'Телевізор', bin: 'square' },
+      { emoji: '🌕', label: 'Місяць', bin: 'circle' }, { emoji: '🖼️', label: 'Картина', bin: 'square' },
+      { emoji: '🍕', label: 'Піца', bin: 'circle' }, { emoji: '🧊', label: 'Кубик льоду', bin: 'square' },
     ],
   },
   {
@@ -200,9 +200,9 @@ export const SORTING_ATTRIBUTES_LEVELS: SortingLevel[] = [
       { id: 'small', label: '🐭 Маленьке' },
     ],
     items: [
-      { emoji: '🐋', bin: 'big' }, { emoji: '🐜', bin: 'small' },
-      { emoji: '🏠', bin: 'big' }, { emoji: '📌', bin: 'small' },
-      { emoji: '🚌', bin: 'big' }, { emoji: '🍬', bin: 'small' },
+      { emoji: '🐋', label: 'Кит', bin: 'big' }, { emoji: '🐜', label: 'Мураха', bin: 'small' },
+      { emoji: '🏠', label: 'Будинок', bin: 'big' }, { emoji: '📌', label: 'Кнопка', bin: 'small' },
+      { emoji: '🚌', label: 'Автобус', bin: 'big' }, { emoji: '🍬', label: 'Цукерка', bin: 'small' },
     ],
   },
   {
@@ -212,9 +212,9 @@ export const SORTING_ATTRIBUTES_LEVELS: SortingLevel[] = [
       { id: 'slow', label: '🐌 Повільне' },
     ],
     items: [
-      { emoji: '🐆', bin: 'fast' }, { emoji: '🐢', bin: 'slow' },
-      { emoji: '🏎️', bin: 'fast' }, { emoji: '🚜', bin: 'slow' },
-      { emoji: '🚀', bin: 'fast' }, { emoji: '🦥', bin: 'slow' },
+      { emoji: '🐆', label: 'Гепард', bin: 'fast' }, { emoji: '🐢', label: 'Черепаха', bin: 'slow' },
+      { emoji: '🏎️', label: 'Гоночне авто', bin: 'fast' }, { emoji: '🚜', label: 'Трактор', bin: 'slow' },
+      { emoji: '🚀', label: 'Ракета', bin: 'fast' }, { emoji: '🦥', label: 'Лінивець', bin: 'slow' },
     ],
   },
 ]

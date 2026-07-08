@@ -7,6 +7,10 @@
  * @returns removeTrap — виклик знімає слухачів
  */
 export function createFocusTrap(el: HTMLElement, onClose?: () => void): () => void {
+  const previouslyFocused = document.activeElement instanceof HTMLElement
+    ? document.activeElement
+    : null
+
   const FOCUSABLE = [
     'a[href]', 'button:not([disabled])', 'input:not([disabled])',
     'select:not([disabled])', 'textarea:not([disabled])',
@@ -40,5 +44,9 @@ export function createFocusTrap(el: HTMLElement, onClose?: () => void): () => vo
   if (nodes.length) nodes[0].focus()
 
   el.addEventListener('keydown', onKeyDown)
-  return () => el.removeEventListener('keydown', onKeyDown)
+  return () => {
+    el.removeEventListener('keydown', onKeyDown)
+    // Return focus to the opener when it still exists after the modal closes.
+    if (previouslyFocused?.isConnected) previouslyFocused.focus()
+  }
 }

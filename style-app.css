@@ -231,7 +231,7 @@
   color: #fff;
   margin-top: auto;
 }
-.mode-door--home   .mode-door__cta { background: var(--clr-amber-dark); }
+.mode-door--home   .mode-door__cta { background: #92400e; }
 .mode-door--school .mode-door__cta { background: var(--clr-brand); }
 .mode-door:hover .mode-door__cta { filter: brightness(.94); }
 
@@ -793,7 +793,6 @@
 .mission-card__meta {
   font-size: var(--font-size-xs, 0.75rem);
   color: var(--clr-text-muted);
-  opacity: 0.85;
   max-width: 100%;
 }
 /* Преміум-активність: бейдж «замок» у кутку + приглушена картка */
@@ -808,7 +807,7 @@
   font-size: var(--font-size-xs, 0.75rem);
   font-weight: 800;
   color: #78350f;
-  background: var(--clr-amber, #fbbf24);
+  background: #fde68a;
   border-radius: var(--r-full);
   padding: 3px 9px;
   box-shadow: var(--shadow-sm);
@@ -841,7 +840,7 @@
 .mission-card--inf .mission-card__meta  { color: var(--track-inf); }
 .mission-card--think { border-color: var(--track-think); background: var(--track-think-light); }
 .mission-card--think .mission-card__title { color: var(--track-think-dark); }
-.mission-card--think .mission-card__meta  { color: var(--track-think); }
+.mission-card--think .mission-card__meta  { color: #6d28d9; }
 .mission-card--ai { border-color: var(--track-ai); background: var(--track-ai-light); }
 .mission-card--ai .mission-card__title { color: var(--track-ai-dark); }
 .mission-card--ai .mission-card__meta  { color: var(--track-ai); }

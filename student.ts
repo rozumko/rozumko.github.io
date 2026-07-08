@@ -7,6 +7,7 @@ import { createAnswerQueue, type AnswerQueue } from './features/olympiad/answer-
 import { renderQuestion, type RenderableQuestion } from './utils/question-renderer.js'
 import { showModal, showConfirm } from './utils/ui.js'
 import { $, $maybe } from './utils/dom.js'
+import { createFocusTrap } from './utils/focus-trap.js'
 
 // --- DOM: тренування ---
 const gradeButtons     = document.querySelectorAll<HTMLButtonElement>('[data-grade]')
@@ -72,6 +73,7 @@ const quizProgressTxt = $('quiz-progress-text')
 const quizProgressBar = $('quiz-progress-bar')
 const quizTimer       = $('quiz-timer')
 const quizTimerDisplay = $('quiz-timer-display')
+const quizQuestionCard = $('quiz-question-card')
 const quizQuestionEl  = $('quiz-question-text')
 const quizOptionsEl   = $('quiz-options')
 const quizFeedback    = $('quiz-feedback')
@@ -80,21 +82,27 @@ const quizNextBtn     = $<HTMLButtonElement>('quiz-next-btn')
 const quizSkipBtn     = $<HTMLButtonElement>('quiz-skip-btn')
 const quizQuitBtn     = $<HTMLButtonElement>('quiz-quit-btn')
 const quizNav         = $('quiz-nav')
+const toastNotification = $('toast-notification')
 
 // --- Lightbox ---
 const quizImage     = $maybe<HTMLImageElement>('quiz-image')
+const quizImageBtn  = $maybe<HTMLButtonElement>('quiz-image-btn')
 const imgLightbox   = $maybe('img-lightbox')
 const imgLightboxImg = $maybe<HTMLImageElement>('img-lightbox-img')
+let lightboxTrapRemove: (() => void) | null = null
 
 function openLightbox(src: string, alt: string) {
   if (!imgLightboxImg || !imgLightbox) return
   imgLightboxImg.src = src
   imgLightboxImg.alt = alt || ''
   imgLightbox.classList.remove('hidden')
-  imgLightbox.focus()
+  lightboxTrapRemove?.()
+  lightboxTrapRemove = createFocusTrap(imgLightbox, closeLightbox)
 }
 function closeLightbox() {
   if (!imgLightbox || !imgLightboxImg) return
+  lightboxTrapRemove?.()
+  lightboxTrapRemove = null
   imgLightbox.classList.add('hidden')
   imgLightboxImg.src = ''
 }
@@ -102,10 +110,6 @@ imgLightbox?.addEventListener('click', (e) => {
   const target = e.target as HTMLElement
   if (target === imgLightbox || target.closest('#img-lightbox-close')) closeLightbox()
 })
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && imgLightbox && !imgLightbox.classList.contains('hidden')) closeLightbox()
-})
-
 // --- DOM: result overlay ---
 const resultOverlay   = $('result-overlay')
 const resultTitle     = $('result-title')
@@ -178,6 +182,9 @@ let timerInterval:    ReturnType<typeof setInterval> | null = null
 let heartbeatInterval: ReturnType<typeof setInterval> | null = null
 let finishing         = false                       // guard від подвійного finishQuiz
 let secondsLeft       = 0
+const TIME_WARNINGS   = new Set([300, 60, 30])
+const spokenTimeWarnings = new Set<number>()
+let toastTimer:       ReturnType<typeof setTimeout> | null = null
 let startedAt:        number | null = null
 let currentMode:      string | null = null
 
@@ -380,10 +387,11 @@ function startQuiz(qs: RenderableQuestion[], mode: string, cfg: any, meta: QuizM
   ;(quizModeBadge as HTMLElement).style.color      = badgeText[mode]  ?? '#334155'
 
   clearInterval(timerInterval!)
+  spokenTimeWarnings.clear()
   if (cfg.timeMinutes) {
     secondsLeft = restore.secondsLeft ?? cfg.timeMinutes * 60
     quizTimer.classList.add('visible')
-    updateTimerDisplay()
+    updateTimerDisplay(false)
     // Локальний тік — лише для показу. Рішення «час вийшов» ухвалює сервер через
     // heartbeat (олімпіада) або дедлайн-перевірку в answer/finish, тож блекаут не
     // завершить квіз передчасно: пауза зараховується й таймер ресинкається.
@@ -394,6 +402,7 @@ function startQuiz(qs: RenderableQuestion[], mode: string, cfg: any, meta: QuizM
     }, 1000)
   } else {
     quizTimer.classList.remove('visible')
+    quizTimer.classList.remove('urgent')
   }
 
   // Heartbeat лише для олімпіади (demo не має серверної спроби).
@@ -414,14 +423,16 @@ function showQuestion() {
   ;(quizProgressBar as HTMLElement).style.width = `${(currentIdx / questions.length) * 100}%`
   quizQuestionEl.textContent         = q.q as string
 
-  if (q.img && quizImage) {
+  if (q.img && quizImage && quizImageBtn) {
     quizImage.src    = q.img as string
-    quizImage.classList.remove('hidden')
-    quizImage.onclick = () => openLightbox(q.img as string, q.q as string)
-  } else if (quizImage) {
-    quizImage.classList.add('hidden')
-    quizImage.src    = ''
-    quizImage.onclick = null
+    quizImageBtn.classList.remove('hidden')
+    quizImageBtn.onclick = () => openLightbox(q.img as string, q.q as string)
+  } else {
+    quizImageBtn?.classList.add('hidden')
+    if (quizImage) {
+      quizImage.src = ''
+    }
+    if (quizImageBtn) quizImageBtn.onclick = null
   }
 
   const codeBlock = $maybe('quiz-code-block')
@@ -486,6 +497,10 @@ function showQuestion() {
       showFeedbackOlympiad() // нейтральний feedback: "збережено" для olympiad, "прийнято" для demo
     },
   })
+
+  if ((currentIdx > 0 || navEnabled) && type !== 'input') {
+    quizQuestionCard.focus()
+  }
 }
 
 function showFeedbackOlympiad() {
@@ -570,7 +585,7 @@ function renderNav() {
     if (isAnswered)     chip.classList.add('quiz-nav-chip--answered')
     if (i === currentIdx) chip.classList.add('quiz-nav-chip--current')
     chip.setAttribute('aria-label', `Питання ${i + 1}${isAnswered ? ' — відповів' : ''}${i === currentIdx ? ' — поточне' : ''}`)
-    if (i === currentIdx) chip.setAttribute('aria-current', 'true')
+    if (i === currentIdx) chip.setAttribute('aria-current', 'step')
     chip.addEventListener('click', () => goToQuestion(i))
     quizNav.appendChild(chip)
   })
@@ -714,11 +729,27 @@ resultCloseBtn.addEventListener('click', () => hideOverlay(resultOverlay))
 
 // ===================== УТИЛІТИ =====================
 
-function updateTimerDisplay() {
+function showToast(message: string) {
+  if (toastTimer) clearTimeout(toastTimer)
+  toastNotification.textContent = message
+  toastNotification.classList.add('toast-notification--visible')
+  toastTimer = setTimeout(() => {
+    toastNotification.classList.remove('toast-notification--visible')
+    toastTimer = null
+  }, 4500)
+}
+
+function updateTimerDisplay(announce = true) {
   const m = Math.floor(secondsLeft / 60)
   const s = secondsLeft % 60
   quizTimerDisplay.textContent = `${m}:${String(s).padStart(2, '0')}`
-  if (secondsLeft <= 60) quizTimer.classList.add('urgent')
+  quizTimer.classList.toggle('urgent', secondsLeft <= 60)
+  if (announce && TIME_WARNINGS.has(secondsLeft) && !spokenTimeWarnings.has(secondsLeft)) {
+    spokenTimeWarnings.add(secondsLeft)
+    showToast(secondsLeft >= 60
+      ? `Залишилось ${secondsLeft / 60} ${secondsLeft === 60 ? 'хвилина' : 'хвилин'}`
+      : 'Залишилось 30 секунд')
+  }
 }
 
 function showOverlay(el: HTMLElement) { el.classList.add('active') }

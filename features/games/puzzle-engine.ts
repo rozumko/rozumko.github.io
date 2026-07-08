@@ -58,7 +58,7 @@ export function mountPuzzles(root: HTMLElement, grade: number, count = 5) {
     }
     // Вибір у сітці — тап-циклування; inline — лише слот (варіанти окремим рядком).
     if (inGrid) {
-      return `<button class="pz-cycle" type="button" data-cycle="${tok.id}" data-options="${tok.options.join('|')}" aria-label="Натисни, щоб змінити">?</button>`
+      return `<button class="pz-cycle" type="button" data-cycle="${tok.id}" data-options="${tok.options.join('|')}" aria-label="Порожнє місце, натисни щоб обрати">?</button>`
     }
     return `<span class="pz-slot" data-slotval="${tok.id}">?</span>`
   }
@@ -99,7 +99,7 @@ export function mountPuzzles(root: HTMLElement, grade: number, count = 5) {
     const choices = inlineChoices(pz)
     const optionsHTML = choices.map(ch =>
       `<div class="pz-opts" data-for="${ch.id}">${ch.options.map(o =>
-        `<button class="pz-opt" type="button" data-choice="${ch.id}" data-value="${o}">${o}</button>`).join('')}</div>`
+        `<button class="pz-opt" type="button" data-choice="${ch.id}" data-value="${o}" aria-pressed="false">${o}</button>`).join('')}</div>`
     ).join('')
 
     el.stage.innerHTML = `
@@ -121,8 +121,11 @@ export function mountPuzzles(root: HTMLElement, grade: number, count = 5) {
         picked[id] = btn.dataset['value']!
         const slot = el.stage.querySelector<HTMLElement>(`[data-slotval="${id}"]`)
         if (slot) { slot.textContent = btn.dataset['value']!; slot.classList.add('pz-slot--set') }
-        el.stage.querySelectorAll<HTMLButtonElement>(`.pz-opt[data-choice="${id}"]`).forEach(b =>
-          b.classList.toggle('pz-opt--on', b === btn))
+        el.stage.querySelectorAll<HTMLButtonElement>(`.pz-opt[data-choice="${id}"]`).forEach(b => {
+          const selected = b === btn
+          b.classList.toggle('pz-opt--on', selected)
+          b.setAttribute('aria-pressed', String(selected))
+        })
       })
     })
     // сітка: тап-циклування
@@ -135,6 +138,7 @@ export function mountPuzzles(root: HTMLElement, grade: number, count = 5) {
         const nextVal = options[(cur + 1) % options.length]
         picked[id] = nextVal
         btn.textContent = nextVal
+        btn.setAttribute('aria-label', `Обрано: ${nextVal}. Натисни, щоб змінити`)
         btn.classList.add('pz-cycle--set')
       })
     })

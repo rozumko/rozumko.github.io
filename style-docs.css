@@ -105,8 +105,8 @@
 }
 
 /* Посилання у тексті */
-.doc-link { color: var(--clr-primary); text-decoration: none; }
-.doc-link:hover { text-decoration: underline; }
+.doc-link { color: #1d4ed8; text-decoration: underline; text-underline-offset: 0.15em; }
+.doc-link:hover { text-decoration-thickness: 2px; }
 
 /* Сірий info-box (контакти тощо) */
 .doc-info-box {
@@ -220,6 +220,6 @@
   transition: filter var(--transition-fast);
 }
 .doc-btn:hover { filter: brightness(.9); }
-.doc-btn--sky     { background: #0284c7; color: #fff; }
-.doc-btn--emerald { background: #059669; color: #fff; }
+.doc-btn--sky     { background: #0369a1; color: #fff; }
+.doc-btn--emerald { background: #047857; color: #fff; }
 .doc-btn--slate   { background: #475569; color: #fff; }

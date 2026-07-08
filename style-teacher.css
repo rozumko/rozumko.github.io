@@ -35,7 +35,7 @@
 
 /* Кольорова шапка картки */
 .auth-card__header {
-  background: var(--clr-sky);
+  background: #0369a1;
   color: #fff;
   padding: var(--sp-6) var(--sp-8);
 }
@@ -44,7 +44,7 @@
   font-size: var(--font-size-xs);
   text-transform: uppercase;
   letter-spacing: 0.2em;
-  color: rgba(186,230,253,0.9);
+  color: #fff;
   margin-bottom: var(--sp-2);
 }
 .auth-card__title {
@@ -57,7 +57,7 @@
 }
 .auth-card__sub {
   font-size: var(--font-size-sm);
-  color: rgba(224,242,254,0.9);
+  color: #fff;
 }
 
 /* Тіло картки */
@@ -84,7 +84,7 @@
 }
 
 /* Кнопки */
-.btn-sky     { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); background: var(--clr-sky); color: #fff; font-weight: 700; padding: var(--sp-3) var(--sp-5); border-radius: var(--r-lg); font-family: var(--font-family); font-size: var(--font-size-base); cursor: pointer; border: none; transition: background-color var(--transition-base); }
+.btn-sky     { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); background: #0369a1; color: #fff; font-weight: 700; padding: var(--sp-3) var(--sp-5); border-radius: var(--r-lg); font-family: var(--font-family); font-size: var(--font-size-base); cursor: pointer; border: none; transition: background-color var(--transition-base); }
 .btn-sky:hover:not(:disabled) { background: var(--clr-sky-dark); }
 .btn-sky:disabled { opacity: 0.65; cursor: not-allowed; }
 .btn-emerald { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); background: var(--clr-emerald); color: #fff; font-weight: 700; padding: var(--sp-3) var(--sp-5); border-radius: var(--r-lg); font-family: var(--font-family); font-size: var(--font-size-base); cursor: pointer; border: none; transition: background-color var(--transition-base); }
@@ -834,4 +834,3 @@ body.teacher-dashboard-active {
   flex-shrink: 0;
   white-space: nowrap;
 }
-

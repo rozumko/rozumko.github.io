@@ -41,7 +41,7 @@ export function mountSortingGame(root: HTMLElement, levels: SortingLevel[], opts
           <span class="sg__streak hidden" aria-live="polite"></span>
         </div>
       </div>
-      <div class="sg__item-wrap"><div class="sg__item" aria-live="polite"><span class="sg__item-emoji"></span><span class="sg__item-label hidden"></span></div></div>
+      <div class="sg__item-wrap"><div class="sg__item" aria-live="polite"><span class="sg__item-emoji" aria-hidden="true"></span><span class="sg__item-label sr-only"></span></div></div>
       <p class="sg__hint">Куди належить цей предмет? Натисни кошик!</p>
       <div class="sg__bins" role="group" aria-label="Кошики для сортування"></div>
       <div class="sg__done hidden">
@@ -124,8 +124,7 @@ export function mountSortingGame(root: HTMLElement, levels: SortingLevel[], opts
   function showItem() {
     el.progress.textContent = `Рівень ${levelIdx + 1} з ${levels.length} · залишилось ${queue.length}`
     el.itemEmoji.textContent = queue[0]?.emoji ?? ''
-    el.itemLabel.textContent = queue[0]?.label ?? ''
-    el.itemLabel.classList.toggle('hidden', !queue[0]?.label)
+    el.itemLabel.textContent = queue[0]?.label ?? queue[0]?.emoji ?? ''
     el.item.classList.remove('sg__item--pop')
     void el.item.offsetWidth  // перезапуск CSS-анімації
     el.item.classList.add('sg__item--pop')

@@ -42,6 +42,8 @@ export function renderQuestion(
   } = {}
 ) {
   container.innerHTML = '';
+  container.parentElement?.querySelectorAll('[data-quiz-sort-live]').forEach(node => node.remove());
+  clearRadioGroup(container);
   const type = q.type ?? 'choice';
 
   // Radio-механіки рендерять кнопки з role="radio" — контейнер має бути
@@ -71,6 +73,8 @@ const CLS = {
   neutral:    ['quiz-option'],   // базовий клас (для reset при знятті стану)
 };
 
+const radioKeydownHandlers = new WeakMap<HTMLElement, (e: KeyboardEvent) => void>();
+
 function markCorrect(el)   { el.classList.add('quiz-option--correct'); }
 function markIncorrect(el) { el.classList.add('quiz-option--incorrect'); }
 
@@ -82,6 +86,48 @@ function prepareRadioOption(btn, checked = false) {
 
 function setRadioSelection(btns, selectedBtn) {
   btns.forEach(btn => btn.setAttribute('aria-checked', String(btn === selectedBtn)));
+}
+
+function clearRadioGroup(container: HTMLElement) {
+  const previous = radioKeydownHandlers.get(container);
+  if (previous) {
+    container.removeEventListener('keydown', previous);
+    radioKeydownHandlers.delete(container);
+  }
+}
+
+function setupRadioGroup(container: HTMLElement, btns: HTMLButtonElement[], initialIndex = 0) {
+  const enabled = btns.filter(btn => !btn.disabled);
+  if (!enabled.length) return;
+
+  const start = btns[initialIndex] && !btns[initialIndex].disabled
+    ? initialIndex
+    : btns.indexOf(enabled[0]);
+  btns.forEach((btn, i) => { btn.tabIndex = i === start ? 0 : -1; });
+
+  const onKeyDown = (e: KeyboardEvent) => {
+    const keys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+    if (!keys.includes(e.key)) return;
+
+    const current = btns.indexOf(document.activeElement as HTMLButtonElement);
+    if (current === -1) return;
+    e.preventDefault();
+
+    const delta = (e.key === 'ArrowDown' || e.key === 'ArrowRight') ? 1 : -1;
+    for (let step = 1; step <= btns.length; step++) {
+      const next = btns[(current + delta * step + btns.length * step) % btns.length];
+      if (!next.disabled) {
+        btns.forEach(btn => { btn.tabIndex = -1; });
+        next.tabIndex = 0;
+        next.focus();
+        break;
+      }
+    }
+  };
+
+  clearRadioGroup(container);
+  container.addEventListener('keydown', onKeyDown);
+  radioKeydownHandlers.set(container, onKeyDown);
 }
 
 // ── choice ─────────────────────────────────────────────────────────────────
@@ -128,10 +174,13 @@ function renderChoice(q, container, onAnswer, preview, preselect = null) {
   });
 
   // Повернення: підсвітити раніше обраний варіант (лишається клікабельним).
+  let initialIndex = 0;
   if (!preview && preselect != null && btns[Number(preselect)]) {
-    btns[Number(preselect)].classList.add('quiz-option--selected');
-    setRadioSelection(btns, btns[Number(preselect)]);
+    initialIndex = Number(preselect);
+    btns[initialIndex].classList.add('quiz-option--selected');
+    setRadioSelection(btns, btns[initialIndex]);
   }
+  if (!preview) setupRadioGroup(container, btns, initialIndex);
 }
 
 // ── truefalse ──────────────────────────────────────────────────────────────
@@ -139,12 +188,14 @@ function renderChoice(q, container, onAnswer, preview, preselect = null) {
 function renderTrueFalse(q, container, onAnswer, preview, preselect = null) {
   let answered = false;
   const OPTIONS = [{ label: '✅ Так', value: true }, { label: '❌ Ні', value: false }];
+  const btns: HTMLButtonElement[] = [];
 
   OPTIONS.forEach(({ label, value }) => {
     const btn = document.createElement('button');
     btn.className = 'quiz-option quiz-option--tf';
     btn.textContent = label;
     prepareRadioOption(btn);
+    btns.push(btn);
     // Так=0, Ні=1 — узгоджено з БД де correct зберігається як integer-індекс
     const answerIndex = value ? 0 : 1;
     btn.dataset.tfIndex = String(answerIndex);
@@ -157,9 +208,8 @@ function renderTrueFalse(q, container, onAnswer, preview, preselect = null) {
       btn.addEventListener('click', () => {
         if (answered) return;
         answered = true;
-        const allBtns = container.querySelectorAll('button');
-        setRadioSelection([...allBtns], btn);
-        allBtns.forEach(b => b.disabled = true);
+        setRadioSelection(btns, btn);
+        btns.forEach(b => b.disabled = true);
         if (q.correct != null) {
           // practice: correct є — порівнюємо індекси
           const isCorrect = answerIndex === Number(q.correct);
@@ -167,7 +217,7 @@ function renderTrueFalse(q, container, onAnswer, preview, preselect = null) {
           if (!isCorrect) {
             // підсвітити правильну кнопку: correctIndex === 0 → Так, 1 → Ні
             const correctIndex = Number(q.correct);
-            allBtns.forEach(b => { if (Number(b.dataset.tfIndex) === correctIndex) markCorrect(b); });
+            btns.forEach(b => { if (Number(b.dataset.tfIndex) === correctIndex) markCorrect(b); });
           }
           onAnswer?.(isCorrect);
         } else {
@@ -182,14 +232,17 @@ function renderTrueFalse(q, container, onAnswer, preview, preselect = null) {
   });
 
   // Повернення: підсвітити раніше обраний варіант (Так=0 / Ні=1).
+  let initialIndex = 0;
   if (!preview && preselect != null) {
-    container.querySelectorAll('button').forEach(b => {
+    btns.forEach((b, i) => {
       if (Number((b as HTMLElement).dataset.tfIndex) === Number(preselect)) {
+        initialIndex = i;
         b.classList.add('quiz-option--selected');
         b.setAttribute('aria-checked', 'true');
       }
     });
   }
+  if (!preview) setupRadioGroup(container, btns, initialIndex);
 }
 
 // ── input ──────────────────────────────────────────────────────────────────
@@ -218,6 +271,12 @@ function renderInput(q, container, onAnswer, preview, preselect = null) {
   inp.setAttribute('autocomplete', 'off');
   inp.setAttribute('autocorrect', 'off');
   inp.setAttribute('spellcheck', 'false');
+  const questionText = document.getElementById('quiz-question-text');
+  if (questionText?.textContent?.trim()) {
+    inp.setAttribute('aria-labelledby', 'quiz-question-text');
+  } else {
+    inp.setAttribute('aria-label', 'Твоя відповідь');
+  }
   if (preselect != null) inp.value = String(preselect); // повернення: відновити введене
 
   const checkBtn = document.createElement('button');
@@ -285,7 +344,13 @@ function renderSort(q, container, onAnswer, preview, preselect = null) {
     ? [...preselect]
     : [...q.items.keys()].sort(() => Math.random() - 0.5);
 
-  const rebuild = () => {
+  const live = document.createElement('span');
+  live.className = 'sr-only';
+  live.dataset['quizSortLive'] = 'true';
+  live.setAttribute('aria-live', 'polite');
+  container.parentElement?.appendChild(live);
+
+  const rebuild = (focusPos?: number, focusDir?: 'up' | 'dn') => {
     container.innerHTML = '';
 
     order.forEach((itemIdx, pos) => {
@@ -312,7 +377,12 @@ function renderSort(q, container, onAnswer, preview, preselect = null) {
         up.disabled = true;
         up.setAttribute('aria-hidden', 'true');
       }
-      up.addEventListener('click', () => { [order[pos], order[pos-1]] = [order[pos-1], order[pos]]; rebuild(); });
+      up.addEventListener('click', () => {
+        [order[pos], order[pos-1]] = [order[pos-1], order[pos]];
+        const nextPos = pos - 1;
+        rebuild(nextPos, 'up');
+        live.textContent = `${q.items[order[nextPos]]} — тепер позиція ${nextPos + 1}`;
+      });
 
       const dn = document.createElement('button');
       dn.className = 'quiz-move';
@@ -323,7 +393,12 @@ function renderSort(q, container, onAnswer, preview, preselect = null) {
         dn.disabled = true;
         dn.setAttribute('aria-hidden', 'true');
       }
-      dn.addEventListener('click', () => { [order[pos], order[pos+1]] = [order[pos+1], order[pos]]; rebuild(); });
+      dn.addEventListener('click', () => {
+        [order[pos], order[pos+1]] = [order[pos+1], order[pos]];
+        const nextPos = pos + 1;
+        rebuild(nextPos, 'dn');
+        live.textContent = `${q.items[order[nextPos]]} — тепер позиція ${nextPos + 1}`;
+      });
 
       arrows.appendChild(up); arrows.appendChild(dn);
       row.appendChild(num); row.appendChild(block); row.appendChild(arrows);
@@ -379,6 +454,14 @@ function renderSort(q, container, onAnswer, preview, preselect = null) {
       onAnswer?.(isCorrect);
     });
     container.appendChild(checkBtn);
+
+    if (focusPos != null) {
+      const row = container.children[focusPos] as HTMLElement | undefined;
+      const want = focusDir === 'up' ? '.quiz-move:first-child' : '.quiz-move:last-child';
+      const btn = row?.querySelector<HTMLButtonElement>(`${want}:not([disabled])`)
+        ?? row?.querySelector<HTMLButtonElement>('.quiz-move:not([disabled])');
+      btn?.focus();
+    }
   };
 
   rebuild();
@@ -446,10 +529,13 @@ function renderSequence(q, container, onAnswer, preview, preselect = null) {
   });
 
   // Повернення: підсвітити раніше обраний варіант.
+  let initialIndex = 0;
   if (!preview && preselect != null && seqBtns[Number(preselect)]) {
-    seqBtns[Number(preselect)].classList.add('quiz-option--selected');
-    setRadioSelection(seqBtns, seqBtns[Number(preselect)]);
+    initialIndex = Number(preselect);
+    seqBtns[initialIndex].classList.add('quiz-option--selected');
+    setRadioSelection(seqBtns, seqBtns[initialIndex]);
   }
+  if (!preview) setupRadioGroup(container, seqBtns, initialIndex);
 }
 
 // ── match ──────────────────────────────────────────────────────────────────
@@ -534,6 +620,11 @@ function renderMatch(q, container, onAnswer, preview, preselect = null) {
       const leftEl = sel.parentElement.querySelector('div');
       leftEl.classList.add(ok ? 'quiz-match-left--correct' : 'quiz-match-left--incorrect');
       sel.classList.add(ok ? 'quiz-select--correct' : 'quiz-select--incorrect');
+      const icon = document.createElement('span');
+      icon.className = 'quiz-sort-icon';
+      icon.textContent = ok ? '✓' : '✗';
+      sel.parentElement.appendChild(icon);
+      sel.setAttribute('aria-label', `Пара для "${q.left[i]}" — ${ok ? 'правильно' : 'неправильно'}`);
     });
     onAnswer?.(allCorrect);
   });

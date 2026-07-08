@@ -41,6 +41,7 @@ export function runMission(
 
   function showQuestion() {
     const q = questions[currentIdx]
+    const questionCard = els.questionText.closest<HTMLElement>('.quiz-question-card')
 
     els.progressText.textContent = `${currentIdx + 1} / ${questions.length}`
     els.progressBar.style.width = `${(currentIdx / questions.length) * 100}%`
@@ -109,6 +110,10 @@ export function runMission(
         }
       },
     })
+
+    if (currentIdx > 0 && type !== 'input') {
+      questionCard?.focus()
+    }
   }
 
   function showFeedback(isCorrect: boolean, q: RenderableQuestion) {
