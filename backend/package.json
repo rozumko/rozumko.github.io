@@ -29,5 +29,8 @@
     "drizzle-kit": "^0.31.10",
     "tsx": "^4.23.0",
     "typescript": "^6.0.3"
+  },
+  "overrides": {
+    "esbuild": "^0.25.0"
   }
 }

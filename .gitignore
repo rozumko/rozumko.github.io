@@ -71,3 +71,6 @@ temp/
 # ── Бренд-кіт (джерело: лого, фавікони, badge). Потрібні файли скопійовані
 # в public/ (favicon.svg/ico, apple-touch-icon.png, rozumko-logo.svg) — вони й деплояться.
 rozumko_brand_assets/
+
+# ── Джерельні матеріали (PDF-фреймворки тощо — не для деплою) ─────────────
+*.pdf
