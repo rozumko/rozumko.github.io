@@ -1,7 +1,22 @@
 import { expect, test, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 
-const AXE_PAGES = ['/', '/student.html', '/teacher.html', '/games.html', '/for-parents.html']
+const AXE_PAGES = [
+  '/',
+  '/home.html',
+  '/school.html',
+  '/student.html',
+  '/teacher.html',
+  '/games.html',
+  '/for-parents.html',
+  '/for-teachers.html',
+  '/for-students.html',
+  '/privacy.html',
+  '/terms.html',
+  '/transparency.html',
+  '/standards.html',
+  '/olympiad-enter.html',
+]
 
 const choiceQuestion = {
   id: 'choice-1',
@@ -27,6 +42,55 @@ const sortQuestion = {
   topic: 'algorithms',
   grade: 3,
 }
+
+const questionTypeFixtures = [
+  choiceQuestion,
+  {
+    id: 'truefalse-1',
+    q: 'Is a sequence an ordered list?',
+    type: 'truefalse',
+    correct: 0,
+    difficulty: 'medium',
+    track: 'computational-thinking',
+    topic: 'algorithms',
+    grade: 3,
+  },
+  {
+    id: 'input-1',
+    q: 'Type the word data.',
+    type: 'input',
+    answer: 'data',
+    difficulty: 'medium',
+    track: 'computational-thinking',
+    topic: 'data',
+    grade: 3,
+  },
+  sortQuestion,
+  {
+    id: 'sequence-1',
+    q: 'What comes next?',
+    type: 'sequence',
+    given: ['2', '4', '6'],
+    choices: ['8', '9', '10'],
+    correct: 0,
+    difficulty: 'medium',
+    track: 'computational-thinking',
+    topic: 'patterns',
+    grade: 3,
+  },
+  {
+    id: 'match-1',
+    q: 'Match the concept to the example.',
+    type: 'match',
+    left: ['Algorithm', 'Data'],
+    right: ['Steps', 'Facts'],
+    pairs: [0, 1],
+    difficulty: 'medium',
+    track: 'computational-thinking',
+    topic: 'algorithms',
+    grade: 3,
+  },
+]
 
 async function routeStaticQuestions(page: Page, questions: unknown[]) {
   await page.route('**/questions/grade-*.json', route =>
@@ -162,6 +226,23 @@ test.describe('axe accessibility scan', () => {
       await page.goto(path)
 
       const results = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+        .analyze()
+
+      expect(results.violations).toEqual([])
+    })
+  }
+})
+
+test.describe('axe accessibility scan: rendered question mechanics', () => {
+  test.use({ viewport: { width: 375, height: 667 } })
+
+  for (const question of questionTypeFixtures) {
+    test(`axe: rendered ${question.type} question`, async ({ page }) => {
+      await startHomeMission(page, [question])
+
+      const results = await new AxeBuilder({ page })
+        .include('#mission-quiz')
         .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
         .analyze()
 

@@ -33,6 +33,7 @@ Core repo evidence:
 - [Security model](./security-model.md)
 - [Home demo contract](./home-demo-contract.md)
 - [Content taxonomy](./content-taxonomy.md)
+- [Accessibility and inclusion baseline](./accessibility-inclusion-baseline.md)
 - [Security operations evidence](./security-ops-evidence.md)
 - [Transparency page](../transparency.html)
 - [Privacy policy](../privacy.html)
@@ -50,7 +51,7 @@ Core repo evidence:
 | Educational Impact | Partial | Basic / intermediate | Curriculum-aligned taxonomy, tagged content bank, reports, missions, classroom/home use cases | Learning impact plan, baseline measures, pilot feedback, longitudinal evidence |
 | Designed for Teaching and Learning | Strong | Basic / intermediate | Age-bounded missions, short sessions, multiple mechanics, teacher/parent flows | Pedagogical QA rubric, content review log, accessibility testing with children |
 | Contextual Readiness | Strong | Intermediate | Ukrainian-first, browser-based, low-friction School Mode, PWA/offline shell, runbooks | Low-connectivity evidence, device matrix, resilience drills |
-| Inclusive Access | Partial | Basic | Free School Mode, no registration burden for children, mobile-first pages, skip links | WCAG baseline, screen reader/keyboard matrix, inclusive design adaptations |
+| Inclusive Access | Partial | Basic / intermediate | Free School Mode, no registration burden for children, mobile-first pages, skip links, WCAG baseline, static HTML guardrails, expanded axe smoke guard | Manual screen reader/keyboard matrix, device evidence, inclusive design adaptations |
 
 ## Organization Logic Model
 
@@ -247,18 +248,19 @@ What is strong:
 - Core pages are mobile-oriented and lightweight.
 - Public pages include basic navigation and skip-link patterns.
 - Free School Mode keeps access from depending on family payment.
+- A WCAG 2.2 AA working baseline now exists for public and product surfaces.
+- The automated guardrails combine static HTML checks, axe checks across core public/app pages, axe checks for rendered question mechanics, and behavior checks for Home/School mission controls.
 
 What to take from the framework:
 
-- Inclusive access is the weakest current evidence area. It needs explicit accessibility testing and design adaptations, not only good intent.
+- Inclusive access is no longer undocumented, but it remains the weakest evidence area until manual keyboard, screen reader, zoom, reduced-motion, and child usability evidence is collected.
 
 High-value next additions:
 
-- WCAG 2.2 AA baseline checklist for the child mission, Home demo, School join, and teacher flow.
-- Keyboard-only smoke test.
-- Screen reader smoke test.
-- Reduced-motion and focus-visible audit.
-- Review of wording, contrast, target sizes, and error recovery for early primary pupils.
+- Complete the first manual keyboard-only and screen-reader smoke matrix for the child mission, Home demo, School join, and teacher flow.
+- Add 320 px, 200% zoom, reduced-motion, and focus-visible evidence.
+- Expand automated smoke coverage to remaining static pages and dynamic app states.
+- Review wording, contrast, target sizes, and error recovery for early primary pupils.
 
 ## Evidence Quality Matrix
 
@@ -272,7 +274,7 @@ High-value next additions:
 | Learning impact | Product claims and reports | Partial | Pilot measures, baseline tasks, feedback forms |
 | Teacher fit | For-teachers page, School Mode flow, classroom game | Specific | Teacher pilot notes and onboarding checklist |
 | Parent trust | For-parents page, Home consent, privacy, report flow | Specific | Parent feedback and support FAQ |
-| Accessibility | Basic public page patterns and mobile-first UI | Partial | WCAG, keyboard, screen reader, reduced-motion evidence |
+| Accessibility | Baseline checklist, basic public page patterns, mobile-first UI, static HTML guardrails, expanded axe and mission-control smoke tests | Partial / improving | Manual keyboard, screen reader, zoom, reduced-motion, device, and child usability evidence |
 | Operations | Runbooks, Render config, smoke/load docs, backup docs | Concrete | Completed pilot readiness checklist |
 
 ## Prioritized Backlog
@@ -281,7 +283,7 @@ High-value next additions:
 
 - Create a short public responsible EdTech page in Ukrainian that explains safety, privacy, AI use, School/Home separation, and how to report concerns.
 - Complete the private security operations evidence checklist and keep only non-sensitive status public.
-- Add an accessibility and inclusion baseline covering WCAG, keyboard, screen reader, mobile/touch, reduced motion, and early-primary readability.
+- Complete the first manual accessibility evidence run for keyboard, screen reader, mobile/touch, reduced motion, zoom, and early-primary readability.
 - Create a learning impact plan with measurable indicators and pilot feedback forms.
 - Add a content QA rubric for new missions and AI-literacy content.
 
@@ -301,6 +303,6 @@ High-value next additions:
 
 ## Recommended Next Step
 
-The best next slice is an accessibility and inclusion baseline. It is high-value, relatively small, and directly improves the weakest ET4G pillar without changing product positioning.
+The best next slice is the first manual accessibility evidence run. It is high-value, relatively small, and directly improves the weakest ET4G pillar without changing product positioning.
 
-Suggested next file: [Accessibility and inclusion baseline](./accessibility-inclusion-baseline.md).
+Suggested source file: [Accessibility and inclusion baseline](./accessibility-inclusion-baseline.md).

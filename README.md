@@ -130,6 +130,8 @@ docs/
 - [Security model](./docs/security-model.md)
 - [Security policy](./SECURITY.md)
 - [Product direction](./docs/product-roadmap.md)
+- [Accessibility and inclusion baseline](./docs/accessibility-inclusion-baseline.md)
+- [Responsible EdTech evidence portfolio](./docs/responsible-edtech-evidence.md)
 - [Database migrations](./docs/migrations.md)
 - [Smoke test](./docs/smoke-test.md)
 - [Event day runbook](./docs/olympiad-day-runbook.md)
@@ -164,6 +166,21 @@ smoke-тесту скопіюйте `.env.example` у `.env.local` і встан
 ```bash
 VITE_API_URL=http://localhost:3000
 ```
+
+---
+
+## Перевірки
+
+```bash
+npm run typecheck
+npm test
+npm run build
+npm run test:layout
+```
+
+`npm test` включає швидкі accessibility guardrails для HTML-сторінок.
+`npm run test:layout` запускає Playwright + axe для WCAG A/AA smoke-перевірки
+публічних сторінок і зрендерених типів питань.
 
 ---
 

@@ -407,10 +407,10 @@
       </div>
       <div class="class-card-body class-card__body hidden">
         <div class="class-card__controls">
-          <select class="event-select form-input form-input--sm"></select>
+          <select class="event-select form-input form-input--sm" aria-label="Подія для генерації кодів"></select>
           <div class="class-card__generate-row">
             <input type="number" min="1" max="40" value="5"
-              class="codes-count-input form-input form-input--count"/>
+              class="codes-count-input form-input form-input--count" aria-label="Кількість учнів"/>
             <label class="codes-count-label">учнів</label>
             <button class="generate-codes-btn btn btn-emerald">
               <i class="fas fa-key" aria-hidden="true"></i> Згенерувати коди
@@ -437,7 +437,7 @@
         </div>
       </div>
       <input type="text" class="code-name-input"
-        placeholder="Ім'я учня (необов'язково)" maxlength="50"/>
+        placeholder="Ім'я учня (необов'язково)" maxlength="50" aria-label="Ім'я учня"/>
     </div>
   </template>
 

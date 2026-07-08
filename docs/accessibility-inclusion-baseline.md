@@ -49,7 +49,8 @@ These signals were observed in the repository and should be preserved:
 | Focus visibility | Global `:focus-visible` and component-specific focus styles exist | Needs visual verification across all interactive surfaces. |
 | Reduced motion | CSS includes `prefers-reduced-motion: reduce` handling | Good baseline; needs runtime verification for animated game/mission states. |
 | Live feedback | Mission errors and quiz feedback use `aria-live="polite"` | Useful for dynamic feedback. |
-| Semantic grouping | Grade, track, avatar, progress, and quiz option areas use ARIA roles | Needs keyboard and screen reader behavior checks. |
+| Semantic grouping | Grade, track, avatar, progress, and quiz option areas use ARIA roles | Automated smoke covers Home/School choice radio semantics and Home sort behavior; other question types still need manual AT checks. |
+| Automated accessibility guard | `npm test` includes static HTML accessibility guardrails; `tests/layout/accessibility-smoke.spec.ts` runs axe against public/app pages and rendered question mechanics | Useful regression guard, not a replacement for manual keyboard, screen reader, zoom, and child usability evidence. |
 | Child privacy inclusion | School Mode works without child registration or real name | Reduces access friction and protects pupils. |
 | Parent consent | Home report gate asks for adult consent before saved report data | Supports safer inclusion for home use. |
 | Mobile-first layout | CSS uses mobile breakpoints and app-shell sizing | Needs device matrix evidence. |
@@ -158,22 +159,37 @@ These should be checked after the P0 surfaces:
 
 ## Current Automated Guard
 
-The first focused accessibility smoke guard is implemented in `tests/layout/accessibility-smoke.spec.ts`.
+The current automated accessibility guard has two layers:
+
+- `features/accessibility/html-guardrails.test.mjs` runs in `npm test` and checks public-page language, skip-link/main landmark wiring, programmatic form-control names on key pages, and documentation links to the accessibility guardrails.
+- `tests/layout/accessibility-smoke.spec.ts` runs in `npm run test:layout` and checks rendered pages/mechanics in Chromium with axe.
 
 Latest local run: 2026-07-08.
 
 Verified:
 
+- Static public-page guardrails pass for core public, child, parent, teacher, and legal pages.
+- Axe has no WCAG A/AA violations on `/`, `/home.html`, `/school.html`, `/student.html`, `/teacher.html`, `/games.html`, `/for-parents.html`, `/for-teachers.html`, `/for-students.html`, `/privacy.html`, `/terms.html`, `/transparency.html`, `/standards.html`, and `/olympiad-enter.html`.
+- Axe has no WCAG A/AA violations for rendered Home question mechanics: `choice`, `truefalse`, `input`, `sort`, `sequence`, and `match`.
 - Home choice questions expose `role="radiogroup"` with child options as `role="radio"`.
 - Home choice answers update `aria-checked`.
+- Home choice questions use one tab stop with arrow-key roving focus.
 - Home sort questions do not keep a misleading `radiogroup` role.
 - Hidden edge move buttons in sort questions are disabled and hidden from assistive technology.
+- Home sort movement keeps keyboard focus and announces the new position.
 - School choice questions keep the same radio semantics after a mocked anonymous join.
 
 Command:
 
 ```powershell
+npm test
 npm run test:layout -- accessibility-smoke.spec.ts
+```
+
+Run the full layout suite when a change touches app markup, focus behavior, CSS color/contrast, or public pages:
+
+```powershell
+npm run test:layout
 ```
 
 ## Evidence to Collect
@@ -202,13 +218,13 @@ Do not store real child names, parent emails, access codes, payment identifiers,
 
 - Run keyboard-only checks for `index.html`, `home.html`, `school.html`, and `teacher.html`.
 - Run a 320 px and 200% zoom visual check for child-facing flows.
-- Verify that all quiz option types expose keyboard and screen reader behavior correctly.
-- Check contrast for focus rings, mission cards, feedback states, and disabled states.
+- Verify that remaining quiz option types beyond the current choice/sort smoke coverage expose keyboard and screen reader behavior correctly.
+- Manually check contrast for focus rings, mission cards, feedback states, and disabled states beyond the pages covered by axe.
 - Add a short public accessibility contact line to the responsible EdTech or transparency page once that public page exists.
 
 ### P1
 
-- Expand the automated accessibility smoke check to static pages and more app states.
+- Expand the automated accessibility smoke check to remaining static pages and more dynamic app states.
 - Add a device/browser support matrix for phone, tablet, and classroom display use.
 - Add content-writing guidance for early-primary readability.
 - Add reduced-motion verification to browser smoke tests.

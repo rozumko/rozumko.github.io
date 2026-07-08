@@ -190,10 +190,10 @@
     box-shadow var(--transition-base);
 }
 .mode-door:hover {
-  transform: translateY(-4px);
+  transform: scale(1.02);
   box-shadow: var(--shadow-lg);
 }
-.mode-door:active { transform: translateY(-1px); }
+.mode-door:active { transform: scale(1.0); }
 .mode-door:focus-visible {
   outline: 3px solid var(--clr-brand);
   outline-offset: 3px;
@@ -384,9 +384,6 @@
   margin: 0 auto;
   padding: var(--sp-8) var(--sp-4) var(--sp-16);
 }
-.app-main:has(#join-code) {
-  padding-top: clamp(var(--sp-4), 4vh, var(--sp-7));
-}
 .app-title {
   font-size: clamp(1.75rem, 5vw, 2.5rem);
   font-weight: 800;
@@ -400,9 +397,6 @@
   color: var(--clr-text-muted);
   text-align: center;
   margin: var(--sp-2) 0 var(--sp-8);
-}
-.app-main:has(#join-code) .app-subtitle {
-  margin-bottom: var(--sp-6);
 }
 .app-section-label {
   font-size: var(--font-size-lg);
@@ -769,7 +763,7 @@
     box-shadow var(--transition-base);
 }
 .mission-card:hover {
-  transform: translateY(-3px);
+  transform: scale(1.02);
   box-shadow: var(--shadow-md);
 }
 .mission-card:focus-visible {
@@ -837,13 +831,13 @@
 /* Напрями (home) */
 .mission-card--inf { border-color: var(--track-inf); background: var(--track-inf-light); }
 .mission-card--inf .mission-card__title { color: var(--track-inf-dark); }
-.mission-card--inf .mission-card__meta  { color: var(--track-inf); }
+.mission-card--inf .mission-card__meta  { color: var(--track-inf-dark); }
 .mission-card--think { border-color: var(--track-think); background: var(--track-think-light); }
 .mission-card--think .mission-card__title { color: var(--track-think-dark); }
 .mission-card--think .mission-card__meta  { color: #6d28d9; }
 .mission-card--ai { border-color: var(--track-ai); background: var(--track-ai-light); }
 .mission-card--ai .mission-card__title { color: var(--track-ai-dark); }
-.mission-card--ai .mission-card__meta  { color: var(--track-ai); }
+.mission-card--ai .mission-card__meta  { color: var(--track-ai-dark); }
 /* Складність (school) */
 .mission-card--warmup { border-color: var(--clr-amber); background: #fffbeb; }
 .mission-card--warmup .mission-card__title { color: #78350f; }
