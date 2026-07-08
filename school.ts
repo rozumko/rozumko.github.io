@@ -1,6 +1,6 @@
 import './frontend-security.js'
 import { $, $maybe } from './utils/dom.js'
-import { joinSchoolSession, submitSchoolAnswer } from './features/api/client.js'
+import { getSchoolParticipantSession, joinSchoolSession, submitSchoolAnswer, type Question } from './features/api/client.js'
 import { runMission, type MissionElements } from './features/missions/mission-runner.js'
 import { encouragement, starRating, type MissionSummary } from './features/missions/mission-result.js'
 import { AVATARS, avatarLabel, avatarSrc } from './avatars.js'
@@ -10,8 +10,10 @@ import { AVATARS, avatarLabel, avatarSrc } from './avatars.js'
 
 let selectedAvatar: string = AVATARS[0]
 let currentNickname = ''
+let waitingPollTimer: number | undefined
 
 const introEl  = $('mission-intro')
+const waitEl   = $('mission-waiting')
 const quizEl   = $('mission-quiz')
 const resultEl = $('mission-result')
 const errorEl  = $('mission-error')
@@ -35,8 +37,17 @@ function setMissionActive(active: boolean) {
   document.body.classList.toggle('mission-active', active)
 }
 
+function clearWaitingPoll() {
+  if (waitingPollTimer !== undefined) {
+    window.clearInterval(waitingPollTimer)
+    waitingPollTimer = undefined
+  }
+}
+
 function showIntro() {
+  clearWaitingPoll()
   setMissionActive(false)
+  hide(waitEl)
   hide(quizEl)
   hide(resultEl)
   errorEl.textContent = ''
@@ -50,6 +61,63 @@ function showStudentIdentity(slug: string, nickname: string) {
   if (img)  { img.src = avatarSrc(slug); img.alt = avatarLabel(slug) }
   if (name) name.textContent = nickname
   if (wrap) show(wrap)
+}
+
+function showWaitingRoom(slug: string, nickname: string, status = 'Очікуємо старт...') {
+  setMissionActive(false)
+  hide(introEl)
+  hide(quizEl)
+  hide(resultEl)
+
+  const avatar = $maybe<HTMLImageElement>('waiting-avatar')
+  const name = $maybe('waiting-name')
+  const statusEl = $maybe('waiting-status')
+  if (avatar) { avatar.src = avatarSrc(slug); avatar.alt = avatarLabel(slug) }
+  if (name) name.textContent = nickname
+  if (statusEl) statusEl.textContent = status
+  show(waitEl)
+}
+
+function showWaitingStatus(status: string) {
+  const statusEl = $maybe('waiting-status')
+  if (statusEl) statusEl.textContent = status
+}
+
+function startSchoolMission(participantId: string, participantToken: string, questions: Question[]) {
+  clearWaitingPoll()
+  hide(introEl)
+  hide(waitEl)
+  hide(resultEl)
+  show(quizEl)
+  setMissionActive(true)
+  showStudentIdentity(selectedAvatar, currentNickname)
+  runMission(els, questions, {
+    showExplanation: false,
+    submitAnswer: (questionId, answer) =>
+      submitSchoolAnswer(participantId, participantToken, questionId, answer)
+        .then(r => r.correct),
+    onComplete: showResult,
+  })
+}
+
+function startWaitingPoll(participantId: string, participantToken: string) {
+  clearWaitingPoll()
+  waitingPollTimer = window.setInterval(async () => {
+    try {
+      const session = await getSchoolParticipantSession(participantId, participantToken)
+      if (session.status === 'active' && session.questions.length > 0) {
+        startSchoolMission(participantId, participantToken, session.questions)
+      } else if (session.status === 'lobby') {
+        showWaitingStatus('Очікуємо старт...')
+      } else if (session.status === 'finished') {
+        clearWaitingPoll()
+        showIntro()
+        errorEl.textContent = 'Гру вже завершено. Попроси вчителя створити нову.'
+      }
+    } catch {
+      showWaitingStatus('Зв’язок нестабільний. Пробуємо ще раз...')
+    }
+  }, 2000)
 }
 
 // ── Аватари ──────────────────────────────────────────────────────────────────
@@ -94,34 +162,32 @@ joinBtn?.addEventListener('click', async () => {
   if (!nickname)              { errorEl.textContent = 'Введи прізвисько'; return }
 
   currentNickname = nickname
-  hide(introEl)
-  hide(resultEl)
-  show(quizEl)
-  setMissionActive(true)
-  showStudentIdentity(selectedAvatar, nickname)
-  els.questionText.textContent = 'Приєднуємось до гри…'
-  els.options.innerHTML = ''
-  els.nextBtn.classList.add('hidden')
+  if (joinBtn) joinBtn.disabled = true
+  showWaitingRoom(selectedAvatar, nickname, 'Приєднуємось до гри...')
 
   try {
     const joined = await joinSchoolSession(code, selectedAvatar, nickname)
-    runMission(els, joined.questions, {
-      showExplanation: false,
-      submitAnswer: (questionId, answer) =>
-        submitSchoolAnswer(joined.participantId, joined.participantToken, questionId, answer)
-          .then(r => r.correct),
-      onComplete: showResult,
-    })
+    if (joined.status === 'active' && joined.questions.length > 0) {
+      startSchoolMission(joined.participantId, joined.participantToken, joined.questions)
+    } else {
+      showWaitingRoom(selectedAvatar, nickname)
+      startWaitingPoll(joined.participantId, joined.participantToken)
+    }
   } catch (err) {
     setMissionActive(false)
+    hide(waitEl)
     hide(quizEl)
     show(introEl)
     errorEl.textContent = (err as Error).message
+  } finally {
+    if (joinBtn) joinBtn.disabled = false
   }
 })
 
 function showResult(summary: MissionSummary) {
+  clearWaitingPoll()
   setMissionActive(false)
+  hide(waitEl)
   hide(quizEl)
   els.progressBar.style.width = '100%'
   const stars = starRating(summary.percent)

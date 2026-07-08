@@ -47,6 +47,17 @@ function isUniqueViolation(e: unknown): boolean {
   return typeof e === 'object' && e !== null && (e as { code?: string }).code === '23505'
 }
 
+async function loadSessionQuestions(sessionId: string) {
+  const qs = await db
+    .select({ id: questions.id, q: questions.q, code: questions.code, type: questions.type, options: questions.options })
+    .from(schoolSessionQuestions)
+    .innerJoin(questions, eq(schoolSessionQuestions.questionId, questions.id))
+    .where(eq(schoolSessionQuestions.sessionId, sessionId))
+    .orderBy(asc(schoolSessionQuestions.position))
+
+  return qs.map(sanitizeOlympiadQuestion)
+}
+
 export async function schoolRoutes(app: FastifyInstance) {
   // ── Вчитель: створити сесію ──────────────────────────────────────────────
   app.post<{ Body: { grade: number; difficulty?: string; questionsCount?: number; track?: string; topic?: string } }>('/sessions', {
@@ -216,32 +227,56 @@ export async function schoolRoutes(app: FastifyInstance) {
     }
     clearCodeThrottle(SCHOOL_JOIN_CODE_THROTTLE_SCOPE, req.body.code)
     if (session.status === 'finished') return reply.code(409).send({ error: 'Сесію вже завершено' })
-    // Приєднання лише до активної гри: якщо пустити дитину в lobby, вона отримає
-    // питання, але кожна відповідь ловитиме 409 до старту — і "спалить" гру нулем.
-    // Поллінг статусу не варіант: клас за шкільним NAT упреться в rate-limit.
-    if (session.status !== 'active') {
-      return reply.code(409).send({ error: 'Вчитель ще не розпочав гру. Зачекай і спробуй ще раз.' })
-    }
 
     const [participant] = await db.insert(schoolParticipants)
       .values({ sessionId: session.id, avatar: req.body.avatar, nickname })
       .returning({ id: schoolParticipants.id })
 
-    // Immutable набір питань сесії; ключі стрипаємо перед відправкою в браузер.
-    const qs = await db
-      .select({ id: questions.id, q: questions.q, code: questions.code, type: questions.type, options: questions.options })
-      .from(schoolSessionQuestions)
-      .innerJoin(questions, eq(schoolSessionQuestions.questionId, questions.id))
-      .where(eq(schoolSessionQuestions.sessionId, session.id))
-      .orderBy(asc(schoolSessionQuestions.position))
+    const questionsForPlayer = session.status === 'active'
+      ? await loadSessionQuestions(session.id)
+      : []
 
     return reply.code(201).send({
       participantId:    participant.id,
       participantToken: generateAttemptToken(participant.id),
       status:           session.status,
       grade:            session.grade,
-      questions:        qs.map(sanitizeOlympiadQuestion),
-      questionsCount:   qs.length,
+      questions:        questionsForPlayer,
+      questionsCount:   questionsForPlayer.length,
+    })
+  })
+
+  app.get<{ Params: { id: string } }>('/participants/:id/session', {
+    config: { rateLimit: { max: 30, timeWindow: '1 minute' } },
+    schema: { params: uuidParam },
+  }, async (req, reply) => {
+    const token = req.headers['x-participant-token']
+    if (typeof token !== 'string' || !verifyAttemptToken(req.params.id, token)) {
+      return reply.code(403).send({ error: 'Невірний токен учасника' })
+    }
+
+    const [participant] = await db
+      .select({
+        id: schoolParticipants.id,
+        sessionId: schoolParticipants.sessionId,
+        status: schoolSessions.status,
+        grade: schoolSessions.grade,
+      })
+      .from(schoolParticipants)
+      .innerJoin(schoolSessions, eq(schoolParticipants.sessionId, schoolSessions.id))
+      .where(eq(schoolParticipants.id, req.params.id))
+      .limit(1)
+    if (!participant) return reply.code(404).send({ error: 'Учасника не знайдено' })
+
+    const questionsForPlayer = participant.status === 'active'
+      ? await loadSessionQuestions(participant.sessionId)
+      : []
+
+    return reply.send({
+      status: participant.status,
+      grade: participant.grade,
+      questions: questionsForPlayer,
+      questionsCount: questionsForPlayer.length,
     })
   })
 

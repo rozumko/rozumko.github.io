@@ -242,7 +242,7 @@ export async function sendHeartbeat(attemptId: string, attemptToken: string): Pr
 export async function joinSchoolSession(code: string, avatar: string, nickname: string): Promise<{
   participantId: string
   participantToken: string
-  status: string
+  status: 'lobby' | 'active' | 'finished'
   grade: number
   questions: Question[]
   questionsCount: number
@@ -251,7 +251,20 @@ export async function joinSchoolSession(code: string, avatar: string, nickname: 
     method: 'POST',
     body: JSON.stringify({ code, avatar, nickname }),
   })
-  data.questions = data.questions.map(normalizeQuestion)
+  data.questions = (data.questions ?? []).map(normalizeQuestion)
+  return data
+}
+
+export async function getSchoolParticipantSession(participantId: string, participantToken: string): Promise<{
+  status: 'lobby' | 'active' | 'finished'
+  grade: number
+  questions: Question[]
+  questionsCount: number
+}> {
+  const data = await request(`/api/school/participants/${encodeURIComponent(participantId)}/session`, {
+    headers: { 'X-Participant-Token': participantToken },
+  })
+  data.questions = (data.questions ?? []).map(normalizeQuestion)
   return data
 }
 

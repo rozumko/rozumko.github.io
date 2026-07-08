@@ -17,8 +17,13 @@ import { openCertModal, awardLabel, percent, getAward } from './utils/certificat
 import { TOPICS_BY_TRACK, TOPIC_LABELS } from './features/missions/topics.js'
 import type { SchoolTopicStat } from './features/api/client.js'
 
-function isPendingError(msg: string): boolean {
-  return msg.includes('ACCOUNT_PENDING') || msg.includes('очікує підтвердження')
+function isPendingError(err: unknown): boolean {
+  const apiErr = err as { code?: string; message?: string }
+  const msg = apiErr.message ?? ''
+  return apiErr.code === 'ACCOUNT_PENDING'
+    || msg.includes('ACCOUNT_PENDING')
+    || msg.includes('очікує підтвердження')
+    || msg.includes('ще не підтверджено')
 }
 import { $, $maybe } from './utils/dom.js'
 import { avatarSrc, avatarLabel } from './avatars.js'
@@ -144,7 +149,7 @@ loginForm.addEventListener('submit', async (e) => {
   } catch (err) {
     hideColdStartBanner()
     const msg = (err as Error).message
-    loginError.textContent     = isPendingError(msg)
+    loginError.textContent     = isPendingError(err)
       ? '⏳ Акаунт очікує підтвердження адміністратора. Зверніться до організатора олімпіади.'
       : friendlyError(msg)
     loginSubmitBtn.disabled    = false
@@ -1067,7 +1072,10 @@ $maybe<HTMLButtonElement>('school-create-btn')?.addEventListener('click', async 
     renderSchoolLeaderboard([])
     startSchoolPolling()
   } catch (err) {
-    schoolSetError(friendlyError((err as Error).message))
+    const apiErr = err as Error & { status?: number }
+    schoolSetError(apiErr.status === 422
+      ? `${apiErr.message}. Спробуйте іншу тему, складність або клас.`
+      : friendlyError(apiErr.message))
   }
 })
 

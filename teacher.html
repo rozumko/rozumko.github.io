@@ -353,7 +353,9 @@
               <option value="15">15</option>
             </select>
           </label>
-          <button id="school-create-btn" class="btn">Створити гру</button>
+          <button id="school-create-btn" class="btn btn-emerald">
+            <i class="fas fa-plus" aria-hidden="true"></i> Створити гру
+          </button>
         </div>
         <p id="school-error" class="quiz-feedback quiz-feedback--incorrect" aria-live="polite"></p>
 
@@ -365,9 +367,15 @@
               <p id="school-join-code" style="font-size:2rem; font-weight:800; letter-spacing:6px; margin:0;"></p>
             </div>
             <span id="school-status" style="font-weight:700;"></span>
-            <button id="school-start-btn" class="btn">▶ Почати гру</button>
-            <button id="school-finish-btn" class="btn hidden">■ Завершити</button>
-            <button id="school-new-btn" class="btn hidden">Нова гра</button>
+            <button id="school-start-btn" class="btn btn-sky">
+              <i class="fas fa-play" aria-hidden="true"></i> Почати гру
+            </button>
+            <button id="school-finish-btn" class="btn btn-secondary hidden">
+              <i class="fas fa-stop" aria-hidden="true"></i> Завершити
+            </button>
+            <button id="school-new-btn" class="btn btn-emerald hidden">
+              <i class="fas fa-plus" aria-hidden="true"></i> Нова гра
+            </button>
           </div>
           <h3 style="font-weight:700; margin-bottom:8px;">Учасники</h3>
           <div id="school-leaderboard"></div>

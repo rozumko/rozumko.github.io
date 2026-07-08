@@ -110,6 +110,12 @@ export function esc(str: unknown): string {
  * Перетворює технічне повідомлення API на зрозумілий текст для користувача.
  */
 export function friendlyError(msg: string): string {
+  if (msg.includes('Invalid login credentials') || msg.includes('invalid_grant'))
+    return 'Невірна електронна пошта або пароль.'
+  if (msg.includes('Email not confirmed'))
+    return 'Підтвердьте email перед входом.'
+  if (msg.includes('Немає тренувальних питань'))
+    return msg
   if (msg.includes('429') || msg.includes('Too Many'))
     return 'Забагато спроб. Спробуй за хвилину.'
   if (msg.includes('401') || msg.includes('авторизован'))

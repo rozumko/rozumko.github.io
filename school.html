@@ -62,6 +62,22 @@
       </div>
     </section>
 
+    <!-- WAITING: the student has joined, but the teacher has not started the game yet -->
+    <section id="mission-waiting" class="hidden school-wait" aria-live="polite">
+      <div class="school-wait-card">
+        <div class="school-wait-card__avatar-wrap">
+          <img id="waiting-avatar" src="" alt="" class="school-wait-card__avatar" />
+        </div>
+        <p id="waiting-name" class="school-wait-card__name"></p>
+        <h2 class="school-wait-card__title">Гра скоро почнеться</h2>
+        <p class="school-wait-card__text">Ти вже в команді. Дочекайся, поки вчитель натисне «Почати гру».</p>
+        <div class="school-wait-dots" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </div>
+        <p id="waiting-status" class="school-wait-card__status">Очікуємо старт...</p>
+      </div>
+    </section>
+
     <!-- QUIZ: сама місія (розмітка й ID — спільний контракт з mission-runner) -->
     <section id="mission-quiz" class="hidden">
       <div class="quiz-progress-header" style="margin-bottom:8px;">

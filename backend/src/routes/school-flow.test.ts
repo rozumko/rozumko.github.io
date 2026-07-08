@@ -50,6 +50,14 @@ function installFakeDb(state: ReturnType<typeof createState>) {
         return state.sessionExists ? [state.session] : []
       }
       if (isTable(this.table, schema.schoolParticipants)) {
+        if (this.joins.includes(schema.schoolSessions) && state.participant) {
+          return [{
+            id: state.participant.id,
+            sessionId: state.participant.sessionId,
+            status: state.session.status,
+            grade: state.session.grade,
+          }]
+        }
         return state.participant ? [state.participant] : []
       }
       if (isTable(this.table, schema.schoolSessionQuestions) && this.joins.includes(schema.questions)) {
@@ -206,17 +214,55 @@ test('school: cannot answer when session is not active (409)', async () => {
   } finally { restore() }
 })
 
-test('school: join is rejected while the session is still in lobby (409)', async () => {
+test('school: lobby join creates a participant but does not issue questions before start', async () => {
   const state = createState()
   state.session.status = 'lobby'
   const restore = installFakeDb(state)
   try {
     await withApp(async (app) => {
       const res = await app.inject({ method: 'POST', url: '/api/school/join', payload: { code: '123456', avatar: AVATAR, nickname: 'Рано' } })
-      assert.equal(res.statusCode, 409, res.body)
-      assert.match(res.json().error, /не розпочав/)
-      // учасник НЕ створюється — жодного спаленого токена
-      assert.equal(state.participant, null)
+      assert.equal(res.statusCode, 201, res.body)
+      const body = res.json()
+      assert.equal(body.status, 'lobby')
+      assert.equal(body.participantId, ids.participant)
+      assert.deepEqual(body.questions, [])
+      assert.equal(body.questionsCount, 0)
+      assert.equal(state.participant?.nickname, 'Рано')
+    })
+  } finally { restore() }
+})
+
+test('school: participant session polling issues questions only after teacher starts', async () => {
+  const state = createState()
+  state.session.status = 'lobby'
+  const restore = installFakeDb(state)
+  try {
+    await withApp(async (app) => {
+      const join = await app.inject({ method: 'POST', url: '/api/school/join', payload: { code: '123456', avatar: AVATAR, nickname: 'Старт' } })
+      assert.equal(join.statusCode, 201, join.body)
+      const token = join.json().participantToken
+
+      const lobby = await app.inject({
+        method: 'GET',
+        url: `/api/school/participants/${ids.participant}/session`,
+        headers: { 'X-Participant-Token': token },
+      })
+      assert.equal(lobby.statusCode, 200, lobby.body)
+      assert.equal(lobby.json().status, 'lobby')
+      assert.deepEqual(lobby.json().questions, [])
+
+      state.session.status = 'active'
+      const active = await app.inject({
+        method: 'GET',
+        url: `/api/school/participants/${ids.participant}/session`,
+        headers: { 'X-Participant-Token': token },
+      })
+      assert.equal(active.statusCode, 200, active.body)
+      const body = active.json()
+      assert.equal(body.status, 'active')
+      assert.equal(body.questions.length, 1)
+      assert.equal('correct' in body.questions[0], false)
+      assert.equal('explanation' in body.questions[0], false)
     })
   } finally { restore() }
 })
