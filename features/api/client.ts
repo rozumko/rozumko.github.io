@@ -51,8 +51,17 @@ export interface TeacherSession {
   email: string
 }
 
+export interface ParentSession {
+  accessToken: string
+  refreshToken: string
+  email: string
+  activeChildProfileId: string | null
+}
+
 const TEACHER_SESSION_KEY = 'teacher_session'
 let teacherSessionMemory: TeacherSession | null = null
+const PARENT_SESSION_KEY = 'parent_session'
+let parentSessionMemory: ParentSession | null = null
 
 export interface AccessCode {
   id: string
@@ -428,6 +437,244 @@ export async function listHomeMissionReports(leadId: string, leadToken: string):
   return request(`/api/home/leads/${leadId}/mission-reports`, {
     headers: { 'X-Lead-Token': leadToken },
   })
+}
+
+// ─── Parent account API ────────────────────────────────────────────────────
+
+export interface ParentProfile {
+  id: string
+  displayName: string | null
+  grade: 1 | 2 | 3 | 4
+}
+
+export interface ParentPathActivityResult {
+  activityId: string
+  activityVersion: number
+  trust: 'client-unverified'
+  stars: number
+  correct: number
+  total: number
+  completedAt: string
+}
+
+export interface ParentPathProgress {
+  pointId: string
+  status: 'completed'
+  bestStars: number
+  attempts: number
+  updatedAt: string
+}
+
+export function storeParentSession(session: ParentSession): void {
+  parentSessionMemory = {
+    accessToken: session.accessToken,
+    refreshToken: session.refreshToken ?? '',
+    email: session.email ?? '',
+    activeChildProfileId: session.activeChildProfileId ?? null,
+  }
+  try { sessionStorage.setItem(PARENT_SESSION_KEY, JSON.stringify(parentSessionMemory)) } catch { /* unavailable */ }
+  try { localStorage.removeItem(PARENT_SESSION_KEY) } catch { /* remove legacy/accidental persistence */ }
+}
+
+export function getParentSession(): ParentSession | null {
+  if (parentSessionMemory) return parentSessionMemory
+  try {
+    const raw = sessionStorage.getItem(PARENT_SESSION_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Partial<ParentSession>
+    if (typeof parsed.accessToken !== 'string' || typeof parsed.refreshToken !== 'string') {
+      clearParentSession()
+      return null
+    }
+    parentSessionMemory = {
+      accessToken: parsed.accessToken,
+      refreshToken: parsed.refreshToken,
+      email: typeof parsed.email === 'string' ? parsed.email : '',
+      activeChildProfileId: typeof parsed.activeChildProfileId === 'string' ? parsed.activeChildProfileId : null,
+    }
+    return parentSessionMemory
+  } catch {
+    clearParentSession()
+    return null
+  }
+}
+
+export function setActiveParentProfile(childProfileId: string | null): void {
+  const session = getParentSession()
+  if (!session) throw new Error('Не авторизовано')
+  storeParentSession({ ...session, activeChildProfileId: childProfileId })
+}
+
+export function clearParentSession(): void {
+  parentSessionMemory = null
+  try { sessionStorage.removeItem(PARENT_SESSION_KEY) } catch { /* unavailable */ }
+  try { localStorage.removeItem(PARENT_SESSION_KEY) } catch { /* remove legacy/accidental persistence */ }
+}
+
+let parentRefreshInFlight: Promise<string | null> | null = null
+
+async function refreshParentSession(): Promise<string | null> {
+  const session = getParentSession()
+  if (!session?.refreshToken) return null
+  if (!parentRefreshInFlight) {
+    parentRefreshInFlight = (async () => {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+          body: JSON.stringify({ refresh_token: session.refreshToken }),
+        })
+        if (!res.ok) return null
+        const data = await res.json()
+        if (!data.access_token) return null
+        storeParentSession({
+          accessToken: data.access_token,
+          refreshToken: data.refresh_token ?? session.refreshToken,
+          email: data.user?.email ?? session.email,
+          activeChildProfileId: session.activeChildProfileId,
+        })
+        return data.access_token as string
+      } catch {
+        return null
+      } finally {
+        parentRefreshInFlight = null
+      }
+    })()
+  }
+  return parentRefreshInFlight
+}
+
+async function parentAuthRequest(path: string, options: RequestInit = {}): Promise<any> {
+  const session = getParentSession()
+  if (!session?.accessToken) throw new Error('Не авторизовано')
+  const send = (token: string) => request(path, {
+    ...options,
+    headers: { 'Authorization': `Bearer ${token}`, ...(options as any).headers },
+  })
+  try {
+    return await send(session.accessToken)
+  } catch (error) {
+    if ((error as ApiError)?.status !== 401) throw error
+    const token = await refreshParentSession()
+    if (!token) {
+      clearParentSession()
+      throw new Error('Сесія завершилася. Увійдіть знову.')
+    }
+    return send(token)
+  }
+}
+
+export function registerParentAccount(): Promise<{ status: 'active' | 'disabled'; email: string; emailVerified: boolean }> {
+  return parentAuthRequest('/api/parent/register', { method: 'POST', body: JSON.stringify({}) })
+}
+
+export function getParentMe(): Promise<{ status: 'none' | 'active' | 'disabled'; email?: string; emailVerified?: boolean }> {
+  return parentAuthRequest('/api/parent/me')
+}
+
+export function listParentProfiles(): Promise<{ profiles: ParentProfile[] }> {
+  return parentAuthRequest('/api/parent/profiles')
+}
+
+export function createParentProfile(input: { displayName?: string; grade: 1 | 2 | 3 | 4 }): Promise<ParentProfile> {
+  return parentAuthRequest('/api/parent/profiles', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+}
+
+export function updateParentProfile(
+  childProfileId: string,
+  input: { displayName?: string; grade?: 1 | 2 | 3 | 4 },
+): Promise<ParentProfile> {
+  return parentAuthRequest(`/api/parent/profiles/${encodeURIComponent(childProfileId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  })
+}
+
+export function getParentEntitlement(): Promise<{
+  status: HomeEntitlementStatus
+  hasAccess: boolean
+  currentPeriodEnd: string | null
+}> {
+  return parentAuthRequest('/api/parent/entitlement')
+}
+
+export interface ParentMissionReport {
+  missionId: string
+  track: HomeDemoTrack
+  grade: number
+  kind: 'demo' | 'practice'
+  createdAt: string
+  report: Partial<HomeDemoReport> & { correct?: number; total?: number }
+}
+
+export function getParentReports(childProfileId: string): Promise<{
+  childProfileId: string
+  reports: ParentMissionReport[]
+}> {
+  return parentAuthRequest(`/api/parent/profiles/${encodeURIComponent(childProfileId)}/reports`)
+}
+
+export function getParentPathProgress(childProfileId: string, pathId: string): Promise<{
+  childProfileId: string
+  pathId: string
+  progress: ParentPathProgress[]
+}> {
+  return parentAuthRequest(`/api/parent/profiles/${encodeURIComponent(childProfileId)}/path-progress?pathId=${encodeURIComponent(pathId)}`)
+}
+
+export function submitParentPathProgress(
+  childProfileId: string,
+  payload: { pathId: string; pointId: string; results: ParentPathActivityResult[] },
+): Promise<ParentPathProgress & { trust: 'client-unverified'; duplicate: boolean }> {
+  return parentAuthRequest(`/api/parent/profiles/${encodeURIComponent(childProfileId)}/path-progress`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function loginParent(email: string, password: string): Promise<void> {
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+    body: JSON.stringify({ email, password }),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error_description ?? data.msg ?? 'Помилка входу')
+  storeParentSession({
+    accessToken: data.access_token,
+    refreshToken: data.refresh_token,
+    email: data.user?.email ?? email,
+    activeChildProfileId: null,
+  })
+  await registerParentAccount()
+}
+
+export async function registerParentAuth(email: string, password: string, captchaToken?: string): Promise<void> {
+  const body: Record<string, unknown> = { email, password, data: { account_type: 'parent' } }
+  if (captchaToken) body.gotrue_meta_security = { captcha_token: captchaToken }
+  const redirect = typeof window !== 'undefined' ? `${window.location.origin}/parent.html` : ''
+  const query = redirect ? `?redirect_to=${encodeURIComponent(redirect)}` : ''
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/signup${query}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error_description ?? data.msg ?? 'Помилка реєстрації')
+}
+
+export async function logoutParent(): Promise<void> {
+  const session = getParentSession()
+  clearParentSession()
+  if (session?.accessToken) {
+    await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${session.accessToken}`, 'apikey': SUPABASE_ANON_KEY },
+    }).catch(() => {})
+  }
 }
 
 // ─── Teacher Auth (Supabase) ───────────────────────────────────────────────

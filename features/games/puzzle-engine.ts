@@ -15,7 +15,17 @@ function starsFor(correct: number, total: number): number {
   return 1
 }
 
-export function mountPuzzles(root: HTMLElement, grade: number, count = 5) {
+export interface PuzzleSessionSummary {
+  correct: number
+  total: number
+  stars: number
+}
+
+export interface PuzzleOptions {
+  onComplete?: (summary: PuzzleSessionSummary) => void
+}
+
+export function mountPuzzles(root: HTMLElement, grade: number, count = 5, opts: PuzzleOptions = {}) {
   let puzzles: Puzzle[] = []
   let idx = 0
   let correctCount = 0
@@ -179,6 +189,7 @@ export function mountPuzzles(root: HTMLElement, grade: number, count = 5) {
 
   function renderResult() {
     const stars = starsFor(correctCount, puzzles.length)
+    opts.onComplete?.({ correct: correctCount, total: puzzles.length, stars })
     el.progress.textContent = ''
     el.feedback.textContent = ''
     el.actions.classList.add('hidden')

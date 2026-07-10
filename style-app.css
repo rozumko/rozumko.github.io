@@ -1157,3 +1157,90 @@ body.puzzle-active #puzzle-area .app-subtitle { display: none; }
 body.puzzle-active #puzzle-area #puzzle-grade-select { margin: 0; }
 body.puzzle-active #puzzle-area #puzzles-root { width: min(100%, 40rem); margin: auto 0; }
 body.puzzle-active #puzzle-area .app-actions { margin: 0; width: 100%; }
+
+/* ── Гра «Факт чи думка?» (features/games/fact-opinion-game.ts) ──────────── */
+.fo { display: flex; flex-direction: column; gap: var(--sp-4); max-width: 40rem; margin: 0 auto; }
+.fo__top { display: flex; align-items: center; gap: var(--sp-3); }
+.fo__progress { font-weight: 800; color: var(--clr-text-faint); min-width: 3.5rem; }
+.fo__bar { flex: 1; height: 8px; background: var(--clr-surface-muted); border-radius: 999px; overflow: hidden; }
+.fo__bar-fill { height: 100%; width: 0; background: var(--clr-primary); border-radius: 999px; transition: width .3s ease; }
+
+.fo-card {
+  background: var(--clr-surface);
+  border: 2px solid var(--clr-border-light);
+  border-radius: 20px;
+  padding: clamp(var(--sp-4), 3vw, var(--sp-6));
+  text-align: center;
+}
+.fo-card__text { font-size: clamp(1.1rem, 2.6vw, 1.4rem); font-weight: 800; margin: 0 0 var(--sp-3); }
+.fo-card__hint { color: var(--clr-text-faint); margin: 0 0 var(--sp-4); }
+.fo-card__answers { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-3); }
+
+.fo-answer {
+  font: inherit; font-weight: 800; font-size: 1.05rem;
+  padding: var(--sp-3) var(--sp-5);
+  border-radius: 16px;
+  border: 3px solid var(--clr-border);
+  background: var(--clr-surface);
+  cursor: pointer;
+  transition: transform .12s ease, border-color .12s ease;
+}
+.fo-answer:hover:not(:disabled), .fo-answer:focus-visible { transform: translateY(-2px); }
+.fo-answer--fact    { border-color: var(--clr-emerald); }
+.fo-answer--opinion { border-color: var(--clr-sky); }
+.fo-answer--myth    { border-color: var(--track-ai); }
+.fo-answer:disabled { cursor: default; opacity: .75; }
+.fo-answer--right:disabled { opacity: 1; background: var(--clr-emerald-light); border-color: var(--clr-emerald); }
+.fo-answer--wrong:disabled { opacity: 1; background: #fee2e2; border-color: var(--clr-danger); }
+
+.fo__feedback { font-weight: 800; min-height: 1.4em; margin: 0; }
+.fo__feedback--ok  { color: var(--clr-emerald-dark); }
+.fo__feedback--bad { color: var(--clr-danger); }
+.fo__explanation { margin: var(--sp-2) 0 0; color: var(--clr-text-muted); }
+.fo__source { margin: var(--sp-2) 0 0; font-size: .92rem; color: var(--clr-text-faint); }
+.fo__next { margin-top: var(--sp-3); }
+
+.fo-done { text-align: center; padding: var(--sp-6) 0; }
+.fo-done__stars { font-size: 2rem; margin: 0 0 var(--sp-2); }
+.fo-done__title { font-weight: 800; font-size: 1.2rem; margin: 0 0 var(--sp-4); }
+
+/* ── Симулятори (features/games/simulator-engine.ts) ─────────────────────── */
+.sim { display: flex; flex-direction: column; gap: var(--sp-4); max-width: 40rem; margin: 0 auto; }
+.sim__statuses { display: flex; flex-wrap: wrap; gap: var(--sp-2); justify-content: center; }
+.sim-status {
+  font-size: .82rem; font-weight: 700;
+  padding: 4px 10px; border-radius: 999px;
+  background: var(--clr-surface-muted); color: var(--clr-text-faint);
+  border: 1px solid var(--clr-border-light);
+}
+.sim-status--on { background: var(--clr-emerald-light); color: var(--clr-emerald-dark); border-color: var(--clr-emerald); }
+.sim-status--danger { background: #fee2e2; color: #b91c1c; border-color: var(--clr-danger); }
+
+.sim-card {
+  background: var(--clr-surface);
+  border: 2px solid var(--clr-border-light);
+  border-radius: 20px;
+  padding: clamp(var(--sp-4), 3vw, var(--sp-6));
+  text-align: center;
+}
+.sim-card__icon { font-size: 2.6rem; line-height: 1; margin-bottom: var(--sp-3); }
+.sim-card__text { font-size: 1.05rem; font-weight: 600; margin: 0; white-space: pre-line; text-align: left; }
+.sim-card__info {
+  margin: var(--sp-4) 0 0; padding: var(--sp-3);
+  border-radius: 12px; text-align: left;
+  background: var(--clr-surface-subtle);
+  border-left: 4px solid var(--clr-primary);
+  color: var(--clr-text-muted); font-size: .95rem;
+}
+
+.sim__choices { display: flex; flex-direction: column; gap: var(--sp-2); }
+.sim-choice {
+  font: inherit; font-weight: 700; text-align: left;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: 14px;
+  border: 2px solid var(--clr-border);
+  background: var(--clr-surface);
+  cursor: pointer;
+  transition: transform .12s ease, border-color .12s ease;
+}
+.sim-choice:hover, .sim-choice:focus-visible { border-color: var(--clr-primary); transform: translateY(-1px); }
