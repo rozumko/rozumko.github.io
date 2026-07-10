@@ -28,11 +28,22 @@ test('parent logs in, creates a child profile and explicitly selects it', async 
           status: 200, headers: { 'Content-Type': 'application/json' },
         })
       }
+      if (url.endsWith('/api/parent/entitlement')) {
+        return new Response(JSON.stringify({ status: 'none', hasAccess: false, currentPeriodEnd: null }), {
+          status: 200, headers: { 'Content-Type': 'application/json' },
+        })
+      }
+      if (url.endsWith('/reports')) {
+        return new Response(JSON.stringify({
+          childProfileId: '00000000-0000-4000-8000-0000000000a3', reports: [],
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+      }
       if (url.includes('/path-progress')) {
         return new Response(JSON.stringify({ childProfileId: '00000000-0000-4000-8000-0000000000a3', pathId: 'grade-2', progress: [] }), {
           status: 200, headers: { 'Content-Type': 'application/json' },
         })
       }
+      if (url.includes('/api/parent/')) throw new Error(`Unexpected parent API request: ${url}`)
       return originalFetch(input, init)
     }
   })
