@@ -251,6 +251,22 @@ export type NewMission = typeof missions.$inferInsert
 // Дитячі дані пишуться ЛИШЕ після створення ліда (consent-gate на бекенді).
 // Жодного звʼязку зі шкільними сесіями чи їх токенами.
 
+// Батьківський акаунт (0029) — окрема ідентичність 1:1 із Supabase Auth
+// користувачем. НЕ app_users: batьківська авторизація не має проходити через
+// teacher/admin auto-provisioning (docs/security-model.md). Runtime routes are
+// implemented under /api/parent; production requires migrations 0029–0031.
+export const homeParentAccounts = pgTable('home_parent_accounts', {
+  id:              uuid('id').primaryKey().defaultRandom(),
+  authUserId:      uuid('auth_user_id').notNull().unique(),
+  email:           text('email').notNull().unique(),   // нормалізований lowercase (застосунок)
+  emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
+  status:          text('status').notNull().default('active'),
+  createdAt:       timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt:       timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
+export type HomeParentAccount = typeof homeParentAccounts.$inferSelect
+
 export const homeLeads = pgTable('home_leads', {
   id:                   uuid('id').primaryKey().defaultRandom(),
   parentEmail:          text('parent_email').notNull(),
@@ -258,19 +274,66 @@ export const homeLeads = pgTable('home_leads', {
   // Клієнтський час згоди — інформаційний; довірений час — created_at сервера.
   consentAcceptedAt:    timestamp('consent_accepted_at', { withTimezone: true }).notNull(),
   createdAt:            timestamp('created_at', { withTimezone: true }).defaultNow(),
+  // Nullable ownership (0029): заповнюється лише транзакційним claim
+  // (parent auth + lead-token + збіг підтвердженого email). RESTRICT —
+  // fail-closed до документованої політики видалення акаунтів.
+  parentAccountId:      uuid('parent_account_id').references(() => homeParentAccounts.id, { onDelete: 'restrict' }),
+  claimedAt:            timestamp('claimed_at', { withTimezone: true }),
 })
 
 export type HomeLead = typeof homeLeads.$inferSelect
 
 export const homeChildProfiles = pgTable('home_child_profiles', {
   id:          uuid('id').primaryKey().defaultRandom(),
-  leadId:      uuid('lead_id').notNull().references(() => homeLeads.id, { onDelete: 'cascade' }),
+  // Nullable з 0030: профіль може бути створений батьківським акаунтом без
+  // demo-ліда. Fail-closed CHECK у міграції: хоча б один власник
+  // (lead_id АБО parent_account_id) завжди є.
+  leadId:      uuid('lead_id').references(() => homeLeads.id, { onDelete: 'cascade' }),
   displayName: text('display_name'),          // опційне, ніколи не вимагається
   grade:       integer('grade').notNull(),
   createdAt:   timestamp('created_at', { withTimezone: true }).defaultNow(),
+  // Nullable ownership (0029): backfill при claim або пряме створення батьком.
+  parentAccountId: uuid('parent_account_id').references(() => homeParentAccounts.id, { onDelete: 'restrict' }),
 })
 
 export type HomeChildProfile = typeof homeChildProfiles.$inferSelect
+
+// Home path progress (0031). Browser results are explicitly untrusted practice
+// evidence; official reports and diplomas continue to use server-scored missions.
+export const homePathProgress = pgTable('home_path_progress', {
+  id:              uuid('id').primaryKey().defaultRandom(),
+  childProfileId:  uuid('child_profile_id').notNull().references(() => homeChildProfiles.id, { onDelete: 'cascade' }),
+  pathId:          text('path_id').notNull(),
+  pointId:         text('point_id').notNull(),
+  status:          text('status').notNull().default('completed').$type<'completed'>(),
+  bestStars:       integer('best_stars').notNull(),
+  attempts:        integer('attempts').notNull().default(1),
+  lastCompletedAt: timestamp('last_completed_at', { withTimezone: true }).notNull().defaultNow(),
+  createdAt:       timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:       timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  uniqProfilePathPoint: unique('home_path_progress_profile_path_point_uq')
+    .on(t.childProfileId, t.pathId, t.pointId),
+}))
+
+export type HomePathProgress = typeof homePathProgress.$inferSelect
+
+export const homePathEvents = pgTable('home_path_events', {
+  id:                uuid('id').primaryKey().defaultRandom(),
+  childProfileId:    uuid('child_profile_id').notNull().references(() => homeChildProfiles.id, { onDelete: 'cascade' }),
+  eventKey:          text('event_key').notNull(),
+  pathId:            text('path_id').notNull(),
+  pointId:           text('point_id').notNull(),
+  activityResults:   jsonb('activity_results').notNull(),
+  trust:             text('trust').notNull().default('client-unverified').$type<'client-unverified'>(),
+  clientCompletedAt: timestamp('client_completed_at', { withTimezone: true }).notNull(),
+  createdAt:         timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  uniqProfileEvent: unique('home_path_events_profile_event_key_uq')
+    .on(t.childProfileId, t.eventKey),
+}))
+
+export type HomePathEvent = typeof homePathEvents.$inferSelect
 
 // Сирі події демо-спроби (телеметрія в jsonb). Скоринг — на сервері при прийомі.
 export const homeDemoAttempts = pgTable('home_demo_attempts', {

@@ -1,6 +1,6 @@
 # Security Model - Rozumko
 
-_Updated: 2026-07-07_
+_Updated: 2026-07-10_
 
 > **Implementation status legend.**
 >
@@ -10,12 +10,13 @@ _Updated: 2026-07-07_
 >   **before** the feature code. Nothing enforces them today because the
 >   feature does not exist.
 >
-> As of _2026-07-02_ the enforced surfaces are the **official olympiad flow**,
+> As of _2026-07-10_ the enforced surfaces are the **official olympiad flow**,
 > **teacher/admin auth**, **School Mode** (self-serve missions and the
 > anonymous classroom game), the **Home demo/lead slice** (consent-gated
 > demo attempts and reports), the **entitlement model** (backend access state,
 > admin manual control, audit trail), gated **Club practice missions** and the
-> provider-neutral **payment webhook verification boundary**.
+> provider-neutral **payment webhook verification boundary**, the
+> **parent account/profile API** and **client-unverified Home path progress**.
 > **Provider checkout, provider-specific webhook adapters, full subscription UI,
 > AIG JSON-template generation and multi-client session rules are [PLANNED].**
 
@@ -138,6 +139,57 @@ Home Mode is the parent-led commercial surface:
 - individual reports and diplomas are based on Home Mode data, not imported
   from anonymous classroom sessions;
 - paid access is checked by backend entitlement state.
+
+### Parent Accounts And Child Profiles — Account/Profile/Path APIs **[IMPLEMENTED]**, Deletion **[PLANNED]**
+
+_Migrations 0029–0031 and `/api/parent` implement registration, database-owned
+account status, lead claiming, multi-profile ownership, reports, aggregated
+entitlement reads and client-unverified path progress. They are code-complete
+but remain unavailable in production until those migrations are deployed.
+Account/profile deletion stays fail-closed until a retention policy is approved._
+
+- A parent authenticates with Supabase Auth. The JWT proves the Supabase user
+  identity only; `GET /api/parent/me` reads account status and ownership from
+  the application database. Parent authorization must not use JWT role claims
+  or the teacher/admin `app_users` auto-provisioning path.
+- A child never receives Supabase Auth credentials and never registers an
+  account. The parent creates a minimal profile containing only a display name
+  and grade after recording the applicable consent.
+- Parent browser sessions are tab-scoped: access/refresh tokens and the active
+  child-profile selector use `sessionStorage`, never `localStorage`. The active
+  profile ID is routing context, not authorization; every API request still
+  verifies ownership. As with teacher sessions, XSS can read `sessionStorage`,
+  so an HttpOnly backend-session design remains a future hardening option.
+- Every parent route that reads or mutates a child profile accepts an explicit
+  UUID `childProfileId`, validates it before database access, and verifies that
+  the profile belongs to `req.parent.id`. A valid UUID without ownership
+  returns `404` so cross-account profile existence is not disclosed.
+- Claiming an existing consented demo requires all three proofs: an
+  authenticated parent session, the valid domain-separated lead token, and a
+  normalized match between the verified parent email and `home_leads.parent_email`.
+  A lead UUID, child display name, School token, or payment reference is never
+  sufficient proof of ownership.
+- Claiming is transactional and idempotent. A lead already owned by another
+  parent fails closed and does not transfer its profiles, reports, entitlement
+  or payment history.
+- Existing lead-token routes remain a limited compatibility surface for the
+  unclaimed demo. Once claimed, authenticated parent routes become the durable
+  authority; the lead token must not grant parent-zone profile management.
+- A parent account may own several child profiles. Entitlement remains at the
+  parent/account level for the first single-plan product, while attempts,
+  progress and reports are always scoped to one explicit child profile.
+- Browser path results marked `client-unverified` may be stored only as
+  practice progress after the server validates the profile ownership,
+  point/activity identifier and immutable content version. They cannot produce
+  an official score, diploma or trusted parent report. Server-issued missions
+  continue to be scored from server-held question versions and saved events.
+- Profile selection may be child-friendly, but profile creation, deletion,
+  consent changes, subscription actions and parent reports remain in the
+  parent zone and require the authenticated parent session. A local PIN can be
+  an additional UX lock, never the authorization boundary.
+- Account/profile deletion must cascade or anonymize child practice data under
+  a documented retention policy; it must not affect School Mode records because
+  no School-to-Home identity link exists.
 
 Olympiad / Seasonal Events are event surfaces:
 
@@ -361,6 +413,25 @@ verification boundary (written before the route code):
   event;
 - the webhook module never touches scoring, question issuing or answer keys
   (source check).
+
+`backend/src/routes/parent-claim.test.ts`, `parent-flow.test.ts` and
+`parent-path-progress.test.ts` protect the parent account and learning-path
+boundaries:
+
+- parent identity is resolved through `/api/parent/me`; status and ownership
+  come from the database, never JWT role claims or teacher `app_users`;
+- lead claiming requires parent auth + valid lead token + verified matching
+  email and is transactional/idempotent;
+- child-profile reads and writes enforce owner-scoped UUID access and return
+  `404` for valid foreign profile IDs;
+- path events accept only catalogued point/activity/version combinations,
+  enforce unlock prerequisites and store a unique server-derived event key;
+- retries do not increment attempts, while new completions keep the best stars;
+- every stored path event remains `client-unverified` and cannot create trusted
+  reports, official scores or diplomas.
+- frontend sync is enabled only when a parent session has an explicitly active
+  child profile; local anonymous progress is never assigned automatically to a
+  child account.
 
 Remaining Home Mode security regression tests **[PLANNED]** (must land before
 the corresponding feature code):

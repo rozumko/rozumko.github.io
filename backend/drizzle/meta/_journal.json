@@ -204,6 +204,27 @@
       "when": 1783035600000,
       "tag": "0028_enable_rls_all_application_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1783641600000,
+      "tag": "0029_add_home_parent_accounts",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1783645200000,
+      "tag": "0030_child_profiles_parent_owned",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1783648800000,
+      "tag": "0031_add_home_path_progress",
+      "breakpoints": true
     }
   ]
 }
