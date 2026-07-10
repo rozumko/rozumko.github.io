@@ -16,3 +16,10 @@ test('teacher session: writes go through the session helper', () => {
   assert.match(clientSource, /sessionStorage\.setItem\(TEACHER_SESSION_KEY/)
   assert.match(teacherSource, /storeTeacherSession\(\{/)
 })
+
+test('parent session is tab-scoped and never persisted to localStorage', () => {
+  assert.match(clientSource, /export function storeParentSession/)
+  assert.match(clientSource, /sessionStorage\.setItem\(PARENT_SESSION_KEY/)
+  assert.doesNotMatch(clientSource, /localStorage\.setItem\(PARENT_SESSION_KEY/)
+  assert.match(clientSource, /activeChildProfileId/)
+})

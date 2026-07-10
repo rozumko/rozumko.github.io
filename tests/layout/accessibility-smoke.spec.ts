@@ -4,6 +4,8 @@ import AxeBuilder from '@axe-core/playwright'
 const AXE_PAGES = [
   '/',
   '/home.html',
+  '/path.html',
+  '/parent.html',
   '/school.html',
   '/student.html',
   '/teacher.html',

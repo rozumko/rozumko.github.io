@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Кабінет батьків — Розумко</title>
+  <meta name="description" content="Батьківський кабінет Розумко: створіть профіль дитини, оберіть клас і продовжуйте домашній навчальний шлях." />
+  <link rel="canonical" href="https://rozumko.com/parent.html" />
+  <meta name="theme-color" content="#3b82f6" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="tokens.css" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style-app.css" />
+  <link rel="stylesheet" href="style-parent.css" />
+</head>
+<body class="parent-page">
+  <a href="#main-content" class="skip-link">Перейти до основного контенту</a>
+
+  <header class="parent-header">
+    <a href="home.html" class="parent-header__brand" aria-label="Розумко — домашні місії">Розумко</a>
+    <a href="home.html" class="btn-ghost">← Домашні місії</a>
+  </header>
+
+  <main id="main-content" class="parent-main" tabindex="-1">
+    <section id="parent-auth" class="parent-auth-card" aria-labelledby="parent-auth-title">
+      <p class="parent-eyebrow">Для дорослих</p>
+      <h1 id="parent-auth-title">Кабінет батьків</h1>
+      <p id="parent-auth-subtitle">Увійдіть, щоб дитина продовжила свій шлях на цьому пристрої.</p>
+
+      <div id="parent-login-mode">
+        <form id="parent-login-form" novalidate aria-describedby="parent-login-error">
+          <label class="parent-field" for="parent-login-email">
+            <span>Email</span>
+            <input id="parent-login-email" type="email" autocomplete="email" required />
+          </label>
+          <label class="parent-field" for="parent-login-password">
+            <span>Пароль</span>
+            <input id="parent-login-password" type="password" autocomplete="current-password" required />
+          </label>
+          <p id="parent-login-error" class="parent-error" role="alert" aria-live="assertive"></p>
+          <button id="parent-login-submit" class="kid-action parent-primary" type="submit">Увійти</button>
+        </form>
+        <p class="parent-switch">Ще немає акаунта? <button id="parent-show-register" type="button">Зареєструватися</button></p>
+      </div>
+
+      <div id="parent-register-mode" class="hidden">
+        <form id="parent-register-form" novalidate aria-describedby="parent-register-error">
+          <label class="parent-field" for="parent-register-email">
+            <span>Email дорослого</span>
+            <input id="parent-register-email" type="email" autocomplete="email" required />
+          </label>
+          <label class="parent-field" for="parent-register-password">
+            <span>Пароль — мінімум 8 символів</span>
+            <input id="parent-register-password" type="password" autocomplete="new-password" minlength="8" required />
+          </label>
+          <p class="parent-privacy">Дитина не отримує окремого логіна. Профіль створює і контролює дорослий.</p>
+          <div id="parent-turnstile" class="parent-turnstile"></div>
+          <p id="parent-register-error" class="parent-error" role="alert" aria-live="assertive"></p>
+          <button id="parent-register-submit" class="kid-action parent-primary" type="submit">Створити акаунт</button>
+        </form>
+        <p class="parent-switch">Вже є акаунт? <button id="parent-show-login" type="button">Увійти</button></p>
+      </div>
+    </section>
+
+    <section id="parent-dashboard" class="hidden" aria-labelledby="parent-dashboard-title">
+      <div class="parent-dashboard-head">
+        <div>
+          <p class="parent-eyebrow">Домашній режим</p>
+          <h1 id="parent-dashboard-title">Хто сьогодні грає?</h1>
+          <p id="parent-email" class="parent-muted"></p>
+        </div>
+        <button id="parent-logout" class="btn-ghost" type="button">Вийти</button>
+      </div>
+
+      <p id="parent-dashboard-status" class="parent-status" role="status" aria-live="polite"></p>
+
+      <section class="parent-overview" aria-labelledby="parent-overview-title">
+        <div class="parent-section-head">
+          <div>
+            <p class="parent-eyebrow">Для дорослих</p>
+            <h2 id="parent-overview-title">Огляд домашніх занять</h2>
+          </div>
+          <div id="parent-entitlement" class="parent-access" aria-live="polite">Перевіряємо доступ…</div>
+        </div>
+        <div id="parent-reports" class="parent-reports" aria-live="polite"></div>
+      </section>
+
+      <div id="parent-profiles" class="parent-profile-grid" aria-label="Профілі дітей"></div>
+
+      <section class="parent-create-card" aria-labelledby="parent-create-title">
+        <h2 id="parent-create-title">Додати дитину</h2>
+        <form id="parent-profile-form" class="parent-profile-form" novalidate aria-describedby="parent-profile-error">
+          <label class="parent-field" for="parent-child-name">
+            <span>Імʼя або домашнє імʼя</span>
+            <input id="parent-child-name" maxlength="60" autocomplete="off" placeholder="Наприклад, Марійка" />
+          </label>
+          <label class="parent-field" for="parent-child-grade">
+            <span>Клас</span>
+            <select id="parent-child-grade">
+              <option value="1">1 клас</option>
+              <option value="2" selected>2 клас</option>
+              <option value="3">3 клас</option>
+              <option value="4">4 клас</option>
+            </select>
+          </label>
+          <p id="parent-profile-error" class="parent-error" role="alert" aria-live="assertive"></p>
+          <button id="parent-profile-submit" class="kid-action parent-primary" type="submit">Додати профіль</button>
+        </form>
+      </section>
+
+      <p class="parent-privacy parent-privacy--dashboard">Зберігаємо лише імʼя профілю, клас і навчальний прогрес. Керування профілями доступне тільки дорослому.</p>
+    </section>
+  </main>
+
+  <script type="module" src="parent.js"></script>
+</body>
+</html>

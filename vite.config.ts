@@ -25,11 +25,11 @@ const BASE_CSP = [
 
 const STRICT_CSP = ["script-src 'self'", ...BASE_CSP].join('; ')
 
-// teacher.html додатково вантажить Cloudflare Turnstile (захист реєстрації від ботів):
+// teacher.html and parent.html additionally load Cloudflare Turnstile:
 //   - script-src: api.js віджета
 //   - frame-src:  Turnstile рендериться в iframe (без директиви впав би на default-src 'self')
 //   - connect-src: віджет робить запити до challenges.cloudflare.com
-// Розширення скоупимо ЛИШЕ на teacher.html, решта сторінок лишаються на STRICT_CSP.
+// Розширення скоупимо лише на auth-сторінки, решта лишаються на STRICT_CSP.
 const TURNSTILE_ORIGIN = 'https://challenges.cloudflare.com'
 const TEACHER_CSP = [
   `script-src 'self' ${TURNSTILE_ORIGIN}`,
@@ -62,8 +62,8 @@ function cspPlugin(): Plugin {
       order: 'pre',
       handler(html, ctx) {
         const isOffline = ctx.path.endsWith('offline.html')
-        const isTeacher = ctx.path.endsWith('teacher.html')
-        const content = isOffline ? OFFLINE_CSP : isTeacher ? TEACHER_CSP : STRICT_CSP
+        const usesTurnstile = ctx.path.endsWith('teacher.html') || ctx.path.endsWith('parent.html')
+        const content = isOffline ? OFFLINE_CSP : usesTurnstile ? TEACHER_CSP : STRICT_CSP
         return {
           html,
           tags: [{
@@ -101,10 +101,12 @@ export default defineConfig({
         student:          resolve(__dirname, 'student.html'),
         'olympiad-enter': resolve(__dirname, 'olympiad-enter.html'),
         teacher:          resolve(__dirname, 'teacher.html'),
+        parent:           resolve(__dirname, 'parent.html'),
         admin:            resolve(__dirname, 'admin.html'),
         'framing-blocked': resolve(__dirname, 'framing-blocked.html'),
         offline:          resolve(__dirname, 'offline.html'),
         home:             resolve(__dirname, 'home.html'),
+        path:             resolve(__dirname, 'path.html'),
         games:            resolve(__dirname, 'games.html'),
         school:           resolve(__dirname, 'school.html'),
         'for-teachers':   resolve(__dirname, 'for-teachers.html'),

@@ -125,8 +125,12 @@ beyond the leaderboard (`/api/school`, migration 0014). Home
 Mode has implemented slices: `/home`, parent lead + consent, server-scored
 demo reports, backend entitlement state and repeatable Club practice missions
 gated by entitlement. The provider-neutral payment webhook boundary is
-implemented under `/api/home/payment/webhook`; checkout/provider adapters and
-richer parent account flows are still planned._
+implemented under `/api/home/payment/webhook`. `/api/parent` implements parent
+registration, lead claiming, child profiles, reports, entitlement aggregation
+and server persistence for unverified learning-path progress. Provider checkout
+adapters and subscription purchase are still planned.
+`parent.html` already implements parent auth, profile creation, latest reports,
+account entitlement status and explicit child selection for the grade-2 path._
 
 School, Home and Olympiad surfaces stay decoupled at the identity/data level.
 School Mode may send users to a Home URL as a neutral brand path, but it does
@@ -161,7 +165,15 @@ Frontend structure:
   `home.html` and `school.html`; registered in the `missions` table;
 - `features/admin/` — admin tabs incl. `missions-tab.ts` (registry) and
   `taxonomy.ts` (topic/concept UI copy);
-- `features/home/` for parent-led Home Mode UX (planned).
+- `parent.html` + `parent.ts` — parent login/registration, profile creation,
+  latest child reports, account entitlement status and
+  explicit child selection and profile editing; subscription purchase UI is
+  still planned;
+- `features/path/path-sync.ts` — profile-scoped offline queue synchronization:
+  loads the server snapshot, groups all required activities of one point,
+  acknowledges only accepted events and preserves the queue while offline.
+  `path.ts` enables it only for an explicitly selected parent child profile;
+  anonymous `local` progress is never auto-adopted.
 
 Backend:
 
@@ -171,11 +183,39 @@ Backend:
 - Home Mode routes are implemented under `/api/home` for parent lead + consent,
   demo attempt/report, entitlement check and gated Club practice, specified in
   [home-demo-contract.md](./home-demo-contract.md); the provider-neutral
-  webhook boundary is also under `/api/home`; further parent-profile and
-  payment-provider checkout routes are planned;
+  webhook boundary is also under `/api/home`;
+- Parent account routes are implemented under `/api/parent`: registration,
+  database-owned account status, lead claiming, child profiles, reports,
+  entitlement aggregation and idempotent learning-path progress. Migrations
+  0029–0031 must be deployed before these routes are enabled in production;
+- payment-provider checkout routes are planned;
 - subscription-aware seasonal event access is planned and must not reuse
   anonymous School identity;
 - all frontend HTTP calls continue to go through `features/api/client.ts`.
+
+### Parent account and path-progress model **[IMPLEMENTED IN CODE]**
+
+The existing `home_leads` record and domain-separated lead token remain the
+consented demo identity. They are not promoted into a durable login token.
+
+The account slice introduces a separate `home_parent_accounts` identity mapped
+one-to-one to a Supabase Auth user. `GET /api/parent/me` resolves its database
+status. Existing leads can be claimed only with a valid parent session, valid
+lead token and matching verified email; the transaction attaches the lead and
+its existing child profile to that parent without importing any School data.
+
+`home_child_profiles` becomes parent-owned and supports several profiles per
+account. During migration, the existing non-null `lead_id` remains for demo
+compatibility and provenance; a nullable `parent_account_id` is added and
+backfilled on claim. New parent routes always use an explicit `childProfileId`
+and enforce ownership server-side. A later cleanup may make parent ownership
+the canonical relation only after every legacy lead path has a tested migration
+or deletion policy.
+
+The first subscription remains account-level, while attempts, path progress and
+reports remain child-profile-level. Client-only path completion is explicitly
+unverified practice evidence; trusted reports, seasonal finals and diplomas use
+server-issued, versioned missions and server scoring.
 
 ### School classroom game integrity **[IMPLEMENTED]**
 
@@ -351,6 +391,9 @@ Current implemented tables **[IMPLEMENTED]**:
 - `home_entitlement_events` (entitlement audit trail)
 - `home_mission_attempts` (repeatable Club practice attempts, gated by entitlement)
 - `home_payment_events` (verified provider event idempotency/audit boundary)
+- `home_parent_accounts` (Supabase Auth mapping, database-owned status)
+- `home_path_progress` (per-profile point aggregate; client-unverified)
+- `home_path_events` (idempotent unverified activity-completion evidence)
 
 Remaining Home Mode concepts **[PLANNED]** would use tables or equivalent
 storage for:
