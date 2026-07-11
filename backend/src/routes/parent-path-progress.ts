@@ -57,7 +57,10 @@ export const HOME_PATH_CATALOG: Record<string, CatalogPath> = {
     points: {
       'g2-info-start': {
         unlockAfter: [],
-        requiredActivities: { 'path:g2-info-start:infosort': 1 },
+        requiredActivities: {
+          'path:g2-info-start:theory': 1,
+          'path:g2-info-start:infosort': 1,
+        },
       },
       'g2-ct-multisort': {
         unlockAfter: ['g2-info-start'],
@@ -81,11 +84,15 @@ export const HOME_PATH_CATALOG: Record<string, CatalogPath> = {
       },
       'g2-digital-safety': {
         unlockAfter: ['g2-fact-opinion'],
-        requiredActivities: { 'path:g2-digital-safety:digital-safety-mission': 1 },
+        requiredActivities: {
+          'path:g2-digital-safety:theory': 1,
+          'path:g2-digital-safety:digital-safety-mission': 1,
+        },
       },
       'g2-ct-algorithms': {
         unlockAfter: ['g2-ct-patterns'],
         requiredActivities: {
+          'path:g2-ct-algorithms:theory': 1,
           'path:g2-ct-algorithms:algorithms-mission': 1,
           'path:g2-ct-algorithms:algorithms-puzzles': 1,
         },

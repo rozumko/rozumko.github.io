@@ -25,7 +25,7 @@ test('valid completion uses the backend catalog and produces a stable event key'
   const body = {
     pathId: 'grade-2',
     pointId: 'g2-info-start',
-    results: [result('path:g2-info-start:infosort')],
+    results: [result('path:g2-info-start:theory'), result('path:g2-info-start:infosort')],
   }
   const first = validatePathCompletion(2, body)
   const second = validatePathCompletion(2, body)
@@ -66,35 +66,38 @@ for (const sample of [
 }
 
 test('multi-activity point requires the exact activity set and immutable versions', () => {
+  const theory = result('path:g2-ct-algorithms:theory', 1, '2026-07-10T09:58:00.000Z')
   const mission = result('path:g2-ct-algorithms:algorithms-mission')
   const puzzles = result('path:g2-ct-algorithms:algorithms-puzzles', 1, '2026-07-10T10:02:00.000Z')
   const valid = validatePathCompletion(2, {
-    pathId: 'grade-2', pointId: 'g2-ct-algorithms', results: [puzzles, mission],
+    pathId: 'grade-2', pointId: 'g2-ct-algorithms', results: [puzzles, theory, mission],
   })
   assert.equal(valid.ok, true)
 
   const missing = validatePathCompletion(2, {
-    pathId: 'grade-2', pointId: 'g2-ct-algorithms', results: [mission],
+    pathId: 'grade-2', pointId: 'g2-ct-algorithms', results: [theory, mission],
   })
   assert.deepEqual(missing, { ok: false, error: 'Не всі обовʼязкові активності завершено' })
 
   const stale = validatePathCompletion(2, {
-    pathId: 'grade-2', pointId: 'g2-ct-algorithms', results: [mission, { ...puzzles, activityVersion: 2 }],
+    pathId: 'grade-2', pointId: 'g2-ct-algorithms', results: [theory, mission, { ...puzzles, activityVersion: 2 }],
   })
   assert.deepEqual(stale, { ok: false, error: 'Невідома активність або версія' })
 })
 
 test('grade, trust, score shape and client time fail closed', () => {
+  // Повний required-набір точки, щоб кожен кейс падав саме через свою мутацію.
+  const theory = result('path:g2-info-start:theory')
   const base = result('path:g2-info-start:infosort')
-  assert.equal(validatePathCompletion(3, { pathId: 'grade-2', pointId: 'g2-info-start', results: [base] }).ok, false)
+  assert.equal(validatePathCompletion(3, { pathId: 'grade-2', pointId: 'g2-info-start', results: [theory, base] }).ok, false)
   assert.equal(validatePathCompletion(2, {
-    pathId: 'grade-2', pointId: 'g2-info-start', results: [{ ...base, trust: 'server-verified' as never }],
+    pathId: 'grade-2', pointId: 'g2-info-start', results: [theory, { ...base, trust: 'server-verified' as never }],
   }).ok, false)
   assert.equal(validatePathCompletion(2, {
-    pathId: 'grade-2', pointId: 'g2-info-start', results: [{ ...base, correct: 6 }],
+    pathId: 'grade-2', pointId: 'g2-info-start', results: [theory, { ...base, correct: 6 }],
   }).ok, false)
   assert.equal(validatePathCompletion(2, {
-    pathId: 'grade-2', pointId: 'g2-info-start', results: [{ ...base, completedAt: '2099-01-01T00:00:00.000Z' }],
+    pathId: 'grade-2', pointId: 'g2-info-start', results: [theory, { ...base, completedAt: '2099-01-01T00:00:00.000Z' }],
   }, new Date('2026-07-10T10:00:00.000Z')).ok, false)
 })
 

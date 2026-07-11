@@ -521,7 +521,7 @@ test('path progress: completion is persisted, listed and idempotent', async () =
     })
     const payload = {
       pathId: 'grade-2', pointId: 'g2-info-start',
-      results: [pathResult('path:g2-info-start:infosort')],
+      results: [pathResult('path:g2-info-start:theory'), pathResult('path:g2-info-start:infosort')],
     }
 
     const first = await app.inject({
@@ -567,7 +567,10 @@ test('path progress: unknown versions and locked points fail without writes', as
       method: 'POST', url: `/api/parent/profiles/${ids.profileA}/path-progress`, headers: auth('mama-verified'),
       payload: {
         pathId: 'grade-2', pointId: 'g2-info-start',
-        results: [{ ...pathResult('path:g2-info-start:infosort'), activityVersion: 2 }],
+        results: [
+          pathResult('path:g2-info-start:theory'),
+          { ...pathResult('path:g2-info-start:infosort'), activityVersion: 2 },
+        ],
       },
     })
     assert.equal(stale.statusCode, 400)
