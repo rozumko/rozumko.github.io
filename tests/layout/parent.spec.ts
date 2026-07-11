@@ -69,7 +69,7 @@ test('parent logs in, creates a child profile and explicitly selects it', async 
   expect(activeProfile).toBe('00000000-0000-4000-8000-0000000000a3')
 })
 
-test('grades without a map are shown honestly and cannot start the grade-2 pilot', async ({ page }) => {
+test('grade-3 profile opens the grade-3 path', async ({ page }) => {
   await page.addInitScript(() => {
     sessionStorage.setItem('parent_session', JSON.stringify({
       accessToken: 'parent-access', refreshToken: 'parent-refresh', email: 'mama@example.com', activeChildProfileId: null,
@@ -83,8 +83,50 @@ test('grades without a map are shown honestly and cannot start the grade-2 pilot
     }
   })
   await page.goto('/parent.html')
-  const unavailable = page.getByRole('button', { name: 'Шлях для 3 класу ще готується' })
-  await expect(unavailable).toBeDisabled()
+  await page.getByRole('button', { name: 'Обрати й грати' }).click()
+  await expect(page).toHaveURL(/path\.html\?grade=3/)
+})
+
+test('grade-1 child profile can open its own path', async ({ page }) => {
+  await page.addInitScript(() => {
+    sessionStorage.setItem('parent_session', JSON.stringify({
+      accessToken: 'parent-access', refreshToken: 'parent-refresh', email: 'mama@example.com', activeChildProfileId: null,
+    }))
+    window.fetch = async input => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+      const data = url.includes('/register')
+        ? { status: 'active', email: 'mama@example.com', emailVerified: true }
+        : url.endsWith('/entitlement')
+          ? { status: 'none', hasAccess: false, currentPeriodEnd: null }
+          : url.endsWith('/reports')
+            ? { childProfileId: '00000000-0000-4000-8000-0000000000c3', reports: [] }
+            : { profiles: [{ id: '00000000-0000-4000-8000-0000000000c3', displayName: 'Софійка', grade: 1 }] }
+      return new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json' } })
+    }
+  })
+  await page.goto('/parent.html')
+  await page.getByRole('button', { name: 'Обрати й грати' }).click()
+  await expect(page).toHaveURL(/path\.html\?grade=1/)
+})
+
+test('profile without a map grade shows disabled "Шлях готується" button', async ({ page }) => {
+  await page.addInitScript(() => {
+    sessionStorage.setItem('parent_session', JSON.stringify({
+      accessToken: 'parent-access', refreshToken: 'parent-refresh', email: 'mama@example.com', activeChildProfileId: null,
+    }))
+    window.fetch = async input => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+      const data = url.includes('/register')
+        ? { status: 'active', email: 'mama@example.com', emailVerified: true }
+        // Inject a grade=5 profile to simulate a future grade not yet in PATHS_BY_GRADE
+        : { profiles: [{ id: '00000000-0000-4000-8000-0000000000f3', displayName: 'Майбутній', grade: 5 }] }
+      return new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json' } })
+    }
+  })
+  await page.goto('/parent.html')
+  const button = page.getByRole('button', { name: 'Шлях для 5 класу ще готується' })
+  await expect(button).toBeVisible()
+  await expect(button).toBeDisabled()
 })
 
 test('parent auth stays usable without horizontal scroll on a phone', async ({ page }) => {
@@ -178,4 +220,76 @@ test('parent edits an owned child profile and incompatible active grade is clear
   await expect(page.locator('.parent-profile-card')).toContainText('3 клас')
   const activeProfile = await page.evaluate(() => JSON.parse(sessionStorage.getItem('parent_session') ?? 'null')?.activeChildProfileId)
   expect(activeProfile).toBeNull()
+})
+
+test('parent explicitly imports only the anonymous first mission into a matching profile', async ({ page }) => {
+  const profileId = '00000000-0000-4000-8000-0000000000d3'
+  await page.addInitScript(({ profileId }) => {
+    if (!sessionStorage.getItem('__parentFixtureSeeded')) {
+      sessionStorage.setItem('parent_session', JSON.stringify({
+        accessToken: 'parent-access', refreshToken: 'parent-refresh', email: 'mama@example.com', activeChildProfileId: null,
+      }))
+      sessionStorage.setItem('__parentFixtureSeeded', '1')
+    }
+    if (!sessionStorage.getItem('__anonymousFixtureSeeded')) {
+      localStorage.setItem('rozumko:path-progress:v1:local', JSON.stringify({
+        version: 1,
+        points: { 'g1-sort-start': { pointId: 'g1-sort-start', status: 'completed', bestStars: 3, attempts: 1, updatedAt: '2026-07-11T08:00:00.000Z' } },
+        queue: [{
+          key: 'g1-start-result', pointId: 'g1-sort-start',
+          result: {
+            type: 'game', activityId: 'path:g1-sort-start:attributes', activityVersion: 1,
+            stars: 3, correct: 8, total: 8, completedAt: '2026-07-11T08:00:00.000Z',
+          },
+        }],
+      }))
+      sessionStorage.setItem('__anonymousFixtureSeeded', '1')
+    }
+    if (!sessionStorage.getItem('__importPayloads')) sessionStorage.setItem('__importPayloads', '[]')
+    window.fetch = async (input, init) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+      let data: unknown = {}
+      let status = 200
+      if (url.includes('/api/parent/register')) {
+        data = { status: 'active', email: 'mama@example.com', emailVerified: true }
+      } else if (url.endsWith('/api/parent/profiles')) {
+        data = { profiles: [
+          { id: profileId, displayName: 'Софійка', grade: 1 },
+          { id: '00000000-0000-4000-8000-0000000000e3', displayName: 'Марко', grade: 2 },
+        ] }
+      } else if (url.endsWith('/api/parent/entitlement')) {
+        data = { status: 'none', hasAccess: false, currentPeriodEnd: null }
+      } else if (url.endsWith('/reports')) {
+        data = { childProfileId: profileId, reports: [] }
+      } else if (url.includes(`/api/parent/profiles/${profileId}/path-progress`) && init?.method === 'POST') {
+        const payloads = JSON.parse(sessionStorage.getItem('__importPayloads') ?? '[]')
+        payloads.push(JSON.parse(String(init.body)))
+        sessionStorage.setItem('__importPayloads', JSON.stringify(payloads))
+        data = { pointId: 'g1-sort-start', status: 'completed', bestStars: 3, attempts: 1, updatedAt: '2026-07-11T08:00:00.000Z', trust: 'client-unverified', duplicate: false }
+        status = 201
+      } else if (url.includes('/path-progress')) {
+        data = { childProfileId: profileId, pathId: 'grade-1', progress: [] }
+      }
+      return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } })
+    }
+  }, { profileId })
+
+  await page.goto('/parent.html?continuePath=grade-1')
+  await expect(page.locator('#parent-path-import')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Зберегти першу місію тут' })).toHaveCount(1)
+  await page.getByRole('button', { name: 'Зберегти першу місію тут' }).click()
+  await expect(page).toHaveURL(/path\.html\?grade=1/)
+  const result = await page.evaluate(() => ({
+    payloads: JSON.parse(sessionStorage.getItem('__importPayloads') ?? '[]'),
+    anonymous: localStorage.getItem('rozumko:path-progress:v1:local'),
+    active: JSON.parse(sessionStorage.getItem('parent_session') ?? 'null')?.activeChildProfileId,
+  }))
+  expect(result.payloads).toHaveLength(1)
+  expect(result.payloads[0].pointId).toBe('g1-sort-start')
+  expect(result.payloads[0].results[0].trust).toBe('client-unverified')
+  // clearPoint видаляє лише імпортовану точку, а не весь ключ
+  const anonymousState = result.anonymous ? JSON.parse(result.anonymous) : null
+  expect(anonymousState?.points?.['g1-sort-start']).toBeUndefined()
+  expect(anonymousState?.queue ?? []).toHaveLength(0)
+  expect(result.active).toBe(profileId)
 })

@@ -8,6 +8,7 @@ import {
 } from './features/api/client.js'
 import { loadStaticQuestions } from './features/missions/static-questions.js'
 import { getSavedGrade, saveGrade } from './utils/grade.js'
+import { PATHS_BY_GRADE } from './features/path/path-data.js'
 
 // Home Demo (зріз 2 контракту docs/home-demo-contract.md).
 // Дитина проходить демо-місію без облікового запису: питання приходять із
@@ -385,6 +386,21 @@ function highlightGrade(grade: number) {
     btn.style.outline = active ? '3px solid #3b82f6' : ''
     btn.style.outlineOffset = active ? '2px' : ''
   })
+  const pathCard = $maybe<HTMLAnchorElement>('home-path-card')
+  const pathMeta = $maybe('home-path-card-meta')
+  const path = PATHS_BY_GRADE[grade]
+  if (pathCard) {
+    pathCard.href = path ? `path.html?grade=${path.grade}` : '#'
+    pathCard.classList.toggle('mission-card--unavailable', !path)
+    pathCard.setAttribute('aria-disabled', String(!path))
+  }
+  if (pathMeta) {
+    pathMeta.textContent = path
+      ? `${path.points.length} точок · інформатика, мислення та основи ШІ`
+      : `Карта ${grade} класу готується`
+  }
+  const pathTitle = $maybe('home-path-card-title')
+  if (pathTitle) pathTitle.textContent = `Карта пригод · ${grade} клас`
 }
 
 document.querySelectorAll<HTMLElement>('.home-grade-btn').forEach(btn => {

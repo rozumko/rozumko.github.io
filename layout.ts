@@ -22,6 +22,7 @@ function injectHeader(): void {
   if (!el) return
 
   const page = activePage()
+  const isHome = page === 'home.html'
   const links = NAV.map(({ href, label }) => {
     const active = page === href ? ' site-header__link--active' : ''
     return `<a href="${href}" class="site-header__link${active}">${label}</a>`
@@ -36,10 +37,10 @@ function injectHeader(): void {
         <button class="site-header__burger" aria-label="Відкрити меню" aria-expanded="false" aria-controls="site-nav">
           <span></span><span></span><span></span>
         </button>
-        <nav id="site-nav" class="site-header__nav" aria-label="Навігація сайтом">${links}<a href="teacher.html" class="site-header__link site-header__mobile-only">Для вчителя</a></nav>
+        <nav id="site-nav" class="site-header__nav" aria-label="Навігація сайтом">${links}<a href="parent.html" class="site-header__link site-header__mobile-only">Кабінет батьків</a><a href="teacher.html" class="site-header__link site-header__mobile-only">Для вчителя</a></nav>
         <div class="site-header__actions">
           <a href="teacher.html" class="site-header__teacher">Для вчителя</a>
-          <a href="home.html" class="site-header__cta">Почати гру →</a>
+          <a href="${isHome ? 'parent.html' : 'home.html'}" class="site-header__cta">${isHome ? 'Кабінет батьків' : 'Почати гру →'}</a>
         </div>
       </div>
     </header>`
@@ -108,6 +109,7 @@ function injectFooter(): void {
           <div class="footer-col--wide">
             <p class="footer-col__heading">Кабінет</p>
             <ul class="footer-col__list">
+              <li><a href="parent.html">Кабінет батьків</a></li>
               <li><a href="teacher.html">Вхід для вчителя</a></li>
               <li><a href="student.html">Вхід учня за кодом</a></li>
             </ul>

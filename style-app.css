@@ -1157,6 +1157,43 @@ body.puzzle-active #puzzle-area .app-subtitle { display: none; }
 body.puzzle-active #puzzle-area #puzzle-grade-select { margin: 0; }
 body.puzzle-active #puzzle-area #puzzles-root { width: min(100%, 40rem); margin: auto 0; }
 body.puzzle-active #puzzle-area .app-actions { margin: 0; width: 100%; }
+.mission-card--unavailable { opacity: .58; cursor: not-allowed; }
+
+.home-path-hero {
+  display: grid;
+  grid-template-columns: minmax(180px, .8fr) minmax(260px, 1.2fr);
+  align-items: center;
+  gap: clamp(var(--sp-4), 4vw, var(--sp-8));
+  width: min(100%, 64rem);
+  margin: var(--sp-5) auto 0;
+  padding: clamp(var(--sp-5), 4vw, var(--sp-8));
+  overflow: hidden;
+  border: 3px solid var(--clr-primary);
+  border-radius: 28px;
+  background: linear-gradient(135deg, #dbeafe 0%, #ecfeff 48%, #f0fdf4 100%);
+  color: var(--clr-text);
+  text-align: left;
+  text-decoration: none;
+  box-shadow: 0 16px 40px rgb(37 99 235 / 18%);
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+.home-path-hero:hover { transform: translateY(-3px); box-shadow: 0 20px 46px rgb(37 99 235 / 24%); }
+.home-path-hero:focus-visible { outline: 4px solid rgb(37 99 235 / 32%); outline-offset: 4px; }
+.home-path-hero__art { display: flex; align-items: flex-end; justify-content: center; gap: 4px; font-size: clamp(2.6rem, 7vw, 5rem); }
+.home-path-hero__art span:nth-child(2) { transform: translateY(-18px); }
+.home-path-hero__copy { display: grid; justify-items: start; gap: 7px; }
+.home-path-hero__eyebrow { color: var(--clr-primary-dark); font-size: .78rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.home-path-hero__title { font-size: clamp(1.45rem, 3vw, 2.2rem); font-weight: 900; }
+.home-path-hero__meta { color: var(--clr-text-muted); line-height: 1.45; }
+.home-path-hero__action { margin-top: var(--sp-2); padding: 10px 18px; border-radius: 999px; background: var(--clr-primary); color: #fff; font-weight: 900; }
+.home-secondary-title { margin-top: var(--sp-8); }
+.home-games-grid { grid-template-columns: minmax(220px, 32rem); justify-content: center; }
+
+@media (max-width: 640px) {
+  .home-path-hero { grid-template-columns: 1fr; gap: var(--sp-3); text-align: center; }
+  .home-path-hero__art { font-size: 3.2rem; }
+  .home-path-hero__copy { justify-items: center; }
+}
 
 /* ── Гра «Факт чи думка?» (features/games/fact-opinion-game.ts) ──────────── */
 .fo { display: flex; flex-direction: column; gap: var(--sp-4); max-width: 40rem; margin: 0 auto; }

@@ -93,6 +93,12 @@
 
 .parent-muted { margin: 0; color: var(--clr-text-muted, #526079); }
 .parent-status { min-height: 1.5em; margin: var(--sp-4) 0; color: var(--clr-text-muted, #526079); }
+.parent-import { display: grid; grid-template-columns: auto 1fr; gap: var(--sp-3); align-items: center; margin-bottom: var(--sp-5); padding: var(--sp-4); border: 2px solid var(--clr-primary, #2563eb); border-radius: 18px; background: #eff6ff; }
+.parent-import.hidden { display: none; }
+.parent-import > span { font-size: 2rem; }
+.parent-import h2 { margin: 0 0 4px; font-size: 1.1rem; }
+.parent-import p { margin: 0; color: var(--clr-text-muted, #526079); }
+.parent-profile-card__import { margin-top: var(--sp-2); }
 .parent-overview { margin-bottom: var(--sp-7); padding: var(--sp-5); border: 1px solid var(--clr-border-light, #dbe4f0); border-radius: 20px; background: var(--clr-surface, #fff); }
 .parent-section-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-4); }
 .parent-section-head h2 { margin: 4px 0 0; }

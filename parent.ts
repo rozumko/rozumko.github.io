@@ -13,10 +13,13 @@ import {
   registerParentAuth,
   setActiveParentProfile,
   storeParentSession,
+  submitParentPathProgress,
   updateParentProfile,
   type ParentProfile,
   type ParentMissionReport,
 } from './features/api/client.js'
+import { PATHS_BY_GRADE, type GradePathMap, type PathPoint } from './features/path/path-data.js'
+import { createProgressStore, type ProgressStore, type QueuedResult } from './features/path/progress-store.js'
 import { $ } from './utils/dom.js'
 
 type TurnstileApi = {
@@ -46,6 +49,39 @@ const dashboardStatus = $('parent-dashboard-status')
 const profilesRoot = $('parent-profiles')
 const entitlementRoot = $('parent-entitlement')
 const reportsRoot = $('parent-reports')
+const importRoot = $('parent-path-import')
+const importMessage = $('parent-path-import-message')
+
+interface PendingPathImport {
+  map: GradePathMap
+  point: PathPoint
+  store: ProgressStore
+  entries: QueuedResult[]
+}
+
+function findPendingPathImports(): PendingPathImport[] {
+  const store = createProgressStore(window.localStorage, 'local')
+  const queue = store.pendingQueue()
+  const recentFirst = [...queue].reverse()
+  const maps = Object.values(PATHS_BY_GRADE)
+  const result: PendingPathImport[] = []
+  for (const map of maps) {
+    const point = map.points[0]
+    if (!point || !store.isCompleted(point.id)) continue
+    const entries = point.activities.filter(step => step.required).map(step => {
+      const activityId = `path:${point.id}:${step.id}`
+      return recentFirst.find(entry => entry.pointId === point.id
+        && entry.result.activityId === activityId
+        && entry.result.activityVersion === step.version)
+    })
+    if (entries.every((entry): entry is QueuedResult => Boolean(entry))) {
+      result.push({ map, point, store, entries })
+    }
+  }
+  return result
+}
+
+let pendingImports = findPendingPathImports()
 
 let turnstileWidgetId: string | null = null
 let turnstileLoad: Promise<void> | null = null
@@ -127,11 +163,12 @@ function profileCard(profile: ParentProfile, activeId: string | null): HTMLEleme
   const button = document.createElement('button')
   button.type = 'button'
   button.className = 'kid-action'
-  if (profile.grade === 2) {
+  const profilePath = PATHS_BY_GRADE[profile.grade]
+  if (profilePath) {
     button.textContent = profile.id === activeId ? 'Продовжити шлях →' : 'Обрати й грати →'
     button.addEventListener('click', () => {
       setActiveParentProfile(profile.id)
-      window.location.href = 'path.html?grade=2'
+      window.location.href = `path.html?grade=${profilePath.grade}`
     })
   } else {
     button.textContent = 'Шлях готується'
@@ -139,6 +176,41 @@ function profileCard(profile: ParentProfile, activeId: string | null): HTMLEleme
     button.setAttribute('aria-label', `Шлях для ${profile.grade} класу ще готується`)
   }
   article.append(avatar, name, grade, button)
+
+  const matchingImport = pendingImports.find(pi => pi.map.grade === profile.grade)
+  if (matchingImport) {
+    const importButton = document.createElement('button')
+    importButton.type = 'button'
+    importButton.className = 'kid-action parent-profile-card__import'
+    importButton.textContent = 'Зберегти першу місію тут'
+    importButton.addEventListener('click', async () => {
+      importButton.disabled = true
+      dashboardStatus.textContent = 'Зберігаємо першу місію…'
+      try {
+        await submitParentPathProgress(profile.id, {
+          pathId: `grade-${matchingImport.map.grade}`,
+          pointId: matchingImport.point.id,
+          results: matchingImport.entries.map(({ result }) => ({
+            activityId: result.activityId,
+            activityVersion: result.activityVersion,
+            trust: 'client-unverified',
+            stars: result.stars,
+            correct: result.correct,
+            total: result.total,
+            completedAt: result.completedAt,
+          })),
+        })
+        matchingImport.store.clearPoint(matchingImport.point.id)
+        pendingImports = pendingImports.filter(pi => pi !== matchingImport)
+        setActiveParentProfile(profile.id)
+        window.location.href = `path.html?grade=${profile.grade}`
+      } catch (error) {
+        dashboardStatus.textContent = friendly(error)
+        importButton.disabled = false
+      }
+    })
+    article.append(importButton)
+  }
 
   const editButton = document.createElement('button')
   editButton.type = 'button'
@@ -296,6 +368,35 @@ async function loadDashboard() {
     const activeStillExists = profiles.some(profile => profile.id === session.activeChildProfileId)
     if (session.activeChildProfileId && !activeStillExists) setActiveParentProfile(null)
     const activeId = activeStillExists ? session.activeChildProfileId : null
+    importRoot.classList.toggle('hidden', pendingImports.length === 0)
+    if (pendingImports.length > 0) {
+      const grades = pendingImports.map(pi => `${pi.map.grade} класу`).join(', ')
+      const missingGrades = pendingImports.filter(
+        pi => !profiles.some(p => p.grade === pi.map.grade),
+      )
+      if (missingGrades.length > 0) {
+        const missing = missingGrades.map(pi => pi.map.grade).join(', ')
+        const missingGrade = missingGrades[0].map.grade
+        const createButton = document.createElement('button')
+        createButton.className = 'parent-create-profile-inline'
+        createButton.type = 'button'
+        createButton.dataset['grade'] = String(missingGrade)
+        createButton.textContent = `Створити профіль ${missingGrade} класу`
+        createButton.addEventListener('click', () => {
+          const gradeSelect = $<HTMLSelectElement>('parent-child-grade')
+          gradeSelect.value = String(missingGrade)
+          gradeSelect.closest('section')?.scrollIntoView({ behavior: 'smooth' })
+          $<HTMLInputElement>('parent-child-name').focus()
+        })
+        importMessage.replaceChildren(
+          document.createTextNode(`Знайдено завершену стартову точку для ${grades}. Для класу ${missing} ще немає профілю — `),
+          createButton,
+          document.createTextNode(', щоб зберегти місію.'),
+        )
+      } else {
+        importMessage.textContent = `Знайдено завершену стартову точку для ${grades}. Оберіть профіль і підтвердьте збереження.`
+      }
+    }
     profilesRoot.replaceChildren(...profiles.map(profile => profileCard(profile, activeId)))
     await loadOverview(profiles)
     dashboardStatus.textContent = profiles.length
