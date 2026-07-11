@@ -130,7 +130,7 @@ registration, lead claiming, child profiles, reports, entitlement aggregation
 and server persistence for unverified learning-path progress. Provider checkout
 adapters and subscription purchase are still planned.
 `parent.html` already implements parent auth, profile creation, latest reports,
-account entitlement status and explicit child selection for the grade-2 path._
+account entitlement status and explicit child selection for grade 1–4 paths._
 
 School, Home and Olympiad surfaces stay decoupled at the identity/data level.
 School Mode may send users to a Home URL as a neutral brand path, but it does
@@ -187,7 +187,7 @@ Backend:
 - Parent account routes are implemented under `/api/parent`: registration,
   database-owned account status, lead claiming, child profiles, reports,
   entitlement aggregation and idempotent learning-path progress. Migrations
-  0029–0031 must be deployed before these routes are enabled in production;
+  0029–0031 were deployed on 2026-07-10;
 - payment-provider checkout routes are planned;
 - subscription-aware seasonal event access is planned and must not reuse
   anonymous School identity;

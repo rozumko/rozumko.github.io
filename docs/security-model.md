@@ -144,8 +144,8 @@ Home Mode is the parent-led commercial surface:
 
 _Migrations 0029–0031 and `/api/parent` implement registration, database-owned
 account status, lead claiming, multi-profile ownership, reports, aggregated
-entitlement reads and client-unverified path progress. They are code-complete
-but remain unavailable in production until those migrations are deployed.
+entitlement reads and client-unverified path progress. They are deployed in
+production as of 2026-07-10.
 Account/profile deletion stays fail-closed until a retention policy is approved._
 
 - A parent authenticates with Supabase Auth. The JWT proves the Supabase user
@@ -183,6 +183,13 @@ Account/profile deletion stays fail-closed until a retention policy is approved.
   point/activity identifier and immutable content version. They cannot produce
   an official score, diploma or trusted parent report. Server-issued missions
   continue to be scored from server-held question versions and saved events.
+- Anonymous Home visitors may complete only the first path point. Its result
+  stays in same-origin local storage until an authenticated parent explicitly
+  chooses a child profile of the same grade and confirms import. The frontend
+  submits only the catalogued first-point activity to the existing
+  ownership-gated path-progress endpoint; the backend revalidates grade,
+  point, activity version and `client-unverified` trust before persistence.
+  The anonymous local record is removed only after the server accepts it.
 - Profile selection may be child-friendly, but profile creation, deletion,
   consent changes, subscription actions and parent reports remain in the
   parent zone and require the authenticated parent session. A local PIN can be
