@@ -89,12 +89,11 @@ function hide(el: HTMLElement) { el.classList.add('hidden') }
 
 if (!requestedMap) {
   $('path-subtitle').textContent = `Карта ${requestedGrade} класу ще готується — повертайся незабаром!`
-  document.getElementById('path-map')!.style.display = 'none'
+  document.getElementById('path-map')!.classList.add('path-map--unavailable')
   parentGate.classList.add('hidden')
   const homeLink = document.createElement('a')
   homeLink.href = 'home.html'
-  homeLink.className = 'kid-action'
-  homeLink.style.marginTop = 'var(--sp-6)'
+  homeLink.className = 'kid-action path-home-link'
   homeLink.textContent = '← На головну'
   $('path-map-screen').appendChild(homeLink)
 } else {

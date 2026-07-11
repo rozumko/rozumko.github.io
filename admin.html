@@ -25,7 +25,7 @@
   <!-- ===== ФОРМА ВХОДУ ===== -->
   <div id="auth-section" class="admin-auth-wrap">
     <div class="admin-auth-inner">
-      <div style="text-align:center; margin-bottom: var(--sp-8);">
+      <div class="admin-auth-heading">
         <span class="admin-auth-eyebrow">Адміністратор</span>
         <h1 class="admin-auth-title">Розумко</h1>
       </div>
@@ -52,7 +52,7 @@
 
 
   <!-- ===== АДМІН-ПАНЕЛЬ ===== -->
-  <div id="admin-panel" class="admin-panel hidden" id="main-content">
+  <div id="admin-panel" class="admin-panel hidden">
 
     <!-- Шапка -->
     <header class="admin-header">
@@ -82,7 +82,7 @@
 
       <!-- Вкладка: Огляд -->
       <section id="tab-overview" class="tab-panel">
-        <h2 class="admin-section-title" style="margin-bottom: var(--sp-6);">Загальна статистика</h2>
+        <h2 class="admin-section-title admin-section-title--spaced">Загальна статистика</h2>
         <div class="stats-grid">
           <div class="stat-card"><p class="stat-card__label">Вчителів</p><p id="stat-teachers" class="stat-card__value">—</p></div>
           <div class="stat-card"><p class="stat-card__label">Учнів (кодів)</p><p id="stat-students" class="stat-card__value">—</p></div>
@@ -164,7 +164,7 @@
 
       <!-- Вкладка: Вчителі -->
       <section id="tab-teachers" class="tab-panel hidden">
-        <h2 class="admin-section-title" style="margin-bottom: var(--sp-6);">Зареєстровані вчителі</h2>
+        <h2 class="admin-section-title admin-section-title--spaced">Зареєстровані вчителі</h2>
         <div id="teachers-list" class="admin-list">
           <div class="admin-empty-state">
             <div>
@@ -201,13 +201,13 @@
           <h2 class="admin-section-title">Реєстр місій</h2>
         </div>
         <div class="admin-filter-bar">
-          <select id="m-filter-track" class="adm-input adm-input--sm" style="width:auto">
+          <select id="m-filter-track" class="adm-input adm-input--sm adm-input--auto">
             <option value="">Всі напрями</option>
             <option value="informatics">Інформатика</option>
             <option value="computational-thinking">Обчислювальне мислення</option>
             <option value="ai-basics">Основи ШІ</option>
           </select>
-          <select id="m-filter-grade" class="adm-input adm-input--sm" style="width:auto">
+          <select id="m-filter-grade" class="adm-input adm-input--sm adm-input--auto">
             <option value="">Всі класи</option>
             <option value="1">1 клас</option>
             <option value="2">2 клас</option>
@@ -232,34 +232,34 @@
 
         <!-- Фільтри -->
         <div class="admin-filter-bar">
-          <select id="q-filter-grade" class="adm-input adm-input--sm" style="width:auto">
+          <select id="q-filter-grade" class="adm-input adm-input--sm adm-input--auto">
             <option value="">Всі класи</option>
             <option value="1">1 клас</option>
             <option value="2">2 клас</option>
             <option value="3">3 клас</option>
             <option value="4">4 клас</option>
           </select>
-          <select id="q-filter-type" class="adm-input adm-input--sm" style="width:auto">
+          <select id="q-filter-type" class="adm-input adm-input--sm adm-input--auto">
             <option value="">Всі типи</option>
             <option value="false">Тренування</option>
             <option value="true">Олімпіада</option>
           </select>
-          <select id="q-filter-difficulty" class="adm-input adm-input--sm" style="width:auto">
+          <select id="q-filter-difficulty" class="adm-input adm-input--sm adm-input--auto">
             <option value="">Всі рівні</option>
             <option value="easy">Легкі</option>
             <option value="medium">Середні</option>
             <option value="hard">Складні</option>
           </select>
-          <select id="q-filter-track" class="adm-input adm-input--sm" style="width:auto">
+          <select id="q-filter-track" class="adm-input adm-input--sm adm-input--auto">
             <option value="">Всі напрями</option>
             <option value="informatics">Інформатика</option>
             <option value="computational-thinking">Обчислювальне мислення</option>
             <option value="ai-basics">Основи ШІ</option>
           </select>
-          <select id="q-filter-topic" class="adm-input adm-input--sm" style="width:auto" disabled>
+          <select id="q-filter-topic" class="adm-input adm-input--sm adm-input--auto" disabled>
             <option value="">Всі теми</option>
           </select>
-          <button id="q-filter-apply" class="btn-adm-sky" style="padding: var(--sp-2) var(--sp-4); font-size: var(--font-size-sm);">Фільтрувати</button>
+          <button id="q-filter-apply" class="btn-adm-sky btn--sm">Фільтрувати</button>
           <span id="q-count" class="admin-filter-count"></span>
         </div>
 
@@ -302,7 +302,7 @@
       <pre id="pv-code" class="pv-code hidden"></pre>
       <div id="pv-options" class="pv-options"></div>
       <div id="pv-explanation-wrap" class="pv-explanation-wrap hidden">
-        <span style="font-weight:600; color:#334155;">Пояснення: </span>
+        <span class="pv-explanation-label">Пояснення: </span>
         <span id="pv-explanation"></span>
       </div>
     </div>
@@ -335,7 +335,7 @@
 
   <!-- Модальне вікно редагування питання -->
   <div id="question-modal" class="question-modal-overlay hidden"
-       role="dialog" aria-modal="true">
+       role="dialog" aria-modal="true" aria-labelledby="question-modal-title">
     <div class="question-modal-card">
       <h3 id="question-modal-title" class="question-modal-title">Редагувати питання</h3>
       <form id="question-form" novalidate class="qf-space">
@@ -344,7 +344,7 @@
         <!-- Мета-поля -->
         <div class="adm-form-grid adm-form-grid--4">
           <div>
-            <label class="adm-label">Тип</label>
+            <label for="qf-type" class="adm-label">Тип</label>
             <select id="qf-type" class="adm-input adm-input--sm">
               <option value="choice">Вибір</option>
               <option value="truefalse">Так/Ні</option>
@@ -355,14 +355,14 @@
             </select>
           </div>
           <div>
-            <label class="adm-label">Клас</label>
+            <label for="qf-grade" class="adm-label">Клас</label>
             <select id="qf-grade" class="adm-input adm-input--sm">
               <option value="1">1</option><option value="2">2</option>
               <option value="3">3</option><option value="4">4</option>
             </select>
           </div>
           <div>
-            <label class="adm-label">Складність</label>
+            <label for="qf-difficulty" class="adm-label">Складність</label>
             <select id="qf-difficulty" class="adm-input adm-input--sm">
               <option value="easy">Легка</option>
               <option value="medium">Середня</option>
@@ -370,7 +370,7 @@
             </select>
           </div>
           <div>
-            <label class="adm-label">Напрям</label>
+            <label for="qf-track" class="adm-label">Напрям</label>
             <select id="qf-track" class="adm-input adm-input--sm">
               <option value="">Без напряму</option>
               <option value="informatics">Інформатика</option>
@@ -379,13 +379,13 @@
             </select>
           </div>
           <div>
-            <label class="adm-label">Тема</label>
+            <label for="qf-topic" class="adm-label">Тема</label>
             <select id="qf-topic" class="adm-input adm-input--sm" disabled>
               <option value="">Без теми</option>
             </select>
           </div>
           <div>
-            <label class="adm-label">CT-навичка</label>
+            <label for="qf-concept" class="adm-label">CT-навичка</label>
             <select id="qf-concept" class="adm-input adm-input--sm">
               <option value="">Без навички</option>
               <option value="algorithms">Алгоритми</option>
@@ -400,7 +400,7 @@
             </select>
           </div>
           <div>
-            <label class="adm-label">Рівень дії</label>
+            <label for="qf-band" class="adm-label">Рівень дії</label>
             <select id="qf-band" class="adm-input adm-input--sm">
               <option value="">Не вказано</option>
               <option value="recognize">Впізнавання</option>
@@ -408,7 +408,7 @@
               <option value="reason">Міркування</option>
             </select>
           </div>
-          <div class="adm-checkbox-row" style="align-items: flex-end; padding-bottom: var(--sp-2);">
+          <div class="adm-checkbox-row adm-checkbox-row--end">
             <input type="checkbox" id="qf-olympiad"/>
             <label for="qf-olympiad">Олімпіада</label>
           </div>
@@ -416,44 +416,44 @@
 
         <!-- Текст питання -->
         <div>
-          <label class="adm-label">Питання</label>
-          <textarea id="qf-q" rows="2" class="adm-input" style="resize:vertical"></textarea>
+          <label for="qf-q" class="adm-label">Питання</label>
+          <textarea id="qf-q" rows="2" class="adm-input adm-textarea"></textarea>
         </div>
 
         <!-- Зображення -->
         <div>
-          <label class="adm-label">Зображення — URL (необов'язково)</label>
+          <label for="qf-img" class="adm-label">Зображення — URL (необов'язково)</label>
           <input type="url" id="qf-img" placeholder="https://..." class="adm-input adm-input--sm"/>
-          <img id="qf-img-preview" src="" alt="preview"
-            class="hidden" style="margin-top:var(--sp-2); max-height:7rem; border-radius:var(--r-lg); object-fit:contain; border:1px solid var(--adm-border);"/>
+          <img id="qf-img-preview" src="" alt="Попередній перегляд зображення до питання"
+            class="qf-image-preview hidden"/>
         </div>
 
         <!-- Код Равлика -->
         <div id="qf-code-wrap">
-          <label class="adm-label">Код Равлика (необов'язково)</label>
+          <label for="qf-code" class="adm-label">Код Равлика (необов'язково)</label>
           <textarea id="qf-code" rows="3" placeholder="процедура…"
-            class="adm-input adm-input--sm adm-input--code" style="resize:vertical"></textarea>
+            class="adm-input adm-input--sm adm-input--code adm-textarea"></textarea>
         </div>
 
         <!-- Секція: choice -->
         <div id="qf-section-choice" class="qf-section">
           <label class="adm-label">Варіанти (відмічений — правильний)</label>
           <div id="qf-options" class="qf-section">
-            <div style="display:flex; align-items:center; gap:var(--sp-2);">
-              <input type="radio" name="qf-correct" value="0" style="width:1rem;height:1rem;cursor:pointer"/>
-              <input type="text" data-idx="0" class="qf-opt adm-input adm-input--sm" style="flex:1" placeholder="Варіант 1"/>
+            <div class="qf-option-row">
+              <input type="radio" name="qf-correct" value="0" class="qf-radio" aria-label="Позначити варіант 1 правильним"/>
+              <input type="text" data-idx="0" class="qf-opt adm-input adm-input--sm adm-input--grow" placeholder="Варіант 1"/>
             </div>
-            <div style="display:flex; align-items:center; gap:var(--sp-2);">
-              <input type="radio" name="qf-correct" value="1" style="width:1rem;height:1rem;cursor:pointer"/>
-              <input type="text" data-idx="1" class="qf-opt adm-input adm-input--sm" style="flex:1" placeholder="Варіант 2"/>
+            <div class="qf-option-row">
+              <input type="radio" name="qf-correct" value="1" class="qf-radio" aria-label="Позначити варіант 2 правильним"/>
+              <input type="text" data-idx="1" class="qf-opt adm-input adm-input--sm adm-input--grow" placeholder="Варіант 2"/>
             </div>
-            <div style="display:flex; align-items:center; gap:var(--sp-2);">
-              <input type="radio" name="qf-correct" value="2" style="width:1rem;height:1rem;cursor:pointer"/>
-              <input type="text" data-idx="2" class="qf-opt adm-input adm-input--sm" style="flex:1" placeholder="Варіант 3"/>
+            <div class="qf-option-row">
+              <input type="radio" name="qf-correct" value="2" class="qf-radio" aria-label="Позначити варіант 3 правильним"/>
+              <input type="text" data-idx="2" class="qf-opt adm-input adm-input--sm adm-input--grow" placeholder="Варіант 3"/>
             </div>
-            <div style="display:flex; align-items:center; gap:var(--sp-2);">
-              <input type="radio" name="qf-correct" value="3" style="width:1rem;height:1rem;cursor:pointer"/>
-              <input type="text" data-idx="3" class="qf-opt adm-input adm-input--sm" style="flex:1" placeholder="Варіант 4"/>
+            <div class="qf-option-row">
+              <input type="radio" name="qf-correct" value="3" class="qf-radio" aria-label="Позначити варіант 4 правильним"/>
+              <input type="text" data-idx="3" class="qf-opt adm-input adm-input--sm adm-input--grow" placeholder="Варіант 4"/>
             </div>
           </div>
         </div>
@@ -461,16 +461,16 @@
         <!-- Секція: sort -->
         <div id="qf-section-sort" class="qf-section hidden">
           <div>
-            <label class="adm-label">Елементи (кожен з нового рядка)</label>
+            <label for="qf-items" class="adm-label">Елементи (кожен з нового рядка)</label>
             <textarea id="qf-items" rows="4"
               placeholder="Іди вперед&#10;Повернись праворуч&#10;Повтори 4 рази&#10;Стоп"
-              class="adm-input adm-input--sm adm-input--code" style="resize:vertical"></textarea>
+              class="adm-input adm-input--sm adm-input--code adm-textarea"></textarea>
           </div>
           <div>
-            <label class="adm-label">Правильний порядок — індекси через кому (0 = перший рядок)</label>
+            <label for="qf-correct-order" class="adm-label">Правильний порядок — індекси через кому (0 = перший рядок)</label>
             <input type="text" id="qf-correct-order" placeholder="2,0,1,3" class="adm-input adm-input--sm"/>
-            <p style="font-size:var(--font-size-xs); color:var(--adm-text-faint); margin-top:var(--sp-1);">
-              Наприклад: <code style="color:var(--adm-text-muted)">2,0,1,3</code> — порядок за індексами рядків.
+            <p class="qf-help">
+              Наприклад: <code>2,0,1,3</code> — порядок за індексами рядків.
             </p>
           </div>
         </div>
@@ -478,27 +478,27 @@
         <!-- Секція: sequence -->
         <div id="qf-section-sequence" class="qf-section hidden">
           <div>
-            <label class="adm-label">Задана послідовність — значення через кому</label>
+            <label for="qf-given" class="adm-label">Задана послідовність — значення через кому</label>
             <input type="text" id="qf-given" placeholder="🔴,🔵,🔴,🔵" class="adm-input adm-input--sm"/>
           </div>
           <div>
             <label class="adm-label">Варіанти відповіді (відмічений — правильний)</label>
             <div class="qf-section">
-              <div style="display:flex; align-items:center; gap:var(--sp-2);">
-                <input type="radio" name="qf-seq-correct" value="0" style="width:1rem;height:1rem;cursor:pointer"/>
-                <input type="text" data-sidx="0" class="qf-seq-opt adm-input adm-input--sm" style="flex:1" placeholder="Варіант 1"/>
+              <div class="qf-option-row">
+                <input type="radio" name="qf-seq-correct" value="0" class="qf-radio" aria-label="Позначити варіант 1 правильним"/>
+                <input type="text" data-sidx="0" class="qf-seq-opt adm-input adm-input--sm adm-input--grow" placeholder="Варіант 1"/>
               </div>
-              <div style="display:flex; align-items:center; gap:var(--sp-2);">
-                <input type="radio" name="qf-seq-correct" value="1" style="width:1rem;height:1rem;cursor:pointer"/>
-                <input type="text" data-sidx="1" class="qf-seq-opt adm-input adm-input--sm" style="flex:1" placeholder="Варіант 2"/>
+              <div class="qf-option-row">
+                <input type="radio" name="qf-seq-correct" value="1" class="qf-radio" aria-label="Позначити варіант 2 правильним"/>
+                <input type="text" data-sidx="1" class="qf-seq-opt adm-input adm-input--sm adm-input--grow" placeholder="Варіант 2"/>
               </div>
-              <div style="display:flex; align-items:center; gap:var(--sp-2);">
-                <input type="radio" name="qf-seq-correct" value="2" style="width:1rem;height:1rem;cursor:pointer"/>
-                <input type="text" data-sidx="2" class="qf-seq-opt adm-input adm-input--sm" style="flex:1" placeholder="Варіант 3"/>
+              <div class="qf-option-row">
+                <input type="radio" name="qf-seq-correct" value="2" class="qf-radio" aria-label="Позначити варіант 3 правильним"/>
+                <input type="text" data-sidx="2" class="qf-seq-opt adm-input adm-input--sm adm-input--grow" placeholder="Варіант 3"/>
               </div>
-              <div style="display:flex; align-items:center; gap:var(--sp-2);">
-                <input type="radio" name="qf-seq-correct" value="3" style="width:1rem;height:1rem;cursor:pointer"/>
-                <input type="text" data-sidx="3" class="qf-seq-opt adm-input adm-input--sm" style="flex:1" placeholder="Варіант 4"/>
+              <div class="qf-option-row">
+                <input type="radio" name="qf-seq-correct" value="3" class="qf-radio" aria-label="Позначити варіант 4 правильним"/>
+                <input type="text" data-sidx="3" class="qf-seq-opt adm-input adm-input--sm adm-input--grow" placeholder="Варіант 4"/>
               </div>
             </div>
           </div>
@@ -508,23 +508,23 @@
         <div id="qf-section-match" class="qf-section hidden">
           <div class="adm-form-grid">
             <div>
-              <label class="adm-label">Лівий стовпець (кожен з нового рядка)</label>
+              <label for="qf-left" class="adm-label">Лівий стовпець (кожен з нового рядка)</label>
               <textarea id="qf-left" rows="4"
                 placeholder="Клавіатура&#10;Принтер&#10;Монітор"
-                class="adm-input adm-input--sm" style="resize:vertical"></textarea>
+                class="adm-input adm-input--sm adm-textarea"></textarea>
             </div>
             <div>
-              <label class="adm-label">Правий стовпець (кожен з нового рядка)</label>
+              <label for="qf-right" class="adm-label">Правий стовпець (кожен з нового рядка)</label>
               <textarea id="qf-right" rows="4"
                 placeholder="Виводить зображення&#10;Вводить текст&#10;Друкує на папері"
-                class="adm-input adm-input--sm" style="resize:vertical"></textarea>
+                class="adm-input adm-input--sm adm-textarea"></textarea>
             </div>
           </div>
           <div>
-            <label class="adm-label">Пари — індекси правого стовпця для кожного лівого через кому</label>
+            <label for="qf-pairs" class="adm-label">Пари — індекси правого стовпця для кожного лівого через кому</label>
             <input type="text" id="qf-pairs" placeholder="1,2,0" class="adm-input adm-input--sm"/>
-            <p style="font-size:var(--font-size-xs); color:var(--adm-text-faint); margin-top:var(--sp-1);">
-              Наприклад: <code style="color:var(--adm-text-muted)">1,2,0</code> — Клавіатура→правий[1], Принтер→правий[2]…
+            <p class="qf-help">
+              Наприклад: <code>1,2,0</code> — Клавіатура→правий[1], Принтер→правий[2]…
             </p>
           </div>
         </div>
@@ -532,12 +532,12 @@
         <!-- Секція: truefalse -->
         <div id="qf-section-truefalse" class="qf-section hidden">
           <label class="adm-label">Правильна відповідь</label>
-          <div style="display:flex; gap:var(--sp-4);">
-            <label style="display:flex; align-items:center; gap:var(--sp-2); cursor:pointer; color:var(--adm-text); font-size:var(--font-size-sm);">
-              <input type="radio" name="qf-tf-correct" value="true" style="width:1rem;height:1rem;cursor:pointer"/> ✅ Так
+          <div class="qf-truefalse-options">
+            <label class="qf-radio-label">
+              <input type="radio" name="qf-tf-correct" value="true" class="qf-radio"/> ✅ Так
             </label>
-            <label style="display:flex; align-items:center; gap:var(--sp-2); cursor:pointer; color:var(--adm-text); font-size:var(--font-size-sm);">
-              <input type="radio" name="qf-tf-correct" value="false" style="width:1rem;height:1rem;cursor:pointer"/> ❌ Ні
+            <label class="qf-radio-label">
+              <input type="radio" name="qf-tf-correct" value="false" class="qf-radio"/> ❌ Ні
             </label>
           </div>
         </div>
@@ -546,12 +546,12 @@
         <div id="qf-section-input" class="qf-section hidden">
           <div class="adm-form-grid">
             <div>
-              <label class="adm-label">Правильна відповідь</label>
+              <label for="qf-input-correct" class="adm-label">Правильна відповідь</label>
               <input type="text" id="qf-input-correct"
                 placeholder="наприклад: 42 або Клавіатура" class="adm-input adm-input--sm"/>
             </div>
             <div>
-              <label class="adm-label">Тип поля</label>
+              <label for="qf-input-type" class="adm-label">Тип поля</label>
               <select id="qf-input-type" class="adm-input adm-input--sm">
                 <option value="text">Текст</option>
                 <option value="number">Число</option>
@@ -562,8 +562,8 @@
 
         <!-- Пояснення -->
         <div>
-          <label class="adm-label">Пояснення</label>
-          <textarea id="qf-explanation" rows="2" class="adm-input adm-input--sm" style="resize:vertical"></textarea>
+          <label for="qf-explanation" class="adm-label">Пояснення</label>
+          <textarea id="qf-explanation" rows="2" class="adm-input adm-input--sm adm-textarea"></textarea>
         </div>
 
         <p id="qf-error" class="adm-form-error" role="alert"></p>

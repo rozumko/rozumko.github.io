@@ -162,9 +162,12 @@ export function openCertModal(r: CertAttempt, onError?: (msg: string) => void): 
   const modal = document.createElement('div')
   modal.id        = 'cert-modal'
   modal.className = 'cert-modal-overlay'
+  modal.setAttribute('role', 'dialog')
+  modal.setAttribute('aria-modal', 'true')
+  modal.setAttribute('aria-labelledby', 'cert-modal-title')
   modal.innerHTML = `
     <div class="cert-modal">
-      <h3 class="cert-modal__title"><i class="fas fa-certificate"></i> ${escapeHtml(docWord)}</h3>
+      <h3 id="cert-modal-title" class="cert-modal__title"><i class="fas fa-certificate" aria-hidden="true"></i> ${escapeHtml(docWord)}</h3>
       <p class="cert-modal__hint">Введи ім'я учня — воно не зберігається на сервері.</p>
       <div class="cert-modal__field">
         <label for="cert-name-input">Прізвище та ім'я</label>
@@ -172,10 +175,10 @@ export function openCertModal(r: CertAttempt, onError?: (msg: string) => void): 
                placeholder="Наприклад: Коваленко Марія" autocomplete="off" />
       </div>
       <div class="cert-modal__actions">
-        <button id="cert-print-btn" class="btn-adm-emerald">
-          <i class="fas fa-print"></i> Друкувати / Зберегти PDF
+        <button id="cert-print-btn" class="btn btn--success">
+          <i class="fas fa-print" aria-hidden="true"></i> Друкувати / Зберегти PDF
         </button>
-        <button id="cert-cancel-btn" class="btn-adm-slate">Скасувати</button>
+        <button id="cert-cancel-btn" class="btn btn--secondary">Скасувати</button>
       </div>
     </div>`
 
@@ -190,12 +193,13 @@ export function openCertModal(r: CertAttempt, onError?: (msg: string) => void): 
 
   document.getElementById('cert-print-btn')!.addEventListener('click', () => {
     const name = nameInput.value.trim()
-    if (!name) { nameInput.style.borderColor = 'var(--clr-danger)'; nameInput.focus(); return }
+    if (!name) { nameInput.classList.add('cert-modal__input--invalid'); nameInput.focus(); return }
     close()
     if (!printAward(r, name)) {
       onError?.('Браузер заблокував відкриття вікна. Дозволь спливаючі вікна для цього сайту.')
     }
   })
+  nameInput.addEventListener('input', () => nameInput.classList.remove('cert-modal__input--invalid'))
 
   nameInput.addEventListener('keydown', e => {
     if (e.key === 'Enter') document.getElementById('cert-print-btn')!.click()

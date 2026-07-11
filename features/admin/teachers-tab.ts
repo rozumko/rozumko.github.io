@@ -32,7 +32,7 @@ export async function loadTeachers() {
     list.innerHTML = ''
     teachers.forEach(t => list.appendChild(buildTeacherRow(t)))
   } catch (err) {
-    list.innerHTML = `<p style="color:var(--clr-danger);padding:var(--sp-4)">${esc((err as Error).message)}</p>`
+    list.innerHTML = `<p class="admin-list-error">${esc((err as Error).message)}</p>`
   }
 }
 
@@ -50,14 +50,14 @@ function buildTeacherRow(t: Teacher): HTMLElement {
       : ''
 
   const actionBtn = isPending
-    ? `<button class="btn-adm-emerald btn-sm btn-teacher-status" data-action="active">
+    ? `<button class="btn-adm-emerald btn--sm btn-teacher-status" data-action="active">
          <i class="fas fa-check"></i> Підтвердити
        </button>`
     : isBlocked
-      ? `<button class="btn-adm-emerald btn-sm btn-teacher-status" data-action="active">
+      ? `<button class="btn-adm-emerald btn--sm btn-teacher-status" data-action="active">
            <i class="fas fa-unlock"></i> Розблокувати
          </button>`
-      : `<button class="btn-adm-danger btn-sm btn-teacher-status" data-action="blocked">
+      : `<button class="btn-adm-danger btn--sm btn-teacher-status" data-action="blocked">
            <i class="fas fa-ban"></i> Заблокувати
          </button>`
 
@@ -67,7 +67,7 @@ function buildTeacherRow(t: Teacher): HTMLElement {
       <p class="admin-row__meta">${esc(t.name ?? '')}${statusBadge}</p>
     </div>
     <div class="admin-row__actions">
-      <p class="admin-row__meta" style="font-size:var(--font-size-xs)">${esc(date)}</p>
+      <p class="admin-row__meta admin-row__meta--compact">${esc(date)}</p>
       ${actionBtn}
     </div>`
 

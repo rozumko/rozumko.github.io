@@ -9,6 +9,7 @@ const AXE_PAGES = [
   '/school.html',
   '/student.html',
   '/teacher.html',
+  '/admin.html',
   '/games.html',
   '/for-parents.html',
   '/for-teachers.html',
@@ -108,6 +109,111 @@ async function startHomeMission(page: Page, questions: unknown[]) {
   await page.locator('.home-track-btn[data-track="computational-thinking"]').click()
   await expect(page.locator('body')).toHaveClass(/mission-active/)
   await expect(page.locator('#quiz-question-text')).not.toHaveText('')
+}
+
+async function openAdminDashboard(page: Page) {
+  await page.addInitScript(() => {
+    sessionStorage.setItem('teacher_session', JSON.stringify({
+      accessToken: 'admin-test-token',
+      refreshToken: '',
+      email: 'admin@example.test',
+    }))
+    const originalFetch = window.fetch.bind(window)
+    window.fetch = async (input, init) => {
+      const url = input instanceof Request ? input.url : String(input)
+      if (!url.includes('/api/')) return originalFetch(input, init)
+
+      const path = new URL(url).pathname
+      const body = path === '/api/teacher/me'
+        ? { id: 'admin-1', authUserId: 'auth-admin-1', role: 'admin', name: 'Test Admin' }
+        : path === '/api/admin/stats'
+          ? { teachers: 0, codes: 0, results: 0, events: 0 }
+          : path === '/api/admin/teachers'
+            ? { teachers: [] }
+          : path === '/api/admin/results'
+              ? {
+                  results: [{
+                    id: 'attempt-1',
+                    code: 'TEST01',
+                    grade: 2,
+                    score: 8,
+                    totalQ: 10,
+                    status: 'finished',
+                    finishedAt: '2026-07-11T10:00:00.000Z',
+                  }],
+                }
+              : path === '/api/admin/events'
+                ? { events: [] }
+                : path === '/api/admin/missions'
+                  ? { missions: [] }
+                  : { questions: [] }
+
+      return new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+  })
+  await page.goto('/admin.html')
+  await expect(page.locator('#admin-panel')).toBeVisible()
+}
+
+async function openTeacherDashboard(page: Page) {
+  await page.addInitScript(() => {
+    sessionStorage.setItem('teacher_session', JSON.stringify({
+      accessToken: 'teacher-test-token',
+      refreshToken: '',
+      email: 'teacher@example.test',
+    }))
+    const originalFetch = window.fetch.bind(window)
+    window.fetch = async (input, init) => {
+      const url = input instanceof Request ? input.url : String(input)
+      if (!url.includes('/api/')) return originalFetch(input, init)
+
+      const path = new URL(url).pathname
+      const method = init?.method ?? (input instanceof Request ? input.method : 'GET')
+      const schoolSession = {
+        id: 'school-session-1',
+        joinCode: 'ABC123',
+        grade: 1,
+        difficulty: null,
+        questionsCount: 10,
+        status: 'lobby',
+      }
+      const body = path === '/api/teacher/me'
+        ? { id: 'teacher-1', authUserId: 'auth-teacher-1', role: 'teacher', name: 'Test Teacher' }
+        : path === '/api/teacher/registration-events'
+          ? { events: [] }
+          : path === '/api/teacher/classes'
+            ? { classes: [] }
+            : path === '/api/teacher/registrations'
+              ? { registrations: [] }
+              : path === '/api/teacher/codes'
+                ? { codes: [] }
+                : path === '/api/teacher/results'
+                  ? { results: [] }
+                  : path === '/api/school/sessions' && method === 'POST'
+                    ? { session: schoolSession }
+                    : path === '/api/school/sessions/school-session-1'
+                      ? {
+                          session: schoolSession,
+                          participants: [{ id: 'student-1', avatar: 'fox', nickname: 'Мрійник', score: 7 }],
+                          topicStats: [
+                            { topic: 'algorithms', total: 10, correct: 3 },
+                            { topic: 'logic', total: 10, correct: 6 },
+                            { topic: 'patterns', total: 10, correct: 9 },
+                          ],
+                        }
+                  : {}
+
+      return new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+  })
+  await page.goto('/teacher.html')
+  await expect(page.locator('#dashboard-section')).toBeVisible()
 }
 
 test.describe('accessibility smoke: home and school missions', () => {
@@ -234,6 +340,149 @@ test.describe('axe accessibility scan', () => {
       expect(results.violations).toEqual([])
     })
   }
+})
+
+test.describe('mobile header touch targets', () => {
+  test.use({ viewport: { width: 320, height: 700 } })
+
+  test('menu button keeps a 44 by 44 CSS pixel target', async ({ page }) => {
+    await page.goto('/home.html')
+
+    const size = await page.getByRole('button', { name: 'Відкрити меню' }).evaluate((button) => {
+      const rect = button.getBoundingClientRect()
+      return { width: rect.width, height: rect.height }
+    })
+
+    expect(size.width).toBeGreaterThanOrEqual(44)
+    expect(size.height).toBeGreaterThanOrEqual(44)
+  })
+})
+
+test.describe('shared button sizing', () => {
+  test('child actions keep the shared touch target and link layout', async ({ page }) => {
+    await page.goto('/path.html')
+
+    const styles = await page.locator('#path-parent-gate-link').evaluate((action) => {
+      const computed = getComputedStyle(action)
+      return {
+        display: computed.display,
+        minHeight: computed.minHeight,
+        textDecoration: computed.textDecorationLine,
+      }
+    })
+
+    expect(styles).toEqual({
+      display: 'inline-flex',
+      minHeight: '56px',
+      textDecoration: 'none',
+    })
+  })
+
+  test('mission links inherit the shared card presentation', async ({ page }) => {
+    await page.goto('/home.html')
+
+    const card = page.locator('a.mission-card[href="games.html"]')
+    await expect(card).toHaveCSS('text-decoration-line', 'none')
+    await card.focus()
+    await expect(card).toHaveCSS('outline-style', 'solid')
+  })
+
+  test('admin compact modifier overrides dark variant defaults', async ({ page }) => {
+    await page.goto('/admin.html')
+
+    const styles = await page.locator('#q-filter-apply').evaluate((button) => {
+      const computed = getComputedStyle(button)
+      return {
+        fontSize: computed.fontSize,
+        minHeight: computed.minHeight,
+        paddingBlock: computed.paddingBlock,
+        paddingInline: computed.paddingInline,
+      }
+    })
+
+    expect(styles).toEqual({
+      fontSize: '14px',
+      minHeight: '36px',
+      paddingBlock: '8px',
+      paddingInline: '12px',
+    })
+  })
+
+  test('admin ghost button keeps its explicit border contract', async ({ page }) => {
+    await page.goto('/admin.html')
+    await expect(page.locator('#modal-cancel-btn')).toHaveCSS('border-top-width', '1px')
+  })
+})
+
+test('axe: /admin.html dashboard', async ({ page }) => {
+  await openAdminDashboard(page)
+
+  const results = await new AxeBuilder({ page })
+    .include('#admin-panel')
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze()
+
+  expect(results.violations).toEqual([])
+})
+
+test('axe: /admin.html question editor', async ({ page }) => {
+  await openAdminDashboard(page)
+  await page.locator('[data-tab="questions"]').click()
+  await page.locator('#add-question-btn').click()
+  await expect(page.locator('#question-modal')).toBeVisible()
+
+  const results = await new AxeBuilder({ page })
+    .include('#question-modal')
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze()
+
+  expect(results.violations).toEqual([])
+})
+
+test('shared certificate dialog is accessible from Admin results', async ({ page }) => {
+  await openAdminDashboard(page)
+  await page.locator('[data-tab="results"]').click()
+  await page.locator('.btn-cert').click()
+  await expect(page.locator('#cert-modal')).toBeVisible()
+
+  const results = await new AxeBuilder({ page })
+    .include('#cert-modal')
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze()
+  expect(results.violations).toEqual([])
+
+  await page.locator('#cert-print-btn').click()
+  await expect(page.locator('#cert-name-input')).toHaveClass(/cert-modal__input--invalid/)
+})
+
+test('axe: /teacher.html dashboard', async ({ page }) => {
+  await openTeacherDashboard(page)
+
+  const results = await new AxeBuilder({ page })
+    .include('#dashboard-section')
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze()
+
+  expect(results.violations).toEqual([])
+})
+
+test('teacher school-game form stays accessible on a phone', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 667 })
+  await openTeacherDashboard(page)
+  await page.locator('[data-tab="school"]').click()
+  await page.locator('#school-create-btn').click()
+  await expect(page.locator('#school-live')).toBeVisible()
+  await expect(page.locator('.school-topic-stat__bar')).toHaveCount(3)
+  await expect(page.locator('.school-topic-stat__bar').nth(0)).toHaveAttribute('value', '30')
+
+  const results = await new AxeBuilder({ page })
+    .include('#tab-school')
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze()
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
+
+  expect(results.violations).toEqual([])
+  expect(overflow).toBeLessThanOrEqual(0)
 })
 
 test.describe('axe accessibility scan: rendered question mechanics', () => {

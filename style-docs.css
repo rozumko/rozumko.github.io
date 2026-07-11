@@ -26,7 +26,7 @@
 }
 
 .doc-article {
-  background: #fff;
+  background: var(--clr-surface);
   border-radius: var(--r-3xl);
   box-shadow: var(--shadow-card);
   border: 1px solid var(--clr-border);
@@ -57,7 +57,7 @@
 }
 
 .doc-content {
-  color: #475569;
+  color: var(--clr-text-muted);
   line-height: 1.7;
   font-size: var(--font-size-base);
   display: flex;
@@ -94,18 +94,25 @@
   border: 1px solid;
   padding: var(--sp-5);
 }
-.doc-highlight--amber  { background: #fffbeb; border-color: #fde68a; color: #78350f; }
-.doc-highlight--emerald{ background: #ecfdf5; border-color: #a7f3d0; color: #064e3b; }
-.doc-highlight--sky    { background: #eff6ff; border-color: #bfdbfe; color: #1e3a8a; }
+.doc-highlight--amber  { background: var(--clr-warning-light); border-color: var(--clr-warning); color: var(--clr-warning-text); }
+.doc-highlight--emerald{ background: var(--fb-ok-bg); border-color: var(--fb-ok-border); color: var(--fb-ok-text); }
+.doc-highlight--sky    { background: var(--clr-sky-light); border-color: var(--clr-sky); color: var(--clr-sky-dark); }
 .doc-highlight--slate  { background: var(--clr-surface-muted); border-color: var(--clr-border); color: var(--clr-text-muted); }
 
 .doc-highlight__heading {
+  display: flex;
+  align-items: center;
   font-weight: 600;
   margin-bottom: var(--sp-2);
 }
+.doc-highlight__icon { margin-right: var(--sp-2); vertical-align: middle; }
+.doc-callout-title { margin-bottom: var(--sp-2); color: var(--clr-text); font-size: 1.05rem; font-weight: 700; }
+.doc-subheading { margin-bottom: var(--sp-2); color: var(--clr-text-muted); font-weight: 600; }
+.doc-note { margin-top: var(--sp-2); color: var(--clr-text-muted); font-size: var(--font-size-sm); }
+.doc-contact-note { color: var(--clr-text-muted); font-size: var(--font-size-sm); }
 
 /* Посилання у тексті */
-.doc-link { color: #1d4ed8; text-decoration: underline; text-underline-offset: 0.15em; }
+.doc-link { color: var(--clr-primary-dark); text-decoration: underline; text-underline-offset: 0.15em; }
 .doc-link:hover { text-decoration-thickness: 2px; }
 
 /* Сірий info-box (контакти тощо) */
@@ -134,7 +141,7 @@
   overflow-x: auto;
   border: 1px solid var(--clr-border);
   border-radius: var(--r-2xl);
-  background: #fff;
+  background: var(--clr-surface);
 }
 
 .standards-table {
@@ -175,24 +182,24 @@
 }
 
 .standard-badge--strong {
-  background: #dcfce7;
-  color: #14532d;
+  background: var(--fb-ok-bg);
+  color: var(--fb-ok-text);
 }
 
 .standard-badge--partial {
-  background: #e0f2fe;
-  color: #075985;
+  background: var(--clr-sky-light);
+  color: var(--clr-sky-dark);
 }
 
 .standard-badge--limited {
-  background: #fef3c7;
-  color: #78350f;
+  background: var(--clr-warning-light);
+  color: var(--clr-warning-text);
 }
 
 .standard-card {
   border: 1px solid var(--clr-border);
   border-radius: var(--r-2xl);
-  background: #fff;
+  background: var(--clr-surface);
   padding: var(--sp-5);
 }
 
@@ -220,9 +227,9 @@
   transition: filter var(--transition-fast);
 }
 .doc-btn:hover { filter: brightness(.9); }
-.doc-btn--sky     { background: #0369a1; color: #fff; }
-.doc-btn--emerald { background: #047857; color: #fff; }
-.doc-btn--slate   { background: #475569; color: #fff; }
+.doc-btn--sky     { background: var(--clr-sky-dark); color: var(--clr-text-inverse); }
+.doc-btn--emerald { background: var(--fb-ok-soft); color: var(--clr-text-inverse); }
+.doc-btn--slate   { background: var(--clr-text-muted); color: var(--clr-text-inverse); }
 
 /* ── Форма підписки батьків (for-parents.html) ── */
 .parent-signup-form {
@@ -242,7 +249,7 @@
 .signup-input {
   height: 3rem;
   padding: 0 var(--sp-4);
-  border: 2px solid #bfdbfe;
+  border: 2px solid var(--clr-border);
   border-radius: var(--r-md);
   font-family: inherit;
   font-size: var(--font-size-base);
@@ -255,7 +262,7 @@
   gap: var(--sp-2);
   align-items: flex-start;
   font-size: var(--font-size-sm);
-  color: #1e3a8a;
+  color: var(--clr-sky-dark);
 }
 .signup-consent input {
   margin-top: 3px;
@@ -272,22 +279,22 @@
   border-radius: var(--r-full);
   font-size: var(--font-size-base);
   font-weight: 700;
-  color: #fff;
+  color: var(--clr-text-inverse);
   background: var(--clr-brand);
   width: fit-content;
   cursor: pointer;
   transition: filter var(--transition-fast);
 }
 .signup-btn:hover { filter: brightness(1.08); }
-.signup-btn:focus-visible { outline: 3px solid var(--clr-brand); outline-offset: 3px; }
+.signup-btn:focus-visible { outline: 3px solid var(--clr-focus-ring); outline-offset: 3px; }
 .signup-error {
   font-size: var(--font-size-sm);
   font-weight: 600;
-  color: #b91c1c;
+  color: var(--fb-err-soft);
   min-height: 1.25rem;
 }
 .signup-success {
   margin-top: var(--sp-3);
   font-weight: 700;
-  color: #1d4ed8;
+  color: var(--clr-primary-dark);
 }

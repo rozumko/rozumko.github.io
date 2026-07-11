@@ -379,12 +379,8 @@ function startQuiz(qs: RenderableQuestion[], mode: string, cfg: any, meta: QuizM
   }
 
   const labels:     Record<string, string> = { practice: 'Тренування', demo: 'Демо', olympiad: 'Олімпіада' }
-  const badgeColor: Record<string, string> = { practice: '#fef3c7', demo: '#e0f2fe', olympiad: '#ffe4e6' }
-  const badgeText:  Record<string, string> = { practice: '#92400e', demo: '#0369a1', olympiad: '#9f1239' }
   quizModeBadge.textContent          = labels[mode]
-  quizModeBadge.className            = 'quiz-badge'
-  ;(quizModeBadge as HTMLElement).style.background = badgeColor[mode] ?? '#f1f5f9'
-  ;(quizModeBadge as HTMLElement).style.color      = badgeText[mode]  ?? '#334155'
+  quizModeBadge.className            = `quiz-badge quiz-badge--${mode}`
 
   clearInterval(timerInterval!)
   spokenTimeWarnings.clear()
@@ -696,7 +692,7 @@ async function finishQuiz(timeUp: boolean) {
       resultErrorMsg.innerHTML =
         `⚠️ Немає зв'язку — результат не збережено автоматично.<br>
          <strong>Скажи вчителю:</strong> код <strong>${meta.code}</strong>, результат невідомий — перевірте на сервері.<br>
-         <span style="font-size:0.8em;opacity:0.7">Коли з'явиться інтернет — оновлення сторінки може відновити збереження.</span>`
+         <span class="result-error__hint">Коли з'явиться інтернет — оновлення сторінки може відновити збереження.</span>`
       resultErrorMsg.classList.remove('hidden')
     }
     // Знімаємо автотригери. На успіху чергу вже очищено; на збої залишаємо

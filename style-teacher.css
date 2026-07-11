@@ -74,6 +74,7 @@
 .form-input--sm        { padding: var(--sp-2) var(--sp-3); font-size: var(--font-size-sm); }
 .form-input--count     { width: 6rem; text-align: center; font-weight: 700; font-size: var(--font-size-lg); }
 .form-privacy-note     { font-size: var(--font-size-xs); color: var(--clr-text-faint); margin-bottom: var(--sp-4); }
+.form-privacy-note--spaced { margin-top: var(--sp-3); }
 .auth-register__title  { font-size: var(--font-size-xl); font-weight: 700; color: var(--clr-text); margin-bottom: var(--sp-5); }
 
 .form-error {
@@ -83,17 +84,9 @@
   margin-bottom: var(--sp-4);
 }
 
-/* Кнопки */
-.btn-sky     { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); background: #0369a1; color: #fff; font-weight: 700; padding: var(--sp-3) var(--sp-5); border-radius: var(--r-lg); font-family: var(--font-family); font-size: var(--font-size-base); cursor: pointer; border: none; transition: background-color var(--transition-base); }
-.btn-sky:hover:not(:disabled) { background: var(--clr-sky-dark); }
-.btn-sky:disabled { opacity: 0.65; cursor: not-allowed; }
-.btn-emerald { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); background: var(--clr-emerald); color: #fff; font-weight: 700; padding: var(--sp-3) var(--sp-5); border-radius: var(--r-lg); font-family: var(--font-family); font-size: var(--font-size-base); cursor: pointer; border: none; transition: background-color var(--transition-base); }
-.btn-emerald:hover:not(:disabled) { background: var(--clr-emerald-dark); }
-.btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); background: var(--clr-surface-subtle); color: var(--clr-text-muted); font-weight: 500; padding: var(--sp-2) var(--sp-4); border-radius: var(--r-lg); font-family: var(--font-family); font-size: var(--font-size-sm); cursor: pointer; border: none; transition: background-color var(--transition-fast); }
-.btn-secondary:hover { background: var(--clr-border); }
-.btn--full { width: 100%; }
-
 /* Розділювач «Ще немає кабінету?» */
+.form-error--success { color: var(--fb-ok-soft); }
+
 .auth-divider {
   margin-top: var(--sp-6);
   padding-top: var(--sp-6);
@@ -237,6 +230,7 @@ body.teacher-dashboard-active {
 .tab-panel__top     { display: flex; flex-direction: column; gap: var(--sp-4); margin-bottom: var(--sp-6); }
 @media (min-width: 640px) { .tab-panel__top { flex-direction: row; align-items: center; justify-content: space-between; } }
 .tab-panel__heading { font-size: var(--font-size-xl); font-weight: 700; color: var(--clr-text); margin-bottom: var(--sp-4); }
+.tab-panel__heading--spaced { margin-bottom: var(--sp-6); }
 
 /* Форма нового класу */
 /* Базова картка (light) — спільні властивості */
@@ -277,6 +271,7 @@ body.teacher-dashboard-active {
 }
 /* Рядки форми класу */
 .class-form__row     { display: flex; flex-direction: column; gap: var(--sp-3); }
+.class-form__row--spaced { margin-top: var(--sp-3); }
 @media (min-width: 640px) { .class-form__row { flex-direction: row; align-items: flex-end; } }
 .class-form__field   { flex: 1; }
 .class-form__grade   {}
@@ -290,6 +285,9 @@ body.teacher-dashboard-active {
   display: flex; justify-content: space-between; align-items: center;
   margin: var(--sp-5) 0 var(--sp-2);
 }
+.teacher-list-heading__filters { display: flex; align-items: center; gap: var(--sp-2); flex: 1; min-width: 0; }
+.teacher-list-heading__title { margin: 0; font-size: var(--font-size-base); font-weight: 600; white-space: nowrap; }
+.teacher-list-heading__select { max-width: 18rem; }
 .teacher-info-card {
   background: #fff;
   border: 1px solid var(--clr-border);
@@ -301,6 +299,12 @@ body.teacher-dashboard-active {
   gap: var(--sp-3);
   box-shadow: var(--shadow-sm);
 }
+.teacher-info-card__main { flex: 1; min-width: 0; }
+.teacher-info-card__actions { display: flex; align-items: center; gap: var(--sp-2); flex-shrink: 0; }
+.cancel-confirm-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); margin-top: var(--sp-2); }
+.cancel-confirm-row__text { color: var(--clr-text-muted); font-size: var(--font-size-sm); }
+.cancel-confirm-row__error { color: var(--fb-err-label); font-size: var(--font-size-xs); }
+
 .teacher-info-card__title {
   color: var(--clr-text);
   font-weight: 700;
@@ -441,6 +445,9 @@ body.teacher-dashboard-active {
 }
 
 /* Scrollable body */
+.students-list__head-code { text-align: center; }
+.students-list__head-count { text-align: right; }
+
 .students-list__body {
   max-height: 22rem;
   overflow-y: auto;
@@ -482,6 +489,7 @@ body.teacher-dashboard-active {
   min-width: 5rem;
   text-align: center;
 }
+.student-row__code-empty { opacity: .35; }
 .student-row__actions {
   display: flex;
   gap: var(--sp-1);
@@ -496,8 +504,6 @@ body.teacher-dashboard-active {
   border: 1px solid var(--clr-border);
   border-radius: var(--r-sm);
 }
-/* .btn-adm-danger defined in admin section below */
-
 /* Порожній стан списку */
 .empty-state {
   padding: var(--sp-10);
@@ -511,6 +517,44 @@ body.teacher-dashboard-active {
 }
 .empty-state__title { font-weight: 600; }
 .empty-state__sub { font-size: var(--font-size-sm); margin-top: var(--sp-1); }
+.empty-state__sub--centered { padding: var(--sp-4); text-align: center; }
+
+/* School game management */
+.school-game__intro { margin-bottom: var(--sp-4); color: var(--clr-text-muted); }
+.school-create {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-6);
+}
+.school-create__field { display: flex; flex-direction: column; gap: var(--sp-1); font-weight: 600; }
+.school-create__select { min-width: 7rem; }
+.school-live__toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-4); margin-bottom: var(--sp-4); }
+.school-live__code-card {
+  padding: var(--sp-3) var(--sp-6);
+  border: 2px solid var(--clr-sky);
+  border-radius: var(--r-md);
+  background: var(--clr-sky-light);
+}
+.school-live__code-label { margin: 0; color: var(--clr-text-muted); font-size: var(--font-size-xs); font-weight: 700; }
+.school-live__code { margin: 0; font-size: var(--font-size-2xl); font-weight: 800; letter-spacing: 0.375rem; }
+.school-live__status { font-weight: 700; }
+.school-live__heading { margin-bottom: var(--sp-2); font-weight: 700; }
+.school-live__stats { margin-top: var(--sp-6); }
+.school-live__stats-hint { margin: 0 0 var(--sp-3); color: var(--clr-text-muted); font-size: var(--font-size-sm); }
+.school-leaderboard__empty { color: var(--clr-text-muted); }
+.school-leaderboard__row { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid var(--clr-border); }
+.school-leaderboard__rank { width: var(--sp-6); font-weight: 800; }
+.school-leaderboard__avatar { border-radius: var(--r-sm); }
+.school-leaderboard__name { flex: 1; font-weight: 600; }
+.school-leaderboard__score { font-weight: 800; }
+.school-topic-stat { display: flex; align-items: center; gap: var(--sp-3); padding: 6px 0; }
+.school-topic-stat__label { flex: 1; font-weight: 600; }
+.school-topic-stat__bar { flex: 1.4; height: 0.625rem; accent-color: var(--fb-ok-soft); }
+.school-topic-stat__bar--low { accent-color: var(--clr-danger); }
+.school-topic-stat__bar--medium { accent-color: var(--clr-warning); }
+.school-topic-stat__score { width: 5.5rem; color: var(--clr-text-muted); font-size: var(--font-size-sm); text-align: right; }
 
 /* ── Картка класу ────────────────────────────────────────────── */
 
@@ -633,6 +677,7 @@ body.teacher-dashboard-active {
   margin-bottom: var(--sp-3);
   color: var(--clr-text-faint);
 }
+.generate-status--spaced { margin-top: var(--sp-2); }
 .generate-status--ok      { color: var(--clr-emerald-dark); }
 .generate-status--err     { color: var(--fb-err-label); }
 .generate-status--neutral { color: var(--clr-text-faint); }

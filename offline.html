@@ -43,6 +43,7 @@
       margin-bottom: 1.5rem;
       text-align: left;
     }
+    .backup-hint--visible { display: block; }
     .backup-hint__title {
       color: #fff;
       font-weight: 600;
@@ -118,7 +119,7 @@
         const backup = JSON.parse(raw);
         // Backup вважається актуальним якщо йому менше 3 годин
         if (backup?.startedAt && Date.now() - backup.startedAt < 3 * 60 * 60 * 1000) {
-          document.getElementById('backup-hint').style.display = 'block';
+          document.getElementById('backup-hint').classList.add('backup-hint--visible');
         }
       } catch { /* ігноруємо помилки localStorage */ }
     })();

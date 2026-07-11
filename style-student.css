@@ -22,6 +22,7 @@
   position: relative;
   margin-inline: auto;   /* якщо задано max-width (olympiad-enter) — центрує контейнер */
 }
+.student-screen--compact { width: 100%; max-width: 30rem; }
 
 /* Кнопка «← На головну» */
 .student-back {
@@ -82,6 +83,7 @@
   box-shadow: 0 25px 60px -15px rgba(0,0,0,0.35);
   padding: var(--sp-8) var(--sp-6);
 }
+.student-card--flush { margin-top: 0; }
 
 .card-label {
   text-align: center;
@@ -484,6 +486,7 @@
   transition: color var(--transition-fast);
 }
 .btn-text:hover { color: rgba(255,255,255,0.85); }
+.btn-text--compact { margin-top: var(--sp-2); }
 
 /* ── Quiz overlay ───────────────────────────────────────────── */
 
@@ -530,11 +533,16 @@ body:has(.result-overlay.active) .student-screen {
 }
 
 .quiz-badge {
+  background: var(--clr-surface-subtle);
+  color: var(--clr-text-muted);
   font-size: var(--font-size-xs);
   font-weight: 700;
   padding: var(--sp-1) var(--sp-3);
   border-radius: var(--r-full);
 }
+.quiz-badge--practice { background: var(--clr-warning-light); color: var(--clr-warning-text); }
+.quiz-badge--demo { background: var(--clr-sky-light); color: var(--clr-sky-dark); }
+.quiz-badge--olympiad { background: var(--fb-err-bg); color: var(--fb-err-text); }
 .quiz-progress-text {
   font-size: var(--font-size-sm);
   font-weight: 700;
@@ -576,6 +584,7 @@ body:has(.result-overlay.active) .student-screen {
   background: #e2e8f0;
 }
 .quiz-progress-bar {
+  width: 0;
   height: 100%;
   background: var(--clr-violet);
   transition: width 300ms ease;
@@ -809,6 +818,7 @@ body:has(.result-overlay.active) .student-screen {
   outline: none;
   box-shadow: 0 0 0 3px rgba(124,58,237,0.4);
 }
+.quiz-option:disabled { cursor: default; }
 /* Стани після відповіді */
 .quiz-option--correct {
   border-color: var(--fb-ok-border) !important;
@@ -1007,6 +1017,7 @@ body.mission-active #mission-quiz .quiz-progress-header {
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-3);
+  margin-bottom: var(--sp-2);
 }
 
 body.mission-active #mission-quiz .quiz-question-card {
@@ -1516,6 +1527,7 @@ body.mission-active.mission-answered #mission-quiz .quiz-feedback-wrap {
   padding: var(--sp-3) var(--sp-4);
   margin-bottom: var(--sp-5);
 }
+.result-error__hint { font-size: .8em; opacity: .7; }
 
 /* ── Quit confirm overlay ───────────────────────────────────── */
 

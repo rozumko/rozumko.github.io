@@ -48,8 +48,6 @@ function highlightPuzzleGrade(grade: number) {
   document.querySelectorAll<HTMLElement>('.puzzle-grade-btn').forEach(btn => {
     const active = Number(btn.dataset['grade']) === grade
     btn.setAttribute('aria-pressed', String(active))
-    btn.style.outline = active ? '3px solid #3b82f6' : ''
-    btn.style.outlineOffset = active ? '2px' : ''
   })
 }
 

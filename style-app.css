@@ -357,6 +357,7 @@
   font-weight: 700;
 }
 .btn-ghost:hover { border-color: var(--clr-brand); }
+.btn-ghost--spaced { margin-top: var(--sp-3); }
 
 /* ── Дорослий рядок унизу вітрини ── */
 .adult-note {
@@ -368,6 +369,7 @@
   color: var(--clr-primary);
   text-decoration: underline;
 }
+.adult-note--spaced { margin-top: var(--sp-8); }
 
 /* ── App shell: сторінки режимів (home.html, school.html) ── */
 .app-page {
@@ -419,6 +421,10 @@
   display: flex;
   justify-content: center;
   margin-top: var(--sp-2);
+}
+.app-actions--back {
+  justify-content: flex-start;
+  margin-bottom: var(--sp-4);
 }
 
 /* Картка вводу коду гри — головна дія School Mode */
@@ -685,25 +691,31 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: var(--sp-2);
   min-height: var(--kid-tap);
   padding: var(--sp-3) var(--sp-8);
+  border: none;
   border-radius: var(--r-full);
+  font-family: var(--font-family);
   font-size: var(--kid-text);
   font-weight: 700;
-  color: #fff;
+  line-height: 1.2;
+  color: var(--clr-text-inverse);
   background: var(--clr-brand);
   box-shadow: var(--shadow-btn);
+  cursor: pointer;
+  text-decoration: none;
   transition:
     transform var(--transition-fast),
     filter    var(--transition-fast);
 }
-.kid-action:hover  { filter: brightness(1.06); transform: translateY(-2px); }
-.kid-action:active { transform: translateY(0); }
+.kid-action:hover:not(:disabled)  { filter: brightness(1.06); transform: translateY(-2px); }
+.kid-action:active:not(:disabled) { transform: translateY(0); }
 .kid-action:focus-visible {
-  outline: 3px solid var(--clr-brand);
+  outline: 3px solid var(--clr-focus-ring);
   outline-offset: 3px;
 }
-.kid-action:disabled { opacity: .6; transform: none; }
+.kid-action:disabled { opacity: .6; cursor: not-allowed; filter: none; transform: none; }
 
 /* Вибір класу */
 .grade-picker {
@@ -755,7 +767,9 @@
   border-radius: var(--r-xl);
   background: var(--clr-surface);
   box-shadow: var(--shadow-sm);
+  color: inherit;
   text-align: center;
+  text-decoration: none;
   min-width: 0;
   overflow-wrap: anywhere;
   transition:
@@ -767,7 +781,7 @@
   box-shadow: var(--shadow-md);
 }
 .mission-card:focus-visible {
-  outline: 3px solid var(--clr-brand);
+  outline: 3px solid var(--clr-focus-ring);
   outline-offset: 3px;
 }
 .mission-card__icon  { font-size: 2rem; line-height: 1; }
@@ -785,7 +799,7 @@
   max-width: 100%;
 }
 .mission-card__meta {
-  font-size: var(--font-size-xs, 0.75rem);
+  font-size: var(--font-size-xs);
   color: var(--clr-text-muted);
   max-width: 100%;
 }
@@ -797,13 +811,13 @@
   right: var(--sp-2);
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: var(--font-size-xs, 0.75rem);
+  gap: var(--sp-1);
+  font-size: var(--font-size-xs);
   font-weight: 800;
-  color: #78350f;
-  background: #fde68a;
+  color: var(--clr-warning-text);
+  background: var(--clr-warning-light);
   border-radius: var(--r-full);
-  padding: 3px 9px;
+  padding: var(--sp-1) var(--sp-3);
   box-shadow: var(--shadow-sm);
 }
 /* CTA-модалка підписки (games) */
@@ -834,16 +848,16 @@
 .mission-card--inf .mission-card__meta  { color: var(--track-inf-dark); }
 .mission-card--think { border-color: var(--track-think); background: var(--track-think-light); }
 .mission-card--think .mission-card__title { color: var(--track-think-dark); }
-.mission-card--think .mission-card__meta  { color: #6d28d9; }
+.mission-card--think .mission-card__meta  { color: var(--track-think-dark); }
 .mission-card--ai { border-color: var(--track-ai); background: var(--track-ai-light); }
 .mission-card--ai .mission-card__title { color: var(--track-ai-dark); }
 .mission-card--ai .mission-card__meta  { color: var(--track-ai-dark); }
 /* Складність (school) */
-.mission-card--warmup { border-color: var(--clr-amber); background: #fffbeb; }
-.mission-card--warmup .mission-card__title { color: #78350f; }
-.mission-card--training { border-color: #93c5fd; background: #eff6ff; }
-.mission-card--training .mission-card__title { color: var(--clr-primary-dark); }
-.mission-card--challenge { border-color: #c4b5fd; background: #f5f3ff; }
+.mission-card--warmup { border-color: var(--clr-warning); background: var(--clr-warning-light); }
+.mission-card--warmup .mission-card__title { color: var(--clr-warning-text); }
+.mission-card--training { border-color: var(--clr-sky); background: var(--clr-sky-light); }
+.mission-card--training .mission-card__title { color: var(--clr-sky-dark); }
+.mission-card--challenge { border-color: var(--clr-violet); background: var(--clr-violet-light); }
 .mission-card--challenge .mission-card__title { color: var(--clr-violet-dark); }
 
 /* Дорослі інформаційні картки (звіт, club, містки) */
@@ -861,8 +875,13 @@
   margin-bottom: var(--sp-2);
 }
 .info-card--center { text-align: center; }
+.school-entry-help { margin-top: var(--sp-6); }
+.school-entry-help + .school-entry-help { margin-top: var(--sp-3); }
 .info-card a { color: var(--clr-primary); font-weight: 700; }
 .info-card a:hover { text-decoration: underline; }
+.demo-report__summary { font-weight: 700; }
+.demo-report__heading { margin-top: var(--sp-3); font-weight: 700; }
+.demo-report__next { margin-top: var(--sp-3); }
 
 /* Дитячий фінал місії */
 .finish-card {

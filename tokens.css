@@ -9,19 +9,23 @@
   /* ── Бренд ─────────────────────────────────────────────────── */
   --clr-brand:          #2563eb;   /* глибший, впевненіший синій */
   --clr-brand-dark:     #1d4ed8;
-  --clr-primary:        #2563eb;
-  --clr-primary-dark:   #1d4ed8;
+  --clr-primary:        var(--clr-brand);
+  --clr-primary-dark:   var(--clr-brand-dark);
+  --clr-focus-ring:     rgba(37,99,235,.65);
+  --clr-backdrop:       rgba(0,0,0,.5);
 
   /* ── Ролі (кнопки входу на index.html) ─────────────────────── */
-  --clr-student:        #10b981;
-  --clr-student-dark:   #059669;
-  --clr-teacher:        #0284c7;   /* глибший sky */
-  --clr-teacher-dark:   #0369a1;
+  --clr-student:        var(--clr-emerald);
+  --clr-student-dark:   var(--clr-emerald-dark);
+  --clr-teacher:        var(--clr-sky);
+  --clr-teacher-dark:   var(--clr-sky-dark);
 
   /* ── Статуси ────────────────────────────────────────────────── */
   --clr-success:        #22c55e;
   --clr-danger:         #ef4444;
   --clr-warning:        #f59e0b;
+  --clr-warning-light:  #fef3c7;
+  --clr-warning-text:   #78350f;
 
   /* ── Feedback: стан картки quiz (correct/incorrect) ─────────── */
   --fb-ok-bg:      #ecfdf5;   /* emerald-50  — фон правильної картки */
@@ -101,8 +105,8 @@
 
   /* ── APP SHELL — дитячий шар (вітрина, home, school) ────────── */
   /* Маскот Розумко */
-  --clr-mascot:         #f59e0b;
-  --clr-mascot-light:   #fef3c7;
+  --clr-mascot:         var(--clr-warning);
+  --clr-mascot-light:   var(--clr-warning-light);
 
   /* Кольори напрямів: колір означає напрям, не декор.
      Один акцент на екран, нейтральна база лишається спокійною. */
@@ -128,7 +132,7 @@
   --clr-violet-dark:    #4338ca;   /* було #6d28d9 */
   --clr-violet-light:   #e0e7ff;   /* було #ede9fe */
   --clr-amber:          #fbbf24;
-  --clr-amber-dark:     #f59e0b;
+  --clr-amber-dark:     var(--clr-warning);
 
   /* ── Акценти: сторінка вчителя (teacher.html) ──────────────── */
   --clr-sky:            #0284c7;   /* глибший */
@@ -147,9 +151,8 @@
   --adm-text-muted:     #8892b0;
   --adm-text-faint:     #4b5680;
   --adm-sky:            #60a5fa;
-  --adm-sky-hover:      #3b82f6;
-  --adm-emerald:        #10b981;
-  --adm-emerald-hover:  #059669;
+  --adm-emerald:        var(--clr-emerald);
+  --adm-emerald-hover:  var(--clr-emerald-dark);
   --adm-violet:         #7c3aed;
   --adm-violet-hover:   #6d28d9;
   --adm-rose:           #f43f5e;

@@ -34,7 +34,7 @@ export async function loadMissionsTab() {
   } catch (err) {
     list.innerHTML = ''
     const error = document.createElement('p')
-    error.style.cssText = 'color:var(--clr-danger);padding:var(--sp-4)'
+    error.className = 'admin-list-error'
     error.textContent = (err as Error).message
     list.appendChild(error)
   }
@@ -65,7 +65,7 @@ function renderMissions() {
     el.className = 'question-item'
     el.innerHTML = `
       <div class="question-item__left">
-        <div style="display:flex;flex-wrap:wrap;gap:var(--sp-2);margin-bottom:var(--sp-2)">
+        <div class="question-item__badges">
           <span class="qi-badge qi-badge--grade">${esc(String(m.grade))} клас</span>
           <span class="qi-badge qi-badge--practice">${esc(TRACK_LABELS[m.track] ?? m.track)}</span>
           <span class="qi-badge qi-badge--type">${esc(KIND_LABELS[m.kind] ?? m.kind)}</span>

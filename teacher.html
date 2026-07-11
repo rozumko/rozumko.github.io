@@ -73,7 +73,7 @@
                 </div>
               </div>
               <p id="login-error" class="form-error" role="alert" aria-live="assertive"></p>
-              <button type="submit" id="login-submit-btn" class="btn btn-sky btn--full">Увійти</button>
+              <button type="submit" id="login-submit-btn" class="btn btn--teacher btn--full">Увійти</button>
             </form>
             <p class="auth-switch-hint">
               Ще немає кабінету?
@@ -108,7 +108,7 @@
               <!-- Cloudflare Turnstile рендериться сюди explicit-режимом з teacher.ts -->
               <div id="turnstile-container" class="form-group"></div>
               <p id="register-error" class="form-error" role="alert" aria-live="assertive"></p>
-              <button type="submit" id="register-submit-btn" class="btn btn-emerald btn--full">Створити кабінет</button>
+              <button type="submit" id="register-submit-btn" class="btn btn--success btn--full">Створити кабінет</button>
             </form>
             <p class="auth-switch-hint">
               Вже є кабінет?
@@ -146,8 +146,8 @@
         <span class="dashboard-role-badge">Вчитель</span>
       </div>
       <div class="dashboard-header__right">
-        <span id="teacher-email-display" class="dashboard-email" style="display:none"></span>
-        <button id="logout-btn" class="btn btn-secondary">
+        <span id="teacher-email-display" class="dashboard-email hidden"></span>
+        <button id="logout-btn" class="btn btn--secondary">
           <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Вийти
         </button>
       </div>
@@ -194,7 +194,7 @@
                   </select>
                 </div>
                 <div class="class-form__actions">
-                  <button id="class-submit-btn" type="submit" class="btn btn-emerald">
+                  <button id="class-submit-btn" type="submit" class="btn btn--success">
                     <i class="fas fa-plus" aria-hidden="true"></i> Додати
                   </button>
                 </div>
@@ -228,7 +228,7 @@
                     <input id="registration-count" type="number" min="1" max="100" value="1" class="form-input form-input--count"/>
                   </div>
                 </div>
-                <div class="class-form__row" style="margin-top:var(--sp-3)">
+                <div class="class-form__row class-form__row--spaced">
                   <div class="class-form__field">
                     <label for="registration-event" class="form-label">Подія</label>
                     <select id="registration-event" class="form-input">
@@ -236,13 +236,13 @@
                     </select>
                   </div>
                   <div class="class-form__actions">
-                    <button id="registration-submit-btn" type="submit" class="btn btn-sky">
+                    <button id="registration-submit-btn" type="submit" class="btn btn--teacher">
                       <i class="fas fa-clipboard-check" aria-hidden="true"></i> Зареєструвати
                     </button>
                   </div>
                 </div>
               </form>
-              <p class="form-privacy-note" style="margin-top:var(--sp-3)">
+              <p class="form-privacy-note form-privacy-note--spaced">
                 <i class="fas fa-shield-alt" aria-hidden="true"></i>
                 Імена дітей не зберігаються — лише кількість учасників.
               </p>
@@ -265,7 +265,7 @@
       <section id="tab-codes" class="tab-panel">
 
         <div class="class-form-card">
-          <h2 class="tab-panel__heading" style="margin-bottom:var(--sp-4)">Генерація кодів за реєстрацією</h2>
+          <h2 class="tab-panel__heading">Генерація кодів за реєстрацією</h2>
           <div class="class-form__row">
             <div class="class-form__field">
               <label for="generate-registration" class="form-label">Реєстрація</label>
@@ -274,7 +274,7 @@
               </select>
             </div>
             <div class="class-form__actions">
-              <button id="generate-btn" class="btn btn-emerald">
+              <button id="generate-btn" class="btn btn--success">
                 <i class="fas fa-key" aria-hidden="true"></i> Згенерувати коди
               </button>
             </div>
@@ -282,25 +282,26 @@
           <p id="generate-status" class="generate-status"></p>
         </div>
 
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:var(--sp-3);margin:var(--sp-4) 0 var(--sp-2);flex-wrap:wrap">
-          <div style="display:flex;align-items:center;gap:var(--sp-2);flex:1;min-width:0">
-            <h3 style="margin:0;font-size:1rem;font-weight:600;white-space:nowrap">Коди учнів</h3>
-            <select id="filter-registration" class="form-input form-input--sm" style="max-width:18rem">
+        <div class="teacher-list-heading">
+          <div class="teacher-list-heading__filters">
+            <h3 class="teacher-list-heading__title">Коди учнів</h3>
+            <label for="filter-registration" class="sr-only">Фільтр кодів за реєстрацією</label>
+            <select id="filter-registration" class="form-input form-input--sm teacher-list-heading__select">
               <option value="">Всі реєстрації</option>
             </select>
           </div>
-          <button id="copy-all-btn" class="btn btn-secondary hidden">
+          <button id="copy-all-btn" class="btn btn--secondary hidden">
             <i class="fas fa-copy" aria-hidden="true"></i> Копіювати всі
           </button>
         </div>
         <div id="codes-list" class="codes-list" aria-live="polite" aria-label="Список кодів доступу">
-          <p class="empty-state__sub" style="text-align:center;padding:var(--sp-4)">Кодів ще немає. Згенеруй перші коди.</p>
+          <p class="empty-state__sub empty-state__sub--centered">Кодів ще немає. Згенеруй перші коди.</p>
         </div>
       </section>
 
       <!-- Вкладка: Результати -->
       <section id="tab-results" class="tab-panel hidden">
-        <h2 class="tab-panel__heading" style="margin-bottom: var(--sp-6);">Результати олімпіади</h2>
+        <h2 class="tab-panel__heading tab-panel__heading--spaced">Результати олімпіади</h2>
         <div id="results-list" class="results-list">
           <div class="empty-state">
             <i class="fas fa-poll empty-state__icon" aria-hidden="true"></i>
@@ -312,48 +313,48 @@
 
       <!-- Вкладка: Класна гра (просунутий School Mode) -->
       <section id="tab-school" class="tab-panel hidden">
-        <h2 class="tab-panel__heading" style="margin-bottom: var(--sp-4);">Класна гра</h2>
-        <p style="margin-bottom:16px; color:#64748b;">Створіть гру — учні приєднаються за кодом на сторінці «Шкільний режим». Без ПІБ та реєстрації дітей.</p>
+        <h2 class="tab-panel__heading">Класна гра</h2>
+        <p class="school-game__intro">Створіть гру — учні приєднаються за кодом на сторінці «Шкільний режим». Без ПІБ та реєстрації дітей.</p>
 
         <!-- Створення гри -->
-        <div id="school-create" style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; margin-bottom:24px;">
-          <label style="display:flex; flex-direction:column; gap:4px; font-weight:600;">Клас
-            <select id="school-grade" style="padding:10px 14px; border:2px solid #cbd5e1; border-radius:12px;">
+        <div id="school-create" class="school-create">
+          <label class="school-create__field">Клас
+            <select id="school-grade" class="form-input form-input--sm school-create__select">
               <option value="1">1 клас</option>
               <option value="2">2 клас</option>
               <option value="3">3 клас</option>
               <option value="4">4 клас</option>
             </select>
           </label>
-          <label style="display:flex; flex-direction:column; gap:4px; font-weight:600;">Напрям
-            <select id="school-track" style="padding:10px 14px; border:2px solid #cbd5e1; border-radius:12px;">
+          <label class="school-create__field">Напрям
+            <select id="school-track" class="form-input form-input--sm school-create__select">
               <option value="">Будь-який</option>
               <option value="informatics">Інформатика</option>
               <option value="computational-thinking">Обчислювальне мислення</option>
               <option value="ai-basics">Основи ШІ</option>
             </select>
           </label>
-          <label style="display:flex; flex-direction:column; gap:4px; font-weight:600;">Тема
-            <select id="school-topic" style="padding:10px 14px; border:2px solid #cbd5e1; border-radius:12px;" disabled>
+          <label class="school-create__field">Тема
+            <select id="school-topic" class="form-input form-input--sm school-create__select" disabled>
               <option value="">Будь-яка</option>
             </select>
           </label>
-          <label style="display:flex; flex-direction:column; gap:4px; font-weight:600;">Складність
-            <select id="school-difficulty" style="padding:10px 14px; border:2px solid #cbd5e1; border-radius:12px;">
+          <label class="school-create__field">Складність
+            <select id="school-difficulty" class="form-input form-input--sm school-create__select">
               <option value="">Будь-яка</option>
               <option value="easy">Легка</option>
               <option value="medium">Середня</option>
               <option value="hard">Складна</option>
             </select>
           </label>
-          <label style="display:flex; flex-direction:column; gap:4px; font-weight:600;">Питань
-            <select id="school-count" style="padding:10px 14px; border:2px solid #cbd5e1; border-radius:12px;">
+          <label class="school-create__field">Питань
+            <select id="school-count" class="form-input form-input--sm school-create__select">
               <option value="5">5</option>
               <option value="10" selected>10</option>
               <option value="15">15</option>
             </select>
           </label>
-          <button id="school-create-btn" class="btn btn-emerald">
+          <button id="school-create-btn" class="btn btn--success">
             <i class="fas fa-plus" aria-hidden="true"></i> Створити гру
           </button>
         </div>
@@ -361,28 +362,28 @@
 
         <!-- Активна гра -->
         <div id="school-live" class="hidden">
-          <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin-bottom:16px;">
-            <div style="background:#eff6ff; border:2px solid #3b82f6; border-radius:16px; padding:12px 24px;">
-              <p style="font-size:0.8rem; font-weight:700; color:#64748b; margin:0;">КОД ГРИ</p>
-              <p id="school-join-code" style="font-size:2rem; font-weight:800; letter-spacing:6px; margin:0;"></p>
+          <div class="school-live__toolbar">
+            <div class="school-live__code-card">
+              <p class="school-live__code-label">КОД ГРИ</p>
+              <p id="school-join-code" class="school-live__code"></p>
             </div>
-            <span id="school-status" style="font-weight:700;"></span>
-            <button id="school-start-btn" class="btn btn-sky">
+            <span id="school-status" class="school-live__status"></span>
+            <button id="school-start-btn" class="btn btn--teacher">
               <i class="fas fa-play" aria-hidden="true"></i> Почати гру
             </button>
-            <button id="school-finish-btn" class="btn btn-secondary hidden">
+            <button id="school-finish-btn" class="btn btn--secondary hidden">
               <i class="fas fa-stop" aria-hidden="true"></i> Завершити
             </button>
-            <button id="school-new-btn" class="btn btn-emerald hidden">
+            <button id="school-new-btn" class="btn btn--success hidden">
               <i class="fas fa-plus" aria-hidden="true"></i> Нова гра
             </button>
           </div>
-          <h3 style="font-weight:700; margin-bottom:8px;">Учасники</h3>
+          <h3 class="school-live__heading">Учасники</h3>
           <div id="school-leaderboard"></div>
 
-          <div id="school-topic-stats-wrap" class="hidden" style="margin-top:24px;">
-            <h3 style="font-weight:700; margin-bottom:8px;">Що варто повторити</h3>
-            <p style="color:#64748b; font-size:0.85rem; margin:0 0 12px;">Відсоток правильних відповідей за темою (від найслабшої).</p>
+          <div id="school-topic-stats-wrap" class="school-live__stats hidden">
+            <h3 class="school-live__heading">Що варто повторити</h3>
+            <p class="school-live__stats-hint">Відсоток правильних відповідей за темою (від найслабшої).</p>
             <div id="school-topic-stats"></div>
           </div>
         </div>
@@ -412,11 +413,11 @@
             <input type="number" min="1" max="40" value="5"
               class="codes-count-input form-input form-input--count" aria-label="Кількість учнів"/>
             <label class="codes-count-label">учнів</label>
-            <button class="generate-codes-btn btn btn-emerald">
+            <button class="generate-codes-btn btn btn--success">
               <i class="fas fa-key" aria-hidden="true"></i> Згенерувати коди
             </button>
           </div>
-          <button class="copy-all-btn btn btn-secondary hidden">
+          <button class="copy-all-btn btn btn--secondary hidden">
             <i class="fas fa-copy" aria-hidden="true"></i> Копіювати всі
           </button>
         </div>

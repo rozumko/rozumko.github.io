@@ -149,7 +149,6 @@ function renderChoice(q, container, onAnswer, preview, preselect = null) {
 
     if (preview) {
       btn.disabled = true;
-      btn.style.cursor = 'default';
       if (i === correct) { markCorrect(btn); btn.title = '✓ Правильна відповідь'; }
     } else {
       btn.addEventListener('click', () => {
@@ -202,7 +201,6 @@ function renderTrueFalse(q, container, onAnswer, preview, preselect = null) {
 
     if (preview) {
       btn.disabled = true;
-      btn.style.cursor = 'default';
       if (answerIndex === Number(q.correct)) markCorrect(btn);
     } else {
       btn.addEventListener('click', () => {
@@ -504,7 +502,6 @@ function renderSequence(q, container, onAnswer, preview, preselect = null) {
 
     if (preview) {
       btn.disabled = true;
-      btn.style.cursor = 'default';
       if (i === seqCorrect) markCorrect(btn);
     } else {
       btn.addEventListener('click', () => {

@@ -100,7 +100,7 @@ export async function loadQuestionsTab() {
   } catch (err) {
     list.innerHTML = ''
     const error = document.createElement('p')
-    error.style.cssText = 'color:var(--clr-danger);padding:var(--sp-4)'
+    error.className = 'admin-list-error'
     error.textContent = (err as Error).message
     list.appendChild(error)
   }
@@ -117,7 +117,7 @@ function buildQuestionCard(q: Question): HTMLElement {
   el.className = 'question-item'
   el.innerHTML = `
     <div class="question-item__left">
-      <div style="display:flex;flex-wrap:wrap;gap:var(--sp-2);margin-bottom:var(--sp-2)">
+      <div class="question-item__badges">
         <span class="qi-badge qi-badge--grade">${esc(String(q.grade))} клас</span>
         <span class="qi-badge qi-badge--type">${esc(TYPE_LABELS[type] ?? type)}</span>
         <span class="qi-badge qi-badge--${q.difficulty ?? 'medium'}">${esc(diffLabel)}</span>
@@ -133,7 +133,7 @@ function buildQuestionCard(q: Question): HTMLElement {
     </div>
     <div class="question-item__actions">
       <button class="btn-q-edit btn-adm-slate btn-icon" aria-label="Редагувати питання"><i class="fas fa-pen" aria-hidden="true"></i></button>
-      <button class="btn-q-del  btn-adm-danger btn-icon" aria-label="Видалити питання"><i class="fas fa-trash" aria-hidden="true"></i></button>
+      <button class="btn-q-del btn-adm-danger btn-icon" aria-label="Видалити питання"><i class="fas fa-trash" aria-hidden="true"></i></button>
     </div>`
 
   el.querySelector<HTMLButtonElement>('.btn-q-edit')!.addEventListener('click', () => openQuestionModal(q))

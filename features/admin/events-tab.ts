@@ -42,7 +42,7 @@ export async function loadEvents() {
     renderEvents(list, events)
     updateEventsStat(events)
   } catch (err) {
-    list.innerHTML = `<p style="color:var(--clr-danger);padding:var(--sp-4)">${esc((err as Error).message)}</p>`
+    list.innerHTML = `<p class="admin-list-error">${esc((err as Error).message)}</p>`
   }
 }
 
@@ -306,7 +306,7 @@ async function loadQuestionPicker() {
     renderQuestionPickerList(allQuestions)
     updateQuestionPickerStatus()
   } catch (err) {
-    list.innerHTML = `<p style="color:var(--clr-danger);padding:var(--sp-4)">${esc((err as Error).message)}</p>`
+    list.innerHTML = `<p class="admin-list-error">${esc((err as Error).message)}</p>`
   }
 }
 

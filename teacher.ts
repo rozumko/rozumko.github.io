@@ -256,7 +256,7 @@ registerForm?.addEventListener('submit', async (e) => {
   if (turnstileWidgetId === null || !window.turnstile) {
     if (registerError) {
       registerError.textContent = 'Захист від ботів ще завантажується. Спробуйте ще раз.'
-      registerError.style.color = ''
+      registerError.classList.remove('form-error--success')
     }
     return
   }
@@ -264,12 +264,15 @@ registerForm?.addEventListener('submit', async (e) => {
   if (!captchaToken) {
     if (registerError) {
       registerError.textContent = 'Підтвердіть, що ви не робот.'
-      registerError.style.color = ''
+      registerError.classList.remove('form-error--success')
     }
     return
   }
 
-  if (registerError) registerError.textContent = ''
+  if (registerError) {
+    registerError.textContent = ''
+    registerError.classList.remove('form-error--success')
+  }
   registerSubmitBtn!.disabled    = true
   registerSubmitBtn!.textContent = 'Реєстрація…'
   showColdStartBanner()
@@ -278,7 +281,7 @@ registerForm?.addEventListener('submit', async (e) => {
     hideColdStartBanner()
     if (registerError) {
       registerError.textContent = '✅ Реєстрацію надіслано! Перевірте пошту та підтвердіть email, потім увійдіть.'
-      registerError.style.color = 'var(--clr-emerald, #059669)'
+      registerError.classList.add('form-error--success')
     }
     // Токен Turnstile одноразовий — скидаємо перед можливою повторною спробою.
     window.turnstile.reset(turnstileWidgetId)
@@ -286,7 +289,10 @@ registerForm?.addEventListener('submit', async (e) => {
     registerSubmitBtn!.textContent = 'Створити кабінет'
   } catch (err) {
     hideColdStartBanner()
-    if (registerError) registerError.textContent = friendlyError((err as Error).message)
+    if (registerError) {
+      registerError.textContent = friendlyError((err as Error).message)
+      registerError.classList.remove('form-error--success')
+    }
     if (turnstileWidgetId !== null) window.turnstile?.reset(turnstileWidgetId)
     registerSubmitBtn!.disabled    = false
     registerSubmitBtn!.textContent = 'Створити кабінет'
@@ -398,7 +404,7 @@ async function loadClasses() {
     renderClasses()
     renderRegistrationClassOptions()
   } catch (err) {
-    classesList.innerHTML = `<p class="empty-state__sub" style="text-align:center;padding:var(--sp-4)">${esc((err as Error).message)}</p>`
+    classesList.innerHTML = `<p class="empty-state__sub empty-state__sub--centered">${esc((err as Error).message)}</p>`
   }
 }
 
@@ -410,7 +416,7 @@ async function loadRegistrations() {
     renderGenerateRegistrationOptions()
     renderFilterRegistrationOptions()
   } catch (err) {
-    registrationsList.innerHTML = `<p class="empty-state__sub" style="text-align:center;padding:var(--sp-4)">${esc((err as Error).message)}</p>`
+    registrationsList.innerHTML = `<p class="empty-state__sub empty-state__sub--centered">${esc((err as Error).message)}</p>`
   }
 }
 
@@ -530,7 +536,7 @@ function renderClasses() {
         <p class="teacher-info-card__title">${esc(cls.name)}</p>
         <p class="teacher-info-card__meta">${esc(String(cls.grade))} клас</p>
       </div>
-      <button class="btn-class-open btn-adm-slate btn-sm" data-class-id="${esc(cls.id)}" data-class-name="${esc(cls.name)}" data-class-grade="${esc(String(cls.grade))}">
+      <button class="btn-class-open btn btn--secondary btn--sm" data-class-id="${esc(cls.id)}" data-class-name="${esc(cls.name)}" data-class-grade="${esc(String(cls.grade))}">
         <i class="fas fa-users" aria-hidden="true"></i> Учні
       </button>`
     const openBtn = card.querySelector<HTMLButtonElement>('.btn-class-open')!
@@ -560,7 +566,7 @@ function openClassDetail(cls: TeacherClass, opener?: HTMLElement) {
         <p class="class-detail-panel__eyebrow">${esc(String(cls.grade))} клас</p>
         <h3 class="class-detail-panel__title" id="class-detail-title">${esc(cls.name)}</h3>
       </div>
-      <button id="class-detail-close" class="btn-adm-slate btn-sm" aria-label="Закрити">
+      <button id="class-detail-close" class="btn btn--secondary btn--sm" aria-label="Закрити">
         <i class="fas fa-times" aria-hidden="true"></i>
       </button>
     </div>
@@ -574,11 +580,11 @@ function openClassDetail(cls: TeacherClass, opener?: HTMLElement) {
     <form id="add-student-form" class="class-detail-panel__add-form" novalidate>
       <input id="student-label-input" type="text" maxlength="60"
         placeholder="Маша К., Учень 5, …" class="form-input" autocomplete="off" />
-      <button type="submit" class="btn-adm-emerald btn-sm">
+      <button type="submit" class="btn btn--success btn--sm">
         <i class="fas fa-plus" aria-hidden="true"></i> Додати
       </button>
     </form>
-    <p id="add-student-status" class="generate-status" style="margin-top:var(--sp-2)"></p>
+    <p id="add-student-status" class="generate-status generate-status--spaced"></p>
 
     <div id="students-list" class="students-list">
       <p class="admin-loading-text">Завантаження…</p>
@@ -674,8 +680,8 @@ function renderStudentsList(container: HTMLElement, classId: string, students: C
     <div class="students-list__head" aria-hidden="true">
       <span>#</span>
       <span>Мітка учня</span>
-      <span style="text-align:center">Код доступу</span>
-      <span style="text-align:right">${students.length} учн.</span>
+      <span class="students-list__head-code">Код доступу</span>
+      <span class="students-list__head-count">${students.length} учн.</span>
     </div>
     <div class="students-list__body" role="list" aria-label="Учні класу"></div>`
 
@@ -691,12 +697,12 @@ function renderStudentsList(container: HTMLElement, classId: string, students: C
     row.innerHTML = `
       <span class="student-row__num">${i + 1}</span>
       <span class="student-row__label" title="${esc(s.label)}">${esc(s.label)}</span>
-      <span class="student-row__code">${codeVal ? esc(codeVal) : '<span style="opacity:.35">—</span>'}</span>
+      <span class="student-row__code">${codeVal ? esc(codeVal) : '<span class="student-row__code-empty">—</span>'}</span>
       <div class="student-row__actions">
-        <button class="btn-student-edit btn-adm-slate btn-sm" aria-label="Редагувати ${esc(s.label)}">
+        <button class="btn-student-edit btn btn--secondary btn--sm" aria-label="Редагувати ${esc(s.label)}">
           <i class="fas fa-pencil-alt" aria-hidden="true"></i>
         </button>
-        <button class="btn-student-delete btn-adm-danger btn-sm" aria-label="Видалити ${esc(s.label)}">
+        <button class="btn-student-delete btn btn--danger btn--sm" aria-label="Видалити ${esc(s.label)}">
           <i class="fas fa-trash" aria-hidden="true"></i>
         </button>
       </div>`
@@ -732,8 +738,8 @@ function startEditStudent(row: HTMLElement, s: ClassStudent, classId: string) {
 
   labelEl.innerHTML = `<input class="student-edit-input form-input" value="${esc(s.label)}" maxlength="60" />`
   actionsEl.innerHTML = `
-    <button class="btn-student-save btn-adm-emerald btn-sm" aria-label="Зберегти"><i class="fas fa-check" aria-hidden="true"></i></button>
-    <button class="btn-student-cancel btn-adm-slate btn-sm" aria-label="Скасувати редагування"><i class="fas fa-times" aria-hidden="true"></i></button>`
+    <button class="btn-student-save btn btn--success btn--sm" aria-label="Зберегти"><i class="fas fa-check" aria-hidden="true"></i></button>
+    <button class="btn-student-cancel btn btn--secondary btn--sm" aria-label="Скасувати редагування"><i class="fas fa-times" aria-hidden="true"></i></button>`
 
   const input = labelEl.querySelector<HTMLInputElement>('.student-edit-input')!
   input.focus()
@@ -783,13 +789,13 @@ function renderRegistrations(registrations: EventRegistration[]) {
 
     const isCancellable = reg.status === 'registered'
     row.innerHTML = `
-      <div style="flex:1;min-width:0">
+      <div class="teacher-info-card__main">
         <p class="teacher-info-card__title">${esc(reg.className ?? 'Клас')} · ${esc(reg.eventTitle ?? 'Подія')}</p>
         <p class="teacher-info-card__meta">${esc(String(reg.grade))} клас · ${esc(String(reg.participantsCount))} учасників · ${paymentLabel(reg.paymentStatus)} · ${codeStatus}</p>
       </div>
-      <div style="display:flex;align-items:center;gap:var(--sp-2);flex-shrink:0">
+      <div class="teacher-info-card__actions">
         <span class="teacher-info-card__badge">${reg.status === 'cancelled' ? '❌ Скасовано' : esc(reg.status)}</span>
-        ${isCancellable ? `<button class="btn-cancel-reg btn-adm-danger btn-sm" data-id="${esc(reg.id)}" aria-label="Скасувати реєстрацію">
+        ${isCancellable ? `<button class="btn-cancel-reg btn btn--danger btn--sm" data-id="${esc(reg.id)}" aria-label="Скасувати реєстрацію">
           <i class="fas fa-times" aria-hidden="true"></i>
         </button>` : ''}
       </div>`
@@ -805,11 +811,10 @@ function renderRegistrations(registrations: EventRegistration[]) {
 
       const row = document.createElement('div')
       row.className = 'cancel-confirm-row'
-      row.style.cssText = 'display:flex;align-items:center;gap:var(--sp-2);margin-top:var(--sp-2);flex-wrap:wrap'
       row.innerHTML = `
-        <span style="font-size:var(--font-size-sm);color:var(--clr-text-muted)">Скасувати? Невикористані коди буде видалено.</span>
-        <button class="btn-cancel-confirm btn-adm-danger btn-sm">Так, скасувати</button>
-        <button class="btn-cancel-abort btn-secondary btn-sm">Ні</button>`
+        <span class="cancel-confirm-row__text">Скасувати? Невикористані коди буде видалено.</span>
+        <button class="btn-cancel-confirm btn btn--danger btn--sm">Так, скасувати</button>
+        <button class="btn-cancel-abort btn btn--secondary btn--sm">Ні</button>`
       card.appendChild(row)
 
       row.querySelector('.btn-cancel-abort')!.addEventListener('click', () => row.remove())
@@ -824,7 +829,7 @@ function renderRegistrations(registrations: EventRegistration[]) {
           confirmBtn.disabled = false
           confirmBtn.textContent = 'Так, скасувати'
           const msg = document.createElement('span')
-          msg.style.cssText = 'color:#dc2626;font-size:var(--font-size-xs)'
+          msg.className = 'cancel-confirm-row__error'
           msg.textContent = (err as Error).message
           row.appendChild(msg)
         }
@@ -863,7 +868,7 @@ function currentFilterRegId(): string | undefined {
 async function loadCodes(registrationId?: string) {
   const { codes } = await getTeacherCodes(registrationId)
   if (!codes.length) {
-    codesList.innerHTML = '<p class="empty-state__sub" style="text-align:center;padding:var(--sp-4)">Кодів немає для цієї реєстрації.</p>'
+    codesList.innerHTML = '<p class="empty-state__sub empty-state__sub--centered">Кодів немає для цієї реєстрації.</p>'
     copyAllBtn.classList.add('hidden')
     return
   }
@@ -933,7 +938,7 @@ function showDashboard(nameOrEmail: string) {
   authSection.classList.add('hidden')
   dashboardSection.classList.remove('hidden')
   teacherEmailDisplay.textContent = nameOrEmail
-  ;(teacherEmailDisplay as HTMLElement).style.display = ''
+  teacherEmailDisplay.classList.remove('hidden')
   document.body.classList.add('teacher-dashboard-active')
   $maybe('auth-back-link')?.classList.add('hidden')
 }
@@ -980,15 +985,15 @@ function renderSchoolLeaderboard(participants: { avatar: string; nickname: strin
   const board = $maybe('school-leaderboard')
   if (!board) return
   if (!participants.length) {
-    board.innerHTML = '<p style="color:#64748b;">Поки нікого. Учні вводять код на сторінці «Шкільний режим».</p>'
+    board.innerHTML = '<p class="school-leaderboard__empty">Поки нікого. Учні вводять код на сторінці «Шкільний режим».</p>'
     return
   }
   board.innerHTML = participants.map((p, i) => `
-    <div style="display:flex; align-items:center; gap:12px; padding:8px 12px; border-bottom:1px solid #e2e8f0;">
-      <span style="font-weight:800; width:24px;">${i + 1}</span>
-      <img src="${esc(avatarSrc(p.avatar))}" alt="${esc(avatarLabel(p.avatar))}" width="32" height="32" style="border-radius:8px;" />
-      <span style="flex:1; font-weight:600;">${esc(p.nickname)}</span>
-      <span style="font-weight:800;">${p.score}</span>
+    <div class="school-leaderboard__row">
+      <span class="school-leaderboard__rank">${i + 1}</span>
+      <img class="school-leaderboard__avatar" src="${esc(avatarSrc(p.avatar))}" alt="${esc(avatarLabel(p.avatar))}" width="32" height="32" />
+      <span class="school-leaderboard__name">${esc(p.nickname)}</span>
+      <span class="school-leaderboard__score">${p.score}</span>
     </div>`).join('')
 }
 
@@ -1003,15 +1008,13 @@ function renderSchoolTopicStats(topicStats: SchoolTopicStat[]) {
   rows.sort((a, b) => (a.correct / a.total) - (b.correct / b.total))
   box.innerHTML = rows.map(s => {
     const pct = Math.round((s.correct / s.total) * 100)
-    const color = pct < 50 ? '#ef4444' : pct < 75 ? '#f59e0b' : '#22c55e'
+    const level = pct < 50 ? 'low' : pct < 75 ? 'medium' : 'high'
     const label = s.topic ? (TOPIC_LABELS[s.topic] ?? s.topic) : 'Без теми'
     return `
-      <div style="display:flex; align-items:center; gap:12px; padding:6px 0;">
-        <span style="flex:1; font-weight:600;">${esc(label)}</span>
-        <div style="flex:1.4; height:10px; background:#e2e8f0; border-radius:6px; overflow:hidden;">
-          <div style="width:${pct}%; height:100%; background:${color};"></div>
-        </div>
-        <span style="width:88px; text-align:right; color:#64748b; font-size:0.85rem;">${pct}% · ${s.correct}/${s.total}</span>
+      <div class="school-topic-stat">
+        <span class="school-topic-stat__label">${esc(label)}</span>
+        <progress class="school-topic-stat__bar school-topic-stat__bar--${level}" value="${pct}" max="100" aria-label="${esc(label)}: ${pct}%"></progress>
+        <span class="school-topic-stat__score">${pct}% · ${s.correct}/${s.total}</span>
       </div>`
   }).join('')
   wrap.classList.remove('hidden')
@@ -1036,6 +1039,7 @@ async function refreshSchoolSession() {
 
 function startSchoolPolling() {
   if (schoolPollTimer) clearInterval(schoolPollTimer)
+  void refreshSchoolSession()
   schoolPollTimer = setInterval(refreshSchoolSession, 5000)
 }
 

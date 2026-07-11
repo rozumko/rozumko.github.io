@@ -344,38 +344,38 @@ function renderReport(report: HomeDemoReport) {
   const box = $('demo-report-body')
   box.innerHTML = ''
 
-  const add = (parent: HTMLElement, tag: string, text: string, style?: string) => {
+  const add = (parent: HTMLElement, tag: string, text: string, className?: string) => {
     const el = document.createElement(tag)
     el.textContent = text
-    if (style) el.setAttribute('style', style)
+    if (className) el.className = className
     parent.appendChild(el)
     return el
   }
 
-  add(box, 'p', `Виконано: ${report.correct} з ${report.total} завдань.`, 'font-weight:700;')
+  add(box, 'p', `Виконано: ${report.correct} з ${report.total} завдань.`, 'demo-report__summary')
 
   if (report.strengths.length) {
-    add(box, 'p', 'Що виходить добре:', 'font-weight:700; margin-top:12px;')
+    add(box, 'p', 'Що виходить добре:', 'demo-report__heading')
     const ul = document.createElement('ul')
     ul.className = 'doc-list'
     report.strengths.forEach(s => add(ul, 'li', s))
     box.appendChild(ul)
   }
   if (report.struggles.length) {
-    add(box, 'p', 'Зона росту:', 'font-weight:700; margin-top:12px;')
+    add(box, 'p', 'Зона росту:', 'demo-report__heading')
     const ul = document.createElement('ul')
     ul.className = 'doc-list'
     report.struggles.forEach(s => add(ul, 'li', s))
     box.appendChild(ul)
   }
   if (report.patterns.length) {
-    add(box, 'p', 'Що ми помітили:', 'font-weight:700; margin-top:12px;')
+    add(box, 'p', 'Що ми помітили:', 'demo-report__heading')
     const ul = document.createElement('ul')
     ul.className = 'doc-list'
     report.patterns.forEach(p => add(ul, 'li', p.evidence))
     box.appendChild(ul)
   }
-  add(box, 'p', `Наступний крок: ${report.nextMission.reason}`, 'margin-top:12px;')
+  add(box, 'p', `Наступний крок: ${report.nextMission.reason}`, 'demo-report__next')
 }
 
 // ── Інтро: вибір класу і напряму ──────────────────────────────
@@ -383,8 +383,6 @@ function highlightGrade(grade: number) {
   document.querySelectorAll<HTMLElement>('.home-grade-btn').forEach(btn => {
     const active = Number(btn.dataset['grade']) === grade
     btn.setAttribute('aria-pressed', String(active))
-    btn.style.outline = active ? '3px solid #3b82f6' : ''
-    btn.style.outlineOffset = active ? '2px' : ''
   })
   const pathCard = $maybe<HTMLAnchorElement>('home-path-card')
   const pathMeta = $maybe('home-path-card-meta')

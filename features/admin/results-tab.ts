@@ -29,7 +29,7 @@ export async function loadResults() {
     list.innerHTML = ''
     results.forEach(r => list.appendChild(buildResultRow(r)))
   } catch (err) {
-    list.innerHTML = `<p style="color:var(--clr-danger);padding:var(--sp-4)">${esc((err as Error).message)}</p>`
+    list.innerHTML = `<p class="admin-list-error">${esc((err as Error).message)}</p>`
   }
 }
 
@@ -51,7 +51,7 @@ function buildResultRow(r: Attempt): HTMLElement {
     </div>
     <div class="admin-row__actions">
       <p class="admin-row__score">${esc(String(r.score ?? '?'))}<span>/${esc(String(r.totalQ ?? '?'))}</span></p>
-      ${finished ? `<button class="btn-adm-slate btn-sm btn-cert">
+      ${finished ? `<button class="btn-adm-slate btn--sm btn-cert">
         <i class="fas fa-certificate"></i> ${award?.kind === 'diploma' ? 'Диплом' : 'Сертифікат'}
       </button>` : ''}
     </div>`
