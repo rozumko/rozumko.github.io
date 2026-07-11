@@ -153,13 +153,21 @@ export function createProgressStore(storage: StorageLike, profileKey = 'local') 
     save(state)
   }
 
+  /** Видаляє одну точку та всі її записи з черги (наприклад, після успішного імпорту). */
+  function clearPoint(pointId: string) {
+    const state = load()
+    delete state.points[pointId]
+    state.queue = state.queue.filter(q => q.pointId !== pointId)
+    save(state)
+  }
+
   /** Повне скидання прогресу профілю (кнопка «почати заново» тощо). */
   function reset() {
     memoryState = emptyState()
     storage.removeItem(storageKey)
   }
 
-  return { recordResult, recordResults, getPoint, isCompleted, completedIds, pendingQueue, ackQueue, mergeServer, reset }
+  return { recordResult, recordResults, getPoint, isCompleted, completedIds, pendingQueue, ackQueue, mergeServer, clearPoint, reset }
 }
 
 export type ProgressStore = ReturnType<typeof createProgressStore>

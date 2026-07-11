@@ -120,6 +120,28 @@ test('mergeServer: авторитетний серверний знімок за
   assert.equal(store.isCompleted('p9'), true)
 })
 
+test('clearPoint: видаляє точку та її черговий запис, не чіпає решту', () => {
+  const store = createProgressStore(fakeStorage())
+  store.recordResult('p1', result('2026-07-10T10:00:00Z'))
+  store.recordResult('p2', result('2026-07-10T10:05:00Z'))
+  store.clearPoint('p1')
+  assert.equal(store.isCompleted('p1'), false)
+  assert.equal(store.isCompleted('p2'), true)
+  const queue = store.pendingQueue()
+  assert.equal(queue.length, 1)
+  assert.equal(queue[0].pointId, 'p2')
+})
+
+test('clearPoint: не зачіпає прогрес інших профілів у тому самому storage', () => {
+  const storage = fakeStorage()
+  const a = createProgressStore(storage, 'child-a')
+  const b = createProgressStore(storage, 'local')
+  b.recordResult('p1', result('2026-07-10T10:00:00Z'))
+  b.clearPoint('p1')
+  a.recordResult('p1', result('2026-07-10T10:00:00Z'))
+  assert.equal(a.isCompleted('p1'), true)
+})
+
 test('reset: скидає прогрес лише свого профілю', () => {
   const storage = fakeStorage()
   const a = createProgressStore(storage, 'child-a')

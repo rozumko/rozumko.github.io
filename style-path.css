@@ -13,6 +13,29 @@
   overflow: visible;
 }
 
+.path-parent-gate {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--sp-4);
+  width: min(100%, 42rem);
+  margin: var(--sp-5) auto 0;
+  padding: var(--sp-5);
+  border: 2px solid var(--clr-primary);
+  border-radius: 20px;
+  background: #eff6ff;
+  text-align: left;
+}
+.path-parent-gate.hidden { display: none; }
+.path-parent-gate__icon { font-size: 2.4rem; }
+.path-parent-gate h2 { margin: 0 0 4px; font-size: 1.2rem; }
+.path-parent-gate p { margin: 0 0 var(--sp-3); color: var(--clr-text-muted); line-height: 1.45; }
+.path-parent-gate .kid-action { display: inline-block; text-decoration: none; }
+
+@media (max-width: 520px) {
+  .path-parent-gate { grid-template-columns: 1fr; text-align: center; }
+}
+
 .path-map__edges {
   position: absolute;
   inset: 0;

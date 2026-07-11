@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Карта пригод — Розумко</title>
-  <meta name="description" content="Навчальний шлях Розумко для 2 класу: точки з іграми, головоломками та місіями з інформатики, мислення й основ ШІ." />
+  <meta name="description" content="Навчальні шляхи Розумко для 1–4 класів: точки з іграми, головоломками та місіями з інформатики, мислення й основ ШІ." />
   <meta name="robots" content="noindex" />
   <link rel="canonical" href="https://rozumko.com/path.html" />
 
@@ -32,6 +32,14 @@
         <svg id="path-edges" class="path-map__edges" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
         <div id="path-nodes" class="path-map__nodes" role="group" aria-label="Точки шляху"></div>
       </div>
+      <section id="path-parent-gate" class="path-parent-gate hidden" aria-labelledby="path-parent-gate-title">
+        <span class="path-parent-gate__icon" aria-hidden="true">🔐</span>
+        <div>
+          <h2 id="path-parent-gate-title">Перша точка пройдена!</h2>
+          <p>Поклич дорослого, щоб зберегти результат і відкрити наступні пригоди.</p>
+          <a id="path-parent-gate-link" class="kid-action" href="parent.html">Зберегти мій шлях →</a>
+        </div>
+      </section>
       <p id="path-error" class="quiz-feedback quiz-feedback--incorrect app-error" aria-live="polite"></p>
     </section>
 

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, type Page } from '@playwright/test'
 import { INFO_SORT_LEVELS } from '../../features/games/sorting-data'
 
 // Карта пригод (path.html): вузли, поступове відкривання, відсутність
@@ -15,8 +15,72 @@ function progressWith(pointIds: string[]) {
   return JSON.stringify({ version: 1, points, queue: [] })
 }
 
+async function expectNoNodeOverlap(page: Page) {
+  const boxes = await page.locator('.path-node').evaluateAll(nodes => nodes.map(node => {
+    const box = node.getBoundingClientRect()
+    return { label: node.getAttribute('aria-label'), left: box.left, right: box.right, top: box.top, bottom: box.bottom }
+  }))
+  for (let i = 0; i < boxes.length; i += 1) {
+    for (let j = i + 1; j < boxes.length; j += 1) {
+      const overlapWidth = Math.min(boxes[i].right, boxes[j].right) - Math.max(boxes[i].left, boxes[j].left)
+      const overlapHeight = Math.min(boxes[i].bottom, boxes[j].bottom) - Math.max(boxes[i].top, boxes[j].top)
+      expect(overlapWidth > 0 && overlapHeight > 0, `${boxes[i].label} overlaps ${boxes[j].label}`).toBe(false)
+    }
+  }
+}
+
+test('grade 1 has its own nine-point path with one visual starting activity', async ({ page }) => {
+  await page.goto('/path.html?grade=1')
+  await expect(page.locator('#path-subtitle')).toContainText('Шлях 1 класу')
+  await expect(page.locator('.path-node')).toHaveCount(9)
+  await expect(page.locator('.path-node--open')).toHaveCount(1)
+  await expect(page.locator('.path-node--open')).toHaveAccessibleName(/Знайди спільну ознаку/)
+  await expect(page.locator('.path-node--locked')).toHaveCount(8)
+})
+
+test('grade-1 anonymous progress stops after the first point and asks for an adult', async ({ page }) => {
+  await page.addInitScript(([key, value]) => localStorage.setItem(key, value),
+    [STORAGE_KEY, progressWith(['g1-sort-start'])] as const)
+  await page.goto('/path.html?grade=1')
+  await expect(page.locator('.path-node--done')).toHaveCount(1)
+  await expect(page.locator('.path-node--open')).toHaveCount(0)
+  await expect(page.locator('#path-parent-gate')).toBeVisible()
+  await expect(page.locator('#path-parent-gate-link')).toHaveAttribute('href', 'parent.html?continuePath=grade-1')
+  await expect(page.getByRole('button', { name: /Свято трьох суперсил/ })).toBeDisabled()
+})
+
+for (const path of [
+  { grade: 3, start: 'g3-algorithms-start', title: 'Команда за командою', final: 'Експедиція трьох напрямів' },
+  { grade: 4, start: 'g4-safety-start', title: 'Захисти цифровий світ', final: 'Фінал цифрового дослідника' },
+]) {
+  test(`grade ${path.grade} has its own nine-point branching path`, async ({ page }) => {
+    await page.goto(`/path.html?grade=${path.grade}`)
+    await expect(page.locator('#path-subtitle')).toContainText(`Шлях ${path.grade} класу`)
+    await expect(page.locator('.path-node')).toHaveCount(9)
+    await expect(page.locator('.path-node--open')).toHaveCount(1)
+    await expect(page.locator('.path-node--open')).toHaveAccessibleName(new RegExp(path.title))
+
+    await page.evaluate(([key, value]) => localStorage.setItem(key, value),
+      [STORAGE_KEY, progressWith([path.start])])
+    await page.reload()
+    await expect(page.locator('.path-node--done')).toHaveCount(1)
+    await expect(page.locator('.path-node--open')).toHaveCount(0)
+    await expect(page.locator('#path-parent-gate')).toBeVisible()
+    await expect(page.getByRole('button', { name: new RegExp(path.final) })).toBeDisabled()
+  })
+
+}
+
+test('unknown grade shows placeholder, not a fallback map', async ({ page }) => {
+  await page.goto('/path.html?grade=9')
+  await expect(page.locator('#path-subtitle')).toContainText('ще готується')
+  await expect(page.locator('#path-map')).not.toBeVisible()
+  await expect(page.locator('.path-node')).toHaveCount(0)
+  await expect(page.getByRole('link', { name: '← На головну' })).toBeVisible()
+})
+
 test('свіжий профіль: 9 точок, відкрита лише стартова', async ({ page }) => {
-  await page.goto('/path.html')
+  await page.goto('/path.html?grade=2')
   const nodes = page.locator('.path-node')
   await expect(nodes).toHaveCount(9)
   await expect(page.locator('.path-node--open')).toHaveCount(1)
@@ -24,34 +88,46 @@ test('свіжий профіль: 9 точок, відкрита лише ст�
   await expect(page.locator('.path-node--locked')).toHaveCount(8)
 })
 
-test('виконана стартова точка відкриває гілки (сортування, факт/думка, збірка)', async ({ page }) => {
+test('анонімна стартова точка показує adult gate замість відкритих гілок', async ({ page }) => {
   await page.addInitScript(([key, value]) => localStorage.setItem(key, value),
     [STORAGE_KEY, progressWith(['g2-info-start'])] as const)
-  await page.goto('/path.html')
+  await page.goto('/path.html?grade=2')
   await expect(page.locator('.path-node--done')).toHaveCount(1)
-  await expect(page.locator('.path-node--open')).toHaveCount(3)
+  await expect(page.locator('.path-node--open')).toHaveCount(0)
+  await expect(page.locator('#path-parent-gate')).toBeVisible()
   const done = page.locator('.path-node--done')
   await expect(done).toHaveAccessibleName(/виконано, 2 з 3 зірок/)
 })
 
-test('фінал зачинений, поки не пройдено всі три гілки', async ({ page }) => {
+test('grade-1 completion does not block grade-2 anonymous start', async ({ page }) => {
+  // Progress of grade-1 first point must not trigger the adult gate on the grade-2 map.
+  await page.addInitScript(([key, value]) => localStorage.setItem(key, value),
+    [STORAGE_KEY, progressWith(['g1-sort-start'])] as const)
+  await page.goto('/path.html?grade=2')
+  await expect(page.locator('#path-parent-gate')).toBeHidden()
+  await expect(page.locator('.path-node--open')).toHaveCount(1)
+  await expect(page.locator('.path-node--open')).toHaveAccessibleName(/Як ми отримуємо інформацію/)
+})
+
+test('anonymous local history cannot bypass the adult gate', async ({ page }) => {
   await page.addInitScript(([key, value]) => localStorage.setItem(key, value),
     [STORAGE_KEY, progressWith([
       'g2-info-start', 'g2-ct-multisort', 'g2-fact-opinion',
       'g2-ct-patterns', 'g2-ai-perception', 'g2-digital-safety',
     ])] as const)
-  await page.goto('/path.html')
+  await page.goto('/path.html?grade=2')
   const final = page.getByRole('button', { name: /Фінальна місія/ })
   await expect(final).toBeDisabled()
-  // Проходимо останню передумову — фінал відкривається. (addInitScript, бо
-  // init-скрипти повторюються на reload і перетерли б localStorage.setItem.)
+  // Even a legacy local history with all prerequisites cannot unlock more
+  // content without an explicitly selected parent-owned profile.
   await page.addInitScript(([key, value]) => localStorage.setItem(key, value),
     [STORAGE_KEY, progressWith([
       'g2-info-start', 'g2-ct-multisort', 'g2-fact-opinion',
       'g2-ct-patterns', 'g2-ai-perception', 'g2-digital-safety', 'g2-ct-algorithms',
     ])] as const)
   await page.reload()
-  await expect(page.getByRole('button', { name: /Фінальна місія.*доступно/ })).toBeEnabled()
+  await expect(page.getByRole('button', { name: /Фінальна місія/ })).toBeDisabled()
+  await expect(page.locator('#path-parent-gate')).toBeVisible()
 })
 
 for (const vp of [{ name: 'mobile-375', width: 375, height: 812 }, { name: 'desktop-1280', width: 1280, height: 800 }]) {
@@ -65,23 +141,15 @@ for (const vp of [{ name: 'mobile-375', width: 375, height: 812 }, { name: 'desk
   })
 }
 
-test('mobile map nodes do not overlap', async ({ page }) => {
-  await page.setViewportSize({ width: 375, height: 812 })
-  await page.goto('/path.html?grade=2')
-  const boxes = await page.locator('.path-node').evaluateAll(nodes => nodes.map(node => {
-    const box = node.getBoundingClientRect()
-    return { label: node.getAttribute('aria-label'), left: box.left, right: box.right, top: box.top, bottom: box.bottom }
-  }))
-  for (let i = 0; i < boxes.length; i += 1) {
-    for (let j = i + 1; j < boxes.length; j += 1) {
-      const overlapWidth = Math.min(boxes[i].right, boxes[j].right) - Math.max(boxes[i].left, boxes[j].left)
-      const overlapHeight = Math.min(boxes[i].bottom, boxes[j].bottom) - Math.max(boxes[i].top, boxes[j].top)
-      expect(overlapWidth > 0 && overlapHeight > 0, `${boxes[i].label} overlaps ${boxes[j].label}`).toBe(false)
-    }
-  }
-})
+for (const grade of [1, 2, 3, 4]) {
+  test(`grade ${grade} mobile map nodes do not overlap`, async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 })
+    await page.goto(`/path.html?grade=${grade}`)
+    await expectNoNodeOverlap(page)
+  })
+}
 
-test('a real activity completes the point, persists progress and opens branches', async ({ page }) => {
+test('a real anonymous activity persists the first point and shows the adult gate', async ({ page }) => {
   const binByItem = new Map<string, string>()
   for (const level of INFO_SORT_LEVELS) {
     const labels = new Map(level.bins.map(bin => [bin.id, bin.label]))
@@ -106,7 +174,8 @@ test('a real activity completes the point, persists progress and opens branches'
   await expect(page.locator('#path-done')).toBeVisible()
   await page.locator('#path-done-map-btn').click()
   await expect(page.locator('.path-node--done')).toHaveCount(1)
-  await expect(page.locator('.path-node--open')).toHaveCount(3)
+  await expect(page.locator('.path-node--open')).toHaveCount(0)
+  await expect(page.locator('#path-parent-gate')).toBeVisible()
   const stored = await page.evaluate(key => localStorage.getItem(key), STORAGE_KEY)
   expect(stored).toContain('g2-info-start')
 })

@@ -32,6 +32,26 @@ interface CatalogPath {
 // Backend allowlist for persisted progress. The browser cannot invent point or
 // activity versions. Keep this catalog aligned with features/path/path-data.ts.
 export const HOME_PATH_CATALOG: Record<string, CatalogPath> = {
+  'grade-1': {
+    grade: 1,
+    points: {
+      'g1-sort-start': { unlockAfter: [], requiredActivities: { 'path:g1-sort-start:attributes': 1 } },
+      'g1-info-senses': { unlockAfter: ['g1-sort-start'], requiredActivities: { 'path:g1-info-senses:infosort': 1 } },
+      'g1-ct-patterns': { unlockAfter: ['g1-sort-start'], requiredActivities: { 'path:g1-ct-patterns:patterns-puzzles': 1 } },
+      'g1-fact-opinion': { unlockAfter: ['g1-sort-start'], requiredActivities: { 'path:g1-fact-opinion:fact-opinion-l1': 1 } },
+      'g1-ct-algorithms': { unlockAfter: ['g1-ct-patterns'], requiredActivities: { 'path:g1-ct-algorithms:algorithms-mission': 1 } },
+      'g1-ai-intro': { unlockAfter: ['g1-fact-opinion'], requiredActivities: { 'path:g1-ai-intro:what-is-ai-mission': 1 } },
+      'g1-digital-safety': { unlockAfter: ['g1-info-senses'], requiredActivities: { 'path:g1-digital-safety:digital-safety-mission': 1 } },
+      'g1-logic-bridge': {
+        unlockAfter: ['g1-ct-algorithms', 'g1-info-senses'],
+        requiredActivities: { 'path:g1-logic-bridge:logic-puzzles': 1 },
+      },
+      'g1-final': {
+        unlockAfter: ['g1-logic-bridge', 'g1-ai-intro', 'g1-digital-safety'],
+        requiredActivities: { 'path:g1-final:final-three-tracks': 1 },
+      },
+    },
+  },
   'grade-2': {
     grade: 2,
     points: {
@@ -73,6 +93,46 @@ export const HOME_PATH_CATALOG: Record<string, CatalogPath> = {
       'g2-final': {
         unlockAfter: ['g2-ct-algorithms', 'g2-ai-perception', 'g2-digital-safety'],
         requiredActivities: { 'path:g2-final:final-three-tracks': 1 },
+      },
+    },
+  },
+  'grade-3': {
+    grade: 3,
+    points: {
+      'g3-algorithms-start': { unlockAfter: [], requiredActivities: { 'path:g3-algorithms-start:algorithms-mission': 1 } },
+      'g3-decomposition': { unlockAfter: ['g3-algorithms-start'], requiredActivities: { 'path:g3-decomposition:decomposition-mission': 1 } },
+      'g3-data': { unlockAfter: ['g3-algorithms-start'], requiredActivities: { 'path:g3-data:data-mission': 1 } },
+      'g3-ai-learning': { unlockAfter: ['g3-algorithms-start'], requiredActivities: { 'path:g3-ai-learning:ai-learning-mission': 1 } },
+      'g3-repetition': { unlockAfter: ['g3-decomposition'], requiredActivities: { 'path:g3-repetition:repetition-mission': 1 } },
+      'g3-assembly': { unlockAfter: ['g3-data'], requiredActivities: { 'path:g3-assembly:assembly-hardware': 1 } },
+      'g3-ai-perception': { unlockAfter: ['g3-ai-learning'], requiredActivities: { 'path:g3-ai-perception:ai-perception-mission': 1 } },
+      'g3-debug-bridge': {
+        unlockAfter: ['g3-repetition', 'g3-assembly'],
+        requiredActivities: { 'path:g3-debug-bridge:debug-puzzles': 1 },
+      },
+      'g3-final': {
+        unlockAfter: ['g3-debug-bridge', 'g3-ai-perception'],
+        requiredActivities: { 'path:g3-final:final-three-tracks': 1 },
+      },
+    },
+  },
+  'grade-4': {
+    grade: 4,
+    points: {
+      'g4-safety-start': { unlockAfter: [], requiredActivities: { 'path:g4-safety-start:digital-safety-mission': 1 } },
+      'g4-networks': { unlockAfter: ['g4-safety-start'], requiredActivities: { 'path:g4-networks:networks-mission': 1 } },
+      'g4-efficiency': { unlockAfter: ['g4-safety-start'], requiredActivities: { 'path:g4-efficiency:efficiency-mission': 1 } },
+      'g4-information-trust': { unlockAfter: ['g4-safety-start'], requiredActivities: { 'path:g4-information-trust:fact-opinion-l2': 1 } },
+      'g4-software': { unlockAfter: ['g4-networks'], requiredActivities: { 'path:g4-software:assembly-software': 1 } },
+      'g4-debugging': { unlockAfter: ['g4-efficiency'], requiredActivities: { 'path:g4-debugging:debug-puzzles': 1 } },
+      'g4-ai-ethics': { unlockAfter: ['g4-information-trust'], requiredActivities: { 'path:g4-ai-ethics:ai-ethics-mission': 1 } },
+      'g4-data-ai-bridge': {
+        unlockAfter: ['g4-software', 'g4-information-trust'],
+        requiredActivities: { 'path:g4-data-ai-bridge:data-ai-mission': 1 },
+      },
+      'g4-final': {
+        unlockAfter: ['g4-data-ai-bridge', 'g4-debugging', 'g4-ai-ethics'],
+        requiredActivities: { 'path:g4-final:final-three-tracks': 1 },
       },
     },
   },

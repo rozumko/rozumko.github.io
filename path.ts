@@ -10,7 +10,7 @@ import { HARDWARE_SCENARIO, SOFTWARE_SCENARIO } from './features/games/simulator
 import { runMission, type MissionElements } from './features/missions/mission-runner.js'
 import { loadStaticQuestions } from './features/missions/static-questions.js'
 import {
-  PATHS_BY_GRADE, GRADE2_PATH, isUnlocked,
+  PATHS_BY_GRADE, isUnlocked,
   type PathPoint, type PathActivity, type PathActivityStep,
 } from './features/path/path-data.js'
 import { createProgressStore } from './features/path/progress-store.js'
@@ -24,7 +24,7 @@ import {
 } from './features/path/activity-result.js'
 import { getSavedGrade } from './utils/grade.js'
 
-// Карта пригод (Home Mode, пілот 2 класу). Прогрес завжди пишеться локально;
+// Home learning paths. Progress is always written locally;
 // для явно вибраного батьком профілю черга синхронізується з backend snapshot.
 // Місії тут practice-режим (ключі в бандлі → локальний фідбек, як у School).
 
@@ -35,12 +35,13 @@ const SORTING_GAMES: Record<string, SortingLevel[]> = {
 }
 
 const savedGrade = getSavedGrade()
-const queryGrade = Number(new URLSearchParams(window.location.search).get('grade'))
-const requestedGrade = Number.isInteger(queryGrade) && queryGrade >= 1 && queryGrade <= 4
+const queryGradeRaw = new URLSearchParams(window.location.search).get('grade')
+const queryGrade = queryGradeRaw !== null ? Number(queryGradeRaw) : null
+const requestedGrade = queryGrade !== null && Number.isInteger(queryGrade) && queryGrade > 0
   ? queryGrade
   : savedGrade
 const requestedMap = PATHS_BY_GRADE[requestedGrade]
-const map = requestedMap ?? GRADE2_PATH
+const map = requestedMap ?? PATHS_BY_GRADE[savedGrade]!
 const activeChildProfileId = getParentSession()?.activeChildProfileId ?? null
 const store = createProgressStore(window.localStorage, activeChildProfileId ?? 'local')
 let syncInFlight: Promise<void> = Promise.resolve()
@@ -68,6 +69,8 @@ const puzzlesRoot  = $('path-puzzles-root')
 const foRoot       = $('path-fo-root')
 const missionQuiz  = $('mission-quiz')
 const doneEl       = $('path-done')
+const parentGate   = $('path-parent-gate')
+const parentGateLink = $<HTMLAnchorElement>('path-parent-gate-link')
 
 const els: MissionElements = {
   progressText: $('quiz-progress-text'),
@@ -84,9 +87,20 @@ const els: MissionElements = {
 function show(el: HTMLElement) { el.classList.remove('hidden') }
 function hide(el: HTMLElement) { el.classList.add('hidden') }
 
-$('path-subtitle').textContent = requestedMap
-  ? `${map.title} · проходь точки — відкривай нові!`
-  : `Карта ${requestedGrade} класу ще готується · показуємо пілот для 2 класу`
+if (!requestedMap) {
+  $('path-subtitle').textContent = `Карта ${requestedGrade} класу ще готується — повертайся незабаром!`
+  document.getElementById('path-map')!.style.display = 'none'
+  parentGate.classList.add('hidden')
+  const homeLink = document.createElement('a')
+  homeLink.href = 'home.html'
+  homeLink.className = 'kid-action'
+  homeLink.style.marginTop = 'var(--sp-6)'
+  homeLink.textContent = '← На головну'
+  $('path-map-screen').appendChild(homeLink)
+} else {
+  $('path-subtitle').textContent = `${map.title} · проходь точки — відкривай нові!`
+  parentGateLink.href = `parent.html?continuePath=grade-${map.grade}`
+}
 
 // ── Рендер карти ──────────────────────────────────────────────
 function trackClass(p: PathPoint): string {
@@ -100,6 +114,10 @@ function trackClass(p: PathPoint): string {
 
 function renderMap() {
   const completed = new Set(store.completedIds())
+  const mapPointIds = new Set(map.points.map(p => p.id))
+  const completedInMap = [...completed].filter(id => mapPointIds.has(id))
+  const anonymousGate = !activeChildProfileId && completedInMap.length > 0
+  parentGate.classList.toggle('hidden', !anonymousGate)
 
   // Ребра: від кожної передумови до точки. Координати = відсотки viewBox 100×100.
   edgesSvg.innerHTML = map.points.flatMap(p =>
@@ -116,7 +134,7 @@ function renderMap() {
   nodesBox.innerHTML = ''
   for (const p of map.points) {
     const done = completed.has(p.id)
-    const open = isUnlocked(p, completed)
+    const open = !anonymousGate && isUnlocked(p, completed)
     const stars = store.getPoint(p.id)?.bestStars ?? 0
 
     const btn = document.createElement('button')
@@ -294,7 +312,9 @@ function finishPoint(p: PathPoint, results: ActivityResult[], run: number) {
   const unlockedNow = map.points.filter(x =>
     !store.isCompleted(x.id) && x.unlockAfter.includes(p.id) && isUnlocked(x, new Set(store.completedIds())),
   )
-  $('path-done-message').textContent = unlockedNow.length
+  $('path-done-message').textContent = !activeChildProfileId
+    ? 'Точку пройдено! Поклич дорослого, щоб зберегти шлях і відкрити наступні пригоди.'
+    : unlockedNow.length
     ? `Точку пройдено! Відкрилось: ${unlockedNow.map(x => `${x.icon} ${x.title}`).join(', ')}`
     : 'Точку пройдено! Молодець!'
   show(doneEl)
@@ -326,5 +346,7 @@ function backToMap() {
 $('path-back-btn').addEventListener('click', backToMap)
 $('path-done-map-btn').addEventListener('click', backToMap)
 
-renderMap()
-schedulePathSync()
+if (requestedMap) {
+  renderMap()
+  schedulePathSync()
+}

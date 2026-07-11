@@ -37,6 +37,34 @@ test('valid completion uses the backend catalog and produces a stable event key'
   }
 })
 
+test('grade-1 path accepts its own start and keeps the final behind all branches', () => {
+  const start = validatePathCompletion(1, {
+    pathId: 'grade-1', pointId: 'g1-sort-start', results: [result('path:g1-sort-start:attributes')],
+  })
+  assert.equal(start.ok, true)
+  assert.equal(validatePathCompletion(2, {
+    pathId: 'grade-1', pointId: 'g1-sort-start', results: [result('path:g1-sort-start:attributes')],
+  }).ok, false)
+
+  const final = HOME_PATH_CATALOG['grade-1'].points['g1-final']
+  assert.equal(hasPathPrerequisites(final, ['g1-logic-bridge', 'g1-ai-intro']), false)
+  assert.equal(hasPathPrerequisites(final, ['g1-logic-bridge', 'g1-ai-intro', 'g1-digital-safety']), true)
+})
+
+for (const sample of [
+  { grade: 3, pathId: 'grade-3', pointId: 'g3-algorithms-start', activityId: 'path:g3-algorithms-start:algorithms-mission' },
+  { grade: 4, pathId: 'grade-4', pointId: 'g4-safety-start', activityId: 'path:g4-safety-start:digital-safety-mission' },
+]) {
+  test(`grade-${sample.grade} path accepts only its own catalog`, () => {
+    assert.equal(validatePathCompletion(sample.grade, {
+      pathId: sample.pathId, pointId: sample.pointId, results: [result(sample.activityId)],
+    }).ok, true)
+    assert.equal(validatePathCompletion(sample.grade === 3 ? 4 : 3, {
+      pathId: sample.pathId, pointId: sample.pointId, results: [result(sample.activityId)],
+    }).ok, false)
+  })
+}
+
 test('multi-activity point requires the exact activity set and immutable versions', () => {
   const mission = result('path:g2-ct-algorithms:algorithms-mission')
   const puzzles = result('path:g2-ct-algorithms:algorithms-puzzles', 1, '2026-07-10T10:02:00.000Z')
@@ -97,16 +125,57 @@ test('0031 schema is idempotent, constrained, RLS-protected and journaled', () =
   assert.match(journal, /"tag": "0031_add_home_path_progress"/)
 })
 
-test('backend path catalog stays aligned with the frontend point/activity ids', () => {
+test('backend catalog structurally matches frontend points, activities and graph edges', () => {
   const here = dirname(fileURLToPath(import.meta.url))
   const frontend = readFileSync(join(here, '../../../features/path/path-data.ts'), 'utf8')
-  for (const path of Object.values(HOME_PATH_CATALOG)) {
+
+  function extractUnlockAfterForPoint(pointId: string): string[] {
+    const idIdx = frontend.indexOf(`id: '${pointId}'`)
+    if (idIdx === -1) return []
+    const block = frontend.slice(idIdx, idIdx + 1400)
+    const match = block.match(/unlockAfter:\s*\[([^\]]*)\]/)
+    if (!match) return []
+    const content = match[1].trim()
+    if (!content) return []
+    return content.split(',').map(s => s.trim().replace(/^'|'$/g, '')).filter(Boolean)
+  }
+
+  function extractActivitiesForPoint(pointId: string): Record<string, number> {
+    const idIdx = frontend.indexOf(`id: '${pointId}'`)
+    assert.notEqual(idIdx, -1, `Frontend point '${pointId}' is missing`)
+    const unlockIdx = frontend.indexOf('unlockAfter:', idIdx)
+    assert.notEqual(unlockIdx, -1, `Frontend point '${pointId}' has no unlockAfter`)
+    const pointBlock = frontend.slice(idIdx, unlockIdx)
+    return Object.fromEntries(
+      [...pointBlock.matchAll(/id:\s*'([^']+)',\s*version:\s*(\d+)/g)]
+        .map(match => [`path:${pointId}:${match[1]}`, Number(match[2])]),
+    )
+  }
+
+  for (const [pathId, path] of Object.entries(HOME_PATH_CATALOG)) {
     for (const [pointId, point] of Object.entries(path.points)) {
-      assert.match(frontend, new RegExp(`id: '${pointId}'`), pointId)
-      for (const [activityId, version] of Object.entries(point.requiredActivities)) {
-        const stepId = activityId.slice(`path:${pointId}:`.length)
-        assert.match(frontend, new RegExp(`id:\\s*'${stepId}',\\s*version:\\s*${version}`), activityId)
-      }
+      const frontendDeps = extractUnlockAfterForPoint(pointId)
+      const backendDeps = [...point.unlockAfter].sort()
+      const frontendDepsSorted = [...frontendDeps].sort()
+      assert.deepEqual(
+        frontendDepsSorted,
+        backendDeps,
+        `${pathId}/${pointId}: backend unlockAfter ${JSON.stringify(backendDeps)} ≠ frontend ${JSON.stringify(frontendDepsSorted)}`,
+      )
+      assert.deepEqual(
+        extractActivitiesForPoint(pointId),
+        point.requiredActivities,
+        `${pathId}/${pointId}: required activity ids or versions differ`,
+      )
     }
+    const gradeNum = path.grade
+    const pathBlockMatch = frontend.match(new RegExp(`grade: ${gradeNum},[\\s\\S]*?(?=export const (?:GRADE|PATHS_BY_GRADE)|$)`))
+    assert.ok(pathBlockMatch, `Frontend grade-${gradeNum} path block is missing`)
+    const frontendPointIds = [...pathBlockMatch[0].matchAll(/id: '(g\d+-[^']+)'/g)].map(match => match[1]).sort()
+    assert.deepEqual(
+      frontendPointIds,
+      Object.keys(path.points).sort(),
+      `${pathId}: frontend and backend point ids differ`,
+    )
   }
 })
