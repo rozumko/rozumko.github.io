@@ -61,6 +61,8 @@ features/admin/          ← вкладки адмін-панелі (+ missions-
 features/olympiad/       ← quiz-engine
 features/missions/       ← спільний mission-runner + відбір питань (pickMissionQuestions)
 features/games/          ← ігри-сортування (sorting-game/-data) + логічні головоломки (puzzle-engine/-data) → games.html
+features/lessons/        ← мікро-уроки (lesson-runner: відео→картки→квіз; явний lessonId у точці шляху)
+features/path/           ← карта пригод Home Mode (path-data, progress-store, path-sync, activity-result)
 utils/                   ← question-renderer, focus-trap, ui
 backend/src/routes/      ← student, attempt, teacher, admin, questions
 backend/src/lib/auth.ts  ← requireAuth, requireAdmin middleware
@@ -69,6 +71,7 @@ backend/src/db/          ← Drizzle schema + migration runner
 backend/drizzle/         ← SQL-міграції (таксономія 0021, missions 0022, ігри 0023–0025, головоломки 0026)
 backend/scripts/         ← import-temp-content, export-practice-questions
 public/questions/        ← статичний practice-бандл (track/topic; npm run export:questions)
+public/lessons/          ← мікро-уроки JSON (<lessonId>.json; план — export з БД, docs/learning-path-plan.md)
 public/                  ← sw.js, manifest, favicon (статичні assets)
 ```
 

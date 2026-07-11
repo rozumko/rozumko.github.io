@@ -115,10 +115,10 @@ self.addEventListener('fetch', (event) => {
     // Навігаційні запити (HTML-сторінки): network-first
     // Якщо мережі немає — показуємо offline.html
     event.respondWith(networkFirstWithOfflineFallback(event.request));
-  } else if (url.pathname.startsWith('/questions/')) {
-    // Бандли питань — контент, що оновлюється частіше за код. Network-first:
-    // онлайн завжди свіжі питання (cache-first підсовував би старий бандл до
-    // зміни CACHE_NAME), офлайн — остання відома версія з кешу.
+  } else if (url.pathname.startsWith('/questions/') || url.pathname.startsWith('/lessons/')) {
+    // Бандли питань та мікро-уроків — контент, що оновлюється частіше за код.
+    // Network-first: онлайн завжди свіжий контент (cache-first підсовував би
+    // старий бандл до зміни CACHE_NAME), офлайн — остання відома версія з кешу.
     event.respondWith(networkFirstWithCacheFallback(event.request));
   } else {
     // Статичні ресурси (JS, CSS, зображення): cache-first

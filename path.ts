@@ -6,6 +6,8 @@ import { mountPuzzles } from './features/games/puzzle-engine.js'
 import { mountFactOpinion } from './features/games/fact-opinion-game.js'
 import { FO_LEVEL1_STATEMENTS, FO_LEVEL2_STATEMENTS } from './features/games/fact-opinion-data.js'
 import { mountSimulator } from './features/games/simulator-engine.js'
+import { mountLesson } from './features/lessons/lesson-runner.js'
+import { loadLesson } from './features/lessons/lesson-loader.js'
 import { HARDWARE_SCENARIO, SOFTWARE_SCENARIO } from './features/games/simulator-data.js'
 import { runMission, type MissionElements } from './features/missions/mission-runner.js'
 import { loadStaticQuestions } from './features/missions/static-questions.js'
@@ -19,7 +21,7 @@ import {
   getParentPathProgress, getParentSession, submitParentPathProgress,
 } from './features/api/client.js'
 import {
-  fromSortingSummary, fromPuzzleSummary, fromMissionSummary, fromGameSummary,
+  fromSortingSummary, fromPuzzleSummary, fromMissionSummary, fromGameSummary, fromLessonSummary,
   type ActivityResult, type ActivityContext,
 } from './features/path/activity-result.js'
 import { getSavedGrade } from './utils/grade.js'
@@ -64,6 +66,7 @@ const edgesSvg     = $('path-edges')
 const errorEl      = $('path-error')
 const activityEl   = $('path-activity')
 const activityBar  = $('path-activity-title')
+const lessonRoot   = $('path-lesson-root')
 const sortingRoot  = $('path-sorting-root')
 const puzzlesRoot  = $('path-puzzles-root')
 const foRoot       = $('path-fo-root')
@@ -212,17 +215,33 @@ async function startActivityStep(
   const step = steps[index]
   const a: PathActivity = step.activity
   clearActivityRoots()
-  hide(sortingRoot); hide(puzzlesRoot); hide(foRoot); hide(missionQuiz)
+  hide(lessonRoot); hide(sortingRoot); hide(puzzlesRoot); hide(foRoot); hide(missionQuiz)
   activityBar.textContent = steps.length > 1
     ? `${p.icon} ${p.title} · ${index + 1}/${steps.length}: ${step.title}`
     : `${p.icon} ${p.title}`
 
+  // Помилка наступного кроку (напр. недоступний бандл місії чи уроку) має
+  // повертати на карту, як у startPoint — інакше unhandled rejection і
+  // застиглий екран «Готуємо…».
   const complete = (result: ActivityResult) => {
     if (run !== activeRun) return
-    void startActivityStep(p, steps, index + 1, [...results, result], run)
+    startActivityStep(p, steps, index + 1, [...results, result], run).catch((err: unknown) => {
+      if (run !== activeRun) return
+      backToMap()
+      errorEl.textContent = (err as Error).message
+    })
   }
 
-  if (a.kind === 'sorting') {
+  if (a.kind === 'lesson') {
+    show(lessonRoot)
+    const lesson = await loadLesson(a.lessonId)
+    if (run !== activeRun) return
+    mountLesson(lessonRoot, lesson, {
+      // Точка вже проходилась — теорію можна пропустити (повторний візит).
+      allowSkip: store.isCompleted(p.id),
+      onComplete: s => complete(fromLessonSummary(s, activityContext(p, step))),
+    })
+  } else if (a.kind === 'sorting') {
     show(sortingRoot)
     mountSortingGame(sortingRoot, SORTING_GAMES[a.game], {
       onComplete: s => complete(fromSortingSummary(s, activityContext(p, step))),
@@ -321,6 +340,7 @@ function finishPoint(p: PathPoint, results: ActivityResult[], run: number) {
 }
 
 function clearActivityRoots() {
+  lessonRoot.innerHTML = ''
   sortingRoot.innerHTML = ''
   puzzlesRoot.innerHTML = ''
   foRoot.innerHTML = ''

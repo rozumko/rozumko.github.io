@@ -1,5 +1,6 @@
 import type { MissionSummary } from '../missions/mission-result.js'
 import type { SortingSummary } from '../games/sorting-game.js'
+import type { LessonSummary } from '../lessons/lesson-data.js'
 import type { CurriculumTag } from './path-data.js'
 
 // Єдиний контракт «активність завершена» для карти шляху (Home Mode).
@@ -7,7 +8,7 @@ import type { CurriculumTag } from './path-data.js'
 // підсумок (зірки/кількість). Джерела: mission-runner, sorting-game,
 // puzzle-engine — кожен зі своїм адаптером нижче.
 
-export type ActivityType = 'mission' | 'game' | 'puzzle'
+export type ActivityType = 'mission' | 'game' | 'puzzle' | 'lesson'
 
 export interface ActivityResult {
   activityType: ActivityType
@@ -100,6 +101,19 @@ export function fromPuzzleSummary(s: PuzzleSummary, ctx: ActivityContext): Activ
 /** Адаптер ігор із підсумком {correct, total, stars} (напр. «Факт чи думка»). */
 export function fromGameSummary(s: PuzzleSummary, ctx: ActivityContext): ActivityResult {
   return { ...fromPuzzleSummary(s, ctx), activityType: 'game' }
+}
+
+/**
+ * Адаптер lesson-runner: теорія не «завалюється», тому зірки фіксовані (3 за
+ * завершення); correct/total мікро-квізу зберігаються як формувальна аналітика.
+ */
+export function fromLessonSummary(s: LessonSummary, ctx: ActivityContext): ActivityResult {
+  return {
+    ...base('lesson', ctx),
+    stars: 3,
+    correct: Math.max(0, Math.min(s.correct, s.total)),
+    total: Math.max(0, s.total),
+  }
 }
 
 /** Адаптер mission-runner: onComplete(MissionSummary) → ActivityResult. */

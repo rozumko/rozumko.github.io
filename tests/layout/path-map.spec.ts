@@ -149,6 +149,22 @@ for (const grade of [1, 2, 3, 4]) {
   })
 }
 
+/** Проходить мікро-урок точки: картки — «Далі», перевірочні питання — перша відповідь + «Далі». */
+async function completeLessonTheory(page: Page) {
+  await expect(page.locator('.lsn')).toBeVisible()
+  // Крок або показує кнопку «Далі» одразу (картка/відео), або чекає відповіді (квіз).
+  while (await page.locator('.lsn').count()) {
+    if (await page.locator('.lsn-answer:not(:disabled)').count()) {
+      await page.locator('.lsn-answer').first().click()
+    }
+    const next = page.locator('.lsn__next')
+    if (!await next.isVisible()) break
+    const label = await next.textContent()
+    await next.click()
+    if (label?.includes('До практики')) break
+  }
+}
+
 test('a real anonymous activity persists the first point and shows the adult gate', async ({ page }) => {
   const binByItem = new Map<string, string>()
   for (const level of INFO_SORT_LEVELS) {
@@ -162,6 +178,11 @@ test('a real anonymous activity persists the first point and shows the adult gat
   await expect(page.locator('#site-header')).toBeHidden()
   await expect(page.locator('#site-footer')).toBeHidden()
   await expect(page.locator('#path-activity')).toHaveCSS('position', 'fixed')
+
+  // Крок 1/2: теорія перед практикою.
+  await expect(page.locator('#path-activity-title')).toContainText('1/2: Теорія')
+  await completeLessonTheory(page)
+  await expect(page.locator('#path-activity-title')).toContainText('2/2: ІнфоСорт')
 
   const totalItems = INFO_SORT_LEVELS.reduce((total, level) => total + level.items.length, 0)
   for (let i = 0; i < totalItems; i += 1) {
@@ -179,6 +200,22 @@ test('a real anonymous activity persists the first point and shows the adult gat
   const stored = await page.evaluate(key => localStorage.getItem(key), STORAGE_KEY)
   expect(stored).toContain('g2-info-start')
 })
+
+for (const vp of [{ name: 'mobile-375', width: 375, height: 812 }, { name: 'desktop-1280', width: 1280, height: 800 }]) {
+  test(`екран теорії вміщується без прокрутки @ ${vp.name}`, async ({ page }) => {
+    await page.setViewportSize({ width: vp.width, height: vp.height })
+    await page.goto('/path.html?grade=2')
+    await page.locator('.path-node--open').click()
+    await expect(page.locator('.lsn-card__text')).toBeVisible()
+    await expect(page.locator('.lsn__next')).toBeVisible()
+    const overflow = await page.evaluate(() => ({
+      x: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      y: document.documentElement.scrollHeight - document.documentElement.clientHeight,
+    }))
+    expect(overflow.x).toBeLessThanOrEqual(0)
+    expect(overflow.y).toBeLessThanOrEqual(0)
+  })
+}
 
 test('selected parent profile loads its server snapshot without mixing local profile data', async ({ page }) => {
   const profileId = '00000000-0000-4000-8000-0000000000a3'

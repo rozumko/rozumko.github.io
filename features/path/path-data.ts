@@ -6,6 +6,7 @@ import type { QuestionTrack } from '../api/client.js'
 // Intersections are represented by several track/topic pairs in curriculum.
 
 export type PathActivity =
+  | { kind: 'lesson'; lessonId: string }
   | { kind: 'sorting'; game: 'attributes' | 'infosort' | 'multisort' }
   | { kind: 'puzzles'; count?: number }
   | { kind: 'fact-opinion'; level: 1 | 2 }
@@ -276,7 +277,10 @@ export const GRADE2_PATH: GradePathMap = {
       title: 'Як ми отримуємо інформацію',
       icon: '📡',
       curriculum: [{ track: 'informatics', topic: 'information' }],
-      activities: [{ id: 'infosort', version: 1, title: 'ІнфоСорт', activity: { kind: 'sorting', game: 'infosort' }, required: true }],
+      activities: [
+        { id: 'theory', version: 1, title: 'Теорія', activity: { kind: 'lesson', lessonId: 'info-senses-g2' }, required: true },
+        { id: 'infosort', version: 1, title: 'ІнфоСорт', activity: { kind: 'sorting', game: 'infosort' }, required: true },
+      ],
       unlockAfter: [],
       x: 50, y: 6,
     },
@@ -334,7 +338,10 @@ export const GRADE2_PATH: GradePathMap = {
       title: 'Що не можна повідомляти онлайн',
       icon: '🛡️',
       curriculum: [{ track: 'informatics', topic: 'digital-safety' }],
-      activities: [{ id: 'digital-safety-mission', version: 1, title: 'Місія про приватні дані', activity: { kind: 'mission', track: 'informatics', topic: 'digital-safety' }, required: true }],
+      activities: [
+        { id: 'theory', version: 1, title: 'Теорія', activity: { kind: 'lesson', lessonId: 'private-info-g2' }, required: true },
+        { id: 'digital-safety-mission', version: 1, title: 'Місія про приватні дані', activity: { kind: 'mission', track: 'informatics', topic: 'digital-safety' }, required: true },
+      ],
       unlockAfter: ['g2-fact-opinion'],
       x: 86, y: 51,
     },
@@ -344,6 +351,7 @@ export const GRADE2_PATH: GradePathMap = {
       icon: '🤖',
       curriculum: [{ track: 'computational-thinking', topic: 'algorithms' }],
       activities: [
+        { id: 'theory', version: 1, title: 'Теорія', activity: { kind: 'lesson', lessonId: 'algorithms-order-g2' }, required: true },
         { id: 'algorithms-mission', version: 1, title: 'Місія про алгоритми', activity: { kind: 'mission', track: 'computational-thinking', topic: 'algorithms', count: 5 }, required: true },
         { id: 'algorithms-puzzles', version: 1, title: 'Закріплення головоломками', activity: { kind: 'puzzles', count: 2 }, required: true },
       ],

@@ -45,28 +45,33 @@ function fakeApi(initial = []) {
   }
 }
 
-test('sync sends a single-activity point, acknowledges it and merges server state', async () => {
+test('sync sends a complete point (theory + game), acknowledges it and merges server state', async () => {
   const store = createProgressStore(storage(), 'child-a')
-  store.recordResult('g2-info-start', activity('path:g2-info-start:infosort', '2026-07-10T10:00:00Z', 3))
+  store.recordResults('g2-info-start', [
+    activity('path:g2-info-start:theory', '2026-07-10T09:58:00Z', 3),
+    activity('path:g2-info-start:infosort', '2026-07-10T10:00:00Z', 3),
+  ])
   const api = fakeApi()
   const result = await syncPathProgress(store, GRADE2_PATH, 'child-a', api)
-  assert.equal(result.syncedEvents, 1)
+  assert.equal(result.syncedEvents, 2)
   assert.equal(result.pendingEvents, 0)
   assert.equal(api.submissions.length, 1)
   assert.equal(store.getPoint('g2-info-start').attempts, 1)
 })
 
-test('sync groups both required activities into one point completion', async () => {
+test('sync groups all required activities into one point completion', async () => {
   const store = createProgressStore(storage(), 'child-a')
   store.recordResults('g2-ct-algorithms', [
+    activity('path:g2-ct-algorithms:theory', '2026-07-10T09:58:00Z', 3),
     activity('path:g2-ct-algorithms:algorithms-mission', '2026-07-10T10:00:00Z', 3),
     activity('path:g2-ct-algorithms:algorithms-puzzles', '2026-07-10T10:02:00Z', 1),
   ])
   const api = fakeApi()
   const result = await syncPathProgress(store, GRADE2_PATH, 'child-a', api)
-  assert.equal(result.syncedEvents, 2)
+  assert.equal(result.syncedEvents, 3)
   assert.equal(api.submissions.length, 1)
-  assert.equal(api.submissions[0].results.length, 2)
+  assert.equal(api.submissions[0].results.length, 3)
+  // (3 + 3 + 1) / 3 → 2.33 → round = 2
   assert.equal(api.progress[0].bestStars, 2)
 })
 
