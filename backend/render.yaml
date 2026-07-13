@@ -4,7 +4,7 @@ services:
     runtime: node
     rootDir: backend
     buildCommand: npm install && npm run build
-    startCommand: node dist/server.js
+    startCommand: npm run db:migrate:check:prod && node dist/server.js
     autoDeployTrigger: checksPass
     healthCheckPath: /health
     # OPERATIONAL INVARIANT: rate limiting is in-process memory

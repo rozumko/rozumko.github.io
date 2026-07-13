@@ -298,6 +298,17 @@ test('supply-chain guardrails are configured for npm dependencies', () => {
   assert.match(workflow, /lockfile:\s*backend\/package-lock\.json/)
 })
 
+test('Render startup fails closed on migration drift without applying SQL', () => {
+  const renderBlueprint = readFileSync(new URL('../render.yaml', import.meta.url), 'utf8')
+  const backendPackage = readFileSync(new URL('../package.json', import.meta.url), 'utf8')
+  const healthRoute = readFileSync(new URL('./routes/health.ts', import.meta.url), 'utf8')
+
+  assert.match(renderBlueprint, /startCommand: npm run db:migrate:check:prod && node dist\/server\.js/)
+  assert.doesNotMatch(renderBlueprint, /startCommand:.*db:migrate:prod(?:\s|&)/)
+  assert.match(backendPackage, /"db:migrate:check:prod": "node dist\/db\/check-migrations\.js"/)
+  assert.match(healthRoute, /db: 'migration_required'/)
+})
+
 test('operational security evidence runbook covers external controls', () => {
   const evidence = readFileSync(new URL('../../docs/security-ops-evidence.md', import.meta.url), 'utf8')
   const smokeTest = readFileSync(new URL('../../docs/smoke-test.md', import.meta.url), 'utf8')

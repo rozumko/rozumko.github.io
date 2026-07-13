@@ -8,6 +8,9 @@ The backend runs on Render from `backend/render.yaml`.
 
 - Render deploys the backend only after CI checks pass:
   `autoDeployTrigger: checksPass`.
+- The start command runs the read-only `db:migrate:check:prod` guard before the
+  server. It never applies migrations; an outdated database blocks the new
+  process from starting.
 - The backend liveness path is `/health`.
 - Live monitoring should use `/ready` or `/ping`, because they verify database access.
 - Required secrets are configured in Render environment variables, not in Git.
@@ -35,6 +38,8 @@ Do not scale to multiple instances until one of these is true:
 
 - [ ] The deployed commit is the intended commit.
 - [ ] The latest Backend CI workflow passed.
+- [ ] Required migrations were applied deliberately and
+      `npm run db:migrate:check` passes.
 - [ ] Render service is synced from `backend/render.yaml`.
 - [ ] Environment variables are present: `DATABASE_URL`, `SUPABASE_URL`,
       `ATTEMPT_SECRET`, `NODE_ENV=production`, `RATE_LIMIT_STORE=memory`.
@@ -52,6 +57,10 @@ Do not scale to multiple instances until one of these is true:
 4. Start the student flow only after the backend is warm.
 
 For a larger pilot, prefer a paid instance over relying on cold-start timing.
+
+If startup logs contain `Database migrations are behind`, apply the reviewed
+migrations from a trusted operator environment. Do not bypass or remove the
+startup check.
 
 ## If Scaling Is Needed
 

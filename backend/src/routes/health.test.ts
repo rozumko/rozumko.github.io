@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import Fastify from 'fastify'
 import { healthRoutes } from './health.js'
+import { MigrationDriftError } from '../db/migration-status.js'
 
 test('health endpoint does not require the database', async () => {
   const app = Fastify()
@@ -47,6 +48,21 @@ test('ready endpoint fails closed when the database is unreachable', async () =>
 
   assert.equal(response.statusCode, 503)
   assert.deepEqual(response.json(), { status: 'error', db: 'unreachable' })
+})
+
+test('ready endpoint identifies pending migrations without exposing details', async () => {
+  const app = Fastify()
+  await app.register(healthRoutes, {
+    checkDatabase: async () => {
+      throw new MigrationDriftError({ timestamp: 300, tag: '0003_latest' }, 200)
+    },
+  })
+
+  const response = await app.inject({ method: 'GET', url: '/ready' })
+
+  assert.equal(response.statusCode, 503)
+  assert.deepEqual(response.json(), { status: 'error', db: 'migration_required' })
+  assert.doesNotMatch(response.body, /0003_latest|300|200/)
 })
 
 test('ping keeps the readiness-compatible database response', async () => {

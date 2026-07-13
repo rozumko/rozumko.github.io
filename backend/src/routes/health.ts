@@ -1,13 +1,20 @@
 import type { FastifyInstance } from 'fastify'
-import { sql } from 'drizzle-orm'
-import { db } from '../db/index.js'
+import { pool } from '../db/index.js'
+import { MigrationDriftError, checkDatabaseMigrations } from '../db/migration-status.js'
 
 type HealthRoutesOptions = {
   checkDatabase?: () => Promise<void>
 }
 
 const defaultCheckDatabase = async () => {
-  await db.execute(sql`SELECT 1`)
+  await pool.query('SELECT 1')
+  await checkDatabaseMigrations(pool)
+}
+
+function readinessFailure(error: unknown) {
+  return error instanceof MigrationDriftError
+    ? { status: 'error', db: 'migration_required' }
+    : { status: 'error', db: 'unreachable' }
 }
 
 export async function healthRoutes(app: FastifyInstance, options: HealthRoutesOptions = {}) {
@@ -22,8 +29,8 @@ export async function healthRoutes(app: FastifyInstance, options: HealthRoutesOp
     try {
       await checkDatabase()
       return reply.send({ status: 'ok', db: 'ok' })
-    } catch {
-      return reply.code(503).send({ status: 'error', db: 'unreachable' })
+    } catch (error) {
+      return reply.code(503).send(readinessFailure(error))
     }
   })
 
@@ -32,8 +39,8 @@ export async function healthRoutes(app: FastifyInstance, options: HealthRoutesOp
     try {
       await checkDatabase()
       return reply.send({ status: 'ok', db: 'ok' })
-    } catch {
-      return reply.code(503).send({ status: 'error', db: 'unreachable' })
+    } catch (error) {
+      return reply.code(503).send(readinessFailure(error))
     }
   })
 }

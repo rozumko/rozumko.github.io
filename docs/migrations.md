@@ -1,6 +1,6 @@
 # Database Migrations - Rozumko
 
-_Updated: 2026-07-02_
+_Updated: 2026-07-13_
 
 ## Source Of Truth
 
@@ -77,13 +77,25 @@ production.
 ## Production Workflow
 
 Migrations do not run automatically on Render deploy. Apply them deliberately
-before deploying backend code:
+before deploying backend code, then run the same read-only journal check used
+by the production start command:
 
 ```powershell
 cd backend
 $env:DATABASE_URL = "postgresql://..."
 npm run db:migrate
+npm run db:migrate:check
 ```
+
+Render runs `npm run db:migrate:check:prod` before starting the new backend
+process. The check compares the newest bundled journal timestamp with
+`drizzle.__drizzle_migrations`. If the database is behind or unavailable, the
+new process fails closed and does not replace the running version. The check
+never applies SQL.
+
+`GET /ready` and `GET /ping` perform the same check. Migration drift returns
+HTTP `503` with `{ "status": "error", "db": "migration_required" }` without
+exposing migration names or timestamps.
 
 Use a direct or session-mode Supabase connection on port `5432`, not PgBouncer
 transaction mode on port `6543`, because Drizzle migrations use advisory locks.
@@ -91,6 +103,8 @@ transaction mode on port `6543`, because Drizzle migrations use advisory locks.
 ## Rules
 
 - Never edit a migration already applied to a shared database.
+- Keep migration application explicit; do not move `db:migrate:prod` into the
+  Render build or start command.
 - Commit schema and migration changes together.
 - Review destructive SQL and take a backup first.
 - Keep SQL portable PostgreSQL where practical.

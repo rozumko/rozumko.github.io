@@ -467,6 +467,10 @@ is used for paid, official or diploma-generating flows:
 
 GitHub Pages also runs frontend typecheck, tests and build inside its deployment
 workflow. Render Blueprint uses `autoDeployTrigger: checksPass`.
+Before starting a new backend process, Render runs a read-only migration journal
+check. A database behind the bundled Drizzle journal blocks startup; `/ready`
+and `/ping` report `migration_required` with no migration details. Migration SQL
+is still applied deliberately by an operator, never by build or startup.
 
 External operational controls are not marked as complete from code review alone.
 Use `docs/security-ops-evidence.md` as the public-safe template, keep completed
@@ -489,8 +493,8 @@ MVP/free-tier pilot blockers:
       reads.
 - [ ] Render: backend service is synced from `backend/render.yaml`.
 - [ ] Render: keep one backend instance while `RATE_LIMIT_STORE=memory`.
-- [ ] Render: `/health` is configured and live checks for `/health`, `/ready`
-      and `/ping` pass after deploy.
+- [ ] Render: `/health` is configured; the read-only migration startup guard
+      passes; live checks for `/health`, `/ready` and `/ping` pass after deploy.
 - [ ] GitHub: protect `main` from direct pushes, force pushes and deletions;
       require Project CI, Pages and Supply Chain checks before merge where the
       current GitHub plan exposes those controls.

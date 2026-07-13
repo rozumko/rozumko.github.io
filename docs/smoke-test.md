@@ -10,7 +10,8 @@ Run this checklist before a real pilot.
 - [ ] `GET https://rozumko-github-io.onrender.com/ready` returns `{ "status": "ok", "db": "ok" }`
 - [ ] `GET https://rozumko-github-io.onrender.com/ping` returns `{ "status": "ok", "db": "ok" }`
 - [ ] Latest GitHub Pages and Backend CI workflows passed for the intended commit
-- [ ] `npm run db:migrate` reports success before backend deployment
+- [ ] `npm run db:migrate` and the read-only `npm run db:migrate:check` report
+      success before backend deployment
 - [ ] Render backend is synced from `backend/render.yaml` and waits for CI checks
 
 ## 1a. Local Smoke Setup
