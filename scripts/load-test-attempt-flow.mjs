@@ -3,11 +3,15 @@
 import { readFileSync } from 'node:fs'
 import { setTimeout as delay } from 'node:timers/promises'
 
-const DEFAULT_BASE_URL = 'https://rozumko-github-io.onrender.com'
+const PRODUCTION_HOSTS = new Set([
+  'rozumko.com',
+  'www.rozumko.com',
+  'rozumko-github-io.onrender.com',
+])
 
 function parseArgs(argv) {
   const args = {
-    baseUrl: process.env.ROZUMKO_LOAD_BASE_URL || DEFAULT_BASE_URL,
+    baseUrl: process.env.ROZUMKO_LOAD_BASE_URL || '',
     codes: process.env.ROZUMKO_LOAD_CODES || '',
     codesFile: process.env.ROZUMKO_LOAD_CODES_FILE || '',
     concurrency: Number(process.env.ROZUMKO_LOAD_CONCURRENCY || 10),
@@ -17,6 +21,7 @@ function parseArgs(argv) {
     finish: process.env.ROZUMKO_LOAD_FINISH !== 'false',
     thinkMs: Number(process.env.ROZUMKO_LOAD_THINK_MS || 100),
     timeoutMs: Number(process.env.ROZUMKO_LOAD_TIMEOUT_MS || 15000),
+    allowProduction: process.env.ROZUMKO_LOAD_ALLOW_PRODUCTION === 'true',
   }
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -33,6 +38,7 @@ function parseArgs(argv) {
     else if (arg === '--think-ms') { args.thinkMs = Number(next); i += 1 }
     else if (arg === '--timeout-ms') { args.timeoutMs = Number(next); i += 1 }
     else if (arg === '--no-finish') args.finish = false
+    else if (arg === '--allow-production') args.allowProduction = true
     else throw new Error(`Unknown argument: ${arg}`)
   }
 
@@ -45,7 +51,7 @@ function printHelp() {
   node scripts/load-test-attempt-flow.mjs --base-url https://staging.example.com --codes-file codes.txt --concurrency 25
 
 Options:
-  --base-url URL              Backend URL. Default: ${DEFAULT_BASE_URL}
+  --base-url URL              Required staging or prepared pilot backend URL.
   --codes A,B,C               Comma or whitespace separated olympiad codes.
   --codes-file PATH           Text file with one or more codes per line.
   --concurrency N             Parallel students. Default: 10.
@@ -55,6 +61,7 @@ Options:
   --think-ms N                Delay between answers per student. Default: 100.
   --timeout-ms N              Per-request timeout. Default: 15000.
   --no-finish                 Do not call /finish after answers.
+  --allow-production          Explicitly permit a known production hostname.
 
 Environment variables mirror the option names:
   ROZUMKO_LOAD_BASE_URL
@@ -67,7 +74,25 @@ Environment variables mirror the option names:
   ROZUMKO_LOAD_THINK_MS
   ROZUMKO_LOAD_TIMEOUT_MS
   ROZUMKO_LOAD_FINISH=false
+  ROZUMKO_LOAD_ALLOW_PRODUCTION=true
 `)
+}
+
+function validateTarget(args) {
+  if (!args.baseUrl) throw new Error('Missing --base-url; the load test has no default target')
+
+  let url
+  try {
+    url = new URL(args.baseUrl)
+  } catch {
+    throw new Error('--base-url must be an absolute http(s) URL')
+  }
+  if (!['http:', 'https:'].includes(url.protocol)) {
+    throw new Error('--base-url must be an absolute http(s) URL')
+  }
+  if (PRODUCTION_HOSTS.has(url.hostname.toLowerCase()) && !args.allowProduction) {
+    throw new Error(`Refusing production load target ${url.hostname}; use staging or pass --allow-production deliberately`)
+  }
 }
 
 function readCodes(args) {
@@ -268,7 +293,7 @@ async function main() {
     printHelp()
     return
   }
-  if (!args.baseUrl) throw new Error('Missing --base-url')
+  validateTarget(args)
   if (!Number.isInteger(args.concurrency) || args.concurrency < 1) throw new Error('--concurrency must be a positive integer')
   if (!Number.isInteger(args.answersPerAttempt) || args.answersPerAttempt < 0) throw new Error('--answers-per-attempt must be a non-negative integer')
   if (!Number.isInteger(args.heartbeatsPerAttempt) || args.heartbeatsPerAttempt < 0) throw new Error('--heartbeats-per-attempt must be a non-negative integer')

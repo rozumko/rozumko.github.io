@@ -6,6 +6,10 @@ This is a lightweight load-test procedure for the official student attempt
 flow. Run it only against staging or a deliberately prepared pilot environment.
 Do not run it against production during a live event.
 
+The script has no default backend target. It also refuses the known production
+hostnames unless `--allow-production` is passed deliberately. Normal staging
+tests must never use that override.
+
 ## What It Covers
 
 The script exercises the same critical endpoints a classroom uses:
@@ -42,12 +46,8 @@ GHI789
 
 ## Run A Small Smoke Load
 
-```bash
-node scripts/load-test-attempt-flow.mjs ^
-  --base-url https://your-staging-backend.example.com ^
-  --codes-file codes.txt ^
-  --concurrency 5 ^
-  --answers-per-attempt 3
+```powershell
+node scripts/load-test-attempt-flow.mjs --base-url https://your-staging-backend.example.com --codes-file codes.txt --concurrency 5 --answers-per-attempt 3
 ```
 
 Expected result:
@@ -60,12 +60,8 @@ Expected result:
 
 Start below the expected class size, then increase:
 
-```bash
-node scripts/load-test-attempt-flow.mjs ^
-  --base-url https://your-staging-backend.example.com ^
-  --codes-file codes.txt ^
-  --concurrency 25 ^
-  --answers-per-attempt 10
+```powershell
+node scripts/load-test-attempt-flow.mjs --base-url https://your-staging-backend.example.com --codes-file codes.txt --concurrency 25 --answers-per-attempt 10
 ```
 
 Then repeat with `--concurrency 50` and `--concurrency 100` if enough codes
@@ -77,14 +73,8 @@ Run all 30 simulated students from one machine or runner so the backend sees
 one public IP. Four heartbeat calls represent one minute of the normal
 15-second heartbeat cadence, sent compactly to keep the test short.
 
-```bash
-node scripts/load-test-attempt-flow.mjs ^
-  --base-url https://your-staging-backend.example.com ^
-  --codes-file codes.txt ^
-  --concurrency 30 ^
-  --validate-codes ^
-  --heartbeats-per-attempt 4 ^
-  --answers-per-attempt 10
+```powershell
+node scripts/load-test-attempt-flow.mjs --base-url https://your-staging-backend.example.com --codes-file codes.txt --concurrency 30 --validate-codes --heartbeats-per-attempt 4 --answers-per-attempt 10
 ```
 
 Expected result:
@@ -96,13 +86,13 @@ Expected result:
 
 ## Useful Environment Variables
 
-```bash
-set ROZUMKO_LOAD_BASE_URL=https://your-staging-backend.example.com
-set ROZUMKO_LOAD_CODES_FILE=codes.txt
-set ROZUMKO_LOAD_CONCURRENCY=50
-set ROZUMKO_LOAD_ANSWERS_PER_ATTEMPT=10
-set ROZUMKO_LOAD_HEARTBEATS_PER_ATTEMPT=4
-set ROZUMKO_LOAD_VALIDATE_CODES=true
+```powershell
+$env:ROZUMKO_LOAD_BASE_URL = 'https://your-staging-backend.example.com'
+$env:ROZUMKO_LOAD_CODES_FILE = 'codes.txt'
+$env:ROZUMKO_LOAD_CONCURRENCY = '50'
+$env:ROZUMKO_LOAD_ANSWERS_PER_ATTEMPT = '10'
+$env:ROZUMKO_LOAD_HEARTBEATS_PER_ATTEMPT = '4'
+$env:ROZUMKO_LOAD_VALIDATE_CODES = 'true'
 node scripts/load-test-attempt-flow.mjs
 ```
 
