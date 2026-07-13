@@ -29,6 +29,13 @@ async function expectNoNodeOverlap(page: Page) {
   }
 }
 
+async function expectElementInViewport(page: Page, selector: string) {
+  await expect.poll(() => page.locator(selector).evaluate((el) => {
+    const box = el.getBoundingClientRect()
+    return box.top >= 0 && box.bottom <= window.innerHeight
+  })).toBe(true)
+}
+
 test('grade 1 has its own nine-point path with one visual starting activity', async ({ page }) => {
   await page.goto('/path.html?grade=1')
   await expect(page.locator('#path-subtitle')).toContainText('Шлях 1 класу')
@@ -149,6 +156,39 @@ for (const grade of [1, 2, 3, 4]) {
   })
 }
 
+test('map edges stay below the node presentation layer', async ({ page }) => {
+  await page.goto('/path.html?grade=2')
+  const layers = await page.evaluate(() => ({
+    edges: Number(getComputedStyle(document.querySelector('.path-map__edges')!).zIndex),
+    nodes: Number(getComputedStyle(document.querySelector('.path-map__nodes')!).zIndex),
+    badgeBg: getComputedStyle(document.querySelector('.path-node__badge')!).backgroundColor,
+    labelBg: getComputedStyle(document.querySelector('.path-node__label')!).backgroundColor,
+  }))
+  expect(layers.edges).toBeLessThan(layers.nodes)
+  expect(layers.badgeBg).not.toBe('rgba(0, 0, 0, 0)')
+  expect(layers.labelBg).not.toBe('rgba(0, 0, 0, 0)')
+})
+
+test('lesson next button keeps a stable position across text lengths', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await page.goto('/path.html?grade=2')
+  await page.locator('.path-node--open').click()
+  await expect(page.locator('.lsn__next')).toBeVisible()
+  const first = await page.locator('.lsn__next').boundingBox()
+  expect(first).not.toBeNull()
+
+  await page.locator('.lsn__next').click()
+  await expect(page.locator('.lsn__next')).toBeVisible()
+  const second = await page.locator('.lsn__next').boundingBox()
+
+  await page.locator('.lsn__next').click()
+  await expect(page.locator('.lsn__next')).toBeVisible()
+  const third = await page.locator('.lsn__next').boundingBox()
+
+  expect(Math.abs(second!.y - first!.y)).toBeLessThanOrEqual(2)
+  expect(Math.abs(third!.y - first!.y)).toBeLessThanOrEqual(2)
+})
+
 /** Проходить мікро-урок точки: картки — «Далі», перевірочні питання — перша відповідь + «Далі». */
 async function completeLessonTheory(page: Page) {
   await expect(page.locator('.lsn')).toBeVisible()
@@ -197,6 +237,7 @@ test('a real anonymous activity persists the first point and shows the adult gat
   await expect(page.locator('.path-node--done')).toHaveCount(1)
   await expect(page.locator('.path-node--open')).toHaveCount(0)
   await expect(page.locator('#path-parent-gate')).toBeVisible()
+  await expectElementInViewport(page, '#path-parent-gate')
   const stored = await page.evaluate(key => localStorage.getItem(key), STORAGE_KEY)
   expect(stored).toContain('g2-info-start')
 })

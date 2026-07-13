@@ -717,6 +717,36 @@
 }
 .kid-action:disabled { opacity: .6; cursor: not-allowed; filter: none; transform: none; }
 
+.btn-next {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: var(--kid-tap);
+  padding: var(--sp-3) var(--sp-7);
+  border: 0;
+  border-radius: var(--r-full);
+  background: var(--clr-brand);
+  color: #fff;
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  font-weight: 800;
+  line-height: 1.15;
+  cursor: pointer;
+  box-shadow: var(--shadow-btn);
+  transition:
+    transform var(--transition-fast),
+    filter var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+.btn-next:hover:not(:disabled) { filter: brightness(1.06); transform: translateY(-2px); }
+.btn-next:active:not(:disabled) { transform: translateY(0); }
+.btn-next:focus-visible {
+  outline: 3px solid var(--clr-focus-ring);
+  outline-offset: 3px;
+}
+.btn-next:disabled { opacity: .6; cursor: not-allowed; filter: none; transform: none; }
+
 /* Вибір класу */
 .grade-picker {
   display: flex;
@@ -1453,3 +1483,53 @@ body.puzzle-active #puzzle-area .app-actions { margin: 0; width: 100%; }
 .lsn__feedback--bad { color: var(--clr-danger); }
 .lsn__explanation { margin: var(--sp-2) 0 0; color: var(--clr-text-muted); }
 .lsn__next { margin-top: var(--sp-3); }
+
+body.path-activity-active #path-lesson-root:not(.hidden) {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+body.path-activity-active #path-lesson-root:not(.hidden) .lsn {
+  width: min(100%, 40rem);
+  flex: 1;
+  min-height: min(34rem, 100%);
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) minmax(7.5rem, auto);
+  align-content: stretch;
+}
+
+body.path-activity-active #path-lesson-root:not(.hidden) .lsn__stage {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+body.path-activity-active #path-lesson-root:not(.hidden) .lsn__feedback-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+body.path-activity-active #path-lesson-root:not(.hidden) .lsn__next {
+  margin-top: auto;
+}
+
+body.path-activity-active #mission-quiz:not(.hidden) {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto auto auto auto minmax(0, 1fr) minmax(7.5rem, auto);
+  gap: var(--sp-3);
+}
+
+body.path-activity-active #mission-quiz .quiz-feedback-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+body.path-activity-active #mission-quiz .btn-next {
+  margin-top: auto;
+}

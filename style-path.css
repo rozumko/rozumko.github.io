@@ -42,6 +42,7 @@
   width: 100%;
   height: 100%;
   pointer-events: none;
+  z-index: 0;
 }
 
 .path-edge {
@@ -59,7 +60,11 @@
   opacity: 0.8;
 }
 
-.path-map__nodes { position: absolute; inset: 0; }
+.path-map__nodes {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
 
 .path-node {
   position: absolute;
@@ -77,6 +82,8 @@
 }
 
 .path-node__badge {
+  position: relative;
+  z-index: 1;
   display: grid;
   place-items: center;
   width: 56px;
@@ -90,11 +97,15 @@
 }
 
 .path-node__label {
+  position: relative;
+  z-index: 1;
   font-size: 12px;
   font-weight: 700;
   line-height: 1.15;
   text-align: center;
   color: var(--clr-text-faint);
+  border-radius: 8px;
+  background: var(--clr-surface-subtle);
 }
 
 .path-node__stars { font-size: 12px; line-height: 1; }

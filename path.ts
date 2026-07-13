@@ -39,6 +39,7 @@ const SORTING_GAMES: Record<string, SortingLevel[]> = {
   infosort:   INFO_SORT_LEVELS,
   multisort:  MULTISORT_LEVELS,
 }
+const EDGE_NODE_GAP = 12.5
 
 const savedGrade = getSavedGrade()
 const queryGradeRaw = new URLSearchParams(window.location.search).get('grade')
@@ -118,6 +119,25 @@ function trackClass(p: PathPoint): string {
   }
 }
 
+function edgeEndpoint(from: PathPoint, to: PathPoint, offset: number) {
+  const dx = to.x - from.x
+  const dy = to.y - from.y
+  const length = Math.hypot(dx, dy)
+  if (!length) return { x: from.x, y: from.y }
+  const safeOffset = Math.min(offset, length / 2)
+  return {
+    x: from.x + (dx / length) * safeOffset,
+    y: from.y + (dy / length) * safeOffset,
+  }
+}
+
+function edgePath(from: PathPoint, to: PathPoint): string {
+  const start = edgeEndpoint(from, to, EDGE_NODE_GAP)
+  const end = edgeEndpoint(to, from, EDGE_NODE_GAP)
+  const midY = (start.y + end.y) / 2
+  return `M ${start.x.toFixed(2)} ${start.y.toFixed(2)} C ${start.x.toFixed(2)} ${midY.toFixed(2)}, ${end.x.toFixed(2)} ${midY.toFixed(2)}, ${end.x.toFixed(2)} ${end.y.toFixed(2)}`
+}
+
 function renderMap() {
   const completed = new Set(store.completedIds())
   const mapPointIds = new Set(map.points.map(p => p.id))
@@ -131,8 +151,7 @@ function renderMap() {
       const from = map.points.find(x => x.id === depId)
       if (!from) return ''
       const open = completed.has(depId)
-      const midY = (from.y + p.y) / 2
-      return `<path d="M ${from.x} ${from.y} C ${from.x} ${midY}, ${p.x} ${midY}, ${p.x} ${p.y}"
+      return `<path d="${edgePath(from, p)}"
         class="path-edge ${open ? 'path-edge--open' : ''}" />`
     }),
   ).join('')
@@ -368,6 +387,14 @@ function clearActivityRoots() {
   els.progressBar.style.width = '0%'
 }
 
+function revealParentGateIfVisible(): boolean {
+  if (parentGate.classList.contains('hidden')) return false
+  parentGate.focus({ preventScroll: true })
+  const behavior: ScrollBehavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+  requestAnimationFrame(() => parentGate.scrollIntoView({ behavior, block: 'center' }))
+  return true
+}
+
 function backToMap() {
   activeRun += 1
   setActivityMode(false)
@@ -376,7 +403,7 @@ function backToMap() {
   clearActivityRoots()
   renderMap()
   show(mapScreen)
-  $('main-content').focus()
+  if (!revealParentGateIfVisible()) $('main-content').focus()
 }
 
 $('path-back-btn').addEventListener('click', backToMap)
