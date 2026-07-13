@@ -74,3 +74,4 @@ rozumko_brand_assets/
 
 # ── Джерельні матеріали (PDF-фреймворки тощо — не для деплою) ─────────────
 *.pdf
+*.load-codes.local.txt

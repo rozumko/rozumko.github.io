@@ -34,9 +34,10 @@ as the planned olympiad.
 - [ ] Assign questions for the target grade.
 - [ ] Register a test class with enough participants.
 - [ ] Generate personal codes (`maxUses = 1`) for every simulated student.
-- [ ] Save the generated codes in a local file that is not committed.
+- [ ] Save the generated codes as `*.load-codes.local.txt`; this pattern is
+      ignored by Git.
 
-Example `codes.txt`:
+Example `nat.load-codes.local.txt`:
 
 ```text
 ABC123
@@ -47,7 +48,7 @@ GHI789
 ## Run A Small Smoke Load
 
 ```powershell
-node scripts/load-test-attempt-flow.mjs --base-url https://your-staging-backend.example.com --codes-file codes.txt --concurrency 5 --answers-per-attempt 3
+node scripts/load-test-attempt-flow.mjs --base-url https://your-staging-backend.example.com --codes-file nat.load-codes.local.txt --concurrency 5 --answers-per-attempt 3
 ```
 
 Expected result:
@@ -61,7 +62,7 @@ Expected result:
 Start below the expected class size, then increase:
 
 ```powershell
-node scripts/load-test-attempt-flow.mjs --base-url https://your-staging-backend.example.com --codes-file codes.txt --concurrency 25 --answers-per-attempt 10
+node scripts/load-test-attempt-flow.mjs --base-url https://your-staging-backend.example.com --codes-file nat.load-codes.local.txt --concurrency 25 --answers-per-attempt 10
 ```
 
 Then repeat with `--concurrency 50` and `--concurrency 100` if enough codes
@@ -74,7 +75,7 @@ one public IP. Four heartbeat calls represent one minute of the normal
 15-second heartbeat cadence, sent compactly to keep the test short.
 
 ```powershell
-node scripts/load-test-attempt-flow.mjs --base-url https://your-staging-backend.example.com --codes-file codes.txt --concurrency 30 --validate-codes --heartbeats-per-attempt 4 --answers-per-attempt 10
+node scripts/load-test-attempt-flow.mjs --base-url https://your-staging-backend.example.com --codes-file nat.load-codes.local.txt --concurrency 30 --validate-codes --heartbeats-per-attempt 4 --answers-per-attempt 10
 ```
 
 Expected result:
@@ -88,7 +89,7 @@ Expected result:
 
 ```powershell
 $env:ROZUMKO_LOAD_BASE_URL = 'https://your-staging-backend.example.com'
-$env:ROZUMKO_LOAD_CODES_FILE = 'codes.txt'
+$env:ROZUMKO_LOAD_CODES_FILE = 'nat.load-codes.local.txt'
 $env:ROZUMKO_LOAD_CONCURRENCY = '50'
 $env:ROZUMKO_LOAD_ANSWERS_PER_ATTEMPT = '10'
 $env:ROZUMKO_LOAD_HEARTBEATS_PER_ATTEMPT = '4'
