@@ -14,6 +14,7 @@ import {
   recordCodeFailure,
 } from './code-throttle.js'
 import { ALL_TOPICS, normalizeTopic } from '../lib/taxonomy.js'
+import { createVerifiedResourceRateLimit, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW } from '../lib/rate-limit-policy.js'
 import type { QuestionTrack } from '../db/schema.js'
 
 const QUESTION_TRACKS = ['informatics', 'computational-thinking', 'ai-basics'] as const
@@ -80,6 +81,27 @@ function requireParticipant(
   }
   return true
 }
+
+const participantSessionRateLimit = createVerifiedResourceRateLimit({
+  scope: 'school-participant-session',
+  headerName: 'x-participant-token',
+  max: RATE_LIMIT_MAX.schoolParticipantSession,
+  verifyToken: verifyAttemptToken,
+})
+
+const participantAvatarRateLimit = createVerifiedResourceRateLimit({
+  scope: 'school-participant-avatar',
+  headerName: 'x-participant-token',
+  max: RATE_LIMIT_MAX.schoolParticipantAvatar,
+  verifyToken: verifyAttemptToken,
+})
+
+const participantAnswerRateLimit = createVerifiedResourceRateLimit({
+  scope: 'school-participant-answer',
+  headerName: 'x-participant-token',
+  max: RATE_LIMIT_MAX.schoolParticipantAnswer,
+  verifyToken: verifyAttemptToken,
+})
 
 async function loadParticipantWithSession(participantId: string) {
   const [row] = await db
@@ -228,7 +250,7 @@ export async function schoolRoutes(app: FastifyInstance) {
 
   // ── Учень: приєднатися за кодом (анонімно) ────────────────────────────────
   app.post<{ Body: { code: string; avatar: string; nickname: string } }>('/join', {
-    config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
+    config: { rateLimit: { max: RATE_LIMIT_MAX.classroomStart, timeWindow: RATE_LIMIT_WINDOW } },
     schema: {
       body: {
         type: 'object',
@@ -285,7 +307,7 @@ export async function schoolRoutes(app: FastifyInstance) {
   })
 
   app.get<{ Params: { id: string } }>('/participants/:id/session', {
-    config: { rateLimit: { max: 30, timeWindow: '1 minute' } },
+    config: { rateLimit: participantSessionRateLimit },
     schema: { params: uuidParam },
   }, async (req, reply) => {
     if (!requireParticipant(req, reply)) return
@@ -306,7 +328,7 @@ export async function schoolRoutes(app: FastifyInstance) {
   })
 
   app.patch<{ Params: { id: string }; Body: { avatar: string } }>('/participants/:id/avatar', {
-    config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
+    config: { rateLimit: participantAvatarRateLimit },
     schema: { params: uuidParam, body: avatarBody },
   }, async (req, reply) => {
     if (!requireParticipant(req, reply)) return
@@ -336,7 +358,7 @@ export async function schoolRoutes(app: FastifyInstance) {
 
   // ── Учень: відповісти на питання (серверний скоринг) ──────────────────────
   app.post<{ Params: { id: string }; Body: { questionId: string; answer: AnswerValue } }>('/participants/:id/answer', {
-    config: { rateLimit: { max: 60, timeWindow: '1 minute' } },
+    config: { rateLimit: participantAnswerRateLimit },
     schema: { params: uuidParam, body: answerBody },
   }, async (req, reply) => {
     if (!requireParticipant(req, reply)) return

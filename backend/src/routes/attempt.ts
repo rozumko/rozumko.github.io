@@ -6,12 +6,34 @@ import { finalizeAttemptFromSavedAnswers } from './attempt-finalization.js'
 import { isQuestionInAttempt } from './attempt-validation.js'
 import { verifyAttemptToken } from './student-validation.js'
 import { getRemainingSeconds, creditPauseSeconds } from './attempt-timing.js'
+import { createVerifiedResourceRateLimit, RATE_LIMIT_MAX } from '../lib/rate-limit-policy.js'
 
 function checkAttemptToken(req: { headers: Record<string, string | string[] | undefined> }, attemptId: string): boolean {
   const token = req.headers['x-attempt-token']
   if (!token || typeof token !== 'string') return false
   return verifyAttemptToken(attemptId, token)
 }
+
+const attemptAnswerRateLimit = createVerifiedResourceRateLimit({
+  scope: 'attempt-answer',
+  headerName: 'x-attempt-token',
+  max: RATE_LIMIT_MAX.attemptAnswer,
+  verifyToken: verifyAttemptToken,
+})
+
+const attemptFinishRateLimit = createVerifiedResourceRateLimit({
+  scope: 'attempt-finish',
+  headerName: 'x-attempt-token',
+  max: RATE_LIMIT_MAX.attemptFinish,
+  verifyToken: verifyAttemptToken,
+})
+
+const attemptHeartbeatRateLimit = createVerifiedResourceRateLimit({
+  scope: 'attempt-heartbeat',
+  headerName: 'x-attempt-token',
+  max: RATE_LIMIT_MAX.attemptHeartbeat,
+  verifyToken: verifyAttemptToken,
+})
 
 export async function attemptRoutes(app: FastifyInstance) {
   // POST /api/attempt/:id/answer
@@ -20,6 +42,7 @@ export async function attemptRoutes(app: FastifyInstance) {
     Params: { id: string }
     Body: { questionId: string; answer: number | string | number[] }
   }>('/:id/answer', {
+    config: { rateLimit: attemptAnswerRateLimit },
     schema: {
       params: {
         type: 'object',
@@ -47,6 +70,10 @@ export async function attemptRoutes(app: FastifyInstance) {
     const { id } = req.params
     const { questionId, answer } = req.body
 
+    if (!checkAttemptToken(req, id)) {
+      return reply.code(403).send({ error: 'Невірний токен спроби' })
+    }
+
     const [attempt] = await db
       .select()
       .from(attempts)
@@ -55,9 +82,6 @@ export async function attemptRoutes(app: FastifyInstance) {
 
     if (!attempt) {
       return reply.code(404).send({ error: 'Спробу не знайдено' })
-    }
-    if (!checkAttemptToken(req, id)) {
-      return reply.code(403).send({ error: 'Невірний токен спроби' })
     }
     if (attempt.status !== 'in_progress') {
       return reply.code(409).send({ error: 'Спроба вже завершена' })
@@ -104,6 +128,7 @@ export async function attemptRoutes(app: FastifyInstance) {
   // POST /api/attempt/:id/finish
   // Підраховує результат, повертає score і правильні відповіді
   app.post<{ Params: { id: string } }>('/:id/finish', {
+    config: { rateLimit: attemptFinishRateLimit },
     schema: {
       params: {
         type: 'object',
@@ -114,6 +139,10 @@ export async function attemptRoutes(app: FastifyInstance) {
   }, async (req, reply) => {
     const { id } = req.params
 
+    if (!checkAttemptToken(req, id)) {
+      return reply.code(403).send({ error: 'Невірний токен спроби' })
+    }
+
     const [attempt] = await db
       .select()
       .from(attempts)
@@ -122,9 +151,6 @@ export async function attemptRoutes(app: FastifyInstance) {
 
     if (!attempt) {
       return reply.code(404).send({ error: 'Спробу не знайдено' })
-    }
-    if (!checkAttemptToken(req, id)) {
-      return reply.code(403).send({ error: 'Невірний токен спроби' })
     }
     if (attempt.status === 'finished') {
       // Ідемпотентне завершення — повертаємо лише score/total без isCorrect по кожному питанню,
@@ -156,6 +182,7 @@ export async function attemptRoutes(app: FastifyInstance) {
   // "прощену" паузу для блекаутів (обмежену grace-лімітом), тоді повертає лишок
   // часу. Розрив міряє сервер, не клієнт — час не можна домалювати звітом.
   app.post<{ Params: { id: string } }>('/:id/heartbeat', {
+    config: { rateLimit: attemptHeartbeatRateLimit },
     schema: {
       params: {
         type: 'object',
@@ -166,6 +193,10 @@ export async function attemptRoutes(app: FastifyInstance) {
   }, async (req, reply) => {
     const { id } = req.params
 
+    if (!checkAttemptToken(req, id)) {
+      return reply.code(403).send({ error: 'Невірний токен спроби' })
+    }
+
     const [attempt] = await db
       .select()
       .from(attempts)
@@ -174,9 +205,6 @@ export async function attemptRoutes(app: FastifyInstance) {
 
     if (!attempt) {
       return reply.code(404).send({ error: 'Спробу не знайдено' })
-    }
-    if (!checkAttemptToken(req, id)) {
-      return reply.code(403).send({ error: 'Невірний токен спроби' })
     }
     if (attempt.status !== 'in_progress') {
       return reply.code(409).send({ error: 'Спроба вже завершена' })

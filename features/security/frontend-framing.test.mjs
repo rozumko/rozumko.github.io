@@ -44,7 +44,7 @@ test('parent accounts preserve the Home ownership and trust boundaries', () => {
 
 test('parent registration is built with the scoped Turnstile CSP', () => {
   assert.match(viteConfig, /ctx\.path\.endsWith\('parent\.html'\)/)
-  assert.match(viteConfig, /usesTurnstile \? TEACHER_CSP : STRICT_CSP/)
+  assert.match(viteConfig, /usesTurnstile\s+\? TEACHER_CSP/)
 })
 
 test('every app HTML entry starts with a module that imports the framing guard', async () => {

@@ -1,6 +1,6 @@
 # Load Test Scaffold - Rozumko
 
-_Updated: 2026-06-30_
+_Updated: 2026-07-13_
 
 This is a lightweight load-test procedure for the official student attempt
 flow. Run it only against staging or a deliberately prepared pilot environment.
@@ -13,6 +13,10 @@ The script exercises the same critical endpoints a classroom uses:
 1. `POST /api/student/exchange-code`
 2. `POST /api/attempt/:id/answer`
 3. `POST /api/attempt/:id/finish`
+
+Optional flags also exercise `GET /api/student/validate-code` and
+`POST /api/attempt/:id/heartbeat` so one runner can reproduce a classroom NAT
+where every simulated student shares the same public IP.
 
 Each test code behaves like one student. For realistic results, use personal
 codes generated for a staging event with the same question count and duration
@@ -67,6 +71,29 @@ node scripts/load-test-attempt-flow.mjs ^
 Then repeat with `--concurrency 50` and `--concurrency 100` if enough codes
 exist.
 
+## Run The Classroom NAT Regression
+
+Run all 30 simulated students from one machine or runner so the backend sees
+one public IP. Four heartbeat calls represent one minute of the normal
+15-second heartbeat cadence, sent compactly to keep the test short.
+
+```bash
+node scripts/load-test-attempt-flow.mjs ^
+  --base-url https://your-staging-backend.example.com ^
+  --codes-file codes.txt ^
+  --concurrency 30 ^
+  --validate-codes ^
+  --heartbeats-per-attempt 4 ^
+  --answers-per-attempt 10
+```
+
+Expected result:
+
+- all 30 code validations and exchanges succeed without `429`;
+- heartbeat, answer and finish requests use separate verified attempt buckets;
+- forged or missing attempt tokens still share an IP fallback bucket;
+- `failed = 0`.
+
 ## Useful Environment Variables
 
 ```bash
@@ -74,6 +101,8 @@ set ROZUMKO_LOAD_BASE_URL=https://your-staging-backend.example.com
 set ROZUMKO_LOAD_CODES_FILE=codes.txt
 set ROZUMKO_LOAD_CONCURRENCY=50
 set ROZUMKO_LOAD_ANSWERS_PER_ATTEMPT=10
+set ROZUMKO_LOAD_HEARTBEATS_PER_ATTEMPT=4
+set ROZUMKO_LOAD_VALIDATE_CODES=true
 node scripts/load-test-attempt-flow.mjs
 ```
 

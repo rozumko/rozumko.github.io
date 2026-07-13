@@ -283,6 +283,13 @@ Backend:
 
 - CORS is restricted to approved origins.
 - API requests are rate-limited.
+- Classroom and olympiad traffic is NAT-aware. Code validation, code exchange
+  and anonymous School joins keep an IP ceiling sized for a 30-pupil class and
+  retain the per-code failure throttle. After authentication, attempt and
+  School participant routes use the HMAC-verified resource ID as the limiter
+  key, so legitimate pupils behind one public IP do not consume one shared
+  bucket. Missing or forged tokens always fall back to a shared IP bucket;
+  unverified token text is never accepted as a key.
 - Rate limiting currently uses `RATE_LIMIT_STORE=memory`. **This is correct only
   on a single backend instance**: the counter lives in one process's memory, so
   running two or more instances silently multiplies the effective limit and lets
@@ -342,6 +349,8 @@ npm test
 `backend/src/security-regression.test.ts` protects the audited invariants:
 
 - spoofed `X-Forwarded-For` does not create a fresh rate-limit bucket;
+- classroom start limits and verified attempt/participant resource buckets
+  remain wired into the student routes;
 - unsupported shared rate-limit store modes fail closed;
 - every application table is covered by the RLS enablement migration;
 - public question query validation rejects unsafe values;

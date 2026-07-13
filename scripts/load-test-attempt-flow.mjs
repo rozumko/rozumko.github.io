@@ -12,6 +12,8 @@ function parseArgs(argv) {
     codesFile: process.env.ROZUMKO_LOAD_CODES_FILE || '',
     concurrency: Number(process.env.ROZUMKO_LOAD_CONCURRENCY || 10),
     answersPerAttempt: Number(process.env.ROZUMKO_LOAD_ANSWERS_PER_ATTEMPT || 3),
+    heartbeatsPerAttempt: Number(process.env.ROZUMKO_LOAD_HEARTBEATS_PER_ATTEMPT || 0),
+    validateCodes: process.env.ROZUMKO_LOAD_VALIDATE_CODES === 'true',
     finish: process.env.ROZUMKO_LOAD_FINISH !== 'false',
     thinkMs: Number(process.env.ROZUMKO_LOAD_THINK_MS || 100),
     timeoutMs: Number(process.env.ROZUMKO_LOAD_TIMEOUT_MS || 15000),
@@ -26,6 +28,8 @@ function parseArgs(argv) {
     else if (arg === '--codes-file') { args.codesFile = next; i += 1 }
     else if (arg === '--concurrency') { args.concurrency = Number(next); i += 1 }
     else if (arg === '--answers-per-attempt') { args.answersPerAttempt = Number(next); i += 1 }
+    else if (arg === '--heartbeats-per-attempt') { args.heartbeatsPerAttempt = Number(next); i += 1 }
+    else if (arg === '--validate-codes') args.validateCodes = true
     else if (arg === '--think-ms') { args.thinkMs = Number(next); i += 1 }
     else if (arg === '--timeout-ms') { args.timeoutMs = Number(next); i += 1 }
     else if (arg === '--no-finish') args.finish = false
@@ -46,6 +50,8 @@ Options:
   --codes-file PATH           Text file with one or more codes per line.
   --concurrency N             Parallel students. Default: 10.
   --answers-per-attempt N     Questions to answer before finish. Default: 3.
+  --heartbeats-per-attempt N  Heartbeats to send per student. Default: 0.
+  --validate-codes            Validate every code before exchange.
   --think-ms N                Delay between answers per student. Default: 100.
   --timeout-ms N              Per-request timeout. Default: 15000.
   --no-finish                 Do not call /finish after answers.
@@ -56,6 +62,8 @@ Environment variables mirror the option names:
   ROZUMKO_LOAD_CODES_FILE
   ROZUMKO_LOAD_CONCURRENCY
   ROZUMKO_LOAD_ANSWERS_PER_ATTEMPT
+  ROZUMKO_LOAD_HEARTBEATS_PER_ATTEMPT
+  ROZUMKO_LOAD_VALIDATE_CODES=true
   ROZUMKO_LOAD_THINK_MS
   ROZUMKO_LOAD_TIMEOUT_MS
   ROZUMKO_LOAD_FINISH=false
@@ -136,6 +144,11 @@ async function runStudent(args, code, index) {
   const metrics = []
   const startedAt = performance.now()
 
+  if (args.validateCodes) {
+    const validated = await requestJson(args, `/api/student/validate-code?code=${encodeURIComponent(code)}`)
+    metrics.push({ step: 'validate', elapsedMs: validated.elapsedMs })
+  }
+
   const exchanged = await requestJson(args, '/api/student/exchange-code', {
     method: 'POST',
     body: JSON.stringify({ code }),
@@ -144,6 +157,15 @@ async function runStudent(args, code, index) {
 
   const { attemptId, attemptToken, questions = [] } = exchanged.body
   if (!attemptId || !attemptToken) throw new Error('exchange-code response missing attemptId or attemptToken')
+
+  for (let i = 0; i < args.heartbeatsPerAttempt; i += 1) {
+    const heartbeat = await requestJson(args, `/api/attempt/${attemptId}/heartbeat`, {
+      method: 'POST',
+      headers: { 'X-Attempt-Token': attemptToken },
+      body: JSON.stringify({}),
+    })
+    metrics.push({ step: 'heartbeat', elapsedMs: heartbeat.elapsedMs })
+  }
 
   const answerCount = Math.min(args.answersPerAttempt, questions.length)
   for (let i = 0; i < answerCount; i += 1) {
@@ -249,6 +271,7 @@ async function main() {
   if (!args.baseUrl) throw new Error('Missing --base-url')
   if (!Number.isInteger(args.concurrency) || args.concurrency < 1) throw new Error('--concurrency must be a positive integer')
   if (!Number.isInteger(args.answersPerAttempt) || args.answersPerAttempt < 0) throw new Error('--answers-per-attempt must be a non-negative integer')
+  if (!Number.isInteger(args.heartbeatsPerAttempt) || args.heartbeatsPerAttempt < 0) throw new Error('--heartbeats-per-attempt must be a non-negative integer')
 
   const codes = readCodes(args)
   if (codes.length === 0) throw new Error('Provide test codes with --codes or --codes-file')
@@ -257,6 +280,8 @@ async function main() {
   console.log(`Codes: ${codes.length}`)
   console.log(`Concurrency: ${args.concurrency}`)
   console.log(`Answers per attempt: ${args.answersPerAttempt}`)
+  console.log(`Heartbeats per attempt: ${args.heartbeatsPerAttempt}`)
+  console.log(`Validate codes: ${args.validateCodes}`)
   console.log(`Finish attempts: ${args.finish}`)
   console.log('')
 

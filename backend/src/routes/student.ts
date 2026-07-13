@@ -18,6 +18,7 @@ import {
   recordCodeFailure,
 } from './code-throttle.js'
 import { getRemainingSeconds } from './attempt-timing.js'
+import { RATE_LIMIT_MAX, RATE_LIMIT_WINDOW } from '../lib/rate-limit-policy.js'
 
 export { generateAttemptToken, verifyAttemptToken }
 
@@ -25,7 +26,7 @@ export async function studentRoutes(app: FastifyInstance) {
   // GET /api/student/validate-code?code=XXX
   // Перевіряє код без споживання — для сторінки olympiad-enter.html
   app.get<{ Querystring: { code?: string } }>('/validate-code', {
-    config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
+    config: { rateLimit: { max: RATE_LIMIT_MAX.classroomStart, timeWindow: RATE_LIMIT_WINDOW } },
     schema: {
       querystring: {
         type: 'object',
@@ -100,7 +101,7 @@ export async function studentRoutes(app: FastifyInstance) {
   // Returns: { attemptId, grade, questions: [...] }
   app.post<{ Body: { code: string } }>('/exchange-code', {
     config: {
-      rateLimit: { max: 10, timeWindow: '1 minute' },
+      rateLimit: { max: RATE_LIMIT_MAX.classroomStart, timeWindow: RATE_LIMIT_WINDOW },
     },
     schema: {
       body: {

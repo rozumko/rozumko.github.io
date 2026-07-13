@@ -49,6 +49,23 @@ test('rate-limit не довіряє підробленому лівому X-For
   await app.close()
 })
 
+test('student traffic keeps classroom NAT capacity and verified-token isolation wired into routes', () => {
+  const studentSource = readFileSync(new URL('./routes/student.ts', import.meta.url), 'utf8')
+  const attemptSource = readFileSync(new URL('./routes/attempt.ts', import.meta.url), 'utf8')
+  const schoolSource = readFileSync(new URL('./routes/school.ts', import.meta.url), 'utf8')
+
+  assert.equal((studentSource.match(/RATE_LIMIT_MAX\.classroomStart/g) ?? []).length, 2)
+  assert.equal((schoolSource.match(/RATE_LIMIT_MAX\.classroomStart/g) ?? []).length, 1)
+  assert.match(attemptSource, /scope:\s*'attempt-answer'/)
+  assert.match(attemptSource, /scope:\s*'attempt-finish'/)
+  assert.match(attemptSource, /scope:\s*'attempt-heartbeat'/)
+  assert.match(attemptSource, /config:\s*\{\s*rateLimit:\s*attemptHeartbeatRateLimit\s*\}/)
+  assert.match(schoolSource, /scope:\s*'school-participant-session'/)
+  assert.match(schoolSource, /scope:\s*'school-participant-avatar'/)
+  assert.match(schoolSource, /scope:\s*'school-participant-answer'/)
+  assert.match(schoolSource, /config:\s*\{\s*rateLimit:\s*participantSessionRateLimit\s*\}/)
+})
+
 test('CORS preflight дозволяє кастомні токен-заголовки з дозволеного origin', async () => {
   const app = Fastify()
   await app.register(cors, CORS_OPTIONS)

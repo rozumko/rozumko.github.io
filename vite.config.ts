@@ -25,6 +25,28 @@ const BASE_CSP = [
 
 const STRICT_CSP = ["script-src 'self'", ...BASE_CSP].join('; ')
 
+const ANALYTICS_PAGES = new Set([
+  'index.html',
+  'for-parents.html',
+  'for-teachers.html',
+  'standards.html',
+  'transparency.html',
+])
+const ANALYTICS_SCRIPT_ORIGIN = 'https://static.cloudflareinsights.com'
+const ANALYTICS_CONNECT_ORIGIN = 'https://cloudflareinsights.com'
+const ANALYTICS_TOKEN = process.env.CLOUDFLARE_WEB_ANALYTICS_TOKEN?.trim()
+const ANALYTICS_CSP = [
+  `script-src 'self' ${ANALYTICS_SCRIPT_ORIGIN}`,
+  ...BASE_CSP.map((directive) => directive.startsWith('connect-src ')
+    ? `${directive} ${ANALYTICS_CONNECT_ORIGIN}`
+    : directive),
+].join('; ')
+
+function isAnalyticsPage(path: string): boolean {
+  const fileName = path.split('/').pop() || 'index.html'
+  return ANALYTICS_PAGES.has(fileName)
+}
+
 // teacher.html and parent.html additionally load Cloudflare Turnstile:
 //   - script-src: api.js віджета
 //   - frame-src:  Turnstile рендериться в iframe (без директиви впав би на default-src 'self')
@@ -63,7 +85,14 @@ function cspPlugin(): Plugin {
       handler(html, ctx) {
         const isOffline = ctx.path.endsWith('offline.html')
         const usesTurnstile = ctx.path.endsWith('teacher.html') || ctx.path.endsWith('parent.html')
-        const content = isOffline ? OFFLINE_CSP : usesTurnstile ? TEACHER_CSP : STRICT_CSP
+        const usesAnalytics = Boolean(ANALYTICS_TOKEN) && isAnalyticsPage(ctx.path)
+        const content = isOffline
+          ? OFFLINE_CSP
+          : usesTurnstile
+            ? TEACHER_CSP
+            : usesAnalytics
+              ? ANALYTICS_CSP
+              : STRICT_CSP
         return {
           html,
           tags: [{
@@ -80,6 +109,32 @@ function cspPlugin(): Plugin {
   }
 }
 
+function analyticsPlugin(): Plugin {
+  return {
+    name: 'inject-cloudflare-web-analytics',
+    apply: 'build',
+    transformIndexHtml(html, ctx) {
+      if (!ANALYTICS_TOKEN || !isAnalyticsPage(ctx.path)) return html
+      if (!/^[a-z0-9]{32}$/i.test(ANALYTICS_TOKEN)) {
+        throw new Error('CLOUDFLARE_WEB_ANALYTICS_TOKEN must be a 32-character alphanumeric site token')
+      }
+
+      return {
+        html,
+        tags: [{
+          tag: 'script',
+          attrs: {
+            defer: true,
+            src: `${ANALYTICS_SCRIPT_ORIGIN}/beacon.min.js`,
+            'data-cf-beacon': JSON.stringify({ token: ANALYTICS_TOKEN }),
+          },
+          injectTo: 'body',
+        }],
+      }
+    },
+  }
+}
+
 export default defineConfig({
   // GitHub Pages user site — base is /
   base: '/',
@@ -87,7 +142,7 @@ export default defineConfig({
   // Static assets copied verbatim to dist/
   publicDir: 'public',
 
-  plugins: [cspPlugin()],
+  plugins: [cspPlugin(), analyticsPlugin()],
 
   build: {
     outDir: 'dist',
