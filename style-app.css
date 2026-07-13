@@ -1301,6 +1301,104 @@ body.puzzle-active #puzzle-area .app-actions { margin: 0; width: 100%; }
 }
 .sim-choice:hover, .sim-choice:focus-visible { border-color: var(--clr-primary); transform: translateY(-1px); }
 
+/* ── Гра «Впорядкуй кроки» (features/games/sequence-game.ts) ─────────────── */
+.sq { display: flex; flex-direction: column; gap: var(--sp-4); max-width: 40rem; margin: 0 auto; }
+.sq__top { display: flex; align-items: center; gap: var(--sp-3); }
+.sq__progress { font-weight: 800; color: var(--clr-text-faint); min-width: 3.5rem; }
+.sq__bar { flex: 1; height: 8px; background: var(--clr-surface-muted); border-radius: 999px; overflow: hidden; }
+.sq__bar-fill { height: 100%; width: 0; background: var(--clr-primary); border-radius: 999px; transition: width .3s ease; }
+
+.sq-card {
+  background: var(--clr-surface);
+  border: 2px solid var(--clr-border-light);
+  border-radius: 20px;
+  padding: clamp(var(--sp-4), 3vw, var(--sp-6));
+}
+.sq-card__title { font-size: clamp(1.05rem, 2.5vw, 1.3rem); font-weight: 800; margin: 0 0 var(--sp-1); }
+.sq-card__hint { color: var(--clr-text-faint); margin: 0 0 var(--sp-3); }
+
+.sq-card__slots { list-style: none; display: flex; flex-direction: column; gap: var(--sp-2); margin: 0 0 var(--sp-4); padding: 0; counter-reset: sq-slot; }
+.sq-slot {
+  counter-increment: sq-slot;
+  display: flex; align-items: center; gap: var(--sp-2);
+  min-height: 2.6rem;
+  border: 2px dashed var(--clr-border);
+  border-radius: 12px;
+  padding: 4px var(--sp-3);
+  color: var(--clr-text-faint);
+}
+.sq-slot::before { content: counter(sq-slot) "."; font-weight: 800; color: var(--clr-text-faint); }
+.sq-slot--filled { border-style: solid; color: inherit; }
+.sq-slot--right { border-color: var(--clr-emerald); background: var(--clr-emerald-light); }
+.sq-slot--wrong { border-color: var(--clr-danger); background: #fee2e2; }
+.sq-slot__step {
+  font: inherit; font-weight: 700; text-align: left;
+  background: none; border: none; cursor: pointer; padding: 4px 0;
+  flex: 1;
+}
+.sq-slot__step:disabled { cursor: default; }
+
+.sq-card__pool { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.sq-step {
+  font: inherit; font-weight: 700;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: 12px;
+  border: 2px solid var(--clr-border);
+  background: var(--clr-surface);
+  cursor: pointer;
+  transition: transform .12s ease, border-color .12s ease;
+}
+.sq-step:hover, .sq-step:focus-visible { border-color: var(--clr-primary); transform: translateY(-1px); }
+
+.sq__feedback { font-weight: 800; min-height: 1.4em; margin: 0; }
+.sq__feedback--ok  { color: var(--clr-emerald-dark); }
+.sq__feedback--bad { color: var(--clr-danger); }
+.sq__next, .sq__retry { margin-top: var(--sp-3); }
+
+.sq-done { text-align: center; padding: var(--sp-6) 0; }
+.sq-done__stars { font-size: 2rem; margin: 0 0 var(--sp-2); }
+.sq-done__title { font-weight: 800; font-size: 1.2rem; margin: 0; }
+
+/* ── Гра «Як вчинити?» (features/games/scenarios-game.ts) ────────────────── */
+.sc { display: flex; flex-direction: column; gap: var(--sp-4); max-width: 40rem; margin: 0 auto; }
+.sc__top { display: flex; align-items: center; gap: var(--sp-3); }
+.sc__progress { font-weight: 800; color: var(--clr-text-faint); min-width: 3.5rem; }
+.sc__bar { flex: 1; height: 8px; background: var(--clr-surface-muted); border-radius: 999px; overflow: hidden; }
+.sc__bar-fill { height: 100%; width: 0; background: var(--clr-primary); border-radius: 999px; transition: width .3s ease; }
+
+.sc-card {
+  background: var(--clr-surface);
+  border: 2px solid var(--clr-border-light);
+  border-radius: 20px;
+  padding: clamp(var(--sp-4), 3vw, var(--sp-6));
+}
+.sc-card__emoji { font-size: 2.2rem; line-height: 1; margin: 0 0 var(--sp-2); text-align: center; }
+.sc-card__text { font-size: clamp(1.05rem, 2.5vw, 1.3rem); font-weight: 800; margin: 0 0 var(--sp-2); }
+.sc-card__hint { color: var(--clr-text-faint); margin: 0 0 var(--sp-4); }
+.sc-card__answers { display: flex; flex-direction: column; gap: var(--sp-2); }
+.sc-answer {
+  font: inherit; font-weight: 700; text-align: left;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: 14px;
+  border: 2px solid var(--clr-border);
+  background: var(--clr-surface);
+  cursor: pointer;
+  transition: transform .12s ease, border-color .12s ease;
+}
+.sc-answer:hover:not(:disabled), .sc-answer:focus-visible { border-color: var(--clr-primary); transform: translateY(-1px); }
+.sc-answer:disabled { cursor: default; opacity: .75; }
+.sc-answer--right:disabled { opacity: 1; background: var(--clr-emerald-light); border-color: var(--clr-emerald); }
+.sc-answer--wrong:disabled { opacity: 1; background: #fee2e2; border-color: var(--clr-danger); }
+
+.sc__feedback { font-weight: 800; min-height: 1.4em; margin: 0; }
+.sc__feedback--ok  { color: var(--clr-emerald-dark); }
+.sc__feedback--bad { color: var(--clr-danger); }
+.sc__next { margin-top: var(--sp-3); }
+
+.sc-done { text-align: center; padding: var(--sp-6) 0; }
+.sc-done__stars { font-size: 2rem; margin: 0 0 var(--sp-2); }
+.sc-done__title { font-weight: 800; font-size: 1.2rem; margin: 0; }
+
 /* ── Мікро-урок (features/lessons/lesson-runner.ts) ──────────────────────── */
 .lsn { display: flex; flex-direction: column; gap: var(--sp-4); max-width: 40rem; margin: 0 auto; }
 .lsn__top { display: flex; align-items: center; gap: var(--sp-3); }

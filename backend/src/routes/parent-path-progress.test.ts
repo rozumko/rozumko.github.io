@@ -67,10 +67,10 @@ for (const sample of [
 
 test('multi-activity point requires the exact activity set and immutable versions', () => {
   const theory = result('path:g2-ct-algorithms:theory', 1, '2026-07-10T09:58:00.000Z')
+  const sequence = result('path:g2-ct-algorithms:algorithms-sequence', 1, '2026-07-10T10:02:00.000Z')
   const mission = result('path:g2-ct-algorithms:algorithms-mission')
-  const puzzles = result('path:g2-ct-algorithms:algorithms-puzzles', 1, '2026-07-10T10:02:00.000Z')
   const valid = validatePathCompletion(2, {
-    pathId: 'grade-2', pointId: 'g2-ct-algorithms', results: [puzzles, theory, mission],
+    pathId: 'grade-2', pointId: 'g2-ct-algorithms', results: [sequence, theory, mission],
   })
   assert.equal(valid.ok, true)
 
@@ -80,7 +80,7 @@ test('multi-activity point requires the exact activity set and immutable version
   assert.deepEqual(missing, { ok: false, error: 'Не всі обовʼязкові активності завершено' })
 
   const stale = validatePathCompletion(2, {
-    pathId: 'grade-2', pointId: 'g2-ct-algorithms', results: [theory, mission, { ...puzzles, activityVersion: 2 }],
+    pathId: 'grade-2', pointId: 'g2-ct-algorithms', results: [theory, mission, { ...sequence, activityVersion: 2 }],
   })
   assert.deepEqual(stale, { ok: false, error: 'Невідома активність або версія' })
 })

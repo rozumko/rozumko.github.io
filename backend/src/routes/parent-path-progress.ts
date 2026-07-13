@@ -86,6 +86,7 @@ export const HOME_PATH_CATALOG: Record<string, CatalogPath> = {
         unlockAfter: ['g2-fact-opinion'],
         requiredActivities: {
           'path:g2-digital-safety:theory': 1,
+          'path:g2-digital-safety:safety-scenarios': 1,
           'path:g2-digital-safety:digital-safety-mission': 1,
         },
       },
@@ -93,8 +94,8 @@ export const HOME_PATH_CATALOG: Record<string, CatalogPath> = {
         unlockAfter: ['g2-ct-patterns'],
         requiredActivities: {
           'path:g2-ct-algorithms:theory': 1,
+          'path:g2-ct-algorithms:algorithms-sequence': 1,
           'path:g2-ct-algorithms:algorithms-mission': 1,
-          'path:g2-ct-algorithms:algorithms-puzzles': 1,
         },
       },
       'g2-final': {

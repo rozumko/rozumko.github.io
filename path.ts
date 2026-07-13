@@ -8,6 +8,10 @@ import { FO_LEVEL1_STATEMENTS, FO_LEVEL2_STATEMENTS } from './features/games/fac
 import { mountSimulator } from './features/games/simulator-engine.js'
 import { mountLesson } from './features/lessons/lesson-runner.js'
 import { loadLesson } from './features/lessons/lesson-loader.js'
+import { mountSequenceGame } from './features/games/sequence-game.js'
+import { SEQUENCE_SETS_G2 } from './features/games/sequence-data.js'
+import { mountScenarios } from './features/games/scenarios-game.js'
+import { SCENARIOS_DIGITAL_SAFETY } from './features/games/scenarios-data.js'
 import { HARDWARE_SCENARIO, SOFTWARE_SCENARIO } from './features/games/simulator-data.js'
 import { runMission, type MissionElements } from './features/missions/mission-runner.js'
 import { loadStaticQuestions } from './features/missions/static-questions.js'
@@ -240,6 +244,19 @@ async function startActivityStep(
       // Точка вже проходилась — теорію можна пропустити (повторний візит).
       allowSkip: store.isCompleted(p.id),
       onComplete: s => complete(fromLessonSummary(s, activityContext(p, step))),
+    })
+  } else if (a.kind === 'sequence') {
+    show(foRoot)
+    // Поки один пул наборів (1–2 клас); пули за класами — коли з'являться.
+    mountSequenceGame(foRoot, SEQUENCE_SETS_G2, {
+      round: a.count,
+      onComplete: s => complete(fromGameSummary(s, activityContext(p, step))),
+    })
+  } else if (a.kind === 'scenarios') {
+    show(foRoot)
+    mountScenarios(foRoot, SCENARIOS_DIGITAL_SAFETY, {
+      round: a.count,
+      onComplete: s => complete(fromGameSummary(s, activityContext(p, step))),
     })
   } else if (a.kind === 'sorting') {
     show(sortingRoot)

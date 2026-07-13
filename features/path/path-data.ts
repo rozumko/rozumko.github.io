@@ -7,6 +7,8 @@ import type { QuestionTrack } from '../api/client.js'
 
 export type PathActivity =
   | { kind: 'lesson'; lessonId: string }
+  | { kind: 'sequence'; count?: number }
+  | { kind: 'scenarios'; count?: number }
   | { kind: 'sorting'; game: 'attributes' | 'infosort' | 'multisort' }
   | { kind: 'puzzles'; count?: number }
   | { kind: 'fact-opinion'; level: 1 | 2 }
@@ -340,6 +342,7 @@ export const GRADE2_PATH: GradePathMap = {
       curriculum: [{ track: 'informatics', topic: 'digital-safety' }],
       activities: [
         { id: 'theory', version: 1, title: 'Теорія', activity: { kind: 'lesson', lessonId: 'private-info-g2' }, required: true },
+        { id: 'safety-scenarios', version: 1, title: 'Як вчинити?', activity: { kind: 'scenarios', count: 4 }, required: true },
         { id: 'digital-safety-mission', version: 1, title: 'Місія про приватні дані', activity: { kind: 'mission', track: 'informatics', topic: 'digital-safety' }, required: true },
       ],
       unlockAfter: ['g2-fact-opinion'],
@@ -352,8 +355,9 @@ export const GRADE2_PATH: GradePathMap = {
       curriculum: [{ track: 'computational-thinking', topic: 'algorithms' }],
       activities: [
         { id: 'theory', version: 1, title: 'Теорія', activity: { kind: 'lesson', lessonId: 'algorithms-order-g2' }, required: true },
+        // Тематичне закріплення теорії замість generic-головоломок (зріз 3).
+        { id: 'algorithms-sequence', version: 1, title: 'Впорядкуй кроки', activity: { kind: 'sequence', count: 3 }, required: true },
         { id: 'algorithms-mission', version: 1, title: 'Місія про алгоритми', activity: { kind: 'mission', track: 'computational-thinking', topic: 'algorithms', count: 5 }, required: true },
-        { id: 'algorithms-puzzles', version: 1, title: 'Закріплення головоломками', activity: { kind: 'puzzles', count: 2 }, required: true },
       ],
       unlockAfter: ['g2-ct-patterns'],
       x: 29, y: 68,
