@@ -41,6 +41,12 @@ environments receive the same schema.
 | `0024_add_infosort_mission` | Registers built-in game «ІнфоСорт» (informatics/information) |
 | `0025_add_multisort_mission` | Registers built-in game «Мульти-Сортування» (computational-thinking/abstraction) |
 | `0026_add_puzzle_missions` | Registers 5 logic puzzles (sequence/machine/balance/magic/symbols) as kind=puzzle under computational-thinking |
+| `0027_add_attempt_pause` | Olympiad attempt pause/heartbeat resilience columns |
+| `0028_enable_rls_all_application_tables` | RLS enabled on every application table |
+| `0029_add_home_parent_accounts` | Parent accounts (1:1 Supabase Auth identity) + nullable lead ownership |
+| `0030_child_profiles_parent_owned` | Child profiles ownable by parent accounts (lead optional, fail-closed CHECK) |
+| `0031_add_home_path_progress` | Home path progress snapshots + idempotent client-unverified events |
+| `0032_add_micro_lessons` | Micro-lessons authoring table (admin CRUD; children read the static export) |
 
 `0012` is intentionally idempotent: production received the columns manually
 before the SQL was incorporated into Drizzle history.
