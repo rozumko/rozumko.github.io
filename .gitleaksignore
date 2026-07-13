@@ -16,3 +16,5 @@ ad32b2f59f14f5407380d8379d764c8d148f36fd:script.js:generic-api-key:32
 ab6e07ca1df30d975e9a23d01f4d786d88527033:script.js:generic-api-key:39
 73347e68af8645b6a40a131507435ae8018b79e2:script.js:generic-api-key:32
 61b1c15afb322088b143e7185ba6b40516106c0d:script.js:generic-api-key:32
+# localStorage key name for the parent signup form (not a credential):
+6086317df2541b2a204be5944e919aa8fd8daea5:for-parents.ts:generic-api-key:1
