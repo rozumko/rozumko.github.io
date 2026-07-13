@@ -580,3 +580,17 @@
 }
 .pv-explanation-wrap:not(.hidden) { display: block; }
 .pv-explanation-label { color: var(--clr-text-muted); font-weight: 600; }
+
+/* ── Вкладка «Уроки» (features/admin/lessons-tab.ts) ─────────────────────── */
+.admin-section-note {
+  margin: 0 0 var(--sp-3); font-size: var(--font-size-sm); color: var(--clr-text-muted);
+}
+.admin-section-note code {
+  background: #f1f5f9; border-radius: 6px; padding: 1px 6px;
+}
+.lf-block {
+  border: 1px solid #e2e8f0; border-radius: var(--r-xl);
+  padding: var(--sp-3) var(--sp-4); margin: 0;
+  display: flex; flex-direction: column; gap: var(--sp-2);
+}
+.lf-block .lf-remove { align-self: flex-end; }

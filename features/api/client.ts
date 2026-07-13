@@ -1037,6 +1037,61 @@ export function getAdminMissions(): Promise<{ missions: Mission[] }> {
   return authRequest('/api/admin/missions')
 }
 
+// ── Мікро-уроки (адмінка). Дітям контент їде статичним бандлом
+// public/lessons/ (npm run export:lessons), не цим API. ──────────────────────
+
+export interface AdminLessonCard {
+  title?: string
+  text: string
+  image?: string
+  imageAlt?: string
+}
+
+export interface AdminLessonCheckQuestion {
+  question: string
+  options: string[]
+  correct: number
+  explanation?: string
+}
+
+export interface AdminMicroLesson {
+  id: string
+  title: string
+  version: number
+  status: 'draft' | 'published' | 'archived'
+  cards: AdminLessonCard[]
+  videoUrl: string | null
+  checkQuestions: AdminLessonCheckQuestion[]
+  createdAt: string | null
+  updatedAt: string | null
+}
+
+export interface AdminLessonContent {
+  title: string
+  cards: AdminLessonCard[]
+  videoUrl?: string | null
+  checkQuestions: AdminLessonCheckQuestion[]
+}
+
+export function getAdminLessons(): Promise<{ lessons: AdminMicroLesson[] }> {
+  return authRequest('/api/admin/lessons')
+}
+
+export function createAdminLesson(data: AdminLessonContent & { id: string }): Promise<{ lesson: AdminMicroLesson }> {
+  return authRequest('/api/admin/lessons', { method: 'POST', body: JSON.stringify(data) })
+}
+
+export function updateAdminLesson(id: string, data: AdminLessonContent): Promise<{ lesson: AdminMicroLesson; versionBumped: boolean }> {
+  return authRequest(`/api/admin/lessons/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) })
+}
+
+export function setAdminLessonStatus(id: string, status: AdminMicroLesson['status']): Promise<{ lesson: AdminMicroLesson }> {
+  return authRequest(`/api/admin/lessons/${encodeURIComponent(id)}/status`, {
+    method: 'PUT',
+    body: JSON.stringify({ status }),
+  })
+}
+
 export function getAdminQuestions(params: { grade?: number | string; isOlympiad?: boolean | string; difficulty?: string; track?: QuestionTrack | string; topic?: string } = {}): Promise<{ questions: Question[] }> {
   const p = new URLSearchParams()
   if (params.grade      != null) p.set('grade',      String(params.grade))

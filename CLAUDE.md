@@ -68,8 +68,8 @@ backend/src/routes/      ← student, attempt, teacher, admin, questions
 backend/src/lib/auth.ts  ← requireAuth, requireAdmin middleware
 backend/src/lib/taxonomy.ts ← TOPICS_BY_TRACK, валідація тем/концептів (fail-closed)
 backend/src/db/          ← Drizzle schema + migration runner
-backend/drizzle/         ← SQL-міграції (таксономія 0021, missions 0022, ігри 0023–0025, головоломки 0026)
-backend/scripts/         ← import-temp-content, export-practice-questions
+backend/drizzle/         ← SQL-міграції (таксономія 0021, missions 0022, ігри 0023–0025, головоломки 0026, уроки 0032)
+backend/scripts/         ← import-temp-content, export-practice-questions, export-lessons
 public/questions/        ← статичний practice-бандл (track/topic; npm run export:questions)
 public/lessons/          ← мікро-уроки JSON (<lessonId>.json; план — export з БД, docs/learning-path-plan.md)
 public/                  ← sw.js, manifest, favicon (статичні assets)

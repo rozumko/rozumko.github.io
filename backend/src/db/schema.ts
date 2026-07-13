@@ -246,6 +246,24 @@ export const missions = pgTable('missions', {
 export type Mission = typeof missions.$inferSelect
 export type NewMission = typeof missions.$inferInsert
 
+// Мікро-уроки (0032): теорія перед випробуванням на карті шляху. Авторяться
+// в адмінці, дітям роздаються статичним бандлом public/lessons/<id>.json
+// (npm run export:lessons) — дитячі сторінки БД не читають. Ключі
+// перевірочних питань формувальні й публічні свідомо (як practice-бандл).
+export const microLessons = pgTable('micro_lessons', {
+  id:             text('id').primaryKey(),   // slug: info-senses-g2
+  title:          text('title').notNull(),
+  version:        integer('version').notNull().default(1),
+  status:         text('status').notNull().default('draft').$type<'draft' | 'published' | 'archived'>(),
+  cards:          jsonb('cards').notNull().$type<unknown[]>(),
+  videoUrl:       text('video_url'),
+  checkQuestions: jsonb('check_questions').notNull().$type<unknown[]>(),
+  createdAt:      timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:      timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type MicroLessonRow = typeof microLessons.$inferSelect
+
 // ── Home Mode (parent-led, consent-based) ─────────────────────────────────────
 // Контракт: docs/home-demo-contract.md. Лід = батьківський email + згода.
 // Дитячі дані пишуться ЛИШЕ після створення ліда (consent-gate на бекенді).

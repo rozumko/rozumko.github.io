@@ -1,7 +1,8 @@
 import type { FastifyInstance } from 'fastify'
 import { eq, desc, count, and, asc, inArray } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { questions, accessCodes, attempts, attemptQuestions, appUsers, olympiadEvents, eventQuestions, schoolSessions, schoolSessionQuestions, homeLeads, homeEntitlements, homeEntitlementEvents, missions, type QuestionTrack } from '../db/schema.js'
+import { questions, accessCodes, attempts, attemptQuestions, appUsers, olympiadEvents, eventQuestions, schoolSessions, schoolSessionQuestions, homeLeads, homeEntitlements, homeEntitlementEvents, missions, microLessons, type QuestionTrack } from '../db/schema.js'
+import { normalizeLessonSlug, normalizeLessonStatus, normalizeLessonContent, lessonContentChanged } from './lesson-validation.js'
 import { ENTITLEMENT_STATUSES, normalizeEntitlementStatus, applyEntitlementChange } from './home-entitlement.js'
 import { requireAdmin } from '../lib/auth.js'
 import { assertQuestionsBelongToGrade, normalizeEventQuestionSelection } from './event-questions-validation.js'
@@ -733,4 +734,93 @@ export async function adminRoutes(app: FastifyInstance) {
       .orderBy(asc(missions.track), asc(missions.grade), asc(missions.id))
     return reply.send({ missions: list })
   })
+
+  // ── Мікро-уроки (0032): авторинг теорії для карти шляху ────────────────────
+  // Дітям контент їде статичним бандлом (npm run export:lessons), тому CRUD
+  // не має рантайм-впливу на дитячі сторінки до наступного експорту.
+
+  // GET /api/admin/lessons
+  app.get('/lessons', { preHandler: requireAdmin }, async (_req, reply) => {
+    const list = await db.select().from(microLessons).orderBy(asc(microLessons.id))
+    return reply.send({ lessons: list })
+  })
+
+  // POST /api/admin/lessons — створення з явним slug
+  app.post<{ Body: { id: string } & Record<string, unknown> }>(
+    '/lessons',
+    { preHandler: requireAdmin },
+    async (req, reply) => {
+      try {
+        const id = normalizeLessonSlug(req.body?.id)
+        const content = normalizeLessonContent(req.body)
+        const [existing] = await db.select({ id: microLessons.id })
+          .from(microLessons).where(eq(microLessons.id, id)).limit(1)
+        if (existing) return reply.code(409).send({ error: 'Урок з таким id вже існує' })
+        const [created] = await db.insert(microLessons).values({
+          id,
+          title: content.title,
+          cards: content.cards,
+          videoUrl: content.videoUrl,
+          checkQuestions: content.checkQuestions,
+        }).returning()
+        return reply.code(201).send({ lesson: created })
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message })
+      }
+    },
+  )
+
+  // PUT /api/admin/lessons/:id — оновлення контенту; зміна контенту піднімає version
+  app.put<{ Params: { id: string }; Body: Record<string, unknown> }>(
+    '/lessons/:id',
+    { preHandler: requireAdmin },
+    async (req, reply) => {
+      try {
+        const id = normalizeLessonSlug(req.params.id)
+        const content = normalizeLessonContent(req.body)
+        const [existing] = await db.select().from(microLessons)
+          .where(eq(microLessons.id, id)).limit(1)
+        if (!existing) return reply.code(404).send({ error: 'Урок не знайдено' })
+
+        const prev = normalizeLessonContent({
+          title: existing.title,
+          cards: existing.cards,
+          videoUrl: existing.videoUrl,
+          checkQuestions: existing.checkQuestions,
+        })
+        const bump = lessonContentChanged(prev, content)
+        const [updated] = await db.update(microLessons).set({
+          title: content.title,
+          cards: content.cards,
+          videoUrl: content.videoUrl,
+          checkQuestions: content.checkQuestions,
+          version: bump ? existing.version + 1 : existing.version,
+          updatedAt: new Date(),
+        }).where(eq(microLessons.id, id)).returning()
+        return reply.send({ lesson: updated, versionBumped: bump })
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message })
+      }
+    },
+  )
+
+  // PUT /api/admin/lessons/:id/status — draft | published | archived
+  app.put<{ Params: { id: string }; Body: { status: string } }>(
+    '/lessons/:id/status',
+    { preHandler: requireAdmin },
+    async (req, reply) => {
+      try {
+        const id = normalizeLessonSlug(req.params.id)
+        const status = normalizeLessonStatus(req.body?.status)
+        const [updated] = await db.update(microLessons)
+          .set({ status, updatedAt: new Date() })
+          .where(eq(microLessons.id, id))
+          .returning()
+        if (!updated) return reply.code(404).send({ error: 'Урок не знайдено' })
+        return reply.send({ lesson: updated })
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message })
+      }
+    },
+  )
 }

@@ -76,6 +76,7 @@
       <button data-tab="results"    class="admin-tab"><i class="fas fa-poll" aria-hidden="true"></i> Результати</button>
       <button data-tab="questions"  class="admin-tab"><i class="fas fa-question" aria-hidden="true"></i> Питання</button>
       <button data-tab="missions"   class="admin-tab"><i class="fas fa-rocket" aria-hidden="true"></i> Місії</button>
+      <button data-tab="lessons"    class="admin-tab"><i class="fas fa-book-open" aria-hidden="true"></i> Уроки</button>
     </nav>
 
     <main id="main-content" class="admin-main">
@@ -217,6 +218,24 @@
           <span id="m-count" class="admin-filter-count"></span>
         </div>
         <div id="missions-list" class="admin-list admin-list--sm"></div>
+      </section>
+
+      <!-- Вкладка: Мікро-уроки -->
+      <section id="tab-lessons" class="tab-panel hidden">
+        <div class="admin-section-header">
+          <h2 class="admin-section-title">Мікро-уроки</h2>
+          <div class="admin-section-actions">
+            <button id="add-lesson-btn" class="btn-adm-emerald">
+              <i class="fas fa-plus" aria-hidden="true"></i> Додати урок
+            </button>
+          </div>
+        </div>
+        <p class="admin-section-note">Дітям уроки їдуть статичним бандлом: після публікації запусти
+          <code>cd backend &amp;&amp; npm run export:lessons</code> і закоміть <code>public/lessons/</code>.</p>
+        <div class="admin-filter-bar">
+          <span id="l-count" class="admin-filter-count"></span>
+        </div>
+        <div id="lessons-list" class="admin-list admin-list--sm"></div>
       </section>
 
       <!-- Вкладка: Питання -->
@@ -577,6 +596,105 @@
       </form>
     </div>
   </div>
+
+  <!-- Модальне вікно редагування мікро-уроку -->
+  <div id="lesson-modal" class="question-modal-overlay hidden"
+       role="dialog" aria-modal="true" aria-labelledby="lesson-modal-title">
+    <div class="question-modal-card">
+      <h3 id="lesson-modal-title" class="question-modal-title">Новий урок</h3>
+      <form id="lesson-form" novalidate class="qf-space">
+
+        <div class="adm-form-grid adm-form-grid--4">
+          <div>
+            <label for="lf-id" class="adm-label">ID (slug)</label>
+            <input type="text" id="lf-id" placeholder="info-senses-g2" class="adm-input adm-input--sm adm-input--code"/>
+          </div>
+          <div>
+            <label for="lf-title" class="adm-label">Назва уроку</label>
+            <input type="text" id="lf-title" placeholder="Як ми отримуємо інформацію" class="adm-input adm-input--sm"/>
+          </div>
+          <div>
+            <label for="lf-video" class="adm-label">Відео (https URL, опційно)</label>
+            <input type="text" id="lf-video" placeholder="https://…/lesson.mp4" class="adm-input adm-input--sm adm-input--code"/>
+          </div>
+        </div>
+
+        <div>
+          <div class="admin-section-header">
+            <span class="adm-label">Картки теорії</span>
+            <button type="button" id="lf-add-card" class="btn-adm-ghost">
+              <i class="fas fa-plus" aria-hidden="true"></i> Картка
+            </button>
+          </div>
+          <div id="lf-cards" class="qf-space"></div>
+        </div>
+
+        <div>
+          <div class="admin-section-header">
+            <span class="adm-label">Мікро-квіз (0–5 питань)</span>
+            <button type="button" id="lf-add-check" class="btn-adm-ghost">
+              <i class="fas fa-plus" aria-hidden="true"></i> Питання
+            </button>
+          </div>
+          <div id="lf-checks" class="qf-space"></div>
+        </div>
+
+        <p id="lf-error" class="adm-form-error" role="alert"></p>
+        <div class="adm-form-actions">
+          <button type="submit" id="lf-submit" class="btn-adm-emerald">Зберегти</button>
+          <button type="button" id="lf-cancel" class="btn-adm-slate">Скасувати</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Шаблон картки уроку -->
+  <template id="lf-card-template">
+    <fieldset class="lf-block">
+      <div class="adm-form-grid adm-form-grid--4">
+        <div>
+          <label class="adm-label">Заголовок (опційно)</label>
+          <input type="text" class="lf-card-title adm-input adm-input--sm"/>
+        </div>
+        <div>
+          <label class="adm-label">Картинка (URL, опційно)</label>
+          <input type="text" class="lf-card-image adm-input adm-input--sm adm-input--code" placeholder="/lessons/assets/x.svg"/>
+        </div>
+        <div>
+          <label class="adm-label">Alt-текст картинки</label>
+          <input type="text" class="lf-card-alt adm-input adm-input--sm"/>
+        </div>
+      </div>
+      <label class="adm-label">Текст картки</label>
+      <textarea rows="3" class="lf-card-text adm-input adm-input--sm adm-textarea"></textarea>
+      <button type="button" class="lf-remove btn-adm-ghost" aria-label="Видалити картку">
+        <i class="fas fa-trash" aria-hidden="true"></i> Видалити картку
+      </button>
+    </fieldset>
+  </template>
+
+  <!-- Шаблон перевірочного питання -->
+  <template id="lf-check-template">
+    <fieldset class="lf-block">
+      <label class="adm-label">Питання</label>
+      <input type="text" class="lf-check-question adm-input adm-input--sm"/>
+      <label class="adm-label">Варіанти (кожен з нового рядка, 2–6)</label>
+      <textarea rows="3" class="lf-check-options adm-input adm-input--sm adm-textarea" placeholder="Варіант А&#10;Варіант Б"></textarea>
+      <div class="adm-form-grid adm-form-grid--4">
+        <div>
+          <label class="adm-label">Правильний (номер рядка, з 1)</label>
+          <input type="number" min="1" value="1" class="lf-check-correct adm-input adm-input--sm"/>
+        </div>
+        <div>
+          <label class="adm-label">Пояснення (опційно)</label>
+          <input type="text" class="lf-check-explanation adm-input adm-input--sm"/>
+        </div>
+      </div>
+      <button type="button" class="lf-remove btn-adm-ghost" aria-label="Видалити питання">
+        <i class="fas fa-trash" aria-hidden="true"></i> Видалити питання
+      </button>
+    </fieldset>
+  </template>
 
   <script type="module" src="admin.js"></script>
 </body>
