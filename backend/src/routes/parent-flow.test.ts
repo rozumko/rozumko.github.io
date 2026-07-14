@@ -1,7 +1,11 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import Fastify from 'fastify'
 import type { PathProgressStore, PathProgressView } from './parent-path-progress.js'
+import { catalogFromPoints, type CatalogPath } from './path-catalog.js'
 
 process.env.ATTEMPT_SECRET = 'test-secret-for-parent-flow'
 process.env.SUPABASE_URL = 'https://test.supabase.co'
@@ -203,11 +207,19 @@ const TOKENS: Record<string, { sub: string; email: string; verified: boolean }> 
   'chuzhyi-verified': { sub: 'auth-chuzhyi', email: 'chuzhyi@example.com', verified: true },
 }
 
+// Каталог шляхів у флоу-тестах — з канонічного seed 0033 (без реальної БД).
+const SEED_MAPS = JSON.parse(readFileSync(
+  join(dirname(fileURLToPath(import.meta.url)), '../db/seed/path-maps.json'), 'utf8',
+)) as Array<{ pathId: string; grade: number; points: unknown[] }>
+const SEED_CATALOGS = new Map<string, CatalogPath | null>(
+  SEED_MAPS.map(map => [map.pathId, catalogFromPoints(map.grade, map.points)]))
+
 async function buildApp(pathProgressStore?: PathProgressStore) {
   const app = Fastify()
   await app.register(parentRoutes, {
     prefix: '/api/parent',
     pathProgressStore,
+    pathCatalogLoader: async (pathId: string) => SEED_CATALOGS.get(pathId) ?? null,
     verifyToken: async (header: string | undefined) => {
       const token = header?.startsWith('Bearer ') ? header.slice(7) : ''
       const known = TOKENS[token]

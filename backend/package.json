@@ -15,6 +15,7 @@
     "db:seed": "tsx src/db/seed.ts",
     "export:questions": "tsx scripts/export-practice-questions.ts",
     "export:lessons": "tsx scripts/export-lessons.ts",
+    "export:path": "tsx scripts/export-path.ts",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {

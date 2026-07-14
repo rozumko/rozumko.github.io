@@ -35,6 +35,12 @@ export interface PathPoint {
   title: string
   /** Емодзі-іконка вузла на карті. */
   icon: string
+  /**
+   * Доступ до точки: 'free' — відкрита всім, 'club' — під підпискою
+   * (подання free-карти — docs/learning-path-plan.md, погоджено 2026-07-13).
+   * Відсутнє поле = 'free'. UI-обмеження — окремий зріз монетизації.
+   */
+  access?: 'free' | 'club'
   /** A point may contribute to several track/topic pairs at an intersection. */
   curriculum: CurriculumTag[]
   /** Required activities run sequentially; bonus activities can be added later. */

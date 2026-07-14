@@ -13,9 +13,10 @@ import {
   MAX_PROFILES_PER_ACCOUNT, type ParentAccountRow,
 } from './parent-validation.js'
 import {
-  HOME_PATH_CATALOG, drizzlePathProgressStore, hasPathPrerequisites, validatePathCompletion,
+  drizzlePathProgressStore, hasPathPrerequisites, validatePathCompletion,
   type PathCompletionBody, type PathProgressStore,
 } from './parent-path-progress.js'
+import { loadPathCatalog, type PathCatalogLoader } from './path-catalog.js'
 
 // Батьківська зона (/api/parent) — зріз 3 плану learning-path.
 // Межі довіри (docs/security-model.md «Parent Accounts And Child Profiles»):
@@ -30,11 +31,14 @@ export interface ParentRoutesOptions {
   verifyToken?: ParentTokenVerifier
   /** DI for path-progress flow tests; production uses the transactional Drizzle store. */
   pathProgressStore?: PathProgressStore
+  /** DI for tests; production loads the catalog from path_maps (0033). */
+  pathCatalogLoader?: PathCatalogLoader
 }
 
 export async function parentRoutes(app: FastifyInstance, opts: ParentRoutesOptions = {}) {
   const verifyToken = opts.verifyToken ?? verifyParentToken
   const pathProgressStore = opts.pathProgressStore ?? drizzlePathProgressStore
+  const pathCatalogLoader = opts.pathCatalogLoader ?? loadPathCatalog
 
   async function authenticate(req: FastifyRequest, reply: FastifyReply): Promise<ParentJwtPayload | null> {
     const payload = await verifyToken(req.headers.authorization)
@@ -301,7 +305,7 @@ export async function parentRoutes(app: FastifyInstance, opts: ParentRoutesOptio
       if (!profile) return
 
       const pathId = req.query.pathId ?? `grade-${profile.grade}`
-      const path = HOME_PATH_CATALOG[pathId]
+      const path = await pathCatalogLoader(pathId)
       if (!path || path.grade !== profile.grade) {
         return reply.code(400).send({ error: 'Невідомий навчальний шлях для цього профілю' })
       }
@@ -349,7 +353,8 @@ export async function parentRoutes(app: FastifyInstance, opts: ParentRoutesOptio
       const profile = await requireOwnedProfile(req, reply, account, req.params.childProfileId)
       if (!profile) return
 
-      const validation = validatePathCompletion(profile.grade, req.body)
+      const catalog = await pathCatalogLoader(req.body.pathId)
+      const validation = validatePathCompletion(catalog, profile.grade, req.body)
       if (!validation.ok) return reply.code(400).send({ error: validation.error })
 
       const existing = await pathProgressStore.list(profile.id, req.body.pathId)

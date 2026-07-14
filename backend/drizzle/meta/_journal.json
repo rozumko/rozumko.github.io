@@ -232,6 +232,13 @@
       "when": 1783652400000,
       "tag": "0032_add_micro_lessons",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1783738800000,
+      "tag": "0033_add_path_maps",
+      "breakpoints": true
     }
   ]
 }

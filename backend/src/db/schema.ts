@@ -264,6 +264,23 @@ export const microLessons = pgTable('micro_lessons', {
 
 export type MicroLessonRow = typeof microLessons.$inferSelect
 
+// Структура навчального шляху (0033): джерело правди для валідації
+// path-progress і для статичного експорту (npm run export:path). Дитячі
+// сторінки читають бандл public/path/<pathId>.json, не БД. points —
+// масив PathPoint (див. features/path/path-data.ts + поле access).
+export const pathMaps = pgTable('path_maps', {
+  pathId:    text('path_id').primaryKey(),   // 'grade-1'..'grade-4'
+  grade:     integer('grade').notNull().unique(),
+  title:     text('title').notNull(),
+  version:   integer('version').notNull().default(1),
+  status:    text('status').notNull().default('published').$type<'draft' | 'published'>(),
+  points:    jsonb('points').notNull().$type<unknown[]>(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type PathMapRow = typeof pathMaps.$inferSelect
+
 // ── Home Mode (parent-led, consent-based) ─────────────────────────────────────
 // Контракт: docs/home-demo-contract.md. Лід = батьківський email + згода.
 // Дитячі дані пишуться ЛИШЕ після створення ліда (consent-gate на бекенді).

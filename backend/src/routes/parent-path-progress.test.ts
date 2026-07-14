@@ -5,11 +5,23 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { getTableColumns } from 'drizzle-orm'
 
-import { homePathEvents, homePathProgress } from '../db/schema.js'
+import { homePathEvents, homePathProgress, pathMaps } from '../db/schema.js'
 import {
-  HOME_PATH_CATALOG, hasPathPrerequisites, validatePathCompletion,
+  hasPathPrerequisites, validatePathCompletion,
   type ClientPathActivityResult,
 } from './parent-path-progress.js'
+import { catalogFromPoints, type CatalogPath } from './path-catalog.js'
+
+// Каталоги для тестів будуються з того самого seed, що і міграція 0033 —
+// один канонічний файл замість дубля структури в коді тестів.
+const HERE = dirname(fileURLToPath(import.meta.url))
+const SEED_MAPS = JSON.parse(readFileSync(join(HERE, '../db/seed/path-maps.json'), 'utf8')) as
+  Array<{ pathId: string; grade: number; title: string; points: unknown[] }>
+const CATALOGS: Record<string, CatalogPath> = Object.fromEntries(SEED_MAPS.map(map => {
+  const catalog = catalogFromPoints(map.grade, map.points)
+  assert.ok(catalog, `Seed-карта ${map.pathId} не проходить catalogFromPoints`)
+  return [map.pathId, catalog]
+}))
 
 const result = (activityId: string, activityVersion = 1, completedAt = '2026-07-10T10:00:00.000Z'): ClientPathActivityResult => ({
   activityId,
@@ -27,8 +39,8 @@ test('valid completion uses the backend catalog and produces a stable event key'
     pointId: 'g2-info-start',
     results: [result('path:g2-info-start:theory'), result('path:g2-info-start:infosort')],
   }
-  const first = validatePathCompletion(2, body)
-  const second = validatePathCompletion(2, body)
+  const first = validatePathCompletion(CATALOGS['grade-2'], 2, body)
+  const second = validatePathCompletion(CATALOGS['grade-2'], 2, body)
   assert.equal(first.ok, true)
   assert.equal(second.ok, true)
   if (first.ok && second.ok) {
@@ -38,15 +50,15 @@ test('valid completion uses the backend catalog and produces a stable event key'
 })
 
 test('grade-1 path accepts its own start and keeps the final behind all branches', () => {
-  const start = validatePathCompletion(1, {
+  const start = validatePathCompletion(CATALOGS['grade-1'], 1, {
     pathId: 'grade-1', pointId: 'g1-sort-start', results: [result('path:g1-sort-start:attributes')],
   })
   assert.equal(start.ok, true)
-  assert.equal(validatePathCompletion(2, {
+  assert.equal(validatePathCompletion(CATALOGS['grade-2'], 2, {
     pathId: 'grade-1', pointId: 'g1-sort-start', results: [result('path:g1-sort-start:attributes')],
   }).ok, false)
 
-  const final = HOME_PATH_CATALOG['grade-1'].points['g1-final']
+  const final = CATALOGS['grade-1'].points['g1-final']
   assert.equal(hasPathPrerequisites(final, ['g1-logic-bridge', 'g1-ai-intro']), false)
   assert.equal(hasPathPrerequisites(final, ['g1-logic-bridge', 'g1-ai-intro', 'g1-digital-safety']), true)
 })
@@ -56,10 +68,10 @@ for (const sample of [
   { grade: 4, pathId: 'grade-4', pointId: 'g4-safety-start', activityId: 'path:g4-safety-start:digital-safety-mission' },
 ]) {
   test(`grade-${sample.grade} path accepts only its own catalog`, () => {
-    assert.equal(validatePathCompletion(sample.grade, {
+    assert.equal(validatePathCompletion(CATALOGS[sample.pathId], sample.grade, {
       pathId: sample.pathId, pointId: sample.pointId, results: [result(sample.activityId)],
     }).ok, true)
-    assert.equal(validatePathCompletion(sample.grade === 3 ? 4 : 3, {
+    assert.equal(validatePathCompletion(CATALOGS[sample.pathId], sample.grade === 3 ? 4 : 3, {
       pathId: sample.pathId, pointId: sample.pointId, results: [result(sample.activityId)],
     }).ok, false)
   })
@@ -69,17 +81,17 @@ test('multi-activity point requires the exact activity set and immutable version
   const theory = result('path:g2-ct-algorithms:theory', 1, '2026-07-10T09:58:00.000Z')
   const sequence = result('path:g2-ct-algorithms:algorithms-sequence', 1, '2026-07-10T10:02:00.000Z')
   const mission = result('path:g2-ct-algorithms:algorithms-mission')
-  const valid = validatePathCompletion(2, {
+  const valid = validatePathCompletion(CATALOGS['grade-2'], 2, {
     pathId: 'grade-2', pointId: 'g2-ct-algorithms', results: [sequence, theory, mission],
   })
   assert.equal(valid.ok, true)
 
-  const missing = validatePathCompletion(2, {
+  const missing = validatePathCompletion(CATALOGS['grade-2'], 2, {
     pathId: 'grade-2', pointId: 'g2-ct-algorithms', results: [theory, mission],
   })
   assert.deepEqual(missing, { ok: false, error: 'Не всі обовʼязкові активності завершено' })
 
-  const stale = validatePathCompletion(2, {
+  const stale = validatePathCompletion(CATALOGS['grade-2'], 2, {
     pathId: 'grade-2', pointId: 'g2-ct-algorithms', results: [theory, mission, { ...sequence, activityVersion: 2 }],
   })
   assert.deepEqual(stale, { ok: false, error: 'Невідома активність або версія' })
@@ -89,20 +101,20 @@ test('grade, trust, score shape and client time fail closed', () => {
   // Повний required-набір точки, щоб кожен кейс падав саме через свою мутацію.
   const theory = result('path:g2-info-start:theory')
   const base = result('path:g2-info-start:infosort')
-  assert.equal(validatePathCompletion(3, { pathId: 'grade-2', pointId: 'g2-info-start', results: [theory, base] }).ok, false)
-  assert.equal(validatePathCompletion(2, {
+  assert.equal(validatePathCompletion(CATALOGS['grade-2'], 3, { pathId: 'grade-2', pointId: 'g2-info-start', results: [theory, base] }).ok, false)
+  assert.equal(validatePathCompletion(CATALOGS['grade-2'], 2, {
     pathId: 'grade-2', pointId: 'g2-info-start', results: [theory, { ...base, trust: 'server-verified' as never }],
   }).ok, false)
-  assert.equal(validatePathCompletion(2, {
+  assert.equal(validatePathCompletion(CATALOGS['grade-2'], 2, {
     pathId: 'grade-2', pointId: 'g2-info-start', results: [theory, { ...base, correct: 6 }],
   }).ok, false)
-  assert.equal(validatePathCompletion(2, {
+  assert.equal(validatePathCompletion(CATALOGS['grade-2'], 2, {
     pathId: 'grade-2', pointId: 'g2-info-start', results: [theory, { ...base, completedAt: '2099-01-01T00:00:00.000Z' }],
   }, new Date('2026-07-10T10:00:00.000Z')).ok, false)
 })
 
 test('unlock prerequisites require every predecessor', () => {
-  const final = HOME_PATH_CATALOG['grade-2'].points['g2-final']
+  const final = CATALOGS['grade-2'].points['g2-final']
   assert.equal(hasPathPrerequisites(final, ['g2-ct-algorithms', 'g2-ai-perception']), false)
   assert.equal(hasPathPrerequisites(final, ['g2-ct-algorithms', 'g2-ai-perception', 'g2-digital-safety']), true)
 })
@@ -126,6 +138,29 @@ test('0031 schema is idempotent, constrained, RLS-protected and journaled', () =
   assert.match(sql, /ALTER TABLE public\.home_path_progress ENABLE ROW LEVEL SECURITY/)
   assert.match(sql, /ALTER TABLE public\.home_path_events ENABLE ROW LEVEL SECURITY/)
   assert.match(journal, /"tag": "0031_add_home_path_progress"/)
+})
+
+test('0033 path_maps schema is constrained, RLS-protected, seeded and journaled', () => {
+  const columns = getTableColumns(pathMaps)
+  assert.equal(columns.grade.notNull, true)
+  assert.equal(columns.points.notNull, true)
+  assert.equal(columns.status.notNull, true)
+
+  const here = dirname(fileURLToPath(import.meta.url))
+  const sql = readFileSync(join(here, '../../drizzle/0033_add_path_maps.sql'), 'utf8')
+  const journal = readFileSync(join(here, '../../drizzle/meta/_journal.json'), 'utf8')
+  assert.match(sql, /CHECK \(status IN \('draft', 'published'\)\)/)
+  assert.match(sql, /CHECK \(path_id ~ '\^grade-\[1-4\]\$'\)/)
+  assert.match(sql, /ALTER TABLE public\.path_maps ENABLE ROW LEVEL SECURITY/)
+  assert.match(journal, /"tag": "0033_add_path_maps"/)
+  // Seed ідемпотентний і містить всі чотири карти з канонічного файлу.
+  assert.equal((sql.match(/ON CONFLICT \(path_id\) DO NOTHING/g) ?? []).length, 4)
+  for (const map of SEED_MAPS) {
+    assert.ok(sql.includes(`'${map.pathId}', ${map.grade}, `), `Seed не містить карту ${map.pathId}`)
+    // INSERT у міграції — байт-у-байт JSON з seed-файлу (з екрануванням лапок).
+    assert.ok(sql.includes(JSON.stringify(map.points).replace(/'/g, "''")),
+      `points у міграції розійшлися з seed для ${map.pathId}`)
+  }
 })
 
 test('backend catalog structurally matches frontend points, activities and graph edges', () => {
@@ -155,7 +190,7 @@ test('backend catalog structurally matches frontend points, activities and graph
     )
   }
 
-  for (const [pathId, path] of Object.entries(HOME_PATH_CATALOG)) {
+  for (const [pathId, path] of Object.entries(CATALOGS)) {
     for (const [pointId, point] of Object.entries(path.points)) {
       const frontendDeps = extractUnlockAfterForPoint(pointId)
       const backendDeps = [...point.unlockAfter].sort()

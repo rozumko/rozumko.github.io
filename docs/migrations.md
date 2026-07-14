@@ -47,6 +47,7 @@ environments receive the same schema.
 | `0030_child_profiles_parent_owned` | Child profiles ownable by parent accounts (lead optional, fail-closed CHECK) |
 | `0031_add_home_path_progress` | Home path progress snapshots + idempotent client-unverified events |
 | `0032_add_micro_lessons` | Micro-lessons authoring table (admin CRUD; children read the static export) |
+| `0033_add_path_maps` | Learning-path structure in DB (seeded from path-data.ts; validation source of truth) |
 
 `0012` is intentionally idempotent: production received the columns manually
 before the SQL was incorporated into Drizzle history.
