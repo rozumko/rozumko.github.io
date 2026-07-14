@@ -23,6 +23,9 @@ export interface QueuedResult {
   /** Idempotency key: point + activity + version + completion time. */
   key: string
   pointId: string
+  /** Bundle revision and completion batch for replay after a newer map loads. */
+  pathVersion?: number
+  batchId?: string
   result: ActivityResult
 }
 
@@ -34,6 +37,20 @@ interface ProgressState {
 
 const SCHEMA_VERSION = 1 as const
 const QUEUE_LIMIT = 200 // захист від розростання storage при довгій офлайн-грі
+
+function trimQueue(queue: QueuedResult[]) {
+  while (queue.length > QUEUE_LIMIT) {
+    const oldest = queue[0]
+    if (!oldest.batchId) {
+      queue.shift()
+      continue
+    }
+    const batchId = oldest.batchId
+    for (let index = queue.length - 1; index >= 0; index -= 1) {
+      if (queue[index].batchId === batchId) queue.splice(index, 1)
+    }
+  }
+}
 
 function emptyState(): ProgressState {
   return { version: SCHEMA_VERSION, points: {}, queue: [] }
@@ -81,19 +98,21 @@ export function createProgressStore(storage: StorageLike, profileKey = 'local') 
    * повторний виклик із тим самим результатом нічого не змінює.
    * Повертає актуальний прогрес точки.
    */
-  function recordResults(pointId: string, results: ActivityResult[]): PointProgress {
+  function recordResults(pointId: string, results: ActivityResult[], pathVersion?: number): PointProgress {
     if (!results.length) throw new Error('Point completion requires at least one activity result')
     const state = load()
     const existing = state.points[pointId]
+    const batchId = pathVersion === undefined ? undefined
+      : `${pointId}:map-v${pathVersion}:${results.map(result => result.completedAt).sort().join(',')}`
     const fresh = results.filter(result => {
-      const key = `${pointId}:${result.activityId}:v${result.activityVersion}:${result.completedAt}`
+      const key = `${pointId}:${result.activityId}:v${result.activityVersion}:map-v${pathVersion ?? 'legacy'}:${result.completedAt}`
       if (state.queue.some(q => q.key === key)) return false
-      state.queue.push({ key, pointId, result })
+      state.queue.push({ key, pointId, ...(pathVersion !== undefined ? { pathVersion, batchId } : {}), result })
       return true
     })
 
     if (fresh.length) {
-      if (state.queue.length > QUEUE_LIMIT) state.queue.splice(0, state.queue.length - QUEUE_LIMIT)
+      trimQueue(state.queue)
       const sessionStars = Math.round(results.reduce((sum, result) => sum + result.stars, 0) / results.length)
       const updatedAt = results.reduce((latest, result) => result.completedAt > latest ? result.completedAt : latest, results[0].completedAt)
 
@@ -111,8 +130,8 @@ export function createProgressStore(storage: StorageLike, profileKey = 'local') 
     return progress
   }
 
-  function recordResult(pointId: string, result: ActivityResult): PointProgress {
-    return recordResults(pointId, [result])
+  function recordResult(pointId: string, result: ActivityResult, pathVersion?: number): PointProgress {
+    return recordResults(pointId, [result], pathVersion)
   }
 
   function getPoint(pointId: string): PointProgress | null {

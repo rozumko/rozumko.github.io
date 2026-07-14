@@ -6,7 +6,7 @@ import { PATHS_BY_GRADE } from './path-data.ts'
 
 function bundleFor(grade) {
   const map = PATHS_BY_GRADE[grade]
-  return JSON.parse(JSON.stringify({ pathId: `grade-${grade}`, grade, title: map.title, points: map.points }))
+  return JSON.parse(JSON.stringify({ pathId: `grade-${grade}`, grade, version: map.version, title: map.title, points: map.points }))
 }
 
 test('вбудовані карти проходять нормалізацію бандла (формат export:path сумісний)', () => {
@@ -43,6 +43,10 @@ test('битий бандл → null (лишаємось на фолбеку)', 
   const badStep = bundleFor(2)
   delete badStep.points[0].activities[0].version
   assert.equal(normalizeMapBundle(badStep, 2), null, 'крок без version')
+
+  const badMapVersion = bundleFor(2)
+  badMapVersion.version = 0
+  assert.equal(normalizeMapBundle(badMapVersion, 2), null, 'карта без додатної version')
 })
 
 test('поле access приймає free/club/відсутнє, інше — ні', () => {
@@ -53,4 +57,18 @@ test('поле access приймає free/club/відсутнє, інше — н
   const badAccess = bundleFor(2)
   badAccess.points[0].access = 'premium'
   assert.equal(normalizeMapBundle(badAccess, 2), null)
+})
+
+test('повна bundle-валідація відхиляє цикл, битий activity shape і координати', () => {
+  const cycle = bundleFor(2)
+  cycle.points[0].unlockAfter = [cycle.points.at(-1).id]
+  assert.equal(normalizeMapBundle(cycle, 2), null, 'цикл')
+
+  const badActivity = bundleFor(2)
+  badActivity.points[0].activities[0].activity = { kind: 'sorting', game: 'broken' }
+  assert.equal(normalizeMapBundle(badActivity, 2), null, 'невідома гра')
+
+  const badCoordinates = bundleFor(2)
+  badCoordinates.points[0].x = 101
+  assert.equal(normalizeMapBundle(badCoordinates, 2), null, 'координати поза картою')
 })

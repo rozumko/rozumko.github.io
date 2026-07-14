@@ -54,6 +54,7 @@ const importMessage = $('parent-path-import-message')
 
 interface PendingPathImport {
   map: GradePathMap
+  pathVersion: number
   point: PathPoint
   store: ProgressStore
   entries: QueuedResult[]
@@ -68,6 +69,14 @@ function findPendingPathImports(): PendingPathImport[] {
   for (const map of maps) {
     const point = map.points[0]
     if (!point || !store.isCompleted(point.id)) continue
+    const latestVersioned = recentFirst.find(entry => entry.pointId === point.id && entry.batchId && entry.pathVersion)
+    if (latestVersioned?.batchId && latestVersioned.pathVersion) {
+      const entries = queue.filter(entry => entry.batchId === latestVersioned.batchId)
+      if (entries.length) {
+        result.push({ map, pathVersion: latestVersioned.pathVersion, point, store, entries })
+        continue
+      }
+    }
     const entries = point.activities.filter(step => step.required).map(step => {
       const activityId = `path:${point.id}:${step.id}`
       return recentFirst.find(entry => entry.pointId === point.id
@@ -75,7 +84,7 @@ function findPendingPathImports(): PendingPathImport[] {
         && entry.result.activityVersion === step.version)
     })
     if (entries.every((entry): entry is QueuedResult => Boolean(entry))) {
-      result.push({ map, point, store, entries })
+      result.push({ map, pathVersion: map.version, point, store, entries })
     }
   }
   return result
@@ -189,10 +198,12 @@ function profileCard(profile: ParentProfile, activeId: string | null): HTMLEleme
       try {
         await submitParentPathProgress(profile.id, {
           pathId: `grade-${matchingImport.map.grade}`,
+          pathVersion: matchingImport.pathVersion,
           pointId: matchingImport.point.id,
           results: matchingImport.entries.map(({ result }) => ({
             activityId: result.activityId,
             activityVersion: result.activityVersion,
+            ...(result.contentVersion !== undefined ? { contentVersion: result.contentVersion } : {}),
             trust: 'client-unverified',
             stars: result.stars,
             correct: result.correct,

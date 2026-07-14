@@ -43,6 +43,14 @@ test('валідація fail-closed: цикл, два старти, битий 
   const noRequired = clone()
   for (const step of badRequiredSteps(noRequired)) step.required = false
   assert.throws(() => validatePathMapPoints(noRequired), /обовʼязковий крок/)
+
+  const badLessonVersion = clone()
+  const lessonStep = badRequiredSteps(badLessonVersion)
+    .find(step => (step.activity as Record<string, unknown>).kind === 'lesson')
+  if (lessonStep) {
+    ;(lessonStep.activity as Record<string, unknown>).lessonVersion = 0
+    assert.throws(() => validatePathMapPoints(badLessonVersion), /lessonVersion/)
+  }
 })
 
 function badRequiredSteps(points: Array<Record<string, unknown>>) {
@@ -76,4 +84,34 @@ test('bumpChangedStepVersions: зміна активності бампає, і�
   const forgedResult = bumpChangedStepVersions(prev, validatePathMapPoints(forged))
   assert.equal(forgedResult.points.find(p => p.id === 'g2-ct-algorithms')!
     .activities.find(step => step.id === 'algorithms-sequence')!.version, 2)
+})
+
+test('bumpChangedStepVersions never reuses a deleted historical step version', () => {
+  const prev = validatePathMapPoints(clone())
+  const point = prev[0]
+  const deleted = prev.map(value => value.id === point.id
+    ? { ...value, activities: value.activities.filter(step => step.id !== point.activities[0].id) }
+    : value)
+  // Keep the point valid after deleting its first activity.
+  if (!deleted[0].activities.length) deleted[0].activities.push({
+    id: 'replacement', version: 1, title: 'Replacement', activity: { kind: 'puzzles' }, required: true,
+  })
+  const historical = new Map([[`${point.id}:${point.activities[0].id}`, 7]])
+  const readded = JSON.parse(JSON.stringify(deleted)) as typeof deleted
+  readded[0].activities.push({ ...point.activities[0], version: 1 })
+  const result = bumpChangedStepVersions(deleted, validatePathMapPoints(readded), historical)
+  assert.equal(result.points[0].activities.at(-1)!.version, 8)
+})
+
+test('admin path save is concurrency-safe and snapshots immutable revisions', () => {
+  const source = readFileSync(join(HERE, 'admin.ts'), 'utf8')
+  assert.match(source, /expectedVersion/)
+  assert.match(source, /\.for\('update'\)/)
+  assert.match(source, /eq\(pathMaps\.version, req\.body\.expectedVersion\)/)
+  assert.match(source, /tx\.insert\(pathMapRevisions\)/)
+  assert.match(source, /lesson\.status !== 'published'/)
+  assert.match(source, /inArray\(microLessons\.id, lessonIds\)\)\.for\('share'\)/)
+  assert.match(source, /where\(eq\(pathMaps\.status, 'published'\)\)\.for\('share'\)/)
+  assert.match(source, /видалений id точки не можна використовувати повторно/)
+  assert.match(source, /homePathProgress\.pointId/)
 })

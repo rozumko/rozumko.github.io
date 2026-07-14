@@ -34,8 +34,14 @@ const MAX_STEPS = 6
 // Шейпи активностей: kind → обовʼязкові/опційні поля. Синхронно з
 // PathActivity у features/path/path-data.ts (guard-тест звіряє kinds).
 const ACTIVITY_KINDS: Record<string, (a: Record<string, unknown>) => string | null> = {
-  lesson: a => typeof a.lessonId === 'string' && /^[a-z0-9-]+$/.test(a.lessonId)
-    ? null : 'lesson: невалідний lessonId',
+  lesson: a => {
+    if (typeof a.lessonId !== 'string' || a.lessonId.length > 80 || !/^[a-z0-9-]+$/.test(a.lessonId)) {
+      return 'lesson: невалідний lessonId'
+    }
+    if (a.lessonVersion !== undefined
+      && (!Number.isInteger(a.lessonVersion) || (a.lessonVersion as number) < 1)) return 'lesson: невалідний lessonVersion'
+    return null
+  },
   sequence: a => optionalCount(a.count),
   scenarios: a => optionalCount(a.count),
   puzzles: a => optionalCount(a.count),
@@ -46,9 +52,11 @@ const ACTIVITY_KINDS: Record<string, (a: Record<string, unknown>) => string | nu
     ? null : 'simulator: невідомий сценарій',
   mission: a => {
     if (a.track !== undefined && !TRACKS.includes(a.track as never)) return 'mission: невідомий track'
-    if (a.tracks !== undefined && (!Array.isArray(a.tracks)
+    if (a.tracks !== undefined && (!Array.isArray(a.tracks) || !a.tracks.length
       || !a.tracks.every(track => TRACKS.includes(track as never)))) return 'mission: невідомі tracks'
-    if (a.topic !== undefined && typeof a.topic !== 'string') return 'mission: невалідний topic'
+    if (a.topic !== undefined && (typeof a.topic !== 'string' || !a.topic || a.topic.length > 120)) {
+      return 'mission: невалідний topic'
+    }
     return optionalCount(a.count)
   },
 }
@@ -66,7 +74,7 @@ function fail(message: string): never {
 function validateStep(raw: unknown, pointId: string, index: number): PathActivityStepInput {
   if (typeof raw !== 'object' || raw === null) fail(`${pointId}: крок ${index + 1} — невалідний формат`)
   const step = raw as Record<string, unknown>
-  const id = typeof step.id === 'string' && STEP_ID_RE.test(step.id) ? step.id : ''
+  const id = typeof step.id === 'string' && step.id.length <= 80 && STEP_ID_RE.test(step.id) ? step.id : ''
   if (!id) fail(`${pointId}: крок ${index + 1} — невалідний id`)
   if (!Number.isInteger(step.version) || (step.version as number) < 1) {
     fail(`${pointId}/${id}: version має бути цілим ≥1`)
@@ -88,7 +96,7 @@ function validateStep(raw: unknown, pointId: string, index: number): PathActivit
 function validatePoint(raw: unknown, index: number): PathPointInput {
   if (typeof raw !== 'object' || raw === null) fail(`Точка ${index + 1}: невалідний формат`)
   const point = raw as Record<string, unknown>
-  const id = typeof point.id === 'string' && POINT_ID_RE.test(point.id) ? point.id : ''
+  const id = typeof point.id === 'string' && point.id.length <= 80 && POINT_ID_RE.test(point.id) ? point.id : ''
   if (!id) fail(`Точка ${index + 1}: id має бути виду g2-slug`)
   const title = typeof point.title === 'string' ? point.title.trim() : ''
   if (!title || title.length > 120) fail(`${id}: назва обовʼязкова (≤120)`)
@@ -102,7 +110,7 @@ function validatePoint(raw: unknown, index: number): PathPointInput {
     if (typeof tag !== 'object' || tag === null) fail(`${id}: curriculum[${tagIndex}] невалідний`)
     const { track, topic } = tag as Record<string, unknown>
     if (!TRACKS.includes(track as never)) fail(`${id}: невідомий track «${String(track)}»`)
-    if (typeof topic !== 'string' || !topic) fail(`${id}: порожній topic`)
+    if (typeof topic !== 'string' || !topic || topic.length > 120) fail(`${id}: порожній або задовгий topic`)
     return { track: track as string, topic }
   })
 
@@ -169,12 +177,27 @@ export function validatePathMapPoints(rawPoints: unknown): PathPointInput[] {
   return points
 }
 
+/** Stable lesson references used by admin-save and export integrity checks. */
+export function pathMapLessonIds(points: PathPointInput[]): string[] {
+  const ids = new Set<string>()
+  for (const point of points) {
+    for (const step of point.activities) {
+      if (step.activity.kind === 'lesson') ids.add(step.activity.lessonId as string)
+    }
+  }
+  return [...ids].sort()
+}
+
 /**
  * Автопідняття version кроку при зміні його активності або required —
  * щоб дитячі результати інтерпретувались проти правильної редакції.
  * Порівняння за (pointId, stepId) з попередньою версією карти.
  */
-export function bumpChangedStepVersions(prev: PathPointInput[], next: PathPointInput[]): { points: PathPointInput[]; bumped: string[] } {
+export function bumpChangedStepVersions(
+  prev: PathPointInput[],
+  next: PathPointInput[],
+  historicalVersions: ReadonlyMap<string, number> = new Map(),
+): { points: PathPointInput[]; bumped: string[] } {
   const prevSteps = new Map<string, PathActivityStepInput>()
   for (const point of prev) {
     for (const step of point.activities) prevSteps.set(`${point.id}:${step.id}`, step)
@@ -184,13 +207,19 @@ export function bumpChangedStepVersions(prev: PathPointInput[], next: PathPointI
   const points = next.map(point => ({
     ...point,
     activities: point.activities.map(step => {
-      const before = prevSteps.get(`${point.id}:${step.id}`)
-      if (!before) return step // новий крок: version як в редакторі (типово 1)
+      const key = `${point.id}:${step.id}`
+      const before = prevSteps.get(key)
+      const historicalMax = historicalVersions.get(key) ?? 0
+      if (!before) {
+        const version = historicalMax > 0 ? historicalMax + 1 : 1
+        if (historicalMax > 0) bumped.push(key)
+        return { ...step, version }
+      }
       const changed = JSON.stringify({ a: before.activity, r: before.required, t: before.title })
         !== JSON.stringify({ a: step.activity, r: step.required, t: step.title })
       if (!changed) return { ...step, version: before.version }
-      bumped.push(`${point.id}:${step.id}`)
-      return { ...step, version: before.version + 1 }
+      bumped.push(key)
+      return { ...step, version: Math.max(before.version, historicalMax) + 1 }
     }),
   }))
   return { points, bumped }

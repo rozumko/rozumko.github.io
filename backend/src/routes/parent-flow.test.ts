@@ -273,6 +273,7 @@ function pathResult(activityId: string, completedAt = '2026-07-10T10:00:00.000Z'
   return {
     activityId,
     activityVersion: 1,
+    ...(activityId.endsWith(':theory') ? { contentVersion: 1 } : {}),
     trust: 'client-unverified',
     stars: 2,
     correct: 4,

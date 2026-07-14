@@ -450,6 +450,7 @@ export interface ParentProfile {
 export interface ParentPathActivityResult {
   activityId: string
   activityVersion: number
+  contentVersion?: number
   trust: 'client-unverified'
   stars: number
   correct: number
@@ -627,7 +628,7 @@ export function getParentPathProgress(childProfileId: string, pathId: string): P
 
 export function submitParentPathProgress(
   childProfileId: string,
-  payload: { pathId: string; pointId: string; results: ParentPathActivityResult[] },
+  payload: { pathId: string; pathVersion: number; pointId: string; results: ParentPathActivityResult[] },
 ): Promise<ParentPathProgress & { trust: 'client-unverified'; duplicate: boolean }> {
   return parentAuthRequest(`/api/parent/profiles/${encodeURIComponent(childProfileId)}/path-progress`, {
     method: 'POST',
@@ -1092,8 +1093,8 @@ export function setAdminLessonStatus(id: string, status: AdminMicroLesson['statu
   })
 }
 
-// ── Карти шляху (адмінка, 0033). Дітям структура їде бандлом public/path/
-// (npm run export:path) з фолбеком на вбудовану копію. ───────────────────────
+// Admin-authored path maps (0033/0034). Children receive immutable revisions via
+// public/path bundles, with the built-in map as a fail-safe fallback.
 
 export interface AdminPathMap {
   pathId: string
@@ -1113,7 +1114,7 @@ export function getAdminPathMaps(): Promise<{ maps: AdminPathMap[] }> {
 
 export function updateAdminPathMap(
   pathId: string,
-  data: { title?: string; points: unknown[] },
+  data: { expectedVersion: number; title?: string; points: unknown[] },
 ): Promise<{ map: AdminPathMap; bumpedSteps: string[] }> {
   return authRequest(`/api/admin/path-maps/${encodeURIComponent(pathId)}`, {
     method: 'PUT',

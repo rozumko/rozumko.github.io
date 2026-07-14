@@ -146,6 +146,47 @@ async function openAdminDashboard(page: Page) {
                 ? { events: [] }
                 : path === '/api/admin/missions'
                   ? { missions: [] }
+                  : path === '/api/admin/lessons'
+                    ? {
+                        lessons: [{
+                          id: 'test-lesson',
+                          title: 'Test lesson',
+                          version: 1,
+                          status: 'published',
+                          content: { title: 'Test lesson', cards: [], checkQuestions: [] },
+                          createdAt: '2026-07-11T10:00:00.000Z',
+                          updatedAt: '2026-07-11T10:00:00.000Z',
+                        }],
+                      }
+                    : path === '/api/admin/path-maps'
+                      ? {
+                          maps: [{
+                            pathId: 'grade-2',
+                            grade: 2,
+                            title: 'Test path',
+                            version: 4,
+                            status: 'published',
+                            points: [{
+                              id: 'g2-test-start',
+                              title: 'Test point',
+                              icon: '🧩',
+                              access: 'free',
+                              curriculum: [{ track: 'informatics', topic: 'data' }],
+                              activities: [{
+                                id: 'theory',
+                                version: 1,
+                                title: 'Theory',
+                                activity: { kind: 'lesson', lessonId: 'test-lesson', lessonVersion: 1 },
+                                required: true,
+                              }],
+                              unlockAfter: [],
+                              x: 50,
+                              y: 10,
+                            }],
+                            createdAt: '2026-07-11T10:00:00.000Z',
+                            updatedAt: '2026-07-11T10:00:00.000Z',
+                          }],
+                        }
                   : { questions: [] }
 
       return new Response(JSON.stringify(body), {
@@ -437,6 +478,38 @@ test('axe: /admin.html question editor', async ({ page }) => {
     .analyze()
 
   expect(results.violations).toEqual([])
+})
+
+test('admin path editor traps focus, passes axe, and preserves unsaved edits across tabs', async ({ page }) => {
+  await openAdminDashboard(page)
+  await page.locator('[data-tab="path"]').click()
+  await expect(page.locator('#pm-status')).toContainText('Test path')
+
+  const editButton = page.locator('#pm-points .pm-edit')
+  await editButton.click()
+  await expect(page.locator('#point-modal')).toBeVisible()
+  await expect(page.locator('#pf-title')).toBeFocused()
+
+  const results = await new AxeBuilder({ page })
+    .include('#point-modal')
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze()
+  expect(results.violations).toEqual([])
+
+  await page.locator('#pf-title').fill('Unsaved point title')
+  await page.locator('#pf-submit').click()
+  await expect(page.locator('#point-modal')).toBeHidden()
+  await expect(editButton).toBeFocused()
+  await expect(page.locator('#pm-status')).toContainText('не збережено')
+
+  await page.locator('[data-tab="overview"]').click()
+  await page.locator('[data-tab="path"]').click()
+  await expect(page.locator('#pm-points')).toContainText('Unsaved point title')
+
+  await editButton.click()
+  await page.keyboard.press('Escape')
+  await expect(page.locator('#point-modal')).toBeHidden()
+  await expect(editButton).toBeFocused()
 })
 
 test('shared certificate dialog is accessible from Admin results', async ({ page }) => {

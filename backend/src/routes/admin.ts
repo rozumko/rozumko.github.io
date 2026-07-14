@@ -1,9 +1,9 @@
 import type { FastifyInstance } from 'fastify'
 import { eq, desc, count, and, asc, inArray } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { questions, accessCodes, attempts, attemptQuestions, appUsers, olympiadEvents, eventQuestions, schoolSessions, schoolSessionQuestions, homeLeads, homeEntitlements, homeEntitlementEvents, missions, microLessons, pathMaps, type QuestionTrack } from '../db/schema.js'
+import { questions, accessCodes, attempts, attemptQuestions, appUsers, olympiadEvents, eventQuestions, schoolSessions, schoolSessionQuestions, homeLeads, homeEntitlements, homeEntitlementEvents, homePathProgress, missions, microLessons, pathMapRevisions, pathMaps, type QuestionTrack } from '../db/schema.js'
 import { normalizeLessonSlug, normalizeLessonStatus, normalizeLessonContent, lessonContentChanged } from './lesson-validation.js'
-import { validatePathMapPoints, bumpChangedStepVersions } from './path-map-validation.js'
+import { validatePathMapPoints, bumpChangedStepVersions, pathMapLessonIds, type PathPointInput } from './path-map-validation.js'
 import { invalidatePathCatalogCache } from './path-catalog.js'
 import { ENTITLEMENT_STATUSES, normalizeEntitlementStatus, applyEntitlementChange } from './home-entitlement.js'
 import { requireAdmin } from '../lib/auth.js'
@@ -18,6 +18,45 @@ import {
   normalizeEventInput,
   normalizeEventPatch,
 } from './event-validation.js'
+
+class PathMapConflictError extends Error {}
+
+function snapshotLessonVersions(points: PathPointInput[], versions: ReadonlyMap<string, number>): PathPointInput[] {
+  return points.map(point => ({
+    ...point,
+    activities: point.activities.map(step => step.activity.kind === 'lesson'
+      ? {
+        ...step,
+        activity: { ...step.activity, lessonVersion: versions.get(step.activity.lessonId as string) },
+      }
+      : step),
+  }))
+}
+
+function collectHistoricalStepVersions(pointSets: unknown[][]): Map<string, number> {
+  const versions = new Map<string, number>()
+  for (const raw of pointSets) {
+    let points: PathPointInput[]
+    try { points = validatePathMapPoints(raw) } catch { continue }
+    for (const point of points) {
+      for (const step of point.activities) {
+        const key = `${point.id}:${step.id}`
+        versions.set(key, Math.max(versions.get(key) ?? 0, step.version))
+      }
+    }
+  }
+  return versions
+}
+
+function collectHistoricalPointIds(pointSets: unknown[][]): Set<string> {
+  const ids = new Set<string>()
+  for (const raw of pointSets) {
+    try {
+      for (const point of validatePathMapPoints(raw)) ids.add(point.id)
+    } catch { /* Corrupt history is ignored here and still fails catalog loading. */ }
+  }
+  return ids
+}
 
 const QUESTION_TRACKS = ['informatics', 'computational-thinking', 'ai-basics'] as const
 
@@ -818,38 +857,112 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // PUT /api/admin/path-maps/:pathId — заміна точок карти цілком.
   // Зміна активності/required/назви кроку автоматично піднімає його version.
-  app.put<{ Params: { pathId: string }; Body: { title?: string; points: unknown } }>(
+  app.put<{ Params: { pathId: string }; Body: { expectedVersion?: number; title?: string; points: unknown } }>(
     '/path-maps/:pathId',
     { preHandler: requireAdmin },
     async (req, reply) => {
       try {
         const pathId = req.params.pathId
         if (!/^grade-[1-4]$/.test(pathId)) return reply.code(400).send({ error: 'Невідомий шлях' })
-        const [existing] = await db.select().from(pathMaps)
-          .where(eq(pathMaps.pathId, pathId)).limit(1)
-        if (!existing) return reply.code(404).send({ error: 'Карту не знайдено' })
-
-        const grade = existing.grade
-        const nextPoints = validatePathMapPoints(req.body?.points)
-        for (const point of nextPoints) {
-          if (!point.id.startsWith(`g${grade}-`)) {
-            return reply.code(400).send({ error: `${point.id}: id точки має починатися з g${grade}-` })
-          }
+        if (!Number.isInteger(req.body?.expectedVersion) || (req.body.expectedVersion as number) < 1) {
+          return reply.code(400).send({ error: 'Потрібна актуальна expectedVersion карти' })
         }
-        const prevPoints = validatePathMapPoints(existing.points)
-        const { points, bumped } = bumpChangedStepVersions(prevPoints, nextPoints)
 
-        const title = typeof req.body?.title === 'string' && req.body.title.trim()
-          ? req.body.title.trim() : existing.title
-        const [updated] = await db.update(pathMaps).set({
-          title,
-          points,
-          version: existing.version + 1,
-          updatedAt: new Date(),
-        }).where(eq(pathMaps.pathId, pathId)).returning()
+        const saved = await db.transaction(async tx => {
+          const [existing] = await tx.select().from(pathMaps)
+            .where(eq(pathMaps.pathId, pathId)).limit(1).for('update')
+          if (!existing) return null
+          if (existing.version !== req.body.expectedVersion) throw new PathMapConflictError()
+
+          const grade = existing.grade
+          let nextPoints = validatePathMapPoints(req.body.points)
+          for (const point of nextPoints) {
+            if (!point.id.startsWith(`g${grade}-`)) {
+              throw new Error(`${point.id}: id точки має починатися з g${grade}-`)
+            }
+          }
+
+          const lessonIds = pathMapLessonIds(nextPoints)
+          const lessons = lessonIds.length
+            ? await tx.select({ id: microLessons.id, version: microLessons.version, status: microLessons.status })
+              .from(microLessons).where(inArray(microLessons.id, lessonIds)).for('share')
+            : []
+          const lessonById = new Map(lessons.map(lesson => [lesson.id, lesson]))
+          for (const lessonId of lessonIds) {
+            const lesson = lessonById.get(lessonId)
+            if (!lesson) throw new Error(`Урок «${lessonId}» не існує`)
+            if (existing.status === 'published' && lesson.status !== 'published') {
+              throw new Error(`Урок «${lessonId}» не опублікований`)
+            }
+          }
+          nextPoints = snapshotLessonVersions(nextPoints,
+            new Map(lessons.map(lesson => [lesson.id, lesson.version])))
+
+          const prevPoints = validatePathMapPoints(existing.points)
+          const revisions = await tx.select({ points: pathMapRevisions.points })
+            .from(pathMapRevisions).where(eq(pathMapRevisions.pathId, pathId))
+          const historicalVersions = collectHistoricalStepVersions([
+            existing.points,
+            ...revisions.map(revision => revision.points),
+          ])
+          const historicalPointIds = collectHistoricalPointIds(revisions.map(revision => revision.points))
+          const previousPointIds = new Set(prevPoints.map(point => point.id))
+          for (const point of nextPoints) {
+            if (!previousPointIds.has(point.id) && historicalPointIds.has(point.id)) {
+              throw new Error(`${point.id}: видалений id точки не можна використовувати повторно`)
+            }
+          }
+          const nextPointIds = new Set(nextPoints.map(point => point.id))
+          const removedPointIds = prevPoints.map(point => point.id).filter(id => !nextPointIds.has(id))
+          if (removedPointIds.length) {
+            const [usedPoint] = await tx.select({ pointId: homePathProgress.pointId })
+              .from(homePathProgress).where(and(
+                eq(homePathProgress.pathId, pathId),
+                inArray(homePathProgress.pointId, removedPointIds),
+              )).limit(1)
+            if (usedPoint) throw new Error(`Точку «${usedPoint.pointId}» не можна видалити: для неї вже є прогрес`)
+          }
+          const { points, bumped } = bumpChangedStepVersions(prevPoints, nextPoints, historicalVersions)
+          const requestedTitle = typeof req.body.title === 'string' ? req.body.title.trim() : ''
+          if (requestedTitle.length > 160) throw new Error('Назва карти має містити не більше 160 символів')
+          const title = requestedTitle || existing.title
+          const nextVersion = existing.version + 1
+
+          await tx.insert(pathMapRevisions).values({
+            pathId: existing.pathId,
+            version: existing.version,
+            grade: existing.grade,
+            title: existing.title,
+            points: existing.points,
+          }).onConflictDoNothing()
+
+          const [updated] = await tx.update(pathMaps).set({
+            title,
+            points,
+            version: nextVersion,
+            updatedAt: new Date(),
+          }).where(and(
+            eq(pathMaps.pathId, pathId),
+            eq(pathMaps.version, req.body.expectedVersion),
+          )).returning()
+          if (!updated) throw new PathMapConflictError()
+
+          await tx.insert(pathMapRevisions).values({
+            pathId: updated.pathId,
+            version: updated.version,
+            grade: updated.grade,
+            title: updated.title,
+            points: updated.points,
+          })
+          return { updated, bumped }
+        })
+        if (!saved) return reply.code(404).send({ error: 'Карту не знайдено' })
         invalidatePathCatalogCache()
-        return reply.send({ map: updated, bumpedSteps: bumped })
+        return reply.send({ map: saved.updated, bumpedSteps: saved.bumped })
       } catch (err) {
+        if (err instanceof PathMapConflictError) {
+          return reply.code(409).send({ error: 'Карту вже змінив інший редактор. Онови вкладку й повтори правки.' })
+        }
         return reply.code(400).send({ error: (err as Error).message })
       }
     },
@@ -863,12 +976,32 @@ export async function adminRoutes(app: FastifyInstance) {
       try {
         const id = normalizeLessonSlug(req.params.id)
         const status = normalizeLessonStatus(req.body?.status)
-        const [updated] = await db.update(microLessons)
-          .set({ status, updatedAt: new Date() })
-          .where(eq(microLessons.id, id))
-          .returning()
-        if (!updated) return reply.code(404).send({ error: 'Урок не знайдено' })
-        return reply.send({ lesson: updated })
+        const outcome = await db.transaction(async tx => {
+          if (status !== 'published') {
+            // Lock maps before the lesson row. Path saves use the same order,
+            // preventing an archive/save race from creating a broken reference.
+            const publishedMaps = await tx.select({ pathId: pathMaps.pathId, points: pathMaps.points })
+              .from(pathMaps).where(eq(pathMaps.status, 'published')).for('share')
+            const referencedBy = publishedMaps
+              .filter(map => {
+                try { return pathMapLessonIds(validatePathMapPoints(map.points)).includes(id) } catch { return false }
+              })
+              .map(map => map.pathId)
+            if (referencedBy.length) return { referencedBy, updated: null }
+          }
+          const [updated] = await tx.update(microLessons)
+            .set({ status, updatedAt: new Date() })
+            .where(eq(microLessons.id, id))
+            .returning()
+          return { referencedBy: [] as string[], updated: updated ?? null }
+        })
+        if (outcome.referencedBy.length) {
+          return reply.code(409).send({
+            error: `Урок використовується в опублікованих картах: ${outcome.referencedBy.join(', ')}`,
+          })
+        }
+        if (!outcome.updated) return reply.code(404).send({ error: 'Урок не знайдено' })
+        return reply.send({ lesson: outcome.updated })
       } catch (err) {
         return reply.code(400).send({ error: (err as Error).message })
       }

@@ -253,16 +253,18 @@
           </div>
         </div>
         <p class="admin-section-note">Зміни впливають на дітей після
-          <code>cd backend &amp;&amp; npm run export:path</code> і коміту <code>public/path/</code>;
-          серверна валідація прогресу оновлюється одразу після збереження.
+          <code>cd backend &amp;&amp; npm run export:path</code> і коміту <code>public/path/</code>.
+          Сервер зберігає кожну ревізію, тому прогрес зі старого бандла не втрачається.
           Зміна активності кроку автоматично піднімає його версію.</p>
         <div class="admin-filter-bar">
-          <select id="pm-grade" class="adm-input adm-input--sm adm-input--auto">
+          <select id="pm-grade" class="adm-input adm-input--sm adm-input--auto" aria-label="Клас карти">
             <option value="grade-1">1 клас</option>
             <option value="grade-2" selected>2 клас</option>
             <option value="grade-3">3 клас</option>
             <option value="grade-4">4 клас</option>
           </select>
+          <input id="pm-title" class="adm-input adm-input--sm" type="text"
+                 aria-label="Назва карти" placeholder="Назва карти" maxlength="160"/>
           <span id="pm-status" class="admin-filter-count"></span>
         </div>
         <div class="pm-layout">
@@ -757,12 +759,12 @@
   <!-- Шаблон теми curriculum -->
   <template id="pf-tag-template">
     <div class="pf-row">
-      <select class="pf-tag-track adm-input adm-input--sm adm-input--auto">
+      <select class="pf-tag-track adm-input adm-input--sm adm-input--auto" aria-label="Напрям навчальної теми">
         <option value="informatics">Інформатика</option>
         <option value="computational-thinking">Обчислювальне мислення</option>
         <option value="ai-basics">Основи ШІ</option>
       </select>
-      <input type="text" class="pf-tag-topic adm-input adm-input--sm adm-input--grow" placeholder="topic (напр. information)"/>
+      <input type="text" class="pf-tag-topic adm-input adm-input--sm adm-input--grow" aria-label="Код навчальної теми" placeholder="topic (напр. information)"/>
       <button type="button" class="pf-remove btn-adm-ghost" aria-label="Видалити тему">
         <i class="fas fa-trash" aria-hidden="true"></i>
       </button>
@@ -775,15 +777,15 @@
       <div class="adm-form-grid adm-form-grid--4">
         <div>
           <label class="adm-label">ID кроку</label>
-          <input type="text" class="pf-step-id adm-input adm-input--sm adm-input--code" placeholder="theory"/>
+          <input type="text" class="pf-step-id adm-input adm-input--sm adm-input--code" aria-label="ID кроку" placeholder="theory"/>
         </div>
         <div>
           <label class="adm-label">Назва кроку</label>
-          <input type="text" class="pf-step-title adm-input adm-input--sm"/>
+          <input type="text" class="pf-step-title adm-input adm-input--sm" aria-label="Назва кроку"/>
         </div>
         <div>
           <label class="adm-label">Тип</label>
-          <select class="pf-step-kind adm-input adm-input--sm">
+          <select class="pf-step-kind adm-input adm-input--sm" aria-label="Тип кроку">
             <option value="lesson">Урок (теорія)</option>
             <option value="mission">Місія (питання)</option>
             <option value="sequence">Впорядкуй кроки</option>
@@ -795,7 +797,7 @@
           </select>
         </div>
         <div class="adm-checkbox-row adm-checkbox-row--end">
-          <input type="checkbox" class="pf-step-required" checked/>
+          <input type="checkbox" class="pf-step-required" aria-label="Обовʼязковий крок" checked/>
           <label>Обовʼязковий</label>
         </div>
       </div>

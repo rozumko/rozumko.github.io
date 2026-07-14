@@ -37,6 +37,39 @@ test('recordResult: перше проходження створює completed-�
   assert.equal(store.pendingQueue().length, 1)
 })
 
+test('recordResults зберігає map version і batch для офлайн replay', () => {
+  const store = createProgressStore(fakeStorage())
+  store.recordResults('p1', [
+    result('2026-07-10T10:00:00Z', 2),
+    result('2026-07-10T10:01:00Z', 3),
+  ], 6)
+  const queue = store.pendingQueue()
+  assert.equal(queue.length, 2)
+  assert.ok(queue.every(entry => entry.pathVersion === 6))
+  assert.equal(new Set(queue.map(entry => entry.batchId)).size, 1)
+})
+
+test('queue cap removes an old versioned completion as one whole batch', () => {
+  const store = createProgressStore(fakeStorage())
+  const firstAt = '2026-01-01T00:00:00.000Z'
+  store.recordResults('old', [
+    { ...result(firstAt), activityId: 'path:old:a' },
+    { ...result('2026-01-01T00:01:00.000Z'), activityId: 'path:old:b' },
+  ], 1)
+  for (let index = 0; index < 197; index += 1) {
+    store.recordResult(`legacy-${index}`, result(new Date(Date.parse(firstAt) + (index + 2) * 60_000).toISOString()))
+  }
+  store.recordResults('new', [
+    { ...result('2026-02-01T00:00:00.000Z'), activityId: 'path:new:a' },
+    { ...result('2026-02-01T00:01:00.000Z'), activityId: 'path:new:b' },
+  ], 2)
+
+  const queue = store.pendingQueue()
+  assert.equal(queue.length, 199)
+  assert.equal(queue.some(entry => entry.pathVersion === 1), false)
+  assert.equal(queue.filter(entry => entry.pathVersion === 2).length, 2)
+})
+
 test('recordResult: ідемпотентність за (pointId, completedAt)', () => {
   const store = createProgressStore(fakeStorage())
   const r = result('2026-07-10T10:00:00Z', 2)
