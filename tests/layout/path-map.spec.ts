@@ -102,6 +102,12 @@ test('анонімна стартова точка показує adult gate з�
   await expect(page.locator('.path-node--done')).toHaveCount(1)
   await expect(page.locator('.path-node--open')).toHaveCount(0)
   await expect(page.locator('#path-parent-gate')).toBeVisible()
+  const gateAndMap = await page.evaluate(() => {
+    const gate = document.querySelector('#path-parent-gate')!.getBoundingClientRect()
+    const map = document.querySelector('#path-map')!.getBoundingClientRect()
+    return { gateBottom: gate.bottom, mapTop: map.top }
+  })
+  expect(gateAndMap.gateBottom).toBeLessThanOrEqual(gateAndMap.mapTop)
   const done = page.locator('.path-node--done')
   await expect(done).toHaveAccessibleName(/виконано, 2 з 3 зірок/)
 })

@@ -28,10 +28,6 @@
     <section id="path-map-screen">
       <h1 class="app-title">Карта пригод</h1>
       <p class="app-subtitle" id="path-subtitle">Проходь точки — відкривай нові!</p>
-      <div id="path-map" class="path-map">
-        <svg id="path-edges" class="path-map__edges" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
-        <div id="path-nodes" class="path-map__nodes" role="group" aria-label="Точки шляху"></div>
-      </div>
       <section id="path-parent-gate" class="path-parent-gate hidden" aria-labelledby="path-parent-gate-title" tabindex="-1">
         <span class="path-parent-gate__icon" aria-hidden="true">🔐</span>
         <div>
@@ -40,6 +36,10 @@
           <a id="path-parent-gate-link" class="kid-action" href="parent.html">Зберегти мій шлях →</a>
         </div>
       </section>
+      <div id="path-map" class="path-map">
+        <svg id="path-edges" class="path-map__edges" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
+        <div id="path-nodes" class="path-map__nodes" role="group" aria-label="Точки шляху"></div>
+      </div>
       <p id="path-error" class="quiz-feedback quiz-feedback--incorrect app-error" aria-live="polite"></p>
     </section>
 
