@@ -39,7 +39,7 @@ const SORTING_GAMES: Record<string, SortingLevel[]> = {
   infosort:   INFO_SORT_LEVELS,
   multisort:  MULTISORT_LEVELS,
 }
-const EDGE_NODE_GAP = 12.5
+const EDGE_NODE_GAP = 1.5
 
 const savedGrade = getSavedGrade()
 const queryGradeRaw = new URLSearchParams(window.location.search).get('grade')
