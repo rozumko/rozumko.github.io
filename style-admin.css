@@ -594,3 +594,16 @@
   display: flex; flex-direction: column; gap: var(--sp-2);
 }
 .lf-block .lf-remove { align-self: flex-end; }
+
+/* ── Вкладка «Шлях» (features/admin/path-tab.ts) ─────────────────────────── */
+.pm-layout { display: grid; grid-template-columns: minmax(260px, 1fr) 2fr; gap: var(--sp-4); align-items: start; }
+@media (max-width: 900px) { .pm-layout { grid-template-columns: 1fr; } }
+.pm-preview {
+  border: 1px solid #e2e8f0; border-radius: var(--r-xl);
+  background: #f8fafc; padding: var(--sp-2);
+  position: sticky; top: var(--sp-4);
+}
+.pm-preview svg { width: 100%; height: auto; display: block; }
+.pf-row { display: flex; gap: var(--sp-2); align-items: center; }
+.pf-unlock { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4); }
+.pf-unlock__item { display: inline-flex; align-items: center; gap: 4px; font-size: var(--font-size-sm); }

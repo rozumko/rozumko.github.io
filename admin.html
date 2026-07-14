@@ -77,6 +77,7 @@
       <button data-tab="questions"  class="admin-tab"><i class="fas fa-question" aria-hidden="true"></i> Питання</button>
       <button data-tab="missions"   class="admin-tab"><i class="fas fa-rocket" aria-hidden="true"></i> Місії</button>
       <button data-tab="lessons"    class="admin-tab"><i class="fas fa-book-open" aria-hidden="true"></i> Уроки</button>
+      <button data-tab="path"       class="admin-tab"><i class="fas fa-map-signs" aria-hidden="true"></i> Шлях</button>
     </nav>
 
     <main id="main-content" class="admin-main">
@@ -236,6 +237,39 @@
           <span id="l-count" class="admin-filter-count"></span>
         </div>
         <div id="lessons-list" class="admin-list admin-list--sm"></div>
+      </section>
+
+      <!-- Вкладка: Карта шляху -->
+      <section id="tab-path" class="tab-panel hidden">
+        <div class="admin-section-header">
+          <h2 class="admin-section-title">Карта пригод</h2>
+          <div class="admin-section-actions">
+            <button id="pm-add-point" class="btn-adm-emerald">
+              <i class="fas fa-plus" aria-hidden="true"></i> Точка
+            </button>
+            <button id="pm-save" class="btn-adm-sky">
+              <i class="fas fa-save" aria-hidden="true"></i> Зберегти карту
+            </button>
+          </div>
+        </div>
+        <p class="admin-section-note">Зміни впливають на дітей після
+          <code>cd backend &amp;&amp; npm run export:path</code> і коміту <code>public/path/</code>;
+          серверна валідація прогресу оновлюється одразу після збереження.
+          Зміна активності кроку автоматично піднімає його версію.</p>
+        <div class="admin-filter-bar">
+          <select id="pm-grade" class="adm-input adm-input--sm adm-input--auto">
+            <option value="grade-1">1 клас</option>
+            <option value="grade-2" selected>2 клас</option>
+            <option value="grade-3">3 клас</option>
+            <option value="grade-4">4 клас</option>
+          </select>
+          <span id="pm-status" class="admin-filter-count"></span>
+        </div>
+        <div class="pm-layout">
+          <div id="pm-preview" class="pm-preview" aria-label="Прев'ю карти"></div>
+          <div id="pm-points" class="admin-list admin-list--sm"></div>
+        </div>
+        <p id="pm-error" class="adm-form-error" role="alert"></p>
       </section>
 
       <!-- Вкладка: Питання -->
@@ -647,6 +681,130 @@
       </form>
     </div>
   </div>
+
+  <!-- Модальне вікно редагування точки шляху -->
+  <div id="point-modal" class="question-modal-overlay hidden"
+       role="dialog" aria-modal="true" aria-labelledby="point-modal-title">
+    <div class="question-modal-card">
+      <h3 id="point-modal-title" class="question-modal-title">Точка шляху</h3>
+      <form id="point-form" novalidate class="qf-space">
+
+        <div class="adm-form-grid adm-form-grid--4">
+          <div>
+            <label for="pf-id" class="adm-label">ID точки</label>
+            <input type="text" id="pf-id" placeholder="g2-nova-tochka" class="adm-input adm-input--sm adm-input--code"/>
+          </div>
+          <div>
+            <label for="pf-title" class="adm-label">Назва</label>
+            <input type="text" id="pf-title" class="adm-input adm-input--sm"/>
+          </div>
+          <div>
+            <label for="pf-icon" class="adm-label">Іконка (емодзі)</label>
+            <input type="text" id="pf-icon" class="adm-input adm-input--sm" placeholder="🧩"/>
+          </div>
+          <div>
+            <label for="pf-access" class="adm-label">Доступ</label>
+            <select id="pf-access" class="adm-input adm-input--sm">
+              <option value="free">Безкоштовно</option>
+              <option value="club">Клуб (підписка)</option>
+            </select>
+          </div>
+          <div>
+            <label for="pf-x" class="adm-label">X (0–100)</label>
+            <input type="number" id="pf-x" min="0" max="100" class="adm-input adm-input--sm"/>
+          </div>
+          <div>
+            <label for="pf-y" class="adm-label">Y (0–100)</label>
+            <input type="number" id="pf-y" min="0" max="100" class="adm-input adm-input--sm"/>
+          </div>
+        </div>
+
+        <div>
+          <span class="adm-label">Відкривається після</span>
+          <div id="pf-unlock" class="pf-unlock"></div>
+        </div>
+
+        <div>
+          <div class="admin-section-header">
+            <span class="adm-label">Навчальні теми (curriculum)</span>
+            <button type="button" id="pf-add-tag" class="btn-adm-ghost">
+              <i class="fas fa-plus" aria-hidden="true"></i> Тема
+            </button>
+          </div>
+          <div id="pf-tags" class="qf-space"></div>
+        </div>
+
+        <div>
+          <div class="admin-section-header">
+            <span class="adm-label">Кроки (активності)</span>
+            <button type="button" id="pf-add-step" class="btn-adm-ghost">
+              <i class="fas fa-plus" aria-hidden="true"></i> Крок
+            </button>
+          </div>
+          <div id="pf-steps" class="qf-space"></div>
+        </div>
+
+        <p id="pf-error" class="adm-form-error" role="alert"></p>
+        <div class="adm-form-actions">
+          <button type="submit" id="pf-submit" class="btn-adm-emerald">Застосувати</button>
+          <button type="button" id="pf-delete" class="btn-adm-ghost hidden">Видалити точку</button>
+          <button type="button" id="pf-cancel" class="btn-adm-slate">Скасувати</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Шаблон теми curriculum -->
+  <template id="pf-tag-template">
+    <div class="pf-row">
+      <select class="pf-tag-track adm-input adm-input--sm adm-input--auto">
+        <option value="informatics">Інформатика</option>
+        <option value="computational-thinking">Обчислювальне мислення</option>
+        <option value="ai-basics">Основи ШІ</option>
+      </select>
+      <input type="text" class="pf-tag-topic adm-input adm-input--sm adm-input--grow" placeholder="topic (напр. information)"/>
+      <button type="button" class="pf-remove btn-adm-ghost" aria-label="Видалити тему">
+        <i class="fas fa-trash" aria-hidden="true"></i>
+      </button>
+    </div>
+  </template>
+
+  <!-- Шаблон кроку точки -->
+  <template id="pf-step-template">
+    <fieldset class="lf-block">
+      <div class="adm-form-grid adm-form-grid--4">
+        <div>
+          <label class="adm-label">ID кроку</label>
+          <input type="text" class="pf-step-id adm-input adm-input--sm adm-input--code" placeholder="theory"/>
+        </div>
+        <div>
+          <label class="adm-label">Назва кроку</label>
+          <input type="text" class="pf-step-title adm-input adm-input--sm"/>
+        </div>
+        <div>
+          <label class="adm-label">Тип</label>
+          <select class="pf-step-kind adm-input adm-input--sm">
+            <option value="lesson">Урок (теорія)</option>
+            <option value="mission">Місія (питання)</option>
+            <option value="sequence">Впорядкуй кроки</option>
+            <option value="scenarios">Як вчинити?</option>
+            <option value="puzzles">Головоломки</option>
+            <option value="sorting">Гра-сортування</option>
+            <option value="fact-opinion">Факт чи думка</option>
+            <option value="simulator">Симулятор</option>
+          </select>
+        </div>
+        <div class="adm-checkbox-row adm-checkbox-row--end">
+          <input type="checkbox" class="pf-step-required" checked/>
+          <label>Обовʼязковий</label>
+        </div>
+      </div>
+      <div class="pf-step-params adm-form-grid adm-form-grid--4"></div>
+      <button type="button" class="pf-remove btn-adm-ghost" aria-label="Видалити крок">
+        <i class="fas fa-trash" aria-hidden="true"></i> Видалити крок
+      </button>
+    </fieldset>
+  </template>
 
   <!-- Шаблон картки уроку -->
   <template id="lf-card-template">

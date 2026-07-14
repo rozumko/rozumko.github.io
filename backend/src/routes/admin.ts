@@ -1,8 +1,10 @@
 import type { FastifyInstance } from 'fastify'
 import { eq, desc, count, and, asc, inArray } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { questions, accessCodes, attempts, attemptQuestions, appUsers, olympiadEvents, eventQuestions, schoolSessions, schoolSessionQuestions, homeLeads, homeEntitlements, homeEntitlementEvents, missions, microLessons, type QuestionTrack } from '../db/schema.js'
+import { questions, accessCodes, attempts, attemptQuestions, appUsers, olympiadEvents, eventQuestions, schoolSessions, schoolSessionQuestions, homeLeads, homeEntitlements, homeEntitlementEvents, missions, microLessons, pathMaps, type QuestionTrack } from '../db/schema.js'
 import { normalizeLessonSlug, normalizeLessonStatus, normalizeLessonContent, lessonContentChanged } from './lesson-validation.js'
+import { validatePathMapPoints, bumpChangedStepVersions } from './path-map-validation.js'
+import { invalidatePathCatalogCache } from './path-catalog.js'
 import { ENTITLEMENT_STATUSES, normalizeEntitlementStatus, applyEntitlementChange } from './home-entitlement.js'
 import { requireAdmin } from '../lib/auth.js'
 import { assertQuestionsBelongToGrade, normalizeEventQuestionSelection } from './event-questions-validation.js'
@@ -798,6 +800,55 @@ export async function adminRoutes(app: FastifyInstance) {
           updatedAt: new Date(),
         }).where(eq(microLessons.id, id)).returning()
         return reply.send({ lesson: updated, versionBumped: bump })
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message })
+      }
+    },
+  )
+
+  // ── Карти шляху (0033): редагування структури з адмінки ───────────────────
+  // Дітям структура їде статичним бандлом (npm run export:path); валідація
+  // path-progress читає БД напряму (TTL-кеш скидається при збереженні).
+
+  // GET /api/admin/path-maps
+  app.get('/path-maps', { preHandler: requireAdmin }, async (_req, reply) => {
+    const list = await db.select().from(pathMaps).orderBy(asc(pathMaps.grade))
+    return reply.send({ maps: list })
+  })
+
+  // PUT /api/admin/path-maps/:pathId — заміна точок карти цілком.
+  // Зміна активності/required/назви кроку автоматично піднімає його version.
+  app.put<{ Params: { pathId: string }; Body: { title?: string; points: unknown } }>(
+    '/path-maps/:pathId',
+    { preHandler: requireAdmin },
+    async (req, reply) => {
+      try {
+        const pathId = req.params.pathId
+        if (!/^grade-[1-4]$/.test(pathId)) return reply.code(400).send({ error: 'Невідомий шлях' })
+        const [existing] = await db.select().from(pathMaps)
+          .where(eq(pathMaps.pathId, pathId)).limit(1)
+        if (!existing) return reply.code(404).send({ error: 'Карту не знайдено' })
+
+        const grade = existing.grade
+        const nextPoints = validatePathMapPoints(req.body?.points)
+        for (const point of nextPoints) {
+          if (!point.id.startsWith(`g${grade}-`)) {
+            return reply.code(400).send({ error: `${point.id}: id точки має починатися з g${grade}-` })
+          }
+        }
+        const prevPoints = validatePathMapPoints(existing.points)
+        const { points, bumped } = bumpChangedStepVersions(prevPoints, nextPoints)
+
+        const title = typeof req.body?.title === 'string' && req.body.title.trim()
+          ? req.body.title.trim() : existing.title
+        const [updated] = await db.update(pathMaps).set({
+          title,
+          points,
+          version: existing.version + 1,
+          updatedAt: new Date(),
+        }).where(eq(pathMaps.pathId, pathId)).returning()
+        invalidatePathCatalogCache()
+        return reply.send({ map: updated, bumpedSteps: bumped })
       } catch (err) {
         return reply.code(400).send({ error: (err as Error).message })
       }

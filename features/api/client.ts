@@ -1092,6 +1092,35 @@ export function setAdminLessonStatus(id: string, status: AdminMicroLesson['statu
   })
 }
 
+// ── Карти шляху (адмінка, 0033). Дітям структура їде бандлом public/path/
+// (npm run export:path) з фолбеком на вбудовану копію. ───────────────────────
+
+export interface AdminPathMap {
+  pathId: string
+  grade: number
+  title: string
+  version: number
+  status: 'draft' | 'published'
+  /** PathPoint[] у форматі features/path/path-data.ts (+ access). */
+  points: unknown[]
+  createdAt: string | null
+  updatedAt: string | null
+}
+
+export function getAdminPathMaps(): Promise<{ maps: AdminPathMap[] }> {
+  return authRequest('/api/admin/path-maps')
+}
+
+export function updateAdminPathMap(
+  pathId: string,
+  data: { title?: string; points: unknown[] },
+): Promise<{ map: AdminPathMap; bumpedSteps: string[] }> {
+  return authRequest(`/api/admin/path-maps/${encodeURIComponent(pathId)}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
 export function getAdminQuestions(params: { grade?: number | string; isOlympiad?: boolean | string; difficulty?: string; track?: QuestionTrack | string; topic?: string } = {}): Promise<{ questions: Question[] }> {
   const p = new URLSearchParams()
   if (params.grade      != null) p.set('grade',      String(params.grade))

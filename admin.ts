@@ -8,6 +8,7 @@ import { initResultsTab,   loadResults       } from './features/admin/results-ta
 import { initQuestionsTab, loadQuestionsTab  } from './features/admin/questions-tab.js'
 import { initMissionsTab,  loadMissionsTab   } from './features/admin/missions-tab.js'
 import { initLessonsTab,   loadLessonsTab    } from './features/admin/lessons-tab.js'
+import { initPathTab,      loadPathTab       } from './features/admin/path-tab.js'
 import { friendlyError } from './features/admin/ui.js'
 import { $, $maybe } from './utils/dom.js'
 
@@ -104,6 +105,7 @@ document.querySelectorAll<HTMLElement>('.admin-tab').forEach(tab => {
     if (tabName === 'questions') loadQuestionsTab()
     if (tabName === 'missions')  loadMissionsTab()
     if (tabName === 'lessons')   loadLessonsTab()
+    if (tabName === 'path')      loadPathTab()
   })
 })
 
@@ -144,3 +146,4 @@ initResultsTab()
 initQuestionsTab()
 initMissionsTab()
 initLessonsTab()
+initPathTab()

@@ -19,6 +19,7 @@ import {
   PATHS_BY_GRADE, isUnlocked,
   type PathPoint, type PathActivity, type PathActivityStep,
 } from './features/path/path-data.js'
+import { loadGradeMap } from './features/path/path-loader.js'
 import { createProgressStore } from './features/path/progress-store.js'
 import { syncPathProgress } from './features/path/path-sync.js'
 import {
@@ -48,7 +49,10 @@ const requestedGrade = queryGrade !== null && Number.isInteger(queryGrade) && qu
   ? queryGrade
   : savedGrade
 const requestedMap = PATHS_BY_GRADE[requestedGrade]
-const map = requestedMap ?? PATHS_BY_GRADE[savedGrade]!
+// Вбудована карта рендериться одразу (перший візит/офлайн), а бандл
+// public/path/ (експорт з БД) підміняє її, щойно довантажиться — свіжі
+// правки з адмінки доїжджають без релізу коду (див. loadGradeMap нижче).
+let map = requestedMap ?? PATHS_BY_GRADE[savedGrade]!
 const activeChildProfileId = getParentSession()?.activeChildProfileId ?? null
 const store = createProgressStore(window.localStorage, activeChildProfileId ?? 'local')
 let syncInFlight: Promise<void> = Promise.resolve()
@@ -412,4 +416,13 @@ $('path-done-map-btn').addEventListener('click', backToMap)
 if (requestedMap) {
   renderMap()
   schedulePathSync()
+  // Свіжа карта з бандла (правки з адмінки без релізу коду). Оновлюємо лише
+  // на екрані карти: підміна структури посеред активної точки могла б
+  // розсинхронізувати кроки поточного проходження.
+  void loadGradeMap(map.grade, requestedMap).then(fresh => {
+    if (!fresh || fresh === requestedMap) return
+    map = fresh
+    $('path-subtitle').textContent = `${map.title} · проходь точки — відкривай нові!`
+    if (activityEl.classList.contains('hidden')) renderMap()
+  })
 }
