@@ -16,6 +16,8 @@ export interface ActivityResult {
   activityId: string
   /** Immutable content version used to interpret attempts after releases. */
   activityVersion: number
+  /** Exact revision of referenced external content, such as a micro-lesson. */
+  contentVersion?: number
   grade: number | null
   curriculum: CurriculumTag[]
   /** Browser results are practice evidence, never trusted certification. */
@@ -33,6 +35,7 @@ export interface ActivityResult {
 export interface ActivityContext {
   activityId: string
   activityVersion: number
+  contentVersion?: number
   grade?: number
   curriculum: CurriculumTag[]
   durationSec?: number
@@ -62,6 +65,7 @@ function base(activityType: ActivityType, ctx: ActivityContext) {
     activityType,
     activityId: ctx.activityId,
     activityVersion: ctx.activityVersion,
+    ...(ctx.contentVersion !== undefined ? { contentVersion: ctx.contentVersion } : {}),
     grade: ctx.grade ?? null,
     curriculum: ctx.curriculum.map(tag => ({ ...tag })),
     trust: 'client-unverified' as const,

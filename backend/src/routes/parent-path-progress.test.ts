@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { getTableColumns } from 'drizzle-orm'
 
-import { homePathEvents, homePathProgress, pathMaps } from '../db/schema.js'
+import { homePathEvents, homePathProgress, pathMapRevisions, pathMaps } from '../db/schema.js'
 import {
   hasPathPrerequisites, validatePathCompletion,
   type ClientPathActivityResult,
@@ -26,6 +26,7 @@ const CATALOGS: Record<string, CatalogPath> = Object.fromEntries(SEED_MAPS.map(m
 const result = (activityId: string, activityVersion = 1, completedAt = '2026-07-10T10:00:00.000Z'): ClientPathActivityResult => ({
   activityId,
   activityVersion,
+  ...(activityId.endsWith(':theory') ? { contentVersion: 1 } : {}),
   trust: 'client-unverified',
   stars: 2,
   correct: 4,
@@ -46,7 +47,22 @@ test('valid completion uses the backend catalog and produces a stable event key'
   if (first.ok && second.ok) {
     assert.equal(first.eventKey, second.eventKey)
     assert.equal(first.sessionStars, 2)
+    assert.equal(first.pathVersion, 1)
   }
+})
+
+test('path revision participates in event identity', () => {
+  const body = {
+    pathId: 'grade-2', pathVersion: 4, pointId: 'g2-info-start',
+    results: [result('path:g2-info-start:theory'), result('path:g2-info-start:infosort')],
+  }
+  const v4 = catalogFromPoints(2, SEED_MAPS.find(map => map.pathId === 'grade-2')!.points, 4)!
+  const v5 = catalogFromPoints(2, SEED_MAPS.find(map => map.pathId === 'grade-2')!.points, 5)!
+  const first = validatePathCompletion(v4, 2, body)
+  const second = validatePathCompletion(v5, 2, { ...body, pathVersion: 5 })
+  assert.equal(first.ok, true)
+  assert.equal(second.ok, true)
+  if (first.ok && second.ok) assert.notEqual(first.eventKey, second.eventKey)
 })
 
 test('grade-1 path accepts its own start and keeps the final behind all branches', () => {
@@ -95,6 +111,18 @@ test('multi-activity point requires the exact activity set and immutable version
     pathId: 'grade-2', pointId: 'g2-ct-algorithms', results: [theory, mission, { ...sequence, activityVersion: 2 }],
   })
   assert.deepEqual(stale, { ok: false, error: 'Невідома активність або версія' })
+})
+
+test('lesson completion records an explicit positive content version', () => {
+  const theory = result('path:g2-info-start:theory')
+  const practice = result('path:g2-info-start:infosort')
+  assert.equal(validatePathCompletion(CATALOGS['grade-2'], 2, {
+    pathId: 'grade-2', pointId: 'g2-info-start', results: [theory, practice],
+  }).ok, true)
+  assert.deepEqual(validatePathCompletion(CATALOGS['grade-2'], 2, {
+    pathId: 'grade-2', pointId: 'g2-info-start',
+    results: [{ ...theory, contentVersion: undefined }, practice],
+  }), { ok: false, error: 'Для уроку потрібна версія контенту' })
 })
 
 test('grade, trust, score shape and client time fail closed', () => {
@@ -161,6 +189,34 @@ test('0033 path_maps schema is constrained, RLS-protected, seeded and journaled'
     assert.ok(sql.includes(JSON.stringify(map.points).replace(/'/g, "''")),
       `points у міграції розійшлися з seed для ${map.pathId}`)
   }
+})
+
+test('0034 keeps immutable path revisions and records event path_version', () => {
+  const revisions = getTableColumns(pathMapRevisions)
+  const events = getTableColumns(homePathEvents)
+  assert.equal(revisions.pathId.notNull, true)
+  assert.equal(revisions.version.notNull, true)
+  assert.equal(events.pathVersion.notNull, true)
+
+  const here = dirname(fileURLToPath(import.meta.url))
+  const sql = readFileSync(join(here, '../../drizzle/0034_add_path_map_revisions.sql'), 'utf8')
+  const journal = readFileSync(join(here, '../../drizzle/meta/_journal.json'), 'utf8')
+  assert.match(sql, /UNIQUE \(path_id, version\)/)
+  assert.match(sql, /ALTER TABLE public\.path_map_revisions ENABLE ROW LEVEL SECURITY/)
+  assert.match(sql, /ADD COLUMN path_version integer NOT NULL DEFAULT 1/)
+  assert.match(journal, /"tag": "0034_add_path_map_revisions"/)
+})
+
+test('0035 seeds every canonical published lesson referenced by Grade 2', () => {
+  const here = dirname(fileURLToPath(import.meta.url))
+  const sql = readFileSync(join(here, '../../drizzle/0035_seed_micro_lessons.sql'), 'utf8')
+  const journal = readFileSync(join(here, '../../drizzle/meta/_journal.json'), 'utf8')
+  for (const lessonId of ['info-senses-g2', 'algorithms-order-g2', 'private-info-g2']) {
+    assert.match(sql, new RegExp(`'${lessonId}'`))
+  }
+  assert.match(sql, /'published'/)
+  assert.match(sql, /ON CONFLICT \(id\) DO NOTHING/)
+  assert.match(journal, /"tag": "0035_seed_micro_lessons"/)
 })
 
 test('backend catalog structurally matches frontend points, activities and graph edges', () => {

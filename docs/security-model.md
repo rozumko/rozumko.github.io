@@ -180,9 +180,13 @@ Account/profile deletion stays fail-closed until a retention policy is approved.
   progress and reports are always scoped to one explicit child profile.
 - Browser path results marked `client-unverified` may be stored only as
   practice progress after the server validates the profile ownership,
-  point/activity identifier and immutable content version. They cannot produce
-  an official score, diploma or trusted parent report. Server-issued missions
-  continue to be scored from server-held question versions and saved events.
+  map revision, point/activity identifier and activity version, and records a
+  positive lesson content version for lesson activities. Immutable
+  `path_map_revisions` keep already downloaded static
+  bundles valid after an administrator publishes a newer map. They cannot
+  produce an official score, diploma or trusted parent report. Server-issued
+  missions continue to be scored from server-held question versions and saved
+  events.
 - Anonymous Home visitors may complete only the first path point. Its result
   stays in same-origin local storage until an authenticated parent explicitly
   chooses a child profile of the same grade and confirms import. The frontend
@@ -440,8 +444,11 @@ boundaries:
   email and is transactional/idempotent;
 - child-profile reads and writes enforce owner-scoped UUID access and return
   `404` for valid foreign profile IDs;
-- path events accept only catalogued point/activity/version combinations,
-  enforce unlock prerequisites and store a unique server-derived event key;
+- path events accept only catalogued map/point/activity-version combinations,
+  require a positive content version for lessons, enforce unlock prerequisites
+  and store a unique server-derived
+  event key; legacy clients without a map revision are matched fail-closed
+  against immutable revisions;
 - retries do not increment attempts, while new completions keep the best stars;
 - every stored path event remains `client-unverified` and cannot create trusted
   reports, official scores or diplomas.

@@ -10,6 +10,10 @@ for (const map of Object.values(PATHS_BY_GRADE)) {
   const prefix = `Grade ${map.grade} map`
   const byId = new Map(map.points.map(p => [p.id, p]))
 
+  test(`${prefix}: map version is a positive integer`, () => {
+    assert.ok(Number.isInteger(map.version) && map.version >= 1)
+  })
+
   test(`${prefix}: point ids are unique`, () => {
     const ids = map.points.map(p => p.id)
     const unique = new Set(ids)

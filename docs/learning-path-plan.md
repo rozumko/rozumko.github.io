@@ -277,7 +277,7 @@ track/topic. Контент-джерело: `temp/new_lessons/` (28 уроків
   (історичні рушії свідомо не рефакторились). Моторні тренажери для
   1 класу — досі кандидати на окремий зріз.
 - ✅ Зріз 4a (2026-07-14): структура шляху в БД — таблиця `path_maps`
-  (міграція 0033, ⚠️ застосувати на проді; seed з `path-data.ts`,
+  (міграція 0033; перед релізом застосувати разом із 0034–0035; seed з `path-data.ts`,
   ідемпотентний, з полем `access: free|club` під free-карту). Валідація
   path-progress тепер читає каталог з БД (`path-catalog.ts`, TTL-кеш 60с,
   fail-closed) — ручне дзеркало `HOME_PATH_CATALOG` видалено, клас
@@ -296,14 +296,24 @@ track/topic. Контент-джерело: `temp/new_lessons/` (28 уроків
   вбудованої копії одразу, бандл `public/path/` підміняє її після
   довантаження (лише на екрані карти, не посеред активності); битий чи
   відсутній бандл → фолбек. Кеш серверного каталогу скидається при
-  збереженні. Хвости: редагування title карти з UI; видалення точки не
-  перевіряє наявність дитячого прогресу по ній (прогрес не губиться, але
-  точка зникає з карти — перед видаленням обжитих точок краще звіритись).
+  збереженні.
+- ✅ Slice 4c (2026-07-14): revision integrity and concurrent editing.
+  Migration 0034 adds immutable `path_map_revisions` and records
+  `path_version` on progress events, so older static bundles remain valid
+  after later map edits. `PUT` requires `expectedVersion`, prevents lost
+  updates, and verifies that every assigned lesson exists and is published.
+  Re-added step IDs advance beyond their historical maximum version. Export
+  and browser loading perform full structural graph validation. A downloaded
+  revision is applied only after the active point closes, while offline batches
+  retain their map revision and lesson content version. The admin editor keeps
+  unsaved changes across tabs, edits map titles, and traps modal focus. Points
+  with server progress cannot be deleted, and deleted `pointId` values cannot
+  be reused to prevent old completion state from unlocking new content.
 - Відео: запуск без відео; `videoUrl` — опційне поле; хостинг self-hosted
   (Cloudflare R2/Stream), не YouTube-embed.
-- Міграційний нюанс: несинхронізовані результати точок, які тепер вимагають
-  теорію, не формують повний батч і лишаються в черзі (кап 200) — локальний
-  прогрес не втрачається, шкоди немає.
+- Migration compatibility: legacy queues without `pathVersion` are accepted
+  only against a structurally compatible immutable revision; new batches
+  always submit their exact map revision.
 
 ## Ризики та відкриті питання
 

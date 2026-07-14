@@ -53,6 +53,7 @@ const requestedMap = PATHS_BY_GRADE[requestedGrade]
 // public/path/ (експорт з БД) підміняє її, щойно довантажиться — свіжі
 // правки з адмінки доїжджають без релізу коду (див. loadGradeMap нижче).
 let map = requestedMap ?? PATHS_BY_GRADE[savedGrade]!
+let pendingMap: typeof map | null = null
 const activeChildProfileId = getParentSession()?.activeChildProfileId ?? null
 const store = createProgressStore(window.localStorage, activeChildProfileId ?? 'local')
 let syncInFlight: Promise<void> = Promise.resolve()
@@ -193,10 +194,11 @@ function setActivityMode(active: boolean) {
   document.body.classList.toggle('path-activity-active', active)
 }
 
-function activityContext(p: PathPoint, step: PathActivityStep): ActivityContext {
+function activityContext(p: PathPoint, step: PathActivityStep, contentVersion?: number): ActivityContext {
   return {
     activityId: `path:${p.id}:${step.id}`,
     activityVersion: step.version,
+    ...(contentVersion !== undefined ? { contentVersion } : {}),
     grade: map.grade,
     curriculum: p.curriculum,
   }
@@ -266,7 +268,7 @@ async function startActivityStep(
     mountLesson(lessonRoot, lesson, {
       // Точка вже проходилась — теорію можна пропустити (повторний візит).
       allowSkip: store.isCompleted(p.id),
-      onComplete: s => complete(fromLessonSummary(s, activityContext(p, step))),
+      onComplete: s => complete(fromLessonSummary(s, activityContext(p, step, lesson.version))),
     })
   } else if (a.kind === 'sequence') {
     show(foRoot)
@@ -356,7 +358,7 @@ async function loadMissionQuestions(a: Extract<PathActivity, { kind: 'mission' }
 // ── Завершення точки ──────────────────────────────────────────
 function finishPoint(p: PathPoint, results: ActivityResult[], run: number) {
   if (run !== activeRun) return
-  const progress = store.recordResults(p.id, results)
+  const progress = store.recordResults(p.id, results, map.version)
   schedulePathSync()
   hide(activityEl)
   clearActivityRoots()
@@ -405,6 +407,11 @@ function backToMap() {
   hide(activityEl)
   hide(doneEl)
   clearActivityRoots()
+  if (pendingMap) {
+    map = pendingMap
+    pendingMap = null
+    $('path-subtitle').textContent = `${map.title} · проходь точки — відкривай нові!`
+  }
   renderMap()
   show(mapScreen)
   if (!revealParentGateIfVisible()) $('main-content').focus()
@@ -421,8 +428,12 @@ if (requestedMap) {
   // розсинхронізувати кроки поточного проходження.
   void loadGradeMap(map.grade, requestedMap).then(fresh => {
     if (!fresh || fresh === requestedMap) return
+    if (!activityEl.classList.contains('hidden')) {
+      pendingMap = fresh
+      return
+    }
     map = fresh
     $('path-subtitle').textContent = `${map.title} · проходь точки — відкривай нові!`
-    if (activityEl.classList.contains('hidden')) renderMap()
+    renderMap()
   })
 }

@@ -1,0 +1,297 @@
+{
+ "pathId": "grade-1",
+ "grade": 1,
+ "title": "Шлях 1 класу",
+ "version": 1,
+ "points": [
+  {
+   "id": "g1-sort-start",
+   "title": "Знайди спільну ознаку",
+   "icon": "🧺",
+   "access": "free",
+   "curriculum": [
+    {
+     "track": "computational-thinking",
+     "topic": "classification"
+    }
+   ],
+   "activities": [
+    {
+     "id": "attributes",
+     "version": 1,
+     "title": "Розумне сортування",
+     "activity": {
+      "game": "attributes",
+      "kind": "sorting"
+     },
+     "required": true
+    }
+   ],
+   "unlockAfter": [],
+   "x": 50,
+   "y": 6
+  },
+  {
+   "id": "g1-info-senses",
+   "title": "Як ми отримуємо інформацію",
+   "icon": "👀",
+   "access": "free",
+   "curriculum": [
+    {
+     "track": "informatics",
+     "topic": "information"
+    }
+   ],
+   "activities": [
+    {
+     "id": "infosort",
+     "version": 1,
+     "title": "ІнфоСорт",
+     "activity": {
+      "game": "infosort",
+      "kind": "sorting"
+     },
+     "required": true
+    }
+   ],
+   "unlockAfter": [
+    "g1-sort-start"
+   ],
+   "x": 50,
+   "y": 27
+  },
+  {
+   "id": "g1-ct-patterns",
+   "title": "Продовж візерунок",
+   "icon": "🧩",
+   "access": "free",
+   "curriculum": [
+    {
+     "track": "computational-thinking",
+     "topic": "patterns"
+    }
+   ],
+   "activities": [
+    {
+     "id": "patterns-puzzles",
+     "version": 1,
+     "title": "Головоломки з візерунками",
+     "activity": {
+      "kind": "puzzles",
+      "count": 3
+     },
+     "required": true
+    }
+   ],
+   "unlockAfter": [
+    "g1-sort-start"
+   ],
+   "x": 19,
+   "y": 27
+  },
+  {
+   "id": "g1-fact-opinion",
+   "title": "Факт чи чиясь думка?",
+   "icon": "💬",
+   "access": "free",
+   "curriculum": [
+    {
+     "track": "informatics",
+     "topic": "information"
+    },
+    {
+     "track": "ai-basics",
+     "topic": "ai-ethics-safety"
+    }
+   ],
+   "activities": [
+    {
+     "id": "fact-opinion-l1",
+     "version": 1,
+     "title": "Факт чи думка",
+     "activity": {
+      "kind": "fact-opinion",
+      "level": 1
+     },
+     "required": true
+    }
+   ],
+   "unlockAfter": [
+    "g1-sort-start"
+   ],
+   "x": 81,
+   "y": 27
+  },
+  {
+   "id": "g1-ct-algorithms",
+   "title": "Крок за кроком",
+   "icon": "👣",
+   "access": "free",
+   "curriculum": [
+    {
+     "track": "computational-thinking",
+     "topic": "algorithms"
+    }
+   ],
+   "activities": [
+    {
+     "id": "algorithms-mission",
+     "version": 1,
+     "title": "Прості алгоритми",
+     "activity": {
+      "kind": "mission",
+      "count": 4,
+      "topic": "algorithms",
+      "track": "computational-thinking"
+     },
+     "required": true
+    }
+   ],
+   "unlockAfter": [
+    "g1-ct-patterns"
+   ],
+   "x": 20,
+   "y": 55
+  },
+  {
+   "id": "g1-ai-intro",
+   "title": "Де живе штучний інтелект",
+   "icon": "🤖",
+   "access": "free",
+   "curriculum": [
+    {
+     "track": "ai-basics",
+     "topic": "what-is-ai"
+    }
+   ],
+   "activities": [
+    {
+     "id": "what-is-ai-mission",
+     "version": 1,
+     "title": "Знайомство із ШІ",
+     "activity": {
+      "kind": "mission",
+      "count": 4,
+      "topic": "what-is-ai",
+      "track": "ai-basics"
+     },
+     "required": true
+    }
+   ],
+   "unlockAfter": [
+    "g1-fact-opinion"
+   ],
+   "x": 63,
+   "y": 52
+  },
+  {
+   "id": "g1-digital-safety",
+   "title": "Мій секрет у безпеці",
+   "icon": "🛡️",
+   "access": "free",
+   "curriculum": [
+    {
+     "track": "informatics",
+     "topic": "digital-safety"
+    }
+   ],
+   "activities": [
+    {
+     "id": "digital-safety-mission",
+     "version": 1,
+     "title": "Безпечно онлайн",
+     "activity": {
+      "kind": "mission",
+      "count": 4,
+      "topic": "digital-safety",
+      "track": "informatics"
+     },
+     "required": true
+    }
+   ],
+   "unlockAfter": [
+    "g1-info-senses"
+   ],
+   "x": 85,
+   "y": 68
+  },
+  {
+   "id": "g1-logic-bridge",
+   "title": "Обери правильний крок",
+   "icon": "🚦",
+   "access": "free",
+   "curriculum": [
+    {
+     "track": "computational-thinking",
+     "topic": "logic"
+    },
+    {
+     "track": "informatics",
+     "topic": "algorithms-programming"
+    }
+   ],
+   "activities": [
+    {
+     "id": "logic-puzzles",
+     "version": 1,
+     "title": "Логічні головоломки",
+     "activity": {
+      "kind": "puzzles",
+      "count": 3
+     },
+     "required": true
+    }
+   ],
+   "unlockAfter": [
+    "g1-ct-algorithms",
+    "g1-info-senses"
+   ],
+   "x": 40,
+   "y": 72
+  },
+  {
+   "id": "g1-final",
+   "title": "Свято трьох суперсил",
+   "icon": "🏰",
+   "access": "free",
+   "curriculum": [
+    {
+     "track": "informatics",
+     "topic": "information"
+    },
+    {
+     "track": "computational-thinking",
+     "topic": "logic"
+    },
+    {
+     "track": "ai-basics",
+     "topic": "what-is-ai"
+    }
+   ],
+   "activities": [
+    {
+     "id": "final-three-tracks",
+     "version": 1,
+     "title": "Фінальна місія",
+     "activity": {
+      "kind": "mission",
+      "count": 6,
+      "tracks": [
+       "informatics",
+       "computational-thinking",
+       "ai-basics"
+      ]
+     },
+     "required": true
+    }
+   ],
+   "unlockAfter": [
+    "g1-logic-bridge",
+    "g1-ai-intro",
+    "g1-digital-safety"
+   ],
+   "x": 54,
+   "y": 91
+  }
+ ]
+}

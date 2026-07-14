@@ -1,0 +1,298 @@
+{
+ "pathId": "grade-3",
+ "grade": 3,
+ "title": "Шлях 3 класу",
+ "version": 1,
+ "points": [
+  {
+   "id": "g3-algorithms-start",
+   "title": "Команда за командою",
+   "icon": "🧭",
+   "access": "free",
+   "curriculum": [
+    {
+     "track": "computational-thinking",
+     "topic": "algorithms"
+    }
+   ],
+   "activities": [
+    {
+     "id": "algorithms-mission",
+     "version": 1,
+     "title": "Будуємо алгоритм",
+     "activity": {
+      "kind": "mission",
+      "count": 5,
+      "topic": "algorithms",
+      "track": "computational-thinking"
+     },
+     "required": true
+    }
+   ],
+   "unlockAfter": [],
+   "x": 50,
+   "y": 6
+  },
+  {
+   "id": "g3-decomposition",
+   "title": "Розклади задачу на частини",
+   "icon": "🧱",
+   "access": "free",
+   "curriculum": [
+    {
+     "track": "computational-thinking",
+     "topic": "decomposition"
+    }
+   ],
+   "activities": [
+    {
+     "id": "decomposition-mission",
+     "version": 1,
+     "title": "Велике завдання — малі кроки",
+     "activity": {
+      "kind": "mission",
+      "count": 5,
+      "topic": "decomposition",
+      "track": "computational-thinking"
+     },
+     "required": true
+    }
+   ],
+   "unlockAfter": [
+    "g3-algorithms-start"
+   ],
+   "x": 18,
+   "y": 27
+  },
+  {
+   "id": "g3-data",
+   "title": "Інформація стає даними",
+   "icon": "📊",
+   "access": "free",
+   "curriculum": [
+    {
+     "track": "informatics",
+     "topic": "data"
+    }
+   ],
+   "activities": [
+    {
+     "id": "data-mission",
+     "version": 1,
+     "title": "Місія про дані",
+     "activity": {
+      "kind": "mission",
+      "count": 5,
+      "topic": "data",
+      "track": "informatics"
+     },
+     "required": true
+    }
+   ],
+   "unlockAfter": [
+    "g3-algorithms-start"
+   ],
+   "x": 50,
+   "y": 28
+  },
+  {
+   "id": "g3-ai-learning",
+   "title": "Як навчається ШІ",
+   "icon": "🧠",
+   "access": "free",
+   "curriculum": [
+    {
+     "track": "ai-basics",
+     "topic": "how-ai-learns"
+    }
+   ],
+   "activities": [
+    {
+     "id": "ai-learning-mission",
+     "version": 1,
+     "title": "Приклади для ШІ",
+     "activity": {
+      "kind": "mission",
+      "count": 5,
+      "topic": "how-ai-learns",
+      "track": "ai-basics"
+     },
+     "required": true
+    }
+   ],
+   "unlockAfter": [
+    "g3-algorithms-start"
+   ],
+   "x": 82,
+   "y": 27
+  },
+  {
+   "id": "g3-repetition",
+   "title": "Повторюй розумно",
+   "icon": "🔁",
+   "access": "free",
+   "curriculum": [
+    {
+     "track": "computational-thinking",
+     "topic": "repetition"
+    }
+   ],
+   "activities": [
+    {
+     "id": "repetition-mission",
+     "version": 1,
+     "title": "Знаходимо повторення",
+     "activity": {
+      "kind": "mission",
+      "count": 5,
+      "topic": "repetition",
+      "track": "computational-thinking"
+     },
+     "required": true
+    }
+   ],
+   "unlockAfter": [
+    "g3-decomposition"
+   ],
+   "x": 17,
+   "y": 53
+  },
+  {
+   "id": "g3-assembly",
+   "title": "Майстерня комп’ютера",
+   "icon": "🔧",
+   "access": "free",
+   "curriculum": [
+    {
+     "track": "informatics",
+     "topic": "computer-systems"
+    }
+   ],
+   "activities": [
+    {
+     "id": "assembly-hardware",
+     "version": 1,
+     "title": "Збери комп’ютер",
+     "activity": {
+      "kind": "simulator",
+      "scenario": "hardware"
+     },
+     "required": true
+    }
+   ],
+   "unlockAfter": [
+    "g3-data"
+   ],
+   "x": 50,
+   "y": 54
+  },
+  {
+   "id": "g3-ai-perception",
+   "title": "Як ШІ бачить і чує",
+   "icon": "👁️",
+   "access": "free",
+   "curriculum": [
+    {
+     "track": "ai-basics",
+     "topic": "ai-perception"
+    }
+   ],
+   "activities": [
+    {
+     "id": "ai-perception-mission",
+     "version": 1,
+     "title": "Розпізнавання навколо нас",
+     "activity": {
+      "kind": "mission",
+      "count": 5,
+      "topic": "ai-perception",
+      "track": "ai-basics"
+     },
+     "required": true
+    }
+   ],
+   "unlockAfter": [
+    "g3-ai-learning"
+   ],
+   "x": 83,
+   "y": 53
+  },
+  {
+   "id": "g3-debug-bridge",
+   "title": "Знайди й виправ помилку",
+   "icon": "🐞",
+   "access": "free",
+   "curriculum": [
+    {
+     "track": "computational-thinking",
+     "topic": "debugging"
+    },
+    {
+     "track": "informatics",
+     "topic": "algorithms-programming"
+    }
+   ],
+   "activities": [
+    {
+     "id": "debug-puzzles",
+     "version": 1,
+     "title": "Лабораторія помилок",
+     "activity": {
+      "kind": "puzzles",
+      "count": 4
+     },
+     "required": true
+    }
+   ],
+   "unlockAfter": [
+    "g3-repetition",
+    "g3-assembly"
+   ],
+   "x": 35,
+   "y": 75
+  },
+  {
+   "id": "g3-final",
+   "title": "Експедиція трьох напрямів",
+   "icon": "🚀",
+   "access": "free",
+   "curriculum": [
+    {
+     "track": "informatics",
+     "topic": "computer-systems"
+    },
+    {
+     "track": "computational-thinking",
+     "topic": "debugging"
+    },
+    {
+     "track": "ai-basics",
+     "topic": "ai-perception"
+    }
+   ],
+   "activities": [
+    {
+     "id": "final-three-tracks",
+     "version": 1,
+     "title": "Фінальна експедиція",
+     "activity": {
+      "kind": "mission",
+      "count": 9,
+      "tracks": [
+       "informatics",
+       "computational-thinking",
+       "ai-basics"
+      ]
+     },
+     "required": true
+    }
+   ],
+   "unlockAfter": [
+    "g3-debug-bridge",
+    "g3-ai-perception"
+   ],
+   "x": 56,
+   "y": 92
+  }
+ ]
+}

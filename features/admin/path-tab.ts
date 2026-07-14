@@ -4,6 +4,7 @@ import {
 } from '../../features/api/client.js'
 import { esc, showModal, showConfirm } from './ui.js'
 import { $ } from '../../utils/dom.js'
+import { createFocusTrap } from '../../utils/focus-trap.js'
 
 // Вкладка «Шлях»: формовий редактор точок карти (не візуальний граф) з
 // SVG-прев'ю. Джерело правди — path_maps у БД; дітям структура їде бандлом
@@ -45,6 +46,9 @@ let workingPoints: PointJson[] = []
 let workingTitle = ''
 let dirty = false
 let editingPointId: string | null = null
+let loaded = false
+let pointModalTrapRemove: (() => void) | null = null
+let dynamicFieldId = 0
 
 export function initPathTab() {
   $<HTMLSelectElement>('pm-grade').addEventListener('change', () => {
@@ -56,6 +60,10 @@ export function initPathTab() {
     resetWorking()
     renderPathTab()
   })
+  $<HTMLInputElement>('pm-title').addEventListener('input', event => {
+    workingTitle = (event.currentTarget as HTMLInputElement).value
+    markDirty()
+  })
   $('pm-add-point').addEventListener('click', () => openPointEditor(null))
   $('pm-save').addEventListener('click', () => { void saveMap() })
   $('pf-cancel').addEventListener('click', closePointEditor)
@@ -63,15 +71,24 @@ export function initPathTab() {
   $('pf-add-step').addEventListener('click', () => addStepRow())
   $('pf-delete').addEventListener('click', deleteEditedPoint)
   $<HTMLFormElement>('point-form').addEventListener('submit', (e) => { e.preventDefault(); applyPoint() })
+  window.addEventListener('beforeunload', (event) => {
+    if (!dirty) return
+    event.preventDefault()
+  })
 }
 
 export async function loadPathTab() {
+  if (loaded) {
+    renderPathTab()
+    return
+  }
   const status = $('pm-status')
   status.textContent = 'Завантаження…'
   try {
-    const [{ maps: loaded }, { lessons }] = await Promise.all([getAdminPathMaps(), getAdminLessons()])
-    maps = loaded
-    lessonIds = lessons.map(lesson => lesson.id).sort()
+    const [{ maps: loadedMaps }, { lessons }] = await Promise.all([getAdminPathMaps(), getAdminLessons()])
+    maps = loadedMaps
+    lessonIds = lessons.filter(lesson => lesson.status === 'published').map(lesson => lesson.id).sort()
+    loaded = true
     resetWorking()
     renderPathTab()
   } catch (err) {
@@ -101,9 +118,14 @@ function markDirty() {
 
 function renderPathTab() {
   const map = currentMap()
+  const titleInput = $<HTMLInputElement>('pm-title')
+  if (titleInput.value !== workingTitle) titleInput.value = workingTitle
+  titleInput.disabled = !map
+  $<HTMLButtonElement>('pm-add-point').disabled = !map
+  $<HTMLButtonElement>('pm-save').disabled = !map
   $('pm-status').textContent = map
     ? `${workingTitle} · v${map.version} · точок: ${workingPoints.length}${dirty ? ' · ✳ не збережено' : ''}`
-    : 'Карту не знайдено (міграція 0033 застосована?)'
+    : 'Карту не знайдено (міграції 0033–0034 застосовані?)'
   renderPreview()
   renderPointsList()
 }
@@ -188,9 +210,13 @@ function openPointEditor(point: PointJson | null) {
   for (const step of point?.activities ?? []) addStepRow(step)
 
   $('point-modal').classList.remove('hidden')
+  pointModalTrapRemove?.()
+  pointModalTrapRemove = createFocusTrap($('point-modal'), closePointEditor)
 }
 
 function closePointEditor() {
+  pointModalTrapRemove?.()
+  pointModalTrapRemove = null
   $('point-modal').classList.add('hidden')
   editingPointId = null
 }
@@ -232,6 +258,8 @@ function renderStepParams(row: HTMLElement, activity: Record<string, unknown> & 
     const labelEl = document.createElement('label')
     labelEl.className = 'adm-label'
     labelEl.textContent = label
+    input.id = `pf-dynamic-${++dynamicFieldId}`
+    labelEl.htmlFor = input.id
     wrap.append(labelEl, input)
     box.appendChild(wrap)
   }
@@ -364,6 +392,7 @@ function applyPoint() {
     }
   }
 
+  const shouldRestoreEditedPoint = editingPointId !== null
   if (editingPointId) {
     workingPoints = workingPoints.map(existing => existing.id === editingPointId ? point : existing)
   } else {
@@ -371,6 +400,10 @@ function applyPoint() {
   }
   closePointEditor()
   markDirty()
+  if (shouldRestoreEditedPoint) {
+    const index = workingPoints.findIndex(existing => existing.id === point.id)
+    $('pm-points').querySelectorAll<HTMLButtonElement>('.pm-edit')[index]?.focus()
+  }
 }
 
 function deleteEditedPoint() {
@@ -391,6 +424,7 @@ async function saveMap() {
   save.disabled = true
   try {
     const { map, bumpedSteps } = await updateAdminPathMap(currentPathId, {
+      expectedVersion: currentMap()?.version ?? 0,
       title: workingTitle,
       points: workingPoints,
     })

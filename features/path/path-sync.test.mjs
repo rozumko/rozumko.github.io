@@ -96,3 +96,16 @@ test('stale activity versions remain queued and are never submitted', async () =
   assert.equal(result.pendingEvents, 1)
   assert.equal(api.submissions.length, 0)
 })
+
+test('versioned offline batch is submitted against its original map revision', async () => {
+  const store = createProgressStore(storage(), 'child-a')
+  store.recordResults('g2-info-start', [
+    { ...activity('path:g2-info-start:theory', '2026-07-10T09:58:00Z'), activityVersion: 7 },
+    { ...activity('path:g2-info-start:infosort', '2026-07-10T10:00:00Z'), activityVersion: 8 },
+  ], 4)
+  const api = fakeApi()
+  const result = await syncPathProgress(store, GRADE2_PATH, 'child-a', api)
+  assert.equal(result.syncedEvents, 2)
+  assert.equal(api.submissions.length, 1)
+  assert.equal(api.submissions[0].pathVersion, 4)
+})

@@ -1,6 +1,6 @@
 # Database Migrations - Rozumko
 
-_Updated: 2026-07-13_
+_Updated: 2026-07-14_
 
 ## Source Of Truth
 
@@ -48,6 +48,8 @@ environments receive the same schema.
 | `0031_add_home_path_progress` | Home path progress snapshots + idempotent client-unverified events |
 | `0032_add_micro_lessons` | Micro-lessons authoring table (admin CRUD; children read the static export) |
 | `0033_add_path_maps` | Learning-path structure in DB (seeded from path-data.ts; validation source of truth) |
+| `0034_add_path_map_revisions` | Immutable learning-path revisions + revision recorded on Home path events |
+| `0035_seed_micro_lessons` | Canonical published Grade 2 lessons required by the seeded path map |
 
 `0012` is intentionally idempotent: production received the columns manually
 before the SQL was incorporated into Drizzle history.
@@ -93,6 +95,16 @@ process. The check compares the newest bundled journal timestamp with
 `drizzle.__drizzle_migrations`. If the database is behind or unavailable, the
 new process fails closed and does not replace the running version. The check
 never applies SQL.
+
+Backend builds containing revision-aware path validation require migration
+`0034` before deployment. The migration backfills every current `path_maps`
+row as its first immutable revision, so already exported bundles remain
+acceptable when later edits create newer revisions.
+
+Migration `0035` closes the original seed dependency: the Grade 2 path from
+`0033` references three micro-lessons, so clean databases must receive those
+published lesson rows before `export:path` can succeed. Existing authored rows
+are preserved with `ON CONFLICT DO NOTHING`.
 
 `GET /ready` and `GET /ping` perform the same check. Migration drift returns
 HTTP `503` with `{ "status": "error", "db": "migration_required" }` without

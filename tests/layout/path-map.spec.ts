@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 import { INFO_SORT_LEVELS } from '../../features/games/sorting-data'
+import { GRADE2_PATH } from '../../features/path/path-data'
 
 // Карта пригод (path.html): вузли, поступове відкривання, відсутність
 // горизонтального скролу. Прогрес інжектиться через localStorage-контракт
@@ -193,6 +194,35 @@ test('lesson next button keeps a stable position across text lengths', async ({ 
 
   expect(Math.abs(second!.y - first!.y)).toBeLessThanOrEqual(2)
   expect(Math.abs(third!.y - first!.y)).toBeLessThanOrEqual(2)
+})
+
+test('a downloaded map revision waits until the active point is closed', async ({ page }) => {
+  let releaseBundle!: () => void
+  const bundleReady = new Promise<void>(resolve => { releaseBundle = resolve })
+  const freshMap = {
+    ...GRADE2_PATH,
+    version: GRADE2_PATH.version + 1,
+    title: 'Deferred map revision',
+    points: GRADE2_PATH.points.map((point, index) => index === 0
+      ? { ...point, title: 'Fresh first point' }
+      : point),
+  }
+
+  await page.route('**/path/grade-2.json', async route => {
+    await bundleReady
+    await route.fulfill({ contentType: 'application/json', body: JSON.stringify(freshMap) })
+  })
+  await page.goto('/path.html?grade=2')
+  await page.locator('.path-node--open').click()
+  await expect(page.locator('#path-activity')).toBeVisible()
+
+  releaseBundle()
+  await expect.poll(() => page.evaluate(() => document.querySelector('#path-subtitle')?.textContent))
+    .not.toContain('Deferred map revision')
+
+  await page.locator('#path-back-btn').click()
+  await expect(page.locator('#path-subtitle')).toContainText('Deferred map revision')
+  await expect(page.locator('.path-node').first()).toHaveAccessibleName(/Fresh first point/)
 })
 
 /** Проходить мікро-урок точки: картки — «Далі», перевірочні питання — перша відповідь + «Далі». */

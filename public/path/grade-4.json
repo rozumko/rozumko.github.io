@@ -1,0 +1,303 @@
+{
+ "pathId": "grade-4",
+ "grade": 4,
+ "title": "Шлях 4 класу",
+ "version": 1,
+ "points": [
+  {
+   "id": "g4-safety-start",
+   "title": "Захисти цифровий світ",
+   "icon": "🛡️",
+   "access": "free",
+   "curriculum": [
+    {
+     "track": "informatics",
+     "topic": "digital-safety"
+    }
+   ],
+   "activities": [
+    {
+     "id": "digital-safety-mission",
+     "version": 1,
+     "title": "Цифровий захисник",
+     "activity": {
+      "kind": "mission",
+      "count": 6,
+      "topic": "digital-safety",
+      "track": "informatics"
+     },
+     "required": true
+    }
+   ],
+   "unlockAfter": [],
+   "x": 50,
+   "y": 6
+  },
+  {
+   "id": "g4-networks",
+   "title": "Як мандрують повідомлення",
+   "icon": "🌐",
+   "access": "free",
+   "curriculum": [
+    {
+     "track": "informatics",
+     "topic": "networks-internet"
+    }
+   ],
+   "activities": [
+    {
+     "id": "networks-mission",
+     "version": 1,
+     "title": "Місія про мережі",
+     "activity": {
+      "kind": "mission",
+      "count": 6,
+      "topic": "networks-internet",
+      "track": "informatics"
+     },
+     "required": true
+    }
+   ],
+   "unlockAfter": [
+    "g4-safety-start"
+   ],
+   "x": 18,
+   "y": 27
+  },
+  {
+   "id": "g4-efficiency",
+   "title": "Обери кращий алгоритм",
+   "icon": "⚡",
+   "access": "free",
+   "curriculum": [
+    {
+     "track": "computational-thinking",
+     "topic": "efficiency"
+    }
+   ],
+   "activities": [
+    {
+     "id": "efficiency-mission",
+     "version": 1,
+     "title": "Швидше й простіше",
+     "activity": {
+      "kind": "mission",
+      "count": 6,
+      "topic": "efficiency",
+      "track": "computational-thinking"
+     },
+     "required": true
+    }
+   ],
+   "unlockAfter": [
+    "g4-safety-start"
+   ],
+   "x": 50,
+   "y": 28
+  },
+  {
+   "id": "g4-information-trust",
+   "title": "Перевір, перш ніж довіряти",
+   "icon": "🔎",
+   "access": "free",
+   "curriculum": [
+    {
+     "track": "informatics",
+     "topic": "information"
+    },
+    {
+     "track": "ai-basics",
+     "topic": "ai-ethics-safety"
+    }
+   ],
+   "activities": [
+    {
+     "id": "fact-opinion-l2",
+     "version": 1,
+     "title": "Факт, думка чи міф",
+     "activity": {
+      "kind": "fact-opinion",
+      "level": 2
+     },
+     "required": true
+    }
+   ],
+   "unlockAfter": [
+    "g4-safety-start"
+   ],
+   "x": 82,
+   "y": 27
+  },
+  {
+   "id": "g4-software",
+   "title": "Підготуй комп’ютер до роботи",
+   "icon": "💻",
+   "access": "free",
+   "curriculum": [
+    {
+     "track": "informatics",
+     "topic": "computer-systems"
+    }
+   ],
+   "activities": [
+    {
+     "id": "assembly-software",
+     "version": 1,
+     "title": "Встанови систему й програми",
+     "activity": {
+      "kind": "simulator",
+      "scenario": "software"
+     },
+     "required": true
+    }
+   ],
+   "unlockAfter": [
+    "g4-networks"
+   ],
+   "x": 17,
+   "y": 54
+  },
+  {
+   "id": "g4-debugging",
+   "title": "Полювання на помилки",
+   "icon": "🐞",
+   "access": "free",
+   "curriculum": [
+    {
+     "track": "computational-thinking",
+     "topic": "debugging"
+    }
+   ],
+   "activities": [
+    {
+     "id": "debug-puzzles",
+     "version": 1,
+     "title": "Знайди помилку",
+     "activity": {
+      "kind": "puzzles",
+      "count": 5
+     },
+     "required": true
+    }
+   ],
+   "unlockAfter": [
+    "g4-efficiency"
+   ],
+   "x": 50,
+   "y": 55
+  },
+  {
+   "id": "g4-ai-ethics",
+   "title": "Коли ШІ може помилятися",
+   "icon": "⚖️",
+   "access": "free",
+   "curriculum": [
+    {
+     "track": "ai-basics",
+     "topic": "ai-ethics-safety"
+    }
+   ],
+   "activities": [
+    {
+     "id": "ai-ethics-mission",
+     "version": 1,
+     "title": "Відповідальний ШІ",
+     "activity": {
+      "kind": "mission",
+      "count": 6,
+      "topic": "ai-ethics-safety",
+      "track": "ai-basics"
+     },
+     "required": true
+    }
+   ],
+   "unlockAfter": [
+    "g4-information-trust"
+   ],
+   "x": 83,
+   "y": 54
+  },
+  {
+   "id": "g4-data-ai-bridge",
+   "title": "Дані навчають ШІ",
+   "icon": "🗂️",
+   "access": "free",
+   "curriculum": [
+    {
+     "track": "informatics",
+     "topic": "data"
+    },
+    {
+     "track": "ai-basics",
+     "topic": "how-ai-learns"
+    }
+   ],
+   "activities": [
+    {
+     "id": "data-ai-mission",
+     "version": 1,
+     "title": "Які дані потрібні ШІ",
+     "activity": {
+      "kind": "mission",
+      "count": 6,
+      "tracks": [
+       "informatics",
+       "ai-basics"
+      ]
+     },
+     "required": true
+    }
+   ],
+   "unlockAfter": [
+    "g4-software",
+    "g4-information-trust"
+   ],
+   "x": 30,
+   "y": 76
+  },
+  {
+   "id": "g4-final",
+   "title": "Фінал цифрового дослідника",
+   "icon": "🏆",
+   "access": "free",
+   "curriculum": [
+    {
+     "track": "informatics",
+     "topic": "networks-internet"
+    },
+    {
+     "track": "computational-thinking",
+     "topic": "debugging"
+    },
+    {
+     "track": "ai-basics",
+     "topic": "ai-ethics-safety"
+    }
+   ],
+   "activities": [
+    {
+     "id": "final-three-tracks",
+     "version": 1,
+     "title": "Фінальна місія",
+     "activity": {
+      "kind": "mission",
+      "count": 9,
+      "tracks": [
+       "informatics",
+       "computational-thinking",
+       "ai-basics"
+      ]
+     },
+     "required": true
+    }
+   ],
+   "unlockAfter": [
+    "g4-data-ai-bridge",
+    "g4-debugging",
+    "g4-ai-ethics"
+   ],
+   "x": 56,
+   "y": 93
+  }
+ ]
+}

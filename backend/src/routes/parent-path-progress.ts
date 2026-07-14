@@ -7,6 +7,8 @@ import type { CatalogPath, CatalogPoint } from './path-catalog.js'
 export interface ClientPathActivityResult {
   activityId: string
   activityVersion: number
+  /** Exact external content revision (for example micro_lesson.version). */
+  contentVersion?: number
   trust: 'client-unverified'
   stars: number
   correct: number
@@ -16,6 +18,8 @@ export interface ClientPathActivityResult {
 
 export interface PathCompletionBody {
   pathId: string
+  /** Static bundle revision. Optional only for legacy clients deployed before 0034. */
+  pathVersion?: number
   pointId: string
   results: ClientPathActivityResult[]
 }
@@ -28,6 +32,7 @@ export type CompletionValidation =
   | {
       ok: true
       point: CatalogPoint
+      pathVersion: number
       eventKey: string
       sessionStars: number
       clientCompletedAt: Date
@@ -43,6 +48,9 @@ export function validatePathCompletion(
 ): CompletionValidation {
   if (!path) return { ok: false, error: 'Невідомий навчальний шлях' }
   if (path.grade !== profileGrade) return { ok: false, error: 'Шлях не відповідає класу профілю' }
+  if (body.pathVersion !== undefined && body.pathVersion !== path.version) {
+    return { ok: false, error: 'Версія навчального шляху не збігається' }
+  }
 
   const point = path.points[body.pointId]
   if (!point) return { ok: false, error: 'Невідома точка навчального шляху' }
@@ -62,6 +70,14 @@ export function validatePathCompletion(
     seen.add(result.activityId)
     if (required[result.activityId] !== result.activityVersion) {
       return { ok: false, error: 'Невідома активність або версія' }
+    }
+    if (point.contentVersionActivities.includes(result.activityId)
+      && result.contentVersion === undefined) {
+      return { ok: false, error: 'Для уроку потрібна версія контенту' }
+    }
+    if (result.contentVersion !== undefined
+      && (!Number.isInteger(result.contentVersion) || result.contentVersion < 1 || result.contentVersion > 1_000_000)) {
+      return { ok: false, error: 'Некоректна версія контенту' }
     }
     if (result.trust !== 'client-unverified') {
       return { ok: false, error: 'Недопустима межа довіри результату' }
@@ -84,9 +100,10 @@ export function validatePathCompletion(
   const latest = normalized.reduce((a, b) => a.completedAt >= b.completedAt ? a : b)
   const sessionStars = Math.round(normalized.reduce((sum, result) => sum + result.stars, 0) / normalized.length)
   const eventKey = createHash('sha256')
-    .update(JSON.stringify({ pathId: body.pathId, pointId: body.pointId, results: normalized.map(result => ({
+    .update(JSON.stringify({ pathId: body.pathId, pathVersion: path.version, pointId: body.pointId, results: normalized.map(result => ({
       activityId: result.activityId,
       activityVersion: result.activityVersion,
+      contentVersion: result.contentVersion,
       completedAt: result.completedAt,
     })) }))
     .digest('hex')
@@ -94,6 +111,7 @@ export function validatePathCompletion(
   return {
     ok: true,
     point,
+    pathVersion: path.version,
     eventKey,
     sessionStars,
     clientCompletedAt: new Date(latest.completedAt),
@@ -119,6 +137,7 @@ export interface PathProgressStore {
   save(input: {
     childProfileId: string
     pathId: string
+    pathVersion: number
     pointId: string
     eventKey: string
     sessionStars: number
@@ -148,6 +167,7 @@ export const drizzlePathProgressStore: PathProgressStore = {
         childProfileId: input.childProfileId,
         eventKey: input.eventKey,
         pathId: input.pathId,
+        pathVersion: input.pathVersion,
         pointId: input.pointId,
         activityResults: input.results,
         trust: 'client-unverified',

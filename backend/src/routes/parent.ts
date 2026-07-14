@@ -16,7 +16,10 @@ import {
   drizzlePathProgressStore, hasPathPrerequisites, validatePathCompletion,
   type PathCompletionBody, type PathProgressStore,
 } from './parent-path-progress.js'
-import { loadPathCatalog, type PathCatalogLoader } from './path-catalog.js'
+import {
+  loadPathCatalog, loadPathCatalogCandidates,
+  type PathCatalogCandidatesLoader, type PathCatalogLoader,
+} from './path-catalog.js'
 
 // Батьківська зона (/api/parent) — зріз 3 плану learning-path.
 // Межі довіри (docs/security-model.md «Parent Accounts And Child Profiles»):
@@ -33,12 +36,21 @@ export interface ParentRoutesOptions {
   pathProgressStore?: PathProgressStore
   /** DI for tests; production loads the catalog from path_maps (0033). */
   pathCatalogLoader?: PathCatalogLoader
+  /** DI for legacy clients without pathVersion; production scans immutable revisions. */
+  pathCatalogCandidatesLoader?: PathCatalogCandidatesLoader
 }
 
 export async function parentRoutes(app: FastifyInstance, opts: ParentRoutesOptions = {}) {
   const verifyToken = opts.verifyToken ?? verifyParentToken
   const pathProgressStore = opts.pathProgressStore ?? drizzlePathProgressStore
   const pathCatalogLoader = opts.pathCatalogLoader ?? loadPathCatalog
+  const pathCatalogCandidatesLoader = opts.pathCatalogCandidatesLoader
+    ?? (opts.pathCatalogLoader
+      ? async (pathId: string) => {
+        const catalog = await pathCatalogLoader(pathId)
+        return catalog ? [catalog] : []
+      }
+      : loadPathCatalogCandidates)
 
   async function authenticate(req: FastifyRequest, reply: FastifyReply): Promise<ParentJwtPayload | null> {
     const payload = await verifyToken(req.headers.authorization)
@@ -325,6 +337,7 @@ export async function parentRoutes(app: FastifyInstance, opts: ParentRoutesOptio
           additionalProperties: false,
           properties: {
             pathId: { type: 'string', minLength: 1, maxLength: 40 },
+            pathVersion: { type: 'integer', minimum: 1, maximum: 1_000_000 },
             pointId: { type: 'string', minLength: 1, maxLength: 80 },
             results: {
               type: 'array', minItems: 1, maxItems: 8,
@@ -335,6 +348,7 @@ export async function parentRoutes(app: FastifyInstance, opts: ParentRoutesOptio
                 properties: {
                   activityId: { type: 'string', minLength: 1, maxLength: 140 },
                   activityVersion: { type: 'integer', minimum: 1, maximum: 1_000_000 },
+                  contentVersion: { type: 'integer', minimum: 1, maximum: 1_000_000 },
                   trust: { type: 'string', enum: ['client-unverified'] },
                   stars: { type: 'integer', minimum: 0, maximum: 3 },
                   correct: { type: 'integer', minimum: 0, maximum: 10_000 },
@@ -353,8 +367,19 @@ export async function parentRoutes(app: FastifyInstance, opts: ParentRoutesOptio
       const profile = await requireOwnedProfile(req, reply, account, req.params.childProfileId)
       if (!profile) return
 
-      const catalog = await pathCatalogLoader(req.body.pathId)
-      const validation = validatePathCompletion(catalog, profile.grade, req.body)
+      const catalogs = req.body.pathVersion !== undefined
+        ? [await pathCatalogLoader(req.body.pathId, req.body.pathVersion)].filter((value) => value !== null)
+        : await pathCatalogCandidatesLoader(req.body.pathId)
+      let validation = validatePathCompletion(catalogs[0] ?? null, profile.grade, req.body)
+      if (!validation.ok && req.body.pathVersion === undefined) {
+        for (const candidate of catalogs.slice(1)) {
+          const attempt = validatePathCompletion(candidate, profile.grade, req.body)
+          if (attempt.ok) {
+            validation = attempt
+            break
+          }
+        }
+      }
       if (!validation.ok) return reply.code(400).send({ error: validation.error })
 
       const existing = await pathProgressStore.list(profile.id, req.body.pathId)
@@ -365,6 +390,7 @@ export async function parentRoutes(app: FastifyInstance, opts: ParentRoutesOptio
       const saved = await pathProgressStore.save({
         childProfileId: profile.id,
         pathId: req.body.pathId,
+        pathVersion: validation.pathVersion,
         pointId: req.body.pointId,
         eventKey: validation.eventKey,
         sessionStars: validation.sessionStars,

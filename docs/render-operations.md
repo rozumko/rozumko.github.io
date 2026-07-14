@@ -1,6 +1,6 @@
 # Render Operations Runbook - Rozumko
 
-_Updated: 2026-06-30_
+_Updated: 2026-07-14_
 
 The backend runs on Render from `backend/render.yaml`.
 
@@ -40,6 +40,9 @@ Do not scale to multiple instances until one of these is true:
 - [ ] The latest Backend CI workflow passed.
 - [ ] Required migrations were applied deliberately and
       `npm run db:migrate:check` passes.
+- [ ] For a learning-path release, the reviewed `public/path/` export is from
+      the intended DB revision; older deployed bundles remain valid through
+      immutable `path_map_revisions`.
 - [ ] Render service is synced from `backend/render.yaml`.
 - [ ] Environment variables are present: `DATABASE_URL`, `SUPABASE_URL`,
       `ATTEMPT_SECRET`, `NODE_ENV=production`, `RATE_LIMIT_STORE=memory`.

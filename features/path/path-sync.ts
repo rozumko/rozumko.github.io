@@ -6,24 +6,40 @@ export interface PathSyncApi {
   getProgress(childProfileId: string, pathId: string): Promise<{ progress: ParentPathProgress[] }>
   submitProgress(
     childProfileId: string,
-    payload: { pathId: string; pointId: string; results: ParentPathActivityResult[] },
+    payload: { pathId: string; pathVersion: number; pointId: string; results: ParentPathActivityResult[] },
   ): Promise<ParentPathProgress>
 }
 
 interface CompletionBatch {
   pointId: string
+  pathVersion: number
   entries: QueuedResult[]
 }
 
 function completionBatches(map: GradePathMap, queue: QueuedResult[]) {
   const batches: CompletionBatch[] = []
   const staleKeys: string[] = []
+  const versionedKeys = new Set<string>()
+
+  const versioned = new Map<string, QueuedResult[]>()
+  for (const entry of queue) {
+    if (!entry.batchId || !entry.pathVersion) continue
+    const entries = versioned.get(entry.batchId) ?? []
+    entries.push(entry)
+    versioned.set(entry.batchId, entries)
+    versionedKeys.add(entry.key)
+  }
+  for (const entries of versioned.values()) {
+    batches.push({ pointId: entries[0].pointId, pathVersion: entries[0].pathVersion!, entries })
+  }
+
+  const legacyQueue = queue.filter(entry => !versionedKeys.has(entry.key))
 
   for (const point of map.points) {
     const required = new Map(point.activities
       .filter(step => step.required)
       .map(step => [`path:${point.id}:${step.id}`, step.version]))
-    const entries = queue.filter(entry => entry.pointId === point.id)
+    const entries = legacyQueue.filter(entry => entry.pointId === point.id)
     let current = new Map<string, QueuedResult>()
 
     for (const entry of entries) {
@@ -38,7 +54,7 @@ function completionBatches(map: GradePathMap, queue: QueuedResult[]) {
       }
       current.set(entry.result.activityId, entry)
       if (current.size === required.size) {
-        batches.push({ pointId: point.id, entries: [...current.values()] })
+        batches.push({ pointId: point.id, pathVersion: map.version, entries: [...current.values()] })
         current = new Map()
       }
     }
@@ -46,7 +62,7 @@ function completionBatches(map: GradePathMap, queue: QueuedResult[]) {
   }
 
   const knownPoints = new Set(map.points.map(point => point.id))
-  for (const entry of queue) {
+  for (const entry of legacyQueue) {
     if (!knownPoints.has(entry.pointId)) staleKeys.push(entry.key)
   }
   return { batches, staleKeys: [...new Set(staleKeys)] }
@@ -57,6 +73,7 @@ function toApiResult(entry: QueuedResult): ParentPathActivityResult {
   return {
     activityId: result.activityId,
     activityVersion: result.activityVersion,
+    ...(result.contentVersion !== undefined ? { contentVersion: result.contentVersion } : {}),
     trust: 'client-unverified',
     stars: result.stars,
     correct: result.correct,
@@ -85,6 +102,7 @@ export async function syncPathProgress(
     try {
       await api.submitProgress(childProfileId, {
         pathId,
+        pathVersion: batch.pathVersion,
         pointId: batch.pointId,
         results: batch.entries.map(toApiResult),
       })

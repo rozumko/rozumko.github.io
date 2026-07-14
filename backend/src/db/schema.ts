@@ -281,6 +281,23 @@ export const pathMaps = pgTable('path_maps', {
 
 export type PathMapRow = typeof pathMaps.$inferSelect
 
+// Append-only snapshots of every published path-map version (0034). Old and
+// offline clients submit the version embedded in their static bundle, so the
+// backend can validate practice progress against the exact graph they used.
+export const pathMapRevisions = pgTable('path_map_revisions', {
+  id:        uuid('id').primaryKey().defaultRandom(),
+  pathId:    text('path_id').notNull().references(() => pathMaps.pathId, { onDelete: 'cascade' }),
+  version:   integer('version').notNull(),
+  grade:     integer('grade').notNull(),
+  title:     text('title').notNull(),
+  points:    jsonb('points').notNull().$type<unknown[]>(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  uniqPathVersion: unique('path_map_revisions_path_version_uq').on(t.pathId, t.version),
+}))
+
+export type PathMapRevisionRow = typeof pathMapRevisions.$inferSelect
+
 // ── Home Mode (parent-led, consent-based) ─────────────────────────────────────
 // Контракт: docs/home-demo-contract.md. Лід = батьківський email + згода.
 // Дитячі дані пишуться ЛИШЕ після створення ліда (consent-gate на бекенді).
@@ -358,6 +375,7 @@ export const homePathEvents = pgTable('home_path_events', {
   childProfileId:    uuid('child_profile_id').notNull().references(() => homeChildProfiles.id, { onDelete: 'cascade' }),
   eventKey:          text('event_key').notNull(),
   pathId:            text('path_id').notNull(),
+  pathVersion:       integer('path_version').notNull().default(1),
   pointId:           text('point_id').notNull(),
   activityResults:   jsonb('activity_results').notNull(),
   trust:             text('trust').notNull().default('client-unverified').$type<'client-unverified'>(),

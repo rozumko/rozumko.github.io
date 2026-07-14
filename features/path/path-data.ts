@@ -1,7 +1,7 @@
 import type { QuestionTrack } from '../api/client.js'
 
-// Статична карта навчального шляху (Home Mode). Джерело правди — код
-// (версіонується з релізами); переїзд у БД/адмінку — свідомо пізніше.
+// Built-in Home Mode fallback. The authored source of truth is path_maps in the
+// database; public/path bundles deliver reviewed revisions without a code release.
 // A point combines curriculum tags, a sequence of activities, and unlock conditions.
 // Intersections are represented by several track/topic pairs in curriculum.
 
@@ -54,6 +54,8 @@ export interface PathPoint {
 
 export interface GradePathMap {
   grade: number
+  /** Immutable database/static-bundle revision used for server validation. */
+  version: number
   title: string
   points: PathPoint[]
 }
@@ -62,6 +64,7 @@ export interface GradePathMap {
 // separate after the first classification game and meet again at the finale.
 export const GRADE1_PATH: GradePathMap = {
   grade: 1,
+  version: 1,
   title: 'Шлях 1 класу',
   points: [
     {
@@ -136,6 +139,7 @@ export const GRADE1_PATH: GradePathMap = {
 
 export const GRADE3_PATH: GradePathMap = {
   grade: 3,
+  version: 1,
   title: 'Шлях 3 класу',
   points: [
     {
@@ -204,6 +208,7 @@ export const GRADE3_PATH: GradePathMap = {
 
 export const GRADE4_PATH: GradePathMap = {
   grade: 4,
+  version: 1,
   title: 'Шлях 4 класу',
   points: [
     {
@@ -278,6 +283,7 @@ export const GRADE4_PATH: GradePathMap = {
 
 export const GRADE2_PATH: GradePathMap = {
   grade: 2,
+  version: 1,
   title: 'Шлях 2 класу',
   points: [
     {
