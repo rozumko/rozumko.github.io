@@ -77,6 +77,7 @@ const errorEl      = $('path-error')
 const activityEl   = $('path-activity')
 const activityBar  = $('path-activity-title')
 const lessonRoot   = $('path-lesson-root')
+const bonusRoot    = $('path-bonus-root')
 const sortingRoot  = $('path-sorting-root')
 const puzzlesRoot  = $('path-puzzles-root')
 const foRoot       = $('path-fo-root')
@@ -220,12 +221,60 @@ async function startPoint(p: PathPoint) {
   }
 
   try {
-    await startActivityStep(p, requiredSteps, 0, [], run)
+    await startActivityStep(p, requiredSteps, 0, [], run, results => offerBonus(p, results, run))
   } catch (err) {
     if (run !== activeRun) return
     backToMap()
     errorEl.textContent = (err as Error).message
   }
+}
+
+/**
+ * Після обовʼязкових кроків — вибір бонусних (required: false): дитина може
+ * зіграти будь-які з них або одразу завершити точку. Бонусні результати
+ * їдуть у ТОМУ Ж батчі (сервер приймає required ⊎ підмножину optional);
+ * зірки точки сервер рахує лише з обовʼязкових.
+ */
+function offerBonus(p: PathPoint, results: ActivityResult[], run: number) {
+  if (run !== activeRun) return
+  const played = new Set(results.map(result => result.activityId))
+  const bonusSteps = p.activities.filter(step =>
+    !step.required && !played.has(`path:${p.id}:${step.id}`))
+  if (!bonusSteps.length) {
+    finishPoint(p, results, run)
+    return
+  }
+
+  clearActivityRoots()
+  hide(lessonRoot); hide(bonusRoot); hide(sortingRoot); hide(puzzlesRoot); hide(foRoot); hide(missionQuiz)
+  activityBar.textContent = `${p.icon} ${p.title}`
+  show(bonusRoot)
+  bonusRoot.innerHTML = `
+    <div class="path-bonus">
+      <p class="path-bonus__icon" aria-hidden="true">🎁</p>
+      <h2 class="path-bonus__title">Обовʼязкову частину пройдено!</h2>
+      <p class="path-bonus__hint">Хочеш спробувати бонусні завдання? Вони не впливають на зірки — це просто для розваги.</p>
+      <div class="path-bonus__list" role="group" aria-label="Бонусні активності"></div>
+      <button type="button" class="kid-action path-bonus__finish">Завершити точку →</button>
+    </div>`
+  const list = bonusRoot.querySelector<HTMLElement>('.path-bonus__list')!
+  for (const step of bonusSteps) {
+    const btn = document.createElement('button')
+    btn.type = 'button'
+    btn.className = 'path-bonus__item'
+    btn.textContent = `🎯 ${step.title}`
+    btn.addEventListener('click', () => {
+      startActivityStep(p, [step], 0, results, run, next => offerBonus(p, next, run), true)
+        .catch((err: unknown) => {
+          if (run !== activeRun) return
+          backToMap()
+          errorEl.textContent = (err as Error).message
+        })
+    })
+    list.appendChild(btn)
+  }
+  bonusRoot.querySelector<HTMLButtonElement>('.path-bonus__finish')!
+    .addEventListener('click', () => finishPoint(p, results, run))
 }
 
 async function startActivityStep(
@@ -234,18 +283,22 @@ async function startActivityStep(
   index: number,
   results: ActivityResult[],
   run: number,
+  onDone: (results: ActivityResult[]) => void,
+  bonus = false,
 ) {
   if (run !== activeRun) return
   if (index >= steps.length) {
-    finishPoint(p, results, run)
+    onDone(results)
     return
   }
 
   const step = steps[index]
   const a: PathActivity = step.activity
   clearActivityRoots()
-  hide(lessonRoot); hide(sortingRoot); hide(puzzlesRoot); hide(foRoot); hide(missionQuiz)
-  activityBar.textContent = steps.length > 1
+  hide(lessonRoot); hide(bonusRoot); hide(sortingRoot); hide(puzzlesRoot); hide(foRoot); hide(missionQuiz)
+  activityBar.textContent = bonus
+    ? `${p.icon} ${p.title} · Бонус: ${step.title}`
+    : steps.length > 1
     ? `${p.icon} ${p.title} · ${index + 1}/${steps.length}: ${step.title}`
     : `${p.icon} ${p.title}`
 
@@ -254,7 +307,7 @@ async function startActivityStep(
   // застиглий екран «Готуємо…».
   const complete = (result: ActivityResult) => {
     if (run !== activeRun) return
-    startActivityStep(p, steps, index + 1, [...results, result], run).catch((err: unknown) => {
+    startActivityStep(p, steps, index + 1, [...results, result], run, onDone, bonus).catch((err: unknown) => {
       if (run !== activeRun) return
       backToMap()
       errorEl.textContent = (err as Error).message
@@ -383,6 +436,7 @@ function finishPoint(p: PathPoint, results: ActivityResult[], run: number) {
 
 function clearActivityRoots() {
   lessonRoot.innerHTML = ''
+  bonusRoot.innerHTML = ''
   sortingRoot.innerHTML = ''
   puzzlesRoot.innerHTML = ''
   foRoot.innerHTML = ''

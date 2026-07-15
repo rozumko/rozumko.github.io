@@ -141,6 +141,54 @@ test('grade, trust, score shape and client time fail closed', () => {
   }, new Date('2026-07-10T10:00:00.000Z')).ok, false)
 })
 
+test('бонусні кроки: приймається підмножина, зірки — лише з required', () => {
+  // Каталог з бонусним кроком будуємо з seed-точок + required:false крок.
+  const map = SEED_MAPS.find(seedMap => seedMap.pathId === 'grade-2')!
+  const points = JSON.parse(JSON.stringify(map.points)) as Array<Record<string, unknown>>
+  const start = points.find(point => point.id === 'g2-info-start')!
+  ;(start.activities as unknown[]).push({
+    id: 'bonus-puzzles', version: 2, title: 'Бонус',
+    activity: { kind: 'puzzles', count: 2 }, required: false,
+  })
+  const catalog = catalogFromPoints(2, points, 1)
+  assert.ok(catalog)
+  assert.deepEqual(catalog.points['g2-info-start'].optionalActivities,
+    { 'path:g2-info-start:bonus-puzzles': 2 })
+
+  const theory = result('path:g2-info-start:theory')
+  const infosort = result('path:g2-info-start:infosort')
+  const requiredOnly = validatePathCompletion(catalog, 2, {
+    pathId: 'grade-2', pointId: 'g2-info-start', results: [theory, infosort],
+  })
+  assert.equal(requiredOnly.ok, true, 'без бонусу точка приймається')
+
+  const withBonus = validatePathCompletion(catalog, 2, {
+    pathId: 'grade-2', pointId: 'g2-info-start',
+    results: [theory, infosort, { ...result('path:g2-info-start:bonus-puzzles', 2), stars: 0 }],
+  })
+  assert.equal(withBonus.ok, true, 'бонус у батчі приймається')
+  // theory + infosort мають stars 2; бонус з 0 зірок НЕ знижує підсумок.
+  if (withBonus.ok) assert.equal(withBonus.sessionStars, 2)
+
+  const wrongVersion = validatePathCompletion(catalog, 2, {
+    pathId: 'grade-2', pointId: 'g2-info-start',
+    results: [theory, infosort, result('path:g2-info-start:bonus-puzzles', 1)],
+  })
+  assert.deepEqual(wrongVersion, { ok: false, error: 'Невідома активність або версія' })
+
+  const unknownExtra = validatePathCompletion(catalog, 2, {
+    pathId: 'grade-2', pointId: 'g2-info-start',
+    results: [theory, infosort, result('path:g2-info-start:vygadka')],
+  })
+  assert.deepEqual(unknownExtra, { ok: false, error: 'Невідома активність або версія' })
+
+  const bonusWithoutRequired = validatePathCompletion(catalog, 2, {
+    pathId: 'grade-2', pointId: 'g2-info-start',
+    results: [theory, result('path:g2-info-start:bonus-puzzles', 2)],
+  })
+  assert.deepEqual(bonusWithoutRequired, { ok: false, error: 'Не всі обовʼязкові активності завершено' })
+})
+
 test('unlock prerequisites require every predecessor', () => {
   const final = CATALOGS['grade-2'].points['g2-final']
   assert.equal(hasPathPrerequisites(final, ['g2-ct-algorithms', 'g2-ai-perception']), false)

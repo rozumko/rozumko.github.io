@@ -58,8 +58,11 @@ export function validatePathCompletion(
     return { ok: false, error: 'Некоректний набір результатів активностей' }
   }
 
+  // Батч = усі required + будь-яка підмножина бонусних (required: false).
   const required = point.requiredActivities
-  if (body.results.length !== Object.keys(required).length) {
+  const optional = point.optionalActivities
+  const submitted = new Set(body.results.map(result => result.activityId))
+  if (Object.keys(required).some(activityId => !submitted.has(activityId))) {
     return { ok: false, error: 'Не всі обовʼязкові активності завершено' }
   }
 
@@ -68,7 +71,8 @@ export function validatePathCompletion(
   for (const result of body.results) {
     if (seen.has(result.activityId)) return { ok: false, error: 'Активність повторюється' }
     seen.add(result.activityId)
-    if (required[result.activityId] !== result.activityVersion) {
+    const expectedVersion = required[result.activityId] ?? optional[result.activityId]
+    if (expectedVersion !== result.activityVersion) {
       return { ok: false, error: 'Невідома активність або версія' }
     }
     if (point.contentVersionActivities.includes(result.activityId)
@@ -98,7 +102,10 @@ export function validatePathCompletion(
 
   normalized.sort((a, b) => a.activityId.localeCompare(b.activityId))
   const latest = normalized.reduce((a, b) => a.completedAt >= b.completedAt ? a : b)
-  const sessionStars = Math.round(normalized.reduce((sum, result) => sum + result.stars, 0) / normalized.length)
+  // Зірки точки — лише з обовʼязкових кроків: бонус «за бажанням» не має
+  // ані знижувати результат за спробу, ані бути обхідним шляхом до зірок.
+  const requiredResults = normalized.filter(result => required[result.activityId] !== undefined)
+  const sessionStars = Math.round(requiredResults.reduce((sum, result) => sum + result.stars, 0) / requiredResults.length)
   const eventKey = createHash('sha256')
     .update(JSON.stringify({ pathId: body.pathId, pathVersion: path.version, pointId: body.pointId, results: normalized.map(result => ({
       activityId: result.activityId,

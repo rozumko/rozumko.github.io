@@ -11,6 +11,8 @@ import { pathMapRevisions, pathMaps } from '../db/schema.js'
 export interface CatalogPoint {
   unlockAfter: string[]
   requiredActivities: Record<string, number>
+  /** Бонусні кроки (required: false): приймаються ДОДАТКОВО до required. */
+  optionalActivities: Record<string, number>
   contentVersionActivities: string[]
 }
 
@@ -37,17 +39,18 @@ export function catalogFromPoints(grade: number, rawPoints: unknown, version = 1
 
     if (!Array.isArray(point.activities)) return null
     const requiredActivities: Record<string, number> = {}
+    const optionalActivities: Record<string, number> = {}
     const contentVersionActivities: string[] = []
     for (const rawStep of point.activities) {
       if (typeof rawStep !== 'object' || rawStep === null) return null
       const step = rawStep as Record<string, unknown>
-      if (step.required !== true) continue
+      if (typeof step.required !== 'boolean') return null
       const stepId = typeof step.id === 'string' ? step.id : ''
       const version = Number.isInteger(step.version) && (step.version as number) >= 1
         ? (step.version as number) : 0
       if (!stepId || !version) return null
       const activityId = `path:${id}:${stepId}`
-      requiredActivities[activityId] = version
+      ;(step.required ? requiredActivities : optionalActivities)[activityId] = version
       if (typeof step.activity === 'object' && step.activity !== null
         && (step.activity as Record<string, unknown>).kind === 'lesson') {
         contentVersionActivities.push(activityId)
@@ -55,7 +58,7 @@ export function catalogFromPoints(grade: number, rawPoints: unknown, version = 1
     }
     if (!Object.keys(requiredActivities).length) return null
 
-    points[id] = { unlockAfter, requiredActivities, contentVersionActivities }
+    points[id] = { unlockAfter, requiredActivities, optionalActivities, contentVersionActivities }
   }
 
   // Кожен unlockAfter має резолвитись у точку цієї ж карти.

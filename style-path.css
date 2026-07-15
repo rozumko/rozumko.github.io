@@ -198,3 +198,25 @@ body.path-activity-active #path-done > * {
   .path-node__badge { width: 48px; height: 48px; font-size: 22px; }
   .path-node__label { font-size: 11px; }
 }
+
+/* Бонус-екран точки (required-частину пройдено, вибір необовʼязкових) */
+.path-bonus {
+  display: flex; flex-direction: column; align-items: center; gap: var(--sp-3);
+  max-width: 32rem; margin: 0 auto; text-align: center;
+  padding: var(--sp-4) 0;
+}
+.path-bonus__icon { font-size: 3rem; line-height: 1; margin: 0; }
+.path-bonus__title { font-size: clamp(1.15rem, 2.8vw, 1.5rem); font-weight: 800; margin: 0; }
+.path-bonus__hint { color: var(--clr-text-muted); margin: 0; }
+.path-bonus__list { display: flex; flex-direction: column; gap: var(--sp-2); width: 100%; }
+.path-bonus__item {
+  font: inherit; font-weight: 700;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: 14px;
+  border: 2px dashed var(--clr-border);
+  background: var(--clr-surface);
+  cursor: pointer;
+  transition: transform .12s ease, border-color .12s ease;
+}
+.path-bonus__item:hover, .path-bonus__item:focus-visible { border-color: var(--clr-primary); transform: translateY(-1px); }
+.path-bonus__finish { margin-top: var(--sp-2); }
