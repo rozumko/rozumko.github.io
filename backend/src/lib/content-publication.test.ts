@@ -3,7 +3,7 @@ import { createHmac } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 import {
-  contentManifestSha256, publicationCallbackMessage, verifyPublicationCallback,
+  contentManifestSha256, emptyContentFamilies, publicationCallbackMessage, verifyPublicationCallback,
   type ContentPublicationManifest, type PublicationCallbackBody,
 } from './content-publication.js'
 
@@ -30,6 +30,14 @@ test('publication manifest avoids parallel database reads for the constrained ex
   assert.match(manifestBuilder, /const lessons = await db/)
   assert.match(manifestBuilder, /const gamePacks = await db/)
   assert.match(manifestBuilder, /const paths = await db/)
+})
+
+test('empty content families are reported so exports fail closed on invisible tables', () => {
+  assert.deepEqual(emptyContentFamilies(manifest), [])
+  const empty = structuredClone(manifest)
+  empty.gamePacks = []
+  empty.paths = []
+  assert.deepEqual(emptyContentFamilies(empty), ['gamePacks', 'paths'])
 })
 
 test('publication callback verifies HMAC and rejects stale or altered payloads', () => {

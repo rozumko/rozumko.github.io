@@ -3,9 +3,14 @@
 import { appendFileSync, mkdirSync, writeFileSync } from 'fs'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
-import { buildContentPublicationManifest, contentManifestSha256 } from '../src/lib/content-publication.js'
+import { buildContentPublicationManifest, contentManifestSha256, emptyContentFamilies } from '../src/lib/content-publication.js'
 
 const manifest = await buildContentPublicationManifest()
+const missing = emptyContentFamilies(manifest)
+if (missing.length) {
+  throw new Error(`Content families came back empty: ${missing.join(', ')}. `
+    + 'The export role cannot see these tables (check RLS policies and GRANTs) or published content is gone.')
+}
 const manifestSha256 = contentManifestSha256(manifest)
 const expected = process.env.EXPECTED_MANIFEST_SHA256
 if (expected && expected !== manifestSha256) {

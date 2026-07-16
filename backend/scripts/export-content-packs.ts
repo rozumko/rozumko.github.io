@@ -19,6 +19,10 @@ const supportedKinds = ['sorting-game', 'sequence-game', 'scenario-game', 'simul
 const rows = await db.select().from(missions).where(and(
   inArray(missions.kind, supportedKinds), isNotNull(missions.publishedVersion), ne(missions.status, 'archived'),
 ))
+if (rows.length === 0) {
+  // Fail before the stale-file cleanup below wipes every deployed pack.
+  throw new Error('No published game packs: the export role cannot read public.missions (RLS/GRANT) or published content is gone.')
+}
 
 const legacyFallbacks: Record<string, { prefix: string; gameKey: string; field: string; content: unknown }> = {
   'game-sorting-attributes-grade1': { prefix: 'sorting', gameKey: 'attributes', field: 'levels', content: SORTING_ATTRIBUTES_LEVELS },

@@ -26,6 +26,9 @@ const rows = await db
   .from(microLessons)
   .where(and(isNotNull(microLessons.publishedVersion), ne(microLessons.status, 'archived')))
 
+if (rows.length === 0) {
+  throw new Error('No published lessons: the export role cannot read public.micro_lessons (RLS/GRANT) or published content is gone.')
+}
 mkdirSync(OUT_DIR, { recursive: true })
 const exportedFiles = new Set(rows.map(row => `${row.id}.json`))
 for (const file of readdirSync(OUT_DIR)) {
