@@ -20,6 +20,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const OUT_DIR = join(__dirname, '../../public/path')
 
 const rows = await db.select().from(pathMaps).where(eq(pathMaps.status, 'published'))
+if (rows.length === 0) {
+  throw new Error('No published path maps: the export role cannot read public.path_maps (RLS/GRANT) or published content is gone.')
+}
 const publishedLessons = new Set((await db.select({ id: microLessons.id }).from(microLessons)
   .where(and(isNotNull(microLessons.publishedVersion), ne(microLessons.status, 'archived')))).map(lesson => lesson.id))
 

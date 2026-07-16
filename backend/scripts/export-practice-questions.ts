@@ -43,6 +43,9 @@ const rows = await db
   .from(questions)
   .where(and(eq(questions.isOlympiad, false), eq(questions.editorialStatus, 'published')))
 
+if (rows.length === 0) {
+  throw new Error('No published practice questions: the export role cannot read public.questions (RLS/GRANT) or published content is gone.')
+}
 const bundle = sanitizeForStaticBundle(rows)
 const grouped = groupByGrade(bundle)
 
