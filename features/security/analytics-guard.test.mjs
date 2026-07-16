@@ -16,8 +16,9 @@ test('Cloudflare analytics is token-gated and fails closed', () => {
   assert.match(viteConfig, /if \(!ANALYTICS_TOKEN \|\| !isAnalyticsPage\(ctx\.path\)\) return html/)
   assert.match(viteConfig, /\^\[a-z0-9\]\{32\}\$/)
   assert.match(viteConfig, /ANALYTICS_SCRIPT_ORIGIN = 'https:\/\/static\.cloudflareinsights\.com'/)
+  assert.match(viteConfig, /ANALYTICS_CONNECT_ORIGIN = 'https:\/\/cloudflareinsights\.com'/)
   assert.match(viteConfig, /\$\{ANALYTICS_SCRIPT_ORIGIN\}\/beacon\.min\.js/)
-  assert.match(viteConfig, /connect-src[\s\S]*cloudflareinsights\.com/)
+  assert.match(viteConfig, /directive\.startsWith\('connect-src '\)[\s\S]*\$\{ANALYTICS_CONNECT_ORIGIN\}/)
   assert.match(deployWorkflow, /CLOUDFLARE_WEB_ANALYTICS_TOKEN: \$\{\{ vars\.CLOUDFLARE_WEB_ANALYTICS_TOKEN \}\}/)
 })
 

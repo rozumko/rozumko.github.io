@@ -1,6 +1,6 @@
 # Deployment Portability - Rozumko
 
-_Updated: 2026-06-30_
+_Updated: 2026-07-16_
 
 This project should stay deployable on Render, a VPS, DigitalOcean, AWS
 Lightsail or another standard Linux host without rewriting application logic.
@@ -18,6 +18,8 @@ Lightsail or another standard Linux host without rewriting application logic.
 - Keep all database schema changes in Drizzle migrations.
 - Keep all application table access behind the backend API.
 - Keep frontend API/Auth endpoints configurable with `VITE_*` variables.
+- Derive build-time CSP `connect-src` origins from the same `VITE_API_URL` and
+  `VITE_SUPABASE_URL` values; do not add provider hosts only to source literals.
 - Keep backend startup compatible with `PORT` and `NODE_ENV=production`.
 
 ## Backend Container
@@ -67,6 +69,22 @@ POSTGRES_PASSWORD=<strong-password>
 SUPABASE_URL=https://<project-id>.supabase.co
 ATTEMPT_SECRET=<64-hex-chars>
 ```
+
+For a frontend move, set these build variables on the target host:
+
+```bash
+VITE_API_URL=https://api.example.com
+VITE_SUPABASE_URL=https://<project-id>.supabase.co
+VITE_SUPABASE_ANON_KEY=<publishable-key>
+```
+
+The Vite build validates the two endpoint URLs and injects their origins into
+the CSP. An invalid or non-HTTP(S) endpoint fails the build instead of shipping
+a CSP that silently blocks authentication or API requests.
+
+The service worker bypasses every cross-origin request rather than maintaining
+a provider hostname allowlist. API, Auth and CDN responses therefore cannot be
+silently cached when the frontend moves to a different host or URL prefix.
 
 ## Migration Checklist
 

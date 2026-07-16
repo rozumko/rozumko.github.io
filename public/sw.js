@@ -5,7 +5,7 @@
  *   - При install: кешуємо критичну статику (shell сайту)
  *   - При fetch навігації (HTML): network-first → якщо offline → offline.html
  *   - При fetch статики (JS/CSS/шрифти): cache-first → якщо немає → мережа
- *   - Backend API (Render) та Supabase: НЕ перехоплюємо
+ *   - Cross-origin requests (API, Auth, CDN): never intercept
  *
  * При оновленні коду: змінити CACHE_NAME — старий кеш очиститься автоматично.
  * ─────────────────────────────────────────────────────────────
@@ -33,23 +33,6 @@ const PRECACHE_URLS = [
   '/favicon-32x32.png',
   '/favicon-16x16.png',
   '/apple-touch-icon.png',
-];
-
-/**
- * Хости що НЕ треба перехоплювати.
- * Backend API, Supabase, Google Fonts, CDN — вони мають власну надійність.
- */
-const BYPASS_HOSTS = [
-  // Backend API (Render) — стан entitlement/звітів/питань має бути завжди свіжим
-  'onrender.com',
-  // Supabase (Auth + PostgreSQL API)
-  'supabase.co',
-  'supabase.com',
-  // Google Fonts
-  'fonts.googleapis.com',
-  'fonts.gstatic.com',
-  // Font Awesome CDN
-  'cdnjs.cloudflare.com',
 ];
 
 // ─── Install: кешуємо shell сайту ────────────────────────────────────────────
@@ -96,8 +79,9 @@ self.addEventListener('fetch', (event) => {
   // Пропускаємо не-HTTP запити (chrome-extension://, etc.)
   if (!url.protocol.startsWith('http')) return;
 
-  // Пропускаємо зовнішні API — вони не мають бути в кеші
-  if (BYPASS_HOSTS.some(host => url.hostname.includes(host))) return;
+  // Never cache cross-origin requests. This keeps API/Auth/CDN behavior safe
+  // when the frontend is moved away from the current providers.
+  if (url.origin !== self.location.origin) return;
 
   // Будь-який бекенд-шлях (у т.ч. localhost:3000 у розробці): ніколи не кешуємо.
   // Cache-first для /api означав би вічно застиглий стан entitlement/звітів.

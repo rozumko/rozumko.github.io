@@ -1,6 +1,6 @@
 # Accessibility and Inclusion Baseline
 
-Updated: 2026-07-08
+Updated: 2026-07-16
 
 Status: working baseline. This document is an internal product and evidence checklist. It is not a completed WCAG audit, legal accessibility statement, or external accessibility certification.
 
@@ -164,12 +164,12 @@ The current automated accessibility guard has two layers:
 - `features/accessibility/html-guardrails.test.mjs` runs in `npm test` and checks public-page language, skip-link/main landmark wiring, programmatic form-control names on key pages, and documentation links to the accessibility guardrails.
 - `tests/layout/accessibility-smoke.spec.ts` runs in `npm run test:layout` and checks rendered pages/mechanics in Chromium with axe.
 
-Latest local run: 2026-07-08.
+Latest local automated run: 2026-07-16 (`87 passed`).
 
 Verified:
 
 - Static public-page guardrails pass for core public, child, parent, teacher, and legal pages.
-- Axe has no WCAG A/AA violations on `/`, `/home.html`, `/school.html`, `/student.html`, `/teacher.html`, `/games.html`, `/for-parents.html`, `/for-teachers.html`, `/for-students.html`, `/privacy.html`, `/terms.html`, `/transparency.html`, `/standards.html`, and `/olympiad-enter.html`.
+- Axe has no WCAG A/AA violations on `/`, `/home.html`, `/path.html`, `/parent.html`, `/school.html`, `/student.html`, `/teacher.html`, `/admin.html`, `/games.html`, `/for-parents.html`, `/for-teachers.html`, `/for-students.html`, `/privacy.html`, `/terms.html`, `/transparency.html`, `/standards.html`, and `/olympiad-enter.html`.
 - Axe has no WCAG A/AA violations for rendered Home question mechanics: `choice`, `truefalse`, `input`, `sort`, `sequence`, and `match`.
 - Home choice questions expose `role="radiogroup"` with child options as `role="radio"`.
 - Home choice answers update `aria-checked`.
@@ -178,6 +178,8 @@ Verified:
 - Hidden edge move buttons in sort questions are disabled and hidden from assistive technology.
 - Home sort movement keeps keyboard focus and announces the new position.
 - School choice questions keep the same radio semantics after a mocked anonymous join.
+- The layout suite covers phone portrait/landscape, tablet and desktop quiz-fit, selected 320/375 px touch/overflow contracts, and accessible Admin/Teacher dynamic states.
+- The browser automation is Chromium-only and does not replace the manual matrix below.
 
 Command:
 

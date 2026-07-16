@@ -1,29 +1,26 @@
-import { defineConfig, type Plugin } from 'vite'
+import { defineConfig, loadEnv, type Plugin } from 'vite'
 import { resolve } from 'path'
 
-// ── Content-Security-Policy ──────────────────────────────────────────────────
-// Шрифти (Nunito) self-hosted у public/fonts — жодних зовнішніх font-джерел.
-// Дозволені зовнішні джерела:
-//   - Font Awesome:    cdnjs.cloudflare.com (CSS + webfonts, лише doc-сторінки)
-//   - API бекенду:     rozumko-github-io.onrender.com
-//   - Supabase Auth:   ivcufigpmamgkfxwulzl.supabase.co (логін/реєстрація вчителя)
-// script-src 'self' — увесь JS лише з власного домену (модулі Vite). Інлайн-скриптів
-// у HTML немає (SW-реєстрацію винесено в register-sw.ts); modulepreload-polyfill
-// вимкнено нижче. style-src має 'unsafe-inline' через inline style-атрибути в розмітці.
-const BASE_CSP = [
-  "default-src 'self'",
-  "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com",
-  "font-src 'self' https://cdnjs.cloudflare.com",
-  "img-src 'self' data:",
-  "connect-src 'self' https://rozumko-github-io.onrender.com https://ivcufigpmamgkfxwulzl.supabase.co https://cdnjs.cloudflare.com",
-  "manifest-src 'self'",
-  "worker-src 'self'",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-]
+// Content-Security-Policy. Nunito is self-hosted in public/fonts.
+// Allowed external sources:
+//   - Font Awesome:    cdnjs.cloudflare.com (CSS + webfonts, document pages only)
+//   - Backend API:     origin from VITE_API_URL
+//   - Supabase Auth:   origin from VITE_SUPABASE_URL
+// script-src keeps application JavaScript same-origin. Service-worker
+// registration is externalized in register-sw.ts and the modulepreload
+// polyfill is disabled below. style-src still permits required inline styles.
+const DEFAULT_API_URL = 'https://rozumko-github-io.onrender.com'
+const DEFAULT_SUPABASE_URL = 'https://ivcufigpmamgkfxwulzl.supabase.co'
 
-const STRICT_CSP = ["script-src 'self'", ...BASE_CSP].join('; ')
+function externalOrigin(value: string, variableName: string): string {
+  try {
+    const url = new URL(value)
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') throw new Error('unsupported protocol')
+    return url.origin
+  } catch {
+    throw new Error(`${variableName} must be an absolute http(s) URL`)
+  }
+}
 
 const ANALYTICS_PAGES = new Set([
   'index.html',
@@ -35,48 +32,47 @@ const ANALYTICS_PAGES = new Set([
 const ANALYTICS_SCRIPT_ORIGIN = 'https://static.cloudflareinsights.com'
 const ANALYTICS_CONNECT_ORIGIN = 'https://cloudflareinsights.com'
 const ANALYTICS_TOKEN = process.env.CLOUDFLARE_WEB_ANALYTICS_TOKEN?.trim()
-const ANALYTICS_CSP = [
-  `script-src 'self' ${ANALYTICS_SCRIPT_ORIGIN}`,
-  ...BASE_CSP.map((directive) => directive.startsWith('connect-src ')
-    ? `${directive} ${ANALYTICS_CONNECT_ORIGIN}`
-    : directive),
-].join('; ')
-
 function isAnalyticsPage(path: string): boolean {
   const fileName = path.split('/').pop() || 'index.html'
   return ANALYTICS_PAGES.has(fileName)
 }
 
-// teacher.html and parent.html additionally load Cloudflare Turnstile:
-//   - script-src: api.js віджета
-//   - frame-src:  Turnstile рендериться в iframe (без директиви впав би на default-src 'self')
-//   - connect-src: віджет робить запити до challenges.cloudflare.com
-// Розширення скоупимо лише на auth-сторінки, решта лишаються на STRICT_CSP.
+// teacher.html and parent.html additionally load Cloudflare Turnstile.
+// Scope its script, frame and connection origins to authentication pages only.
 const TURNSTILE_ORIGIN = 'https://challenges.cloudflare.com'
-const TEACHER_CSP = [
-  `script-src 'self' ${TURNSTILE_ORIGIN}`,
-  "default-src 'self'",
-  "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com",
-  "font-src 'self' https://cdnjs.cloudflare.com",
-  "img-src 'self' data:",
-  `connect-src 'self' https://rozumko-github-io.onrender.com https://ivcufigpmamgkfxwulzl.supabase.co https://cdnjs.cloudflare.com ${TURNSTILE_ORIGIN}`,
-  `frame-src ${TURNSTILE_ORIGIN}`,
-  "manifest-src 'self'",
-  "worker-src 'self'",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-].join('; ')
+// GitHub Pages cannot set CSP headers, so inject a CSP meta tag at build time.
+// Development remains unaffected to preserve Vite HMR.
+function cspPlugin(apiOrigin: string, supabaseOrigin: string): Plugin {
+  const BASE_CSP = [
+    "default-src 'self'",
+    "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com",
+    "font-src 'self' https://cdnjs.cloudflare.com",
+    "img-src 'self' data:",
+    `connect-src 'self' ${apiOrigin} ${supabaseOrigin} https://cdnjs.cloudflare.com`,
+    "manifest-src 'self'",
+    "worker-src 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ]
+  const STRICT_CSP = ["script-src 'self'", ...BASE_CSP].join('; ')
+  const ANALYTICS_CSP = [
+    `script-src 'self' ${ANALYTICS_SCRIPT_ORIGIN}`,
+    ...BASE_CSP.map((directive) => directive.startsWith('connect-src ')
+      ? `${directive} ${ANALYTICS_CONNECT_ORIGIN}`
+      : directive),
+  ].join('; ')
+  const TEACHER_CSP = [
+    `script-src 'self' ${TURNSTILE_ORIGIN}`,
+    ...BASE_CSP.map((directive) => directive.startsWith('connect-src ')
+      ? `${directive} ${TURNSTILE_ORIGIN}`
+      : directive),
+    `frame-src ${TURNSTILE_ORIGIN}`,
+  ].join('; ')
 
-// offline.html обслуговується Service Worker без доступу до зовнішніх JS-бандлів,
-// тому має власний інлайн-скрипт + onclick. Для цієї сторінки (статичної, без
-// доступу до API/секретів) дозволяємо інлайн-скрипти.
-const OFFLINE_CSP = ["script-src 'self' 'unsafe-inline'", ...BASE_CSP].join('; ')
+  // offline.html is served by the Service Worker without external bundles.
+  const OFFLINE_CSP = ["script-src 'self' 'unsafe-inline'", ...BASE_CSP].join('; ')
 
-// Інжектить <meta http-equiv="Content-Security-Policy"> у кожен HTML лише під час
-// build (GitHub Pages не дозволяє ставити HTTP-заголовки). У dev не застосовується,
-// щоб не ламати Vite HMR.
-function cspPlugin(): Plugin {
   return {
     name: 'inject-csp-meta',
     apply: 'build',
@@ -135,43 +131,47 @@ function analyticsPlugin(): Plugin {
   }
 }
 
-export default defineConfig({
-  // GitHub Pages user site — base is /
-  base: '/',
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  const apiOrigin = externalOrigin(env.VITE_API_URL?.trim() || DEFAULT_API_URL, 'VITE_API_URL')
+  const supabaseOrigin = externalOrigin(env.VITE_SUPABASE_URL?.trim() || DEFAULT_SUPABASE_URL, 'VITE_SUPABASE_URL')
 
-  // Static assets copied verbatim to dist/
-  publicDir: 'public',
+  return {
+    // GitHub Pages user site.
+    base: '/',
 
-  plugins: [cspPlugin(), analyticsPlugin()],
+    // Static assets copied verbatim to dist/
+    publicDir: 'public',
 
-  build: {
-    outDir: 'dist',
-    // modulepreload-polyfill — це інлайн-скрипт; вимикаємо, щоб тримати
-    // script-src 'self' без 'unsafe-inline'. Сучасні браузери підтримують
-    // modulepreload нативно.
-    modulePreload: { polyfill: false },
-    rollupOptions: {
-      input: {
-        index:            resolve(__dirname, 'index.html'),
-        student:          resolve(__dirname, 'student.html'),
-        'olympiad-enter': resolve(__dirname, 'olympiad-enter.html'),
-        teacher:          resolve(__dirname, 'teacher.html'),
-        parent:           resolve(__dirname, 'parent.html'),
-        admin:            resolve(__dirname, 'admin.html'),
-        'framing-blocked': resolve(__dirname, 'framing-blocked.html'),
-        offline:          resolve(__dirname, 'offline.html'),
-        home:             resolve(__dirname, 'home.html'),
-        path:             resolve(__dirname, 'path.html'),
-        games:            resolve(__dirname, 'games.html'),
-        school:           resolve(__dirname, 'school.html'),
-        'for-teachers':   resolve(__dirname, 'for-teachers.html'),
-        'for-students':   resolve(__dirname, 'for-students.html'),
-        'for-parents':    resolve(__dirname, 'for-parents.html'),
-        privacy:          resolve(__dirname, 'privacy.html'),
-        terms:            resolve(__dirname, 'terms.html'),
-        transparency:     resolve(__dirname, 'transparency.html'),
-        standards:        resolve(__dirname, 'standards.html'),
+    plugins: [cspPlugin(apiOrigin, supabaseOrigin), analyticsPlugin()],
+
+    build: {
+      outDir: 'dist',
+      // Disable the inline modulepreload polyfill to preserve script-src 'self'.
+      modulePreload: { polyfill: false },
+      rollupOptions: {
+        input: {
+          index:            resolve(__dirname, 'index.html'),
+          student:          resolve(__dirname, 'student.html'),
+          'olympiad-enter': resolve(__dirname, 'olympiad-enter.html'),
+          teacher:          resolve(__dirname, 'teacher.html'),
+          parent:           resolve(__dirname, 'parent.html'),
+          admin:            resolve(__dirname, 'admin.html'),
+          'framing-blocked': resolve(__dirname, 'framing-blocked.html'),
+          offline:          resolve(__dirname, 'offline.html'),
+          home:             resolve(__dirname, 'home.html'),
+          path:             resolve(__dirname, 'path.html'),
+          games:            resolve(__dirname, 'games.html'),
+          school:           resolve(__dirname, 'school.html'),
+          'for-teachers':   resolve(__dirname, 'for-teachers.html'),
+          'for-students':   resolve(__dirname, 'for-students.html'),
+          'for-parents':    resolve(__dirname, 'for-parents.html'),
+          privacy:          resolve(__dirname, 'privacy.html'),
+          terms:            resolve(__dirname, 'terms.html'),
+          transparency:     resolve(__dirname, 'transparency.html'),
+          standards:        resolve(__dirname, 'standards.html'),
+        },
       },
     },
-  },
+  }
 })
