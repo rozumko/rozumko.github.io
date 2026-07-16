@@ -2,6 +2,10 @@ import type { QuestionTrack } from '../db/schema.js'
 import { SIMULATOR_MECHANICS_CONTRACTS } from './simulator-contracts.js'
 
 export const MISSION_EDITORIAL_STATUSES = ['draft', 'review', 'published', 'archived'] as const
+// Single source of truth for every kind the editorial routes accept.
+export const EDITABLE_MISSION_KINDS = [
+  'question-set', 'sorting-game', 'sequence-game', 'scenario-game', 'fact-opinion-game', 'simulator-game',
+] as const
 export type MissionEditorialStatus = (typeof MISSION_EDITORIAL_STATUSES)[number]
 export type MissionSetPurpose = 'practice' | 'apply' | 'confirm'
 export type MissionSetVariant = 'a' | 'b' | 'default'
@@ -427,7 +431,7 @@ export function normalizeEditableMission(raw: unknown): NormalizedMissionInput {
   if (typeof raw !== 'object' || raw === null) throw new Error('Невалідне тіло місії')
   const body = raw as Record<string, unknown>
   if (body.kind === 'question-set') return normalizeQuestionSetMission(raw)
-  if (!['sorting-game', 'sequence-game', 'scenario-game', 'fact-opinion-game', 'simulator-game'].includes(String(body.kind))) {
+  if (!(EDITABLE_MISSION_KINDS as readonly string[]).includes(String(body.kind))) {
     throw new Error('Цей редактор не підтримує цей тип місії')
   }
   const id = normalizeMissionSlug(body.id)

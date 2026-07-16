@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import test from 'node:test'
-import { missionPublishedSnapshot, normalizeEditableMission, normalizeFactOpinionConfig, normalizeQuestionSetConfig, normalizeQuestionSetMission, normalizeScenarioConfig, normalizeSequenceConfig, normalizeSimulatorConfig, normalizeSortingConfig } from './mission-editorial.js'
+import { EDITABLE_MISSION_KINDS, missionPublishedSnapshot, normalizeEditableMission, normalizeFactOpinionConfig, normalizeQuestionSetConfig, normalizeQuestionSetMission, normalizeScenarioConfig, normalizeSequenceConfig, normalizeSimulatorConfig, normalizeSortingConfig } from './mission-editorial.js'
 import { SIMULATOR_MECHANICS_CONTRACTS } from './simulator-contracts.js'
 
 const ids = [
@@ -95,6 +96,15 @@ test('scenario packs require exactly one correct option and feedback everywhere'
       { label: 'A', correct: true, feedback: 'A' }, { label: 'B', correct: true, feedback: 'B' },
     ],
   }] }), /рівно одну/)
+})
+
+test('admin mission routes share the single editable-kind allowlist', () => {
+  assert.ok(EDITABLE_MISSION_KINDS.includes('fact-opinion-game'))
+  const adminSource = readFileSync(new URL('./admin.ts', import.meta.url), 'utf8')
+  // Inline kind lists silently exclude newly added kinds — the routes must
+  // reuse EDITABLE_MISSION_KINDS instead.
+  assert.ok((adminSource.match(/EDITABLE_MISSION_KINDS/g) ?? []).length >= 3)
+  assert.doesNotMatch(adminSource, /'question-set',\s*'sorting-game',\s*'sequence-game'/)
 })
 
 test('fact-opinion packs require balanced categories and https-only sources', () => {
