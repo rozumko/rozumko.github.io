@@ -29,6 +29,23 @@ configuration error instead of deploying stale committed bundles.
 Never use a classic broad-scope GitHub token. Never expose any of these values
 as repository variables, frontend environment variables or workflow output.
 
+### Exporter role and RLS
+
+Application tables have Row Level Security enabled, and the export role is
+subject to it. **Every new content table needs an explicit `GRANT SELECT` and
+a read policy for the exporter role**, otherwise its queries silently return
+zero rows instead of failing. Two layers turn that silence into a hard error:
+
+- each export script aborts before writing or deleting any file when a content
+  family comes back empty (`No published game packs: the export role cannot
+  read public.missions (RLS/GRANT) or published content is gone.`);
+- the manifest comparison rejects the publication because the backend (which
+  sees the full tables) and CI computed different manifests.
+
+This exact failure happened when `public.missions` gained content before the
+role had a policy: the run failed closed and no partial bundle was deployed.
+When adding a content table, extend the role policies in the same change.
+
 ## Publication Contract
 
 1. An administrator starts a publication in the admin panel.
