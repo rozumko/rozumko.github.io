@@ -36,7 +36,7 @@ have a test, CI gate, deployment check, or an explicitly owned manual control.
 | App readiness | Partial with enforced contract | `docs/app-ready-contract.md`; backend owns business rules; API calls are centralized; selected reusable domain modules reject browser globals; content and path data are versioned | Web auth/session code remains coupled to Supabase and `sessionStorage`; the machine-readable native API contract, secure native token adapter and app-store payment adapter are not implemented |
 | Hosting portability | Good backend baseline, partial full-stack proof | Dockerfile, Compose reference, PostgreSQL/Drizzle migrations, `PORT`, readiness endpoints, configurable API/Auth URLs, CSP origins derived from build environment | Restore/cutover has not been proven on a second provider in this baseline; rate limiting is single-instance memory mode; Supabase Auth migration is separate from PostgreSQL migration |
 | Educational standards/evidence | Partial | Content taxonomy, public standards page, responsible EdTech evidence portfolio and canonical content validation | Framework mappings are evidence models, not certifications; new public claims and curriculum mappings need dated official-source review and educator judgment |
-| Security | Strong code baseline, operational proof required | Backend regression suite, fail-closed readiness/migration behavior, supply-chain workflows, secret scan, CSP/framing guards | Branch protection, Supabase controls, Render settings, backup evidence and authenticated staging smoke are external/manual controls |
+| Security | Strong code baseline, operational proof required | Backend regression suite, fail-closed readiness/migration behavior, supply-chain workflows, secret scan, CSP/framing guards; `main` branch ruleset requires the `frontend`/`backend` checks and blocks force pushes and deletion | Supabase controls, Render settings, backup evidence and authenticated staging smoke are external/manual controls |
 | Cross-browser support | Limited evidence | Chromium is exercised in Playwright CI | Firefox, WebKit/Safari and assistive-technology combinations are not CI-gated |
 | Database/deploy integrity | Strong static/test baseline | Migration journal checks, schema/RLS regression tests, Render `checksPass`, `/ready` fails on drift | This local audit had no Docker or `psql`; a disposable/staging database migration and restore rehearsal remains required |
 | Frontend code quality | Incremental enforcement | ESLint blocks unsafe control-flow and JavaScript hazards; TypeScript enforces strict function variance, unknown catch variables, explicit returns, switch fallthrough and overrides | Full `strictNullChecks`, `noImplicitAny` and checked legacy JavaScript remain migration work; new debt should not increase |
@@ -56,10 +56,11 @@ npm run build
 npm test
 ```
 
-`Project CI` now runs the browser-backed layout/accessibility suite on pull
-requests. The repository owner must configure branch protection so the backend
-and frontend jobs are required before merge. A workflow that runs but is not a
-required check is not a complete merge guard.
+`Project CI` runs the browser-backed layout/accessibility suite on pull
+requests. Since 2026-07-16 a branch ruleset on `main` (no bypass) requires the
+`frontend` and `backend` jobs to pass, blocks force pushes and blocks branch
+deletion. Direct pushes to `main` are rejected; every change lands through a
+branch and pull request with green required checks.
 
 Changes in these areas require additional evidence:
 
