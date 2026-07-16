@@ -432,7 +432,8 @@
 .question-item__text  { color: var(--adm-text); font-size: var(--font-size-sm); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .question-item__code  { color: #6ee7b7; font-size: var(--font-size-xs); font-family: 'Courier New', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
 .question-item__meta  { font-size: var(--font-size-xs); color: var(--adm-text-faint); margin-top: 2px; }
-.question-item__actions { display: flex; gap: var(--sp-2); flex-shrink: 0; }
+.publication-meta { color: var(--adm-text-muted); }
+.question-item__actions { display: flex; gap: var(--sp-2); flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
 
 .qi-badge            { font-size: var(--font-size-xs); font-weight: 700; padding: 2px var(--sp-2); border-radius: var(--r-full); }
 .qi-badge--grade     { background: #334155; color: #cbd5e1; }
@@ -487,6 +488,21 @@
 }
 .admin-modal-msg { color: var(--adm-text); font-size: var(--font-size-base); margin-bottom: var(--sp-5); white-space: pre-line; }
 .admin-modal-card .modal-actions { display: flex; flex-direction: column; gap: var(--sp-3); }
+.question-history-card { max-width: 60rem; text-align: left; }
+.question-history-card .history-list { max-height: min(65vh, 42rem); overflow-y: auto; padding-right: var(--sp-2); }
+.lesson-preview-card { max-width: 48rem; text-align: left; }
+.lesson-preview-root { color: var(--clr-text); background: var(--clr-surface); border-radius: var(--r-xl); padding: var(--sp-5); }
+.lesson-preview-root .lsn { display: flex; flex-direction: column; gap: var(--sp-4); }
+.lesson-preview-root .lsn__top { display: flex; align-items: center; gap: var(--sp-3); }
+.lesson-preview-root .lsn__badge { background: var(--clr-violet-light); color: var(--clr-violet-dark); padding: var(--sp-2) var(--sp-3); border-radius: var(--r-full); font-weight: 800; }
+.lesson-preview-root .lsn__progress { margin-left: auto; font-weight: 800; }
+.lesson-preview-root .lsn-card { background: var(--clr-surface); border: 2px solid var(--clr-border); border-radius: var(--r-xl); padding: var(--sp-5); }
+.lesson-preview-root .lsn-card__image { display: block; max-width: 100%; max-height: 15rem; margin: 0 auto var(--sp-4); object-fit: contain; }
+.lesson-preview-root .lsn-card__text { white-space: pre-line; font-size: var(--font-size-lg); }
+.lesson-preview-root .lsn-check__answers { display: flex; flex-direction: column; gap: var(--sp-2); margin-top: var(--sp-4); }
+.lesson-preview-root .lsn-answer { min-height: 44px; border: 2px solid var(--clr-border); border-radius: var(--r-lg); background: var(--clr-surface); padding: var(--sp-3); text-align: left; }
+.lesson-preview-root .lsn-answer--right { background: var(--clr-emerald-light); border-color: var(--clr-emerald); }
+.lesson-preview-root .lsn-answer--wrong { background: var(--clr-surface-muted); border-color: var(--clr-danger); }
 .btn-adm-ghost {
   background: transparent;
   color: var(--adm-text-muted);
@@ -583,10 +599,10 @@
 
 /* ── Вкладка «Уроки» (features/admin/lessons-tab.ts) ─────────────────────── */
 .admin-section-note {
-  margin: 0 0 var(--sp-3); font-size: var(--font-size-sm); color: var(--clr-text-muted);
+  margin: 0 0 var(--sp-3); font-size: var(--font-size-sm); color: var(--adm-text-muted);
 }
 .admin-section-note code {
-  background: #f1f5f9; border-radius: 6px; padding: 1px 6px;
+  background: #f1f5f9; color: var(--clr-text); border-radius: 6px; padding: 1px 6px;
 }
 .lf-block {
   border: 1px solid #e2e8f0; border-radius: var(--r-xl);
@@ -594,6 +610,79 @@
   display: flex; flex-direction: column; gap: var(--sp-2);
 }
 .lf-block .lf-remove { align-self: flex-end; }
+
+/* ── Mission question-set editor ─────────────────────────────────────────── */
+.mission-editor-card {
+  width: min(72rem, calc(100vw - 2 * var(--sp-4)));
+  max-width: 72rem;
+  max-height: calc(100vh - 2 * var(--sp-4));
+  overflow-y: auto;
+  text-align: left;
+}
+.mission-set-block { gap: var(--sp-3); }
+.mission-question-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-2);
+  max-height: 18rem;
+  overflow-y: auto;
+  padding: var(--sp-2);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--r-lg);
+  background: var(--adm-surface);
+}
+.mission-question-option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  padding: var(--sp-2);
+  border-radius: var(--r-md);
+  color: var(--adm-text);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+.mission-question-option:hover { background: var(--adm-surface-2); }
+.mission-question-option input { flex: 0 0 auto; margin-top: 0.2em; }
+.sorting-level-columns {
+  display: grid;
+  grid-template-columns: minmax(15rem, 0.8fr) minmax(20rem, 1.2fr);
+  gap: var(--sp-3);
+}
+.sorting-level-columns textarea {
+  width: 100%;
+  min-height: 9rem;
+  resize: vertical;
+  font-family: 'Courier New', monospace;
+}
+.simulator-node-block { gap: var(--sp-3); }
+.simulator-field-label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.simulator-variant {
+  border: 1px solid var(--adm-border);
+  border-radius: var(--r-lg);
+  padding: var(--sp-2);
+}
+.simulator-variant summary {
+  cursor: pointer;
+  color: var(--adm-text-muted);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--sp-2);
+}
+.simulator-variant textarea { width: 100%; resize: vertical; }
+.simulator-transition {
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.35fr) minmax(16rem, 1fr) minmax(12rem, 0.55fr);
+  gap: var(--sp-2);
+  align-items: center;
+}
+@media (max-width: 760px) {
+  .mission-question-grid { grid-template-columns: 1fr; }
+  .sorting-level-columns { grid-template-columns: 1fr; }
+  .simulator-transition { grid-template-columns: 1fr; }
+}
 
 /* ── Вкладка «Шлях» (features/admin/path-tab.ts) ─────────────────────────── */
 .pm-layout { display: grid; grid-template-columns: minmax(260px, 1fr) 2fr; gap: var(--sp-4); align-items: start; }

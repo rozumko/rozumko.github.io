@@ -298,7 +298,7 @@ async function loadQuestionPicker() {
 
   try {
     const [{ questions: allQuestions }, { questions: selectedQuestions }] = await Promise.all([
-      getAdminQuestions({ grade: pickerGrade, isOlympiad: true }),
+      getAdminQuestions({ grade: pickerGrade, isOlympiad: true, status: 'published' }),
       getEventQuestions(selectedEvent!.id, pickerGrade),
     ])
 

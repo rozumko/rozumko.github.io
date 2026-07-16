@@ -207,7 +207,7 @@ test('публічний API питань фільтрує олімпіадні 
     .from(questions)
     .where(capturedWhere as any)
     .toSQL()
-  assert.deepEqual(sql.params, [false, 'ai-basics'])
+  assert.deepEqual(sql.params, [false, 'published', 'ai-basics'])
 })
 
 test('критичні UUID-параметри відхиляються до звернення до БД', async () => {
@@ -219,6 +219,9 @@ test('критичні UUID-параметри відхиляються до з�
   const cases: { method: 'GET' | 'POST' | 'PUT' | 'DELETE'; url: string; payload?: Record<string, unknown> }[] = [
     { method: 'PUT', url: '/api/admin/teachers/not-a-uuid/status', payload: { status: 'active' } },
     { method: 'PUT', url: '/api/admin/questions/not-a-uuid', payload: {} },
+    { method: 'PUT', url: '/api/admin/questions/not-a-uuid/status', payload: { status: 'draft', expectedEditVersion: 1 } },
+    { method: 'GET', url: '/api/admin/questions/not-a-uuid/revisions' },
+    { method: 'POST', url: '/api/admin/questions/not-a-uuid/restore', payload: { revisionEditVersion: 1, expectedEditVersion: 1 } },
     { method: 'DELETE', url: '/api/admin/questions/not-a-uuid' },
     { method: 'DELETE', url: '/api/teacher/registrations/not-a-uuid' },
     { method: 'GET', url: '/api/teacher/codes?registrationId=not-a-uuid' },
@@ -280,6 +283,70 @@ test('application tables have an RLS enablement migration', () => {
     )
   }
   assert.match(journal, /"tag": "0028_enable_rls_all_application_tables"/)
+})
+
+test('question editorial history is RLS-protected and journaled', () => {
+  const migration = readFileSync(new URL('../drizzle/0036_add_question_editorial_workflow.sql', import.meta.url), 'utf8')
+  const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS public\.question_revisions/)
+  assert.match(migration, /ALTER TABLE public\.question_revisions ENABLE ROW LEVEL SECURITY;/)
+  assert.match(migration, /ALTER COLUMN editorial_status SET DEFAULT 'draft'/)
+  assert.match(journal, /"tag": "0036_add_question_editorial_workflow"/)
+})
+
+test('lesson editorial history is RLS-protected and journaled', () => {
+  const migration = readFileSync(new URL('../drizzle/0037_add_lesson_editorial_workflow.sql', import.meta.url), 'utf8')
+  const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS public\.micro_lesson_revisions/)
+  assert.match(migration, /ALTER TABLE public\.micro_lesson_revisions ENABLE ROW LEVEL SECURITY;/)
+  assert.match(migration, /published_snapshot = jsonb_build_object/)
+  assert.match(journal, /"tag": "0037_add_lesson_editorial_workflow"/)
+})
+
+test('mission editorial history is RLS-protected and journaled', () => {
+  const migration = readFileSync(new URL('../drizzle/0038_add_mission_editorial_workflow.sql', import.meta.url), 'utf8')
+  const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS public\.mission_revisions/)
+  assert.match(migration, /ALTER TABLE public\.mission_revisions ENABLE ROW LEVEL SECURITY;/)
+  assert.match(migration, /ALTER COLUMN status SET DEFAULT 'draft'/)
+  assert.match(migration, /published_snapshot = jsonb_build_object/)
+  assert.match(journal, /"tag": "0038_add_mission_editorial_workflow"/)
+})
+
+test('sequence and scenario content registry seed is journaled and revision-aware', () => {
+  const migration = readFileSync(new URL('../drizzle/0039_seed_sequence_scenario_missions.sql', import.meta.url), 'utf8')
+  const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')
+  assert.match(migration, /'sequence-game'/)
+  assert.match(migration, /'scenario-game'/)
+  assert.match(migration, /INSERT INTO public\.mission_revisions/)
+  assert.match(journal, /"tag": "0039_seed_sequence_scenario_missions"/)
+})
+
+test('simulator content registry seed keeps mechanics code-owned and is journaled', () => {
+  const migration = readFileSync(new URL('../drizzle/0040_seed_simulator_missions.sql', import.meta.url), 'utf8')
+  const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')
+  assert.match(migration, /'simulator-game'/)
+  assert.match(migration, /'mechanicsVersion', 1/)
+  assert.match(migration, /INSERT INTO public\.mission_revisions/)
+  assert.match(journal, /"tag": "0040_seed_simulator_missions"/)
+})
+
+test('content publication queue is constrained, RLS-protected and journaled', () => {
+  const migration = readFileSync(new URL('../drizzle/0041_add_content_publications.sql', import.meta.url), 'utf8')
+  const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')
+  const workflow = readFileSync(new URL('../../.github/workflows/deploy.yml', import.meta.url), 'utf8')
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS public\.content_publications/)
+  assert.match(migration, /WHERE status IN \('queued', 'running'\)/)
+  assert.match(migration, /expected_manifest_sha256 ~ '\^\[0-9a-f\]\{64\}\$'/)
+  assert.match(migration, /ALTER TABLE public\.content_publications ENABLE ROW LEVEL SECURITY;/)
+  assert.match(journal, /"tag": "0041_add_content_publications"/)
+  assert.match(workflow, /EXPECTED_MANIFEST_SHA256/)
+  assert.match(workflow, /secrets\.CONTENT_EXPORT_DATABASE_URL/)
+  assert.match(workflow, /cancel-in-progress:\s*false/)
+  assert.match(workflow, /queue:\s*max/)
+  assert.match(workflow, /Verify content export configuration/)
+  assert.match(workflow, /publication-callback\.mjs succeeded/)
+  assert.doesNotMatch(workflow, /CONTENT_PUBLISH_GITHUB_TOKEN/)
 })
 
 test('supply-chain guardrails are configured for npm dependencies', () => {

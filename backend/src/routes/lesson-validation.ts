@@ -23,7 +23,7 @@ export interface LessonContentInput {
   checkQuestions: LessonCheckQuestionInput[]
 }
 
-export const LESSON_STATUSES = ['draft', 'published', 'archived'] as const
+export const LESSON_STATUSES = ['draft', 'review', 'published', 'archived'] as const
 export type LessonStatus = (typeof LESSON_STATUSES)[number]
 
 const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/

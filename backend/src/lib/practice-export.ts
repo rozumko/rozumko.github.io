@@ -13,9 +13,14 @@ export interface ExportableQuestionRow {
   options: unknown
   correct: number | null
   explanation: string | null
+  img: string | null
+  imageAlt: string | null
   difficulty: string | null
   track: string | null
   topic: string | null
+  conceptKey: string | null
+  progressionBand: string | null
+  version: number
   grade: number | null
   isOlympiad: boolean | null
 }

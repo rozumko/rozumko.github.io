@@ -33,7 +33,7 @@ export async function questionsRoutes(app: FastifyInstance) {
     const topic      = req.query.topic
     // Публічний endpoint видає лише тренувальні питання. Олімпіадні питання
     // студент отримує тільки після POST /api/student/exchange-code.
-    const filters = [eq(questions.isOlympiad, false)]
+    const filters = [eq(questions.isOlympiad, false), eq(questions.editorialStatus, 'published')]
     if (grade      !== undefined) filters.push(eq(questions.grade,      grade))
     if (difficulty)               filters.push(eq(questions.difficulty,  difficulty))
     if (track)                    filters.push(eq(questions.track,       track))
@@ -48,6 +48,8 @@ export async function questionsRoutes(app: FastifyInstance) {
         options:     questions.options,
         correct:     questions.correct,
         explanation: questions.explanation,
+        img:         questions.img,
+        imageAlt:    questions.imageAlt,
         difficulty:  questions.difficulty,
         track:       questions.track,
         topic:       questions.topic,

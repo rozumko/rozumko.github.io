@@ -14,6 +14,9 @@ The backend runs on Render from `backend/render.yaml`.
 - The backend liveness path is `/health`.
 - Live monitoring should use `/ready` or `/ping`, because they verify database access.
 - Required secrets are configured in Render environment variables, not in Git.
+- Admin content publication additionally requires
+  `CONTENT_PUBLISH_GITHUB_TOKEN`, `CONTENT_PUBLISH_GITHUB_REPOSITORY` and
+  `CONTENT_PUBLISH_CALLBACK_SECRET`; see `docs/content-publication.md`.
 
 ## Instance Count Rule
 
@@ -45,7 +48,8 @@ Do not scale to multiple instances until one of these is true:
       immutable `path_map_revisions`.
 - [ ] Render service is synced from `backend/render.yaml`.
 - [ ] Environment variables are present: `DATABASE_URL`, `SUPABASE_URL`,
-      `ATTEMPT_SECRET`, `NODE_ENV=production`, `RATE_LIMIT_STORE=memory`.
+      `ATTEMPT_SECRET`, `NODE_ENV=production`, `RATE_LIMIT_STORE=memory`, and
+      the three content-publication variables when that feature is enabled.
 - [ ] Instance count is one.
 - [ ] `/health` returns `{ "status": "ok", "service": "rozumko-backend" }`.
 - [ ] `/ready` returns `{ "status": "ok", "db": "ok" }`.

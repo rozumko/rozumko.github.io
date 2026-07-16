@@ -77,6 +77,72 @@ the physical code to obtain a fresh token before the queue can flush.
 
 Nested answer keys are stripped for structured question types.
 
+## Question Editorial Workflow — **[IMPLEMENTED]**
+
+Migration `0036` and the admin question routes implement an auditable content
+workflow. New questions start as `draft`; only `published` rows may be issued
+by public practice, Home, School, event selection, or the static practice
+export. Publishing fails closed when required taxonomy, answer shape, or image
+alternative text is missing.
+
+Every create, edit, status transition, and restore writes an immutable snapshot
+to `question_revisions` in the same transaction as the question mutation.
+Admin writes use `edit_version` optimistic locking so concurrent editors cannot
+silently overwrite each other. A published revision cannot be edited in place:
+the admin UI creates a separate draft question for the replacement, while the
+old revision remains stable for in-flight and historical scoring. Restoring
+history is limited to never-published drafts and never deletes prior snapshots.
+Published questions are archived rather than hard-deleted; hard deletion is
+limited to unused drafts. Revision rows contain answer keys and are available
+only through the authenticated admin API. RLS is enabled on the revision table
+with no browser-facing policy.
+
+## Lesson Editorial Workflow — **[IMPLEMENTED]**
+
+Migration `0037` gives micro-lessons the same `draft → review → published →
+archived` workflow, optimistic edit locking and immutable revision history.
+Unlike questions, a logical lesson keeps its last published content in a
+separate immutable snapshot while the administrator edits a newer draft. The
+static export reads the published snapshot, so draft text and answer keys never
+reach children accidentally. Publishing atomically updates that snapshot;
+archiving is blocked while a published path references the lesson. Revision
+history remains admin-only and RLS-protected.
+
+## Mission Editorial Workflow — **[IMPLEMENTED]**
+
+Migration `0038` adds the same audited state machine, optimistic edit locking
+and immutable revision history to missions. The admin constructor edits
+`question-set` missions and structured sorting, sequence, scenario and
+simulator presentation packs. Generated puzzle rules remain read-only. A
+published mission keeps an immutable snapshot while newer work returns to
+`draft`.
+
+Every apply/confirm set contains explicit UUID references to published
+questions. Review and publication lock and verify those rows server-side: each
+question must exist, remain published, match the mission grade and track, and
+belong to only one set in that mission. Apply/confirm pairs must have equal
+sizes. Revision snapshots and their question references are available only to
+the authenticated admin API; `mission_revisions` has RLS enabled with no
+browser-facing policy.
+
+Game packs are validated on both export and load. Sorting items must reference
+existing used bins; sequence steps must be non-empty and unique; scenarios must
+have exactly one correct option and feedback for every choice. Malformed
+published JSON falls back to bundled last-known-good content. Bin assignments,
+step order and scenario correctness are answer keys, but these are local
+formative games, matching the documented static-practice key policy rather than
+an official or paid scoring surface. The service worker treats
+`/content-packs/` as network-first so a republished pack reaches online clients
+without waiting for a cache-version deployment.
+
+Simulator content is separated from mechanics by stable code-owned action
+slots. Authored packs may replace icons, all rendered text variants, help text,
+choice labels and only explicitly allowlisted navigation targets. They cannot
+contain or replace state actions, initial state, fail-node flags, win nodes,
+completion callbacks or star calculation. Server validation requires the exact
+mechanics version, node set and slot set; the browser repeats structural checks
+and ignores a transition target unless the runtime allowlist permits it.
+
 ## Teacher And Admin Authorization
 
 1. Supabase Auth returns a JWT after signup or login.
@@ -101,8 +167,12 @@ or a stricter in-memory-only browser session remain a future hardening item.
 
 The backend is the only component that accesses application tables. Migration
 `0028_enable_rls_all_application_tables` enables Row Level Security on every
-application table as defense-in-depth; no permissive browser-facing policies are
-created, so accidental Supabase Data API/grant exposure remains deny-by-default.
+application table that existed at that revision; later table migrations,
+including `0036` for `question_revisions`, enable RLS in the same migration.
+Migrations `0037` and `0038` apply the same rule to
+`micro_lesson_revisions` and `mission_revisions`.
+No permissive browser-facing policies are created, so accidental Supabase Data
+API/grant exposure remains deny-by-default.
 No frontend code may call Supabase Data API tables directly.
 
 ## Surface Data Boundaries — School **[IMPLEMENTED]**, Home Demo/Entitlement/Club Practice **[IMPLEMENTED]**, Payment Webhook Boundary **[IMPLEMENTED]**, Provider Checkout **[PLANNED]**, Olympiad **[IMPLEMENTED]/[PLANNED]**
@@ -478,6 +548,27 @@ Before starting a new backend process, Render runs a read-only migration journal
 check. A database behind the bundled Drizzle journal blocks startup; `/ready`
 and `/ping` report `migration_required` with no migration details. Migration SQL
 is still applied deliberately by an operator, never by build or startup.
+
+Admin-triggered static content publication uses a separate least-privilege
+trust chain:
+
+- the authenticated admin API freezes the exact published-version manifest in
+  `content_publications`; a partial unique index permits one active job;
+- the backend token is a fine-grained repository token with only Actions write
+  permission. It can dispatch the existing Pages workflow but cannot push code;
+- GitHub Actions exports with a dedicated read-only PostgreSQL credential and
+  refuses deployment when the current manifest differs from the approved hash;
+- callbacks are HTTPS-only, HMAC-signed, timestamp-bounded and state-machine
+  checked. Successful jobs must return the approved manifest hash and a valid
+  source commit SHA;
+- publication tokens and callback secrets exist only in Render/GitHub secret
+  stores and never enter frontend bundles or logs.
+- Pages runs use a bounded FIFO concurrency queue, so a later push cannot
+  silently replace a pending audited publication before its callback starts.
+
+Normal code-triggered Pages deployments run the same database export before
+building, preventing a later frontend deploy from restoring stale committed
+bundles. See `docs/content-publication.md` for setup and recovery steps.
 
 External operational controls are not marked as complete from code review alone.
 Use `docs/security-ops-evidence.md` as the public-safe template, keep completed

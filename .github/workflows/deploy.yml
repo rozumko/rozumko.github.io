@@ -7,6 +7,16 @@ on:
       - 'backend/**'
       - 'docs/**'
       - '**.md'
+  workflow_dispatch:
+    inputs:
+      publication_id:
+        description: Audited content publication UUID
+        required: false
+        type: string
+      expected_manifest_sha256:
+        description: Approved content manifest SHA-256
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -15,7 +25,8 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
+  queue: max
 
 jobs:
   build-and-deploy:
@@ -33,6 +44,52 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Install backend dependencies
+        run: npm ci
+        working-directory: backend
+
+      - name: Verify content export configuration
+        shell: bash
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::Configure the CONTENT_EXPORT_DATABASE_URL Actions secret before deploying Pages."
+            exit 1
+          fi
+        env:
+          DATABASE_URL: ${{ secrets.CONTENT_EXPORT_DATABASE_URL }}
+
+      - name: Verify publication callback configuration
+        if: inputs.publication_id != ''
+        shell: bash
+        run: |
+          if [[ "$BACKEND_URL" != https://* ]]; then
+            echo "::error::CONTENT_PUBLISH_BACKEND_URL must be a configured HTTPS origin."
+            exit 1
+          fi
+          if [ ${#CALLBACK_SECRET} -lt 32 ]; then
+            echo "::error::CONTENT_PUBLISH_CALLBACK_SECRET must contain at least 32 characters."
+            exit 1
+          fi
+        env:
+          BACKEND_URL: ${{ secrets.CONTENT_PUBLISH_BACKEND_URL }}
+          CALLBACK_SECRET: ${{ secrets.CONTENT_PUBLISH_CALLBACK_SECRET }}
+
+      - name: Mark publication as running
+        if: inputs.publication_id != ''
+        run: node backend/scripts/publication-callback.mjs running
+        env:
+          PUBLICATION_ID: ${{ inputs.publication_id }}
+          CONTENT_PUBLISH_BACKEND_URL: ${{ secrets.CONTENT_PUBLISH_BACKEND_URL }}
+          CONTENT_PUBLISH_CALLBACK_SECRET: ${{ secrets.CONTENT_PUBLISH_CALLBACK_SECRET }}
+
+      - name: Export approved content bundles
+        id: content
+        run: npm run export:all-content
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ secrets.CONTENT_EXPORT_DATABASE_URL }}
+          EXPECTED_MANIFEST_SHA256: ${{ inputs.expected_manifest_sha256 }}
 
       - name: Type check
         run: npm run typecheck
@@ -59,3 +116,18 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Record publication result
+        if: always() && inputs.publication_id != ''
+        shell: bash
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            node backend/scripts/publication-callback.mjs succeeded
+          else
+            node backend/scripts/publication-callback.mjs failed
+          fi
+        env:
+          PUBLICATION_ID: ${{ inputs.publication_id }}
+          CONTENT_PUBLISH_BACKEND_URL: ${{ secrets.CONTENT_PUBLISH_BACKEND_URL }}
+          CONTENT_PUBLISH_CALLBACK_SECRET: ${{ secrets.CONTENT_PUBLISH_CALLBACK_SECRET }}
+          PUBLISHED_MANIFEST_SHA256: ${{ steps.content.outputs.manifest_sha256 }}

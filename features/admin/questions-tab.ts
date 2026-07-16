@@ -1,4 +1,8 @@
-import { getAdminQuestions, createQuestion, updateQuestion, deleteQuestion, type Question, type QuestionType } from '../../features/api/client.js'
+import {
+  getAdminQuestions, createQuestion, updateQuestion, deleteQuestion,
+  setQuestionEditorialStatus, getQuestionRevisions, restoreQuestionRevision,
+  type Question, type QuestionType,
+} from '../../features/api/client.js'
 import { createFocusTrap } from '../../utils/focus-trap.js'
 import { renderQuestion }  from '../../utils/question-renderer.js'
 import { esc, showModal, showConfirm }  from './ui.js'
@@ -39,6 +43,12 @@ const TYPE_LABELS: Record<QuestionType, string> = {
   sequence:  'Послідовність',
   match:     'Пари',
 }
+const STATUS_LABELS: Record<NonNullable<Question['editorialStatus']>, string> = {
+  draft: 'Чернетка', review: 'На перевірці', published: 'Опубліковано', archived: 'Архів',
+}
+const STATUS_BADGES: Record<NonNullable<Question['editorialStatus']>, string> = {
+  draft: 'qi-badge--medium', review: 'qi-badge--type', published: 'qi-badge--easy', archived: 'qi-badge--type',
+}
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
@@ -51,6 +61,9 @@ export function initQuestionsTab() {
     applyTypeUI((e.target as HTMLSelectElement).value)
   })
   $<HTMLButtonElement>('q-filter-apply').addEventListener('click', () => loadQuestionsTab())
+  $<HTMLInputElement>('q-filter-search').addEventListener('keydown', event => {
+    if (event.key === 'Enter') void loadQuestionsTab()
+  })
   // Тема залежить від напряму — і у фільтрі, і у формі
   $<HTMLSelectElement>('q-filter-track').addEventListener('change', (e) => {
     fillTopicSelect($<HTMLSelectElement>('q-filter-topic'), (e.target as HTMLSelectElement).value, 'Всі теми')
@@ -80,8 +93,10 @@ export async function loadQuestionsTab() {
     const difficulty = $<HTMLSelectElement>('q-filter-difficulty').value || undefined
     const track      = $<HTMLSelectElement>('q-filter-track').value || undefined
     const topic      = $<HTMLSelectElement>('q-filter-topic').value || undefined
+    const status     = $<HTMLSelectElement>('q-filter-status').value || undefined
+    const search     = $<HTMLInputElement>('q-filter-search').value.trim() || undefined
 
-    const { questions } = await getAdminQuestions({ grade, isOlympiad, difficulty, track, topic })
+    const { questions } = await getAdminQuestions({ grade, isOlympiad, difficulty, track, topic, status, search })
     currentQuestions = questions
 
     $('q-count').textContent = `${questions.length} питань`
@@ -113,11 +128,16 @@ function buildQuestionCard(q: Question): HTMLElement {
   const trackLabel = q.track ? (TRACK_LABELS[q.track] ?? q.track) : null
   const type = q.type ?? 'choice'
   const correctHint = describeCorrectAnswer(q)
+  const status = q.editorialStatus ?? 'published'
+  const immutable = Boolean(q.publishedAt) || status === 'published'
+  const nextStatus = status === 'draft' ? 'review' : status === 'review' ? 'published' : status === 'published' ? 'archived' : immutable ? 'published' : 'draft'
+  const nextLabel = status === 'draft' ? 'На перевірку' : status === 'review' ? 'Опублікувати' : status === 'published' ? 'Архівувати' : immutable ? 'Опублікувати знову' : 'У чернетки'
   const el = document.createElement('div')
   el.className = 'question-item'
   el.innerHTML = `
     <div class="question-item__left">
       <div class="question-item__badges">
+        <span class="qi-badge ${STATUS_BADGES[status]}">${STATUS_LABELS[status]}</span>
         <span class="qi-badge qi-badge--grade">${esc(String(q.grade))} клас</span>
         <span class="qi-badge qi-badge--type">${esc(TYPE_LABELS[type] ?? type)}</span>
         <span class="qi-badge qi-badge--${q.difficulty ?? 'medium'}">${esc(diffLabel)}</span>
@@ -129,17 +149,33 @@ function buildQuestionCard(q: Question): HTMLElement {
       </div>
       <p class="question-item__text">${esc(q.q)}</p>
       ${q.code ? `<p class="question-item__code">${esc(q.code.split('\n')[0])}…</p>` : ''}
-      <p class="question-item__meta">✓ ${esc(correctHint)}</p>
+      <p class="question-item__meta">✓ ${esc(correctHint)} · контент v${esc(String(q.version ?? 1))} · редакція ${esc(String(q.editVersion ?? 1))}</p>
     </div>
     <div class="question-item__actions">
       <button class="btn-q-edit btn-adm-slate btn-icon" aria-label="Редагувати питання"><i class="fas fa-pen" aria-hidden="true"></i></button>
-      <button class="btn-q-del btn-adm-danger btn-icon" aria-label="Видалити питання"><i class="fas fa-trash" aria-hidden="true"></i></button>
+      <button class="btn-q-copy btn-adm-ghost btn-icon" aria-label="Дублювати питання"><i class="fas fa-copy" aria-hidden="true"></i></button>
+      <button class="btn-q-history btn-adm-ghost btn-icon" aria-label="Історія питання"><i class="fas fa-history" aria-hidden="true"></i></button>
+      <button class="btn-q-status btn-adm-sky btn--sm">${nextLabel}</button>
+      ${status === 'draft' ? '<button class="btn-q-del btn-adm-danger btn-icon" aria-label="Видалити чернетку"><i class="fas fa-trash" aria-hidden="true"></i></button>' : ''}
     </div>`
 
-  el.querySelector<HTMLButtonElement>('.btn-q-edit')!.addEventListener('click', () => openQuestionModal(q))
-  el.querySelector<HTMLButtonElement>('.btn-q-del')!.addEventListener('click', () => {
+  el.querySelector<HTMLButtonElement>('.btn-q-edit')!.setAttribute(
+    'aria-label', immutable ? 'Створити нову версію як чернетку' : 'Редагувати питання',
+  )
+  el.querySelector<HTMLButtonElement>('.btn-q-edit')!.addEventListener('click', () => openQuestionModal(q, immutable))
+  el.querySelector<HTMLButtonElement>('.btn-q-copy')!.addEventListener('click', () => openQuestionModal(q, true))
+  el.querySelector<HTMLButtonElement>('.btn-q-history')!.addEventListener('click', () => { void openHistory(q) })
+  el.querySelector<HTMLButtonElement>('.btn-q-status')!.addEventListener('click', () => {
+    showConfirm(`${nextLabel} це питання?`, async () => {
+      try {
+        await setQuestionEditorialStatus(q.id, nextStatus, q.editVersion ?? 1)
+        await loadQuestionsTab()
+      } catch (err) { showModal((err as Error).message) }
+    })
+  })
+  el.querySelector<HTMLButtonElement>('.btn-q-del')?.addEventListener('click', () => {
     showConfirm(
-      `Видалити питання?\n\n«${q.q.slice(0, 80)}${q.q.length > 80 ? '…' : ''}»\n\nЦю дію неможливо скасувати.`,
+      `Видалити чернетку?\n\n«${q.q.slice(0, 80)}${q.q.length > 80 ? '…' : ''}»\n\nЦю дію неможливо скасувати.`,
       async () => {
         try {
           await deleteQuestion(q.id)
@@ -154,11 +190,74 @@ function buildQuestionCard(q: Question): HTMLElement {
   return el
 }
 
+async function openHistory(question: Question) {
+  try {
+    const { revisions } = await getQuestionRevisions(question.id)
+    const overlay = document.createElement('div')
+    overlay.className = 'admin-modal-overlay'
+    overlay.setAttribute('role', 'dialog')
+    overlay.setAttribute('aria-modal', 'true')
+    overlay.setAttribute('aria-labelledby', 'question-history-title')
+    overlay.innerHTML = `
+      <div class="admin-modal-card question-history-card">
+        <div class="admin-section-header">
+          <h3 id="question-history-title" class="admin-section-title">Історія питання</h3>
+          <button type="button" class="btn-adm-ghost history-close">Закрити</button>
+        </div>
+        <p class="admin-section-note">Кожне відновлення створює нову чернетку — попередня історія не зникає.</p>
+        <div class="admin-list admin-list--sm history-list"></div>
+      </div>`
+    const list = overlay.querySelector<HTMLElement>('.history-list')!
+    for (const revision of revisions) {
+      const snapshot = revision.snapshot
+      const status = String(snapshot.editorialStatus ?? snapshot.editorial_status ?? '—')
+      const text = String(snapshot.q ?? '(без тексту)')
+      const item = document.createElement('div')
+      item.className = 'question-item'
+      item.innerHTML = `
+        <div class="question-item__left">
+          <div class="question-item__badges">
+            <span class="qi-badge qi-badge--type">редакція ${revision.editVersion}</span>
+            <span class="qi-badge qi-badge--type">${esc(revision.action)}</span>
+            <span class="qi-badge qi-badge--type">${esc(status)}</span>
+          </div>
+          <p class="question-item__text">${esc(text)}</p>
+          <p class="question-item__meta">${esc(new Date(revision.createdAt).toLocaleString('uk-UA'))}</p>
+        </div>
+        ${!question.publishedAt && question.editorialStatus !== 'published' && revision.editVersion !== (question.editVersion ?? 1)
+          ? '<div class="question-item__actions"><button type="button" class="btn-adm-sky btn--sm history-restore">Відновити</button></div>'
+          : ''}`
+      item.querySelector<HTMLButtonElement>('.history-restore')?.addEventListener('click', () => {
+        close()
+        showConfirm(`Відновити редакцію ${revision.editVersion} як нову чернетку?`, async () => {
+          try {
+            await restoreQuestionRevision(question.id, revision.editVersion, question.editVersion ?? 1)
+            await loadQuestionsTab()
+          } catch (err) { showModal((err as Error).message) }
+        })
+      })
+      list.appendChild(item)
+    }
+    document.body.appendChild(overlay)
+    let removeTrap: () => void = () => {}
+    const close = () => {
+      removeTrap()
+      overlay.remove()
+    }
+    removeTrap = createFocusTrap(overlay, close)
+    overlay.querySelector<HTMLButtonElement>('.history-close')!.addEventListener('click', close)
+    overlay.addEventListener('click', event => { if (event.target === overlay) close() })
+  } catch (err) {
+    showModal((err as Error).message)
+  }
+}
+
 // ─── Modal ────────────────────────────────────────────────────────────────────
 
-export function openQuestionModal(q: Question | null) {
-  $('question-modal-title').textContent                 = q ? 'Редагувати питання' : 'Нове питання'
-  $<HTMLInputElement>('qf-id').value                    = q?.id ?? ''
+export function openQuestionModal(q: Question | null, duplicate = false) {
+  $('question-modal-title').textContent                 = duplicate && (q?.editorialStatus === 'published' || q?.publishedAt)
+    ? 'Нова версія як чернетка' : duplicate ? 'Дублювати питання' : q ? 'Редагувати питання' : 'Нове питання'
+  $<HTMLInputElement>('qf-id').value                    = duplicate ? '' : q?.id ?? ''
   $<HTMLSelectElement>('qf-grade').value                = String(q?.grade ?? '1')
   $<HTMLSelectElement>('qf-difficulty').value           = q?.difficulty ?? 'medium'
   $<HTMLSelectElement>('qf-track').value                = q?.track ?? ''
@@ -177,6 +276,7 @@ export function openQuestionModal(q: Question | null) {
 
   const imgUrl = (q as any)?.img ?? ''
   $<HTMLInputElement>('qf-img').value = imgUrl
+  $<HTMLInputElement>('qf-image-alt').value = q?.imageAlt ?? ''
   const prev = $maybe<HTMLImageElement>('qf-img-preview')
   if (prev) {
     if (imgUrl) { prev.src = imgUrl; prev.classList.remove('hidden') }
@@ -228,12 +328,18 @@ async function handleSubmit(e: Event) {
     isOlympiad:  $<HTMLInputElement>('qf-olympiad').checked,
     explanation: $<HTMLTextAreaElement>('qf-explanation').value.trim(),
     code:        $<HTMLTextAreaElement>('qf-code').value.trim() || undefined,
+    img:         $<HTMLInputElement>('qf-img').value.trim() || null,
+    imageAlt:    $<HTMLInputElement>('qf-image-alt').value.trim() || null,
   }
 
   qfSubmitBtn.disabled    = true
   qfSubmitBtn.textContent = 'Збереження…'
   try {
-    if (id) await updateQuestion(id, data)
+    if (id) {
+      const current = currentQuestions.find(question => question.id === id)
+      if (!current) throw new Error('Питання змінилося або список застарів. Онови вкладку.')
+      await updateQuestion(id, { ...data, expectedEditVersion: current.editVersion ?? 1 })
+    }
     else    await createQuestion(data)
     closeQuestionModal()
     await loadQuestionsTab()
@@ -263,6 +369,7 @@ function handlePreviewClick() {
     options:     shape.options,
     correct:     shape.correct,
     img:         $<HTMLInputElement>('qf-img').value.trim() || null,
+    imageAlt:    $<HTMLInputElement>('qf-image-alt').value.trim() || null,
     code:        $<HTMLTextAreaElement>('qf-code').value.trim() || null,
     explanation: $<HTMLTextAreaElement>('qf-explanation').value.trim(),
     ...(Array.isArray(shape.options) ? { a: shape.options } : shape.options),
@@ -271,7 +378,7 @@ function handlePreviewClick() {
   $('pv-question-text').textContent = q.q
   const pvImg = $maybe<HTMLImageElement>('pv-image')
   if (pvImg) {
-    if (q.img) { pvImg.src = q.img; pvImg.classList.remove('hidden') }
+    if (q.img) { pvImg.src = q.img; pvImg.alt = q.imageAlt || 'Зображення до питання'; pvImg.classList.remove('hidden') }
     else       { pvImg.classList.add('hidden'); pvImg.src = '' }
   }
 

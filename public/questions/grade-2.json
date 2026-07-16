@@ -12,9 +12,14 @@
   ],
   "correct": 2,
   "explanation": "Образи в мережі — це справжня образа. Підтримай друга і залучи дорослих.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "informatics",
   "topic": "digital-safety",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 1,
   "grade": 2
  },
  {
@@ -30,9 +35,14 @@
   ],
   "correct": 3,
   "explanation": "Де ти вчишся — особиста інформація, її не можна давати без дозволу батьків.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "ai-ethics-safety",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -48,9 +58,14 @@
   ],
   "correct": 2,
   "explanation": "Ознаку поділу обирають під задачу: шукатимеш за кольором — діли за кольором.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "computational-thinking",
   "topic": "classification",
+  "conceptKey": "classification",
+  "progressionBand": "reason",
+  "version": 1,
   "grade": 2
  },
  {
@@ -66,9 +81,14 @@
   ],
   "correct": 1,
   "explanation": "Програма зберігає «звукові відбитки» пісень і шукає серед них схожий на почутий.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "what-is-ai",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 1,
   "grade": 2
  },
  {
@@ -84,9 +104,14 @@
   ],
   "correct": 2,
   "explanation": "Перед першою лінією — червоний. Перед другою — колір змінюється на синій. Друга лінія синя.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "conceptKey": "patterns",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -110,9 +135,14 @@
   },
   "correct": 1,
   "explanation": "Щоразу додаємо 2, після 8 буде 10.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "computational-thinking",
   "topic": "patterns",
+  "conceptKey": "patterns",
+  "progressionBand": "apply",
+  "version": 1,
   "grade": 2
  },
  {
@@ -128,9 +158,14 @@
   ],
   "correct": 1,
   "explanation": "Людина вміє фантазувати, дружити і вигадувати нове. Програми поки лише повторюють вивчене.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "human-vs-ai",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -146,9 +181,14 @@
   ],
   "correct": 0,
   "explanation": "Таблиця впорядковує дані, і їх легко порівнювати й знаходити.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "data",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -164,9 +204,14 @@
   ],
   "correct": 1,
   "explanation": "Сайти живуть в Інтернеті, тож потрібне з'єднання з мережею.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "networks-internet",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -182,9 +227,14 @@
   ],
   "correct": 0,
   "explanation": "Один похід із повною лійкою замінює десять походів із чашкою — менше зайвих дій.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "efficiency",
+  "conceptKey": "efficiency",
+  "progressionBand": "apply",
+  "version": 1,
   "grade": 2
  },
  {
@@ -200,9 +250,14 @@
   ],
   "correct": 0,
   "explanation": "Пошук стає швидшим, коли ти одразу відкидаєш зайве за важливою ознакою. Тут такою ознакою є колір рюкзака.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "efficiency",
+  "conceptKey": "efficiency",
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -218,9 +273,14 @@
   ],
   "correct": 3,
   "explanation": "Одноманітну роботу з великою кількістю картинок програма робить швидше за людину.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "human-vs-ai",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -244,9 +304,14 @@
   },
   "correct": null,
   "explanation": "Сторони квадрата чергуються з поворотами: сторона → поворот → сторона → поворот.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -262,9 +327,14 @@
   ],
   "correct": 0,
   "explanation": "Знак працює завдяки спрощенню: головна ідея зчитується миттєво навіть на швидкості.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "computational-thinking",
   "topic": "abstraction",
+  "conceptKey": "abstraction",
+  "progressionBand": "reason",
+  "version": 1,
   "grade": 2
  },
  {
@@ -280,9 +350,14 @@
   ],
   "correct": 2,
   "explanation": "Інтернет — це мережа, яка з'єднує безліч комп'ютерів і дозволяє їм обмінюватися інформацією.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "networks-internet",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -298,9 +373,14 @@
   ],
   "correct": 2,
   "explanation": "Малюються: жовта лінія, синя лінія, червона лінія. Остання — червона.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "conceptKey": "patterns",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -316,9 +396,14 @@
   ],
   "correct": 1,
   "explanation": "Будь-які покупки в Інтернеті — лише разом із дорослими.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "ai-basics",
   "topic": "ai-ethics-safety",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 1,
   "grade": 2
  },
  {
@@ -334,9 +419,14 @@
   ],
   "correct": 2,
   "explanation": "Рисочки — простий спосіб рахувати дані. Три рисочки більше за одну.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "informatics",
   "topic": "data",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -352,9 +442,14 @@
   ],
   "correct": 1,
   "explanation": "1 лінія до циклу + 3 лінії в циклі + 1 лінія після = 5 ліній.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "hard",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "conceptKey": "algorithms",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -370,9 +465,14 @@
   ],
   "correct": 1,
   "explanation": "Кислий смак лимона — це приклад смакової інформації.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "information",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -388,9 +488,14 @@
   ],
   "correct": 0,
   "explanation": "Два відрізки по 50 і два по 30, три повороти по 90° — три сторони прямокутника (незамкненого, бо 4-ї сторони немає).",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "hard",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "conceptKey": "algorithms",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -406,9 +511,14 @@
   ],
   "correct": 3,
   "explanation": "Правило «І» вимагає виконання обох умов, щоб отримати результат.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "logic",
+  "conceptKey": "logic",
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -424,9 +534,14 @@
   ],
   "correct": 3,
   "explanation": "Спершу звук стає текстом, потім програма розуміє запитання і готує відповідь.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "ai-basics",
   "topic": "ai-perception",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -442,9 +557,14 @@
   ],
   "correct": 1,
   "explanation": "Онлайн-відео живе в Інтернеті — без з'єднання його не відкрити.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "informatics",
   "topic": "networks-internet",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -460,9 +580,14 @@
   ],
   "correct": 2,
   "explanation": "Таблиця зберігає дані. Найбільше число — 6, отже рибок найбільше.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "informatics",
   "topic": "data",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -478,9 +603,14 @@
   ],
   "correct": 0,
   "explanation": "Ефективність — обрати найкоротший спосіб. Готові листівки просто роздати по черзі.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "computational-thinking",
   "topic": "efficiency",
+  "conceptKey": "efficiency",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -496,9 +626,14 @@
   ],
   "correct": 2,
   "explanation": "Голосовий помічник працює на розумній програмі — це приклад ШІ вдома.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "ai-basics",
   "topic": "what-is-ai",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -514,9 +649,14 @@
   ],
   "correct": 2,
   "explanation": "Музику ми чуємо, тому її сприймають вуха.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "information",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -532,9 +672,14 @@
   ],
   "correct": 3,
   "explanation": "Програма обробляє багато даних про погоду й робить прогноз.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "ai-tools",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -548,9 +693,14 @@
   },
   "correct": null,
   "explanation": "3 + 2 = 5 разів.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "computational-thinking",
   "topic": "repetition",
+  "conceptKey": "repetition",
+  "progressionBand": "apply",
+  "version": 1,
   "grade": 2
  },
  {
@@ -566,9 +716,14 @@
   ],
   "correct": 2,
   "explanation": "Коли одна й та сама дія повторюється багато разів, зручно записати це як повторення, а не дублювати однакову команду.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "repetition",
+  "conceptKey": "repetition",
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -584,9 +739,14 @@
   ],
   "correct": 3,
   "explanation": "Велику справу ділимо на частини — так нічого не забудеш і легше зробити.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "computational-thinking",
   "topic": "decomposition",
+  "conceptKey": "decomposition",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -602,9 +762,14 @@
   ],
   "correct": 3,
   "explanation": "20 + (4 × 30) + 20 = 20 + 120 + 20 = 160 кроків.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "hard",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "conceptKey": "algorithms",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -620,9 +785,14 @@
   ],
   "correct": 0,
   "explanation": "4 сторони по 60 кроків з поворотами 90° утворюють квадрат.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "conceptKey": "algorithms",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -638,9 +808,14 @@
   ],
   "correct": 3,
   "explanation": "Це приклад налагодження алгоритму: потрібно знайти крок, який стоїть не на своєму місці, і виправити порядок.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "debugging",
+  "conceptKey": "debugging",
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -656,9 +831,14 @@
   ],
   "correct": 3,
   "explanation": "Цикл «повторити 3» виконує команду «вперед 30» рівно три рази.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "conceptKey": "algorithms",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -674,9 +854,14 @@
   ],
   "correct": 0,
   "explanation": "Найменше число у таблиці — 2, отже грушу обрали найрідше.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "informatics",
   "topic": "data",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -692,9 +877,14 @@
   ],
   "correct": 0,
   "explanation": "Усередині планшета є акумулятор — він запасає енергію, коли пристрій заряджають.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "computer-systems",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 1,
   "grade": 2
  },
  {
@@ -708,9 +898,14 @@
   ],
   "correct": 0,
   "explanation": "Так, алгоритм — це послідовність кроків, які ведуть до мети.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "algorithms",
+  "conceptKey": "algorithms",
+  "progressionBand": "recognize",
+  "version": 1,
   "grade": 2
  },
  {
@@ -726,9 +921,14 @@
   ],
   "correct": 1,
   "explanation": "Це умовний оператор: «Якщо полив — то росте», «інакше — в'яне».",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "algorithms",
+  "conceptKey": "algorithms",
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -744,9 +944,14 @@
   ],
   "correct": 2,
   "explanation": "Помилку шукають, звіряючи свої кроки зі зразком — так знаходиш, де саме пішло не так.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "computational-thinking",
   "topic": "debugging",
+  "conceptKey": "debugging",
+  "progressionBand": "apply",
+  "version": 1,
   "grade": 2
  },
  {
@@ -762,9 +967,14 @@
   ],
   "correct": 3,
   "explanation": "Зрозумілі маленькі кроки ведуть до результату — це і є декомпозиція.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "decomposition",
+  "conceptKey": "decomposition",
+  "progressionBand": "apply",
+  "version": 1,
   "grade": 2
  },
  {
@@ -780,9 +990,14 @@
   ],
   "correct": 2,
   "explanation": "В кожній ітерації: 15+25+10 = 50 кроків. 3 × 50 = 150 кроків.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "hard",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "conceptKey": "algorithms",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -798,9 +1013,14 @@
   ],
   "correct": 2,
   "explanation": "ШІ знає лише те, що бачив у прикладах. Якщо чорних собак не показували — він може розгубитися.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "how-ai-learns",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -816,9 +1036,14 @@
   ],
   "correct": 1,
   "explanation": "ШІ може помилятися, а думати — твоя робота. Помічник підказує, але не вчиться замість тебе.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "ai-ethics-safety",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -834,9 +1059,14 @@
   ],
   "correct": 2,
   "explanation": "Програма шукає на зображенні знайомі форми — так вона «впізнає» людину на переході.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "ai-perception",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -852,9 +1082,14 @@
   ],
   "correct": 0,
   "explanation": "Запис у зошиті допомагає зберегти інформацію, щоб не забути.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "information",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -870,9 +1105,14 @@
   ],
   "correct": 2,
   "explanation": "В Інтернеті трапляються помилки та обман, тому важливу інформацію перевіряють у надійних джерелах.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "digital-safety",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 3,
   "grade": 2
  },
  {
@@ -888,9 +1128,14 @@
   ],
   "correct": 1,
   "explanation": "Перекладач аналізує слова і речення — для цього потрібна «розумна» програма.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "ai-basics",
   "topic": "what-is-ai",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -906,9 +1151,14 @@
   ],
   "correct": 1,
   "explanation": "ШІ — тренер: він повторює, підказує і виправляє. Але запам'ятовуєш слова ти сам.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "ai-tools",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 1,
   "grade": 2
  },
  {
@@ -924,9 +1174,14 @@
   ],
   "correct": 2,
   "explanation": "Програма вірить прикладам. Помилки в даних стають помилками програми.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "how-ai-learns",
+  "conceptKey": null,
+  "progressionBand": "reason",
+  "version": 1,
   "grade": 2
  },
  {
@@ -942,9 +1197,14 @@
   ],
   "correct": 3,
   "explanation": "Після навчання на прикладах програма впізнає схожі речі навіть на фото, яких не бачила.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "how-ai-learns",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -960,9 +1220,14 @@
   ],
   "correct": 2,
   "explanation": "До циклу колір синій. В 1-й ітерації малюється синя сторона, потім одразу встановлюється червоний. Наступні 3 сторони — червоні. Разом: 1 синя сторона.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "conceptKey": "algorithms",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -978,9 +1243,14 @@
   ],
   "correct": 0,
   "explanation": "Ми дивимося на кольори світлофора очима, тому це зорова інформація.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "information",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -996,9 +1266,14 @@
   ],
   "correct": 3,
   "explanation": "Порівнюємо дані: 12 більше за 8, отже зоопарк набрав більше голосів.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "data",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 1,
   "grade": 2
  },
  {
@@ -1014,9 +1289,14 @@
   ],
   "correct": 0,
   "explanation": "6 × 60° = 360°. Повне коло — Равлик знову дивиться вгору.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "hard",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "conceptKey": "algorithms",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1040,9 +1320,14 @@
   },
   "correct": null,
   "explanation": "Налагодження: помітити збій → перевірити кроки → знайти помилку → виправити.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "computational-thinking",
   "topic": "debugging",
+  "conceptKey": "debugging",
+  "progressionBand": "apply",
+  "version": 1,
   "grade": 2
  },
  {
@@ -1058,9 +1343,14 @@
   ],
   "correct": 3,
   "explanation": "Очі й постава втомлюються від екрана — короткі перерви повертають сили.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "digital-safety",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 1,
   "grade": 2
  },
  {
@@ -1076,9 +1366,14 @@
   ],
   "correct": 2,
   "explanation": "Закономірність — щоразу +2. Після 8 буде 10.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "computational-thinking",
   "topic": "patterns",
+  "conceptKey": "patterns",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1094,9 +1389,14 @@
   ],
   "correct": 0,
   "explanation": "Іконка — маленький значок; натиснувши на нього, відкриваєш програму чи файл.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "digital-tools",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1110,9 +1410,14 @@
   },
   "correct": null,
   "explanation": "У квадрата 4 сторони.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 1,
   "grade": 2
  },
  {
@@ -1128,9 +1433,14 @@
   ],
   "correct": 3,
   "explanation": "У книзі є текст і малюнки — це текстова та графічна інформація.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "information",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1146,9 +1456,14 @@
   ],
   "correct": 3,
   "explanation": "Калькулятор завжди робить одне й те саме за правилами, а ШІ може навчатися і покращуватися.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "what-is-ai",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1164,9 +1479,14 @@
   ],
   "correct": 3,
   "explanation": "Налагодження — це коли ти повертаєшся до своїх дій і крок за кроком перевіряєш, де саме сталася помилка.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "debugging",
+  "conceptKey": "debugging",
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1182,9 +1502,14 @@
   ],
   "correct": 3,
   "explanation": "Множення — короткий запис однакових додавань: 2 × 5 = 10 одразу.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "computational-thinking",
   "topic": "efficiency",
+  "conceptKey": "efficiency",
+  "progressionBand": "apply",
+  "version": 1,
   "grade": 2
  },
  {
@@ -1200,9 +1525,14 @@
   ],
   "correct": 0,
   "explanation": "Коли говоримо вголос, ми передаємо те, що знаємо, іншим.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "information",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1218,9 +1548,14 @@
   ],
   "correct": 2,
   "explanation": "Цикл повторює дію задану кількість разів — тут «плесни» повторюється 3 рази.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "computational-thinking",
   "topic": "repetition",
+  "conceptKey": "repetition",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1236,9 +1571,14 @@
   ],
   "correct": 2,
   "explanation": "Несподівані «подарунки» часто пастка. Безпечно — не клікати й спитати дорослих.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "networks-internet",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1254,9 +1594,14 @@
   ],
   "correct": 1,
   "explanation": "4 повторення × 25 кроків = 100 кроків.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "conceptKey": "algorithms",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1272,9 +1617,14 @@
   ],
   "correct": 0,
   "explanation": "ШІ — добрий помічник для ідей та підказок, але подарунок, зроблений твоїми руками, — найцінніший.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "ai-tools",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1290,9 +1640,14 @@
   ],
   "correct": 0,
   "explanation": "ШІ добре підкидає ідеї, а вибір і турбота — за тобою.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "ai-tools",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1306,9 +1661,14 @@
   ],
   "correct": 0,
   "explanation": "Так. Поспіх — прийом шахраїв. Зупинись, нічого не натискай і поклич дорослого.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "digital-safety",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 1,
   "grade": 2
  },
  {
@@ -1324,9 +1684,14 @@
   ],
   "correct": 0,
   "explanation": "До циклу і після нього — червоні лінії. В циклі 4 рази «вперед 30» з кольором синій = 4 сині лінії.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "hard",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "conceptKey": "algorithms",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1342,9 +1707,14 @@
   ],
   "correct": 0,
   "explanation": "Для тексту є текстовий редактор — саме він підходить для листа.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "informatics",
   "topic": "digital-tools",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1360,9 +1730,14 @@
   ],
   "correct": 1,
   "explanation": "Веб-камера знімає зображення і передає його співрозмовнику у відеодзвінку.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "computer-systems",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 1,
   "grade": 2
  },
  {
@@ -1378,9 +1753,14 @@
   ],
   "correct": 0,
   "explanation": "Класифікація (сортування за категоріями) допомагає швидше знаходити потрібну річ.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "classification",
+  "conceptKey": "classification",
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1396,9 +1776,14 @@
   ],
   "correct": 0,
   "explanation": "В кожній ітерації: 10 + 20 = 30 кроків. 3 ітерації × 30 = 90 кроків.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "hard",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "conceptKey": "algorithms",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1414,9 +1799,14 @@
   ],
   "correct": 3,
   "explanation": "Навігатор збирає дані від багатьох машин і обчислює, де дорога вільніша.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "ai-tools",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1432,9 +1822,14 @@
   ],
   "correct": 2,
   "explanation": "Кроки алгоритму мають вести до мети: між набором води й поливом треба підійти до квітки.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "computational-thinking",
   "topic": "algorithms",
+  "conceptKey": "algorithms",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1450,9 +1845,14 @@
   ],
   "correct": 3,
   "explanation": "Навіть упевнена відповідь програми може бути хибною. Про здоров'я питай лікарів і батьків.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "ai-basics",
   "topic": "ai-ethics-safety",
+  "conceptKey": null,
+  "progressionBand": "reason",
+  "version": 1,
   "grade": 2
  },
  {
@@ -1468,9 +1868,14 @@
   ],
   "correct": 3,
   "explanation": "Перший поворот праворуч: вгору → вправо. Другий: вправо → вниз.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "conceptKey": "algorithms",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1486,9 +1891,14 @@
   ],
   "correct": 0,
   "explanation": "Покрокова перевірка показує, де саме закралася помилка, — не треба починати з нуля.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "debugging",
+  "conceptKey": "debugging",
+  "progressionBand": "apply",
+  "version": 1,
   "grade": 2
  },
  {
@@ -1504,9 +1914,14 @@
   ],
   "correct": 3,
   "explanation": "Інформація — це будь-які відомості, які ми отримуємо, зберігаємо чи передаємо.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "information",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1522,9 +1937,14 @@
   ],
   "correct": 1,
   "explanation": "Зайвий шум ускладнює розпізнавання голосу — програмі важче «почути».",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "ai-basics",
   "topic": "ai-perception",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1540,9 +1960,14 @@
   ],
   "correct": 0,
   "explanation": "Для обчислень є калькулятор — правильний інструмент під задачу.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "informatics",
   "topic": "digital-tools",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1558,9 +1983,14 @@
   ],
   "correct": 3,
   "explanation": "Програми підказують комп'ютеру, що саме робити з інформацією.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "information",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1576,9 +2006,14 @@
   ],
   "correct": 0,
   "explanation": "Колір футболки — це несуттєва деталь, яка не впливає на успішність виконання завдання.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "abstraction",
+  "conceptKey": "abstraction",
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1594,9 +2029,14 @@
   ],
   "correct": 0,
   "explanation": "Листочки заміняють гроші у грі — це модель: головна роль збережена, деталі не важливі.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "abstraction",
+  "conceptKey": "abstraction",
+  "progressionBand": "recognize",
+  "version": 1,
   "grade": 2
  },
  {
@@ -1610,9 +2050,14 @@
   ],
   "correct": 0,
   "explanation": "Так, мікрофон — це «вуха» колонки: він вловлює звук голосу.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "ai-basics",
   "topic": "ai-perception",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 1,
   "grade": 2
  },
  {
@@ -1628,9 +2073,14 @@
   ],
   "correct": 3,
   "explanation": "Якщо послідовність повторюється, за нею можна передбачити наступний крок. Після червоного тут знову йде зелене.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "patterns",
+  "conceptKey": "patterns",
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1646,9 +2096,14 @@
   ],
   "correct": 1,
   "explanation": "Ми можемо передавати інформацію голосом або через текст — це усні й письмові повідомлення.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "information",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1664,9 +2119,14 @@
   ],
   "correct": 2,
   "explanation": "Коли говоримо по телефону, ми передаємо інформацію на відстань.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "information",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1682,9 +2142,14 @@
   ],
   "correct": 3,
   "explanation": "3 сторони по 60 кроків з поворотами 120° утворюють рівносторонній трикутник.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "hard",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "conceptKey": "algorithms",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1700,9 +2165,14 @@
   ],
   "correct": 2,
   "explanation": "Перші два «вперед» — синій колір (2 сині сторони). Потім колір змінюється на червоний — ще 2 сторони червоні. Разом: 2+2.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "hard",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "conceptKey": "algorithms",
+  "progressionBand": "apply",
+  "version": 3,
   "grade": 2
  },
  {
@@ -1718,9 +2188,14 @@
   ],
   "correct": 2,
   "explanation": "Програма навчена на багатьох текстах і передбачає, яке слово найімовірніше буде наступним.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "ai-tools",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 1,
   "grade": 2
  },
  {
@@ -1736,9 +2211,14 @@
   ],
   "correct": 0,
   "explanation": "Спершу файл зберігають, і аж тоді копіюють на флешку.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "informatics",
   "topic": "digital-tools",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1754,9 +2234,14 @@
   ],
   "correct": 1,
   "explanation": "Абстрагування допомагає помітити головне. Усі ці предмети різні на вигляд і смак, але мають спільну важливу ознаку: це фрукти.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "abstraction",
+  "conceptKey": "abstraction",
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1772,9 +2257,14 @@
   ],
   "correct": 0,
   "explanation": "Ти не зможеш подивитися мультик, якщо жодна з двох умов («уроки» і «допомога») не виконана.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "logic",
+  "conceptKey": "logic",
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1790,9 +2280,14 @@
   ],
   "correct": 3,
   "explanation": "Ми чуємо дощ, тому це слухова інформація.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "information",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1808,9 +2303,14 @@
   ],
   "correct": 1,
   "explanation": "Одноманітний підрахунок — сильна сторона комп'ютера: швидко і без помилок.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "ai-basics",
   "topic": "human-vs-ai",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 1,
   "grade": 2
  },
  {
@@ -1826,9 +2326,14 @@
   ],
   "correct": 3,
   "explanation": "Газета зроблена з паперу, тож її місце в контейнері для паперу.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "classification",
+  "conceptKey": "classification",
+  "progressionBand": "apply",
+  "version": 1,
   "grade": 2
  },
  {
@@ -1844,9 +2349,14 @@
   ],
   "correct": 3,
   "explanation": "І люди, і техніка можуть надсилати й отримувати інформацію.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "information",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1862,9 +2372,14 @@
   ],
   "correct": 0,
   "explanation": "Кожна команда «вперед» малює одну лінію. Три команди — три лінії.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "conceptKey": "algorithms",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1880,9 +2395,14 @@
   ],
   "correct": 3,
   "explanation": "Цикл виконується 5 разів, кожного разу — 1 поворот праворуч. Разом 5 поворотів.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "hard",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "conceptKey": "algorithms",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1898,9 +2418,14 @@
   ],
   "correct": 3,
   "explanation": "Розклад відповідає на питання «що і коли». Погода на це не впливає.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "abstraction",
+  "conceptKey": "abstraction",
+  "progressionBand": "apply",
+  "version": 1,
   "grade": 2
  },
  {
@@ -1916,9 +2441,14 @@
   ],
   "correct": 2,
   "explanation": "Один ланцюжок передач швидший, ніж десятки окремих походів між партами.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "efficiency",
+  "conceptKey": "efficiency",
+  "progressionBand": "apply",
+  "version": 1,
   "grade": 2
  },
  {
@@ -1934,9 +2464,14 @@
   ],
   "correct": 2,
   "explanation": "Коли відчуваємо запах, ми сприймаємо нюхову інформацію.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "information",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -1952,9 +2487,14 @@
   ],
   "correct": 0,
   "explanation": "Програма виділяє слова зі звуку. Коли навколо шум, слова «губляться» і розпізнати їх важче.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "ai-perception",
+  "conceptKey": null,
+  "progressionBand": "reason",
+  "version": 1,
   "grade": 2
  },
  {
@@ -1968,9 +2508,14 @@
   ],
   "correct": 0,
   "explanation": "Так, Інтернет — це велика мережа, що з'єднує безліч комп'ютерів.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "networks-internet",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 1,
   "grade": 2
  },
  {
@@ -1986,9 +2531,14 @@
   ],
   "correct": 1,
   "explanation": "Що різноманітніші приклади, то краще програма впізнаватиме нові автобуси.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "how-ai-learns",
+  "conceptKey": null,
+  "progressionBand": "reason",
+  "version": 1,
   "grade": 2
  },
  {
@@ -2012,9 +2562,14 @@
   },
   "correct": null,
   "explanation": "Спершу дата, потім список, тоді запрошення — і аж тоді їх можна роздавати.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "computational-thinking",
   "topic": "decomposition",
+  "conceptKey": "decomposition",
+  "progressionBand": "apply",
+  "version": 1,
   "grade": 2
  },
  {
@@ -2030,9 +2585,14 @@
   ],
   "correct": 3,
   "explanation": "Аватарка не має видавати, хто ти і де тебе шукати. Малюнок — безпечний вибір.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "informatics",
   "topic": "digital-safety",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 1,
   "grade": 2
  },
  {
@@ -2048,9 +2608,14 @@
   ],
   "correct": 2,
   "explanation": "Правило «І» вимагає обох умов. Одна виконана — цього замало.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "computational-thinking",
   "topic": "logic",
+  "conceptKey": "logic",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2080,9 +2645,14 @@
   },
   "correct": null,
   "explanation": "Значки-піктограми підказують дію без слів — так швидше орієнтуватися у програмі.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "digital-tools",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 1,
   "grade": 2
  },
  {
@@ -2098,9 +2668,14 @@
   ],
   "correct": 1,
   "explanation": "Кнопка — простий вимикач. А щоб зрозуміти людську мову, потрібна навчена програма.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "what-is-ai",
+  "conceptKey": null,
+  "progressionBand": "reason",
+  "version": 1,
   "grade": 2
  },
  {
@@ -2116,9 +2691,14 @@
   ],
   "correct": 3,
   "explanation": "«Крім червоних» — це заперечення: усі кольори дозволені, червоний — ні.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "logic",
+  "conceptKey": "logic",
+  "progressionBand": "apply",
+  "version": 1,
   "grade": 2
  },
  {
@@ -2134,9 +2714,14 @@
   ],
   "correct": 0,
   "explanation": "Ефективність — це вибір найшвидшого та найзручнішого способу виконати дію (пачками швидше, ніж по одній).",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "efficiency",
+  "conceptKey": "efficiency",
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2166,9 +2751,14 @@
   },
   "correct": null,
   "explanation": "Клавіатура — текст, мишка — курсор, монітор — зображення, принтер — друк.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "informatics",
   "topic": "computer-systems",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 1,
   "grade": 2
  },
  {
@@ -2184,9 +2774,14 @@
   ],
   "correct": 2,
   "explanation": "Навчившись на прикладах, програма впізнає їх навіть на нових фото.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "how-ai-learns",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2202,9 +2797,14 @@
   ],
   "correct": 2,
   "explanation": "Зібрані дані допомагають порівнювати й помічати закономірності.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "data",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2220,9 +2820,14 @@
   ],
   "correct": 3,
   "explanation": "Хибна інформація — це така, що не відповідає дійсності.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "information",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2238,9 +2843,14 @@
   ],
   "correct": 3,
   "explanation": "Декомпозиція допомагає поділити велику справу на частини-результати. Для замку це частини самого замку, а не інструменти чи випадкові ознаки.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "decomposition",
+  "conceptKey": "decomposition",
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2256,9 +2866,14 @@
   ],
   "correct": 1,
   "explanation": "Несподівані ситуації вимагають кмітливості — тут людина поки сильніша за програму.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "human-vs-ai",
+  "conceptKey": null,
+  "progressionBand": "reason",
+  "version": 1,
   "grade": 2
  },
  {
@@ -2288,9 +2903,14 @@
   },
   "correct": null,
   "explanation": "Класифікація — кожен предмет належить до групи за своєю головною ознакою.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "classification",
+  "conceptKey": "classification",
+  "progressionBand": "apply",
+  "version": 1,
   "grade": 2
  },
  {
@@ -2306,9 +2926,14 @@
   ],
   "correct": 3,
   "explanation": "Надійний план має зрозумілий порядок кроків. Коли дії йдуть послідовно, менше шансів щось пропустити.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "algorithms",
+  "conceptKey": "algorithms",
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2324,9 +2949,14 @@
   ],
   "correct": 1,
   "explanation": "Фото — це особиста інформація. Її не можна надсилати без дозволу батьків нікому, навіть «роботу».",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "ai-ethics-safety",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2342,9 +2972,14 @@
   ],
   "correct": 1,
   "explanation": "Цикл виконується 5 разів, кожного разу малюється 1 лінія (вперед 20). Разом 5 ліній.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "conceptKey": "repetition",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2360,9 +2995,14 @@
   ],
   "correct": 3,
   "explanation": "Числа й приклади — це числова інформація.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "information",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2378,9 +3018,14 @@
   ],
   "correct": 2,
   "explanation": "Програмі потрібні точні кроки. Досвід «на око» — це відчуття, які складно перетворити на команди.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "human-vs-ai",
+  "conceptKey": null,
+  "progressionBand": "reason",
+  "version": 1,
   "grade": 2
  },
  {
@@ -2396,9 +3041,14 @@
   ],
   "correct": 3,
   "explanation": "8 сторін по 40 кроків з поворотами 45° (8 × 45° = 360°) — правильний восьмикутник.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "hard",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "conceptKey": "algorithms",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2414,9 +3064,14 @@
   ],
   "correct": 0,
   "explanation": "Розклад — прості правила, а впізнавання голосу потребує навчання — це ШІ.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "what-is-ai",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2432,9 +3087,14 @@
   ],
   "correct": 2,
   "explanation": "Програма розпізнає звуки мови й перетворює їх на текст.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "ai-perception",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2450,9 +3110,14 @@
   ],
   "correct": 1,
   "explanation": "Мікрофон перетворює звук на сигнал, який розуміє комп'ютер. Динамік робить навпаки.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "computer-systems",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 1,
   "grade": 2
  },
  {
@@ -2468,9 +3133,14 @@
   ],
   "correct": 3,
   "explanation": "5 сторін по 50 кроків з поворотами 72° (5 × 72° = 360°) — правильний п'ятикутник.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "hard",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "conceptKey": "repetition",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2486,9 +3156,14 @@
   ],
   "correct": 3,
   "explanation": "Незбережена робота живе в тимчасовій пам'яті — без живлення вона втрачається.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "informatics",
   "topic": "computer-systems",
+  "conceptKey": null,
+  "progressionBand": "reason",
+  "version": 1,
   "grade": 2
  },
  {
@@ -2502,9 +3177,14 @@
   ],
   "correct": 0,
   "explanation": "Так. Число в циклі точно задає кількість повторень.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "repetition",
+  "conceptKey": "repetition",
+  "progressionBand": "recognize",
+  "version": 1,
   "grade": 2
  },
  {
@@ -2520,9 +3200,14 @@
   ],
   "correct": 1,
   "explanation": "«Одне на вибір» означає: після вибору другий варіант недоступний.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "computational-thinking",
   "topic": "logic",
+  "conceptKey": "logic",
+  "progressionBand": "apply",
+  "version": 1,
   "grade": 2
  },
  {
@@ -2538,9 +3223,14 @@
   ],
   "correct": 3,
   "explanation": "Фільтрація — це коли ти залишаєш лише те, що відповідає умові (тут — тільки сині фішки).",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "classification",
+  "conceptKey": "classification",
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2554,9 +3244,14 @@
   ],
   "correct": 1,
   "explanation": "Ні. Умова «уроки зроблені» не виконана, тому дозвіл із правила не діє.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "computational-thinking",
   "topic": "logic",
+  "conceptKey": "logic",
+  "progressionBand": "reason",
+  "version": 1,
   "grade": 2
  },
  {
@@ -2572,9 +3267,14 @@
   ],
   "correct": 3,
   "explanation": "Тут чіткий шаблон чергування: ⭐, 🔵, ⭐, 🔵... Тому після ⭐ йде 🔵.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "patterns",
+  "conceptKey": "patterns",
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2590,9 +3290,14 @@
   ],
   "correct": 3,
   "explanation": "3 жовті сторони по 60 кроків з поворотами 90°, потім зелена четверта сторона — утворюється замкнений квадрат: три жовті сторони і одна зелена.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "hard",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "conceptKey": "algorithms",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2608,9 +3313,14 @@
   ],
   "correct": 1,
   "explanation": "Фотографія, малюнок чи схема — це графічна інформація.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "information",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2626,9 +3336,14 @@
   ],
   "correct": 2,
   "explanation": "В кожній ітерації: 1-ша лінія червона (колір червоний → вперед), 2-га синя (колір синій → вперед). іт1: л1=червона, л2=синя. іт2: л3=червона, л4=синя. 4-та лінія — синя.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "hard",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "conceptKey": "patterns",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2644,9 +3359,14 @@
   ],
   "correct": 2,
   "explanation": "Перед командою «вперед» встановлено зелений колір — лінія буде зеленою.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "conceptKey": "patterns",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2662,9 +3382,14 @@
   ],
   "correct": 1,
   "explanation": "Зовнішній цикл виконується 3 рази. Кожного разу внутрішній цикл малює повний квадрат (4 сторони × 90°). Разом 3 квадрати.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "hard",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "conceptKey": "algorithms",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2680,9 +3405,14 @@
   ],
   "correct": 2,
   "explanation": "За одну ітерацію: 5+10+15 = 30 кроків.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "hard",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "conceptKey": "repetition",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2698,9 +3428,14 @@
   ],
   "correct": 3,
   "explanation": "Абстрагування — залишити головні ознаки (стіни, дах, двері) і відкинути дрібниці.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "computational-thinking",
   "topic": "abstraction",
+  "conceptKey": "abstraction",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2716,9 +3451,14 @@
   ],
   "correct": 1,
   "explanation": "4 × 45° = 180°. Поворот на 180° від «вгору» дає напрямок «вниз».",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "hard",
   "track": "informatics",
   "topic": "algorithms-programming",
+  "conceptKey": "algorithms",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2734,9 +3474,14 @@
   ],
   "correct": 0,
   "explanation": "Ми повторюємо дію знову і знову, поки не станеться щось важливе — і тоді зупиняємось. Тут зупинка відбувається, коли чашка стає повною.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "repetition",
+  "conceptKey": "repetition",
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2752,9 +3497,14 @@
   ],
   "correct": 3,
   "explanation": "Сайт — це сторінки в Інтернеті з текстом, картинками чи відео.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "networks-internet",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2770,9 +3520,14 @@
   ],
   "correct": 2,
   "explanation": "Жест показує, що людина вітається — це теж повідомлення, тобто інформація.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "information",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 3,
   "grade": 2
  },
  {
@@ -2796,9 +3551,14 @@
   },
   "correct": 1,
   "explanation": "Щоразу додаємо 2: після 7 буде 9.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "computational-thinking",
   "topic": "patterns",
+  "conceptKey": "patterns",
+  "progressionBand": "apply",
+  "version": 1,
   "grade": 2
  },
  {
@@ -2814,9 +3574,14 @@
   ],
   "correct": 0,
   "explanation": "У пам'яті зберігається все, з чим працює комп'ютер: програми, малюнки, тексти.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "computer-systems",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 1,
   "grade": 2
  },
  {
@@ -2832,9 +3597,14 @@
   ],
   "correct": 0,
   "explanation": "Закономірність — це чергування трьох кольорів: зелений, червоний, жовтий. Після червоного має йти жовтий.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "patterns",
+  "conceptKey": "patterns",
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2850,9 +3620,14 @@
   ],
   "correct": 1,
   "explanation": "Щоб виконати будь-який план, треба спершу зібрати все необхідне — те, що потрібно «до старту».",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "algorithms",
+  "conceptKey": "algorithms",
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2868,9 +3643,14 @@
   ],
   "correct": 3,
   "explanation": "Налагодження — знайти неправильний крок. Спершу шкарпетки, потім черевики.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "computational-thinking",
   "topic": "debugging",
+  "conceptKey": "debugging",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2886,9 +3666,14 @@
   ],
   "correct": 2,
   "explanation": "Крок за кроком кожна дія проста. Без поділу велика модель здавалася б неможливою.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "computational-thinking",
   "topic": "decomposition",
+  "conceptKey": "decomposition",
+  "progressionBand": "reason",
+  "version": 1,
   "grade": 2
  },
  {
@@ -2904,9 +3689,14 @@
   ],
   "correct": 1,
   "explanation": "Роботу треба зберегти — інакше вона зникне після закриття програми.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "digital-tools",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2922,9 +3712,14 @@
   ],
   "correct": 2,
   "explanation": "Решта — фрукти, а м'яч — іграшка. Він не підходить під спільну ознаку.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "computational-thinking",
   "topic": "classification",
+  "conceptKey": "classification",
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -2938,9 +3733,14 @@
   },
   "correct": null,
   "explanation": "4 повторення × 2 кроки = 8 кроків.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "computational-thinking",
   "topic": "repetition",
+  "conceptKey": "repetition",
+  "progressionBand": "apply",
+  "version": 1,
   "grade": 2
  },
  {
@@ -2964,9 +3764,14 @@
   },
   "correct": null,
   "explanation": "Спершу ямка, потім насінина, засипаємо і поливаємо.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "computational-thinking",
   "topic": "algorithms",
+  "conceptKey": "algorithms",
+  "progressionBand": "apply",
+  "version": 1,
   "grade": 2
  },
  {
@@ -2982,9 +3787,14 @@
   ],
   "correct": 1,
   "explanation": "Поділ на частини дозволяє працювати одночасно — справа йде швидше.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "computational-thinking",
   "topic": "decomposition",
+  "conceptKey": "decomposition",
+  "progressionBand": "apply",
+  "version": 1,
   "grade": 2
  },
  {
@@ -3000,9 +3810,14 @@
   ],
   "correct": 0,
   "explanation": "Програма знає лише те, що бачила у прикладах.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "how-ai-learns",
+  "conceptKey": null,
+  "progressionBand": "apply",
+  "version": 2,
   "grade": 2
  },
  {
@@ -3018,9 +3833,14 @@
   ],
   "correct": 0,
   "explanation": "Зображення людини — її особиста справа. Навіть жартівливу картинку поширюють лише за згодою.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "ai-basics",
   "topic": "ai-ethics-safety",
+  "conceptKey": null,
+  "progressionBand": "reason",
+  "version": 1,
   "grade": 2
  },
  {
@@ -3036,9 +3856,14 @@
   ],
   "correct": 1,
   "explanation": "Те, що ти отримуєш після виконання всіх кроків — це результат. Усі дії в рецепті зроблені заради готового торта.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "computational-thinking",
   "topic": "algorithms",
+  "conceptKey": "algorithms",
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -3054,9 +3879,14 @@
   ],
   "correct": 1,
   "explanation": "Якщо ми щось записали або намалювали — це можна переглянути пізніше.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "informatics",
   "topic": "information",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 2,
   "grade": 2
  },
  {
@@ -3072,9 +3902,14 @@
   ],
   "correct": 2,
   "explanation": "Дружба — це справжні почуття і турбота. Програма може лише вдавати їх словами.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "easy",
   "track": "ai-basics",
   "topic": "human-vs-ai",
+  "conceptKey": null,
+  "progressionBand": "recognize",
+  "version": 1,
   "grade": 2
  },
  {
@@ -3090,9 +3925,14 @@
   ],
   "correct": 0,
   "explanation": "«Подарунок за пароль» — класична пастка: так крадуть акаунти.",
+  "img": null,
+  "imageAlt": null,
   "difficulty": "medium",
   "track": "informatics",
   "topic": "digital-safety",
+  "conceptKey": null,
+  "progressionBand": "reason",
+  "version": 1,
   "grade": 2
  }
 ]

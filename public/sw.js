@@ -99,8 +99,8 @@ self.addEventListener('fetch', (event) => {
     // Навігаційні запити (HTML-сторінки): network-first
     // Якщо мережі немає — показуємо offline.html
     event.respondWith(networkFirstWithOfflineFallback(event.request));
-  } else if (url.pathname.startsWith('/questions/') || url.pathname.startsWith('/lessons/') || url.pathname.startsWith('/path/')) {
-    // Бандли питань, мікро-уроків і карт шляху — контент, що оновлюється
+  } else if (url.pathname.startsWith('/questions/') || url.pathname.startsWith('/lessons/') || url.pathname.startsWith('/path/') || url.pathname.startsWith('/content-packs/')) {
+    // Бандли питань, мікро-уроків, карт шляху й ігрового контенту — дані, що оновлюються
     // частіше за код. Network-first: онлайн завжди свіжий контент (cache-first
     // підсовував би старий бандл до зміни CACHE_NAME), офлайн — з кешу.
     event.respondWith(networkFirstWithCacheFallback(event.request));

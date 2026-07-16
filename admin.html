@@ -78,6 +78,7 @@
       <button data-tab="missions"   class="admin-tab"><i class="fas fa-rocket" aria-hidden="true"></i> Місії</button>
       <button data-tab="lessons"    class="admin-tab"><i class="fas fa-book-open" aria-hidden="true"></i> Уроки</button>
       <button data-tab="path"       class="admin-tab"><i class="fas fa-map-signs" aria-hidden="true"></i> Шлях</button>
+      <button data-tab="publication" class="admin-tab"><i class="fas fa-cloud-upload-alt" aria-hidden="true"></i> Публікація</button>
     </nav>
 
     <main id="main-content" class="admin-main">
@@ -201,6 +202,23 @@
       <section id="tab-missions" class="tab-panel hidden">
         <div class="admin-section-header">
           <h2 class="admin-section-title">Реєстр місій</h2>
+          <div class="admin-section-actions">
+            <button id="add-simulator-mission-btn" class="btn-adm-violet" type="button">
+              <i class="fas fa-sitemap" aria-hidden="true"></i> Новий симулятор
+            </button>
+            <button id="add-scenario-mission-btn" class="btn-adm-violet" type="button">
+              <i class="fas fa-comments" aria-hidden="true"></i> Нова ситуаційна гра
+            </button>
+            <button id="add-sequence-mission-btn" class="btn-adm-violet" type="button">
+              <i class="fas fa-list-ol" aria-hidden="true"></i> Нова гра-кроки
+            </button>
+            <button id="add-sorting-mission-btn" class="btn-adm-violet" type="button">
+              <i class="fas fa-layer-group" aria-hidden="true"></i> Нова гра-сортування
+            </button>
+            <button id="add-mission-btn" class="btn-adm-emerald" type="button">
+              <i class="fas fa-plus" aria-hidden="true"></i> Нова місія
+            </button>
+          </div>
         </div>
         <div class="admin-filter-bar">
           <select id="m-filter-track" class="adm-input adm-input--sm adm-input--auto">
@@ -231,8 +249,7 @@
             </button>
           </div>
         </div>
-        <p class="admin-section-note">Дітям уроки їдуть статичним бандлом: після публікації запусти
-          <code>cd backend &amp;&amp; npm run export:lessons</code> і закоміть <code>public/lessons/</code>.</p>
+        <p class="admin-section-note">Статус «Опубліковано» фіксує перевірену версію уроку. Щоб доставити всі перевірені зміни дітям, скористайся вкладкою «Публікація».</p>
         <div class="admin-filter-bar">
           <span id="l-count" class="admin-filter-count"></span>
         </div>
@@ -252,9 +269,8 @@
             </button>
           </div>
         </div>
-        <p class="admin-section-note">Зміни впливають на дітей після
-          <code>cd backend &amp;&amp; npm run export:path</code> і коміту <code>public/path/</code>.
-          Сервер зберігає кожну ревізію, тому прогрес зі старого бандла не втрачається.
+        <p class="admin-section-note">Збережена карта потрапляє до дітей після запуску у вкладці «Публікація».
+          Сервер зберігає кожну ревізію, тому прогрес зі старого набору не втрачається.
           Зміна активності кроку автоматично піднімає його версію.</p>
         <div class="admin-filter-bar">
           <select id="pm-grade" class="adm-input adm-input--sm adm-input--auto" aria-label="Клас карти">
@@ -274,6 +290,21 @@
         <p id="pm-error" class="adm-form-error" role="alert"></p>
       </section>
 
+      <!-- Вкладка: Публікація -->
+      <section id="tab-publication" class="tab-panel hidden">
+        <div class="admin-section-header">
+          <div>
+            <h2 class="admin-section-title">Публікація контенту</h2>
+            <p class="admin-section-note">Один запуск збирає лише опубліковані версії питань, уроків, місій і карт, перевіряє їхній склад та доставляє дітям. Кожен запуск зберігається в журналі.</p>
+          </div>
+          <button id="publish-content-btn" class="btn-adm-sky" type="button">
+            <i class="fas fa-cloud-upload-alt" aria-hidden="true"></i> Опублікувати для дітей
+          </button>
+        </div>
+        <p id="publication-status" class="admin-section-note" role="status" aria-live="polite">Завантаження стану…</p>
+        <div id="publication-list" class="admin-list admin-list--sm"></div>
+      </section>
+
       <!-- Вкладка: Питання -->
       <section id="tab-questions" class="tab-panel hidden">
         <div class="admin-section-header">
@@ -287,6 +318,15 @@
 
         <!-- Фільтри -->
         <div class="admin-filter-bar">
+          <input id="q-filter-search" class="adm-input adm-input--sm" type="search"
+                 placeholder="Пошук за текстом або ID" aria-label="Пошук питань" maxlength="120"/>
+          <select id="q-filter-status" class="adm-input adm-input--sm adm-input--auto">
+            <option value="">Всі статуси</option>
+            <option value="draft">Чернетки</option>
+            <option value="review">На перевірці</option>
+            <option value="published">Опубліковані</option>
+            <option value="archived">Архів</option>
+          </select>
           <select id="q-filter-grade" class="adm-input adm-input--sm adm-input--auto">
             <option value="">Всі класи</option>
             <option value="1">1 клас</option>
@@ -478,7 +518,10 @@
         <!-- Зображення -->
         <div>
           <label for="qf-img" class="adm-label">Зображення — URL (необов'язково)</label>
-          <input type="url" id="qf-img" placeholder="https://..." class="adm-input adm-input--sm"/>
+          <input type="text" id="qf-img" placeholder="/assets/task.svg або https://..." class="adm-input adm-input--sm"/>
+          <label for="qf-image-alt" class="adm-label">Опис зображення для доступності</label>
+          <input type="text" id="qf-image-alt" maxlength="240" class="adm-input adm-input--sm"
+                 placeholder="Що важливого зображено"/>
           <img id="qf-img-preview" src="" alt="Попередній перегляд зображення до питання"
             class="qf-image-preview hidden"/>
         </div>
@@ -678,6 +721,9 @@
         <p id="lf-error" class="adm-form-error" role="alert"></p>
         <div class="adm-form-actions">
           <button type="submit" id="lf-submit" class="btn-adm-emerald">Зберегти</button>
+          <button type="button" id="lf-preview" class="btn-adm-violet">
+            <i class="fas fa-eye" aria-hidden="true"></i> Переглянути
+          </button>
           <button type="button" id="lf-cancel" class="btn-adm-slate">Скасувати</button>
         </div>
       </form>

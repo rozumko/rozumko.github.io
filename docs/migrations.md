@@ -106,6 +106,41 @@ Migration `0035` closes the original seed dependency: the Grade 2 path from
 published lesson rows before `export:path` can succeed. Existing authored rows
 are preserved with `ON CONFLICT DO NOTHING`.
 
+Migration `0036` adds the question editorial workflow and immutable revision
+history. It backfills existing live questions as `published`, records their
+current state as a baseline revision, then changes the default for newly
+created questions to `draft`. Deploy this migration before backend code that
+filters child-facing question queries by `editorial_status`; otherwise the
+startup migration check intentionally fails closed.
+
+Migration `0037` adds the same audited workflow to micro-lessons. Existing
+published lessons are backfilled into immutable `published_snapshot` values;
+this lets an administrator edit a newer draft without changing the lesson
+currently exported to children. The export reads only that published snapshot
+and removes archived stale JSON files.
+
+Migration `0038` adds audited editorial state and immutable revisions to
+missions. Existing `active` missions become `published` with a frozen snapshot.
+New question-set missions start as drafts, and every publish records the exact
+apply/confirm question-set composition exposed by that content version.
+
+Migration `0039` registers the existing sequence and digital-safety scenario
+games in the mission editorial registry. Their first admin edit imports the
+bundled last-known-good content into a draft; later publications use the normal
+immutable mission snapshot and static content-pack export.
+
+Migration `0040` registers the two code-owned computer simulators in the same
+editorial registry. Their initial published snapshots point to bundled content;
+the first admin edit imports every rendered text variant and stable action slot.
+State mutations, completion rules and fail-node behavior remain executable code
+and are never serialized into the authored package.
+
+Migration `0041` adds the audited `content_publications` queue. Each row freezes
+the exact published content-version manifest requested by an administrator,
+records the GitHub Actions run and final deployed manifest, and permits only one
+queued/running publication at a time. The table has RLS enabled and is accessed
+only through the backend.
+
 `GET /ready` and `GET /ping` perform the same check. Migration drift returns
 HTTP `503` with `{ "status": "error", "db": "migration_required" }` without
 exposing migration names or timestamps.

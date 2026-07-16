@@ -23,5 +23,13 @@ services:
       # webhook responds 503 fail-closed, so deploying without it is safe.
       - key: HOME_PAYMENT_WEBHOOK_SECRET
         sync: false
+      # Fine-grained token scoped to this repository with Actions: write only.
+      - key: CONTENT_PUBLISH_GITHUB_TOKEN
+        sync: false
+      - key: CONTENT_PUBLISH_GITHUB_REPOSITORY
+        sync: false
+      # Must match the GitHub Actions secret of the same name (32+ chars).
+      - key: CONTENT_PUBLISH_CALLBACK_SECRET
+        sync: false
       - key: NODE_ENV
         value: production

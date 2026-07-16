@@ -114,7 +114,7 @@ order by tablename;
 | Deploy gate | Auto-deploy waits for checks to pass | Render deploy setting or last deploy evidence |  |
 | Instance count | `numInstances = 1` while `RATE_LIMIT_STORE=memory` | Render scaling setting |  |
 | Health check | `/health` is configured as health check path | Render setting and live response |  |
-| Secrets | `DATABASE_URL`, `SUPABASE_URL`, `ATTEMPT_SECRET`, `HOME_PAYMENT_WEBHOOK_SECRET` are stored as secret env vars | Env var names only, no values |  |
+| Secrets | Backend and content-publication secret names from `backend/render.yaml` are stored as secret env vars; GitHub stores `CONTENT_EXPORT_DATABASE_URL`, callback URL and callback secret | Env var names only, no values |  |
 
 Live checks:
 

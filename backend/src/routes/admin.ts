@@ -1,14 +1,24 @@
 import type { FastifyInstance } from 'fastify'
-import { eq, desc, count, and, asc, inArray } from 'drizzle-orm'
+import { eq, desc, count, and, asc, inArray, ilike, or, sql } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { questions, accessCodes, attempts, attemptQuestions, appUsers, olympiadEvents, eventQuestions, schoolSessions, schoolSessionQuestions, homeLeads, homeEntitlements, homeEntitlementEvents, homePathProgress, missions, microLessons, pathMapRevisions, pathMaps, type QuestionTrack } from '../db/schema.js'
+import { questions, questionRevisions, accessCodes, attempts, attemptQuestions, appUsers, olympiadEvents, eventQuestions, schoolSessions, schoolSessionQuestions, homeLeads, homeEntitlements, homeEntitlementEvents, homePathProgress, missions, missionRevisions, microLessons, microLessonRevisions, pathMapRevisions, pathMaps, contentPublications, type QuestionTrack } from '../db/schema.js'
 import { normalizeLessonSlug, normalizeLessonStatus, normalizeLessonContent, lessonContentChanged } from './lesson-validation.js'
+import { contentFromLessonRevision, lessonPublishedSnapshot, lessonRevisionSnapshot } from './lesson-editorial.js'
+import { missionPublishedSnapshot, missionSnapshot, normalizeEditableMission, normalizeMissionSlug, normalizeMissionStatus, type NormalizedMissionInput } from './mission-editorial.js'
 import { validatePathMapPoints, bumpChangedStepVersions, pathMapLessonIds, type PathPointInput } from './path-map-validation.js'
 import { invalidatePathCatalogCache } from './path-catalog.js'
 import { ENTITLEMENT_STATUSES, normalizeEntitlementStatus, applyEntitlementChange } from './home-entitlement.js'
 import { requireAdmin } from '../lib/auth.js'
 import { assertQuestionsBelongToGrade, normalizeEventQuestionSelection } from './event-questions-validation.js'
 import { validateQuestionShape, type QuestionType } from './question-input-validation.js'
+import {
+  QUESTION_EDITORIAL_STATUSES,
+  normalizeQuestionEditorialStatus,
+  normalizeQuestionMedia,
+  questionReadinessIssues,
+  questionSnapshot,
+  restoredQuestionValues,
+} from './question-editorial.js'
 import { ALL_TOPICS, normalizeTopic, normalizeConceptKey, normalizeProgressionBand, type ConceptKey, type ProgressionBand } from '../lib/taxonomy.js'
 import {
   EVENT_STATUSES,
@@ -18,8 +28,16 @@ import {
   normalizeEventInput,
   normalizeEventPatch,
 } from './event-validation.js'
+import {
+  buildContentPublicationManifest,
+  contentManifestSha256,
+  dispatchContentPublication,
+} from '../lib/content-publication.js'
 
 class PathMapConflictError extends Error {}
+class QuestionEditConflictError extends Error {}
+class LessonEditConflictError extends Error {}
+class MissionEditConflictError extends Error {}
 
 function snapshotLessonVersions(points: PathPointInput[], versions: ReadonlyMap<string, number>): PathPointInput[] {
   return points.map(point => ({
@@ -93,13 +111,16 @@ async function questionIsLocked(questionId: string): Promise<boolean> {
     .limit(1)
   if (issued) return true
 
-  const [selectedForActiveEvent] = await db
+  const [selectedForLiveEvent] = await db
     .select({ id: eventQuestions.id })
     .from(eventQuestions)
     .innerJoin(olympiadEvents, eq(eventQuestions.eventId, olympiadEvents.id))
-    .where(and(eq(eventQuestions.questionId, questionId), eq(olympiadEvents.status, 'active')))
+    .where(and(
+      eq(eventQuestions.questionId, questionId),
+      inArray(olympiadEvents.status, ['published', 'active']),
+    ))
     .limit(1)
-  if (selectedForActiveEvent) return true
+  if (selectedForLiveEvent) return true
 
   // School-сесія читає поточний стан questions при join/скорингу, тож редагування
   // питання під час незавершеної гри розсинхронізувало б видане питання і ключ.
@@ -116,7 +137,55 @@ async function questionIsLocked(questionId: string): Promise<boolean> {
   return !!inLiveSchoolSession
 }
 
+async function questionHasEventReference(questionId: string): Promise<boolean> {
+  const [selected] = await db.select({ id: eventQuestions.id }).from(eventQuestions)
+    .where(eq(eventQuestions.questionId, questionId)).limit(1)
+  return !!selected
+}
+
 export async function adminRoutes(app: FastifyInstance) {
+
+  // Static bundles are published through an immutable, audited GitHub Actions job.
+  app.get('/content-publications', { preHandler: requireAdmin }, async (_req, reply) => {
+    const publications = await db.select().from(contentPublications)
+      .orderBy(desc(contentPublications.createdAt)).limit(20)
+    return reply.send({ publications })
+  })
+
+  app.post('/content-publications', { preHandler: requireAdmin }, async (req, reply) => {
+    const manifest = await buildContentPublicationManifest()
+    const expectedManifestSha256 = contentManifestSha256(manifest)
+    let publication
+    try {
+      ;[publication] = await db.insert(contentPublications).values({
+        expectedManifest: manifest,
+        expectedManifestSha256,
+        requestedBy: req.user!.id,
+      }).returning()
+    } catch (err) {
+      if ((err as { code?: string }).code === '23505') {
+        return reply.code(409).send({ error: 'Інша публікація вже виконується.' })
+      }
+      throw err
+    }
+
+    try {
+      const dispatched = await dispatchContentPublication(publication.id, expectedManifestSha256)
+      if (dispatched.workflowRunId || dispatched.workflowUrl) {
+        ;[publication] = await db.update(contentPublications).set(dispatched)
+          .where(eq(contentPublications.id, publication.id)).returning()
+      }
+      return reply.code(201).send({ publication })
+    } catch (err) {
+      await db.update(contentPublications).set({
+        status: 'failed',
+        failureReason: (err as Error).message.slice(0, 300),
+        completedAt: new Date(),
+      }).where(eq(contentPublications.id, publication.id))
+      req.log.error({ err, publicationId: publication.id }, 'content publication dispatch failed')
+      return reply.code(503).send({ error: 'Не вдалося запустити публікацію. Перевір налаштування сервісу.' })
+    }
+  })
 
   // GET /api/admin/stats
   app.get('/stats', { preHandler: requireAdmin }, async (_req, reply) => {
@@ -380,7 +449,10 @@ export async function adminRoutes(app: FastifyInstance) {
 
     const found = selection.questionIds.length
       ? await db
-          .select({ id: questions.id, grade: questions.grade, isOlympiad: questions.isOlympiad, type: questions.type })
+          .select({
+            id: questions.id, grade: questions.grade, isOlympiad: questions.isOlympiad,
+            type: questions.type, editorialStatus: questions.editorialStatus,
+          })
           .from(questions)
           .where(inArray(questions.id, selection.questionIds))
       : []
@@ -394,6 +466,10 @@ export async function adminRoutes(app: FastifyInstance) {
     const nonOlympiad = found.filter(q => !q.isOlympiad)
     if (nonOlympiad.length) {
       return reply.code(400).send({ error: `Питання ${nonOlympiad.map(q => q.id).join(', ')} не є олімпіадними (isOlympiad=false). До події можна додавати лише олімпіадні питання.` })
+    }
+    const unpublished = found.filter(q => q.editorialStatus !== 'published')
+    if (unpublished.length) {
+      return reply.code(400).send({ error: `Питання ${unpublished.map(q => q.id).join(', ')} не опубліковані.` })
     }
 
     // Усі типи мають серверне оцінювання і санітизацію ключів.
@@ -442,9 +518,9 @@ export async function adminRoutes(app: FastifyInstance) {
     return reply.send({ results: allAttempts })
   })
 
-  // GET /api/admin/questions?grade=&isOlympiad=&difficulty=&track=&topic=
+  // GET /api/admin/questions?grade=&isOlympiad=&difficulty=&track=&topic=&status=&search=
   app.get<{
-    Querystring: { grade?: string; isOlympiad?: string; difficulty?: string; track?: string; topic?: string }
+    Querystring: { grade?: string; isOlympiad?: string; difficulty?: string; track?: string; topic?: string; status?: string; search?: string }
   }>('/questions', {
     preHandler: requireAdmin,
     schema: {
@@ -457,11 +533,13 @@ export async function adminRoutes(app: FastifyInstance) {
           difficulty: { type: 'string', enum: ['easy', 'medium', 'hard'] },
           track:      { type: 'string', enum: ['informatics', 'computational-thinking', 'ai-basics'] },
           topic:      { type: 'string', enum: ALL_TOPICS as string[] },
+          status:     { type: 'string', enum: [...QUESTION_EDITORIAL_STATUSES] },
+          search:     { type: 'string', minLength: 1, maxLength: 120 },
         },
       },
     },
   }, async (req, reply) => {
-    const { grade, isOlympiad, difficulty, topic } = req.query
+    const { grade, isOlympiad, difficulty, topic, status, search } = req.query
     let track: QuestionTrack | null
     try {
       track = normalizeQuestionTrack(req.query.track)
@@ -474,12 +552,17 @@ export async function adminRoutes(app: FastifyInstance) {
     if (difficulty) filters.push(eq(questions.difficulty, difficulty))
     if (track)      filters.push(eq(questions.track,      track))
     if (topic)      filters.push(eq(questions.topic,      topic))
+    if (status)     filters.push(eq(questions.editorialStatus, normalizeQuestionEditorialStatus(status)))
+    if (search) {
+      const pattern = `%${search.trim().replaceAll('%', '\\%').replaceAll('_', '\\_')}%`
+      filters.push(or(ilike(questions.q, pattern), sql`${questions.id}::text ILIKE ${pattern}`)!)
+    }
 
     const list = await db
       .select()
       .from(questions)
       .where(filters.length ? and(...filters) : undefined)
-      .orderBy(desc(questions.createdAt))
+      .orderBy(desc(questions.updatedAt), desc(questions.createdAt))
     return reply.send({ questions: list })
   })
 
@@ -489,7 +572,7 @@ export async function adminRoutes(app: FastifyInstance) {
       q: string; grade: number; difficulty: string; track?: QuestionTrack | null; isOlympiad: boolean
       topic?: string | null; conceptKey?: string | null; progressionBand?: string | null
       type?: string; options: string[] | Record<string, unknown>
-      correct?: number; explanation?: string; code?: string
+      correct?: number; explanation?: string; code?: string; img?: string | null; imageAlt?: string | null
     }
   }>('/questions', {
     preHandler: requireAdmin,
@@ -511,7 +594,10 @@ export async function adminRoutes(app: FastifyInstance) {
           correct:     { oneOf: [{ type: 'integer', minimum: 0 }, { type: 'null' }] },
           explanation: { type: 'string' },
           code:        { type: 'string' },
+          img:         { oneOf: [{ type: 'string', maxLength: 500 }, { type: 'null' }] },
+          imageAlt:    { oneOf: [{ type: 'string', maxLength: 240 }, { type: 'null' }] },
         },
+        additionalProperties: false,
       },
     },
   }, async (req, reply) => {
@@ -521,11 +607,13 @@ export async function adminRoutes(app: FastifyInstance) {
     let topic: string | null
     let conceptKey: ConceptKey | null
     let progressionBand: ProgressionBand | null
+    let media: { img: string | null; imageAlt: string | null }
     try {
       track           = normalizeQuestionTrack(req.body.track)
       topic           = normalizeTopic(req.body.topic, track)
       conceptKey      = normalizeConceptKey(req.body.conceptKey)
       progressionBand = normalizeProgressionBand(req.body.progressionBand)
+      media             = normalizeQuestionMedia(req.body.img, req.body.imageAlt)
     } catch (err) {
       return reply.code(400).send({ error: (err as Error).message })
     }
@@ -538,10 +626,25 @@ export async function adminRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: (err as Error).message })
     }
 
-    const [inserted] = await db
-      .insert(questions)
-      .values({ q, grade, difficulty, track, topic, conceptKey, progressionBand, isOlympiad, type, options: shape.options as any, correct: shape.correct, explanation: explanation ?? null, code: code ?? null })
-      .returning({ id: questions.id })
+    const inserted = await db.transaction(async tx => {
+      const [row] = await tx
+        .insert(questions)
+        .values({
+          q: q.trim(), grade, difficulty, track, topic, conceptKey, progressionBand, isOlympiad,
+          type, options: shape.options as any, correct: shape.correct,
+          explanation: explanation?.trim() || null, code: code?.trim() || null,
+          ...media, editorialStatus: 'draft', createdBy: req.user!.id, updatedBy: req.user!.id,
+        })
+        .returning()
+      await tx.insert(questionRevisions).values({
+        questionId: row.id,
+        editVersion: row.editVersion,
+        action: 'create',
+        snapshot: questionSnapshot(row),
+        changedBy: req.user!.id,
+      })
+      return row
+    })
     return reply.code(201).send({ id: inserted.id })
   })
 
@@ -549,10 +652,11 @@ export async function adminRoutes(app: FastifyInstance) {
   app.put<{
     Params: { id: string }
     Body: {
+      expectedEditVersion: number
       q?: string; grade?: number; difficulty?: string; track?: QuestionTrack | null; isOlympiad?: boolean
       topic?: string | null; conceptKey?: string | null; progressionBand?: string | null
       type?: string; options?: string[] | Record<string, unknown>
-      correct?: number; explanation?: string; code?: string
+      correct?: number | null; explanation?: string; code?: string; img?: string | null; imageAlt?: string | null
     }
   }>('/questions/:id', {
     preHandler: requireAdmin,
@@ -564,7 +668,9 @@ export async function adminRoutes(app: FastifyInstance) {
       },
       body: {
         type: 'object',
+        required: ['expectedEditVersion'],
         properties: {
+          expectedEditVersion: { type: 'integer', minimum: 1 },
           q:           { type: 'string' },
           grade:       { type: 'integer', minimum: 1, maximum: 4 },
           difficulty:  { type: 'string', enum: ['easy', 'medium', 'hard'] },
@@ -578,6 +684,8 @@ export async function adminRoutes(app: FastifyInstance) {
           correct:     { oneOf: [{ type: 'integer', minimum: 0 }, { type: 'null' }] },
           explanation: { type: 'string' },
           code:        { type: 'string' },
+          img:         { oneOf: [{ type: 'string', maxLength: 500 }, { type: 'null' }] },
+          imageAlt:    { oneOf: [{ type: 'string', maxLength: 240 }, { type: 'null' }] },
         },
         additionalProperties: false,
       },
@@ -588,21 +696,34 @@ export async function adminRoutes(app: FastifyInstance) {
     let track: QuestionTrack | null | undefined
     let conceptKey: ConceptKey | null | undefined
     let progressionBand: ProgressionBand | null | undefined
-    try {
-      track           = b.track           !== undefined ? normalizeQuestionTrack(b.track) : undefined
-      conceptKey      = b.conceptKey      !== undefined ? normalizeConceptKey(b.conceptKey) : undefined
-      progressionBand = b.progressionBand !== undefined ? normalizeProgressionBand(b.progressionBand) : undefined
-    } catch (err) {
-      return reply.code(400).send({ error: (err as Error).message })
-    }
 
-    // Завантажити поточний стан питання для merge-валідації
     const [current] = await db
-      .select({ type: questions.type, correct: questions.correct, options: questions.options, track: questions.track, topic: questions.topic, version: questions.version })
+      .select()
       .from(questions)
       .where(eq(questions.id, id))
       .limit(1)
     if (!current) return reply.code(404).send({ error: 'Питання не знайдено' })
+    if (current.editVersion !== b.expectedEditVersion) {
+      return reply.code(409).send({ error: 'Питання вже змінив інший редактор. Онови список і повтори правки.' })
+    }
+    if (current.publishedAt) {
+      return reply.code(409).send({ error: 'Опубліковане питання незмінне. Створи з нього нову чернетку, перевір і опублікуй окремо.' })
+    }
+
+    let media: { img: string | null; imageAlt: string | null } | undefined
+    try {
+      track           = b.track           !== undefined ? normalizeQuestionTrack(b.track) : undefined
+      conceptKey      = b.conceptKey      !== undefined ? normalizeConceptKey(b.conceptKey) : undefined
+      progressionBand = b.progressionBand !== undefined ? normalizeProgressionBand(b.progressionBand) : undefined
+      if (b.img !== undefined || b.imageAlt !== undefined) {
+        media = normalizeQuestionMedia(
+          b.img !== undefined ? b.img : current.img,
+          b.imageAlt !== undefined ? b.imageAlt : current.imageAlt,
+        )
+      }
+    } catch (err) {
+      return reply.code(400).send({ error: (err as Error).message })
+    }
 
     // Пара track+topic валідується у майбутньому (merged) стані: зміна track
     // без topic не може лишити тему чужого напряму
@@ -634,8 +755,11 @@ export async function adminRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: (err as Error).message })
     }
 
-    const updates: Record<string, unknown> = { updatedAt: new Date() }
-    if (b.q           !== undefined) updates.q           = b.q
+    const updates: Record<string, unknown> = { updatedAt: new Date(), updatedBy: req.user!.id }
+    if (current.editorialStatus === 'review' || current.editorialStatus === 'archived') {
+      updates.editorialStatus = 'draft'
+    }
+    if (b.q           !== undefined) updates.q           = b.q.trim()
     if (b.grade       !== undefined) updates.grade       = b.grade
     if (b.difficulty  !== undefined) updates.difficulty  = b.difficulty
     if (track         !== undefined) updates.track       = track
@@ -647,23 +771,219 @@ export async function adminRoutes(app: FastifyInstance) {
     // options/correct беремо з провалідованої форми (нормалізовані)
     if (b.options !== undefined || b.type !== undefined) updates.options = shape.options
     if (b.correct !== undefined || b.type !== undefined) updates.correct = shape.correct  // null очищає
-    if (b.explanation !== undefined) updates.explanation = b.explanation
-    if (b.code        !== undefined) updates.code        = b.code
-
-    // Змістовна правка (текст/варіанти/відповідь/тип) → нова версія питання
-    if (b.q !== undefined || b.options !== undefined || b.correct !== undefined || b.type !== undefined) {
-      updates.version = current.version + 1
+    if (b.explanation !== undefined) updates.explanation = b.explanation.trim() || null
+    if (b.code        !== undefined) updates.code        = b.code.trim() || null
+    if (media) {
+      updates.img = media.img
+      updates.imageAlt = media.imageAlt
     }
 
-    const [updated] = await db
-      .update(questions)
-      .set(updates)
-      .where(eq(questions.id, id))
-      .returning({ id: questions.id })
+    const contentFields = [
+      'q', 'options', 'correct', 'type', 'explanation', 'code', 'img', 'imageAlt',
+      'grade', 'difficulty', 'track', 'topic', 'conceptKey', 'progressionBand', 'isOlympiad',
+    ] as const
+    if (contentFields.some(field => Object.prototype.hasOwnProperty.call(b, field))) {
+      updates.version = current.version + 1
+    }
+    updates.editVersion = current.editVersion + 1
 
-    if (!updated) return reply.code(404).send({ error: 'Питання не знайдено' })
-    return reply.send({ id: updated.id })
+    try {
+      const updated = await db.transaction(async tx => {
+        const [row] = await tx
+          .update(questions)
+          .set(updates)
+          .where(and(eq(questions.id, id), eq(questions.editVersion, b.expectedEditVersion)))
+          .returning()
+        if (!row) throw new QuestionEditConflictError()
+        await tx.insert(questionRevisions).values({
+          questionId: row.id,
+          editVersion: row.editVersion,
+          action: 'update',
+          snapshot: questionSnapshot(row),
+          changedBy: req.user!.id,
+        })
+        return row
+      })
+      return reply.send({ id: updated.id, version: updated.version, editVersion: updated.editVersion })
+    } catch (err) {
+      if (err instanceof QuestionEditConflictError) {
+        return reply.code(409).send({ error: 'Питання вже змінив інший редактор. Онови список і повтори правки.' })
+      }
+      throw err
+    }
   })
+
+  // PUT /api/admin/questions/:id/status — explicit editorial transition.
+  app.put<{ Params: { id: string }; Body: { status: string; expectedEditVersion: number } }>(
+    '/questions/:id/status',
+    {
+      preHandler: requireAdmin,
+      schema: {
+        params: {
+          type: 'object', required: ['id'],
+          properties: { id: { type: 'string', format: 'uuid' } },
+        },
+        body: {
+          type: 'object', required: ['status', 'expectedEditVersion'], additionalProperties: false,
+          properties: {
+            status: { type: 'string', enum: [...QUESTION_EDITORIAL_STATUSES] },
+            expectedEditVersion: { type: 'integer', minimum: 1 },
+          },
+        },
+      },
+    },
+    async (req, reply) => {
+      let status
+      try { status = normalizeQuestionEditorialStatus(req.body.status) } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message })
+      }
+      const [current] = await db.select().from(questions).where(eq(questions.id, req.params.id)).limit(1)
+      if (!current) return reply.code(404).send({ error: 'Питання не знайдено' })
+      if (current.editVersion !== req.body.expectedEditVersion) {
+        return reply.code(409).send({ error: 'Питання вже змінив інший редактор. Онови список і повтори дію.' })
+      }
+      if (status === current.editorialStatus) return reply.send({ question: current })
+      if (current.publishedAt && !['published', 'archived'].includes(status)) {
+        return reply.code(400).send({ error: 'Опубліковану редакцію можна лише архівувати або опублікувати знову' })
+      }
+      if (status === 'review' || status === 'published') {
+        const issues = questionReadinessIssues(current)
+        if (issues.length) return reply.code(400).send({ error: `Контент не готовий: ${issues.join('; ')}` })
+      }
+      if (current.editorialStatus === 'published' && status !== 'published'
+        && (await questionIsLocked(current.id) || await questionHasEventReference(current.id))) {
+        return reply.code(409).send({ error: 'Опубліковане питання вже використовується — його не можна зняти з публікації' })
+      }
+
+      const now = new Date()
+      const updates: Record<string, unknown> = {
+        editorialStatus: status,
+        editVersion: current.editVersion + 1,
+        updatedAt: now,
+        updatedBy: req.user!.id,
+      }
+      if (status === 'published') {
+        updates.reviewedAt = now
+        updates.reviewedBy = req.user!.id
+        updates.publishedAt = now
+        updates.publishedBy = req.user!.id
+      }
+
+      try {
+        const updated = await db.transaction(async tx => {
+          const [row] = await tx.update(questions).set(updates).where(and(
+            eq(questions.id, current.id),
+            eq(questions.editVersion, req.body.expectedEditVersion),
+          )).returning()
+          if (!row) throw new QuestionEditConflictError()
+          await tx.insert(questionRevisions).values({
+            questionId: row.id, editVersion: row.editVersion, action: 'status',
+            snapshot: questionSnapshot(row), changedBy: req.user!.id,
+          })
+          return row
+        })
+        return reply.send({ question: updated })
+      } catch (err) {
+        if (err instanceof QuestionEditConflictError) {
+          return reply.code(409).send({ error: 'Питання вже змінив інший редактор. Онови список і повтори дію.' })
+        }
+        throw err
+      }
+    },
+  )
+
+  // GET /api/admin/questions/:id/revisions — immutable editorial history.
+  app.get<{ Params: { id: string } }>('/questions/:id/revisions', {
+    preHandler: requireAdmin,
+    schema: {
+      params: {
+        type: 'object', required: ['id'],
+        properties: { id: { type: 'string', format: 'uuid' } },
+      },
+    },
+  }, async (req, reply) => {
+    const revisions = await db.select().from(questionRevisions)
+      .where(eq(questionRevisions.questionId, req.params.id))
+      .orderBy(desc(questionRevisions.editVersion))
+    return reply.send({ revisions })
+  })
+
+  // POST /api/admin/questions/:id/restore — restore content as a new draft.
+  app.post<{ Params: { id: string }; Body: { revisionEditVersion: number; expectedEditVersion: number } }>(
+    '/questions/:id/restore',
+    {
+      preHandler: requireAdmin,
+      schema: {
+        params: {
+          type: 'object', required: ['id'],
+          properties: { id: { type: 'string', format: 'uuid' } },
+        },
+        body: {
+          type: 'object', required: ['revisionEditVersion', 'expectedEditVersion'], additionalProperties: false,
+          properties: {
+            revisionEditVersion: { type: 'integer', minimum: 1 },
+            expectedEditVersion: { type: 'integer', minimum: 1 },
+          },
+        },
+      },
+    },
+    async (req, reply) => {
+      const [current] = await db.select().from(questions).where(eq(questions.id, req.params.id)).limit(1)
+      if (!current) return reply.code(404).send({ error: 'Питання не знайдено' })
+      if (current.editVersion !== req.body.expectedEditVersion) {
+        return reply.code(409).send({ error: 'Питання вже змінив інший редактор. Онови список і повтори дію.' })
+      }
+      if (current.publishedAt) {
+        return reply.code(409).send({ error: 'Опубліковане питання незмінне. Віднови потрібну редакцію через нову чернетку.' })
+      }
+      if (await questionIsLocked(current.id)) {
+        return reply.code(409).send({ error: 'Питання вже використовується — відновлення змісту заблоковано' })
+      }
+      const [revision] = await db.select().from(questionRevisions).where(and(
+        eq(questionRevisions.questionId, current.id),
+        eq(questionRevisions.editVersion, req.body.revisionEditVersion),
+      )).limit(1)
+      if (!revision) return reply.code(404).send({ error: 'Ревізію не знайдено' })
+
+      const restored = restoredQuestionValues(revision.snapshot)
+      try {
+        validateQuestionShape(restored.type as QuestionType, restored.options, restored.correct as number | null)
+        normalizeQuestionTrack(restored.track)
+        normalizeTopic(restored.topic, restored.track as QuestionTrack | null)
+        normalizeQuestionMedia(restored.img, restored.imageAlt)
+      } catch (err) {
+        return reply.code(400).send({ error: `Ревізію неможливо відновити: ${(err as Error).message}` })
+      }
+
+      try {
+        const updated = await db.transaction(async tx => {
+          const [row] = await tx.update(questions).set({
+            ...restored,
+            version: current.version + 1,
+            editVersion: current.editVersion + 1,
+            editorialStatus: 'draft',
+            updatedAt: new Date(),
+            updatedBy: req.user!.id,
+          }).where(and(
+            eq(questions.id, current.id),
+            eq(questions.editVersion, req.body.expectedEditVersion),
+          )).returning()
+          if (!row) throw new QuestionEditConflictError()
+          await tx.insert(questionRevisions).values({
+            questionId: row.id, editVersion: row.editVersion, action: 'restore',
+            snapshot: questionSnapshot(row), changedBy: req.user!.id,
+          })
+          return row
+        })
+        return reply.send({ question: updated })
+      } catch (err) {
+        if (err instanceof QuestionEditConflictError) {
+          return reply.code(409).send({ error: 'Питання вже змінив інший редактор. Онови список і повтори дію.' })
+        }
+        throw err
+      }
+    },
+  )
 
   // DELETE /api/admin/questions/:id
   app.delete<{ Params: { id: string } }>(
@@ -680,6 +1000,12 @@ export async function adminRoutes(app: FastifyInstance) {
     },
     async (req, reply) => {
       const { id } = req.params
+      const [current] = await db.select({ status: questions.editorialStatus })
+        .from(questions).where(eq(questions.id, id)).limit(1)
+      if (!current) return reply.code(404).send({ error: 'Питання не знайдено' })
+      if (current.status !== 'draft') {
+        return reply.code(409).send({ error: 'Видаляти можна лише чернетки. Інший контент архівуй через зміну статусу.' })
+      }
       if (await questionIsLocked(id)) {
         return reply.code(409).send({ error: 'Не можна видаляти питання активної олімпіади або питання, яке вже було видане учню' })
       }
@@ -767,7 +1093,7 @@ export async function adminRoutes(app: FastifyInstance) {
     }
   })
 
-  // GET /api/admin/missions — реєстр місій (read-only, редагування — пізніше)
+  // GET /api/admin/missions — registry plus editorial state.
   app.get('/missions', { preHandler: requireAdmin }, async (_req, reply) => {
     const list = await db
       .select()
@@ -775,6 +1101,179 @@ export async function adminRoutes(app: FastifyInstance) {
       .orderBy(asc(missions.track), asc(missions.grade), asc(missions.id))
     return reply.send({ missions: list })
   })
+
+  app.post<{ Body: Record<string, unknown> }>('/missions', { preHandler: requireAdmin }, async (req, reply) => {
+    let input: NormalizedMissionInput
+    try { input = normalizeEditableMission(req.body) } catch (err) {
+      return reply.code(400).send({ error: (err as Error).message })
+    }
+    const [exists] = await db.select({ id: missions.id }).from(missions).where(eq(missions.id, input.id)).limit(1)
+    if (exists) return reply.code(409).send({ error: 'Місія з таким id вже існує' })
+    const created = await db.transaction(async tx => {
+      const [row] = await tx.insert(missions).values({
+        ...input, config: { ...input.config }, status: 'draft', createdBy: req.user!.id, updatedBy: req.user!.id,
+      }).returning()
+      await tx.insert(missionRevisions).values({
+        missionId: row.id, editVersion: row.editVersion, action: 'create',
+        snapshot: missionSnapshot(row), changedBy: req.user!.id,
+      })
+      return row
+    })
+    return reply.code(201).send({ mission: created })
+  })
+
+  app.put<{ Params: { id: string }; Body: Record<string, unknown> & { expectedEditVersion?: number } }>(
+    '/missions/:id', { preHandler: requireAdmin }, async (req, reply) => {
+      let input: NormalizedMissionInput
+      try { input = normalizeEditableMission({ ...req.body, id: req.params.id }) } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message })
+      }
+      const [current] = await db.select().from(missions).where(eq(missions.id, input.id)).limit(1)
+      if (!current) return reply.code(404).send({ error: 'Місію не знайдено' })
+      if (!['question-set', 'sorting-game', 'sequence-game', 'scenario-game', 'simulator-game'].includes(current.kind)) return reply.code(409).send({ error: 'Цей тип місії поки доступний лише для перегляду' })
+      if (!Number.isInteger(req.body.expectedEditVersion) || current.editVersion !== req.body.expectedEditVersion) {
+        return reply.code(409).send({ error: 'Місію вже змінив інший редактор. Онови список і повтори правки.' })
+      }
+      try {
+        const updated = await db.transaction(async tx => {
+          const [row] = await tx.update(missions).set({
+            title: input.title, track: input.track, grade: input.grade, config: { ...input.config },
+            version: current.version + 1, editVersion: current.editVersion + 1,
+            status: 'draft', updatedAt: new Date(), updatedBy: req.user!.id,
+          }).where(and(eq(missions.id, input.id), eq(missions.editVersion, current.editVersion))).returning()
+          if (!row) throw new MissionEditConflictError()
+          await tx.insert(missionRevisions).values({
+            missionId: row.id, editVersion: row.editVersion, action: 'update',
+            snapshot: missionSnapshot(row), changedBy: req.user!.id,
+          })
+          return row
+        })
+        return reply.send({ mission: updated })
+      } catch (err) {
+        if (err instanceof MissionEditConflictError) return reply.code(409).send({ error: 'Місію вже змінив інший редактор.' })
+        throw err
+      }
+    },
+  )
+
+  app.put<{ Params: { id: string }; Body: { status?: string; expectedEditVersion?: number } }>(
+    '/missions/:id/status', { preHandler: requireAdmin }, async (req, reply) => {
+      let status
+      let missionId
+      try {
+        status = normalizeMissionStatus(req.body.status)
+        missionId = normalizeMissionSlug(req.params.id)
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message })
+      }
+      try {
+        const updated = await db.transaction(async tx => {
+          const [current] = await tx.select().from(missions).where(eq(missions.id, missionId)).limit(1).for('update')
+          if (!current) return null
+          if (!['question-set', 'sorting-game', 'sequence-game', 'scenario-game', 'simulator-game'].includes(current.kind)) throw new Error('Цей тип місії поки доступний лише для перегляду')
+          if (!Number.isInteger(req.body.expectedEditVersion) || current.editVersion !== req.body.expectedEditVersion) {
+            throw new MissionEditConflictError()
+          }
+          const input = normalizeEditableMission({
+            id: current.id, title: current.title, kind: current.kind,
+            track: current.track, grade: current.grade, config: current.config,
+          })
+          if ((status === 'review' || status === 'published') && input.kind === 'question-set') {
+            const questionIds = input.config.questionSets.flatMap(set => set.questionIds)
+            const selected = await tx.select({
+              id: questions.id, grade: questions.grade, track: questions.track,
+              status: questions.editorialStatus,
+            }).from(questions).where(inArray(questions.id, questionIds)).for('share')
+            if (selected.length !== questionIds.length) throw new Error('Один або кілька questionId не існують')
+            const invalid = selected.filter(question => question.status !== 'published'
+              || question.grade !== input.grade || question.track !== input.track)
+            if (invalid.length) throw new Error(`Питання не опубліковані або не відповідають класу/напряму: ${invalid.map(q => q.id).join(', ')}`)
+          }
+          const now = new Date()
+          const updates: Record<string, unknown> = {
+            status, editVersion: current.editVersion + 1, updatedAt: now, updatedBy: req.user!.id,
+          }
+          if (status === 'review') { updates.reviewedAt = now; updates.reviewedBy = req.user!.id }
+          if (status === 'published') {
+            updates.publishedVersion = current.version
+            updates.publishedSnapshot = missionPublishedSnapshot(input, current.version)
+            updates.publishedAt = now
+            updates.publishedBy = req.user!.id
+          }
+          const [row] = await tx.update(missions).set(updates).where(and(
+            eq(missions.id, current.id), eq(missions.editVersion, current.editVersion),
+          )).returning()
+          if (!row) throw new MissionEditConflictError()
+          await tx.insert(missionRevisions).values({
+            missionId: row.id, editVersion: row.editVersion, action: 'status',
+            snapshot: missionSnapshot(row), changedBy: req.user!.id,
+          })
+          return row
+        })
+        if (!updated) return reply.code(404).send({ error: 'Місію не знайдено' })
+        return reply.send({ mission: updated })
+      } catch (err) {
+        if (err instanceof MissionEditConflictError) return reply.code(409).send({ error: 'Місію вже змінив інший редактор.' })
+        return reply.code(400).send({ error: (err as Error).message })
+      }
+    },
+  )
+
+  app.get<{ Params: { id: string } }>('/missions/:id/revisions', { preHandler: requireAdmin }, async (req, reply) => {
+    let missionId
+    try { missionId = normalizeMissionSlug(req.params.id) } catch (err) {
+      return reply.code(400).send({ error: (err as Error).message })
+    }
+    const revisions = await db.select().from(missionRevisions)
+      .where(eq(missionRevisions.missionId, missionId)).orderBy(desc(missionRevisions.editVersion))
+    return reply.send({ revisions })
+  })
+
+  app.post<{ Params: { id: string }; Body: { revisionEditVersion?: number; expectedEditVersion?: number } }>(
+    '/missions/:id/restore', { preHandler: requireAdmin }, async (req, reply) => {
+      let missionId
+      try { missionId = normalizeMissionSlug(req.params.id) } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message })
+      }
+      if (!Number.isInteger(req.body.revisionEditVersion) || !Number.isInteger(req.body.expectedEditVersion)) {
+        return reply.code(400).send({ error: 'Потрібні коректні версії редакції' })
+      }
+      try {
+        const updated = await db.transaction(async tx => {
+          const [current] = await tx.select().from(missions).where(eq(missions.id, missionId)).limit(1).for('update')
+          if (!current) return null
+          if (!['question-set', 'sorting-game', 'sequence-game', 'scenario-game', 'simulator-game'].includes(current.kind)) throw new Error('Цей тип місії не відновлюється цим редактором')
+          if (current.editVersion !== req.body.expectedEditVersion) throw new MissionEditConflictError()
+          const [revision] = await tx.select().from(missionRevisions).where(and(
+            eq(missionRevisions.missionId, current.id),
+            eq(missionRevisions.editVersion, req.body.revisionEditVersion!),
+          )).limit(1)
+          if (!revision) throw new Error('Ревізію не знайдено')
+          const snapshot = revision.snapshot
+          const input = normalizeEditableMission({
+            id: current.id, title: snapshot.title, kind: snapshot.kind,
+            track: snapshot.track, grade: snapshot.grade, config: snapshot.config,
+          })
+          const [row] = await tx.update(missions).set({
+            title: input.title, track: input.track, grade: input.grade, config: { ...input.config },
+            version: current.version + 1, editVersion: current.editVersion + 1,
+            status: 'draft', updatedAt: new Date(), updatedBy: req.user!.id,
+          }).where(and(eq(missions.id, current.id), eq(missions.editVersion, current.editVersion))).returning()
+          if (!row) throw new MissionEditConflictError()
+          await tx.insert(missionRevisions).values({
+            missionId: row.id, editVersion: row.editVersion, action: 'restore',
+            snapshot: missionSnapshot(row), changedBy: req.user!.id,
+          })
+          return row
+        })
+        if (!updated) return reply.code(404).send({ error: 'Місію не знайдено' })
+        return reply.send({ mission: updated })
+      } catch (err) {
+        if (err instanceof MissionEditConflictError) return reply.code(409).send({ error: 'Місію вже змінив інший редактор.' })
+        return reply.code(400).send({ error: (err as Error).message })
+      }
+    },
+  )
 
   // ── Мікро-уроки (0032): авторинг теорії для карти шляху ────────────────────
   // Дітям контент їде статичним бандлом (npm run export:lessons), тому CRUD
@@ -797,13 +1296,17 @@ export async function adminRoutes(app: FastifyInstance) {
         const [existing] = await db.select({ id: microLessons.id })
           .from(microLessons).where(eq(microLessons.id, id)).limit(1)
         if (existing) return reply.code(409).send({ error: 'Урок з таким id вже існує' })
-        const [created] = await db.insert(microLessons).values({
-          id,
-          title: content.title,
-          cards: content.cards,
-          videoUrl: content.videoUrl,
-          checkQuestions: content.checkQuestions,
-        }).returning()
+        const created = await db.transaction(async tx => {
+          const [row] = await tx.insert(microLessons).values({
+            id, title: content.title, cards: content.cards, videoUrl: content.videoUrl,
+            checkQuestions: content.checkQuestions, createdBy: req.user!.id, updatedBy: req.user!.id,
+          }).returning()
+          await tx.insert(microLessonRevisions).values({
+            lessonId: row.id, editVersion: row.editVersion, action: 'create',
+            snapshot: lessonRevisionSnapshot(row), changedBy: req.user!.id,
+          })
+          return row
+        })
         return reply.code(201).send({ lesson: created })
       } catch (err) {
         return reply.code(400).send({ error: (err as Error).message })
@@ -812,7 +1315,7 @@ export async function adminRoutes(app: FastifyInstance) {
   )
 
   // PUT /api/admin/lessons/:id — оновлення контенту; зміна контенту піднімає version
-  app.put<{ Params: { id: string }; Body: Record<string, unknown> }>(
+  app.put<{ Params: { id: string }; Body: { expectedEditVersion?: number } & Record<string, unknown> }>(
     '/lessons/:id',
     { preHandler: requireAdmin },
     async (req, reply) => {
@@ -822,6 +1325,9 @@ export async function adminRoutes(app: FastifyInstance) {
         const [existing] = await db.select().from(microLessons)
           .where(eq(microLessons.id, id)).limit(1)
         if (!existing) return reply.code(404).send({ error: 'Урок не знайдено' })
+        if (!Number.isInteger(req.body.expectedEditVersion) || req.body.expectedEditVersion !== existing.editVersion) {
+          return reply.code(409).send({ error: 'Урок уже змінив інший редактор. Онови список і повтори правки.' })
+        }
 
         const prev = normalizeLessonContent({
           title: existing.title,
@@ -830,16 +1336,79 @@ export async function adminRoutes(app: FastifyInstance) {
           checkQuestions: existing.checkQuestions,
         })
         const bump = lessonContentChanged(prev, content)
-        const [updated] = await db.update(microLessons).set({
-          title: content.title,
-          cards: content.cards,
-          videoUrl: content.videoUrl,
-          checkQuestions: content.checkQuestions,
-          version: bump ? existing.version + 1 : existing.version,
-          updatedAt: new Date(),
-        }).where(eq(microLessons.id, id)).returning()
+        const updated = await db.transaction(async tx => {
+          const [row] = await tx.update(microLessons).set({
+            title: content.title, cards: content.cards, videoUrl: content.videoUrl,
+            checkQuestions: content.checkQuestions,
+            version: bump ? existing.version + 1 : existing.version,
+            editVersion: existing.editVersion + 1,
+            status: bump ? 'draft' : existing.status,
+            updatedAt: new Date(), updatedBy: req.user!.id,
+          }).where(and(
+            eq(microLessons.id, id), eq(microLessons.editVersion, existing.editVersion),
+          )).returning()
+          if (!row) throw new LessonEditConflictError()
+          await tx.insert(microLessonRevisions).values({
+            lessonId: row.id, editVersion: row.editVersion, action: 'update',
+            snapshot: lessonRevisionSnapshot(row), changedBy: req.user!.id,
+          })
+          return row
+        })
         return reply.send({ lesson: updated, versionBumped: bump })
       } catch (err) {
+        if (err instanceof LessonEditConflictError) {
+          return reply.code(409).send({ error: 'Урок уже змінив інший редактор. Онови список і повтори правки.' })
+        }
+        return reply.code(400).send({ error: (err as Error).message })
+      }
+    },
+  )
+
+  app.get<{ Params: { id: string } }>('/lessons/:id/revisions', {
+    preHandler: requireAdmin,
+  }, async (req, reply) => {
+    let id: string
+    try { id = normalizeLessonSlug(req.params.id) } catch (err) { return reply.code(400).send({ error: (err as Error).message }) }
+    const revisions = await db.select().from(microLessonRevisions)
+      .where(eq(microLessonRevisions.lessonId, id)).orderBy(desc(microLessonRevisions.editVersion))
+    return reply.send({ revisions })
+  })
+
+  app.post<{ Params: { id: string }; Body: { revisionEditVersion?: number; expectedEditVersion?: number } }>(
+    '/lessons/:id/restore', { preHandler: requireAdmin }, async (req, reply) => {
+      try {
+        const id = normalizeLessonSlug(req.params.id)
+        if (!Number.isInteger(req.body.revisionEditVersion) || !Number.isInteger(req.body.expectedEditVersion)) {
+          return reply.code(400).send({ error: 'Потрібні коректні версії редакції' })
+        }
+        const [current] = await db.select().from(microLessons).where(eq(microLessons.id, id)).limit(1)
+        if (!current) return reply.code(404).send({ error: 'Урок не знайдено' })
+        if (current.editVersion !== req.body.expectedEditVersion) {
+          return reply.code(409).send({ error: 'Урок уже змінив інший редактор. Онови список і повтори дію.' })
+        }
+        const [revision] = await db.select().from(microLessonRevisions).where(and(
+          eq(microLessonRevisions.lessonId, id),
+          eq(microLessonRevisions.editVersion, req.body.revisionEditVersion!),
+        )).limit(1)
+        if (!revision) return reply.code(404).send({ error: 'Ревізію не знайдено' })
+        const content = contentFromLessonRevision(revision.snapshot)
+        const updated = await db.transaction(async tx => {
+          const [row] = await tx.update(microLessons).set({
+            title: content.title, cards: content.cards, videoUrl: content.videoUrl,
+            checkQuestions: content.checkQuestions, version: current.version + 1,
+            editVersion: current.editVersion + 1, status: 'draft',
+            updatedAt: new Date(), updatedBy: req.user!.id,
+          }).where(and(eq(microLessons.id, id), eq(microLessons.editVersion, current.editVersion))).returning()
+          if (!row) throw new LessonEditConflictError()
+          await tx.insert(microLessonRevisions).values({
+            lessonId: row.id, editVersion: row.editVersion, action: 'restore',
+            snapshot: lessonRevisionSnapshot(row), changedBy: req.user!.id,
+          })
+          return row
+        })
+        return reply.send({ lesson: updated })
+      } catch (err) {
+        if (err instanceof LessonEditConflictError) return reply.code(409).send({ error: 'Урок уже змінив інший редактор.' })
         return reply.code(400).send({ error: (err as Error).message })
       }
     },
@@ -884,19 +1453,22 @@ export async function adminRoutes(app: FastifyInstance) {
 
           const lessonIds = pathMapLessonIds(nextPoints)
           const lessons = lessonIds.length
-            ? await tx.select({ id: microLessons.id, version: microLessons.version, status: microLessons.status })
+            ? await tx.select({
+              id: microLessons.id, version: microLessons.version,
+              publishedVersion: microLessons.publishedVersion, status: microLessons.status,
+            })
               .from(microLessons).where(inArray(microLessons.id, lessonIds)).for('share')
             : []
           const lessonById = new Map(lessons.map(lesson => [lesson.id, lesson]))
           for (const lessonId of lessonIds) {
             const lesson = lessonById.get(lessonId)
             if (!lesson) throw new Error(`Урок «${lessonId}» не існує`)
-            if (existing.status === 'published' && lesson.status !== 'published') {
+            if (existing.status === 'published' && (!lesson.publishedVersion || lesson.status === 'archived')) {
               throw new Error(`Урок «${lessonId}» не опублікований`)
             }
           }
           nextPoints = snapshotLessonVersions(nextPoints,
-            new Map(lessons.map(lesson => [lesson.id, lesson.version])))
+            new Map(lessons.map(lesson => [lesson.id, lesson.publishedVersion ?? lesson.version])))
 
           const prevPoints = validatePathMapPoints(existing.points)
           const revisions = await tx.select({ points: pathMapRevisions.points })
@@ -968,8 +1540,8 @@ export async function adminRoutes(app: FastifyInstance) {
     },
   )
 
-  // PUT /api/admin/lessons/:id/status — draft | published | archived
-  app.put<{ Params: { id: string }; Body: { status: string } }>(
+  // PUT /api/admin/lessons/:id/status — draft | review | published | archived
+  app.put<{ Params: { id: string }; Body: { status: string; expectedEditVersion?: number } }>(
     '/lessons/:id/status',
     { preHandler: requireAdmin },
     async (req, reply) => {
@@ -977,7 +1549,7 @@ export async function adminRoutes(app: FastifyInstance) {
         const id = normalizeLessonSlug(req.params.id)
         const status = normalizeLessonStatus(req.body?.status)
         const outcome = await db.transaction(async tx => {
-          if (status !== 'published') {
+          if (status === 'archived') {
             // Lock maps before the lesson row. Path saves use the same order,
             // preventing an archive/save race from creating a broken reference.
             const publishedMaps = await tx.select({ pathId: pathMaps.pathId, points: pathMaps.points })
@@ -989,10 +1561,38 @@ export async function adminRoutes(app: FastifyInstance) {
               .map(map => map.pathId)
             if (referencedBy.length) return { referencedBy, updated: null }
           }
+          const [current] = await tx.select().from(microLessons).where(eq(microLessons.id, id)).limit(1).for('update')
+          if (!current) return { referencedBy: [] as string[], updated: null }
+          if (!Number.isInteger(req.body.expectedEditVersion) || current.editVersion !== req.body.expectedEditVersion) {
+            throw new LessonEditConflictError()
+          }
+          const content = normalizeLessonContent({
+            title: current.title, cards: current.cards, videoUrl: current.videoUrl,
+            checkQuestions: current.checkQuestions,
+          })
+          const now = new Date()
+          const updates: Record<string, unknown> = {
+            status, editVersion: current.editVersion + 1, updatedAt: now, updatedBy: req.user!.id,
+          }
+          if (status === 'review') {
+            updates.reviewedAt = now
+            updates.reviewedBy = req.user!.id
+          }
+          if (status === 'published') {
+            updates.publishedVersion = current.version
+            updates.publishedSnapshot = lessonPublishedSnapshot(id, current.version, content)
+            updates.publishedAt = now
+            updates.publishedBy = req.user!.id
+          }
           const [updated] = await tx.update(microLessons)
-            .set({ status, updatedAt: new Date() })
-            .where(eq(microLessons.id, id))
+            .set(updates)
+            .where(and(eq(microLessons.id, id), eq(microLessons.editVersion, current.editVersion)))
             .returning()
+          if (!updated) throw new LessonEditConflictError()
+          await tx.insert(microLessonRevisions).values({
+            lessonId: updated.id, editVersion: updated.editVersion, action: 'status',
+            snapshot: lessonRevisionSnapshot(updated), changedBy: req.user!.id,
+          })
           return { referencedBy: [] as string[], updated: updated ?? null }
         })
         if (outcome.referencedBy.length) {
@@ -1003,6 +1603,9 @@ export async function adminRoutes(app: FastifyInstance) {
         if (!outcome.updated) return reply.code(404).send({ error: 'Урок не знайдено' })
         return reply.send({ lesson: outcome.updated })
       } catch (err) {
+        if (err instanceof LessonEditConflictError) {
+          return reply.code(409).send({ error: 'Урок уже змінив інший редактор. Онови список і повтори дію.' })
+        }
         return reply.code(400).send({ error: (err as Error).message })
       }
     },

@@ -6,6 +6,7 @@ function row(overrides: Partial<ExportableQuestionRow> = {}): ExportableQuestion
   return {
     id: 'q-1', q: '2+2?', code: null, type: 'choice', options: ['4', '5'],
     correct: 0, explanation: null, difficulty: 'easy', track: null, topic: null,
+    img: null, imageAlt: null, conceptKey: null, progressionBand: null, version: 1,
     grade: 1, isOlympiad: false,
     ...overrides,
   }

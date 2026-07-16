@@ -189,6 +189,26 @@ async function openAdminDashboard(page: Page) {
                             updatedAt: '2026-07-11T10:00:00.000Z',
                           }],
                         }
+                      : path === '/api/admin/content-publications'
+                        ? {
+                            publications: [{
+                              id: '00000000-0000-4000-8000-000000000041',
+                              status: 'succeeded',
+                              expectedManifest: {
+                                schemaVersion: 1, practiceQuestions: [{}], lessons: [{}], gamePacks: [{}], paths: [{}],
+                              },
+                              expectedManifestSha256: 'a'.repeat(64),
+                              publishedManifestSha256: 'a'.repeat(64),
+                              requestedBy: 'admin-1',
+                              workflowRunId: '41',
+                              workflowUrl: 'https://github.com/example/repo/actions/runs/41',
+                              sourceSha: 'b'.repeat(40),
+                              failureReason: null,
+                              createdAt: '2026-07-16T10:00:00.000Z',
+                              startedAt: '2026-07-16T10:00:01.000Z',
+                              completedAt: '2026-07-16T10:01:00.000Z',
+                            }],
+                          }
                   : { questions: [] }
 
       return new Response(JSON.stringify(body), {
@@ -504,6 +524,43 @@ test('axe: /admin.html question editor', async ({ page }) => {
     .analyze()
 
   expect(results.violations).toEqual([])
+})
+
+test('admin publication journal is accessible and exposes the audited run', async ({ page }) => {
+  await openAdminDashboard(page)
+  await page.locator('[data-tab="publication"]').click()
+  await expect(page.locator('#publication-list')).toContainText('Опубліковано')
+  await expect(page.locator('#publication-list a')).toHaveAttribute('rel', 'noopener noreferrer')
+
+  const results = await new AxeBuilder({ page })
+    .include('#tab-publication')
+    .withTags(WCAG_AA_TAGS)
+    .analyze()
+  expect(results.violations).toEqual([])
+})
+
+test('admin game content-pack editors are accessible and keyboard-contained', async ({ page }) => {
+  await openAdminDashboard(page)
+  await page.locator('[data-tab="missions"]').click()
+  for (const [buttonId, formSelector, closeSelector] of [
+    ['#add-sorting-mission-btn', '.sorting-editor-form', '.se-close'],
+    ['#add-sequence-mission-btn', '.narrative-editor-form', '.ne-close'],
+    ['#add-scenario-mission-btn', '.narrative-editor-form', '.ne-close'],
+    ['#add-simulator-mission-btn', '.simulator-editor-form', '.sie-close'],
+  ]) {
+    await page.locator(buttonId).click()
+    const editor = page.locator(formSelector)
+    await expect(editor).toBeVisible()
+    await expect(page.locator(closeSelector)).toBeFocused()
+    const results = await new AxeBuilder({ page })
+      .include('.mission-editor-card')
+      .withTags(WCAG_AA_TAGS)
+      .analyze()
+    expect(results.violations).toEqual([])
+    await page.keyboard.press('Escape')
+    await expect(editor).toBeHidden()
+    await expect(page.locator(buttonId)).toBeFocused()
+  }
 })
 
 test('admin path editor traps focus, passes axe, and preserves unsaved edits across tabs', async ({ page }) => {

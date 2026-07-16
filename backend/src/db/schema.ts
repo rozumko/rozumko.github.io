@@ -11,6 +11,7 @@ import { pgTable, text, integer, boolean, timestamp, jsonb, uuid, unique } from 
  */
 export type QuestionType = 'choice' | 'truefalse' | 'input' | 'sort' | 'sequence' | 'match'
 export type QuestionTrack = 'informatics' | 'computational-thinking' | 'ai-basics'
+export type QuestionEditorialStatus = 'draft' | 'review' | 'published' | 'archived'
 
 export const questions = pgTable('questions', {
   id:          uuid('id').primaryKey().defaultRandom(),
@@ -20,6 +21,8 @@ export const questions = pgTable('questions', {
   options:     jsonb('options').notNull().$type<string[] | Record<string, unknown>>(),
   correct:     integer('correct'),   // null для input/sort/sequence/match
   explanation: text('explanation'),
+  img:         text('img'),
+  imageAlt:    text('image_alt'),
   difficulty:  text('difficulty'),
   track:       text('track').$type<QuestionTrack>(),
   // Таксономія вмісту (docs/content-taxonomy.md):
@@ -27,18 +30,43 @@ export const questions = pgTable('questions', {
   topic:       text('topic'),
   conceptKey:  text('concept_key'),
   progressionBand: text('progression_band').$type<'recognize' | 'apply' | 'reason'>(),
-  // Інкрементується бекендом при змістовних правках (q/options/correct/type)
+  // Incremented by the backend for every child-visible or selection-affecting edit.
   version:     integer('version').notNull().default(1),
+  // Окремий optimistic-lock лічильник кожного редакційного збереження.
+  editVersion: integer('edit_version').notNull().default(1),
+  editorialStatus: text('editorial_status').notNull().default('draft').$type<QuestionEditorialStatus>(),
   // Редакційні метадані без окремих колонок (reviewStatus, isCore, джерело імпорту…)
   meta:        jsonb('meta').$type<Record<string, unknown>>(),
   grade:       integer('grade'),
   isOlympiad:  boolean('is_olympiad').default(false),
+  createdBy:   text('created_by'),
+  updatedBy:   text('updated_by'),
+  reviewedBy:  text('reviewed_by'),
+  publishedBy: text('published_by'),
+  reviewedAt:  timestamp('reviewed_at', { withTimezone: true }),
+  publishedAt: timestamp('published_at', { withTimezone: true }),
   createdAt:   timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt:   timestamp('updated_at', { withTimezone: true }).defaultNow(),
 })
 
 export type Question = typeof questions.$inferSelect
 export type NewQuestion = typeof questions.$inferInsert
+
+// Immutable editorial snapshots. editVersion is independent from the public
+// content version, so metadata/status-only changes are also recoverable.
+export const questionRevisions = pgTable('question_revisions', {
+  id:          uuid('id').primaryKey().defaultRandom(),
+  questionId:  uuid('question_id').notNull().references(() => questions.id, { onDelete: 'cascade' }),
+  editVersion: integer('edit_version').notNull(),
+  action:      text('action').notNull(),
+  snapshot:    jsonb('snapshot').notNull().$type<Record<string, unknown>>(),
+  changedBy:   text('changed_by'),
+  createdAt:   timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  uniqQuestionEditVersion: unique('question_revisions_question_edit_version_uq').on(t.questionId, t.editVersion),
+}))
+
+export type QuestionRevisionRow = typeof questionRevisions.$inferSelect
 
 export const olympiadEvents = pgTable('olympiad_events', {
   id:          uuid('id').primaryKey().defaultRandom(),
@@ -237,14 +265,58 @@ export const missions = pgTable('missions', {
   track:     text('track').notNull().$type<QuestionTrack>(),
   grade:     integer('grade').notNull(),
   version:   integer('version').notNull().default(1),
-  status:    text('status').notNull().default('active'),     // draft | active | archived
+  editVersion: integer('edit_version').notNull().default(1),
+  status:    text('status').notNull().default('draft'),     // draft | review | published | archived
   config:    jsonb('config').$type<Record<string, unknown>>(),
+  publishedVersion: integer('published_version'),
+  publishedSnapshot: jsonb('published_snapshot').$type<Record<string, unknown>>(),
+  createdBy: text('created_by'),
+  updatedBy: text('updated_by'),
+  reviewedBy: text('reviewed_by'),
+  publishedBy: text('published_by'),
+  reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+  publishedAt: timestamp('published_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 })
 
 export type Mission = typeof missions.$inferSelect
 export type NewMission = typeof missions.$inferInsert
+
+export const missionRevisions = pgTable('mission_revisions', {
+  id:          uuid('id').primaryKey().defaultRandom(),
+  missionId:   text('mission_id').notNull().references(() => missions.id, { onDelete: 'cascade' }),
+  editVersion: integer('edit_version').notNull(),
+  action:      text('action').notNull(),
+  snapshot:    jsonb('snapshot').notNull().$type<Record<string, unknown>>(),
+  changedBy:   text('changed_by'),
+  createdAt:   timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  uniqMissionEditVersion: unique('mission_revisions_mission_edit_version_uq').on(t.missionId, t.editVersion),
+}))
+
+export type MissionRevisionRow = typeof missionRevisions.$inferSelect
+
+// Audited requests to rebuild and deploy all static child-facing bundles.
+// The expected manifest hash freezes the exact published versions requested by
+// the admin; GitHub Actions refuses deployment if the database changes in queue.
+export const contentPublications = pgTable('content_publications', {
+  id:                 uuid('id').primaryKey().defaultRandom(),
+  status:             text('status').notNull().default('queued').$type<'queued' | 'running' | 'succeeded' | 'failed'>(),
+  expectedManifest:   jsonb('expected_manifest').notNull().$type<Record<string, unknown>>(),
+  expectedManifestSha256: text('expected_manifest_sha256').notNull(),
+  publishedManifestSha256: text('published_manifest_sha256'),
+  requestedBy:        text('requested_by').notNull(),
+  workflowRunId:      text('workflow_run_id'),
+  workflowUrl:        text('workflow_url'),
+  sourceSha:          text('source_sha'),
+  failureReason:      text('failure_reason'),
+  createdAt:          timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  startedAt:          timestamp('started_at', { withTimezone: true }),
+  completedAt:        timestamp('completed_at', { withTimezone: true }),
+})
+
+export type ContentPublicationRow = typeof contentPublications.$inferSelect
 
 // Мікро-уроки (0032): теорія перед випробуванням на карті шляху. Авторяться
 // в адмінці, дітям роздаються статичним бандлом public/lessons/<id>.json
@@ -254,15 +326,38 @@ export const microLessons = pgTable('micro_lessons', {
   id:             text('id').primaryKey(),   // slug: info-senses-g2
   title:          text('title').notNull(),
   version:        integer('version').notNull().default(1),
-  status:         text('status').notNull().default('draft').$type<'draft' | 'published' | 'archived'>(),
+  status:         text('status').notNull().default('draft').$type<'draft' | 'review' | 'published' | 'archived'>(),
+  editVersion:    integer('edit_version').notNull().default(1),
+  publishedVersion: integer('published_version'),
+  publishedSnapshot: jsonb('published_snapshot').$type<Record<string, unknown>>(),
   cards:          jsonb('cards').notNull().$type<unknown[]>(),
   videoUrl:       text('video_url'),
   checkQuestions: jsonb('check_questions').notNull().$type<unknown[]>(),
+  createdBy:      text('created_by'),
+  updatedBy:      text('updated_by'),
+  reviewedBy:     text('reviewed_by'),
+  publishedBy:    text('published_by'),
+  reviewedAt:     timestamp('reviewed_at', { withTimezone: true }),
+  publishedAt:    timestamp('published_at', { withTimezone: true }),
   createdAt:      timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt:      timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })
 
 export type MicroLessonRow = typeof microLessons.$inferSelect
+
+export const microLessonRevisions = pgTable('micro_lesson_revisions', {
+  id:          uuid('id').primaryKey().defaultRandom(),
+  lessonId:    text('lesson_id').notNull().references(() => microLessons.id, { onDelete: 'cascade' }),
+  editVersion: integer('edit_version').notNull(),
+  action:      text('action').notNull(),
+  snapshot:    jsonb('snapshot').notNull().$type<Record<string, unknown>>(),
+  changedBy:   text('changed_by'),
+  createdAt:   timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  uniqLessonEditVersion: unique('micro_lesson_revisions_lesson_edit_version_uq').on(t.lessonId, t.editVersion),
+}))
+
+export type MicroLessonRevisionRow = typeof microLessonRevisions.$inferSelect
 
 // Структура навчального шляху (0033): джерело правди для валідації
 // path-progress і для статичного експорту (npm run export:path). Дитячі

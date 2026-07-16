@@ -10,7 +10,7 @@
 import { mkdirSync, writeFileSync } from 'fs'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
-import { eq } from 'drizzle-orm'
+import { and, eq, isNotNull, ne } from 'drizzle-orm'
 import { db } from '../src/db/index.js'
 import { microLessons, pathMaps } from '../src/db/schema.js'
 import { catalogFromPoints } from '../src/routes/path-catalog.js'
@@ -21,7 +21,7 @@ const OUT_DIR = join(__dirname, '../../public/path')
 
 const rows = await db.select().from(pathMaps).where(eq(pathMaps.status, 'published'))
 const publishedLessons = new Set((await db.select({ id: microLessons.id }).from(microLessons)
-  .where(eq(microLessons.status, 'published'))).map(lesson => lesson.id))
+  .where(and(isNotNull(microLessons.publishedVersion), ne(microLessons.status, 'archived')))).map(lesson => lesson.id))
 
 mkdirSync(OUT_DIR, { recursive: true })
 for (const row of rows) {
