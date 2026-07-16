@@ -13,7 +13,7 @@ import { mountSequenceGame } from './features/games/sequence-game.js'
 import { SEQUENCE_SETS_G2 } from './features/games/sequence-data.js'
 import { mountScenarios } from './features/games/scenarios-game.js'
 import { SCENARIOS_DIGITAL_SAFETY } from './features/games/scenarios-data.js'
-import { loadScenarioPack, loadSequencePack } from './features/games/narrative-pack-loader.js'
+import { loadFactOpinionPack, loadScenarioPack, loadSequencePack } from './features/games/narrative-pack-loader.js'
 import { HARDWARE_SCENARIO, SOFTWARE_SCENARIO } from './features/games/simulator-data.js'
 import { loadSimulatorScenario } from './features/games/simulator-content-loader.js'
 import { runMission, type MissionElements } from './features/missions/mission-runner.js'
@@ -356,7 +356,12 @@ async function startActivityStep(
     })
   } else if (a.kind === 'fact-opinion') {
     show(foRoot)
-    mountFactOpinion(foRoot, a.level === 1 ? FO_LEVEL1_STATEMENTS : FO_LEVEL2_STATEMENTS, {
+    const statements = await loadFactOpinionPack(
+      a.level === 1 ? 'level1' : 'level2',
+      a.level === 1 ? FO_LEVEL1_STATEMENTS : FO_LEVEL2_STATEMENTS,
+    )
+    if (run !== activeRun) return
+    mountFactOpinion(foRoot, statements, {
       onComplete: s => complete(fromGameSummary(s, activityContext(p, step))),
     })
   } else if (a.kind === 'simulator') {

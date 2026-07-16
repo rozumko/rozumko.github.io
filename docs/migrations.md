@@ -141,6 +141,11 @@ records the GitHub Actions run and final deployed manifest, and permits only one
 queued/running publication at a time. The table has RLS enabled and is accessed
 only through the backend.
 
+Migration `0042` registers the two fact-opinion games (level 1: fact/opinion,
+level 2: fact/opinion/myth) as editable `fact-opinion-game` missions. Initial
+published snapshots point to bundled content; the first admin edit imports the
+statement list into the database as a draft.
+
 `GET /ready` and `GET /ping` perform the same check. Migration drift returns
 HTTP `503` with `{ "status": "error", "db": "migration_required" }` without
 exposing migration names or timestamps.

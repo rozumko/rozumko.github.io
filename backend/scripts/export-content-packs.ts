@@ -7,6 +7,7 @@ import { and, inArray, isNotNull, ne } from 'drizzle-orm'
 import { db } from '../src/db/index.js'
 import { missions } from '../src/db/schema.js'
 import { normalizeEditableMission } from '../src/routes/mission-editorial.js'
+import { FO_LEVEL1_STATEMENTS, FO_LEVEL2_STATEMENTS } from '../../features/games/fact-opinion-data.js'
 import { SCENARIOS_DIGITAL_SAFETY } from '../../features/games/scenarios-data.js'
 import { SEQUENCE_SETS_G2 } from '../../features/games/sequence-data.js'
 import { INFO_SORT_LEVELS, MULTISORT_LEVELS, SORTING_ATTRIBUTES_LEVELS } from '../../features/games/sorting-data.js'
@@ -15,7 +16,7 @@ import { defaultSimulatorPack } from '../../features/games/simulator-content-loa
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const outDir = join(__dirname, '../../public/content-packs')
-const supportedKinds = ['sorting-game', 'sequence-game', 'scenario-game', 'simulator-game']
+const supportedKinds = ['sorting-game', 'sequence-game', 'scenario-game', 'fact-opinion-game', 'simulator-game']
 const rows = await db.select().from(missions).where(and(
   inArray(missions.kind, supportedKinds), isNotNull(missions.publishedVersion), ne(missions.status, 'archived'),
 ))
@@ -30,6 +31,8 @@ const legacyFallbacks: Record<string, { prefix: string; gameKey: string; field: 
   'game-multisort-attributes-grade2': { prefix: 'sorting', gameKey: 'multisort', field: 'levels', content: MULTISORT_LEVELS },
   'game-sequence-algorithms-grade2': { prefix: 'sequence', gameKey: 'algorithms-g2', field: 'sets', content: SEQUENCE_SETS_G2 },
   'game-scenarios-digital-safety-grade2': { prefix: 'scenario', gameKey: 'digital-safety', field: 'items', content: SCENARIOS_DIGITAL_SAFETY },
+  'game-fact-opinion-level1-grade1': { prefix: 'fact-opinion', gameKey: 'level1', field: 'statements', content: FO_LEVEL1_STATEMENTS },
+  'game-fact-opinion-level2-grade2': { prefix: 'fact-opinion', gameKey: 'level2', field: 'statements', content: FO_LEVEL2_STATEMENTS },
 }
 const legacySimulatorFallbacks = {
   'game-simulator-assembly-hardware': defaultSimulatorPack(HARDWARE_SCENARIO),
@@ -64,6 +67,7 @@ for (const row of rows) {
     if (snapshot.kind === 'sorting-game') writePack(row, 'sorting', snapshot.config.gameKey, 'levels', snapshot.config.levels)
     else if (snapshot.kind === 'sequence-game') writePack(row, 'sequence', snapshot.config.gameKey, 'sets', snapshot.config.sets)
     else if (snapshot.kind === 'scenario-game') writePack(row, 'scenario', snapshot.config.gameKey, 'items', snapshot.config.items)
+    else if (snapshot.kind === 'fact-opinion-game') writePack(row, 'fact-opinion', snapshot.config.gameKey, 'statements', snapshot.config.statements)
     else if (snapshot.kind === 'simulator-game') writeSimulatorPack(row, snapshot.config)
     else throw new Error('unsupported published mission kind')
   } catch (error) {
@@ -83,7 +87,7 @@ for (const row of rows) {
   }
 }
 for (const file of readdirSync(outDir)) {
-  if (/^(?:sorting|sequence|scenario|simulator)-[a-z0-9-]+\.json$/.test(file) && !files.has(file)) unlinkSync(join(outDir, file))
+  if (/^(?:sorting|sequence|scenario|fact-opinion|simulator)-[a-z0-9-]+\.json$/.test(file) && !files.has(file)) unlinkSync(join(outDir, file))
 }
 console.log(`Exported ${files.size} game content packs.`)
 process.exit(0)

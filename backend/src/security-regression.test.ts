@@ -322,6 +322,15 @@ test('sequence and scenario content registry seed is journaled and revision-awar
   assert.match(journal, /"tag": "0039_seed_sequence_scenario_missions"/)
 })
 
+test('fact-opinion content registry seed is journaled and revision-aware', () => {
+  const migration = readFileSync(new URL('../drizzle/0042_seed_fact_opinion_missions.sql', import.meta.url), 'utf8')
+  const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')
+  assert.match(migration, /'fact-opinion-game'/)
+  assert.match(migration, /INSERT INTO public\.mission_revisions/)
+  assert.match(migration, /ON CONFLICT \(id\) DO NOTHING/)
+  assert.match(journal, /"tag": "0042_seed_fact_opinion_missions"/)
+})
+
 test('simulator content registry seed keeps mechanics code-owned and is journaled', () => {
   const migration = readFileSync(new URL('../drizzle/0040_seed_simulator_missions.sql', import.meta.url), 'utf8')
   const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')
