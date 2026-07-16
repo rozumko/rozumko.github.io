@@ -68,6 +68,25 @@ export interface NormalizedScenarioMissionInput {
   grade: number
   config: { gameKey: string; topic?: string; items: ScenarioContentItem[] }
 }
+export const FACT_OPINION_CATEGORIES = ['fact', 'opinion', 'myth'] as const
+export type FactOpinionCategory = (typeof FACT_OPINION_CATEGORIES)[number]
+export interface FactOpinionStatementContent {
+  id: string
+  category: FactOpinionCategory
+  text: string
+  explanation: string
+  sourceTitle?: string
+  sourceUrl?: string
+  sourceLanguage?: 'uk' | 'en'
+}
+export interface NormalizedFactOpinionMissionInput {
+  id: string
+  title: string
+  kind: 'fact-opinion-game'
+  track: QuestionTrack
+  grade: number
+  config: { gameKey: string; topic?: string; statements: FactOpinionStatementContent[] }
+}
 export interface SimulatorTextVariant { source: string; value: string }
 export interface SimulatorTransitionContent { slot: string; labels: SimulatorTextVariant[]; target?: string }
 export interface SimulatorNodeContent {
@@ -82,7 +101,8 @@ export interface NormalizedSimulatorMissionInput {
   config: { scenarioKey: string; mechanicsVersion: number; topic?: string; nodes: SimulatorNodeContent[] }
 }
 export type NormalizedMissionInput = NormalizedQuestionSetMissionInput | NormalizedSortingMissionInput
-  | NormalizedSequenceMissionInput | NormalizedScenarioMissionInput | NormalizedSimulatorMissionInput
+  | NormalizedSequenceMissionInput | NormalizedScenarioMissionInput | NormalizedFactOpinionMissionInput
+  | NormalizedSimulatorMissionInput
 
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -334,6 +354,58 @@ export function normalizeSimulatorConfig(raw: unknown): NormalizedSimulatorMissi
   return out
 }
 
+export function normalizeFactOpinionConfig(raw: unknown): NormalizedFactOpinionMissionInput['config'] {
+  if (typeof raw !== 'object' || raw === null) throw new Error('config має бути обʼєктом')
+  const config = raw as Record<string, unknown>
+  if (!Array.isArray(config.statements) || config.statements.length < 10 || config.statements.length > 120) {
+    throw new Error('Потрібно від 10 до 120 тверджень')
+  }
+  const ids = new Set<string>()
+  const byCategory = new Map<FactOpinionCategory, number>()
+  const statements = config.statements.map((rawStatement, index): FactOpinionStatementContent => {
+    if (typeof rawStatement !== 'object' || rawStatement === null) throw new Error(`Твердження ${index + 1}: невалідний формат`)
+    const statement = rawStatement as Record<string, unknown>
+    const id = requiredString(statement.id, `Твердження ${index + 1}: id`, 64)
+    if (!SLUG_RE.test(id) || ids.has(id)) throw new Error(`Твердження ${index + 1}: невалідний або повторний id`)
+    ids.add(id)
+    if (!(FACT_OPINION_CATEGORIES as readonly string[]).includes(String(statement.category))) {
+      throw new Error(`Твердження «${id}»: категорія має бути fact, opinion або myth`)
+    }
+    const category = statement.category as FactOpinionCategory
+    byCategory.set(category, (byCategory.get(category) ?? 0) + 1)
+    const out: FactOpinionStatementContent = {
+      id,
+      category,
+      text: requiredString(statement.text, `Твердження «${id}»: текст`, 300),
+      explanation: requiredString(statement.explanation, `Твердження «${id}»: пояснення`, 400),
+    }
+    if (statement.sourceTitle !== undefined && statement.sourceTitle !== null && statement.sourceTitle !== '') {
+      out.sourceTitle = requiredString(statement.sourceTitle, `Твердження «${id}»: джерело`, 160)
+    }
+    if (statement.sourceUrl !== undefined && statement.sourceUrl !== null && statement.sourceUrl !== '') {
+      const sourceUrl = requiredString(statement.sourceUrl, `Твердження «${id}»: посилання`, 500)
+      let parsed: URL
+      try { parsed = new URL(sourceUrl) } catch { throw new Error(`Твердження «${id}»: невалідне посилання на джерело`) }
+      if (parsed.protocol !== 'https:') throw new Error(`Твердження «${id}»: джерело має бути https-посиланням`)
+      if (!out.sourceTitle) throw new Error(`Твердження «${id}»: посилання потребує назви джерела`)
+      out.sourceUrl = sourceUrl
+    }
+    if (statement.sourceLanguage !== undefined && statement.sourceLanguage !== null && statement.sourceLanguage !== '') {
+      if (!['uk', 'en'].includes(String(statement.sourceLanguage))) throw new Error(`Твердження «${id}»: мова джерела — uk або en`)
+      out.sourceLanguage = statement.sourceLanguage as 'uk' | 'en'
+    }
+    return out
+  })
+  // A balanced round needs at least two categories with enough statements each.
+  if (byCategory.size < 2) throw new Error('Гра потребує щонайменше двох категорій тверджень')
+  for (const [category, count] of byCategory) {
+    if (count < 3) throw new Error(`Категорія «${category}» має містити щонайменше 3 твердження`)
+  }
+  const out: NormalizedFactOpinionMissionInput['config'] = { gameKey: normalizeGameKey(config.gameKey), statements }
+  if (config.topic !== undefined && config.topic !== null && config.topic !== '') out.topic = requiredString(config.topic, 'topic', 80)
+  return out
+}
+
 export function normalizeQuestionSetMission(raw: unknown): NormalizedQuestionSetMissionInput {
   if (typeof raw !== 'object' || raw === null) throw new Error('Невалідне тіло місії')
   const body = raw as Record<string, unknown>
@@ -355,7 +427,7 @@ export function normalizeEditableMission(raw: unknown): NormalizedMissionInput {
   if (typeof raw !== 'object' || raw === null) throw new Error('Невалідне тіло місії')
   const body = raw as Record<string, unknown>
   if (body.kind === 'question-set') return normalizeQuestionSetMission(raw)
-  if (!['sorting-game', 'sequence-game', 'scenario-game', 'simulator-game'].includes(String(body.kind))) {
+  if (!['sorting-game', 'sequence-game', 'scenario-game', 'fact-opinion-game', 'simulator-game'].includes(String(body.kind))) {
     throw new Error('Цей редактор не підтримує цей тип місії')
   }
   const id = normalizeMissionSlug(body.id)
@@ -370,6 +442,7 @@ export function normalizeEditableMission(raw: unknown): NormalizedMissionInput {
   if (body.kind === 'sorting-game') return { ...common, kind: 'sorting-game', config: normalizeSortingConfig(body.config) }
   if (body.kind === 'sequence-game') return { ...common, kind: 'sequence-game', config: normalizeSequenceConfig(body.config) }
   if (body.kind === 'scenario-game') return { ...common, kind: 'scenario-game', config: normalizeScenarioConfig(body.config) }
+  if (body.kind === 'fact-opinion-game') return { ...common, kind: 'fact-opinion-game', config: normalizeFactOpinionConfig(body.config) }
   return { ...common, kind: 'simulator-game', config: normalizeSimulatorConfig(body.config) }
 }
 

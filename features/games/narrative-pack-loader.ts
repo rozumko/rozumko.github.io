@@ -1,9 +1,12 @@
+import type { FoCategory, FoStatement } from './fact-opinion-game.js'
 import type { ScenarioItem } from './scenarios-data.js'
 import type { SequenceSet } from './sequence-data.js'
 
 const sequenceCache = new Map<string, SequenceSet[]>()
 const scenarioCache = new Map<string, ScenarioItem[]>()
+const factOpinionCache = new Map<string, FoStatement[]>()
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+const FO_CATEGORIES: readonly FoCategory[] = ['fact', 'opinion', 'myth']
 
 function value(value: unknown, max: number): string {
   return typeof value === 'string' && value.trim().length <= max ? value.trim() : ''
@@ -54,6 +57,43 @@ export function normalizeScenarioPack(raw: unknown, gameKey: string): ScenarioIt
   return items
 }
 
+export function normalizeFactOpinionPack(raw: unknown, gameKey: string): FoStatement[] | null {
+  if (typeof raw !== 'object' || raw === null) return null
+  const pack = raw as Record<string, unknown>
+  if (pack.gameKey !== gameKey || !Number.isInteger(pack.version) || (pack.version as number) < 1
+    || !Array.isArray(pack.statements) || pack.statements.length < 10 || pack.statements.length > 120) return null
+  const ids = new Set<string>()
+  const byCategory = new Map<FoCategory, number>()
+  const statements: FoStatement[] = []
+  for (const rawStatement of pack.statements) {
+    if (typeof rawStatement !== 'object' || rawStatement === null) return null
+    const statement = rawStatement as Record<string, unknown>
+    const id = value(statement.id, 64)
+    const text = value(statement.text, 300)
+    const explanation = value(statement.explanation, 400)
+    if (!SLUG_RE.test(id) || ids.has(id) || !text || !explanation
+      || !FO_CATEGORIES.includes(statement.category as FoCategory)) return null
+    const category = statement.category as FoCategory
+    ids.add(id)
+    byCategory.set(category, (byCategory.get(category) ?? 0) + 1)
+    const out: FoStatement = { id, category, text, explanation }
+    const sourceTitle = value(statement.sourceTitle, 160)
+    if (sourceTitle) out.sourceTitle = sourceTitle
+    const sourceUrl = value(statement.sourceUrl, 500)
+    if (sourceUrl) {
+      let parsed: URL
+      try { parsed = new URL(sourceUrl) } catch { return null }
+      if (parsed.protocol !== 'https:' || !sourceTitle) return null
+      out.sourceUrl = sourceUrl
+    }
+    if (statement.sourceLanguage === 'uk' || statement.sourceLanguage === 'en') out.sourceLanguage = statement.sourceLanguage
+    statements.push(out)
+  }
+  if (byCategory.size < 2) return null
+  for (const count of byCategory.values()) if (count < 3) return null
+  return statements
+}
+
 async function loadPack<T>(url: string, normalize: (raw: unknown) => T | null, fallback: T): Promise<T> {
   try {
     const response = await fetch(url)
@@ -76,4 +116,12 @@ export async function loadScenarioPack(gameKey: string, fallback: ScenarioItem[]
   const items = await loadPack(`/content-packs/scenario-${encodeURIComponent(gameKey)}.json`, raw => normalizeScenarioPack(raw, gameKey), fallback)
   if (items !== fallback) scenarioCache.set(gameKey, items)
   return items
+}
+
+export async function loadFactOpinionPack(gameKey: string, fallback: FoStatement[]): Promise<FoStatement[]> {
+  const cached = factOpinionCache.get(gameKey)
+  if (cached) return cached
+  const statements = await loadPack(`/content-packs/fact-opinion-${encodeURIComponent(gameKey)}.json`, raw => normalizeFactOpinionPack(raw, gameKey), fallback)
+  if (statements !== fallback) factOpinionCache.set(gameKey, statements)
+  return statements
 }

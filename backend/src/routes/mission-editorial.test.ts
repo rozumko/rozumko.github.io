@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { missionPublishedSnapshot, normalizeEditableMission, normalizeQuestionSetConfig, normalizeQuestionSetMission, normalizeScenarioConfig, normalizeSequenceConfig, normalizeSimulatorConfig, normalizeSortingConfig } from './mission-editorial.js'
+import { missionPublishedSnapshot, normalizeEditableMission, normalizeFactOpinionConfig, normalizeQuestionSetConfig, normalizeQuestionSetMission, normalizeScenarioConfig, normalizeSequenceConfig, normalizeSimulatorConfig, normalizeSortingConfig } from './mission-editorial.js'
 import { SIMULATOR_MECHANICS_CONTRACTS } from './simulator-contracts.js'
 
 const ids = [
@@ -95,6 +95,36 @@ test('scenario packs require exactly one correct option and feedback everywhere'
       { label: 'A', correct: true, feedback: 'A' }, { label: 'B', correct: true, feedback: 'B' },
     ],
   }] }), /рівно одну/)
+})
+
+test('fact-opinion packs require balanced categories and https-only sources', () => {
+  const statements = [
+    ...Array.from({ length: 5 }, (_, i) => ({
+      id: `fact-${i + 1}`, category: 'fact', text: `Факт ${i + 1}`, explanation: 'Це можна перевірити.',
+    })),
+    ...Array.from({ length: 5 }, (_, i) => ({
+      id: `opinion-${i + 1}`, category: 'opinion', text: `Думка ${i + 1}`, explanation: 'Це особиста оцінка.',
+    })),
+  ]
+  const config = normalizeFactOpinionConfig({ gameKey: 'level1', statements })
+  assert.equal(config.statements.length, 10)
+
+  const httpSource = statements.map((statement, index) => index === 0
+    ? { ...statement, sourceTitle: 'Джерело', sourceUrl: 'http://example.com' } : statement)
+  assert.throws(() => normalizeFactOpinionConfig({ gameKey: 'level1', statements: httpSource }), /https/)
+
+  const untitledSource = statements.map((statement, index) => index === 0
+    ? { ...statement, sourceUrl: 'https://example.com' } : statement)
+  assert.throws(() => normalizeFactOpinionConfig({ gameKey: 'level1', statements: untitledSource }), /назви джерела/)
+
+  const singleCategory = statements.map(statement => ({ ...statement, category: 'fact' }))
+  assert.throws(() => normalizeFactOpinionConfig({ gameKey: 'level1', statements: singleCategory }), /двох категорій/)
+
+  const mission = normalizeEditableMission({
+    id: 'fact-opinion-test', title: 'Факт чи думка', kind: 'fact-opinion-game',
+    track: 'ai-basics', grade: 1, config: { gameKey: 'level1', statements },
+  })
+  assert.equal(mission.kind, 'fact-opinion-game')
 })
 
 test('simulator packs must mirror mechanics nodes and may use only allowlisted targets', () => {

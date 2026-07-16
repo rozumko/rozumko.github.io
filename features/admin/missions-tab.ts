@@ -2,10 +2,12 @@ import {
   createAdminMission, getAdminMissionRevisions, getAdminMissions, getAdminQuestions,
   restoreAdminMissionRevision, setAdminMissionStatus, updateAdminMission,
   type AdminMissionQuestionSet, type AdminQuestionSetMissionInput, type AdminSortingLevel,
+  type AdminFactOpinionMissionInput, type AdminFactOpinionStatement,
   type AdminScenarioItem, type AdminScenarioMissionInput, type AdminSequenceMissionInput,
   type AdminSequenceSet, type AdminSimulatorMissionInput, type AdminSimulatorNode,
   type AdminSortingMissionInput, type Mission, type Question,
 } from '../../features/api/client.js'
+import { FO_LEVEL1_STATEMENTS, FO_LEVEL2_STATEMENTS } from '../../features/games/fact-opinion-data.js'
 import {
   INFO_SORT_LEVELS, MULTISORT_LEVELS, SORTING_ATTRIBUTES_LEVELS, type SortingLevel,
 } from '../../features/games/sorting-data.js'
@@ -26,8 +28,11 @@ const TRACK_LABELS: Record<string, string> = {
 const KIND_LABELS: Record<string, string> = {
   'question-set': 'Набір питань', 'sorting-game': 'Гра-сортування',
   'sequence-game': 'Гра-кроки', 'scenario-game': 'Ситуаційна гра', puzzle: 'Головоломка',
-  'simulator-game': 'Симулятор',
+  'fact-opinion-game': 'Факт чи думка', 'simulator-game': 'Симулятор',
 }
+const FO_CATEGORY_OPTIONS: Array<{ value: AdminFactOpinionStatement['category']; label: string }> = [
+  { value: 'fact', label: '✅ Факт' }, { value: 'opinion', label: '💬 Думка' }, { value: 'myth', label: '🔮 Міф' },
+]
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Чернетка', review: 'На перевірці', published: 'Опублікована', active: 'Опублікована', archived: 'Архів',
 }
@@ -46,6 +51,7 @@ export function initMissionsTab() {
   $('add-sorting-mission-btn').addEventListener('click', () => { openSortingEditor(null) })
   $('add-sequence-mission-btn').addEventListener('click', () => { openNarrativeEditor(null, 'sequence-game') })
   $('add-scenario-mission-btn').addEventListener('click', () => { openNarrativeEditor(null, 'scenario-game') })
+  $('add-fact-opinion-mission-btn').addEventListener('click', () => { openNarrativeEditor(null, 'fact-opinion-game') })
   $('add-simulator-mission-btn').addEventListener('click', () => { openSimulatorEditor(null) })
 }
 
@@ -77,7 +83,7 @@ function renderMissions() {
 
 function missionCard(mission: Mission): HTMLElement {
   const status = (mission.status as string) === 'active' ? 'published' : mission.status
-  const editable = ['question-set', 'sorting-game', 'sequence-game', 'scenario-game', 'simulator-game'].includes(mission.kind)
+  const editable = ['question-set', 'sorting-game', 'sequence-game', 'scenario-game', 'fact-opinion-game', 'simulator-game'].includes(mission.kind)
   const needsSortingImport = mission.kind === 'sorting-game'
     && !(typeof mission.config?.gameKey === 'string' && Array.isArray(mission.config?.levels)
       && mission.config.levels.every(level => {
@@ -86,6 +92,7 @@ function missionCard(mission: Mission): HTMLElement {
       }))
   const needsNarrativeImport = (mission.kind === 'sequence-game' && !Array.isArray(mission.config?.sets))
     || (mission.kind === 'scenario-game' && !Array.isArray(mission.config?.items))
+    || (mission.kind === 'fact-opinion-game' && !Array.isArray(mission.config?.statements))
   const needsImport = needsSortingImport || needsNarrativeImport
     || (mission.kind === 'simulator-game' && !Array.isArray(mission.config?.nodes))
   const nextStatus: Mission['status'] = status === 'draft' ? 'review' : status === 'review' ? 'published'
@@ -115,14 +122,14 @@ function missionCard(mission: Mission): HTMLElement {
     el.querySelector<HTMLButtonElement>('.m-status')!.textContent = needsImport ? 'Спершу імпортувати' : nextLabel
     el.querySelector<HTMLButtonElement>('.m-edit')!.addEventListener('click', () => {
       if (mission.kind === 'sorting-game') openSortingEditor(mission)
-      else if (mission.kind === 'sequence-game' || mission.kind === 'scenario-game') openNarrativeEditor(mission, mission.kind)
+      else if (mission.kind === 'sequence-game' || mission.kind === 'scenario-game' || mission.kind === 'fact-opinion-game') openNarrativeEditor(mission, mission.kind)
       else if (mission.kind === 'simulator-game') openSimulatorEditor(mission)
       else void openEditor(mission)
     })
     el.querySelector<HTMLButtonElement>('.m-history')!.addEventListener('click', () => { void openHistory(mission) })
     el.querySelector<HTMLButtonElement>('.m-status')!.addEventListener('click', () => {
       if (needsSortingImport) { openSortingEditor(mission); return }
-      if (needsNarrativeImport && (mission.kind === 'sequence-game' || mission.kind === 'scenario-game')) {
+      if (needsNarrativeImport && (mission.kind === 'sequence-game' || mission.kind === 'scenario-game' || mission.kind === 'fact-opinion-game')) {
         openNarrativeEditor(mission, mission.kind); return
       }
       if (mission.kind === 'simulator-game' && !Array.isArray(mission.config?.nodes)) {
@@ -434,21 +441,33 @@ async function saveSortingMission() {
   finally { save.disabled = false }
 }
 
-let narrativeKind: 'sequence-game' | 'scenario-game' = 'sequence-game'
+type NarrativeKind = 'sequence-game' | 'scenario-game' | 'fact-opinion-game'
+let narrativeKind: NarrativeKind = 'sequence-game'
 let sequenceSets: AdminSequenceSet[] = []
 let scenarioItems: AdminScenarioItem[] = []
+let factOpinionStatements: AdminFactOpinionStatement[] = []
 
-function openNarrativeEditor(mission: Mission | null, kind: 'sequence-game' | 'scenario-game') {
+const NARRATIVE_DEFAULTS: Record<NarrativeKind, { key: string; title: string; heading: string; sectionLabel: string }> = {
+  'sequence-game': { key: 'algorithms-g2', title: 'Гра: Упорядкуй кроки', heading: 'Редактор гри «Упорядкуй кроки»', sectionLabel: 'Набори кроків' },
+  'scenario-game': { key: 'digital-safety', title: 'Гра: Як вчинити?', heading: 'Редактор ситуаційної гри', sectionLabel: 'Ситуації' },
+  'fact-opinion-game': { key: 'level1', title: 'Гра: Факт чи думка?', heading: 'Редактор гри «Факт чи думка»', sectionLabel: 'Твердження' },
+}
+
+function openNarrativeEditor(mission: Mission | null, kind: NarrativeKind) {
   editorMission = mission
   narrativeKind = kind
   const config = mission?.config ?? {}
   const sequenceStored = Array.isArray(config.sets) ? config.sets as unknown as AdminSequenceSet[] : null
   const scenarioStored = Array.isArray(config.items) ? config.items as unknown as AdminScenarioItem[] : null
+  const factOpinionStored = Array.isArray(config.statements) ? config.statements as unknown as AdminFactOpinionStatement[] : null
   sequenceSets = cloneData(sequenceStored ?? SEQUENCE_SETS_G2)
   scenarioItems = cloneData(scenarioStored ?? SCENARIOS_DIGITAL_SAFETY)
-  const legacyImport = mission && ((kind === 'sequence-game' && !sequenceStored) || (kind === 'scenario-game' && !scenarioStored))
-  const defaultKey = kind === 'sequence-game' ? 'algorithms-g2' : 'digital-safety'
-  const defaultTitle = kind === 'sequence-game' ? 'Гра: Упорядкуй кроки' : 'Гра: Як вчинити?'
+  factOpinionStatements = cloneData(factOpinionStored
+    ?? (config.gameKey === 'level2' ? FO_LEVEL2_STATEMENTS : FO_LEVEL1_STATEMENTS) as AdminFactOpinionStatement[])
+  const legacyImport = mission && ((kind === 'sequence-game' && !sequenceStored) || (kind === 'scenario-game' && !scenarioStored)
+    || (kind === 'fact-opinion-game' && !factOpinionStored))
+  const defaultKey = mission && kind === 'fact-opinion-game' && config.gameKey === 'level2' ? 'level2' : NARRATIVE_DEFAULTS[kind].key
+  const defaultTitle = NARRATIVE_DEFAULTS[kind].title
   editorOverlay = document.createElement('div')
   editorOverlay.className = 'admin-modal-overlay'
   editorOverlay.setAttribute('role', 'dialog')
@@ -456,7 +475,7 @@ function openNarrativeEditor(mission: Mission | null, kind: 'sequence-game' | 's
   editorOverlay.setAttribute('aria-labelledby', 'narrative-editor-title')
   editorOverlay.innerHTML = `
     <div class="admin-modal-card mission-editor-card">
-      <div class="admin-section-header"><h3 id="narrative-editor-title" class="admin-section-title">${kind === 'sequence-game' ? 'Редактор гри «Упорядкуй кроки»' : 'Редактор ситуаційної гри'}</h3>
+      <div class="admin-section-header"><h3 id="narrative-editor-title" class="admin-section-title">${NARRATIVE_DEFAULTS[kind].heading}</h3>
         <button type="button" class="btn-adm-ghost ne-close">Закрити</button></div>
       ${legacyImport ? '<p class="admin-section-note">Повний чинний вміст імпортовано з вбудованого пакета. Збережи його як чернетку, перевір і опублікуй.</p>' : ''}
       <form class="narrative-editor-form qf-space" novalidate>
@@ -468,7 +487,7 @@ function openNarrativeEditor(mission: Mission | null, kind: 'sequence-game' | 's
           <div><label class="adm-label">Ключ гри</label><input aria-label="Ключ гри" class="adm-input adm-input--sm adm-input--code ne-key" value="${esc(typeof config.gameKey === 'string' ? config.gameKey : defaultKey)}"></div>
           <div><label class="adm-label">Тема</label><input aria-label="Тема гри" class="adm-input adm-input--sm ne-topic" value="${esc(typeof config.topic === 'string' ? config.topic : '')}"></div>
         </div>
-        <div class="admin-section-header"><span class="adm-label">${kind === 'sequence-game' ? 'Набори кроків' : 'Ситуації'}</span><button type="button" class="btn-adm-ghost ne-add">Додати</button></div>
+        <div class="admin-section-header"><span class="adm-label">${NARRATIVE_DEFAULTS[kind].sectionLabel}</span><button type="button" class="btn-adm-ghost ne-add">Додати</button></div>
         <div class="narrative-item-list qf-space"></div>
         <p class="adm-form-error ne-error" role="alert"></p>
         <div class="adm-form-actions"><button type="submit" class="btn-adm-emerald ne-save">Зберегти чернетку</button><button type="button" class="btn-adm-violet ne-check">Перевірити склад</button></div>
@@ -479,6 +498,10 @@ function openNarrativeEditor(mission: Mission | null, kind: 'sequence-game' | 's
   editorOverlay.querySelector<HTMLButtonElement>('.ne-close')!.addEventListener('click', closeEditor)
   editorOverlay.querySelector<HTMLButtonElement>('.ne-add')!.addEventListener('click', () => {
     if (narrativeKind === 'sequence-game') sequenceSets.push({ id: `set-${sequenceSets.length + 1}`, title: 'Новий набір', steps: ['Перший крок', 'Другий крок', 'Третій крок'] })
+    else if (narrativeKind === 'fact-opinion-game') factOpinionStatements.push({
+      id: `statement-${factOpinionStatements.length + 1}`, category: 'fact',
+      text: 'Нове твердження', explanation: 'Поясни дитині, чому це так.',
+    })
     else scenarioItems.push({ id: `scenario-${scenarioItems.length + 1}`, emoji: '💬', text: 'Опиши ситуацію', options: [
       { label: 'Правильна дія', correct: true, feedback: 'Так, це правильна дія.' },
       { label: 'Неправильна дія', correct: false, feedback: 'Спробуй обрати безпечнішу дію.' },
@@ -488,8 +511,10 @@ function openNarrativeEditor(mission: Mission | null, kind: 'sequence-game' | 's
   editorOverlay.querySelector<HTMLButtonElement>('.ne-check')!.addEventListener('click', () => {
     try {
       const value = collectNarrativeMission()
-      const count = value.kind === 'sequence-game' ? value.config.sets.length : value.config.items.length
-      showModal(`${count} ${value.kind === 'sequence-game' ? 'наборів' : 'ситуацій'} · структура коректна`)
+      const count = value.kind === 'sequence-game' ? value.config.sets.length
+        : value.kind === 'fact-opinion-game' ? value.config.statements.length : value.config.items.length
+      const noun = value.kind === 'sequence-game' ? 'наборів' : value.kind === 'fact-opinion-game' ? 'тверджень' : 'ситуацій'
+      showModal(`${count} ${noun} · структура коректна`)
     } catch (err) { showModal((err as Error).message) }
   })
   editorOverlay.querySelector<HTMLFormElement>('.narrative-editor-form')!.addEventListener('submit', event => { event.preventDefault(); void saveNarrativeMission() })
@@ -502,11 +527,42 @@ function renderNarrativeItems() {
   if (!editorOverlay) return
   const list = editorOverlay.querySelector<HTMLElement>('.narrative-item-list')!
   list.innerHTML = ''
-  const count = narrativeKind === 'sequence-game' ? sequenceSets.length : scenarioItems.length
+  const count = narrativeKind === 'sequence-game' ? sequenceSets.length
+    : narrativeKind === 'fact-opinion-game' ? factOpinionStatements.length : scenarioItems.length
   for (let index = 0; index < count; index++) {
     const block = document.createElement('fieldset')
     block.className = 'lf-block narrative-item-block'
-    if (narrativeKind === 'sequence-game') {
+    if (narrativeKind === 'fact-opinion-game') {
+      const statement = factOpinionStatements[index]
+      block.innerHTML = `<div class="admin-section-header"><strong>Твердження ${index + 1}</strong><button type="button" class="btn-adm-ghost ni-remove">Видалити</button></div>
+        <div class="adm-form-grid adm-form-grid--4">
+          <div><label class="adm-label">ID</label><input aria-label="ID твердження ${index + 1}" class="adm-input adm-input--sm adm-input--code ni-id" value="${esc(statement.id)}"></div>
+          <div><label class="adm-label">Категорія</label><select aria-label="Категорія твердження ${index + 1}" class="adm-input adm-input--sm ni-category">${FO_CATEGORY_OPTIONS.map(option => `<option value="${option.value}">${option.label}</option>`).join('')}</select></div>
+          <div><label class="adm-label">Мова джерела</label><select aria-label="Мова джерела твердження ${index + 1}" class="adm-input adm-input--sm ni-lang"><option value="">—</option><option value="uk">українська</option><option value="en">англійська</option></select></div>
+        </div>
+        <div><label class="adm-label">Твердження</label><textarea aria-label="Текст твердження ${index + 1}" class="adm-input ni-text" rows="2">${esc(statement.text)}</textarea></div>
+        <div><label class="adm-label">Пояснення для дитини</label><textarea aria-label="Пояснення твердження ${index + 1}" class="adm-input ni-explanation" rows="2">${esc(statement.explanation)}</textarea></div>
+        <div class="adm-form-grid">
+          <div><label class="adm-label">Джерело — назва</label><input aria-label="Назва джерела твердження ${index + 1}" class="adm-input adm-input--sm ni-source-title" value="${esc(statement.sourceTitle ?? '')}"></div>
+          <div><label class="adm-label">Джерело — https-посилання</label><input aria-label="Посилання джерела твердження ${index + 1}" class="adm-input adm-input--sm ni-source-url" value="${esc(statement.sourceUrl ?? '')}"></div>
+        </div>`
+      block.querySelector<HTMLSelectElement>('.ni-category')!.value = statement.category
+      block.querySelector<HTMLSelectElement>('.ni-lang')!.value = statement.sourceLanguage ?? ''
+      const bind = (selector: string, apply: (value: string) => void) => {
+        const control = block.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(selector)!
+        control.addEventListener('input', () => { apply(control.value) })
+      }
+      bind('.ni-id', value => { statement.id = value })
+      bind('.ni-category', value => { statement.category = value as AdminFactOpinionStatement['category'] })
+      bind('.ni-text', value => { statement.text = value })
+      bind('.ni-explanation', value => { statement.explanation = value })
+      bind('.ni-source-title', value => { statement.sourceTitle = value })
+      bind('.ni-source-url', value => { statement.sourceUrl = value })
+      bind('.ni-lang', value => {
+        if (value === 'uk' || value === 'en') statement.sourceLanguage = value
+        else delete statement.sourceLanguage
+      })
+    } else if (narrativeKind === 'sequence-game') {
       const set = sequenceSets[index]
       block.innerHTML = `<div class="admin-section-header"><strong>Набір ${index + 1}</strong><button type="button" class="btn-adm-ghost ni-remove">Видалити</button></div>
         <div class="adm-form-grid"><div><label class="adm-label">ID</label><input aria-label="ID набору ${index + 1}" class="adm-input adm-input--sm ni-id" value="${esc(set.id)}"></div>
@@ -522,6 +578,7 @@ function renderNarrativeItems() {
     }
     block.querySelector<HTMLButtonElement>('.ni-remove')!.addEventListener('click', () => {
       if (narrativeKind === 'sequence-game') sequenceSets.splice(index, 1)
+      else if (narrativeKind === 'fact-opinion-game') factOpinionStatements.splice(index, 1)
       else scenarioItems.splice(index, 1)
       renderNarrativeItems()
     })
@@ -535,7 +592,7 @@ function nonEmptyLines(value: string, label: string): string[] {
   return lines
 }
 
-function collectNarrativeMission(): AdminSequenceMissionInput | AdminScenarioMissionInput {
+function collectNarrativeMission(): AdminSequenceMissionInput | AdminScenarioMissionInput | AdminFactOpinionMissionInput {
   if (!editorOverlay) throw new Error('Редактор закрито')
   const common = {
     id: editorMission?.id ?? editorOverlay.querySelector<HTMLInputElement>('.ne-id')!.value.trim(),
@@ -546,6 +603,18 @@ function collectNarrativeMission(): AdminSequenceMissionInput | AdminScenarioMis
   const gameKey = editorOverlay.querySelector<HTMLInputElement>('.ne-key')!.value.trim()
   const topic = editorOverlay.querySelector<HTMLInputElement>('.ne-topic')!.value.trim()
   const blocks = [...editorOverlay.querySelectorAll<HTMLElement>('.narrative-item-block')]
+  if (narrativeKind === 'fact-opinion-game') {
+    const statements = factOpinionStatements.map(statement => ({
+      id: statement.id.trim(),
+      category: statement.category,
+      text: statement.text.trim(),
+      explanation: statement.explanation.trim(),
+      ...(statement.sourceTitle?.trim() ? { sourceTitle: statement.sourceTitle.trim() } : {}),
+      ...(statement.sourceUrl?.trim() ? { sourceUrl: statement.sourceUrl.trim() } : {}),
+      ...(statement.sourceLanguage ? { sourceLanguage: statement.sourceLanguage } : {}),
+    }))
+    return { ...common, kind: 'fact-opinion-game', config: { gameKey, ...(topic ? { topic } : {}), statements } }
+  }
   if (narrativeKind === 'sequence-game') {
     const sets = blocks.map((block, index) => ({
       id: block.querySelector<HTMLInputElement>('.ni-id')!.value.trim(),
