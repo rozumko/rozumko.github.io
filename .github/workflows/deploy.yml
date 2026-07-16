@@ -56,8 +56,15 @@ jobs:
             echo "::error::Configure the CONTENT_EXPORT_DATABASE_URL Actions secret before deploying Pages."
             exit 1
           fi
+          if [[ "$SUPABASE_DB_CA_CERT" != *"BEGIN CERTIFICATE"* ]]; then
+            echo "::error::Configure the SUPABASE_DB_CA_CERT Actions secret before deploying Pages."
+            exit 1
+          fi
+          printf '%s\n' "$SUPABASE_DB_CA_CERT" > "$RUNNER_TEMP/supabase-db-ca.crt"
+          chmod 600 "$RUNNER_TEMP/supabase-db-ca.crt"
         env:
           DATABASE_URL: ${{ secrets.CONTENT_EXPORT_DATABASE_URL }}
+          SUPABASE_DB_CA_CERT: ${{ secrets.SUPABASE_DB_CA_CERT }}
 
       - name: Verify publication callback configuration
         if: inputs.publication_id != ''
@@ -89,6 +96,7 @@ jobs:
         working-directory: backend
         env:
           DATABASE_URL: ${{ secrets.CONTENT_EXPORT_DATABASE_URL }}
+          NODE_EXTRA_CA_CERTS: ${{ runner.temp }}/supabase-db-ca.crt
           EXPECTED_MANIFEST_SHA256: ${{ inputs.expected_manifest_sha256 }}
 
       - name: Type check
