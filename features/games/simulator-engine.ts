@@ -5,6 +5,8 @@
 export type SimState = Record<string, boolean>
 
 export interface SimChoice {
+  /** Stable authoring slot. Content may change its label, never its action. */
+  contentId: string
   text: string | ((s: SimState) => string)
   next: string | ((s: SimState) => string)
   action?: (s: SimState) => void
@@ -47,6 +49,31 @@ export interface SimSummary {
 
 export interface SimOptions {
   onComplete?: (summary: SimSummary) => void
+}
+
+export interface SimulatorTextVariant {
+  source: string
+  value: string
+}
+
+export interface SimulatorTransitionContent {
+  slot: string
+  labels: SimulatorTextVariant[]
+  target?: string
+}
+
+export interface SimulatorNodeContent {
+  id: string
+  icon: string
+  texts: SimulatorTextVariant[]
+  info?: string
+  transitions: SimulatorTransitionContent[]
+}
+
+export interface SimulatorContentPack {
+  scenarioKey: string
+  mechanicsVersion: number
+  nodes: SimulatorNodeContent[]
 }
 
 /** 3 зірки — без помилок, 2 — одна-дві, інакше 1. */

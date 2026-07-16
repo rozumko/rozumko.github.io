@@ -12,7 +12,7 @@
 import { mkdirSync, writeFileSync } from 'fs'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { db } from '../src/db/index.js'
 import { questions } from '../src/db/schema.js'
 import { sanitizeForStaticBundle, groupByGrade } from '../src/lib/practice-export.js'
@@ -29,14 +29,19 @@ const rows = await db
     options:     questions.options,
     correct:     questions.correct,
     explanation: questions.explanation,
+    img:         questions.img,
+    imageAlt:    questions.imageAlt,
     difficulty:  questions.difficulty,
     track:       questions.track,
     topic:       questions.topic,
+    conceptKey:  questions.conceptKey,
+    progressionBand: questions.progressionBand,
+    version:     questions.version,
     grade:       questions.grade,
     isOlympiad:  questions.isOlympiad,
   })
   .from(questions)
-  .where(eq(questions.isOlympiad, false))
+  .where(and(eq(questions.isOlympiad, false), eq(questions.editorialStatus, 'published')))
 
 const bundle = sanitizeForStaticBundle(rows)
 const grouped = groupByGrade(bundle)

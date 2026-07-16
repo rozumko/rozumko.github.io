@@ -6,10 +6,9 @@ import { esc, showModal, showConfirm } from './ui.js'
 import { $ } from '../../utils/dom.js'
 import { createFocusTrap } from '../../utils/focus-trap.js'
 
-// Вкладка «Шлях»: формовий редактор точок карти (не візуальний граф) з
-// SVG-прев'ю. Джерело правди — path_maps у БД; дітям структура їде бандлом
-// public/path/ після npm run export:path. Зміна активності кроку піднімає
-// його version на сервері автоматично (bumpChangedStepVersions).
+// Form-based path point editor with an SVG preview. The database is the source
+// of truth; the audited publication tab deploys child-facing static bundles.
+// Changing step activity bumps its server-side version automatically.
 
 interface StepJson {
   id: string
@@ -87,7 +86,7 @@ export async function loadPathTab() {
   try {
     const [{ maps: loadedMaps }, { lessons }] = await Promise.all([getAdminPathMaps(), getAdminLessons()])
     maps = loadedMaps
-    lessonIds = lessons.filter(lesson => lesson.status === 'published').map(lesson => lesson.id).sort()
+    lessonIds = lessons.filter(lesson => lesson.publishedVersion && lesson.status !== 'archived').map(lesson => lesson.id).sort()
     loaded = true
     resetWorking()
     renderPathTab()
@@ -432,8 +431,8 @@ async function saveMap() {
     resetWorking()
     renderPathTab()
     showModal(bumpedSteps.length
-      ? `Збережено (v${map.version}). Підняті версії кроків: ${bumpedSteps.join(', ')}. Не забудь npm run export:path.`
-      : `Збережено (v${map.version}). Не забудь npm run export:path.`)
+      ? `Збережено (v${map.version}). Підняті версії кроків: ${bumpedSteps.join(', ')}. Для доставки дітям запусти загальну публікацію.`
+      : `Збережено (v${map.version}). Для доставки дітям запусти загальну публікацію.`)
   } catch (err) {
     $('pm-error').textContent = (err as Error).message
   } finally {

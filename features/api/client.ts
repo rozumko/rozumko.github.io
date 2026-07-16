@@ -27,10 +27,15 @@ export interface Question {
   conceptKey?: string | null      // CT-навичка (крос-напрямкова)
   progressionBand?: 'recognize' | 'apply' | 'reason' | null
   version?: number
+  editVersion?: number
+  editorialStatus?: 'draft' | 'review' | 'published' | 'archived'
   grade?: number
   isOlympiad?: boolean
   a?: string[]                    // normalized alias для question-renderer (choice/truefalse)
   img?: string | null
+  imageAlt?: string | null
+  updatedAt?: string | null
+  publishedAt?: string | null
   [key: string]: unknown          // дозволяє передавати Question туди де очікується RenderableQuestion
 }
 
@@ -1010,10 +1015,46 @@ export function createQuestion(data: Omit<Question, 'id' | 'a'>): Promise<{ id: 
   })
 }
 
-export function updateQuestion(id: string, data: Partial<Omit<Question, 'id' | 'a'>>): Promise<{ id: string }> {
+export function updateQuestion(id: string, data: Partial<Omit<Question, 'id' | 'a'>> & { expectedEditVersion: number }): Promise<{ id: string; version: number; editVersion: number }> {
   return authRequest(`/api/admin/questions/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
+  })
+}
+
+export function setQuestionEditorialStatus(
+  id: string,
+  status: NonNullable<Question['editorialStatus']>,
+  expectedEditVersion: number,
+): Promise<{ question: Question }> {
+  return authRequest(`/api/admin/questions/${id}/status`, {
+    method: 'PUT',
+    body: JSON.stringify({ status, expectedEditVersion }),
+  })
+}
+
+export interface QuestionRevision {
+  id: string
+  questionId: string
+  editVersion: number
+  action: 'create' | 'update' | 'status' | 'restore' | 'backfill'
+  snapshot: Record<string, unknown>
+  changedBy: string | null
+  createdAt: string
+}
+
+export function getQuestionRevisions(id: string): Promise<{ revisions: QuestionRevision[] }> {
+  return authRequest(`/api/admin/questions/${id}/revisions`)
+}
+
+export function restoreQuestionRevision(
+  id: string,
+  revisionEditVersion: number,
+  expectedEditVersion: number,
+): Promise<{ question: Question }> {
+  return authRequest(`/api/admin/questions/${id}/restore`, {
+    method: 'POST',
+    body: JSON.stringify({ revisionEditVersion, expectedEditVersion }),
   })
 }
 
@@ -1028,7 +1069,9 @@ export interface Mission {
   track: QuestionTrack
   grade: number
   version: number
-  status: 'draft' | 'active' | 'archived'
+  editVersion: number
+  status: 'draft' | 'review' | 'published' | 'archived'
+  publishedVersion: number | null
   config: Record<string, unknown> | null
   createdAt: string | null
   updatedAt: string | null
@@ -1036,6 +1079,112 @@ export interface Mission {
 
 export function getAdminMissions(): Promise<{ missions: Mission[] }> {
   return authRequest('/api/admin/missions')
+}
+
+export type MissionSetPurpose = 'practice' | 'apply' | 'confirm'
+export type MissionSetVariant = 'default' | 'a' | 'b'
+export interface AdminMissionQuestionSet {
+  id: string
+  purpose: MissionSetPurpose
+  variant: MissionSetVariant
+  questionIds: string[]
+}
+export interface AdminQuestionSetMissionInput {
+  id: string
+  title: string
+  kind: 'question-set'
+  track: QuestionTrack
+  grade: number
+  config: {
+    topic?: string
+    difficulty?: 'easy' | 'medium' | 'hard'
+    questionSets: AdminMissionQuestionSet[]
+  }
+}
+
+export interface AdminSortingBin { id: string; label: string }
+export interface AdminSortingItem { emoji: string; label?: string; bin: string }
+export interface AdminSortingLevel {
+  instruction: string
+  bins: AdminSortingBin[]
+  items: AdminSortingItem[]
+}
+export interface AdminSortingMissionInput {
+  id: string
+  title: string
+  kind: 'sorting-game'
+  track: QuestionTrack
+  grade: number
+  config: {
+    gameKey: string
+    topic?: string
+    conceptKey?: string
+    levels: AdminSortingLevel[]
+  }
+}
+export interface AdminSequenceSet { id: string; title: string; steps: string[] }
+export interface AdminSequenceMissionInput {
+  id: string; title: string; kind: 'sequence-game'; track: QuestionTrack; grade: number
+  config: { gameKey: string; topic?: string; sets: AdminSequenceSet[] }
+}
+export interface AdminScenarioOption { label: string; correct: boolean; feedback: string }
+export interface AdminScenarioItem { id: string; emoji: string; text: string; options: AdminScenarioOption[] }
+export interface AdminScenarioMissionInput {
+  id: string; title: string; kind: 'scenario-game'; track: QuestionTrack; grade: number
+  config: { gameKey: string; topic?: string; items: AdminScenarioItem[] }
+}
+export interface AdminSimulatorTextVariant { source: string; value: string }
+export interface AdminSimulatorTransition {
+  slot: string
+  labels: AdminSimulatorTextVariant[]
+  target?: string
+}
+export interface AdminSimulatorNode {
+  id: string
+  icon: string
+  texts: AdminSimulatorTextVariant[]
+  info?: string
+  transitions: AdminSimulatorTransition[]
+}
+export interface AdminSimulatorMissionInput {
+  id: string; title: string; kind: 'simulator-game'; track: QuestionTrack; grade: number
+  config: { scenarioKey: string; mechanicsVersion: number; topic?: string; nodes: AdminSimulatorNode[] }
+}
+export type AdminEditableMissionInput = AdminQuestionSetMissionInput | AdminSortingMissionInput
+  | AdminSequenceMissionInput | AdminScenarioMissionInput | AdminSimulatorMissionInput
+
+export function createAdminMission(data: AdminEditableMissionInput): Promise<{ mission: Mission }> {
+  return authRequest('/api/admin/missions', { method: 'POST', body: JSON.stringify(data) })
+}
+
+export function updateAdminMission(id: string, data: AdminEditableMissionInput & { expectedEditVersion: number }): Promise<{ mission: Mission }> {
+  return authRequest(`/api/admin/missions/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) })
+}
+
+export function setAdminMissionStatus(id: string, status: Mission['status'], expectedEditVersion: number): Promise<{ mission: Mission }> {
+  return authRequest(`/api/admin/missions/${encodeURIComponent(id)}/status`, {
+    method: 'PUT', body: JSON.stringify({ status, expectedEditVersion }),
+  })
+}
+
+export interface AdminMissionRevision {
+  id: string
+  missionId: string
+  editVersion: number
+  action: string
+  snapshot: Record<string, unknown>
+  changedBy: string | null
+  createdAt: string
+}
+
+export function getAdminMissionRevisions(id: string): Promise<{ revisions: AdminMissionRevision[] }> {
+  return authRequest(`/api/admin/missions/${encodeURIComponent(id)}/revisions`)
+}
+
+export function restoreAdminMissionRevision(id: string, revisionEditVersion: number, expectedEditVersion: number): Promise<{ mission: Mission }> {
+  return authRequest(`/api/admin/missions/${encodeURIComponent(id)}/restore`, {
+    method: 'POST', body: JSON.stringify({ revisionEditVersion, expectedEditVersion }),
+  })
 }
 
 // ── Мікро-уроки (адмінка). Дітям контент їде статичним бандлом
@@ -1059,7 +1208,9 @@ export interface AdminMicroLesson {
   id: string
   title: string
   version: number
-  status: 'draft' | 'published' | 'archived'
+  status: 'draft' | 'review' | 'published' | 'archived'
+  editVersion: number
+  publishedVersion: number | null
   cards: AdminLessonCard[]
   videoUrl: string | null
   checkQuestions: AdminLessonCheckQuestion[]
@@ -1082,15 +1233,65 @@ export function createAdminLesson(data: AdminLessonContent & { id: string }): Pr
   return authRequest('/api/admin/lessons', { method: 'POST', body: JSON.stringify(data) })
 }
 
-export function updateAdminLesson(id: string, data: AdminLessonContent): Promise<{ lesson: AdminMicroLesson; versionBumped: boolean }> {
+export function updateAdminLesson(id: string, data: AdminLessonContent & { expectedEditVersion: number }): Promise<{ lesson: AdminMicroLesson; versionBumped: boolean }> {
   return authRequest(`/api/admin/lessons/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) })
 }
 
-export function setAdminLessonStatus(id: string, status: AdminMicroLesson['status']): Promise<{ lesson: AdminMicroLesson }> {
+export function setAdminLessonStatus(id: string, status: AdminMicroLesson['status'], expectedEditVersion: number): Promise<{ lesson: AdminMicroLesson }> {
   return authRequest(`/api/admin/lessons/${encodeURIComponent(id)}/status`, {
     method: 'PUT',
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ status, expectedEditVersion }),
   })
+}
+
+export interface AdminLessonRevision {
+  id: string
+  lessonId: string
+  editVersion: number
+  action: string
+  snapshot: Record<string, unknown>
+  changedBy: string | null
+  createdAt: string
+}
+
+export function getAdminLessonRevisions(id: string): Promise<{ revisions: AdminLessonRevision[] }> {
+  return authRequest(`/api/admin/lessons/${encodeURIComponent(id)}/revisions`)
+}
+
+export function restoreAdminLessonRevision(id: string, revisionEditVersion: number, expectedEditVersion: number): Promise<{ lesson: AdminMicroLesson }> {
+  return authRequest(`/api/admin/lessons/${encodeURIComponent(id)}/restore`, {
+    method: 'POST', body: JSON.stringify({ revisionEditVersion, expectedEditVersion }),
+  })
+}
+
+export interface AdminContentPublication {
+  id: string
+  status: 'queued' | 'running' | 'succeeded' | 'failed'
+  expectedManifest: {
+    schemaVersion: number
+    practiceQuestions?: unknown[]
+    lessons?: unknown[]
+    gamePacks?: unknown[]
+    paths?: unknown[]
+  }
+  expectedManifestSha256: string
+  publishedManifestSha256: string | null
+  requestedBy: string
+  workflowRunId: string | null
+  workflowUrl: string | null
+  sourceSha: string | null
+  failureReason: string | null
+  createdAt: string
+  startedAt: string | null
+  completedAt: string | null
+}
+
+export function getAdminContentPublications(): Promise<{ publications: AdminContentPublication[] }> {
+  return authRequest('/api/admin/content-publications')
+}
+
+export function createAdminContentPublication(): Promise<{ publication: AdminContentPublication }> {
+  return authRequest('/api/admin/content-publications', { method: 'POST', body: JSON.stringify({}) })
 }
 
 // Admin-authored path maps (0033/0034). Children receive immutable revisions via
@@ -1122,12 +1323,14 @@ export function updateAdminPathMap(
   })
 }
 
-export function getAdminQuestions(params: { grade?: number | string; isOlympiad?: boolean | string; difficulty?: string; track?: QuestionTrack | string; topic?: string } = {}): Promise<{ questions: Question[] }> {
+export function getAdminQuestions(params: { grade?: number | string; isOlympiad?: boolean | string; difficulty?: string; track?: QuestionTrack | string; topic?: string; status?: string; search?: string } = {}): Promise<{ questions: Question[] }> {
   const p = new URLSearchParams()
   if (params.grade      != null) p.set('grade',      String(params.grade))
   if (params.isOlympiad != null) p.set('isOlympiad', String(params.isOlympiad))
   if (params.difficulty)         p.set('difficulty', params.difficulty)
   if (params.track)              p.set('track',      String(params.track))
   if (params.topic)              p.set('topic',      params.topic)
+  if (params.status)             p.set('status',     params.status)
+  if (params.search)             p.set('search',     params.search)
   return authRequest(`/api/admin/questions?${p}`)
 }

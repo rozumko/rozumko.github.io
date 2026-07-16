@@ -25,8 +25,9 @@ test('slug: валідні приймаються, невалідні фейля
   }
 })
 
-test('status: лише draft/published/archived', () => {
+test('status: лише draft/review/published/archived', () => {
   assert.equal(normalizeLessonStatus('published'), 'published')
+  assert.equal(normalizeLessonStatus('review'), 'review')
   for (const bad of ['active', '', null, 1]) {
     assert.throws(() => normalizeLessonStatus(bad))
   }

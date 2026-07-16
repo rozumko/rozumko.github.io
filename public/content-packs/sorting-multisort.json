@@ -1,0 +1,212 @@
+{
+  "id": "game-multisort-attributes-grade2",
+  "gameKey": "multisort",
+  "version": 1,
+  "title": "Гра: Мульти-Сортування (той самий предмет — різні ознаки)",
+  "levels": [
+    {
+      "instruction": "Спочатку — за кольором",
+      "bins": [
+        {
+          "id": "red",
+          "label": "🔴 Червоне"
+        },
+        {
+          "id": "green",
+          "label": "🟢 Зелене"
+        }
+      ],
+      "items": [
+        {
+          "emoji": "🍎",
+          "label": "Яблуко",
+          "bin": "red"
+        },
+        {
+          "emoji": "🌶️",
+          "label": "Перець",
+          "bin": "red"
+        },
+        {
+          "emoji": "🚒",
+          "label": "Пожежна",
+          "bin": "red"
+        },
+        {
+          "emoji": "🎈",
+          "label": "Кулька",
+          "bin": "red"
+        },
+        {
+          "emoji": "🍃",
+          "label": "Листок",
+          "bin": "green"
+        },
+        {
+          "emoji": "🥦",
+          "label": "Броколі",
+          "bin": "green"
+        },
+        {
+          "emoji": "🐸",
+          "label": "Жаба",
+          "bin": "green"
+        },
+        {
+          "emoji": "🐢",
+          "label": "Черепаха",
+          "bin": "green"
+        },
+        {
+          "emoji": "🚗",
+          "label": "Авто",
+          "bin": "red"
+        },
+        {
+          "emoji": "🧦",
+          "label": "Шкарпетки",
+          "bin": "red"
+        }
+      ]
+    },
+    {
+      "instruction": "Ті самі речі — тепер їжа чи тварини?",
+      "bins": [
+        {
+          "id": "food",
+          "label": "🍔 Їжа"
+        },
+        {
+          "id": "animal",
+          "label": "🐾 Тварини"
+        }
+      ],
+      "items": [
+        {
+          "emoji": "🍎",
+          "label": "Яблуко",
+          "bin": "food"
+        },
+        {
+          "emoji": "🍌",
+          "label": "Банан",
+          "bin": "food"
+        },
+        {
+          "emoji": "🧀",
+          "label": "Сир",
+          "bin": "food"
+        },
+        {
+          "emoji": "🍩",
+          "label": "Пончик",
+          "bin": "food"
+        },
+        {
+          "emoji": "🐱",
+          "label": "Кіт",
+          "bin": "animal"
+        },
+        {
+          "emoji": "🐕",
+          "label": "Пес",
+          "bin": "animal"
+        },
+        {
+          "emoji": "🐋",
+          "label": "Кит",
+          "bin": "animal"
+        },
+        {
+          "emoji": "🐸",
+          "label": "Жаба",
+          "bin": "animal"
+        },
+        {
+          "emoji": "🥦",
+          "label": "Броколі",
+          "bin": "food"
+        },
+        {
+          "emoji": "🍋",
+          "label": "Лимон",
+          "bin": "food"
+        }
+      ]
+    },
+    {
+      "instruction": "А тепер — природа, техніка чи одяг?",
+      "bins": [
+        {
+          "id": "nature",
+          "label": "🌿 Природа"
+        },
+        {
+          "id": "machine",
+          "label": "⚙️ Техніка"
+        },
+        {
+          "id": "clothing",
+          "label": "👕 Одяг"
+        }
+      ],
+      "items": [
+        {
+          "emoji": "🍃",
+          "label": "Листок",
+          "bin": "nature"
+        },
+        {
+          "emoji": "☀️",
+          "label": "Сонце",
+          "bin": "nature"
+        },
+        {
+          "emoji": "💧",
+          "label": "Крапля",
+          "bin": "nature"
+        },
+        {
+          "emoji": "🐸",
+          "label": "Жаба",
+          "bin": "nature"
+        },
+        {
+          "emoji": "🚗",
+          "label": "Авто",
+          "bin": "machine"
+        },
+        {
+          "emoji": "⏰",
+          "label": "Годинник",
+          "bin": "machine"
+        },
+        {
+          "emoji": "✈️",
+          "label": "Літак",
+          "bin": "machine"
+        },
+        {
+          "emoji": "👖",
+          "label": "Джинси",
+          "bin": "clothing"
+        },
+        {
+          "emoji": "🚒",
+          "label": "Пожежна",
+          "bin": "machine"
+        },
+        {
+          "emoji": "👕",
+          "label": "Футболка",
+          "bin": "clothing"
+        },
+        {
+          "emoji": "🧦",
+          "label": "Шкарпетки",
+          "bin": "clothing"
+        }
+      ]
+    }
+  ]
+}

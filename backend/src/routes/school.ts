@@ -145,7 +145,11 @@ export async function schoolRoutes(app: FastifyInstance) {
     try { topic = normalizeTopic(req.body.topic, track) } catch (e) { return reply.code(400).send({ error: (e as Error).message }) }
     const wanted = req.body.questionsCount ?? 10
 
-    const filters = [eq(questions.isOlympiad, false), eq(questions.grade, req.body.grade)]
+    const filters = [
+      eq(questions.isOlympiad, false),
+      eq(questions.editorialStatus, 'published'),
+      eq(questions.grade, req.body.grade),
+    ]
     if (difficulty) filters.push(eq(questions.difficulty, difficulty))
     if (track)      filters.push(eq(questions.track, track))
     if (topic)      filters.push(eq(questions.topic, topic))

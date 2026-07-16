@@ -1,0 +1,262 @@
+{
+  "id": "game-sorting-attributes-grade1",
+  "gameKey": "attributes",
+  "version": 1,
+  "title": "Гра: Розумне сортування (класифікація за ознакою)",
+  "levels": [
+    {
+      "instruction": "Що можна їсти?",
+      "bins": [
+        {
+          "id": "eat",
+          "label": "😋 Їстівне"
+        },
+        {
+          "id": "no-eat",
+          "label": "🚫 Неїстівне"
+        }
+      ],
+      "items": [
+        {
+          "emoji": "🍕",
+          "label": "Піца",
+          "bin": "eat"
+        },
+        {
+          "emoji": "🎩",
+          "label": "Капелюх",
+          "bin": "no-eat"
+        },
+        {
+          "emoji": "🍓",
+          "label": "Полуниця",
+          "bin": "eat"
+        },
+        {
+          "emoji": "🧱",
+          "label": "Цеглина",
+          "bin": "no-eat"
+        },
+        {
+          "emoji": "🧀",
+          "label": "Сир",
+          "bin": "eat"
+        },
+        {
+          "emoji": "⏰",
+          "label": "Будильник",
+          "bin": "no-eat"
+        },
+        {
+          "emoji": "🍎",
+          "label": "Яблуко",
+          "bin": "eat"
+        },
+        {
+          "emoji": "⚽",
+          "label": "Мʼяч",
+          "bin": "no-eat"
+        }
+      ]
+    },
+    {
+      "instruction": "Який це транспорт?",
+      "bins": [
+        {
+          "id": "air",
+          "label": "✈️ Повітря"
+        },
+        {
+          "id": "water",
+          "label": "⛵ Вода"
+        },
+        {
+          "id": "land",
+          "label": "🚗 Земля"
+        }
+      ],
+      "items": [
+        {
+          "emoji": "🚁",
+          "label": "Гелікоптер",
+          "bin": "air"
+        },
+        {
+          "emoji": "🚢",
+          "label": "Корабель",
+          "bin": "water"
+        },
+        {
+          "emoji": "🚌",
+          "label": "Автобус",
+          "bin": "land"
+        },
+        {
+          "emoji": "🚀",
+          "label": "Ракета",
+          "bin": "air"
+        },
+        {
+          "emoji": "⛵",
+          "label": "Вітрильник",
+          "bin": "water"
+        },
+        {
+          "emoji": "🚲",
+          "label": "Велосипед",
+          "bin": "land"
+        },
+        {
+          "emoji": "🚤",
+          "label": "Катер",
+          "bin": "water"
+        },
+        {
+          "emoji": "🚂",
+          "label": "Потяг",
+          "bin": "land"
+        },
+        {
+          "emoji": "🦅",
+          "label": "Орел",
+          "bin": "air"
+        }
+      ]
+    },
+    {
+      "instruction": "Яка це форма?",
+      "bins": [
+        {
+          "id": "circle",
+          "label": "⭕ Кругле"
+        },
+        {
+          "id": "square",
+          "label": "🟥 Кутасте"
+        }
+      ],
+      "items": [
+        {
+          "emoji": "⚽",
+          "label": "Мʼяч",
+          "bin": "circle"
+        },
+        {
+          "emoji": "📺",
+          "label": "Телевізор",
+          "bin": "square"
+        },
+        {
+          "emoji": "🌕",
+          "label": "Місяць",
+          "bin": "circle"
+        },
+        {
+          "emoji": "🖼️",
+          "label": "Картина",
+          "bin": "square"
+        },
+        {
+          "emoji": "🍕",
+          "label": "Піца",
+          "bin": "circle"
+        },
+        {
+          "emoji": "🧊",
+          "label": "Кубик льоду",
+          "bin": "square"
+        }
+      ]
+    },
+    {
+      "instruction": "Велике чи маленьке?",
+      "bins": [
+        {
+          "id": "big",
+          "label": "🐘 Велике"
+        },
+        {
+          "id": "small",
+          "label": "🐭 Маленьке"
+        }
+      ],
+      "items": [
+        {
+          "emoji": "🐋",
+          "label": "Кит",
+          "bin": "big"
+        },
+        {
+          "emoji": "🐜",
+          "label": "Мураха",
+          "bin": "small"
+        },
+        {
+          "emoji": "🏠",
+          "label": "Будинок",
+          "bin": "big"
+        },
+        {
+          "emoji": "📌",
+          "label": "Кнопка",
+          "bin": "small"
+        },
+        {
+          "emoji": "🚌",
+          "label": "Автобус",
+          "bin": "big"
+        },
+        {
+          "emoji": "🍬",
+          "label": "Цукерка",
+          "bin": "small"
+        }
+      ]
+    },
+    {
+      "instruction": "Швидке чи повільне?",
+      "bins": [
+        {
+          "id": "fast",
+          "label": "⚡ Швидке"
+        },
+        {
+          "id": "slow",
+          "label": "🐌 Повільне"
+        }
+      ],
+      "items": [
+        {
+          "emoji": "🐆",
+          "label": "Гепард",
+          "bin": "fast"
+        },
+        {
+          "emoji": "🐢",
+          "label": "Черепаха",
+          "bin": "slow"
+        },
+        {
+          "emoji": "🏎️",
+          "label": "Гоночне авто",
+          "bin": "fast"
+        },
+        {
+          "emoji": "🚜",
+          "label": "Трактор",
+          "bin": "slow"
+        },
+        {
+          "emoji": "🚀",
+          "label": "Ракета",
+          "bin": "fast"
+        },
+        {
+          "emoji": "🦥",
+          "label": "Лінивець",
+          "bin": "slow"
+        }
+      ]
+    }
+  ]
+}

@@ -145,7 +145,10 @@ async function loadSanitizedPracticeQuestions(options: {
     track:      questions.track,
     difficulty: questions.difficulty,
   } as const
-  const filters = practiceFilterPlan(options).map(f => eq(practiceColumns[f.column], f.value))
+  const filters = [
+    eq(questions.editorialStatus, 'published'),
+    ...practiceFilterPlan(options).map(f => eq(practiceColumns[f.column], f.value)),
+  ]
 
   const rows = await db
     .select({
@@ -156,6 +159,8 @@ async function loadSanitizedPracticeQuestions(options: {
       options:     questions.options,
       correct:     questions.correct,
       explanation: questions.explanation,
+      img:         questions.img,
+      imageAlt:    questions.imageAlt,
       difficulty:  questions.difficulty,
       track:       questions.track,
       grade:       questions.grade,
@@ -181,7 +186,11 @@ async function scoreEventsFromPracticePool(events: DemoAttemptEvent[]): Promise<
   const pool = await db
     .select({ id: questions.id, type: questions.type, correct: questions.correct, explanation: questions.explanation, options: questions.options })
     .from(questions)
-    .where(and(eq(questions.isOlympiad, false), inArray(questions.id, questionIds)))
+    .where(and(
+      eq(questions.isOlympiad, false),
+      inArray(questions.editorialStatus, ['published', 'archived']),
+      inArray(questions.id, questionIds),
+    ))
   const byId = new Map(pool.map(q => [q.id, q]))
   if (questionIds.some(id => !byId.has(id))) return null
 

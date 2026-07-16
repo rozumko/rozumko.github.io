@@ -2,6 +2,7 @@ import './frontend-security.js'
 import { $, $maybe } from './utils/dom.js'
 import { mountSortingGame } from './features/games/sorting-game.js'
 import { SORTING_ATTRIBUTES_LEVELS, INFO_SORT_LEVELS, MULTISORT_LEVELS, type SortingLevel } from './features/games/sorting-data.js'
+import { loadSortingPack } from './features/games/sorting-pack-loader.js'
 import { mountPuzzles } from './features/games/puzzle-engine.js'
 import { mountFactOpinion } from './features/games/fact-opinion-game.js'
 import { FO_LEVEL1_STATEMENTS, FO_LEVEL2_STATEMENTS } from './features/games/fact-opinion-data.js'
@@ -12,7 +13,9 @@ import { mountSequenceGame } from './features/games/sequence-game.js'
 import { SEQUENCE_SETS_G2 } from './features/games/sequence-data.js'
 import { mountScenarios } from './features/games/scenarios-game.js'
 import { SCENARIOS_DIGITAL_SAFETY } from './features/games/scenarios-data.js'
+import { loadScenarioPack, loadSequencePack } from './features/games/narrative-pack-loader.js'
 import { HARDWARE_SCENARIO, SOFTWARE_SCENARIO } from './features/games/simulator-data.js'
+import { loadSimulatorScenario } from './features/games/simulator-content-loader.js'
 import { runMission, type MissionElements } from './features/missions/mission-runner.js'
 import { loadStaticQuestions } from './features/missions/static-questions.js'
 import {
@@ -325,20 +328,25 @@ async function startActivityStep(
     })
   } else if (a.kind === 'sequence') {
     show(foRoot)
-    // Поки один пул наборів (1–2 клас); пули за класами — коли з'являться.
-    mountSequenceGame(foRoot, SEQUENCE_SETS_G2, {
+    const sets = await loadSequencePack('algorithms-g2', SEQUENCE_SETS_G2)
+    if (run !== activeRun) return
+    mountSequenceGame(foRoot, sets, {
       round: a.count,
       onComplete: s => complete(fromGameSummary(s, activityContext(p, step))),
     })
   } else if (a.kind === 'scenarios') {
     show(foRoot)
-    mountScenarios(foRoot, SCENARIOS_DIGITAL_SAFETY, {
+    const items = await loadScenarioPack('digital-safety', SCENARIOS_DIGITAL_SAFETY)
+    if (run !== activeRun) return
+    mountScenarios(foRoot, items, {
       round: a.count,
       onComplete: s => complete(fromGameSummary(s, activityContext(p, step))),
     })
   } else if (a.kind === 'sorting') {
     show(sortingRoot)
-    mountSortingGame(sortingRoot, SORTING_GAMES[a.game], {
+    const levels = await loadSortingPack(a.game, SORTING_GAMES[a.game])
+    if (run !== activeRun) return
+    mountSortingGame(sortingRoot, levels, {
       onComplete: s => complete(fromSortingSummary(s, activityContext(p, step))),
     })
   } else if (a.kind === 'puzzles') {
@@ -353,7 +361,9 @@ async function startActivityStep(
     })
   } else if (a.kind === 'simulator') {
     show(foRoot)
-    mountSimulator(foRoot, a.scenario === 'hardware' ? HARDWARE_SCENARIO : SOFTWARE_SCENARIO, {
+    const scenario = await loadSimulatorScenario(a.scenario === 'hardware' ? HARDWARE_SCENARIO : SOFTWARE_SCENARIO)
+    if (run !== activeRun) return
+    mountSimulator(foRoot, scenario, {
       onComplete: s => complete(fromGameSummary(
         { correct: Math.max(0, s.steps - s.mistakes), total: Math.max(1, s.steps), stars: s.stars },
         activityContext(p, step),

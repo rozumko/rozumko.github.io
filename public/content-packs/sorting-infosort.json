@@ -1,0 +1,178 @@
+{
+  "id": "game-sorting-information-grade1",
+  "gameKey": "infosort",
+  "version": 1,
+  "title": "Гра: ІнфоСорт (як ми отримуємо інформацію)",
+  "levels": [
+    {
+      "instruction": "Яким органом чуття ми це сприймаємо?",
+      "bins": [
+        {
+          "id": "eye",
+          "label": "👀 Очі"
+        },
+        {
+          "id": "ear",
+          "label": "👂 Вуха"
+        },
+        {
+          "id": "nose",
+          "label": "👃 Ніс"
+        },
+        {
+          "id": "mouth",
+          "label": "👅 Язик"
+        },
+        {
+          "id": "skin",
+          "label": "✋ Шкіра"
+        }
+      ],
+      "items": [
+        {
+          "emoji": "🌈",
+          "label": "Веселка",
+          "bin": "eye"
+        },
+        {
+          "emoji": "🚦",
+          "label": "Світлофор",
+          "bin": "eye"
+        },
+        {
+          "emoji": "🖼️",
+          "label": "Картина",
+          "bin": "eye"
+        },
+        {
+          "emoji": "🔔",
+          "label": "Дзвінок",
+          "bin": "ear"
+        },
+        {
+          "emoji": "🐕",
+          "label": "Гавкіт собаки",
+          "bin": "ear"
+        },
+        {
+          "emoji": "🎵",
+          "label": "Музика",
+          "bin": "ear"
+        },
+        {
+          "emoji": "🧴",
+          "label": "Парфуми",
+          "bin": "nose"
+        },
+        {
+          "emoji": "🍞",
+          "label": "Свіжий хліб",
+          "bin": "nose"
+        },
+        {
+          "emoji": "🍬",
+          "label": "Цукерка",
+          "bin": "mouth"
+        },
+        {
+          "emoji": "🍋",
+          "label": "Лимон",
+          "bin": "mouth"
+        },
+        {
+          "emoji": "🧊",
+          "label": "Лід",
+          "bin": "skin"
+        },
+        {
+          "emoji": "🐱",
+          "label": "М'яке хутро",
+          "bin": "skin"
+        }
+      ]
+    },
+    {
+      "instruction": "У якій формі подана інформація?",
+      "bins": [
+        {
+          "id": "text",
+          "label": "🔤 Текст"
+        },
+        {
+          "id": "graphic",
+          "label": "🖼️ Зображення"
+        },
+        {
+          "id": "numeric",
+          "label": "🔢 Числа"
+        },
+        {
+          "id": "sound",
+          "label": "🔊 Звук"
+        }
+      ],
+      "items": [
+        {
+          "emoji": "📖",
+          "label": "Казка у книзі",
+          "bin": "text"
+        },
+        {
+          "emoji": "🚪",
+          "label": "Напис на дверях",
+          "bin": "text"
+        },
+        {
+          "emoji": "🅰️",
+          "label": "Буква А",
+          "bin": "text"
+        },
+        {
+          "emoji": "📷",
+          "label": "Фотографія",
+          "bin": "graphic"
+        },
+        {
+          "emoji": "🚸",
+          "label": "Дорожній знак",
+          "bin": "graphic"
+        },
+        {
+          "emoji": "🎨",
+          "label": "Малюнок",
+          "bin": "graphic"
+        },
+        {
+          "emoji": "5️⃣",
+          "label": "Число 5",
+          "bin": "numeric"
+        },
+        {
+          "emoji": "🏷️",
+          "label": "Ціна 10 грн",
+          "bin": "numeric"
+        },
+        {
+          "emoji": "🏠",
+          "label": "Номер будинку 15",
+          "bin": "numeric"
+        },
+        {
+          "emoji": "🎵",
+          "label": "Пісня",
+          "bin": "sound"
+        },
+        {
+          "emoji": "⏰",
+          "label": "Сигнал будильника",
+          "bin": "sound"
+        },
+        {
+          "emoji": "🗣️",
+          "label": "Голос учителя",
+          "bin": "sound"
+        }
+      ]
+    }
+  ]
+}

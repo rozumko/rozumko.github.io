@@ -72,6 +72,15 @@ test('frontend endpoint origins remain deployment-configurable and feed CSP', as
   assert.doesNotMatch(serviceWorker, /onrender\.com|supabase\.co/)
 })
 
+test('mutable static content bundles use the service worker network-first branch', async () => {
+  const serviceWorker = await readFile(resolve(ROOT, 'public/sw.js'), 'utf8')
+  const networkFirstBranch = serviceWorker.match(/else if \(([^)]+(?:\)[^{]*)?)\) \{\s*\/\/ Бандли[\s\S]*?networkFirstWithCacheFallback/)
+  assert.ok(networkFirstBranch, 'network-first content branch not found')
+  for (const path of ['/questions/', '/lessons/', '/path/', '/content-packs/']) {
+    assert.match(networkFirstBranch[0], new RegExp(path.replaceAll('/', '\\/')), path)
+  }
+})
+
 test('provider-specific fallback hosts stay inside the configuration boundary', async () => {
   const violations = []
   const rootEntries = await readdir(ROOT, { withFileTypes: true })

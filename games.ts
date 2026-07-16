@@ -1,5 +1,6 @@
 import { mountSortingGame } from './features/games/sorting-game.js'
 import { SORTING_ATTRIBUTES_LEVELS, INFO_SORT_LEVELS, MULTISORT_LEVELS, type SortingLevel } from './features/games/sorting-data.js'
+import { loadSortingPack } from './features/games/sorting-pack-loader.js'
 import { mountPuzzles } from './features/games/puzzle-engine.js'
 import { getSavedGrade, saveGrade } from './utils/grade.js'
 
@@ -24,10 +25,12 @@ document.getElementById('premium-close')!.addEventListener('click', closePremium
 premiumModal.addEventListener('click', (e) => { if (e.target === premiumModal) closePremiumModal() })
 
 document.querySelectorAll<HTMLButtonElement>('.game-pick-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', async () => {
     if (btn.dataset['locked']) { openPremiumModal(); return }
-    const levels = GAMES[btn.dataset['game'] ?? '']
-    if (!levels) return
+    const gameKey = btn.dataset['game'] ?? ''
+    const fallback = GAMES[gameKey]
+    if (!fallback) return
+    const levels = await loadSortingPack(gameKey, fallback)
     menu.classList.add('hidden')
     gameArea.classList.remove('hidden')
     mountSortingGame(gameRoot, levels)
