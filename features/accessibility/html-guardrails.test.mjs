@@ -96,3 +96,19 @@ test('accessibility documentation names the automated guardrails', async () => {
   assert.match(baseline, /npm run test:layout/, 'baseline should document the layout/accessibility command')
   assert.match(readme, /Accessibility and inclusion baseline/, 'README should link the accessibility baseline')
 })
+
+test('axe coverage follows every production HTML entry or an explicit exception', async () => {
+  const viteConfig = await readRepoFile('vite.config.ts')
+  const accessibilitySmoke = await readRepoFile('tests/layout/accessibility-smoke.spec.ts')
+  const productionEntries = [...viteConfig.matchAll(/resolve\(__dirname,\s*'([^']+\.html)'\)/g)]
+    .map(match => `/${match[1] === 'index.html' ? '' : match[1]}`)
+  const axeBlock = accessibilitySmoke.match(/const AXE_PAGES = \[([\s\S]*?)\]/)?.[1] ?? ''
+  const axePages = [...axeBlock.matchAll(/'([^']+)'/g)].map(match => match[1])
+  const explicitExceptions = new Set(['/offline.html', '/framing-blocked.html'])
+  const uncovered = productionEntries.filter(page => !axePages.includes(page) && !explicitExceptions.has(page))
+  const unknown = axePages.filter(page => !productionEntries.includes(page))
+
+  assert.deepEqual(uncovered, [], `production pages missing axe coverage: ${uncovered.join(', ')}`)
+  assert.deepEqual(unknown, [], `axe pages missing from Vite production entries: ${unknown.join(', ')}`)
+  assert.match(accessibilitySmoke, /'wcag22aa'/, 'axe scans must include the WCAG 2.2 AA tag')
+})

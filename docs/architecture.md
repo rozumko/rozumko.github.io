@@ -237,6 +237,9 @@ server-issued, versioned missions and server scoring.
 
 _Direction for future native/PWA clients. Only the web/PWA client exists today._
 
+The enforceable readiness levels, client boundaries and release evidence are
+defined in `docs/app-ready-contract.md`.
+
 Rozumko is web-first today and app-ready by design.
 
 Principles:

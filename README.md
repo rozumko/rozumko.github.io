@@ -127,6 +127,7 @@ docs/
 - [Onboarding (перший день розробника)](./docs/onboarding.md)
 - [Architecture](./docs/architecture.md)
 - [Architecture conformance and drift guardrails](./docs/architecture-conformance.md)
+- [App-ready contract](./docs/app-ready-contract.md)
 - [Architecture Decision Records (чому так вирішили)](./docs/adr/README.md)
 - [Security model](./docs/security-model.md)
 - [Security policy](./SECURITY.md)
@@ -174,6 +175,7 @@ VITE_API_URL=http://localhost:3000
 
 ```bash
 npm run typecheck
+npm run lint
 npm test
 npm run build
 npm run test:layout

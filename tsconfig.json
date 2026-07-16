@@ -7,6 +7,11 @@
     "allowJs": true,
     "checkJs": false,
     "strict": false,
+    "strictFunctionTypes": true,
+    "useUnknownInCatchVariables": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
     "noEmit": true,
     "skipLibCheck": true,
     "isolatedModules": true

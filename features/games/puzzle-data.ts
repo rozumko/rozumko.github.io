@@ -153,7 +153,7 @@ function createMachine(i: number, p: Profile): Puzzle {
 
 // ── balance → logic (тап) ────────────────────────────────────────────────────
 function createBalance(i: number, p: Profile): Puzzle {
-  let leftKnown = 0, unknown = 0, rightA = 0, rightB = 0
+  let leftKnown: number, unknown: number, rightA: number, rightB: number
   do {
     leftKnown = randomInt(3, p.balanceMax); unknown = randomInt(3, p.balanceMax)
     rightA = randomInt(3, p.balanceMax); rightB = leftKnown + unknown - rightA

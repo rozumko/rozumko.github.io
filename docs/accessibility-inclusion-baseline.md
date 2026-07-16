@@ -74,10 +74,10 @@ These should be checked after the P0 surfaces:
 
 - `games.html`
 - `student.html`
-- `login.html`
-- `teacher-dashboard.html`
-- `olympiad.html`
-- `results.html`
+- `path.html`
+- `parent.html`
+- `admin.html`
+- `olympiad-enter.html`
 - `transparency.html`
 - `terms.html`
 
@@ -162,9 +162,10 @@ These should be checked after the P0 surfaces:
 The current automated accessibility guard has two layers:
 
 - `features/accessibility/html-guardrails.test.mjs` runs in `npm test` and checks public-page language, skip-link/main landmark wiring, programmatic form-control names on key pages, and documentation links to the accessibility guardrails.
-- `tests/layout/accessibility-smoke.spec.ts` runs in `npm run test:layout` and checks rendered pages/mechanics in Chromium with axe.
+- `tests/layout/accessibility-smoke.spec.ts` runs in `npm run test:layout` and checks rendered pages/mechanics in Chromium with axe using WCAG 2.0 A/AA, 2.1 AA and 2.2 AA tags.
+- `features/accessibility/html-guardrails.test.mjs` compares the axe page list with Vite production entries. New production pages fail the unit gate unless they receive axe coverage or are added to the explicit `offline.html` / `framing-blocked.html` exception list.
 
-Latest local automated run: 2026-07-16 (`87 passed`).
+Latest local automated run: 2026-07-16 (`159` unit/guardrail tests and `90` Playwright tests passed).
 
 Verified:
 
@@ -179,7 +180,9 @@ Verified:
 - Home sort movement keeps keyboard focus and announces the new position.
 - School choice questions keep the same radio semantics after a mocked anonymous join.
 - The layout suite covers phone portrait/landscape, tablet and desktop quiz-fit, selected 320/375 px touch/overflow contracts, and accessible Admin/Teacher dynamic states.
+- Reduced-motion emulation verifies that decorative mascot, School waiting and path-node animations are disabled.
 - The browser automation is Chromium-only and does not replace the manual matrix below.
+- Axe's WCAG 2.2 `target-size` rule is disabled upstream; Rozumko therefore keeps explicit 44 CSS pixel target tests for shared child actions and mobile navigation.
 
 Command:
 

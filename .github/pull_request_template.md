@@ -11,7 +11,7 @@ Describe the change and its impact briefly.
 - [ ] Rate limits are not weakened; `trustProxy` is not changed to `true`.
 - [ ] New frontend HTTP requests go through `features/api/client.ts`.
 - [ ] No secrets, child private data or direct frontend access to Supabase tables were added.
-- [ ] `npm run typecheck`, `npm test` and `npm run build` pass.
+- [ ] `npm run typecheck`, `npm run lint`, `npm test` and `npm run build` pass.
 - [ ] `cd backend && npm run build && npm test` pass when backend code changes.
 - [ ] Render or Supabase changes completed the manual checklist in `docs/security-model.md`.
 

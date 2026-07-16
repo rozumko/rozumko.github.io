@@ -21,6 +21,8 @@ const AXE_PAGES = [
   '/olympiad-enter.html',
 ]
 
+const WCAG_AA_TAGS = ['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']
+
 const choiceQuestion = {
   id: 'choice-1',
   q: 'Choose the first option.',
@@ -375,7 +377,7 @@ test.describe('axe accessibility scan', () => {
       await page.goto(path)
 
       const results = await new AxeBuilder({ page })
-        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+        .withTags(WCAG_AA_TAGS)
         .analyze()
 
       expect(results.violations).toEqual([])
@@ -397,6 +399,30 @@ test.describe('mobile header touch targets', () => {
     expect(size.width).toBeGreaterThanOrEqual(44)
     expect(size.height).toBeGreaterThanOrEqual(44)
   })
+})
+
+test.describe('reduced motion', () => {
+  for (const scenario of [
+    { path: '/', selector: '.mascot' },
+    { path: '/school.html', selector: '.school-wait-dots span' },
+    { path: '/path.html?grade=2', selector: '.path-node--open .path-node__badge' },
+  ]) {
+    test(`${scenario.path} disables decorative animation`, async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: 'reduce' })
+      await page.goto(scenario.path)
+      await expect(page.locator(scenario.selector).first()).toBeAttached()
+
+      const motion = await page.locator(scenario.selector).first().evaluate((element) => {
+        const style = getComputedStyle(element)
+        return {
+          animationName: style.animationName,
+          reduced: matchMedia('(prefers-reduced-motion: reduce)').matches,
+        }
+      })
+
+      expect(motion).toEqual({ animationName: 'none', reduced: true })
+    })
+  }
 })
 
 test.describe('shared button sizing', () => {
@@ -460,7 +486,7 @@ test('axe: /admin.html dashboard', async ({ page }) => {
 
   const results = await new AxeBuilder({ page })
     .include('#admin-panel')
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .withTags(WCAG_AA_TAGS)
     .analyze()
 
   expect(results.violations).toEqual([])
@@ -474,7 +500,7 @@ test('axe: /admin.html question editor', async ({ page }) => {
 
   const results = await new AxeBuilder({ page })
     .include('#question-modal')
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .withTags(WCAG_AA_TAGS)
     .analyze()
 
   expect(results.violations).toEqual([])
@@ -492,7 +518,7 @@ test('admin path editor traps focus, passes axe, and preserves unsaved edits acr
 
   const results = await new AxeBuilder({ page })
     .include('#point-modal')
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .withTags(WCAG_AA_TAGS)
     .analyze()
   expect(results.violations).toEqual([])
 
@@ -520,7 +546,7 @@ test('shared certificate dialog is accessible from Admin results', async ({ page
 
   const results = await new AxeBuilder({ page })
     .include('#cert-modal')
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .withTags(WCAG_AA_TAGS)
     .analyze()
   expect(results.violations).toEqual([])
 
@@ -533,7 +559,7 @@ test('axe: /teacher.html dashboard', async ({ page }) => {
 
   const results = await new AxeBuilder({ page })
     .include('#dashboard-section')
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .withTags(WCAG_AA_TAGS)
     .analyze()
 
   expect(results.violations).toEqual([])
@@ -550,7 +576,7 @@ test('teacher school-game form stays accessible on a phone', async ({ page }) =>
 
   const results = await new AxeBuilder({ page })
     .include('#tab-school')
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .withTags(WCAG_AA_TAGS)
     .analyze()
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
 
@@ -567,7 +593,7 @@ test.describe('axe accessibility scan: rendered question mechanics', () => {
 
       const results = await new AxeBuilder({ page })
         .include('#mission-quiz')
-        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+        .withTags(WCAG_AA_TAGS)
         .analyze()
 
       expect(results.violations).toEqual([])

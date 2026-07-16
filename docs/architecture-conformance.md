@@ -33,12 +33,13 @@ have a test, CI gate, deployment check, or an explicitly owned manual control.
 | Frontend HTTP boundary | Enforced | `features/api/client.ts`; `features/architecture/architecture-conformance.test.mjs` rejects literal backend/auth endpoint calls elsewhere | Static content loaders intentionally remain separate; a deliberately obscured dynamic URL still needs code review |
 | WCAG 2.2 AA target | Partial, improving | Static HTML guards plus Playwright/axe on core pages, dashboards and rendered question types; keyboard behavior tests for choice/sort mechanics | Axe is not certification; manual keyboard, screen reader, 200% zoom, contrast, reduced-motion and child-usability evidence remains required |
 | Mobile/touch | Good automated baseline | 320/375 px header and overflow checks; phone portrait/landscape, tablet and desktop quiz-fit matrix; 44 px shared target checks | Real iOS Safari, Android Chrome, soft keyboard, orientation change and low-end device testing are not covered |
-| App readiness | Partial | Backend owns business rules; API calls are centralized; content and path data are versioned; web storage queues are isolated from official scoring | Web auth/session code is coupled to Supabase and `sessionStorage`; there is no published native-client contract, secure native token-storage decision, or app-store payment adapter |
+| App readiness | Partial with enforced contract | `docs/app-ready-contract.md`; backend owns business rules; API calls are centralized; selected reusable domain modules reject browser globals; content and path data are versioned | Web auth/session code remains coupled to Supabase and `sessionStorage`; the machine-readable native API contract, secure native token adapter and app-store payment adapter are not implemented |
 | Hosting portability | Good backend baseline, partial full-stack proof | Dockerfile, Compose reference, PostgreSQL/Drizzle migrations, `PORT`, readiness endpoints, configurable API/Auth URLs, CSP origins derived from build environment | Restore/cutover has not been proven on a second provider in this baseline; rate limiting is single-instance memory mode; Supabase Auth migration is separate from PostgreSQL migration |
 | Educational standards/evidence | Partial | Content taxonomy, public standards page, responsible EdTech evidence portfolio and canonical content validation | Framework mappings are evidence models, not certifications; new public claims and curriculum mappings need dated official-source review and educator judgment |
 | Security | Strong code baseline, operational proof required | Backend regression suite, fail-closed readiness/migration behavior, supply-chain workflows, secret scan, CSP/framing guards | Branch protection, Supabase controls, Render settings, backup evidence and authenticated staging smoke are external/manual controls |
 | Cross-browser support | Limited evidence | Chromium is exercised in Playwright CI | Firefox, WebKit/Safari and assistive-technology combinations are not CI-gated |
 | Database/deploy integrity | Strong static/test baseline | Migration journal checks, schema/RLS regression tests, Render `checksPass`, `/ready` fails on drift | This local audit had no Docker or `psql`; a disposable/staging database migration and restore rehearsal remains required |
+| Frontend code quality | Incremental enforcement | ESLint blocks unsafe control-flow and JavaScript hazards; TypeScript enforces strict function variance, unknown catch variables, explicit returns, switch fallthrough and overrides | Full `strictNullChecks`, `noImplicitAny` and checked legacy JavaScript remain migration work; new debt should not increase |
 
 ## Required Change Gates
 
@@ -46,6 +47,7 @@ Every pull request must pass:
 
 ```powershell
 npm run typecheck
+npm run lint
 npm test
 npm run build
 npm run test:layout
@@ -106,8 +108,8 @@ real child names or parent contact data.
 1. Add automated reduced-motion and 200% reflow smoke for Home and School.
 2. Add a small WebKit/Firefox compatibility job once its runtime cost and
    stability are acceptable.
-3. Extract a documented, versioned API contract for a future native client,
-   including secure token storage and refresh behavior.
+3. Publish the machine-readable API contract and implement secure native token
+   storage/refresh before starting a native client.
 4. Run the VPS/second-provider rehearsal and turn every discovered manual step
    into a script or checklist assertion.
 5. Add a dated review cadence for public standards and evidence claims.
