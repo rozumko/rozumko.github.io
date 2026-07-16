@@ -4,7 +4,7 @@ import { db } from '../db/index.js'
 import { questions, questionRevisions, accessCodes, attempts, attemptQuestions, appUsers, olympiadEvents, eventQuestions, schoolSessions, schoolSessionQuestions, homeLeads, homeEntitlements, homeEntitlementEvents, homePathProgress, missions, missionRevisions, microLessons, microLessonRevisions, pathMapRevisions, pathMaps, contentPublications, type QuestionTrack } from '../db/schema.js'
 import { normalizeLessonSlug, normalizeLessonStatus, normalizeLessonContent, lessonContentChanged } from './lesson-validation.js'
 import { contentFromLessonRevision, lessonPublishedSnapshot, lessonRevisionSnapshot } from './lesson-editorial.js'
-import { missionPublishedSnapshot, missionSnapshot, normalizeEditableMission, normalizeMissionSlug, normalizeMissionStatus, type NormalizedMissionInput } from './mission-editorial.js'
+import { EDITABLE_MISSION_KINDS, missionPublishedSnapshot, missionSnapshot, normalizeEditableMission, normalizeMissionSlug, normalizeMissionStatus, type NormalizedMissionInput } from './mission-editorial.js'
 import { validatePathMapPoints, bumpChangedStepVersions, pathMapLessonIds, type PathPointInput } from './path-map-validation.js'
 import { invalidatePathCatalogCache } from './path-catalog.js'
 import { ENTITLEMENT_STATUSES, normalizeEntitlementStatus, applyEntitlementChange } from './home-entitlement.js'
@@ -1130,7 +1130,7 @@ export async function adminRoutes(app: FastifyInstance) {
       }
       const [current] = await db.select().from(missions).where(eq(missions.id, input.id)).limit(1)
       if (!current) return reply.code(404).send({ error: 'Місію не знайдено' })
-      if (!['question-set', 'sorting-game', 'sequence-game', 'scenario-game', 'simulator-game'].includes(current.kind)) return reply.code(409).send({ error: 'Цей тип місії поки доступний лише для перегляду' })
+      if (!(EDITABLE_MISSION_KINDS as readonly string[]).includes(current.kind)) return reply.code(409).send({ error: 'Цей тип місії поки доступний лише для перегляду' })
       if (!Number.isInteger(req.body.expectedEditVersion) || current.editVersion !== req.body.expectedEditVersion) {
         return reply.code(409).send({ error: 'Місію вже змінив інший редактор. Онови список і повтори правки.' })
       }
@@ -1170,7 +1170,7 @@ export async function adminRoutes(app: FastifyInstance) {
         const updated = await db.transaction(async tx => {
           const [current] = await tx.select().from(missions).where(eq(missions.id, missionId)).limit(1).for('update')
           if (!current) return null
-          if (!['question-set', 'sorting-game', 'sequence-game', 'scenario-game', 'simulator-game'].includes(current.kind)) throw new Error('Цей тип місії поки доступний лише для перегляду')
+          if (!(EDITABLE_MISSION_KINDS as readonly string[]).includes(current.kind)) throw new Error('Цей тип місії поки доступний лише для перегляду')
           if (!Number.isInteger(req.body.expectedEditVersion) || current.editVersion !== req.body.expectedEditVersion) {
             throw new MissionEditConflictError()
           }
@@ -1242,7 +1242,7 @@ export async function adminRoutes(app: FastifyInstance) {
         const updated = await db.transaction(async tx => {
           const [current] = await tx.select().from(missions).where(eq(missions.id, missionId)).limit(1).for('update')
           if (!current) return null
-          if (!['question-set', 'sorting-game', 'sequence-game', 'scenario-game', 'simulator-game'].includes(current.kind)) throw new Error('Цей тип місії не відновлюється цим редактором')
+          if (!(EDITABLE_MISSION_KINDS as readonly string[]).includes(current.kind)) throw new Error('Цей тип місії не відновлюється цим редактором')
           if (current.editVersion !== req.body.expectedEditVersion) throw new MissionEditConflictError()
           const [revision] = await tx.select().from(missionRevisions).where(and(
             eq(missionRevisions.missionId, current.id),
