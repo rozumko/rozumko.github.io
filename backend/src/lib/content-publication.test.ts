@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { createHmac } from 'node:crypto'
+import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 import {
   contentManifestSha256, publicationCallbackMessage, verifyPublicationCallback,
@@ -16,6 +17,19 @@ test('publication manifest hash is stable and content-sensitive', () => {
   assert.equal(contentManifestSha256(manifest), contentManifestSha256(structuredClone(manifest)))
   const changed = structuredClone(manifest); changed.paths[0].version++
   assert.notEqual(contentManifestSha256(manifest), contentManifestSha256(changed))
+})
+
+test('publication manifest avoids parallel database reads for the constrained exporter role', async () => {
+  const source = await readFile(new URL('./content-publication.ts', import.meta.url), 'utf8')
+  const manifestBuilder = source.slice(
+    source.indexOf('export async function buildContentPublicationManifest'),
+    source.indexOf('export function contentManifestSha256'),
+  )
+  assert.doesNotMatch(manifestBuilder, /Promise\.all/)
+  assert.match(manifestBuilder, /const practiceQuestions = await db/)
+  assert.match(manifestBuilder, /const lessons = await db/)
+  assert.match(manifestBuilder, /const gamePacks = await db/)
+  assert.match(manifestBuilder, /const paths = await db/)
 })
 
 test('publication callback verifies HMAC and rejects stale or altered payloads', () => {

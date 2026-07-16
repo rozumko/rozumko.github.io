@@ -17,19 +17,21 @@ export interface ContentPublicationManifest extends Record<string, unknown> {
 }
 
 export async function buildContentPublicationManifest(): Promise<ContentPublicationManifest> {
-  const [practiceQuestions, lessons, gamePacks, paths] = await Promise.all([
-    db.select({ id: questions.id, version: questions.version, editVersion: questions.editVersion })
-      .from(questions).where(and(eq(questions.isOlympiad, false), eq(questions.editorialStatus, 'published')))
-      .orderBy(asc(questions.id)),
-    db.select({ id: microLessons.id, version: microLessons.publishedVersion }).from(microLessons)
-      .where(and(isNotNull(microLessons.publishedVersion), ne(microLessons.status, 'archived')))
-      .orderBy(asc(microLessons.id)),
-    db.select({ id: missions.id, version: missions.publishedVersion }).from(missions)
-      .where(and(inArray(missions.kind, PUBLISHED_GAME_KINDS), isNotNull(missions.publishedVersion), ne(missions.status, 'archived')))
-      .orderBy(asc(missions.id)),
-    db.select({ id: pathMaps.pathId, version: pathMaps.version }).from(pathMaps)
-      .where(eq(pathMaps.status, 'published')).orderBy(asc(pathMaps.pathId)),
-  ])
+  // Keep export compatible with the deliberately low connection limit of the
+  // read-only content_exporter role. Each awaited query releases its pool slot
+  // before the next content family is read.
+  const practiceQuestions = await db
+    .select({ id: questions.id, version: questions.version, editVersion: questions.editVersion })
+    .from(questions).where(and(eq(questions.isOlympiad, false), eq(questions.editorialStatus, 'published')))
+    .orderBy(asc(questions.id))
+  const lessons = await db.select({ id: microLessons.id, version: microLessons.publishedVersion }).from(microLessons)
+    .where(and(isNotNull(microLessons.publishedVersion), ne(microLessons.status, 'archived')))
+    .orderBy(asc(microLessons.id))
+  const gamePacks = await db.select({ id: missions.id, version: missions.publishedVersion }).from(missions)
+    .where(and(inArray(missions.kind, PUBLISHED_GAME_KINDS), isNotNull(missions.publishedVersion), ne(missions.status, 'archived')))
+    .orderBy(asc(missions.id))
+  const paths = await db.select({ id: pathMaps.pathId, version: pathMaps.version }).from(pathMaps)
+    .where(eq(pathMaps.status, 'published')).orderBy(asc(pathMaps.pathId))
   return {
     schemaVersion: 1,
     practiceQuestions,
