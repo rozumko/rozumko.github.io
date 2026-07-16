@@ -112,10 +112,11 @@ history remains admin-only and RLS-protected.
 
 Migration `0038` adds the same audited state machine, optimistic edit locking
 and immutable revision history to missions. The admin constructor edits
-`question-set` missions and structured sorting, sequence, scenario and
-simulator presentation packs. Generated puzzle rules remain read-only. A
-published mission keeps an immutable snapshot while newer work returns to
-`draft`.
+`question-set` missions and structured sorting, sequence, scenario,
+fact-opinion and simulator presentation packs (the route allowlist is the
+single `EDITABLE_MISSION_KINDS` constant, enforced by a regression test).
+Generated puzzle rules remain read-only code. A published mission keeps an
+immutable snapshot while newer work returns to `draft`.
 
 Every apply/confirm set contains explicit UUID references to published
 questions. Review and publication lock and verify those rows server-side: each
@@ -127,7 +128,10 @@ browser-facing policy.
 
 Game packs are validated on both export and load. Sorting items must reference
 existing used bins; sequence steps must be non-empty and unique; scenarios must
-have exactly one correct option and feedback for every choice. Malformed
+have exactly one correct option and feedback for every choice; fact-opinion
+statements need a category from the fixed allowlist, an explanation, at least
+two categories with three statements each, and sources that are https-only and
+always titled. Malformed
 published JSON falls back to bundled last-known-good content. Bin assignments,
 step order and scenario correctness are answer keys, but these are local
 formative games, matching the documented static-practice key policy rather than

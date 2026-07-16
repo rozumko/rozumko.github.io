@@ -258,8 +258,8 @@ track/topic. Контент-джерело: `temp/new_lessons/` (28 уроків
   2 класу в `public/lessons/` (info-senses-g2, algorithms-order-g2,
   private-info-g2) у точках g2-info-start / g2-ct-algorithms /
   g2-digital-safety.
-- ✅ Зріз 2 (2026-07-13): таблиця `micro_lessons` (міграція 0032, ⚠️ треба
-  застосувати на проді), CRUD під `requireAdmin` (fail-closed
+- ✅ Зріз 2 (2026-07-13): таблиця `micro_lessons` (міграція 0032; на проді
+  застосовано, схема актуальна до 0042), CRUD під `requireAdmin` (fail-closed
   `lesson-validation.ts`, автоінкремент version при зміні контенту),
   вкладка «Уроки» в адмінці (редактор карток/квізу, slug незмінний після
   створення), `npm run export:lessons` → `public/lessons/<id>.json`
@@ -277,6 +277,13 @@ track/topic. Контент-джерело: `temp/new_lessons/` (28 уроків
   віддзеркалено. Спільні утиліти нових ігор — `round-utils.ts`
   (історичні рушії свідомо не рефакторились). Моторні тренажери для
   1 класу — досі кандидати на окремий зріз.
+- ✅ Імпорт контенту (2026-07-16): усі 28 уроків з `temp/new_lessons`
+  перенесені в `micro_lessons` чернетками (`npm run import:lessons`,
+  fail-closed валідація до першого запису, skip існуючих id). Пояснення
+  квізів місцями вчительські — перед публікацією потрібен редакційний
+  перегляд у вкладці «Уроки». Уроки живуть у редакційному циклі 0037
+  (published snapshot + ревізії), доставка — через аудовану публікацію
+  (docs/content-publication.md).
 - ✅ Зріз 4a (2026-07-14): структура шляху в БД — таблиця `path_maps`
   (міграція 0033; перед релізом застосувати разом із 0034–0035; seed з `path-data.ts`,
   ідемпотентний, з полем `access: free|club` під free-карту). Валідація

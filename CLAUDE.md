@@ -61,18 +61,19 @@ features/api/client.ts   ← всі API-запити (типізовані)
 features/admin/          ← вкладки адмін-панелі (+ missions-tab, taxonomy)
 features/olympiad/       ← quiz-engine
 features/missions/       ← спільний mission-runner + відбір питань (pickMissionQuestions)
-features/games/          ← ігри-сортування (sorting-game/-data) + логічні головоломки (puzzle-engine/-data) → games.html
+features/games/          ← сортування, sequence/scenarios, факт-думка, симулятори (+ fail-closed pack-loader-и); головоломки (puzzle-engine) — процедурні, НЕ редагуються
 features/lessons/        ← мікро-уроки (lesson-runner: відео→картки→квіз; явний lessonId у точці шляху)
 features/path/           ← карта пригод Home Mode (path-data, progress-store, path-sync, activity-result)
 utils/                   ← question-renderer, focus-trap, ui
-backend/src/routes/      ← student, attempt, teacher, admin, questions
+backend/src/routes/      ← student, attempt, teacher, admin, questions + *-editorial (редакційний цикл)
 backend/src/lib/auth.ts  ← requireAuth, requireAdmin middleware
 backend/src/lib/taxonomy.ts ← TOPICS_BY_TRACK, валідація тем/концептів (fail-closed)
 backend/src/db/          ← Drizzle schema + migration runner
-backend/drizzle/         ← SQL-міграції (таксономія 0021, missions 0022, ігри 0023–0025, головоломки 0026, уроки 0032)
-backend/scripts/         ← import-temp-content, export-practice-questions, export-lessons
+backend/drizzle/         ← SQL-міграції (таксономія 0021, ігри 0023–0026, уроки 0032, редакційний цикл 0036–0038, сіди ігор 0039–0040+0042, публікація 0041)
+backend/scripts/         ← import-temp-content, import-temp-lessons, export:* (питання/уроки/шлях/пакети/manifest)
 public/questions/        ← статичний practice-бандл (track/topic; npm run export:questions)
-public/lessons/          ← мікро-уроки JSON (<lessonId>.json; план — export з БД, docs/learning-path-plan.md)
+public/lessons/          ← мікро-уроки JSON з published snapshot БД (npm run export:lessons)
+public/content-packs/    ← опубліковані ігрові пакети (sorting-/sequence-/scenario-/fact-opinion-/simulator-*.json) + /content-manifest.json
 public/                  ← sw.js, manifest, favicon (статичні assets)
 ```
 
