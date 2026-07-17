@@ -882,7 +882,7 @@ async function authRequest(path: string, options: RequestInit = {}): Promise<any
   }
 }
 
-export function getTeacherMe(): Promise<{ id: string; authUserId: string; role: string; name: string }> {
+export function getTeacherMe(): Promise<{ id: string; authUserId: string; role: string; name: string; email: string }> {
   return authRequest('/api/teacher/me')
 }
 

@@ -72,7 +72,7 @@ export async function requireAuth(req: FastifyRequest, reply: FastifyReply) {
     return reply.code(403).send({ error: 'Акаунт заблоковано' })
   }
 
-  req.user = { id: user.id, authUserId, role: user.role, name: user.name }
+  req.user = { id: user.id, authUserId, role: user.role, name: user.name, email: user.email }
 }
 
 /** Pure role check — no I/O. Returns error string or null. */

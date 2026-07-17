@@ -18,6 +18,13 @@ import { openCertModal, awardLabel, percent, getAward } from './utils/certificat
 import { TOPICS_BY_TRACK, TOPIC_LABELS } from './features/missions/topics.js'
 import type { SchoolTopicStat } from './features/api/client.js'
 
+// Header label next to the logout button: always contains the email so the
+// user can tell which account is signed in (Google sign-in has no local email).
+function teacherLabel(me: { name?: string | null; email?: string }, fallbackEmail: string): string {
+  const email = me.email || fallbackEmail
+  return me.name && email ? `${me.name} · ${email}` : (email || me.name || '')
+}
+
 function isPendingError(err: unknown): boolean {
   const apiErr = err as { code?: string; message?: string }
   const msg = apiErr.message ?? ''
@@ -118,7 +125,7 @@ async function init() {
     try {
       const me = await getTeacherMe()
       hideColdStartBanner()
-      showDashboard(me.name || session.email)
+      showDashboard(teacherLabel(me, session.email))
       await Promise.all([loadRegistrationEvents(), loadClasses(), loadRegistrations(), loadCodes(), loadResults()])
     } catch (err) {
       hideColdStartBanner()
@@ -161,7 +168,7 @@ loginForm.addEventListener('submit', async (e) => {
     await loginTeacher(email, password)
     const me = await getTeacherMe()
     hideColdStartBanner()
-    showDashboard(me.name || email)
+    showDashboard(teacherLabel(me, email))
     await Promise.all([loadRegistrationEvents(), loadClasses(), loadRegistrations(), loadCodes(), loadResults()])
   } catch (err) {
     hideColdStartBanner()
@@ -368,7 +375,7 @@ resetForm?.addEventListener('submit', async (e) => {
   try {
     const me = await getTeacherMe()
     hideColdStartBanner()
-    showDashboard(me.name || session.email)
+    showDashboard(teacherLabel(me, session.email))
     await Promise.all([loadRegistrationEvents(), loadClasses(), loadRegistrations(), loadCodes(), loadResults()])
   } catch (err) {
     hideColdStartBanner()
