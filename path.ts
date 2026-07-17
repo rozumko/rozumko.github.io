@@ -13,7 +13,9 @@ import { mountSequenceGame } from './features/games/sequence-game.js'
 import { SEQUENCE_SETS_G2 } from './features/games/sequence-data.js'
 import { mountScenarios } from './features/games/scenarios-game.js'
 import { SCENARIOS_DIGITAL_SAFETY } from './features/games/scenarios-data.js'
-import { loadFactOpinionPack, loadScenarioPack, loadSequencePack } from './features/games/narrative-pack-loader.js'
+import { loadClickTrainerPack, loadFactOpinionPack, loadScenarioPack, loadSequencePack } from './features/games/narrative-pack-loader.js'
+import { mountClickTrainer } from './features/games/click-trainer.js'
+import { CLICK_TRAINER_COMPUTER_PARTS } from './features/games/click-trainer-data.js'
 import { HARDWARE_SCENARIO, SOFTWARE_SCENARIO } from './features/games/simulator-data.js'
 import { loadSimulatorScenario } from './features/games/simulator-content-loader.js'
 import { runMission, type MissionElements } from './features/missions/mission-runner.js'
@@ -362,6 +364,14 @@ async function startActivityStep(
     )
     if (run !== activeRun) return
     mountFactOpinion(foRoot, statements, {
+      onComplete: s => complete(fromGameSummary(s, activityContext(p, step))),
+    })
+  } else if (a.kind === 'click-trainer') {
+    show(foRoot)
+    const rounds = await loadClickTrainerPack(a.game, CLICK_TRAINER_COMPUTER_PARTS)
+    if (run !== activeRun) return
+    mountClickTrainer(foRoot, rounds, {
+      round: a.count,
       onComplete: s => complete(fromGameSummary(s, activityContext(p, step))),
     })
   } else if (a.kind === 'simulator') {

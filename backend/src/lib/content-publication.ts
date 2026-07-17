@@ -3,7 +3,7 @@ import { and, asc, eq, inArray, isNotNull, ne } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { microLessons, missions, pathMaps, questions } from '../db/schema.js'
 
-const PUBLISHED_GAME_KINDS = ['sorting-game', 'sequence-game', 'scenario-game', 'fact-opinion-game', 'simulator-game']
+const PUBLISHED_GAME_KINDS = ['sorting-game', 'sequence-game', 'scenario-game', 'fact-opinion-game', 'click-trainer-game', 'simulator-game']
 const SHA256_RE = /^[0-9a-f]{64}$/
 const SHA_RE = /^[0-9a-f]{40}$/
 const REPOSITORY_RE = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/

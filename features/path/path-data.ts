@@ -12,6 +12,7 @@ export type PathActivity =
   | { kind: 'sorting'; game: 'attributes' | 'infosort' | 'multisort' }
   | { kind: 'puzzles'; count?: number }
   | { kind: 'fact-opinion'; level: 1 | 2 }
+  | { kind: 'click-trainer'; game: 'computer-parts'; count?: number }
   | { kind: 'simulator'; scenario: 'hardware' | 'software' }
   | { kind: 'mission'; track?: QuestionTrack; tracks?: QuestionTrack[]; topic?: string; count?: number }
 

@@ -32,7 +32,8 @@ interface PointJson {
 
 const KIND_LABELS: Record<string, string> = {
   lesson: '📖 урок', mission: '🚀 місія', sequence: '👣 кроки', scenarios: '💬 ситуації',
-  puzzles: '🧩 головоломки', sorting: '🧺 сортування', 'fact-opinion': '🧐 факт/думка', simulator: '🔧 симулятор',
+  puzzles: '🧩 головоломки', sorting: '🧺 сортування', 'fact-opinion': '🧐 факт/думка',
+  'click-trainer': '👆 клік-тренажер', simulator: '🔧 симулятор',
 }
 const TRACK_COLORS: Record<string, string> = {
   informatics: '#0ea5e9', 'computational-thinking': '#8b5cf6', 'ai-basics': '#f59e0b',
@@ -319,6 +320,11 @@ function renderStepParams(row: HTMLElement, activity: Record<string, unknown> & 
       field('Рівень', select('pf-param-level', [['1', 'Рівень 1 (факт/думка)'], ['2', 'Рівень 2 (+міф)']],
         String(activity.level ?? 1)))
       break
+    case 'click-trainer':
+      field('Гра', select('pf-param-game', [['computer-parts', 'Частини компʼютера']],
+        activity.game as string | undefined))
+      field('Кількість раундів (порожньо = всі)', numberInput('pf-param-count', activity.count))
+      break
     case 'simulator':
       field('Сценарій', select('pf-param-scenario', [
         ['hardware', 'Збери компʼютер'], ['software', 'Встанови систему'],
@@ -335,7 +341,7 @@ function collectStep(row: HTMLElement): StepJson {
   const readValue = (selector: string) => row.querySelector<HTMLInputElement | HTMLSelectElement>(selector)?.value?.trim() ?? ''
 
   if (kind === 'lesson') activity.lessonId = readValue('.pf-param-lesson')
-  if (kind === 'sorting') activity.game = readValue('.pf-param-game')
+  if (kind === 'sorting' || kind === 'click-trainer') activity.game = readValue('.pf-param-game')
   if (kind === 'fact-opinion') activity.level = Number(readValue('.pf-param-level'))
   if (kind === 'simulator') activity.scenario = readValue('.pf-param-scenario')
   if (kind === 'mission') {

@@ -29,6 +29,8 @@ function isValidActivity(raw: unknown): boolean {
       return validCount(activity.count)
     case 'sorting':
       return ['attributes', 'infosort', 'multisort'].includes(activity.game as string)
+    case 'click-trainer':
+      return activity.game === 'computer-parts' && validCount(activity.count)
     case 'fact-opinion':
       return activity.level === 1 || activity.level === 2
     case 'simulator':
