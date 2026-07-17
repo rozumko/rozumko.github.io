@@ -641,11 +641,14 @@ export function submitParentPathProgress(
   })
 }
 
-export async function loginParent(email: string, password: string): Promise<void> {
+export async function loginParent(email: string, password: string, captchaToken?: string): Promise<void> {
+  // Supabase captcha protection covers the password grant as well.
+  const body: Record<string, unknown> = { email, password }
+  if (captchaToken) body.gotrue_meta_security = { captcha_token: captchaToken }
   const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify(body),
   })
   const data = await res.json()
   if (!res.ok) throw new Error(data.error_description ?? data.msg ?? 'Помилка входу')
@@ -735,11 +738,15 @@ export function googleSignInUrl(redirectPath: string): string {
 
 // ─── Teacher Auth (Supabase) ───────────────────────────────────────────────
 
-export async function loginTeacher(email: string, password: string): Promise<any> {
+export async function loginTeacher(email: string, password: string, captchaToken?: string): Promise<any> {
+  // Supabase captcha protection covers the password grant as well;
+  // gotrue_meta_security is the same contract as signup/recover.
+  const body: Record<string, unknown> = { email, password }
+  if (captchaToken) body.gotrue_meta_security = { captcha_token: captchaToken }
   const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify(body),
   })
   const data = await res.json()
   if (!res.ok) throw new Error(data.error_description ?? data.msg ?? 'Помилка входу')

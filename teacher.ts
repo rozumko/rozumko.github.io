@@ -212,18 +212,26 @@ loginForm.addEventListener('submit', async (e) => {
   e.preventDefault()
   const email    = $<HTMLInputElement>('login-email').value.trim()
   const password = $<HTMLInputElement>('login-password').value
+  const loginWidgetId = turnstileWidgets.get('turnstile-container-login')
+  const captchaToken = window.turnstile?.getResponse(loginWidgetId)
+  if (loginWidgetId === undefined || !captchaToken) {
+    loginError.textContent = 'Підтвердіть, що ви не робот (зачекайте, поки з’явиться перевірка).'
+    return
+  }
   loginError.textContent     = ''
   loginSubmitBtn.disabled    = true
   loginSubmitBtn.textContent = 'Вхід…'
   showColdStartBanner()
   try {
-    await loginTeacher(email, password)
+    await loginTeacher(email, password, captchaToken)
     const me = await getTeacherMe()
     hideColdStartBanner()
     showDashboard(teacherLabel(me, email))
     await Promise.all([loadRegistrationEvents(), loadClasses(), loadRegistrations(), loadCodes(), loadResults()])
   } catch (err) {
     hideColdStartBanner()
+    // Turnstile token is single-use: reset for the next attempt.
+    window.turnstile?.reset(loginWidgetId)
     const msg = (err as Error).message
     if (isUnknownAccountError(err)) {
       loginError.textContent = 'Вхід виконано, але кабінету вчителя ще немає.'
@@ -265,9 +273,10 @@ const authCardTitle    = $maybe('auth-card-title')
 const authCardSub      = $maybe('auth-card-sub')
 
 // ── Cloudflare Turnstile (explicit-рендер) ───────────────────────────────────
-// api.js вантажимо лише після відкриття форми реєстрації. Так зовнішній JS
-// Cloudflare не виконується у звичайному login/dashboard-потоці.
-// Токен одноразовий, тож після кожної спроби реєстрації робимо reset.
+// Supabase captcha protection покриває і password-логін, тож api.js вантажиться
+// щойно видно auth-картку (login/register/forgot — кожна форма зі своїм
+// віджетом). У dashboard-потоці з живою сесією сторонній JS не виконується.
+// Токен одноразовий, тож після кожної спроби робимо reset.
 type TurnstileApi = {
   render: (el: string | HTMLElement, opts: { sitekey: string }) => string
   getResponse: (id?: string) => string | undefined
@@ -331,11 +340,6 @@ function switchToRegister() {
 }
 
 function switchToLogin() {
-  // Після виконання стороннього JS повертаємось до чистого документа перед входом.
-  if (document.getElementById(TURNSTILE_SCRIPT_ID) || window.turnstile) {
-    window.location.reload()
-    return
-  }
   registerMode?.classList.add('hidden')
   forgotMode?.classList.add('hidden')
   resetMode?.classList.add('hidden')
@@ -1178,6 +1182,11 @@ function showAuth(message?: string) {
   loginSubmitBtn.disabled    = false
   loginSubmitBtn.textContent = 'Увійти'
   loginError.textContent = message ?? ''
+  // Supabase captcha protection covers password sign-in, so the login form
+  // needs its own Turnstile widget as soon as the auth card is visible.
+  loadTurnstile('turnstile-container-login').catch(() => {
+    loginError.textContent = 'Не вдалося завантажити захист від ботів. Оновіть сторінку.'
+  })
 }
 
 // ── Класна гра (просунутий School Mode) ──────────────────────────────────────
