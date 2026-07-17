@@ -13,85 +13,119 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="style-app.css" />
   <link rel="stylesheet" href="style-parent.css" />
+  <link rel="stylesheet" href="style-auth.css" />
 </head>
-<body class="parent-page">
+<body class="parent-page auth-surface auth-surface--parent">
   <a href="#main-content" class="skip-link">Перейти до основного контенту</a>
 
-  <header class="parent-header">
-    <a href="home.html" class="parent-header__brand" aria-label="Розумко — домашні місії">Розумко</a>
-    <a href="home.html" class="btn-ghost">← Домашні місії</a>
+  <header class="auth-topbar">
+    <a href="home.html" class="auth-topbar__brand" aria-label="Розумко — домашні місії">Розумко</a>
+    <a href="home.html" class="auth-topbar__back">← Домашні місії</a>
   </header>
 
-  <main id="main-content" class="parent-main" tabindex="-1">
-    <section id="parent-auth" class="parent-auth-card" aria-labelledby="parent-auth-title">
-      <p class="parent-eyebrow">Для дорослих</p>
-      <h1 id="parent-auth-title">Кабінет батьків</h1>
-      <p id="parent-auth-subtitle">Увійдіть, щоб дитина продовжила свій шлях на цьому пристрої.</p>
+  <main id="main-content" tabindex="-1">
+    <div id="parent-auth" class="auth-main">
+    <section class="auth-card" aria-labelledby="parent-auth-title">
+      <div class="auth-card__header">
+        <p class="auth-card__eyebrow">Для дорослих</p>
+        <h1 id="parent-auth-title" class="auth-card__title">Кабінет батьків</h1>
+        <p id="parent-auth-subtitle" class="auth-card__sub">Увійдіть, щоб дитина продовжила свій шлях на цьому пристрої.</p>
+      </div>
+
+      <div class="auth-card__body">
 
       <div id="parent-login-mode">
         <form id="parent-login-form" novalidate aria-describedby="parent-login-error">
-          <label class="parent-field" for="parent-login-email">
-            <span>Email</span>
-            <input id="parent-login-email" type="email" autocomplete="email" required />
-          </label>
-          <label class="parent-field" for="parent-login-password">
-            <span>Пароль</span>
-            <input id="parent-login-password" type="password" autocomplete="current-password" required />
-          </label>
+          <div class="auth-fields">
+            <label class="auth-field" for="parent-login-email">
+              <span class="auth-label">Електронна пошта</span>
+              <input id="parent-login-email" class="auth-input" type="email" autocomplete="email" placeholder="parent@example.com" required />
+            </label>
+            <label class="auth-field" for="parent-login-password">
+              <span class="auth-label">Пароль</span>
+              <input id="parent-login-password" class="auth-input" type="password" autocomplete="current-password" placeholder="••••••••" required />
+            </label>
+          </div>
           <!-- Supabase captcha protection covers password sign-in too -->
-          <div id="parent-turnstile-login" class="parent-turnstile"></div>
-          <p id="parent-login-error" class="parent-error" role="alert" aria-live="assertive"></p>
-          <button id="parent-login-submit" class="kid-action parent-primary" type="submit">Увійти</button>
+          <div id="parent-turnstile-login" class="auth-turnstile"></div>
+          <p id="parent-login-error" class="auth-message" role="alert" aria-live="assertive"></p>
+          <button id="parent-login-submit" class="auth-button auth-button--primary" type="submit">Увійти</button>
         </form>
-        <button id="parent-google-login" class="kid-action parent-google" type="button">Увійти через Google</button>
-        <p class="parent-switch">Ще немає акаунта? <button id="parent-show-register" type="button">Зареєструватися</button></p>
-        <p class="parent-switch"><button id="parent-show-forgot" type="button">Забули пароль?</button></p>
+        <div class="auth-divider">
+          <p class="auth-divider__text" aria-hidden="true">або</p>
+          <button id="parent-google-login" class="auth-button auth-button--secondary auth-button--google" type="button">Увійти через Google</button>
+        </div>
+        <div class="auth-switch-group">
+          <p class="auth-switch">Ще немає акаунта? <button id="parent-show-register" class="auth-switch__link" type="button">Зареєструватися</button></p>
+          <p class="auth-switch"><button id="parent-show-forgot" class="auth-switch__link" type="button">Забули пароль?</button></p>
+        </div>
       </div>
 
       <div id="parent-forgot-mode" class="hidden">
         <form id="parent-forgot-form" novalidate aria-describedby="parent-forgot-error">
-          <label class="parent-field" for="parent-forgot-email">
-            <span>Email</span>
-            <input id="parent-forgot-email" type="email" autocomplete="email" required />
-          </label>
-          <div id="parent-turnstile-forgot" class="parent-turnstile"></div>
-          <p id="parent-forgot-error" class="parent-error" role="alert" aria-live="assertive"></p>
-          <button id="parent-forgot-submit" class="kid-action parent-primary" type="submit">Надіслати лист</button>
+          <div class="auth-fields">
+            <label class="auth-field" for="parent-forgot-email">
+              <span class="auth-label">Електронна пошта</span>
+              <input id="parent-forgot-email" class="auth-input" type="email" autocomplete="email" placeholder="parent@example.com" required />
+            </label>
+          </div>
+          <div id="parent-turnstile-forgot" class="auth-turnstile"></div>
+          <p id="parent-forgot-error" class="auth-message" role="alert" aria-live="assertive"></p>
+          <button id="parent-forgot-submit" class="auth-button auth-button--primary" type="submit">Надіслати лист</button>
         </form>
-        <p class="parent-switch">Згадали пароль? <button id="parent-hide-forgot" type="button">Увійти</button></p>
+        <div class="auth-switch-group">
+          <p class="auth-switch">Згадали пароль? <button id="parent-hide-forgot" class="auth-switch__link" type="button">Увійти</button></p>
+        </div>
       </div>
 
       <div id="parent-reset-mode" class="hidden">
         <form id="parent-reset-form" novalidate aria-describedby="parent-reset-error">
-          <label class="parent-field" for="parent-reset-password">
-            <span>Новий пароль — мінімум 8 символів</span>
-            <input id="parent-reset-password" type="password" autocomplete="new-password" minlength="8" required />
-          </label>
-          <p id="parent-reset-error" class="parent-error" role="alert" aria-live="assertive"></p>
-          <button id="parent-reset-submit" class="kid-action parent-primary" type="submit">Зберегти пароль</button>
+          <div class="auth-fields">
+            <label class="auth-field" for="parent-reset-password">
+              <span class="auth-label">Новий пароль — мінімум 8 символів</span>
+              <input id="parent-reset-password" class="auth-input" type="password" autocomplete="new-password" placeholder="••••••••" minlength="8" required />
+            </label>
+          </div>
+          <p id="parent-reset-error" class="auth-message" role="alert" aria-live="assertive"></p>
+          <button id="parent-reset-submit" class="auth-button auth-button--primary" type="submit">Зберегти пароль</button>
         </form>
       </div>
 
       <div id="parent-register-mode" class="hidden">
         <form id="parent-register-form" novalidate aria-describedby="parent-register-error">
-          <label class="parent-field" for="parent-register-email">
-            <span>Email дорослого</span>
-            <input id="parent-register-email" type="email" autocomplete="email" required />
-          </label>
-          <label class="parent-field" for="parent-register-password">
-            <span>Пароль — мінімум 8 символів</span>
-            <input id="parent-register-password" type="password" autocomplete="new-password" minlength="8" required />
-          </label>
-          <p class="parent-privacy">Дитина не отримує окремого логіна. Профіль створює і контролює дорослий.</p>
-          <div id="parent-turnstile" class="parent-turnstile"></div>
-          <p id="parent-register-error" class="parent-error" role="alert" aria-live="assertive"></p>
-          <button id="parent-register-submit" class="kid-action parent-primary" type="submit">Створити акаунт</button>
+          <div class="auth-fields">
+            <label class="auth-field" for="parent-register-email">
+              <span class="auth-label">Електронна пошта дорослого</span>
+              <input id="parent-register-email" class="auth-input" type="email" autocomplete="email" placeholder="parent@example.com" required />
+            </label>
+            <label class="auth-field" for="parent-register-password">
+              <span class="auth-label">Пароль — мінімум 8 символів</span>
+              <input id="parent-register-password" class="auth-input" type="password" autocomplete="new-password" placeholder="••••••••" minlength="8" required />
+            </label>
+          </div>
+          <p class="auth-privacy">Дитина не отримує окремого логіна. Профіль створює і контролює дорослий.</p>
+          <div id="parent-turnstile" class="auth-turnstile"></div>
+          <p id="parent-register-error" class="auth-message" role="alert" aria-live="assertive"></p>
+          <button id="parent-register-submit" class="auth-button auth-button--primary" type="submit">Створити акаунт</button>
         </form>
-        <p class="parent-switch">Вже є акаунт? <button id="parent-show-login" type="button">Увійти</button></p>
+        <div class="auth-switch-group">
+          <p class="auth-switch">Вже є акаунт? <button id="parent-show-login" class="auth-switch__link" type="button">Увійти</button></p>
+        </div>
+      </div>
       </div>
     </section>
+    <footer class="auth-footer">
+      <nav class="auth-footer__links" aria-label="Корисні посилання">
+        <a href="for-teachers.html">Для вчителів</a>
+        <a href="for-parents.html">Для батьків</a>
+        <a href="privacy.html">Конфіденційність</a>
+        <a href="terms.html">Правила</a>
+      </nav>
+      <p>&copy; 2024–2026 Розумко</p>
+    </footer>
+    </div>
 
-    <section id="parent-dashboard" class="hidden" aria-labelledby="parent-dashboard-title">
+    <section id="parent-dashboard" class="parent-main hidden" aria-labelledby="parent-dashboard-title">
       <div class="parent-dashboard-head">
         <div>
           <p class="parent-eyebrow">Домашній режим</p>

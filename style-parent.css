@@ -4,30 +4,12 @@
   color: var(--clr-text);
 }
 
-.parent-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-3);
-  width: min(100% - 32px, 980px);
-  margin: 0 auto;
-  padding: var(--sp-4) 0;
-}
-
-.parent-header__brand {
-  color: var(--clr-primary);
-  font-size: var(--font-size-xl);
-  font-weight: 800;
-  text-decoration: none;
-}
-
 .parent-main {
   width: min(100% - 32px, 760px);
   margin: 0 auto;
-  padding: var(--sp-5) 0 var(--sp-10);
+  padding: 0 0 var(--sp-10);
 }
 
-.parent-auth-card,
 .parent-create-card {
   max-width: 520px;
   margin: 0 auto;
@@ -38,7 +20,6 @@
   box-shadow: var(--shadow-card);
 }
 
-.parent-auth-card h1,
 .parent-dashboard-head h1 { margin: 4px 0 8px; }
 
 .parent-eyebrow {
@@ -78,18 +59,6 @@
 
 .parent-primary { width: 100%; margin-top: var(--sp-4); }
 .parent-error { min-height: 1.4em; margin: var(--sp-3) 0 0; color: var(--fb-err-soft); font-weight: 700; }
-.parent-error--success { color: var(--fb-ok-soft); }
-.parent-switch { margin: var(--sp-5) 0 0; text-align: center; }
-.parent-switch button { border: 0; background: none; color: var(--clr-primary); font: inherit; font-weight: 800; text-decoration: underline; cursor: pointer; }
-.parent-privacy { color: var(--clr-text-muted); font-size: var(--font-size-sm); line-height: 1.5; }
-.parent-turnstile { min-height: 65px; margin-top: var(--sp-4); }
-.parent-google {
-  width: 100%;
-  margin-top: var(--sp-3);
-  background: var(--clr-surface-muted);
-  color: var(--clr-text);
-  border: 2px solid var(--clr-border);
-}
 
 .parent-dashboard-head {
   display: flex;
@@ -149,11 +118,10 @@
 .parent-profile-form { display: grid; grid-template-columns: 1fr 130px; gap: 0 var(--sp-4); align-items: end; }
 .parent-profile-form .parent-error,
 .parent-profile-form .parent-primary { grid-column: 1 / -1; }
+.parent-privacy { color: var(--clr-text-muted); font-size: var(--font-size-sm); line-height: 1.5; }
 .parent-privacy--dashboard { margin-top: var(--sp-6); text-align: center; }
 
 @media (max-width: 560px) {
-  .parent-header { align-items: flex-start; }
-  .parent-main { padding-top: var(--sp-2); }
   .parent-dashboard-head { display: grid; }
   .parent-section-head { display: grid; }
   .parent-access { max-width: none; text-align: left; }

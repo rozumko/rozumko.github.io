@@ -31,151 +31,152 @@
   <link rel="stylesheet" href="tokens.css"/>
   <link rel="stylesheet" href="style.css"/>
   <link rel="stylesheet" href="style-teacher.css"/>
+  <link rel="stylesheet" href="style-auth.css"/>
 
 </head>
-<body class="teacher-auth-page">
+<body class="teacher-auth-page auth-surface auth-surface--teacher">
   <a href="#main-content" class="skip-link">Перейти до основного контенту</a>
 
-  <!-- Кнопка «На головну» — фіксована зліва, як на сторінці учня -->
-  <a href="index.html" class="student-back" id="auth-back-link">
-    <i class="fas fa-arrow-left" aria-hidden="true"></i> На головну
-  </a>
+  <header class="auth-topbar" id="auth-back-link">
+    <a href="index.html" class="auth-topbar__brand" aria-label="Розумко — на головну">Розумко</a>
+    <a href="index.html" class="auth-topbar__back">← На головну</a>
+  </header>
 
-  <!-- ===== ФОРМА ВХОДУ ===== -->
-  <div id="auth-section" class="auth-page-wrap">
-    <div class="auth-page-inner">
+  <!-- Authentication surface -->
+  <div id="auth-section" class="auth-main">
+    <!-- Shared card for login, registration and recovery modes. -->
+    <div class="auth-card" id="auth-card">
 
-      <!-- Єдина картка: login / register -->
-      <div class="auth-card" id="auth-card">
-
-        <!-- Заголовок (змінюється через JS) -->
+        <!-- Copy changes with the active mode. -->
         <div class="auth-card__header" id="auth-card-header">
           <p class="auth-card__eyebrow">Кабінет</p>
           <h1 class="auth-card__title" id="auth-card-title">Вхід для вчителя</h1>
           <p class="auth-card__sub" id="auth-card-sub">Увійдіть, щоб керувати класами, кодами та результатами.</p>
         </div>
 
-        <div class="auth-card__body">
+      <div class="auth-card__body">
 
-          <!-- ── РЕЖИМ ВХОДУ ── -->
+          <!-- Login mode -->
           <div id="login-mode">
             <form id="teacher-login-form" novalidate aria-describedby="login-error">
-              <div class="form-fields">
-                <div class="form-group">
-                  <label for="login-email" class="form-label">Електронна пошта</label>
+              <div class="auth-fields">
+                <div class="auth-field">
+                  <label for="login-email" class="auth-label">Електронна пошта</label>
                   <input id="login-email" type="email" autocomplete="email"
-                    placeholder="teacher@school.ua" required class="form-input"/>
+                    placeholder="teacher@school.ua" required class="auth-input"/>
                 </div>
-                <div class="form-group">
-                  <label for="login-password" class="form-label">Пароль</label>
+                <div class="auth-field">
+                  <label for="login-password" class="auth-label">Пароль</label>
                   <input id="login-password" type="password" autocomplete="current-password"
-                    placeholder="••••••••" required class="form-input"/>
+                    placeholder="••••••••" required class="auth-input"/>
                 </div>
               </div>
               <!-- Turnstile is rendered here explicitly from teacher.ts:
                    Supabase captcha protection now covers password sign-in too -->
-              <div id="turnstile-container-login" class="form-group"></div>
-              <p id="login-error" class="form-error" role="alert" aria-live="assertive"></p>
-              <button type="submit" id="login-submit-btn" class="btn btn--teacher btn--full">Увійти</button>
+              <div id="turnstile-container-login" class="auth-turnstile"></div>
+              <p id="login-error" class="auth-message" role="alert" aria-live="assertive"></p>
+              <button type="submit" id="login-submit-btn" class="auth-button auth-button--primary">Увійти</button>
             </form>
             <!-- Shown when the signed-in account has no teacher cabinet yet -->
             <div id="register-request-box" class="hidden">
-              <p class="auth-switch-hint">Цей акаунт ще не має кабінету вчителя.</p>
-              <button type="button" id="register-request-btn" class="btn btn--success btn--full">Подати заявку вчителя</button>
+              <p class="auth-switch">Цей акаунт ще не має кабінету вчителя.</p>
+              <button type="button" id="register-request-btn" class="auth-button auth-button--primary">Подати заявку вчителя</button>
             </div>
             <div class="auth-divider">
               <p class="auth-divider__text" aria-hidden="true">або</p>
-              <button type="button" id="google-login-btn" class="btn btn--secondary btn--full">
-              <i class="fab fa-google" aria-hidden="true"></i> Увійти через Google
-              </button>
+              <button type="button" id="google-login-btn" class="auth-button auth-button--secondary auth-button--google">Увійти через Google</button>
             </div>
-            <p class="auth-switch-hint">
-              Ще немає кабінету?
-              <button type="button" id="show-register-btn" class="auth-switch-link">Зареєструватись</button>
-            </p>
-            <p class="auth-switch-hint">
-              <button type="button" id="show-forgot-btn" class="auth-switch-link">Забули пароль?</button>
-            </p>
+            <div class="auth-switch-group">
+              <p class="auth-switch">
+                Ще немає кабінету?
+                <button type="button" id="show-register-btn" class="auth-switch__link">Зареєструватись</button>
+              </p>
+              <p class="auth-switch">
+                <button type="button" id="show-forgot-btn" class="auth-switch__link">Забули пароль?</button>
+              </p>
+            </div>
           </div>
 
-          <!-- ── РЕЖИМ ВІДНОВЛЕННЯ ПАРОЛЮ (запит листа) ── -->
+          <!-- Password recovery request mode -->
           <div id="forgot-mode" class="hidden">
             <form id="teacher-forgot-form" novalidate aria-describedby="forgot-error">
-              <div class="form-fields">
-                <div class="form-group">
-                  <label for="forgot-email" class="form-label">Електронна пошта</label>
+              <div class="auth-fields">
+                <div class="auth-field">
+                  <label for="forgot-email" class="auth-label">Електронна пошта</label>
                   <input id="forgot-email" type="email" autocomplete="email"
-                    placeholder="teacher@school.ua" required class="form-input"/>
+                    placeholder="teacher@school.ua" required class="auth-input"/>
                 </div>
               </div>
               <!-- Turnstile is rendered here explicitly from teacher.ts -->
-              <div id="turnstile-container-forgot" class="form-group"></div>
-              <p id="forgot-error" class="form-error" role="alert" aria-live="assertive"></p>
-              <button type="submit" id="forgot-submit-btn" class="btn btn--teacher btn--full">Надіслати лист</button>
+              <div id="turnstile-container-forgot" class="auth-turnstile"></div>
+              <p id="forgot-error" class="auth-message" role="alert" aria-live="assertive"></p>
+              <button type="submit" id="forgot-submit-btn" class="auth-button auth-button--primary">Надіслати лист</button>
             </form>
-            <p class="auth-switch-hint">
-              Згадали пароль?
-              <button type="button" id="hide-forgot-btn" class="auth-switch-link">Увійти</button>
-            </p>
+            <div class="auth-switch-group">
+              <p class="auth-switch">
+                Згадали пароль?
+                <button type="button" id="hide-forgot-btn" class="auth-switch__link">Увійти</button>
+              </p>
+            </div>
           </div>
 
-          <!-- ── РЕЖИМ НОВОГО ПАРОЛЮ (після переходу з листа) ── -->
+          <!-- New-password mode after an email callback -->
           <div id="reset-mode" class="hidden">
             <form id="teacher-reset-form" novalidate aria-describedby="reset-error">
-              <div class="form-fields">
-                <div class="form-group">
-                  <label for="reset-password" class="form-label">Новий пароль (мінімум 8 символів)</label>
+              <div class="auth-fields">
+                <div class="auth-field">
+                  <label for="reset-password" class="auth-label">Новий пароль (мінімум 8 символів)</label>
                   <input id="reset-password" type="password" autocomplete="new-password"
-                    placeholder="••••••••" minlength="8" required class="form-input"/>
+                    placeholder="••••••••" minlength="8" required class="auth-input"/>
                 </div>
               </div>
-              <p id="reset-error" class="form-error" role="alert" aria-live="assertive"></p>
-              <button type="submit" id="reset-submit-btn" class="btn btn--teacher btn--full">Зберегти пароль</button>
+              <p id="reset-error" class="auth-message" role="alert" aria-live="assertive"></p>
+              <button type="submit" id="reset-submit-btn" class="auth-button auth-button--primary">Зберегти пароль</button>
             </form>
           </div>
 
-          <!-- ── РЕЖИМ РЕЄСТРАЦІЇ ── -->
+          <!-- Registration mode -->
           <div id="register-mode" class="hidden">
             <form id="teacher-register-form" novalidate aria-describedby="register-error">
-              <div class="form-fields">
-                <div class="form-group">
-                  <label for="reg-email" class="form-label">Електронна пошта</label>
+              <div class="auth-fields">
+                <div class="auth-field">
+                  <label for="reg-email" class="auth-label">Електронна пошта</label>
                   <input id="reg-email" type="email" autocomplete="email"
-                    placeholder="teacher@school.ua" required class="form-input"/>
+                    placeholder="teacher@school.ua" required class="auth-input"/>
                 </div>
-                <div class="form-group">
-                  <label for="reg-school" class="form-label">Школа або заклад</label>
+                <div class="auth-field">
+                  <label for="reg-school" class="auth-label">Школа або заклад</label>
                   <input id="reg-school" type="text" autocomplete="organization"
-                    placeholder="Ліцей №1, м. Київ" class="form-input"/>
+                    placeholder="Ліцей №1, м. Київ" class="auth-input"/>
                 </div>
-                <div class="form-group">
-                  <label for="reg-password" class="form-label">Пароль (мінімум 8 символів)</label>
+                <div class="auth-field">
+                  <label for="reg-password" class="auth-label">Пароль (мінімум 8 символів)</label>
                   <input id="reg-password" type="password" autocomplete="new-password"
-                    placeholder="••••••••" minlength="8" required class="form-input"/>
+                    placeholder="••••••••" minlength="8" required class="auth-input"/>
                 </div>
               </div>
-              <p class="form-privacy-note">
+              <p class="auth-privacy">
                 <i class="fas fa-shield-alt" aria-hidden="true"></i>
                 Зберігаємо лише email і назву закладу.
               </p>
-              <!-- Cloudflare Turnstile рендериться сюди explicit-режимом з teacher.ts -->
-              <div id="turnstile-container" class="form-group"></div>
-              <p id="register-error" class="form-error" role="alert" aria-live="assertive"></p>
-              <button type="submit" id="register-submit-btn" class="btn btn--success btn--full">Створити кабінет</button>
+              <!-- Turnstile is rendered here explicitly from teacher.ts. -->
+              <div id="turnstile-container" class="auth-turnstile"></div>
+              <p id="register-error" class="auth-message" role="alert" aria-live="assertive"></p>
+              <button type="submit" id="register-submit-btn" class="auth-button auth-button--primary">Створити кабінет</button>
             </form>
-            <p class="auth-switch-hint">
-              Вже є кабінет?
-              <button type="button" id="hide-register-btn" class="auth-switch-link">Увійти</button>
-            </p>
+            <div class="auth-switch-group">
+              <p class="auth-switch">
+                Вже є кабінет?
+                <button type="button" id="hide-register-btn" class="auth-switch__link">Увійти</button>
+              </p>
+            </div>
           </div>
 
-        </div>
+      </div>
       </div>
 
-    </div><!-- /auth-page-inner -->
-
-    <footer class="teacher-auth-footer">
-      <nav class="teacher-auth-footer__links" aria-label="Корисні посилання">
+    <footer class="auth-footer">
+      <nav class="auth-footer__links" aria-label="Корисні посилання">
         <a href="for-teachers.html">Для вчителів</a>
         <a href="for-parents.html">Для батьків</a>
         <a href="privacy.html">Конфіденційність</a>
