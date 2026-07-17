@@ -120,8 +120,14 @@ async function init() {
       hideColdStartBanner()
       showDashboard(me.name || session.email)
       await Promise.all([loadRegistrationEvents(), loadClasses(), loadRegistrations(), loadCodes(), loadResults()])
-    } catch {
+    } catch (err) {
       hideColdStartBanner()
+      // New account (Google sign-in or just-confirmed email) lands here with
+      // ACCOUNT_PENDING — without a message it looks like a silent failure.
+      if (isPendingError(err)) {
+        showAuth('✅ Акаунт створено! Він очікує підтвердження адміністратора — після підтвердження увійдіть ще раз.')
+        return
+      }
       // authRequest чистить сесію, якщо refresh-токен теж мертвий. Тоді показуємо
       // явне повідомлення; транзієнтна помилка (сесія лишилась) — без нього.
       showAuth(getTeacherSession() ? undefined : 'Сесія завершилася. Увійдіть знову.')
