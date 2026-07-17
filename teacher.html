@@ -452,8 +452,13 @@
                 <p id="school-join-code" class="school-live__code"></p>
               </div>
               <figure id="school-join-qr-card" class="school-live__qr-card" aria-busy="true">
-                <canvas id="school-join-qr" class="school-live__qr hidden" role="img"></canvas>
-                <figcaption id="school-join-qr-caption">Скануйте камерою, щоб приєднатися</figcaption>
+                <button id="school-join-qr-open" class="school-live__qr-open" type="button" aria-label="Збільшити QR-код" disabled>
+                  <canvas id="school-join-qr" class="school-live__qr hidden" aria-hidden="true"></canvas>
+                </button>
+                <figcaption id="school-join-qr-caption">
+                  <strong>Скануйте камерою</strong>
+                  <span>Натисніть QR-код, щоб збільшити</span>
+                </figcaption>
                 <p id="school-join-qr-fallback" class="school-live__qr-fallback hidden">QR-код не вдалося створити. Скористайтеся кодом гри або посиланням.</p>
               </figure>
             </div>
@@ -489,6 +494,18 @@
             <h3 class="school-live__heading">Що варто повторити</h3>
             <p class="school-live__stats-hint">Відсоток правильних відповідей за темою (від найслабшої).</p>
             <div id="school-topic-stats"></div>
+          </div>
+        </div>
+
+        <div id="school-qr-dialog" class="school-qr-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="school-qr-dialog-title" aria-describedby="school-qr-dialog-hint">
+          <div class="school-qr-dialog__card">
+            <button id="school-qr-dialog-close" class="school-qr-dialog__close" type="button" aria-label="Закрити збільшений QR-код">
+              <i class="fas fa-times" aria-hidden="true"></i>
+            </button>
+            <p id="school-qr-dialog-title" class="school-qr-dialog__label">Код гри</p>
+            <p id="school-qr-dialog-code" class="school-qr-dialog__code"></p>
+            <canvas id="school-join-qr-large" class="school-qr-dialog__qr" role="img"></canvas>
+            <p id="school-qr-dialog-hint" class="school-qr-dialog__hint">Відскануйте QR-код камерою телефона або планшета</p>
           </div>
         </div>
 

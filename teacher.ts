@@ -1280,8 +1280,10 @@ function showAuth(message?: string) {
 let schoolSession: SchoolSessionInfo | null = null
 let schoolPollTimer: ReturnType<typeof setInterval> | null = null
 let projectorTrapCleanup: (() => void) | null = null
+let qrDialogTrapCleanup: (() => void) | null = null
 
 const projectorOverlay = $maybe('school-projector')
+const schoolQrDialog = $maybe('school-qr-dialog')
 const projectorEls: MissionElements | null = projectorOverlay ? {
   progressText: $('school-projector-progress-text'),
   progressBar: $('school-projector-progress-bar'),
@@ -1413,6 +1415,7 @@ function setSchoolCreateBusy(busy: boolean) {
 }
 
 function resetSchoolView() {
+  closeSchoolQrDialog()
   schoolSession = null
   if (schoolPollTimer) { clearInterval(schoolPollTimer); schoolPollTimer = null }
   $maybe('school-live')?.classList.add('hidden')
@@ -1430,27 +1433,43 @@ function buildSchoolJoinUrl(code: string): string {
 
 async function renderSchoolJoinQr(joinUrl: string, joinCode: string) {
   const canvas = $maybe<HTMLCanvasElement>('school-join-qr')
+  const largeCanvas = $maybe<HTMLCanvasElement>('school-join-qr-large')
   const card = $maybe('school-join-qr-card')
   const caption = $maybe('school-join-qr-caption')
   const fallback = $maybe('school-join-qr-fallback')
-  if (!canvas || !card || !caption || !fallback) return
+  const openBtn = $maybe<HTMLButtonElement>('school-join-qr-open')
+  const dialogCode = $maybe('school-qr-dialog-code')
+  if (!canvas || !largeCanvas || !card || !caption || !fallback || !openBtn || !dialogCode) return
 
   card.setAttribute('aria-busy', 'true')
+  openBtn.disabled = true
   canvas.classList.add('hidden')
   canvas.removeAttribute('data-ready')
+  largeCanvas.removeAttribute('data-ready')
   caption.classList.remove('hidden')
   fallback.classList.add('hidden')
   try {
     const { default: QRCode } = await import('qrcode')
-    await QRCode.toCanvas(canvas, joinUrl, {
-      errorCorrectionLevel: 'Q',
+    const sharedOptions = {
+      errorCorrectionLevel: 'Q' as const,
       margin: 3,
-      width: 240,
       color: { dark: '#071226', light: '#ffffff' },
-    })
-    canvas.setAttribute('aria-label', `QR-код для приєднання до гри ${joinCode}`)
+    }
+    await Promise.all([
+      QRCode.toCanvas(canvas, joinUrl, { ...sharedOptions, width: 240 }),
+      QRCode.toCanvas(largeCanvas, joinUrl, { ...sharedOptions, width: 1200 }),
+    ])
+    // The renderer adds fixed inline dimensions; CSS owns the responsive size.
+    for (const qrCanvas of [canvas, largeCanvas]) {
+      qrCanvas.removeAttribute('style')
+    }
+    openBtn.setAttribute('aria-label', `Збільшити QR-код для гри ${joinCode}`)
+    largeCanvas.setAttribute('aria-label', `QR-код для приєднання до гри ${joinCode}`)
+    dialogCode.textContent = joinCode
     canvas.dataset.ready = 'true'
+    largeCanvas.dataset.ready = 'true'
     canvas.classList.remove('hidden')
+    openBtn.disabled = false
   } catch {
     canvas.classList.add('hidden')
     caption.classList.add('hidden')
@@ -1459,6 +1478,29 @@ async function renderSchoolJoinQr(joinUrl: string, joinCode: string) {
     card.setAttribute('aria-busy', 'false')
   }
 }
+
+function openSchoolQrDialog() {
+  const openBtn = $maybe<HTMLButtonElement>('school-join-qr-open')
+  if (!schoolQrDialog || !openBtn || openBtn.disabled) return
+  schoolQrDialog.classList.remove('hidden')
+  document.body.classList.add('teacher-qr-dialog-active')
+  qrDialogTrapCleanup?.()
+  qrDialogTrapCleanup = createFocusTrap(schoolQrDialog, closeSchoolQrDialog)
+}
+
+function closeSchoolQrDialog() {
+  if (!schoolQrDialog || schoolQrDialog.classList.contains('hidden')) return
+  schoolQrDialog.classList.add('hidden')
+  document.body.classList.remove('teacher-qr-dialog-active')
+  qrDialogTrapCleanup?.()
+  qrDialogTrapCleanup = null
+}
+
+$maybe<HTMLButtonElement>('school-join-qr-open')?.addEventListener('click', openSchoolQrDialog)
+$maybe<HTMLButtonElement>('school-qr-dialog-close')?.addEventListener('click', closeSchoolQrDialog)
+schoolQrDialog?.addEventListener('click', event => {
+  if (event.target === schoolQrDialog) closeSchoolQrDialog()
+})
 
 function showSchoolLobby(session: SchoolSessionInfo) {
   schoolSession = session
