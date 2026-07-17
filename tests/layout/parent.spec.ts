@@ -2,6 +2,13 @@ import { test, expect } from '@playwright/test'
 
 test('parent logs in, creates a child profile and explicitly selects it', async ({ page }) => {
   await page.addInitScript(() => {
+    // Login requires a Turnstile token (Supabase captcha covers the password
+    // grant). Stub the API so loadTurnstile never injects the real script.
+    ;(window as any).turnstile = {
+      render: () => 'stub-widget',
+      getResponse: () => 'stub-captcha-token',
+      reset: () => {},
+    }
     const originalFetch = window.fetch.bind(window)
     ;(window as any).__parentProfiles = []
     window.fetch = async (input, init) => {
