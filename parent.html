@@ -41,7 +41,33 @@
           <p id="parent-login-error" class="parent-error" role="alert" aria-live="assertive"></p>
           <button id="parent-login-submit" class="kid-action parent-primary" type="submit">Увійти</button>
         </form>
+        <button id="parent-google-login" class="kid-action parent-google" type="button">Увійти через Google</button>
         <p class="parent-switch">Ще немає акаунта? <button id="parent-show-register" type="button">Зареєструватися</button></p>
+        <p class="parent-switch"><button id="parent-show-forgot" type="button">Забули пароль?</button></p>
+      </div>
+
+      <div id="parent-forgot-mode" class="hidden">
+        <form id="parent-forgot-form" novalidate aria-describedby="parent-forgot-error">
+          <label class="parent-field" for="parent-forgot-email">
+            <span>Email</span>
+            <input id="parent-forgot-email" type="email" autocomplete="email" required />
+          </label>
+          <div id="parent-turnstile-forgot" class="parent-turnstile"></div>
+          <p id="parent-forgot-error" class="parent-error" role="alert" aria-live="assertive"></p>
+          <button id="parent-forgot-submit" class="kid-action parent-primary" type="submit">Надіслати лист</button>
+        </form>
+        <p class="parent-switch">Згадали пароль? <button id="parent-hide-forgot" type="button">Увійти</button></p>
+      </div>
+
+      <div id="parent-reset-mode" class="hidden">
+        <form id="parent-reset-form" novalidate aria-describedby="parent-reset-error">
+          <label class="parent-field" for="parent-reset-password">
+            <span>Новий пароль — мінімум 8 символів</span>
+            <input id="parent-reset-password" type="password" autocomplete="new-password" minlength="8" required />
+          </label>
+          <p id="parent-reset-error" class="parent-error" role="alert" aria-live="assertive"></p>
+          <button id="parent-reset-submit" class="kid-action parent-primary" type="submit">Зберегти пароль</button>
+        </form>
       </div>
 
       <div id="parent-register-mode" class="hidden">

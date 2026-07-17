@@ -83,6 +83,13 @@
 .parent-switch button { border: 0; background: none; color: var(--clr-primary); font: inherit; font-weight: 800; text-decoration: underline; cursor: pointer; }
 .parent-privacy { color: var(--clr-text-muted); font-size: var(--font-size-sm); line-height: 1.5; }
 .parent-turnstile { min-height: 65px; margin-top: var(--sp-4); }
+.parent-google {
+  width: 100%;
+  margin-top: var(--sp-3);
+  background: var(--clr-surface-muted);
+  color: var(--clr-text);
+  border: 2px solid var(--clr-border);
+}
 
 .parent-dashboard-head {
   display: flex;
