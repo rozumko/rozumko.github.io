@@ -127,6 +127,12 @@ export function friendlyError(msg: string): string {
   if (msg.includes('Невірний формат') || msg.includes('Код не знайдено') ||
       msg.includes('Код застарів')    || msg.includes('вже використано'))
     return msg
+  // Network failures and a mid-deploy 404 (route not on the old instance yet)
+  // are transient — tell the user to retry instead of "check your input".
+  if (/Failed to fetch|NetworkError|load failed/i.test(msg))
+    return 'Немає зʼєднання із сервером. Зачекайте кілька секунд і спробуйте ще раз.'
+  if (msg.includes('Not Found'))
+    return 'Сервер оновлюється. Зачекайте хвилину і спробуйте ще раз.'
   return 'Помилка. Перевір дані і спробуй знову.'
 }
 
