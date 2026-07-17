@@ -47,14 +47,21 @@ export function runMission(
     const questionCard = els.questionText.closest<HTMLElement>('.quiz-question-card')
 
     els.progressText.textContent = `${currentIdx + 1} / ${questions.length}`
-    els.progressBar.style.width = `${(currentIdx / questions.length) * 100}%`
+    els.progressBar.style.width = `${((currentIdx + 1) / questions.length) * 100}%`
     els.questionText.textContent = String(q.q ?? '')
 
-    // Зображення до питання (опційне поле q.img). Однакова поведінка з олімпіадою.
+    // Optional question image. Keep behavior consistent across mission surfaces.
     if (els.image) {
       const img = q.img as string | undefined
-      if (img) { els.image.src = img; els.image.classList.remove('hidden') }
-      else     { els.image.src = ''; els.image.classList.add('hidden') }
+      if (img) {
+        els.image.src = img
+        els.image.alt = String(q.imageAlt ?? 'Зображення до питання')
+        els.image.classList.remove('hidden')
+      } else {
+        els.image.src = ''
+        els.image.alt = ''
+        els.image.classList.add('hidden')
+      }
     }
 
     if (els.codeBlock) {

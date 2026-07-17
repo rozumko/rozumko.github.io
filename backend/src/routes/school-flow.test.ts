@@ -26,9 +26,19 @@ function createState() {
   return {
     session: { id: ids.session, joinCode: '123456', status: 'active', grade: 2, difficulty: 'easy', questionsCount: 1 },
     sessionExists: true,
-    question: { id: ids.question, q: '2+2?', code: null, type: 'choice', options: ['4', '5'], correct: 0, explanation: 'Additon' },
+    question: {
+      id: ids.question,
+      q: '2+2?',
+      code: null,
+      type: 'choice',
+      options: ['4', '5'],
+      correct: 0,
+      explanation: 'Addition',
+      img: '/questions/addition.webp',
+      imageAlt: 'Four blocks arranged as two plus two',
+    },
     participant: null as null | { id: string; sessionId: string; avatar: string; nickname: string; score: number },
-    issuedContains: true, // чи належить питання сесії (membership select)
+    issuedContains: true, // Whether the question belongs to the issued session set
     answers: new Set<string>(),
   }
 }
@@ -62,9 +72,9 @@ function installFakeDb(state: ReturnType<typeof createState>) {
         return state.participant ? [state.participant] : []
       }
       if (isTable(this.table, schema.schoolSessionQuestions) && this.joins.includes(schema.questions)) {
-        // render-набір для join (без ключів у select)
-        const { id, q, code, type, options } = state.question
-        return [{ id, q, code, type, options }]
+        // Render payload for classroom clients, without answer keys
+        const { id, q, code, type, options, img, imageAlt } = state.question
+        return [{ id, q, code, type, options, img, imageAlt }]
       }
       if (isTable(this.table, schema.schoolSessionQuestions)) {
         // membership-перевірка в answer
@@ -113,6 +123,10 @@ function installFakeDb(state: ReturnType<typeof createState>) {
     where() { return this }
     // Аватар оновлюється атомарним UPDATE ... WHERE session in lobby → returning
     returning() {
+      if (isTable(this.table, schema.schoolSessions) && state.sessionExists && this.patch?.status === 'finished') {
+        state.session.status = 'finished'
+        return [{ id: state.session.id }]
+      }
       if (isTable(this.table, schema.schoolParticipants) && state.participant && this.patch?.avatar && state.session.status === 'lobby') {
         state.participant.avatar = this.patch.avatar
         return [{ id: state.participant.id }]
@@ -162,9 +176,11 @@ test('school: join → answer correct → score increments; keys are stripped', 
       const body = join.json()
       assert.equal(body.participantId, ids.participant)
       assert.equal(body.questions.length, 1)
-      // ключі не течуть у браузер
+      // Answer keys never reach the browser.
       assert.equal('correct' in body.questions[0], false)
       assert.equal('explanation' in body.questions[0], false)
+      assert.equal(body.questions[0].img, '/questions/addition.webp')
+      assert.equal(body.questions[0].imageAlt, 'Four blocks arranged as two plus two')
       assert.equal(state.participant?.nickname, 'Маша') // нормалізовано
 
       const answer = await app.inject({
@@ -285,6 +301,26 @@ test('school: participant session polling issues questions only after teacher st
       assert.equal(body.questions.length, 1)
       assert.equal('correct' in body.questions[0], false)
       assert.equal('explanation' in body.questions[0], false)
+      assert.equal(body.questions[0].img, '/questions/addition.webp')
+      assert.equal(body.questions[0].imageAlt, 'Four blocks arranged as two plus two')
+    })
+  } finally { restore() }
+})
+
+test('school: teacher can cancel a lobby session before changing game settings', async () => {
+  const state = createState()
+  state.session.status = 'lobby'
+  const restore = installFakeDb(state)
+  try {
+    await withApp(async (app) => {
+      const canceled = await app.inject({ method: 'POST', url: `/api/school/sessions/${ids.session}/finish` })
+      assert.equal(canceled.statusCode, 200, canceled.body)
+      assert.deepEqual(canceled.json(), { status: 'finished' })
+      assert.equal(state.session.status, 'finished')
+
+      const join = await app.inject({ method: 'POST', url: '/api/school/join', payload: { code: '123456', avatar: AVATAR, nickname: 'Пізно' } })
+      assert.equal(join.statusCode, 409, join.body)
+      assert.equal(state.participant, null)
     })
   } finally { restore() }
 })
@@ -300,6 +336,8 @@ test('school: projector questions are sanitized and available only for an active
       assert.equal(body.questions.length, 1)
       assert.equal('correct' in body.questions[0], false)
       assert.equal('explanation' in body.questions[0], false)
+      assert.equal(body.questions[0].img, '/questions/addition.webp')
+      assert.equal(body.questions[0].imageAlt, 'Four blocks arranged as two plus two')
 
       state.session.status = 'finished'
       const finished = await app.inject({ method: 'GET', url: `/api/school/sessions/${ids.session}/questions` })

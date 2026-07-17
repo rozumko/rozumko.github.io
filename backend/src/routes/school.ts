@@ -63,7 +63,15 @@ function isUniqueViolation(e: unknown): boolean {
 
 async function loadSessionQuestions(sessionId: string) {
   const qs = await db
-    .select({ id: questions.id, q: questions.q, code: questions.code, type: questions.type, options: questions.options })
+    .select({
+      id: questions.id,
+      q: questions.q,
+      code: questions.code,
+      type: questions.type,
+      options: questions.options,
+      img: questions.img,
+      imageAlt: questions.imageAlt,
+    })
     .from(schoolSessionQuestions)
     .innerJoin(questions, eq(schoolSessionQuestions.questionId, questions.id))
     .where(eq(schoolSessionQuestions.sessionId, sessionId))

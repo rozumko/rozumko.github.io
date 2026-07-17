@@ -1310,6 +1310,7 @@ function renderSchoolStatus() {
   }
   if (statusEl) statusEl.textContent = labels[schoolSession.status] ?? schoolSession.status
   $maybe('school-start-btn')?.classList.toggle('hidden', schoolSession.status !== 'lobby')
+  $maybe('school-cancel-btn')?.classList.toggle('hidden', schoolSession.status !== 'lobby')
   $maybe('school-finish-btn')?.classList.toggle('hidden', schoolSession.status !== 'active')
   $maybe('school-new-btn')?.classList.toggle('hidden', schoolSession.status !== 'finished')
 }
@@ -1357,8 +1358,10 @@ function renderSchoolTopicStats(topicStats: SchoolTopicStat[]) {
 
 async function refreshSchoolSession() {
   if (!schoolSession) return
+  const sessionId = schoolSession.id
   try {
-    const { session, participants, topicStats } = await getSchoolSession(schoolSession.id)
+    const { session, participants, topicStats } = await getSchoolSession(sessionId)
+    if (!schoolSession || schoolSession.id !== sessionId) return
     schoolSession = session
     renderSchoolStatus()
     renderSchoolLeaderboard(participants)
@@ -1425,11 +1428,45 @@ function buildSchoolJoinUrl(code: string): string {
   return url.toString()
 }
 
+async function renderSchoolJoinQr(joinUrl: string, joinCode: string) {
+  const canvas = $maybe<HTMLCanvasElement>('school-join-qr')
+  const card = $maybe('school-join-qr-card')
+  const caption = $maybe('school-join-qr-caption')
+  const fallback = $maybe('school-join-qr-fallback')
+  if (!canvas || !card || !caption || !fallback) return
+
+  card.setAttribute('aria-busy', 'true')
+  canvas.classList.add('hidden')
+  canvas.removeAttribute('data-ready')
+  caption.classList.remove('hidden')
+  fallback.classList.add('hidden')
+  try {
+    const { default: QRCode } = await import('qrcode')
+    await QRCode.toCanvas(canvas, joinUrl, {
+      errorCorrectionLevel: 'Q',
+      margin: 3,
+      width: 240,
+      color: { dark: '#071226', light: '#ffffff' },
+    })
+    canvas.setAttribute('aria-label', `QR-код для приєднання до гри ${joinCode}`)
+    canvas.dataset.ready = 'true'
+    canvas.classList.remove('hidden')
+  } catch {
+    canvas.classList.add('hidden')
+    caption.classList.add('hidden')
+    fallback.classList.remove('hidden')
+  } finally {
+    card.setAttribute('aria-busy', 'false')
+  }
+}
+
 function showSchoolLobby(session: SchoolSessionInfo) {
   schoolSession = session
   $('school-join-code').textContent = session.joinCode
   const link = $maybe<HTMLInputElement>('school-join-link')
-  if (link) link.value = buildSchoolJoinUrl(session.joinCode)
+  const joinUrl = buildSchoolJoinUrl(session.joinCode)
+  if (link) link.value = joinUrl
+  void renderSchoolJoinQr(joinUrl, session.joinCode)
   $maybe('school-create-panel')?.classList.add('hidden')
   $maybe('school-live')?.classList.remove('hidden')
   renderSchoolStatus()
@@ -1467,6 +1504,34 @@ $maybe<HTMLButtonElement>('school-copy-link-btn')?.addEventListener('click', asy
   window.setTimeout(() => {
     button.innerHTML = '<i class="fas fa-copy" aria-hidden="true"></i> Копіювати'
   }, 1800)
+})
+
+async function cancelSchoolLobby(sessionId: string) {
+  const cancelBtn = $maybe<HTMLButtonElement>('school-cancel-btn')
+  const startBtn = $maybe<HTMLButtonElement>('school-start-btn')
+  if (cancelBtn) cancelBtn.disabled = true
+  if (startBtn) startBtn.disabled = true
+  schoolSetError('')
+  try {
+    await finishSchoolSession(sessionId)
+    if (schoolSession?.id !== sessionId) return
+    resetSchoolView()
+    $maybe<HTMLSelectElement>('school-topic')?.focus()
+  } catch (err) {
+    schoolSetError(friendlyError((err as Error).message))
+  } finally {
+    if (cancelBtn) cancelBtn.disabled = false
+    if (startBtn) startBtn.disabled = false
+  }
+}
+
+$maybe<HTMLButtonElement>('school-cancel-btn')?.addEventListener('click', () => {
+  if (!schoolSession || schoolSession.status !== 'lobby') return
+  const sessionId = schoolSession.id
+  showConfirm(
+    'Скасувати цю гру? Учні більше не зможуть приєднатися за поточним кодом.',
+    () => { void cancelSchoolLobby(sessionId) },
+  )
 })
 
 function openProjector(questions: Question[]) {

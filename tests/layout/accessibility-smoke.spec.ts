@@ -260,9 +260,20 @@ async function openTeacherDashboard(page: Page) {
                   : path === '/api/school/sessions' && method === 'POST'
                     ? { session: schoolSession }
                     : path === '/api/school/sessions/school-session-1/questions'
-                      ? { questions: [{ id: 'question-1', q: 'Що робить клавіатура?', type: 'choice', options: ['Вводить дані', 'Друкує на папері'] }] }
+                      ? {
+                          questions: [{
+                            id: 'question-1',
+                            q: 'Що робить клавіатура?',
+                            type: 'choice',
+                            options: ['Вводить дані', 'Друкує на папері', 'Показує відео', 'Зберігає електроенергію'],
+                            img: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360"%3E%3Crect width="640" height="360" fill="%23dbeafe"/%3E%3Crect x="90" y="95" width="460" height="170" rx="20" fill="%23ffffff" stroke="%231e3a8a" stroke-width="12"/%3E%3C/svg%3E',
+                            imageAlt: 'Схематичне зображення клавіатури',
+                          }],
+                        }
                       : path === '/api/school/sessions/school-session-1/projector-answer' && method === 'POST'
                         ? { correct: true }
+                    : path === '/api/school/sessions/school-session-1/finish' && method === 'POST'
+                      ? { status: 'finished' }
                     : path === '/api/school/sessions/school-session-1'
                       ? {
                           session: schoolSession,
@@ -633,6 +644,22 @@ test('teacher school-game form stays accessible on a phone', async ({ page }) =>
   await openTeacherDashboard(page)
   await page.locator('#school-create-btn').click()
   await expect(page.locator('#school-live')).toBeVisible()
+  const qr = page.locator('#school-join-qr')
+  await expect(qr).toHaveAttribute('data-ready', 'true')
+  await expect(qr).toHaveAttribute('aria-label', 'QR-код для приєднання до гри ABC123')
+  const qrPixels = await qr.evaluate((canvas: HTMLCanvasElement) => {
+    const data = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data
+    let dark = 0
+    let light = 0
+    for (let i = 0; i < data.length; i += 4) {
+      const sum = data[i] + data[i + 1] + data[i + 2]
+      if (sum < 180) dark++
+      if (sum > 720) light++
+    }
+    return { dark, light }
+  })
+  expect(qrPixels.dark).toBeGreaterThan(500)
+  expect(qrPixels.light).toBeGreaterThan(500)
   await expect(page.locator('.school-topic-stat__bar')).toHaveCount(3)
   await expect(page.locator('.school-topic-stat__bar').nth(0)).toHaveAttribute('value', '30')
 
@@ -644,13 +671,39 @@ test('teacher school-game form stays accessible on a phone', async ({ page }) =>
 
   expect(results.violations).toEqual([])
   expect(overflow).toBeLessThanOrEqual(0)
+
+  await page.locator('#school-cancel-btn').click()
+  await expect(page.locator('#app-modal')).toBeVisible()
+  await page.locator('#modal-ok-btn').click()
+  await expect(page.locator('#school-create-panel')).toBeVisible()
+  await expect(page.locator('#school-live')).toBeHidden()
+  await expect(page.locator('#school-topic')).toBeFocused()
 })
 
 test('teacher can start an accessible projector game from the default screen', async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 })
   await openTeacherDashboard(page)
   await page.locator('#school-projector-btn').click()
   await expect(page.locator('#school-projector')).toBeVisible()
   await expect(page.locator('#school-projector-question-text')).toHaveText('Що робить клавіатура?')
+  await expect(page.getByText('Гра на великому екрані')).toHaveCount(0)
+  await expect(page.locator('#school-projector-progress-text')).toHaveText('1 / 1')
+
+  const image = page.locator('#school-projector-image')
+  await expect(image).toBeVisible()
+  await expect(image).toHaveAttribute('alt', 'Схематичне зображення клавіатури')
+
+  const options = page.locator('#school-projector-options .quiz-option')
+  await expect(options).toHaveCount(4)
+  const boxes = await options.evaluateAll(nodes => nodes.map(node => {
+    const box = node.getBoundingClientRect()
+    return { width: box.width, height: box.height, top: box.top, left: box.left }
+  }))
+  expect(boxes.every(box => box.width >= 280 && box.height >= 72)).toBe(true)
+  expect(Math.abs(boxes[0].top - boxes[1].top)).toBeLessThan(2)
+  expect(boxes[1].left).toBeGreaterThan(boxes[0].left + boxes[0].width)
+
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
 
   const results = await new AxeBuilder({ page })
     .include('#school-projector')
@@ -658,6 +711,7 @@ test('teacher can start an accessible projector game from the default screen', a
     .analyze()
 
   expect(results.violations).toEqual([])
+  expect(overflow).toBeLessThanOrEqual(0)
 })
 
 test.describe('axe accessibility scan: rendered question mechanics', () => {

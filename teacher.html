@@ -443,12 +443,19 @@
         </div>
         <p id="school-error" class="quiz-feedback quiz-feedback--incorrect" aria-live="polite"></p>
 
-        <!-- Активна гра -->
+        <!-- Active classroom game -->
         <div id="school-live" class="school-live hidden">
           <div class="school-live__lobby">
-            <div class="school-live__code-card" aria-label="Код гри">
-              <p class="school-live__code-label">КОД ГРИ</p>
-              <p id="school-join-code" class="school-live__code"></p>
+            <div class="school-live__access">
+              <div class="school-live__code-card" aria-label="Код гри">
+                <p class="school-live__code-label">КОД ГРИ</p>
+                <p id="school-join-code" class="school-live__code"></p>
+              </div>
+              <figure id="school-join-qr-card" class="school-live__qr-card" aria-busy="true">
+                <canvas id="school-join-qr" class="school-live__qr hidden" role="img"></canvas>
+                <figcaption id="school-join-qr-caption">Скануйте камерою, щоб приєднатися</figcaption>
+                <p id="school-join-qr-fallback" class="school-live__qr-fallback hidden">QR-код не вдалося створити. Скористайтеся кодом гри або посиланням.</p>
+              </figure>
             </div>
             <div class="school-live__join-info">
               <p id="school-status" class="school-live__status" aria-live="polite"></p>
@@ -464,6 +471,9 @@
           <div class="school-live__actions">
               <button id="school-start-btn" class="btn btn--teacher">
                 <i class="fas fa-play" aria-hidden="true"></i> Почати гру
+              </button>
+              <button id="school-cancel-btn" class="btn btn--danger">
+                <i class="fas fa-times" aria-hidden="true"></i> Скасувати гру
               </button>
               <button id="school-finish-btn" class="btn btn--secondary hidden">
                 <i class="fas fa-stop" aria-hidden="true"></i> Завершити
@@ -482,13 +492,13 @@
           </div>
         </div>
 
-        <!-- Повноекранний режим для роботи всім класом -->
-        <div id="school-projector" class="school-projector hidden" role="dialog" aria-modal="true" aria-labelledby="school-projector-title">
+        <!-- Classroom projector surface -->
+        <div id="school-projector" class="school-projector hidden" role="dialog" aria-modal="true" aria-label="Класна гра">
           <div class="school-projector__shell">
             <header class="school-projector__header">
-              <div>
-                <p class="school-projector__eyebrow">Класна гра</p>
-                <h2 id="school-projector-title">Гра на великому екрані</h2>
+              <div class="school-projector__progress" aria-live="polite">
+                <span>Питання</span>
+                <strong id="school-projector-progress-text"></strong>
               </div>
               <div class="school-projector__header-actions">
                 <button id="school-projector-fullscreen-btn" class="btn btn--secondary" type="button">
@@ -501,9 +511,6 @@
             </header>
 
             <div id="school-projector-stage" class="school-projector__stage">
-              <div class="quiz-progress-header">
-                <span id="school-projector-progress-text" class="quiz-progress-text"></span>
-              </div>
               <div class="quiz-progress-bar-wrap" aria-hidden="true">
                 <div id="school-projector-progress-bar" class="quiz-progress-bar"></div>
               </div>
