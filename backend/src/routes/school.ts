@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyReply } from 'fastify'
+import type { FastifyInstance, FastifyReply, preHandlerHookHandler } from 'fastify'
 import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { questions, schoolSessions, schoolSessionQuestions, schoolParticipants, schoolAnswers } from '../db/schema.js'
@@ -18,6 +18,10 @@ import { createVerifiedResourceRateLimit, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW } fr
 import type { QuestionTrack } from '../db/schema.js'
 
 const QUESTION_TRACKS = ['informatics', 'computational-thinking', 'ai-basics'] as const
+
+export interface SchoolRoutesOptions {
+  authorizeTeacher?: preHandlerHookHandler
+}
 
 // Просунутий School Mode (Kahoot-стиль). Ключі відповідей учням не віддаються,
 // скоринг — на сервері. Учасник анонімний, ідентифікується HMAC-токеном.
@@ -118,10 +122,12 @@ async function loadParticipantWithSession(participantId: string) {
   return row
 }
 
-export async function schoolRoutes(app: FastifyInstance) {
+export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptions = {}) {
+  const authorizeTeacher = opts.authorizeTeacher ?? requireAuth
+
   // ── Вчитель: створити сесію ──────────────────────────────────────────────
   app.post<{ Body: { grade: number; difficulty?: string; questionsCount?: number; track?: string; topic?: string } }>('/sessions', {
-    preHandler: requireAuth,
+    preHandler: authorizeTeacher,
     schema: {
       body: {
         type: 'object',
@@ -197,7 +203,7 @@ export async function schoolRoutes(app: FastifyInstance) {
   })
 
   // ── Вчитель: старт/фініш сесії (лише свою) ────────────────────────────────
-  app.post<{ Params: { id: string } }>('/sessions/:id/start', { preHandler: requireAuth, schema: { params: uuidParam } }, async (req, reply) => {
+  app.post<{ Params: { id: string } }>('/sessions/:id/start', { preHandler: authorizeTeacher, schema: { params: uuidParam } }, async (req, reply) => {
     const [updated] = await db.update(schoolSessions)
       .set({ status: 'active', startedAt: new Date() })
       .where(and(eq(schoolSessions.id, req.params.id), eq(schoolSessions.teacherId, req.user!.id), eq(schoolSessions.status, 'lobby')))
@@ -206,7 +212,7 @@ export async function schoolRoutes(app: FastifyInstance) {
     return reply.send({ status: 'active' })
   })
 
-  app.post<{ Params: { id: string } }>('/sessions/:id/finish', { preHandler: requireAuth, schema: { params: uuidParam } }, async (req, reply) => {
+  app.post<{ Params: { id: string } }>('/sessions/:id/finish', { preHandler: authorizeTeacher, schema: { params: uuidParam } }, async (req, reply) => {
     const [updated] = await db.update(schoolSessions)
       .set({ status: 'finished', finishedAt: new Date() })
       .where(and(eq(schoolSessions.id, req.params.id), eq(schoolSessions.teacherId, req.user!.id)))
@@ -216,7 +222,7 @@ export async function schoolRoutes(app: FastifyInstance) {
   })
 
   // ── Вчитель: стан + агрегат (лідерборд) своєї сесії ───────────────────────
-  app.get<{ Params: { id: string } }>('/sessions/:id', { preHandler: requireAuth, schema: { params: uuidParam } }, async (req, reply) => {
+  app.get<{ Params: { id: string } }>('/sessions/:id', { preHandler: authorizeTeacher, schema: { params: uuidParam } }, async (req, reply) => {
     const [session] = await db.select().from(schoolSessions)
       .where(and(eq(schoolSessions.id, req.params.id), eq(schoolSessions.teacherId, req.user!.id)))
       .limit(1)
@@ -250,6 +256,59 @@ export async function schoolRoutes(app: FastifyInstance) {
       participants,
       topicStats,
     })
+  })
+
+  // Teacher projector mode receives only sanitized render data. Answer
+  // evaluation remains server-side and never returns the answer key.
+  app.get<{ Params: { id: string } }>('/sessions/:id/questions', {
+    preHandler: authorizeTeacher,
+    schema: { params: uuidParam },
+  }, async (req, reply) => {
+    const [session] = await db
+      .select({ id: schoolSessions.id, status: schoolSessions.status })
+      .from(schoolSessions)
+      .where(and(eq(schoolSessions.id, req.params.id), eq(schoolSessions.teacherId, req.user!.id)))
+      .limit(1)
+    if (!session) return reply.code(404).send({ error: 'Сесію не знайдено' })
+    if (session.status !== 'active') return reply.code(409).send({ error: 'Сесію ще не розпочато або вже завершено' })
+
+    return reply.send({ questions: await loadSessionQuestions(session.id) })
+  })
+
+  app.post<{ Params: { id: string }; Body: { questionId: string; answer: AnswerValue } }>('/sessions/:id/projector-answer', {
+    preHandler: authorizeTeacher,
+    schema: { params: uuidParam, body: answerBody },
+  }, async (req, reply) => {
+    const [session] = await db
+      .select({ id: schoolSessions.id, status: schoolSessions.status })
+      .from(schoolSessions)
+      .where(and(eq(schoolSessions.id, req.params.id), eq(schoolSessions.teacherId, req.user!.id)))
+      .limit(1)
+    if (!session) return reply.code(404).send({ error: 'Сесію не знайдено' })
+    if (session.status !== 'active') return reply.code(409).send({ error: 'Сесія неактивна' })
+
+    const [issued] = await db
+      .select({ questionId: schoolSessionQuestions.questionId })
+      .from(schoolSessionQuestions)
+      .where(and(
+        eq(schoolSessionQuestions.sessionId, session.id),
+        eq(schoolSessionQuestions.questionId, req.body.questionId),
+      ))
+      .limit(1)
+    if (!issued) return reply.code(400).send({ error: 'Питання не належить цій сесії' })
+
+    const [question] = await db
+      .select({ id: questions.id, type: questions.type, correct: questions.correct, explanation: questions.explanation, options: questions.options })
+      .from(questions)
+      .where(eq(questions.id, req.body.questionId))
+      .limit(1)
+    if (!question) return reply.code(404).send({ error: 'Питання не знайдено' })
+
+    const { results } = scoreAttempt(
+      [{ id: question.id, type: question.type ?? 'choice', correct: question.correct, explanation: question.explanation, options: question.options }],
+      { [question.id]: req.body.answer },
+    )
+    return reply.send({ correct: results[question.id]?.isCorrect ?? false })
   })
 
   // ── Учень: приєднатися за кодом (анонімно) ────────────────────────────────

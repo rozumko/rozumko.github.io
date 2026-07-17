@@ -9,14 +9,17 @@ import {
   requestPasswordReset, updateAuthPassword, googleSignInUrl, exchangeAuthCode, registerTeacherRequest,
   getClassStudents, addClassStudent, updateClassStudent, deleteClassStudent,
   createSchoolSession, startSchoolSession, finishSchoolSession, getSchoolSession,
+  getSchoolSessionQuestions, submitSchoolProjectorAnswer,
   TURNSTILE_SITE_KEY,
   type TeacherClass, type ClassStudent, type EventRegistration, type TeacherEvent, type Attempt,
-  type SchoolSessionInfo,
+  type SchoolSessionInfo, type Question,
 } from './features/api/client.js'
 import { esc, friendlyError, recoveryErrorMessage, showConfirm, showModal } from './utils/ui.js'
 import { openCertModal, awardLabel, percent, getAward } from './utils/certificate.js'
 import { TOPICS_BY_TRACK, TOPIC_LABELS } from './features/missions/topics.js'
 import type { SchoolTopicStat } from './features/api/client.js'
+import { runMission, type MissionElements } from './features/missions/mission-runner.js'
+import { createFocusTrap } from './utils/focus-trap.js'
 
 // Header label next to the logout button: always contains the email so the
 // user can tell which account is signed in (Google sign-in has no local email).
@@ -89,6 +92,8 @@ const generateBtn               = $maybe<HTMLButtonElement>('generate-btn')
 let teacherClasses: TeacherClass[] = []
 let registrationEvents: TeacherEvent[] = []
 let teacherRegistrations: EventRegistration[] = []
+let olympiadLoaded = false
+let olympiadLoading: Promise<void> | null = null
 
 // --- Cold start banner ---
 function showColdStartBanner() {
@@ -201,7 +206,6 @@ async function init() {
       hideColdStartBanner()
       showDashboard(teacherLabel(me, session.email))
       clearTeacherCallbackFlow()
-      await Promise.all([loadRegistrationEvents(), loadClasses(), loadRegistrations(), loadCodes(), loadResults()])
     } catch (err) {
       hideColdStartBanner()
       if (isUnknownAccountError(err)) {
@@ -242,11 +246,46 @@ async function init() {
   }
 }
 
-// --- Tabs ---
+// --- Teacher dashboard navigation ---
+async function ensureOlympiadLoaded() {
+  if (olympiadLoaded) return
+  if (!olympiadLoading) {
+    olympiadLoading = Promise.allSettled([
+      loadRegistrationEvents(),
+      loadClasses(),
+      loadRegistrations(),
+      loadCodes(),
+      loadResults(),
+    ]).then(results => {
+      // Only latch as loaded when nothing failed; otherwise allow a retry
+      // on the next visit instead of leaving the tab permanently empty.
+      if (results.every(r => r.status === 'fulfilled')) olympiadLoaded = true
+      else olympiadLoading = null
+    })
+  }
+  await olympiadLoading
+}
+
+document.querySelectorAll<HTMLElement>('.teacher-section-link').forEach(link => {
+  link.addEventListener('click', () => {
+    const sectionName = link.dataset['section']
+    if (!sectionName) return
+    document.querySelectorAll('.teacher-section-link').forEach(item => {
+      item.classList.remove('teacher-section-link--active')
+      item.removeAttribute('aria-current')
+    })
+    document.querySelectorAll('.teacher-section').forEach(section => section.classList.add('hidden'))
+    link.classList.add('teacher-section-link--active')
+    link.setAttribute('aria-current', 'page')
+    $maybe(`teacher-section-${sectionName}`)?.classList.remove('hidden')
+    if (sectionName === 'olympiad') void ensureOlympiadLoaded()
+  })
+})
+
 document.querySelectorAll<HTMLElement>('.teacher-tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.teacher-tab').forEach(t => t.classList.remove('teacher-tab--active'))
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'))
+    document.querySelectorAll('.olympiad-tab-panel').forEach(p => p.classList.add('hidden'))
     tab.classList.add('teacher-tab--active')
     const tabName = tab.dataset['tab']
     if (tabName) $maybe(`tab-${tabName}`)?.classList.remove('hidden')
@@ -1240,6 +1279,20 @@ function showAuth(message?: string) {
 
 let schoolSession: SchoolSessionInfo | null = null
 let schoolPollTimer: ReturnType<typeof setInterval> | null = null
+let projectorTrapCleanup: (() => void) | null = null
+
+const projectorOverlay = $maybe('school-projector')
+const projectorEls: MissionElements | null = projectorOverlay ? {
+  progressText: $('school-projector-progress-text'),
+  progressBar: $('school-projector-progress-bar'),
+  questionText: $('school-projector-question-text'),
+  image: $maybe<HTMLImageElement>('school-projector-image'),
+  codeBlock: $maybe('school-projector-code'),
+  options: $('school-projector-options'),
+  feedback: $('school-projector-feedback'),
+  explanation: $('school-projector-explanation'),
+  nextBtn: $<HTMLButtonElement>('school-projector-next-btn'),
+} : null
 
 const schoolError = $maybe('school-error')
 
@@ -1250,10 +1303,9 @@ function schoolSetError(msg: string) {
 function renderSchoolStatus() {
   if (!schoolSession) return
   const statusEl = $maybe('school-status')
-  // Учні можуть приєднатися лише ПІСЛЯ старту (join у lobby сервер відхиляє).
   const labels: Record<string, string> = {
-    lobby: '⏳ Натисніть «Почати гру» — тоді учні зможуть ввести код',
-    active: '🟢 Гра триває — диктуйте код учням',
+    lobby: 'Учні вже можуть приєднуватися. Коли всі з’являться у списку — починайте гру.',
+    active: 'Гра триває. Учні, які запізнилися, також можуть приєднатися за цим кодом.',
     finished: '🏁 Завершено',
   }
   if (statusEl) statusEl.textContent = labels[schoolSession.status] ?? schoolSession.status
@@ -1265,8 +1317,10 @@ function renderSchoolStatus() {
 function renderSchoolLeaderboard(participants: { avatar: string; nickname: string; score: number }[]) {
   const board = $maybe('school-leaderboard')
   if (!board) return
+  const count = $maybe('school-participant-count')
+  if (count) count.textContent = String(participants.length)
   if (!participants.length) {
-    board.innerHTML = '<p class="school-leaderboard__empty">Поки нікого. Учні вводять код на сторінці «Шкільний режим».</p>'
+    board.innerHTML = '<p class="school-leaderboard__empty">Поки нікого. Учні відкривають посилання або вводять код на сторінці «Шкільний режим».</p>'
     return
   }
   board.innerHTML = participants.map((p, i) => `
@@ -1324,45 +1378,177 @@ function startSchoolPolling() {
   schoolPollTimer = setInterval(refreshSchoolSession, 5000)
 }
 
-// Тема залежить від напряму (той самий словник, що й публічні сторінки).
-$maybe<HTMLSelectElement>('school-track')?.addEventListener('change', (e) => {
-  const track = (e.target as HTMLSelectElement).value
+function populateSchoolTopics() {
   const topicSel = $maybe<HTMLSelectElement>('school-topic')
   if (!topicSel) return
-  const topics = (TOPICS_BY_TRACK as Record<string, readonly string[]>)[track] ?? []
-  topicSel.innerHTML = '<option value="">Будь-яка</option>' +
+  const topics = TOPICS_BY_TRACK['informatics']
+  topicSel.innerHTML = '<option value="">Будь-яка тема</option>' +
     topics.map(t => `<option value="${t}">${TOPIC_LABELS[t] ?? t}</option>`).join('')
-  topicSel.disabled = topics.length === 0
-})
+}
+
+populateSchoolTopics()
+
+// This is the content-source boundary for a classroom session. A future
+// "My questions" source can extend this payload without rebuilding the form.
+function classroomSessionPayload() {
+  const difficulty = $<HTMLSelectElement>('school-difficulty').value
+  const topic = $<HTMLSelectElement>('school-topic').value
+  return {
+    grade: Number($<HTMLSelectElement>('school-grade').value),
+    track: 'informatics',
+    ...(difficulty ? { difficulty } : {}),
+    ...(topic ? { topic } : {}),
+    questionsCount: Number($<HTMLSelectElement>('school-count').value),
+  }
+}
+
+function setSchoolCreateBusy(busy: boolean) {
+  const codeBtn = $maybe<HTMLButtonElement>('school-create-btn')
+  const projectorBtn = $maybe<HTMLButtonElement>('school-projector-btn')
+  if (codeBtn) codeBtn.disabled = busy
+  if (projectorBtn) projectorBtn.disabled = busy
+}
+
+function resetSchoolView() {
+  schoolSession = null
+  if (schoolPollTimer) { clearInterval(schoolPollTimer); schoolPollTimer = null }
+  $maybe('school-live')?.classList.add('hidden')
+  $maybe('school-create-panel')?.classList.remove('hidden')
+  schoolSetError('')
+}
+
+function buildSchoolJoinUrl(code: string): string {
+  const url = new URL('school.html', window.location.href)
+  url.search = ''
+  url.hash = ''
+  url.searchParams.set('code', code)
+  return url.toString()
+}
+
+function showSchoolLobby(session: SchoolSessionInfo) {
+  schoolSession = session
+  $('school-join-code').textContent = session.joinCode
+  const link = $maybe<HTMLInputElement>('school-join-link')
+  if (link) link.value = buildSchoolJoinUrl(session.joinCode)
+  $maybe('school-create-panel')?.classList.add('hidden')
+  $maybe('school-live')?.classList.remove('hidden')
+  renderSchoolStatus()
+  renderSchoolLeaderboard([])
+  startSchoolPolling()
+}
 
 $maybe<HTMLButtonElement>('school-create-btn')?.addEventListener('click', async () => {
   schoolSetError('')
-  const grade = Number($<HTMLSelectElement>('school-grade').value)
-  const difficulty = $<HTMLSelectElement>('school-difficulty').value
-  const track = $<HTMLSelectElement>('school-track').value
-  const topic = $<HTMLSelectElement>('school-topic').value
-  const questionsCount = Number($<HTMLSelectElement>('school-count').value)
+  setSchoolCreateBusy(true)
   try {
-    const { session } = await createSchoolSession({
-      grade,
-      ...(difficulty ? { difficulty } : {}),
-      ...(track ? { track } : {}),
-      ...(topic ? { topic } : {}),
-      questionsCount,
-    })
-    schoolSession = session
-    $('school-join-code').textContent = session.joinCode
-    $maybe('school-live')?.classList.remove('hidden')
-    renderSchoolStatus()
-    renderSchoolLeaderboard([])
-    startSchoolPolling()
+    const { session } = await createSchoolSession(classroomSessionPayload())
+    showSchoolLobby(session)
   } catch (err) {
     const apiErr = err as Error & { status?: number }
     schoolSetError(apiErr.status === 422
       ? `${apiErr.message}. Спробуйте іншу тему, складність або клас.`
       : friendlyError(apiErr.message))
+  } finally {
+    setSchoolCreateBusy(false)
   }
 })
+
+$maybe<HTMLButtonElement>('school-copy-link-btn')?.addEventListener('click', async () => {
+  const input = $maybe<HTMLInputElement>('school-join-link')
+  const button = $maybe<HTMLButtonElement>('school-copy-link-btn')
+  if (!input || !button) return
+  try {
+    await navigator.clipboard.writeText(input.value)
+  } catch {
+    input.select()
+    document.execCommand('copy')
+  }
+  button.innerHTML = '<i class="fas fa-check" aria-hidden="true"></i> Скопійовано'
+  window.setTimeout(() => {
+    button.innerHTML = '<i class="fas fa-copy" aria-hidden="true"></i> Копіювати'
+  }, 1800)
+})
+
+function openProjector(questions: Question[]) {
+  if (!schoolSession || !projectorOverlay || !projectorEls) return
+  $maybe('school-create-panel')?.classList.add('hidden')
+  $maybe('school-projector-stage')?.classList.remove('hidden')
+  $maybe('school-projector-complete')?.classList.add('hidden')
+  projectorOverlay.classList.remove('hidden')
+  document.body.classList.add('teacher-projector-active')
+  projectorTrapCleanup?.()
+  projectorTrapCleanup = createFocusTrap(projectorOverlay, () => { void closeProjector() })
+
+  runMission(projectorEls, questions, {
+    showExplanation: false,
+    incorrectFeedback: 'Майже! Обговоріть відповідь разом.',
+    completeLabel: 'Завершити гру',
+    submitAnswer: async (questionId, answer) => {
+      if (!schoolSession) throw new Error('Сесію завершено')
+      const result = await submitSchoolProjectorAnswer(schoolSession.id, questionId, answer)
+      return result.correct
+    },
+    onComplete: async summary => {
+      $maybe('school-projector-stage')?.classList.add('hidden')
+      $maybe('school-projector-complete')?.classList.remove('hidden')
+      const result = $maybe('school-projector-result')
+      if (result) result.textContent = `Правильних відповідей: ${summary.correct} із ${summary.total}.`
+      if (schoolSession?.status === 'active') {
+        try {
+          await finishSchoolSession(schoolSession.id)
+          schoolSession.status = 'finished'
+        } catch { /* the completion screen remains usable after a transient error */ }
+      }
+    },
+  })
+}
+
+async function closeProjector() {
+  if (schoolSession?.status === 'active') {
+    try { await finishSchoolSession(schoolSession.id) } catch { /* best-effort close */ }
+  }
+  if (document.fullscreenElement === projectorOverlay) {
+    try { await document.exitFullscreen() } catch { /* already leaving fullscreen */ }
+  }
+  projectorOverlay?.classList.add('hidden')
+  document.body.classList.remove('teacher-projector-active', 'mission-answered')
+  projectorTrapCleanup?.()
+  projectorTrapCleanup = null
+  resetSchoolView()
+}
+
+$maybe<HTMLButtonElement>('school-projector-btn')?.addEventListener('click', async () => {
+  schoolSetError('')
+  setSchoolCreateBusy(true)
+  try {
+    const { session } = await createSchoolSession(classroomSessionPayload())
+    schoolSession = session
+    await startSchoolSession(session.id)
+    schoolSession.status = 'active'
+    const { questions } = await getSchoolSessionQuestions(session.id)
+    openProjector(questions)
+  } catch (err) {
+    const apiErr = err as Error & { status?: number }
+    const message = apiErr.status === 422
+      ? `${apiErr.message}. Спробуйте іншу тему, складність або клас.`
+      : friendlyError(apiErr.message)
+    // If the session was already started but questions failed to load, close it
+    // on the server so we do not leak a lingering active session with no UI.
+    if (schoolSession?.status === 'active') {
+      try { await finishSchoolSession(schoolSession.id) } catch { /* best-effort cleanup */ }
+    }
+    resetSchoolView()
+    schoolSetError(message)
+  } finally {
+    setSchoolCreateBusy(false)
+  }
+})
+
+$maybe<HTMLButtonElement>('school-projector-fullscreen-btn')?.addEventListener('click', () => {
+  if (projectorOverlay?.requestFullscreen) void projectorOverlay.requestFullscreen()
+})
+$maybe<HTMLButtonElement>('school-projector-close-btn')?.addEventListener('click', () => { void closeProjector() })
+$maybe<HTMLButtonElement>('school-projector-new-btn')?.addEventListener('click', () => { void closeProjector() })
 
 $maybe<HTMLButtonElement>('school-start-btn')?.addEventListener('click', async () => {
   if (!schoolSession) return
@@ -1390,10 +1576,7 @@ $maybe<HTMLButtonElement>('school-finish-btn')?.addEventListener('click', async 
 })
 
 $maybe<HTMLButtonElement>('school-new-btn')?.addEventListener('click', () => {
-  schoolSession = null
-  if (schoolPollTimer) { clearInterval(schoolPollTimer); schoolPollTimer = null }
-  $maybe('school-live')?.classList.add('hidden')
-  schoolSetError('')
+  resetSchoolView()
 })
 
 // Runs last so every const above is initialized (see the Init comment).

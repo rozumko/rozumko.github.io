@@ -79,16 +79,22 @@ Run this checklist before a real pilot.
 
 ## 6a. School Classroom Game (advanced School Mode)
 
-- [ ] Teacher: dashboard -> "Класна гра" -> create a game (grade, difficulty,
-      count); a 6-digit join code appears with status "lobby"
-- [ ] Student (incognito): `/school` -> "Є код від вчителя?" -> the code is
-      rejected with "Вчитель ще не розпочав гру" while the game is in lobby
-- [ ] Teacher presses "Почати гру"; student joins with the code, an avatar and
-      a nickname
+- [ ] The teacher dashboard opens on "Класна гра" and does not load Olympiad
+      data until the teacher opens the separate "Олімпіада" section.
+- [ ] Teacher: choose grade, Informatics topic and difficulty -> "Гра з кодом";
+      a 6-digit join code and direct student link appear with status "lobby".
+- [ ] Student (incognito): open the shared link or `/school`, enter the code,
+      choose a temporary nickname/avatar and appear in the teacher lobby before
+      the teacher starts the game.
+- [ ] Teacher presses "Почати гру"; the waiting student receives the sanitized
+      question set and can answer.
 - [ ] Student answers a question; the join response and network traffic contain
       no `correct`, `correctOrder`, `pairs` or `answer` keys
 - [ ] Teacher leaderboard shows the participant (avatar + nickname + score)
       within ~5 seconds
+- [ ] Teacher: choose the same filters -> "Запустити на екрані"; the projector
+      surface opens, can enter browser fullscreen, renders sanitized questions
+      and receives only `{ correct: boolean }` after a class answer.
 - [ ] Teacher presses "Завершити"; further answers are rejected and the
       leaderboard freezes
 - [ ] Admin cannot edit or delete a question while it belongs to the running

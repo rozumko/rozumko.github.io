@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import Fastify from 'fastify'
+import type { FastifyRequest } from 'fastify'
 
 process.env.ATTEMPT_SECRET = 'test-secret-for-school-flow'
 process.env.SUPABASE_URL = 'https://test.supabase.co'
@@ -135,7 +136,18 @@ function installFakeDb(state: ReturnType<typeof createState>) {
 
 async function withApp(fn: (app: ReturnType<typeof Fastify>) => Promise<void>) {
   const app = Fastify()
-  await app.register(schoolRoutes, { prefix: '/api/school' })
+  await app.register(schoolRoutes, {
+    prefix: '/api/school',
+    authorizeTeacher: async (req: FastifyRequest) => {
+      req.user = {
+        id: '00000000-0000-4000-8000-0000000000f1',
+        authUserId: 'teacher-auth-id',
+        role: 'teacher',
+        name: 'Test Teacher',
+        email: 'teacher@example.test',
+      }
+    },
+  })
   await app.ready()
   try { await fn(app) } finally { await app.close() }
 }
@@ -273,6 +285,49 @@ test('school: participant session polling issues questions only after teacher st
       assert.equal(body.questions.length, 1)
       assert.equal('correct' in body.questions[0], false)
       assert.equal('explanation' in body.questions[0], false)
+    })
+  } finally { restore() }
+})
+
+test('school: projector questions are sanitized and available only for an active owned session', async () => {
+  const state = createState()
+  const restore = installFakeDb(state)
+  try {
+    await withApp(async (app) => {
+      const active = await app.inject({ method: 'GET', url: `/api/school/sessions/${ids.session}/questions` })
+      assert.equal(active.statusCode, 200, active.body)
+      const body = active.json()
+      assert.equal(body.questions.length, 1)
+      assert.equal('correct' in body.questions[0], false)
+      assert.equal('explanation' in body.questions[0], false)
+
+      state.session.status = 'finished'
+      const finished = await app.inject({ method: 'GET', url: `/api/school/sessions/${ids.session}/questions` })
+      assert.equal(finished.statusCode, 409, finished.body)
+    })
+  } finally { restore() }
+})
+
+test('school: projector answers are scored on the server without returning an answer key', async () => {
+  const state = createState()
+  const restore = installFakeDb(state)
+  try {
+    await withApp(async (app) => {
+      const answer = await app.inject({
+        method: 'POST',
+        url: `/api/school/sessions/${ids.session}/projector-answer`,
+        payload: { questionId: ids.question, answer: 0 },
+      })
+      assert.equal(answer.statusCode, 200, answer.body)
+      assert.deepEqual(answer.json(), { correct: true })
+
+      state.issuedContains = false
+      const foreign = await app.inject({
+        method: 'POST',
+        url: `/api/school/sessions/${ids.session}/projector-answer`,
+        payload: { questionId: ids.foreignQuestion, answer: 0 },
+      })
+      assert.equal(foreign.statusCode, 400, foreign.body)
     })
   } finally { restore() }
 })

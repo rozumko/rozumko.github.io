@@ -182,6 +182,9 @@ const joinBtn    = $maybe<HTMLButtonElement>('join-btn')
 const codeInput  = $maybe<HTMLInputElement>('join-code')
 const nickInput  = $maybe<HTMLInputElement>('join-nickname')
 
+const sharedCode = new URLSearchParams(window.location.search).get('code')?.trim() ?? ''
+if (codeInput && /^\d{6}$/.test(sharedCode)) codeInput.value = sharedCode
+
 if (avatarWrap) {
   AVATARS.forEach(slug => {
     const btn = document.createElement('button')

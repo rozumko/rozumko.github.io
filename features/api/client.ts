@@ -1097,6 +1097,23 @@ export function getSchoolSession(id: string): Promise<{ session: SchoolSessionIn
   return authRequest(`/api/school/sessions/${encodeURIComponent(id)}`)
 }
 
+export async function getSchoolSessionQuestions(id: string): Promise<{ questions: Question[] }> {
+  const data = await authRequest(`/api/school/sessions/${encodeURIComponent(id)}/questions`)
+  data.questions = (data.questions ?? []).map(normalizeQuestion)
+  return data
+}
+
+export function submitSchoolProjectorAnswer(
+  sessionId: string,
+  questionId: string,
+  answer: number | string | number[],
+): Promise<{ correct: boolean }> {
+  return authRequest(`/api/school/sessions/${encodeURIComponent(sessionId)}/projector-answer`, {
+    method: 'POST',
+    body: JSON.stringify({ questionId, answer }),
+  })
+}
+
 // ─── Admin API ─────────────────────────────────────────────────────────────
 
 export function getAdminStats(): Promise<{ teachers: number; parents?: number; codes: number; results: number; events?: number }> {

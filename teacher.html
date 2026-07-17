@@ -207,26 +207,44 @@
       </div>
     </header>
 
-    <!-- Вкладки -->
-    <nav class="dashboard-tabs" aria-label="Розділи кабінету">
-      <button data-tab="classes" class="teacher-tab">
-        <i class="fas fa-users" aria-hidden="true"></i> Класи
-      </button>
-      <button data-tab="codes" class="teacher-tab teacher-tab--active">
-        <i class="fas fa-key" aria-hidden="true"></i> Коди учнів
-      </button>
-      <button data-tab="results" class="teacher-tab">
-        <i class="fas fa-poll" aria-hidden="true"></i> Результати
-      </button>
-      <button data-tab="school" class="teacher-tab">
-        <i class="fas fa-gamepad" aria-hidden="true"></i> Класна гра
-      </button>
-    </nav>
+    <div class="dashboard-shell">
+      <aside class="dashboard-sidebar">
+        <nav class="dashboard-primary-nav" aria-label="Основні розділи кабінету">
+          <button data-section="school" class="teacher-section-link teacher-section-link--active" aria-current="page">
+            <i class="fas fa-gamepad" aria-hidden="true"></i>
+            <span>Класна гра</span>
+          </button>
+          <button data-section="olympiad" class="teacher-section-link">
+            <i class="fas fa-medal" aria-hidden="true"></i>
+            <span>Олімпіада</span>
+          </button>
+        </nav>
+      </aside>
 
-    <main id="main-content" class="dashboard-main" tabindex="-1">
+      <div class="dashboard-content">
+        <main id="main-content" class="dashboard-main" tabindex="-1">
+
+      <section id="teacher-section-olympiad" class="teacher-section hidden">
+        <div class="teacher-section__heading">
+          <p class="teacher-section__eyebrow">Окремий режим</p>
+          <h1>Олімпіада</h1>
+          <p>Реєструйте класи на події, створюйте персональні коди учасників і переглядайте офіційні результати.</p>
+        </div>
+
+        <nav class="dashboard-tabs" aria-label="Розділи олімпіади">
+          <button data-tab="classes" class="teacher-tab teacher-tab--active">
+            <i class="fas fa-users" aria-hidden="true"></i> Класи й реєстрації
+          </button>
+          <button data-tab="codes" class="teacher-tab">
+            <i class="fas fa-key" aria-hidden="true"></i> Коди учасників
+          </button>
+          <button data-tab="results" class="teacher-tab">
+            <i class="fas fa-poll" aria-hidden="true"></i> Результати
+          </button>
+        </nav>
 
       <!-- Вкладка: Класи -->
-      <section id="tab-classes" class="tab-panel hidden">
+      <section id="tab-classes" class="tab-panel olympiad-tab-panel">
         <div class="classes-grid">
 
           <!-- Ліва колонка: Класи -->
@@ -316,7 +334,7 @@
       </section>
 
       <!-- Вкладка: Коди учнів -->
-      <section id="tab-codes" class="tab-panel">
+      <section id="tab-codes" class="tab-panel olympiad-tab-panel hidden">
 
         <div class="class-form-card">
           <h2 class="tab-panel__heading">Генерація кодів за реєстрацією</h2>
@@ -354,7 +372,7 @@
       </section>
 
       <!-- Вкладка: Результати -->
-      <section id="tab-results" class="tab-panel hidden">
+      <section id="tab-results" class="tab-panel olympiad-tab-panel hidden">
         <h2 class="tab-panel__heading tab-panel__heading--spaced">Результати олімпіади</h2>
         <div id="results-list" class="results-list">
           <div class="empty-state">
@@ -365,74 +383,96 @@
         </div>
       </section>
 
+      </section>
+
       <!-- Вкладка: Класна гра (просунутий School Mode) -->
-      <section id="tab-school" class="tab-panel hidden">
-        <h2 class="tab-panel__heading">Класна гра</h2>
-        <p class="school-game__intro">Створіть гру — учні приєднаються за кодом на сторінці «Шкільний режим». Без ПІБ та реєстрації дітей.</p>
+      <section id="teacher-section-school" class="teacher-section">
+        <div class="teacher-section__heading teacher-section__heading--school">
+          <p class="teacher-section__eyebrow">Головний інструмент учителя</p>
+          <h1>Класна гра</h1>
+          <p>Оберіть клас, тему та складність. Учні можуть грати зі своїх пристроїв або весь клас — разом на великому екрані.</p>
+        </div>
 
         <!-- Створення гри -->
-        <div id="school-create" class="school-create">
-          <label class="school-create__field">Клас
-            <select id="school-grade" class="form-input form-input--sm school-create__select">
-              <option value="1">1 клас</option>
-              <option value="2">2 клас</option>
-              <option value="3">3 клас</option>
-              <option value="4">4 клас</option>
-            </select>
-          </label>
-          <label class="school-create__field">Напрям
-            <select id="school-track" class="form-input form-input--sm school-create__select">
-              <option value="">Будь-який</option>
-              <option value="informatics">Інформатика</option>
-              <option value="computational-thinking">Обчислювальне мислення</option>
-              <option value="ai-basics">Основи ШІ</option>
-            </select>
-          </label>
-          <label class="school-create__field">Тема
-            <select id="school-topic" class="form-input form-input--sm school-create__select" disabled>
-              <option value="">Будь-яка</option>
-            </select>
-          </label>
-          <label class="school-create__field">Складність
-            <select id="school-difficulty" class="form-input form-input--sm school-create__select">
-              <option value="">Будь-яка</option>
-              <option value="easy">Легка</option>
-              <option value="medium">Середня</option>
-              <option value="hard">Складна</option>
-            </select>
-          </label>
-          <label class="school-create__field">Питань
-            <select id="school-count" class="form-input form-input--sm school-create__select">
-              <option value="5">5</option>
-              <option value="10" selected>10</option>
-              <option value="15">15</option>
-            </select>
-          </label>
-          <button id="school-create-btn" class="btn btn--success">
-            <i class="fas fa-plus" aria-hidden="true"></i> Створити гру
-          </button>
+        <div id="school-create-panel" class="school-create-card">
+          <div id="school-create" class="school-create">
+            <label class="school-create__field">Клас
+              <select id="school-grade" class="form-input school-create__select">
+                <option value="1">1 клас</option>
+                <option value="2">2 клас</option>
+                <option value="3">3 клас</option>
+                <option value="4">4 клас</option>
+              </select>
+            </label>
+            <label class="school-create__field school-create__field--topic">Тема з інформатики
+              <select id="school-topic" class="form-input school-create__select">
+                <option value="">Будь-яка тема</option>
+              </select>
+            </label>
+            <label class="school-create__field">Складність
+              <select id="school-difficulty" class="form-input school-create__select">
+                <option value="">Будь-яка</option>
+                <option value="easy">Легка</option>
+                <option value="medium">Середня</option>
+                <option value="hard">Складна</option>
+              </select>
+            </label>
+          </div>
+
+          <details class="school-create__advanced">
+            <summary>Додаткові налаштування</summary>
+            <label class="school-create__field">Кількість запитань
+              <select id="school-count" class="form-input school-create__select">
+                <option value="5">5</option>
+                <option value="10" selected>10</option>
+                <option value="15">15</option>
+              </select>
+            </label>
+          </details>
+
+          <div class="school-create__actions">
+            <button id="school-create-btn" class="btn btn--success school-create__action">
+              <i class="fas fa-mobile-alt" aria-hidden="true"></i>
+              <span><strong>Гра з кодом</strong><small>Учні відповідають зі своїх пристроїв</small></span>
+            </button>
+            <button id="school-projector-btn" class="btn btn--teacher school-create__action">
+              <i class="fas fa-tv" aria-hidden="true"></i>
+              <span><strong>Запустити на екрані</strong><small>Працюйте над питаннями всім класом</small></span>
+            </button>
+          </div>
         </div>
         <p id="school-error" class="quiz-feedback quiz-feedback--incorrect" aria-live="polite"></p>
 
         <!-- Активна гра -->
-        <div id="school-live" class="hidden">
-          <div class="school-live__toolbar">
-            <div class="school-live__code-card">
+        <div id="school-live" class="school-live hidden">
+          <div class="school-live__lobby">
+            <div class="school-live__code-card" aria-label="Код гри">
               <p class="school-live__code-label">КОД ГРИ</p>
               <p id="school-join-code" class="school-live__code"></p>
             </div>
-            <span id="school-status" class="school-live__status"></span>
-            <button id="school-start-btn" class="btn btn--teacher">
-              <i class="fas fa-play" aria-hidden="true"></i> Почати гру
-            </button>
-            <button id="school-finish-btn" class="btn btn--secondary hidden">
-              <i class="fas fa-stop" aria-hidden="true"></i> Завершити
-            </button>
-            <button id="school-new-btn" class="btn btn--success hidden">
-              <i class="fas fa-plus" aria-hidden="true"></i> Нова гра
-            </button>
+            <div class="school-live__join-info">
+              <p id="school-status" class="school-live__status" aria-live="polite"></p>
+              <label for="school-join-link" class="form-label">Посилання для учнів</label>
+              <div class="school-live__link-row">
+                <input id="school-join-link" class="form-input" type="text" readonly />
+                <button id="school-copy-link-btn" class="btn btn--secondary" type="button">
+                  <i class="fas fa-copy" aria-hidden="true"></i> Копіювати
+                </button>
+              </div>
+            </div>
           </div>
-          <h3 class="school-live__heading">Учасники</h3>
+          <div class="school-live__actions">
+              <button id="school-start-btn" class="btn btn--teacher">
+                <i class="fas fa-play" aria-hidden="true"></i> Почати гру
+              </button>
+              <button id="school-finish-btn" class="btn btn--secondary hidden">
+                <i class="fas fa-stop" aria-hidden="true"></i> Завершити
+              </button>
+              <button id="school-new-btn" class="btn btn--success hidden">
+                <i class="fas fa-plus" aria-hidden="true"></i> Нова гра
+              </button>
+          </div>
+          <h3 class="school-live__heading">Учасники <span id="school-participant-count" class="school-live__count">0</span></h3>
           <div id="school-leaderboard"></div>
 
           <div id="school-topic-stats-wrap" class="school-live__stats hidden">
@@ -441,9 +481,60 @@
             <div id="school-topic-stats"></div>
           </div>
         </div>
+
+        <!-- Повноекранний режим для роботи всім класом -->
+        <div id="school-projector" class="school-projector hidden" role="dialog" aria-modal="true" aria-labelledby="school-projector-title">
+          <div class="school-projector__shell">
+            <header class="school-projector__header">
+              <div>
+                <p class="school-projector__eyebrow">Класна гра</p>
+                <h2 id="school-projector-title">Гра на великому екрані</h2>
+              </div>
+              <div class="school-projector__header-actions">
+                <button id="school-projector-fullscreen-btn" class="btn btn--secondary" type="button">
+                  <i class="fas fa-expand" aria-hidden="true"></i> На весь екран
+                </button>
+                <button id="school-projector-close-btn" class="btn btn--secondary" type="button">
+                  <i class="fas fa-times" aria-hidden="true"></i> Завершити
+                </button>
+              </div>
+            </header>
+
+            <div id="school-projector-stage" class="school-projector__stage">
+              <div class="quiz-progress-header">
+                <span id="school-projector-progress-text" class="quiz-progress-text"></span>
+              </div>
+              <div class="quiz-progress-bar-wrap" aria-hidden="true">
+                <div id="school-projector-progress-bar" class="quiz-progress-bar"></div>
+              </div>
+              <div class="quiz-question-card school-projector__question-card" tabindex="-1">
+                <p id="school-projector-question-text" class="quiz-question-text"></p>
+                <img id="school-projector-image" src="" alt="Зображення до питання" class="quiz-image hidden" />
+              </div>
+              <pre id="school-projector-code" class="quiz-code hidden"></pre>
+              <div id="school-projector-options" class="quiz-options" role="radiogroup" aria-labelledby="school-projector-question-text"></div>
+              <div class="quiz-feedback-wrap">
+                <p id="school-projector-feedback" class="quiz-feedback" aria-live="polite"></p>
+                <p id="school-projector-explanation" class="quiz-explanation hidden"></p>
+                <button id="school-projector-next-btn" class="btn-next hidden">Далі →</button>
+              </div>
+            </div>
+
+            <div id="school-projector-complete" class="school-projector__complete hidden" aria-live="polite">
+              <i class="fas fa-flag-checkered" aria-hidden="true"></i>
+              <h2>Гру завершено</h2>
+              <p id="school-projector-result"></p>
+              <button id="school-projector-new-btn" class="btn btn--success" type="button">
+                <i class="fas fa-plus" aria-hidden="true"></i> Створити нову гру
+              </button>
+            </div>
+          </div>
+        </div>
       </section>
 
-    </main>
+        </main>
+      </div>
+    </div>
   </div><!-- /dashboard-section -->
 
 
