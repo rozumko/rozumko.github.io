@@ -127,6 +127,8 @@ export function friendlyError(msg: string): string {
   if (msg.includes('Невірний формат') || msg.includes('Код не знайдено') ||
       msg.includes('Код застарів')    || msg.includes('вже використано'))
     return msg
+  if (/captcha/i.test(msg))
+    return 'Перевірка «я не робот» не пройшла. Оновіть сторінку та спробуйте ще раз.'
   // Network failures and a mid-deploy 404 (route not on the old instance yet)
   // are transient — tell the user to retry instead of "check your input".
   if (/Failed to fetch|NetworkError|load failed/i.test(msg))

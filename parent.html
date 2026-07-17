@@ -38,6 +38,8 @@
             <span>Пароль</span>
             <input id="parent-login-password" type="password" autocomplete="current-password" required />
           </label>
+          <!-- Supabase captcha protection covers password sign-in too -->
+          <div id="parent-turnstile-login" class="parent-turnstile"></div>
           <p id="parent-login-error" class="parent-error" role="alert" aria-live="assertive"></p>
           <button id="parent-login-submit" class="kid-action parent-primary" type="submit">Увійти</button>
         </form>

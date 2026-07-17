@@ -111,6 +111,7 @@ let turnstileLoad: Promise<void> | null = null
 
 function friendly(error: unknown): string {
   const message = (error as Error)?.message ?? 'Сталася помилка'
+  if (/captcha/i.test(message)) return 'Перевірка «я не робот» не пройшла. Оновіть сторінку та спробуйте ще раз.'
   if (/Invalid login credentials/i.test(message)) return 'Невірний email або пароль.'
   if (/Email not confirmed/i.test(message)) return 'Підтвердьте email за посиланням у листі.'
   if (/Failed to fetch|з'єднання|network/i.test(message)) return 'Немає зʼєднання із сервером. Спробуйте ще раз.'
@@ -125,6 +126,7 @@ function showLogin() {
   $('parent-auth-title').textContent = 'Кабінет батьків'
   $('parent-auth-subtitle').textContent = 'Увійдіть, щоб дитина продовжила свій шлях на цьому пристрої.'
   $<HTMLInputElement>('parent-login-email').focus()
+  void loadTurnstile('parent-turnstile-login').catch(error => { loginError.textContent = friendly(error) })
 }
 
 function renderTurnstile(containerId: string) {
@@ -188,6 +190,8 @@ function showAuth(message = '') {
   dashboard.classList.add('hidden')
   authSection.classList.remove('hidden')
   loginError.textContent = message
+  // Supabase captcha protection covers password sign-in too.
+  void loadTurnstile('parent-turnstile-login').catch(error => { loginError.textContent = friendly(error) })
 }
 
 function profileCard(profile: ParentProfile, activeId: string | null): HTMLElement {
@@ -500,6 +504,12 @@ $('parent-show-login').addEventListener('click', showLogin)
 loginForm.addEventListener('submit', async event => {
   event.preventDefault()
   const button = $<HTMLButtonElement>('parent-login-submit')
+  const loginWidgetId = turnstileWidgets.get('parent-turnstile-login')
+  const captchaToken = window.turnstile?.getResponse(loginWidgetId)
+  if (loginWidgetId === undefined || !captchaToken) {
+    loginError.textContent = 'Підтвердьте, що ви не робот (зачекайте, поки з’явиться перевірка).'
+    return
+  }
   loginError.textContent = ''
   button.disabled = true
   button.textContent = 'Входимо…'
@@ -507,11 +517,14 @@ loginForm.addEventListener('submit', async event => {
     await loginParent(
       $<HTMLInputElement>('parent-login-email').value.trim(),
       $<HTMLInputElement>('parent-login-password').value,
+      captchaToken,
     )
     await loadDashboard()
   } catch (error) {
     loginError.textContent = friendly(error)
   } finally {
+    // Turnstile token is single-use: reset for the next attempt.
+    window.turnstile?.reset(loginWidgetId)
     button.disabled = false
     button.textContent = 'Увійти'
   }
