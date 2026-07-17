@@ -88,6 +88,10 @@ function hideColdStartBanner() {
   document.getElementById('cold-start-banner')?.remove()
 }
 
+// Set right before the redirect to Google; checked (and cleared) by init()
+// when tokens come back in the hash without a `type`.
+const OAUTH_PENDING_KEY = 'rozumko_teacher_oauth_pending'
+
 // --- Init ---
 // The call itself is at the END of the module: the recovery branch touches
 // consts (resetMode etc.) that are declared below, so init must run after
@@ -102,12 +106,24 @@ async function init() {
   const type         = hash.get('type')
 
   if (accessToken) {
-    // Зберігаємо сесію з токена в хеші
-    storeTeacherSession({
-      accessToken,
-      refreshToken: refreshToken ?? '',
-      email: '',
-    })
+    // Anti-fixation: a typeless token is only trusted when THIS tab started the
+    // OAuth redirect (flag set by the Google button). A crafted link like
+    // teacher.html#access_token=<attacker> must not silently sign the user in.
+    const trustedType = type === 'signup' || type === 'magiclink' || type === 'recovery'
+    let oauthPending = false
+    try {
+      oauthPending = sessionStorage.getItem(OAUTH_PENDING_KEY) === '1'
+      sessionStorage.removeItem(OAUTH_PENDING_KEY)
+    } catch { /* sessionStorage unavailable */ }
+
+    if (trustedType || oauthPending) {
+      // Зберігаємо сесію з токена в хеші
+      storeTeacherSession({
+        accessToken,
+        refreshToken: refreshToken ?? '',
+        email: '',
+      })
+    }
     // Очищаємо хеш з URL щоб токен не залишався в адресному рядку
     history.replaceState(null, '', window.location.pathname)
   }
@@ -390,6 +406,8 @@ resetForm?.addEventListener('submit', async (e) => {
 
 // ── Google OAuth ─────────────────────────────────────────────────────────────
 $maybe<HTMLButtonElement>('google-login-btn')?.addEventListener('click', () => {
+  // The flag is what lets init() trust the typeless token on return.
+  try { sessionStorage.setItem(OAUTH_PENDING_KEY, '1') } catch { /* sessionStorage unavailable */ }
   window.location.href = googleSignInUrl('teacher.html')
 })
 

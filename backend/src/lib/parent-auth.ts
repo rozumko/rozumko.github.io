@@ -9,6 +9,12 @@ import { createRemoteJWKSet, jwtVerify } from 'jose'
 export interface ParentJwtPayload {
   sub?: string
   email?: string
+  is_anonymous?: boolean
+  /**
+   * НЕ ДОВІРЯТИ: user_metadata — це user-writable raw_user_meta_data
+   * (PUT /auth/v1/user міняє будь-який ключ, включно з email_verified).
+   * Підтвердження email читається server-side з auth.users (routes/parent.ts).
+   */
   user_metadata?: { email_verified?: boolean }
 }
 
@@ -29,9 +35,13 @@ export const verifyParentToken: ParentTokenVerifier = async (header) => {
   try {
     const { payload } = await jwtVerify(header.slice(7), getJwks(), {
       issuer:     `${process.env.SUPABASE_URL}/auth/v1`,
+      audience:   'authenticated',  // service/anon-key tokens carry a different aud
       algorithms: ['ES256'],  // явно забороняємо alg:none та HMAC downgrade
     })
-    return payload as ParentJwtPayload
+    const parsed = payload as ParentJwtPayload
+    // Fail closed: anonymous sign-ins must not mint parent accounts.
+    if (parsed.is_anonymous === true) return null
+    return parsed
   } catch {
     return null
   }

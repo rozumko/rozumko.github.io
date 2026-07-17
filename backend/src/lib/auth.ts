@@ -8,6 +8,7 @@ import type { FastifyRequest, FastifyReply } from 'fastify'
 interface SupabaseJwtPayload {
   sub?: string
   email?: string
+  is_anonymous?: boolean
   user_metadata?: { school?: string; name?: string }
 }
 
@@ -27,6 +28,7 @@ export async function requireAuth(req: FastifyRequest, reply: FastifyReply) {
   try {
     const result = await jwtVerify(token, JWKS, {
       issuer:     `${process.env.SUPABASE_URL}/auth/v1`,
+      audience:   'authenticated',  // service/anon-key tokens carry a different aud
       algorithms: ['ES256'],  // явно забороняємо alg:none та HMAC downgrade
     })
     payload = result.payload as SupabaseJwtPayload
@@ -36,6 +38,12 @@ export async function requireAuth(req: FastifyRequest, reply: FastifyReply) {
 
   const authUserId = payload.sub
   if (!authUserId) {
+    return reply.code(401).send({ error: 'Недійсний токен' })
+  }
+
+  // Fail closed: anonymous sign-ins (if ever enabled in Supabase) must not
+  // reach the teacher auto-provisioning below.
+  if (payload.is_anonymous === true) {
     return reply.code(401).send({ error: 'Недійсний токен' })
   }
 

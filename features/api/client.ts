@@ -757,7 +757,10 @@ export async function registerTeacher(email: string, password: string, school?: 
   // У supabase-js цей же шлях відповідає options.captchaToken.
   const body: Record<string, unknown> = { email, password, data: { school: school || '' } }
   if (captchaToken) body.gotrue_meta_security = { captcha_token: captchaToken }
-  const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+  // Confirmation email should land back on the teacher cabinet, not the Site URL.
+  const redirect = typeof window !== 'undefined' ? `${window.location.origin}/teacher.html` : ''
+  const query = redirect ? `?redirect_to=${encodeURIComponent(redirect)}` : ''
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/signup${query}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
     body: JSON.stringify(body),
