@@ -7,6 +7,7 @@ declare module 'fastify' {
       authUserId: string
       role: string
       name: string | null
+      email: string
     }
   }
 }
