@@ -3,7 +3,7 @@ import { randomInt } from 'crypto'
 import { and, count, desc, eq, gte, inArray, lte } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { accessCodes, appUsers, attempts, classStudents, eventQuestions, eventRegistrations, olympiadEvents, teacherClasses } from '../db/schema.js'
-import { requireAuth, verifySupabaseIdentity } from '../lib/auth.js'
+import { requireAuth, verifySupabaseIdentity, type SupabaseIdentity } from '../lib/auth.js'
 import { assertEventCanAcceptRegistrations, assertRegistrationCanBeCancelled, normalizeRegistrationInput, normalizeTeacherClassInput } from './registration-validation.js'
 import { assertEventCanIssueCodes, resolveCodeExpiry } from './teacher-events-validation.js'
 
@@ -30,7 +30,39 @@ function generateCode(exclude: Set<string> = new Set()): string {
   throw new Error('Не вдалося згенерувати унікальний код. Спробуйте ще раз.')
 }
 
-export async function teacherRoutes(app: FastifyInstance) {
+export interface TeacherRegistrationStore {
+  registerPending(identity: SupabaseIdentity): Promise<{ status: string; created: boolean }>
+}
+
+export interface TeacherRoutesOptions {
+  verifyIdentity?: (header: string | undefined) => Promise<SupabaseIdentity | null>
+  registrationStore?: TeacherRegistrationStore
+}
+
+const drizzleTeacherRegistrationStore: TeacherRegistrationStore = {
+  async registerPending(identity) {
+    const [created] = await db.insert(appUsers).values({
+      authUserId: identity.authUserId,
+      email: identity.email,
+      role: 'teacher',
+      status: 'pending',
+    }).onConflictDoNothing({ target: appUsers.authUserId }).returning({ status: appUsers.status })
+
+    if (created) return { status: created.status, created: true }
+
+    const [existing] = await db
+      .select({ status: appUsers.status })
+      .from(appUsers)
+      .where(eq(appUsers.authUserId, identity.authUserId))
+      .limit(1)
+    if (!existing) throw new Error('Teacher registration conflict did not resolve to an existing row')
+    return { status: existing.status, created: false }
+  },
+}
+
+export async function teacherRoutes(app: FastifyInstance, opts: TeacherRoutesOptions = {}) {
+  const verifyIdentity = opts.verifyIdentity ?? verifySupabaseIdentity
+  const registrationStore = opts.registrationStore ?? drizzleTeacherRegistrationStore
 
   // GET /api/me
   app.get('/me', { preHandler: requireAuth }, async (req, reply) => {
@@ -44,24 +76,12 @@ export async function teacherRoutes(app: FastifyInstance) {
   app.post('/register-request', {
     config: { rateLimit: { max: 5, timeWindow: '1 minute' } },
   }, async (req, reply) => {
-    const identity = await verifySupabaseIdentity(req.headers.authorization)
+    const identity = await verifyIdentity(req.headers.authorization)
     if (!identity) return reply.code(401).send({ error: 'Потрібна авторизація' })
     if (!identity.email) return reply.code(403).send({ error: 'Email не знайдено в токені' })
 
-    const [existing] = await db
-      .select({ status: appUsers.status })
-      .from(appUsers)
-      .where(eq(appUsers.authUserId, identity.authUserId))
-      .limit(1)
-    if (existing) return reply.send({ status: existing.status })
-
-    await db.insert(appUsers).values({
-      authUserId: identity.authUserId,
-      email: identity.email,
-      role: 'teacher',
-      status: 'pending',
-    })
-    return reply.code(201).send({ status: 'pending' })
+    const registration = await registrationStore.registerPending(identity)
+    return reply.code(registration.created ? 201 : 200).send({ status: registration.status })
   })
 
   // GET /api/teacher/events

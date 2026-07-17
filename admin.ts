@@ -4,6 +4,7 @@ import {
 } from './features/api/client.js'
 import { initEventsTab,    loadEvents        } from './features/admin/events-tab.js'
 import { initTeachersTab,  loadTeachers      } from './features/admin/teachers-tab.js'
+import { initParentsTab,   loadParents       } from './features/admin/parents-tab.js'
 import { initResultsTab,   loadResults       } from './features/admin/results-tab.js'
 import { initQuestionsTab, loadQuestionsTab  } from './features/admin/questions-tab.js'
 import { initMissionsTab,  loadMissionsTab   } from './features/admin/missions-tab.js'
@@ -102,6 +103,7 @@ document.querySelectorAll<HTMLElement>('.admin-tab').forEach(tab => {
     if (tabName) $maybe(`tab-${tabName}`)?.classList.remove('hidden')
     if (tabName === 'events')    loadEvents()
     if (tabName === 'teachers')  loadTeachers()
+    if (tabName === 'parents')   loadParents()
     if (tabName === 'results')   loadResults()
     if (tabName === 'questions') loadQuestionsTab()
     if (tabName === 'missions')  loadMissionsTab()
@@ -119,6 +121,7 @@ function showDashboard(nameOrEmail: string) {
   refreshStats()
   loadEvents()
   loadTeachers()
+  loadParents()
   loadResults()
 }
 
@@ -132,8 +135,9 @@ function showAuth(message?: string) {
 
 async function refreshStats() {
   try {
-    const { teachers, codes, results, events } = await getAdminStats()
+    const { teachers, parents, codes, results, events } = await getAdminStats()
     $('stat-teachers').textContent = String(teachers)
+    $('stat-parents').textContent = String(parents ?? 0)
     $('stat-students').textContent = String(codes)
     $('stat-results').textContent  = String(results)
     $('stat-events').textContent   = String(events ?? 0)
@@ -144,6 +148,7 @@ async function refreshStats() {
 
 initEventsTab({ refreshStats })
 initTeachersTab()
+initParentsTab()
 initResultsTab()
 initQuestionsTab()
 initMissionsTab()

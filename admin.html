@@ -73,6 +73,7 @@
       <button data-tab="overview"   class="admin-tab tab-active"><i class="fas fa-chart-bar" aria-hidden="true"></i> Огляд</button>
       <button data-tab="events"     class="admin-tab"><i class="fas fa-calendar-alt" aria-hidden="true"></i> Олімпіади</button>
       <button data-tab="teachers"   class="admin-tab"><i class="fas fa-chalkboard-teacher" aria-hidden="true"></i> Вчителі</button>
+      <button data-tab="parents"    class="admin-tab"><i class="fas fa-user-friends" aria-hidden="true"></i> Батьки</button>
       <button data-tab="results"    class="admin-tab"><i class="fas fa-poll" aria-hidden="true"></i> Результати</button>
       <button data-tab="questions"  class="admin-tab"><i class="fas fa-question" aria-hidden="true"></i> Питання</button>
       <button data-tab="missions"   class="admin-tab"><i class="fas fa-rocket" aria-hidden="true"></i> Місії</button>
@@ -88,6 +89,7 @@
         <h2 class="admin-section-title admin-section-title--spaced">Загальна статистика</h2>
         <div class="stats-grid">
           <div class="stat-card"><p class="stat-card__label">Вчителів</p><p id="stat-teachers" class="stat-card__value">—</p></div>
+          <div class="stat-card"><p class="stat-card__label">Батьківських акаунтів</p><p id="stat-parents" class="stat-card__value">—</p></div>
           <div class="stat-card"><p class="stat-card__label">Учнів (кодів)</p><p id="stat-students" class="stat-card__value">—</p></div>
           <div class="stat-card"><p class="stat-card__label">Результатів</p><p id="stat-results" class="stat-card__value">—</p></div>
           <div class="stat-card"><p class="stat-card__label">Активних олімпіад</p><p id="stat-events" class="stat-card__value">—</p></div>
@@ -173,6 +175,21 @@
             <div>
               <i class="fas fa-users admin-empty-state__icon" aria-hidden="true"></i>
               <p class="admin-empty-state__title">Список вчителів</p>
+              <p class="admin-empty-state__sub">Завантажується після входу.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Parents tab -->
+      <section id="tab-parents" class="tab-panel hidden">
+        <h2 class="admin-section-title admin-section-title--spaced">Зареєстровані батьки</h2>
+        <p class="admin-section-note">Показано лише дані дорослого акаунта та кількість профілів. Імена дітей і навчальні результати тут не відображаються.</p>
+        <div id="parents-list" class="admin-list">
+          <div class="admin-empty-state">
+            <div>
+              <i class="fas fa-user-friends admin-empty-state__icon" aria-hidden="true"></i>
+              <p class="admin-empty-state__title">Список батьківських акаунтів</p>
               <p class="admin-empty-state__sub">Завантажується після входу.</p>
             </div>
           </div>

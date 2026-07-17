@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test'
 
 test('parent logs in, creates a child profile and explicitly selects it', async ({ page }) => {
   await page.addInitScript(() => {
+    sessionStorage.setItem('__parent_test_loads', String(Number(sessionStorage.getItem('__parent_test_loads') ?? '0') + 1))
     // Login requires a Turnstile token (Supabase captcha covers the password
     // grant). Stub the API so loadTurnstile never injects the real script.
     ;(window as any).turnstile = {
@@ -62,6 +63,7 @@ test('parent logs in, creates a child profile and explicitly selects it', async 
   await page.locator('#parent-login-submit').click()
 
   await expect(page.getByRole('heading', { name: 'Хто сьогодні грає?' })).toBeVisible()
+  expect(await page.evaluate(() => Number(sessionStorage.getItem('__parent_test_loads')))).toBeGreaterThanOrEqual(2)
   await expect(page.locator('#parent-dashboard-status')).toContainText('Додайте перший профіль')
 
   await page.locator('#parent-child-name').fill('Марійка')
@@ -74,6 +76,71 @@ test('parent logs in, creates a child profile and explicitly selects it', async 
   await expect(page).toHaveURL(/path\.html\?grade=2/)
   const activeProfile = await page.evaluate(() => JSON.parse(sessionStorage.getItem('parent_session') ?? 'null')?.activeChildProfileId)
   expect(activeProfile).toBe('00000000-0000-4000-8000-0000000000a3')
+})
+
+test('parent recovery callback exchanges a PKCE code and cleans the URL', async ({ page }) => {
+  await page.addInitScript(() => {
+    if (location.search.includes('code=')) {
+      localStorage.setItem('rozumko_auth_pkce_parent', JSON.stringify({
+        verifier: 'a'.repeat(64),
+        flow: 'recovery',
+        createdAt: Date.now(),
+      }))
+    }
+    window.fetch = async (input, init) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+      if (!url.includes('/auth/v1/token?grant_type=pkce')) throw new Error(`Unexpected request: ${url}`)
+      const body = JSON.parse(String(init?.body))
+      if (body.auth_code !== 'trusted-code' || body.code_verifier !== 'a'.repeat(64)) {
+        return new Response(JSON.stringify({ error: 'invalid_grant' }), { status: 400 })
+      }
+      return new Response(JSON.stringify({
+        access_token: 'recovery-access',
+        refresh_token: 'recovery-refresh',
+        user: { email: 'mama@example.com' },
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+    }
+  })
+
+  await page.goto('/parent.html?code=trusted-code')
+
+  await expect(page.locator('#parent-reset-mode')).toBeVisible()
+  await expect(page).toHaveURL(/\/parent\.html$/)
+  expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem('parent_session') ?? 'null')?.accessToken)).toBe('recovery-access')
+  expect(await page.evaluate(() => localStorage.getItem('rozumko_auth_pkce_parent'))).toBeNull()
+  await expect(page.locator('script[src*="turnstile"]')).toHaveCount(0)
+})
+
+test('parent rejects legacy bearer fragments even when the flow type is forged', async ({ page }) => {
+  await page.addInitScript(() => {
+    ;(window as any).turnstile = {
+      render: () => 'stub-widget',
+      getResponse: () => 'stub-captcha-token',
+      reset: () => {},
+    }
+  })
+
+  await page.goto('/parent.html#access_token=attacker-token&refresh_token=attacker-refresh&type=signup')
+
+  await expect(page.locator('#parent-login-error')).toContainText('застарілий формат')
+  expect(await page.evaluate(() => sessionStorage.getItem('parent_session'))).toBeNull()
+  await expect(page).toHaveURL(/\/parent\.html$/)
+})
+
+test('direct parent registration link opens the signup form and cleans the URL', async ({ page }) => {
+  await page.addInitScript(() => {
+    ;(window as any).turnstile = {
+      render: () => 'stub-widget',
+      getResponse: () => 'stub-captcha-token',
+      reset: () => {},
+    }
+  })
+
+  await page.goto('/parent.html?mode=register')
+
+  await expect(page.locator('#parent-register-mode')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Створити акаунт' })).toBeVisible()
+  await expect(page).toHaveURL(/\/parent\.html$/)
 })
 
 test('grade-3 profile opens the grade-3 path', async ({ page }) => {

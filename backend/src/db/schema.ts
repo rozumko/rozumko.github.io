@@ -398,10 +398,9 @@ export type PathMapRevisionRow = typeof pathMapRevisions.$inferSelect
 // Дитячі дані пишуться ЛИШЕ після створення ліда (consent-gate на бекенді).
 // Жодного звʼязку зі шкільними сесіями чи їх токенами.
 
-// Батьківський акаунт (0029) — окрема ідентичність 1:1 із Supabase Auth
-// користувачем. НЕ app_users: batьківська авторизація не має проходити через
-// teacher/admin auto-provisioning (docs/security-model.md). Runtime routes are
-// implemented under /api/parent; production requires migrations 0029–0031.
+// Parent account (0029) is a separate 1:1 Supabase Auth identity. It never
+// uses teacher/admin app_users authorization (docs/security-model.md). Runtime
+// routes live under /api/parent; production requires migrations 0029–0031.
 export const homeParentAccounts = pgTable('home_parent_accounts', {
   id:              uuid('id').primaryKey().defaultRandom(),
   authUserId:      uuid('auth_user_id').notNull().unique(),

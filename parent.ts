@@ -14,6 +14,7 @@ import {
   requestPasswordReset,
   updateAuthPassword,
   googleSignInUrl,
+  exchangeAuthCode,
   setActiveParentProfile,
   storeParentSession,
   submitParentPathProgress,
@@ -102,8 +103,25 @@ function findPendingPathImports(): PendingPathImport[] {
 
 let pendingImports = findPendingPathImports()
 
-// Set right before the redirect to Google; checked (and cleared) by init().
-const OAUTH_PENDING_KEY = 'rozumko_parent_oauth_pending'
+const PARENT_RECOVERY_MODE_KEY = 'rozumko_parent_recovery_mode'
+const PARENT_AUTH_MODE_KEY = 'rozumko_parent_auth_mode'
+
+function takeParentAuthMode(): 'register' | 'forgot' | null {
+  try {
+    const mode = sessionStorage.getItem(PARENT_AUTH_MODE_KEY)
+    sessionStorage.removeItem(PARENT_AUTH_MODE_KEY)
+    return mode === 'register' || mode === 'forgot' ? mode : null
+  } catch {
+    return null
+  }
+}
+
+function leaveAuthenticatedDocumentFor(mode: 'register' | 'forgot'): boolean {
+  if (!getParentSession()) return false
+  try { sessionStorage.setItem(PARENT_AUTH_MODE_KEY, mode) } catch { /* unavailable */ }
+  void logoutParent().finally(() => window.location.reload())
+  return true
+}
 
 // One widget per container: register form and forgot-password form have their own.
 const turnstileWidgets = new Map<string, string>()
@@ -157,6 +175,7 @@ function loadTurnstile(containerId: string): Promise<void> {
 }
 
 function showRegister() {
+  if (leaveAuthenticatedDocumentFor('register')) return
   loginMode.classList.add('hidden')
   forgotMode.classList.add('hidden')
   registerMode.classList.remove('hidden')
@@ -167,6 +186,7 @@ function showRegister() {
 }
 
 function showForgot() {
+  if (leaveAuthenticatedDocumentFor('forgot')) return
   loginMode.classList.add('hidden')
   registerMode.classList.add('hidden')
   forgotMode.classList.remove('hidden')
@@ -190,8 +210,11 @@ function showAuth(message = '') {
   dashboard.classList.add('hidden')
   authSection.classList.remove('hidden')
   loginError.textContent = message
-  // Supabase captcha protection covers password sign-in too.
-  void loadTurnstile('parent-turnstile-login').catch(error => { loginError.textContent = friendly(error) })
+  // Never introduce third-party script into a document that already holds a
+  // Supabase session (recovery/transient-error paths).
+  if (!getParentSession()) {
+    void loadTurnstile('parent-turnstile-login').catch(error => { loginError.textContent = friendly(error) })
+  }
 }
 
 function profileCard(profile: ParentProfile, activeId: string | null): HTMLElement {
@@ -461,35 +484,59 @@ async function loadDashboard() {
 }
 
 async function init() {
-  const hash = new URLSearchParams(window.location.hash.slice(1))
-  const accessToken = hash.get('access_token')
-  const refreshToken = hash.get('refresh_token')
-  // 'signup' | 'recovery' | ...; OAuth (Google) returns tokens WITHOUT type
-  const type = hash.get('type')
-  if (accessToken) {
-    // Anti-fixation: a typeless token is only trusted when THIS tab started the
-    // OAuth redirect (flag set by the Google button); see teacher.ts for details.
-    const trustedType = type === 'signup' || type === 'magiclink' || type === 'recovery'
-    let oauthPending = false
-    try {
-      oauthPending = sessionStorage.getItem(OAUTH_PENDING_KEY) === '1'
-      sessionStorage.removeItem(OAUTH_PENDING_KEY)
-    } catch { /* sessionStorage unavailable */ }
+  const url = new URL(window.location.href)
+  const code = url.searchParams.get('code')
+  const callbackError = url.searchParams.get('error_description') || url.searchParams.get('error')
+  const directAuthMode = url.searchParams.get('mode') === 'register' ? 'register' : null
+  const fragment = new URLSearchParams(window.location.hash.slice(1))
+  const hasLegacyBearerFragment = fragment.has('access_token') || fragment.has('refresh_token')
 
-    if (trustedType || oauthPending) {
-      storeParentSession({ accessToken, refreshToken: refreshToken ?? '', email: '', activeChildProfileId: null })
-    }
+  if (code || callbackError || hasLegacyBearerFragment || directAuthMode) {
+    // Remove callback material before any form can load Turnstile.
     history.replaceState(null, '', window.location.pathname)
   }
 
-  if (accessToken && type === 'recovery') {
-    // Password-recovery link: ask for a new password before anything else.
+  if (hasLegacyBearerFragment && !getParentSession()) {
+    return showAuth('Це посилання використовує застарілий формат. Почніть вхід або відновлення паролю ще раз.')
+  }
+
+  if (callbackError && !getParentSession()) return showAuth(friendly(new Error(callbackError)))
+
+  if (code) {
+    try {
+      const exchanged = await exchangeAuthCode('parent', code)
+      storeParentSession({
+        accessToken: exchanged.accessToken,
+        refreshToken: exchanged.refreshToken,
+        email: exchanged.email,
+        activeChildProfileId: null,
+      })
+      if (exchanged.flow === 'recovery') {
+        try { sessionStorage.setItem(PARENT_RECOVERY_MODE_KEY, '1') } catch { /* unavailable */ }
+      }
+      // The callback document never becomes the authenticated dashboard.
+      window.location.reload()
+      return
+    } catch (error) {
+      return showAuth(friendly(error))
+    }
+  }
+
+  let recoveryMode = false
+  try { recoveryMode = sessionStorage.getItem(PARENT_RECOVERY_MODE_KEY) === '1' } catch { /* unavailable */ }
+  if (recoveryMode && getParentSession()) {
     showAuth()
     showReset()
     return
   }
 
-  if (!getParentSession()) return showAuth()
+  if (!getParentSession()) {
+    showAuth()
+    const requestedMode = takeParentAuthMode() ?? directAuthMode
+    if (requestedMode === 'register') showRegister()
+    if (requestedMode === 'forgot') showForgot()
+    return
+  }
   try {
     await registerParentAccount()
     await loadDashboard()
@@ -519,7 +566,8 @@ loginForm.addEventListener('submit', async event => {
       $<HTMLInputElement>('parent-login-password').value,
       captchaToken,
     )
-    await loadDashboard()
+    // Leave the document that executed Turnstile before rendering private data.
+    window.location.reload()
   } catch (error) {
     loginError.textContent = friendly(error)
   } finally {
@@ -566,10 +614,12 @@ registerForm.addEventListener('submit', async event => {
 $('parent-show-forgot').addEventListener('click', showForgot)
 $('parent-hide-forgot').addEventListener('click', showLogin)
 
-$('parent-google-login').addEventListener('click', () => {
-  // The flag is what lets init() trust the typeless token on return.
-  try { sessionStorage.setItem(OAUTH_PENDING_KEY, '1') } catch { /* sessionStorage unavailable */ }
-  window.location.href = googleSignInUrl('parent.html')
+$('parent-google-login').addEventListener('click', async () => {
+  try {
+    window.location.href = await googleSignInUrl('parent.html', 'parent')
+  } catch (error) {
+    loginError.textContent = friendly(error)
+  }
 })
 
 forgotForm.addEventListener('submit', async event => {
@@ -588,7 +638,7 @@ forgotForm.addEventListener('submit', async event => {
   button.disabled = true
   button.textContent = 'Надсилаємо…'
   try {
-    await requestPasswordReset(email, 'parent.html', captchaToken)
+    await requestPasswordReset(email, 'parent.html', 'parent', captchaToken)
     forgotError.classList.add('parent-error--success')
     forgotError.textContent = 'Якщо такий акаунт існує, лист уже в дорозі. Перевірте пошту (і папку «Спам»).'
   } catch (error) {
@@ -618,9 +668,8 @@ resetForm.addEventListener('submit', async event => {
   button.textContent = 'Зберігаємо…'
   try {
     await updateAuthPassword(session.accessToken, password)
-    // Password is saved; enter the dashboard with the same session.
-    await registerParentAccount()
-    await loadDashboard()
+    try { sessionStorage.removeItem(PARENT_RECOVERY_MODE_KEY) } catch { /* unavailable */ }
+    window.location.reload()
   } catch (error) {
     resetError.textContent = friendly(error)
   } finally {
@@ -650,8 +699,9 @@ profileForm.addEventListener('submit', async event => {
 
 $('parent-logout').addEventListener('click', async () => {
   await logoutParent()
-  showLogin()
-  showAuth()
+  try { sessionStorage.removeItem(PARENT_RECOVERY_MODE_KEY) } catch { /* unavailable */ }
+  try { sessionStorage.removeItem(PARENT_AUTH_MODE_KEY) } catch { /* unavailable */ }
+  window.location.reload()
 })
 
 void init()

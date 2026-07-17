@@ -1,6 +1,6 @@
 # Architecture - Rozumko
 
-_Updated: 2026-07-02_
+_Updated: 2026-07-17_
 
 > **Implementation status legend.** This document mixes shipped design with
 > forward-looking direction. Sections are tagged:
@@ -48,7 +48,7 @@ diploma-generating scoring go through the backend.
 | Frontend | Vite 6, TypeScript, Vanilla JS, CSS |
 | Backend | Node.js, Fastify v5, TypeScript |
 | Database | PostgreSQL on Supabase, Drizzle ORM |
-| Auth | Supabase Auth for teachers and admins only |
+| Auth | Supabase Auth for teachers, admins and parents; children have no accounts |
 | Hosting | GitHub Pages frontend, Render backend |
 
 ## Current Student/Event Modes
@@ -163,10 +163,10 @@ Frontend structure:
   (`puzzle-engine.ts` + `puzzle-data.ts`: 5 parametric CT puzzle types by grade,
   emoji/tap for grade 1, numbers for 2+). Served from `games.html`, linked from
   `home.html` and `school.html`; registered in the `missions` table;
-- `features/admin/` — admin tabs incl. `missions-tab.ts` (registry) and
-  `taxonomy.ts` (topic/concept UI copy);
+- `features/admin/` — admin tabs incl. the privacy-minimized parent account
+  directory, `missions-tab.ts` (registry) and taxonomy UI copy;
 - `parent.html` + `parent.ts` — parent login/registration, profile creation,
-  latest child reports, account entitlement status and
+  direct `?mode=register` entry, latest child reports, account entitlement status and
   explicit child selection and profile editing; subscription purchase UI is
   still planned;
 - `features/path/path-sync.ts` — profile-scoped offline queue synchronization:
@@ -188,6 +188,9 @@ Backend:
   database-owned account status, lead claiming, child profiles, reports,
   entitlement aggregation and idempotent learning-path progress. Migrations
   0029–0031 were deployed on 2026-07-10;
+- `GET /api/admin/parents` provides the admin-only operational directory. It
+  returns adult email, database status, email-verification state, account date
+  and aggregate profile count only; it never returns child names or learning data;
 - payment-provider checkout routes are planned;
 - subscription-aware seasonal event access is planned and must not reuse
   anonymous School identity;
@@ -333,11 +336,19 @@ The frontend calls Supabase Auth endpoints for signup, login and logout, then
 sends `Authorization: Bearer <jwt>` to the backend. The backend verifies the
 Supabase JWT with JWKS and loads the current `role` and `status` from `app_users`.
 
+Signup, password recovery and Google OAuth use S256 PKCE. Redirect callbacks
+carry only a one-time `?code=`; the frontend exchanges it with a short-lived,
+surface-specific verifier and rejects legacy bearer-token fragments. Access and
+refresh tokens are tab-scoped in `sessionStorage`, and a clean document reload
+separates the Turnstile credential-grant page from authenticated API calls.
+
 Frontend authorization decisions use `GET /api/teacher/me`. JWT claims are never
 trusted for role or account status.
 
-New Supabase users are provisioned in `app_users` as `teacher` with
-`status = 'pending'`. An admin must activate the account.
+Authentication is read-only with respect to `app_users`. A new teacher is
+created as `status = 'pending'` only through the explicit, idempotent
+`POST /api/teacher/register-request`; its insert is conflict-safe under
+concurrent callbacks. An admin must activate the account.
 
 ## Question Model
 

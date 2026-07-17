@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { eq, desc, count, and, asc, inArray, ilike, or, sql } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { questions, questionRevisions, accessCodes, attempts, attemptQuestions, appUsers, olympiadEvents, eventQuestions, schoolSessions, schoolSessionQuestions, homeLeads, homeEntitlements, homeEntitlementEvents, homePathProgress, missions, missionRevisions, microLessons, microLessonRevisions, pathMapRevisions, pathMaps, contentPublications, type QuestionTrack } from '../db/schema.js'
+import { questions, questionRevisions, accessCodes, attempts, attemptQuestions, appUsers, olympiadEvents, eventQuestions, schoolSessions, schoolSessionQuestions, homeLeads, homeEntitlements, homeEntitlementEvents, homeParentAccounts, homePathProgress, missions, missionRevisions, microLessons, microLessonRevisions, pathMapRevisions, pathMaps, contentPublications, type QuestionTrack } from '../db/schema.js'
 import { normalizeLessonSlug, normalizeLessonStatus, normalizeLessonContent, lessonContentChanged } from './lesson-validation.js'
 import { contentFromLessonRevision, lessonPublishedSnapshot, lessonRevisionSnapshot } from './lesson-editorial.js'
 import { EDITABLE_MISSION_KINDS, missionPublishedSnapshot, missionSnapshot, normalizeEditableMission, normalizeMissionSlug, normalizeMissionStatus, type NormalizedMissionInput } from './mission-editorial.js'
@@ -33,6 +33,7 @@ import {
   contentManifestSha256,
   dispatchContentPublication,
 } from '../lib/content-publication.js'
+import { listAdminParents } from './admin-parents.js'
 
 class PathMapConflictError extends Error {}
 class QuestionEditConflictError extends Error {}
@@ -189,13 +190,19 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // GET /api/admin/stats
   app.get('/stats', { preHandler: requireAdmin }, async (_req, reply) => {
-    const [[{ teachers }], [{ codes }], [{ results }], [{ events }]] = await Promise.all([
+    const [[{ teachers }], [{ parents }], [{ codes }], [{ results }], [{ events }]] = await Promise.all([
       db.select({ teachers: count() }).from(appUsers).where(eq(appUsers.role, 'teacher')),
+      db.select({ parents: count() }).from(homeParentAccounts),
       db.select({ codes:    count() }).from(accessCodes),
       db.select({ results:  count() }).from(attempts).where(eq(attempts.status, 'finished')),
       db.select({ events:   count() }).from(olympiadEvents).where(eq(olympiadEvents.status, 'active')),
     ])
-    return reply.send({ teachers, codes, results, events })
+    return reply.send({ teachers, parents, codes, results, events })
+  })
+
+  // GET /api/admin/parents
+  app.get('/parents', { preHandler: requireAdmin }, async (_req, reply) => {
+    return reply.send({ parents: await listAdminParents() })
   })
 
   // GET /api/admin/teachers

@@ -6,7 +6,7 @@ import {
   getTeacherMe, generateCodes, getTeacherClasses, getTeacherCodes,
   getTeacherRegistrationEvents, getTeacherRegistrations, getTeacherResults,
   cancelTeacherRegistration,
-  requestPasswordReset, updateAuthPassword, googleSignInUrl, registerTeacherRequest,
+  requestPasswordReset, updateAuthPassword, googleSignInUrl, exchangeAuthCode, registerTeacherRequest,
   getClassStudents, addClassStudent, updateClassStudent, deleteClassStudent,
   createSchoolSession, startSchoolSession, finishSchoolSession, getSchoolSession,
   TURNSTILE_SITE_KEY,
@@ -106,9 +106,38 @@ function hideColdStartBanner() {
   document.getElementById('cold-start-banner')?.remove()
 }
 
-// Set right before the redirect to Google; checked (and cleared) by init()
-// when tokens come back in the hash without a `type`.
-const OAUTH_PENDING_KEY = 'rozumko_teacher_oauth_pending'
+const TEACHER_CALLBACK_FLOW_KEY = 'rozumko_teacher_callback_flow'
+const TEACHER_AUTH_MODE_KEY = 'rozumko_teacher_auth_mode'
+
+function readTeacherCallbackFlow(): 'signup' | 'recovery' | null {
+  try {
+    const value = sessionStorage.getItem(TEACHER_CALLBACK_FLOW_KEY)
+    return value === 'signup' || value === 'recovery' ? value : null
+  } catch {
+    return null
+  }
+}
+
+function clearTeacherCallbackFlow(): void {
+  try { sessionStorage.removeItem(TEACHER_CALLBACK_FLOW_KEY) } catch { /* unavailable */ }
+}
+
+function takeTeacherAuthMode(): 'register' | 'forgot' | null {
+  try {
+    const mode = sessionStorage.getItem(TEACHER_AUTH_MODE_KEY)
+    sessionStorage.removeItem(TEACHER_AUTH_MODE_KEY)
+    return mode === 'register' || mode === 'forgot' ? mode : null
+  } catch {
+    return null
+  }
+}
+
+function leaveAuthenticatedDocumentFor(mode: 'register' | 'forgot'): boolean {
+  if (!getTeacherSession()) return false
+  try { sessionStorage.setItem(TEACHER_AUTH_MODE_KEY, mode) } catch { /* unavailable */ }
+  void logoutTeacher().finally(() => window.location.reload())
+  return true
+}
 
 // --- Init ---
 // The call itself is at the END of the module: the recovery branch touches
@@ -116,38 +145,49 @@ const OAUTH_PENDING_KEY = 'rozumko_teacher_oauth_pending'
 // the whole module is evaluated.
 
 async function init() {
-  // Обробляємо #access_token=... після підтвердження email від Supabase
-  const hash = new URLSearchParams(window.location.hash.slice(1))
-  const accessToken  = hash.get('access_token')
-  const refreshToken = hash.get('refresh_token')
-  // 'signup' | 'magiclink' | 'recovery'; OAuth (Google) returns tokens WITHOUT type
-  const type         = hash.get('type')
+  const url = new URL(window.location.href)
+  const code = url.searchParams.get('code')
+  const callbackError = url.searchParams.get('error_description') || url.searchParams.get('error')
+  const fragment = new URLSearchParams(window.location.hash.slice(1))
+  const hasLegacyBearerFragment = fragment.has('access_token') || fragment.has('refresh_token')
 
-  if (accessToken) {
-    // Anti-fixation: a typeless token is only trusted when THIS tab started the
-    // OAuth redirect (flag set by the Google button). A crafted link like
-    // teacher.html#access_token=<attacker> must not silently sign the user in.
-    const trustedType = type === 'signup' || type === 'magiclink' || type === 'recovery'
-    let oauthPending = false
-    try {
-      oauthPending = sessionStorage.getItem(OAUTH_PENDING_KEY) === '1'
-      sessionStorage.removeItem(OAUTH_PENDING_KEY)
-    } catch { /* sessionStorage unavailable */ }
-
-    if (trustedType || oauthPending) {
-      // Зберігаємо сесію з токена в хеші
-      storeTeacherSession({
-        accessToken,
-        refreshToken: refreshToken ?? '',
-        email: '',
-      })
-    }
-    // Очищаємо хеш з URL щоб токен не залишався в адресному рядку
+  if (code || callbackError || hasLegacyBearerFragment) {
+    // Remove callback material before any form can load Turnstile.
     history.replaceState(null, '', window.location.pathname)
   }
 
-  if (accessToken && type === 'recovery') {
-    // Password-recovery link: ask for a new password before anything else.
+  if (hasLegacyBearerFragment && !getTeacherSession()) {
+    showAuth('Це посилання використовує застарілий формат. Почніть вхід або відновлення паролю ще раз.')
+    return
+  }
+
+  if (callbackError && !getTeacherSession()) {
+    showAuth(friendlyError(callbackError))
+    return
+  }
+
+  if (code) {
+    try {
+      const exchanged = await exchangeAuthCode('teacher', code)
+      storeTeacherSession({
+        accessToken: exchanged.accessToken,
+        refreshToken: exchanged.refreshToken,
+        email: exchanged.email,
+      })
+      if (exchanged.flow === 'signup' || exchanged.flow === 'recovery') {
+        try { sessionStorage.setItem(TEACHER_CALLBACK_FLOW_KEY, exchanged.flow) } catch { /* unavailable */ }
+      }
+      // The callback document never becomes the authenticated dashboard.
+      window.location.reload()
+      return
+    } catch (error) {
+      showAuth(friendlyError((error as Error).message))
+      return
+    }
+  }
+
+  const callbackFlow = readTeacherCallbackFlow()
+  if (callbackFlow === 'recovery' && getTeacherSession()) {
     showAuth()
     switchToReset()
     return
@@ -160,15 +200,17 @@ async function init() {
       const me = await getTeacherMe()
       hideColdStartBanner()
       showDashboard(teacherLabel(me, session.email))
+      clearTeacherCallbackFlow()
       await Promise.all([loadRegistrationEvents(), loadClasses(), loadRegistrations(), loadCodes(), loadResults()])
     } catch (err) {
       hideColdStartBanner()
       if (isUnknownAccountError(err)) {
-        if (type === 'signup') {
+        if (callbackFlow === 'signup') {
           // Came from the teacher signup confirmation email — intent is
           // explicit, so file the request right away.
           try {
             await registerTeacherRequest()
+            clearTeacherCallbackFlow()
             showAuth(PENDING_CREATED_MSG)
           } catch {
             showAuth('Не вдалося створити кабінет. Спробуйте увійти ще раз.')
@@ -184,6 +226,7 @@ async function init() {
       // New account (just-confirmed email) lands here with ACCOUNT_PENDING —
       // without a message it looks like a silent failure.
       if (isPendingError(err)) {
+        clearTeacherCallbackFlow()
         showAuth('✅ Акаунт створено! Він очікує підтвердження адміністратора — після підтвердження увійдіть ще раз.')
         return
       }
@@ -193,6 +236,9 @@ async function init() {
     }
   } else {
     showAuth()
+    const requestedMode = takeTeacherAuthMode()
+    if (requestedMode === 'register') switchToRegister()
+    if (requestedMode === 'forgot') switchToForgot()
   }
 }
 
@@ -224,10 +270,8 @@ loginForm.addEventListener('submit', async (e) => {
   showColdStartBanner()
   try {
     await loginTeacher(email, password, captchaToken)
-    const me = await getTeacherMe()
-    hideColdStartBanner()
-    showDashboard(teacherLabel(me, email))
-    await Promise.all([loadRegistrationEvents(), loadClasses(), loadRegistrations(), loadCodes(), loadResults()])
+    // Leave the document that executed Turnstile before rendering private data.
+    window.location.reload()
   } catch (err) {
     hideColdStartBanner()
     // Turnstile token is single-use: reset for the next attempt.
@@ -253,6 +297,7 @@ $maybe<HTMLButtonElement>('register-request-btn')?.addEventListener('click', asy
   btn.textContent = 'Надсилання…'
   try {
     await registerTeacherRequest()
+    clearTeacherCallbackFlow()
     hideRegisterRequestBox()
     loginError.textContent = PENDING_CREATED_MSG
   } catch (err) {
@@ -324,9 +369,11 @@ function loadTurnstile(containerId: string): Promise<void> {
 }
 
 function switchToRegister() {
-  // Реєстрація завжди починається без локальної teacher-сесії. Це також закриває
-  // крайовий випадок зі stale token після невдалого bootstrap-запиту до API.
+  if (leaveAuthenticatedDocumentFor('register')) return
+  // Registration always starts without a local teacher session, including
+  // after a stale-token bootstrap failure.
   void logoutTeacher()
+  clearTeacherCallbackFlow()
   hideRegisterRequestBox()
   loginMode?.classList.add('hidden')
   forgotMode?.classList.add('hidden')
@@ -350,6 +397,9 @@ function switchToLogin() {
 }
 
 // ── Password recovery ────────────────────────────────────────────────────────
+$maybe<HTMLButtonElement>('show-register-btn')?.addEventListener('click', switchToRegister)
+$maybe<HTMLButtonElement>('hide-register-btn')?.addEventListener('click', switchToLogin)
+
 const forgotMode      = $maybe('forgot-mode')
 const forgotForm      = $maybe<HTMLFormElement>('teacher-forgot-form')
 const forgotError     = $maybe('forgot-error')
@@ -361,6 +411,7 @@ const resetSubmitBtn  = $maybe<HTMLButtonElement>('reset-submit-btn')
 const FORGOT_TURNSTILE = 'turnstile-container-forgot'
 
 function switchToForgot() {
+  if (leaveAuthenticatedDocumentFor('forgot')) return
   hideRegisterRequestBox()
   loginMode?.classList.add('hidden')
   registerMode?.classList.add('hidden')
@@ -413,7 +464,7 @@ forgotForm?.addEventListener('submit', async (e) => {
   forgotSubmitBtn!.disabled    = true
   forgotSubmitBtn!.textContent = 'Надсилання…'
   try {
-    await requestPasswordReset(email, 'teacher.html', captchaToken)
+    await requestPasswordReset(email, 'teacher.html', 'teacher', captchaToken)
     if (forgotError) {
       forgotError.textContent = '✅ Якщо такий акаунт існує, лист уже в дорозі. Перевірте пошту (і папку «Спам»).'
       forgotError.classList.add('form-error--success')
@@ -444,35 +495,25 @@ resetForm?.addEventListener('submit', async (e) => {
   resetSubmitBtn!.textContent = 'Збереження…'
   try {
     await updateAuthPassword(session.accessToken, password)
+    clearTeacherCallbackFlow()
+    window.location.reload()
   } catch (err) {
     if (resetError) resetError.textContent = friendlyError((err as Error).message)
     resetSubmitBtn!.disabled    = false
     resetSubmitBtn!.textContent = 'Зберегти пароль'
     return
   }
-  // Password is saved; try to enter the dashboard with the same session.
-  showColdStartBanner()
-  try {
-    const me = await getTeacherMe()
-    hideColdStartBanner()
-    showDashboard(teacherLabel(me, session.email))
-    await Promise.all([loadRegistrationEvents(), loadClasses(), loadRegistrations(), loadCodes(), loadResults()])
-  } catch (err) {
-    hideColdStartBanner()
-    switchToLogin()
-    loginError.textContent = isPendingError(err)
-      ? '✅ Пароль змінено, але акаунт ще очікує підтвердження адміністратора.'
-      : '✅ Пароль змінено. Увійдіть з новим паролем.'
-  }
   resetSubmitBtn!.disabled    = false
   resetSubmitBtn!.textContent = 'Зберегти пароль'
 })
 
 // ── Google OAuth ─────────────────────────────────────────────────────────────
-$maybe<HTMLButtonElement>('google-login-btn')?.addEventListener('click', () => {
-  // The flag is what lets init() trust the typeless token on return.
-  try { sessionStorage.setItem(OAUTH_PENDING_KEY, '1') } catch { /* sessionStorage unavailable */ }
-  window.location.href = googleSignInUrl('teacher.html')
+$maybe<HTMLButtonElement>('google-login-btn')?.addEventListener('click', async () => {
+  try {
+    window.location.href = await googleSignInUrl('teacher.html', 'teacher')
+  } catch (error) {
+    loginError.textContent = friendlyError((error as Error).message)
+  }
 })
 
 registerForm?.addEventListener('submit', async (e) => {
@@ -589,7 +630,9 @@ registrationForm?.addEventListener('submit', async (e) => {
 // --- Logout ---
 logoutBtn.addEventListener('click', async () => {
   await logoutTeacher()
-  showAuth()
+  clearTeacherCallbackFlow()
+  try { sessionStorage.removeItem(TEACHER_AUTH_MODE_KEY) } catch { /* unavailable */ }
+  window.location.reload()
 })
 
 // --- Generate codes ---
@@ -1182,11 +1225,13 @@ function showAuth(message?: string) {
   loginSubmitBtn.disabled    = false
   loginSubmitBtn.textContent = 'Увійти'
   loginError.textContent = message ?? ''
-  // Supabase captcha protection covers password sign-in, so the login form
-  // needs its own Turnstile widget as soon as the auth card is visible.
-  loadTurnstile('turnstile-container-login').catch(() => {
-    loginError.textContent = 'Не вдалося завантажити захист від ботів. Оновіть сторінку.'
-  })
+  // Never introduce third-party script into a document that already holds a
+  // Supabase session (recovery/pending/transient-error paths).
+  if (!getTeacherSession()) {
+    loadTurnstile('turnstile-container-login').catch(() => {
+      loginError.textContent = 'Не вдалося завантажити захист від ботів. Оновіть сторінку.'
+    })
+  }
 }
 
 // ── Класна гра (просунутий School Mode) ──────────────────────────────────────
