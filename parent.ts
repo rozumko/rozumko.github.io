@@ -24,6 +24,7 @@ import {
 import { PATHS_BY_GRADE, type GradePathMap, type PathPoint } from './features/path/path-data.js'
 import { createProgressStore, type ProgressStore, type QueuedResult } from './features/path/progress-store.js'
 import { $ } from './utils/dom.js'
+import { recoveryErrorMessage } from './utils/ui.js'
 
 type TurnstileApi = {
   render: (element: string | HTMLElement, options: { sitekey: string }) => string
@@ -562,7 +563,7 @@ forgotForm.addEventListener('submit', async event => {
     forgotError.classList.add('parent-error--success')
     forgotError.textContent = 'Якщо такий акаунт існує, лист уже в дорозі. Перевірте пошту (і папку «Спам»).'
   } catch (error) {
-    forgotError.textContent = friendly(error)
+    forgotError.textContent = recoveryErrorMessage((error as Error)?.message ?? 'Сталася помилка')
   } finally {
     window.turnstile?.reset(widgetId)
     button.disabled = false

@@ -13,7 +13,7 @@ import {
   type TeacherClass, type ClassStudent, type EventRegistration, type TeacherEvent, type Attempt,
   type SchoolSessionInfo,
 } from './features/api/client.js'
-import { esc, friendlyError, showConfirm, showModal } from './utils/ui.js'
+import { esc, friendlyError, recoveryErrorMessage, showConfirm, showModal } from './utils/ui.js'
 import { openCertModal, awardLabel, percent, getAward } from './utils/certificate.js'
 import { TOPICS_BY_TRACK, TOPIC_LABELS } from './features/missions/topics.js'
 import type { SchoolTopicStat } from './features/api/client.js'
@@ -326,7 +326,7 @@ forgotForm?.addEventListener('submit', async (e) => {
       forgotError.classList.add('form-error--success')
     }
   } catch (err) {
-    if (forgotError) forgotError.textContent = friendlyError((err as Error).message)
+    if (forgotError) forgotError.textContent = recoveryErrorMessage((err as Error).message)
   } finally {
     window.turnstile?.reset(widgetId)
     forgotSubmitBtn!.disabled    = false
