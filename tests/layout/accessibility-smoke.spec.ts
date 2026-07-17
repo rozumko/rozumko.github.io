@@ -646,7 +646,8 @@ test('teacher school-game form stays accessible on a phone', async ({ page }) =>
   await expect(page.locator('#school-live')).toBeVisible()
   const qr = page.locator('#school-join-qr')
   await expect(qr).toHaveAttribute('data-ready', 'true')
-  await expect(qr).toHaveAttribute('aria-label', 'QR-код для приєднання до гри ABC123')
+  const qrOpen = page.locator('#school-join-qr-open')
+  await expect(qrOpen).toHaveAttribute('aria-label', 'Збільшити QR-код для гри ABC123')
   const qrPixels = await qr.evaluate((canvas: HTMLCanvasElement) => {
     const data = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data
     let dark = 0
@@ -672,12 +673,57 @@ test('teacher school-game form stays accessible on a phone', async ({ page }) =>
   expect(results.violations).toEqual([])
   expect(overflow).toBeLessThanOrEqual(0)
 
+  await qrOpen.click()
+  const qrDialog = page.locator('#school-qr-dialog')
+  await expect(qrDialog).toBeVisible()
+  await expect(page.locator('#school-qr-dialog-code')).toHaveText('ABC123')
+  await expect(page.locator('#school-join-qr-large')).toHaveAttribute('data-ready', 'true')
+  await expect(page.locator('#school-join-qr-large')).toHaveAttribute('aria-label', 'QR-код для приєднання до гри ABC123')
+  const largeQrBox = await page.locator('#school-join-qr-large').boundingBox()
+  expect(largeQrBox?.width).toBeGreaterThanOrEqual(290)
+  expect(largeQrBox?.width).toBeLessThanOrEqual(305)
+  await expect(page.locator('#school-qr-dialog-close')).toBeFocused()
+  const qrDialogResults = await new AxeBuilder({ page })
+    .include('#school-qr-dialog')
+    .withTags(WCAG_AA_TAGS)
+    .analyze()
+  expect(qrDialogResults.violations).toEqual([])
+  await page.keyboard.press('Escape')
+  await expect(qrDialog).toBeHidden()
+  await expect(qrOpen).toBeFocused()
+
   await page.locator('#school-cancel-btn').click()
   await expect(page.locator('#app-modal')).toBeVisible()
   await page.locator('#modal-ok-btn').click()
   await expect(page.locator('#school-create-panel')).toBeVisible()
   await expect(page.locator('#school-live')).toBeHidden()
   await expect(page.locator('#school-topic')).toBeFocused()
+})
+
+test('teacher lobby keeps the game code and QR card contained on desktop', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await openTeacherDashboard(page)
+  await page.locator('#school-create-btn').click()
+  await expect(page.locator('#school-join-qr')).toHaveAttribute('data-ready', 'true')
+
+  const metrics = await page.locator('.school-live__access').evaluate(access => {
+    const codeCard = access.querySelector<HTMLElement>('.school-live__code-card')!
+    const code = access.querySelector<HTMLElement>('.school-live__code')!
+    const qrCard = access.querySelector<HTMLElement>('.school-live__qr-card')!
+    const accessBox = access.getBoundingClientRect()
+    const codeBox = code.getBoundingClientRect()
+    const codeCardBox = codeCard.getBoundingClientRect()
+    const qrCardBox = qrCard.getBoundingClientRect()
+    return {
+      codeContained: codeBox.left >= codeCardBox.left && codeBox.right <= codeCardBox.right,
+      cardsAligned: Math.abs(codeCardBox.width - qrCardBox.width),
+      accessContained: qrCardBox.right <= accessBox.right && codeCardBox.left >= accessBox.left,
+    }
+  })
+
+  expect(metrics.codeContained).toBe(true)
+  expect(metrics.cardsAligned).toBeLessThan(2)
+  expect(metrics.accessContained).toBe(true)
 })
 
 test('teacher can start an accessible projector game from the default screen', async ({ page }) => {
