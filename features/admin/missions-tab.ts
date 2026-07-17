@@ -2,11 +2,13 @@ import {
   createAdminMission, getAdminMissionRevisions, getAdminMissions, getAdminQuestions,
   restoreAdminMissionRevision, setAdminMissionStatus, updateAdminMission,
   type AdminMissionQuestionSet, type AdminQuestionSetMissionInput, type AdminSortingLevel,
+  type AdminClickTrainerMissionInput, type AdminClickTrainerRound,
   type AdminFactOpinionMissionInput, type AdminFactOpinionStatement,
   type AdminScenarioItem, type AdminScenarioMissionInput, type AdminSequenceMissionInput,
   type AdminSequenceSet, type AdminSimulatorMissionInput, type AdminSimulatorNode,
   type AdminSortingMissionInput, type Mission, type Question,
 } from '../../features/api/client.js'
+import { CLICK_TRAINER_COMPUTER_PARTS } from '../../features/games/click-trainer-data.js'
 import { FO_LEVEL1_STATEMENTS, FO_LEVEL2_STATEMENTS } from '../../features/games/fact-opinion-data.js'
 import {
   INFO_SORT_LEVELS, MULTISORT_LEVELS, SORTING_ATTRIBUTES_LEVELS, type SortingLevel,
@@ -28,7 +30,7 @@ const TRACK_LABELS: Record<string, string> = {
 const KIND_LABELS: Record<string, string> = {
   'question-set': 'Набір питань', 'sorting-game': 'Гра-сортування',
   'sequence-game': 'Гра-кроки', 'scenario-game': 'Ситуаційна гра', puzzle: 'Головоломка',
-  'fact-opinion-game': 'Факт чи думка', 'simulator-game': 'Симулятор',
+  'fact-opinion-game': 'Факт чи думка', 'click-trainer-game': 'Клік-тренажер', 'simulator-game': 'Симулятор',
 }
 const FO_CATEGORY_OPTIONS: Array<{ value: AdminFactOpinionStatement['category']; label: string }> = [
   { value: 'fact', label: '✅ Факт' }, { value: 'opinion', label: '💬 Думка' }, { value: 'myth', label: '🔮 Міф' },
@@ -52,6 +54,7 @@ export function initMissionsTab() {
   $('add-sequence-mission-btn').addEventListener('click', () => { openNarrativeEditor(null, 'sequence-game') })
   $('add-scenario-mission-btn').addEventListener('click', () => { openNarrativeEditor(null, 'scenario-game') })
   $('add-fact-opinion-mission-btn').addEventListener('click', () => { openNarrativeEditor(null, 'fact-opinion-game') })
+  $('add-click-trainer-mission-btn').addEventListener('click', () => { openNarrativeEditor(null, 'click-trainer-game') })
   $('add-simulator-mission-btn').addEventListener('click', () => { openSimulatorEditor(null) })
 }
 
@@ -83,7 +86,7 @@ function renderMissions() {
 
 function missionCard(mission: Mission): HTMLElement {
   const status = (mission.status as string) === 'active' ? 'published' : mission.status
-  const editable = ['question-set', 'sorting-game', 'sequence-game', 'scenario-game', 'fact-opinion-game', 'simulator-game'].includes(mission.kind)
+  const editable = ['question-set', 'sorting-game', 'sequence-game', 'scenario-game', 'fact-opinion-game', 'click-trainer-game', 'simulator-game'].includes(mission.kind)
   const needsSortingImport = mission.kind === 'sorting-game'
     && !(typeof mission.config?.gameKey === 'string' && Array.isArray(mission.config?.levels)
       && mission.config.levels.every(level => {
@@ -93,6 +96,7 @@ function missionCard(mission: Mission): HTMLElement {
   const needsNarrativeImport = (mission.kind === 'sequence-game' && !Array.isArray(mission.config?.sets))
     || (mission.kind === 'scenario-game' && !Array.isArray(mission.config?.items))
     || (mission.kind === 'fact-opinion-game' && !Array.isArray(mission.config?.statements))
+    || (mission.kind === 'click-trainer-game' && !Array.isArray(mission.config?.rounds))
   const needsImport = needsSortingImport || needsNarrativeImport
     || (mission.kind === 'simulator-game' && !Array.isArray(mission.config?.nodes))
   const nextStatus: Mission['status'] = status === 'draft' ? 'review' : status === 'review' ? 'published'
@@ -122,14 +126,15 @@ function missionCard(mission: Mission): HTMLElement {
     el.querySelector<HTMLButtonElement>('.m-status')!.textContent = needsImport ? 'Спершу імпортувати' : nextLabel
     el.querySelector<HTMLButtonElement>('.m-edit')!.addEventListener('click', () => {
       if (mission.kind === 'sorting-game') openSortingEditor(mission)
-      else if (mission.kind === 'sequence-game' || mission.kind === 'scenario-game' || mission.kind === 'fact-opinion-game') openNarrativeEditor(mission, mission.kind)
+      else if (mission.kind === 'sequence-game' || mission.kind === 'scenario-game' || mission.kind === 'fact-opinion-game' || mission.kind === 'click-trainer-game') openNarrativeEditor(mission, mission.kind)
       else if (mission.kind === 'simulator-game') openSimulatorEditor(mission)
       else void openEditor(mission)
     })
     el.querySelector<HTMLButtonElement>('.m-history')!.addEventListener('click', () => { void openHistory(mission) })
     el.querySelector<HTMLButtonElement>('.m-status')!.addEventListener('click', () => {
       if (needsSortingImport) { openSortingEditor(mission); return }
-      if (needsNarrativeImport && (mission.kind === 'sequence-game' || mission.kind === 'scenario-game' || mission.kind === 'fact-opinion-game')) {
+      if (needsNarrativeImport && (mission.kind === 'sequence-game' || mission.kind === 'scenario-game'
+        || mission.kind === 'fact-opinion-game' || mission.kind === 'click-trainer-game')) {
         openNarrativeEditor(mission, mission.kind); return
       }
       if (mission.kind === 'simulator-game' && !Array.isArray(mission.config?.nodes)) {
@@ -441,16 +446,18 @@ async function saveSortingMission() {
   finally { save.disabled = false }
 }
 
-type NarrativeKind = 'sequence-game' | 'scenario-game' | 'fact-opinion-game'
+type NarrativeKind = 'sequence-game' | 'scenario-game' | 'fact-opinion-game' | 'click-trainer-game'
 let narrativeKind: NarrativeKind = 'sequence-game'
 let sequenceSets: AdminSequenceSet[] = []
 let scenarioItems: AdminScenarioItem[] = []
 let factOpinionStatements: AdminFactOpinionStatement[] = []
+let clickTrainerRounds: AdminClickTrainerRound[] = []
 
 const NARRATIVE_DEFAULTS: Record<NarrativeKind, { key: string; title: string; heading: string; sectionLabel: string }> = {
   'sequence-game': { key: 'algorithms-g2', title: 'Гра: Упорядкуй кроки', heading: 'Редактор гри «Упорядкуй кроки»', sectionLabel: 'Набори кроків' },
   'scenario-game': { key: 'digital-safety', title: 'Гра: Як вчинити?', heading: 'Редактор ситуаційної гри', sectionLabel: 'Ситуації' },
   'fact-opinion-game': { key: 'level1', title: 'Гра: Факт чи думка?', heading: 'Редактор гри «Факт чи думка»', sectionLabel: 'Твердження' },
+  'click-trainer-game': { key: 'computer-parts', title: 'Тренажер: Клацни правильну картку', heading: 'Редактор клік-тренажера', sectionLabel: 'Раунди' },
 }
 
 function openNarrativeEditor(mission: Mission | null, kind: NarrativeKind) {
@@ -460,12 +467,14 @@ function openNarrativeEditor(mission: Mission | null, kind: NarrativeKind) {
   const sequenceStored = Array.isArray(config.sets) ? config.sets as unknown as AdminSequenceSet[] : null
   const scenarioStored = Array.isArray(config.items) ? config.items as unknown as AdminScenarioItem[] : null
   const factOpinionStored = Array.isArray(config.statements) ? config.statements as unknown as AdminFactOpinionStatement[] : null
+  const clickTrainerStored = Array.isArray(config.rounds) ? config.rounds as unknown as AdminClickTrainerRound[] : null
   sequenceSets = cloneData(sequenceStored ?? SEQUENCE_SETS_G2)
   scenarioItems = cloneData(scenarioStored ?? SCENARIOS_DIGITAL_SAFETY)
   factOpinionStatements = cloneData(factOpinionStored
     ?? (config.gameKey === 'level2' ? FO_LEVEL2_STATEMENTS : FO_LEVEL1_STATEMENTS) as AdminFactOpinionStatement[])
+  clickTrainerRounds = cloneData(clickTrainerStored ?? CLICK_TRAINER_COMPUTER_PARTS as AdminClickTrainerRound[])
   const legacyImport = mission && ((kind === 'sequence-game' && !sequenceStored) || (kind === 'scenario-game' && !scenarioStored)
-    || (kind === 'fact-opinion-game' && !factOpinionStored))
+    || (kind === 'fact-opinion-game' && !factOpinionStored) || (kind === 'click-trainer-game' && !clickTrainerStored))
   const defaultKey = mission && kind === 'fact-opinion-game' && config.gameKey === 'level2' ? 'level2' : NARRATIVE_DEFAULTS[kind].key
   const defaultTitle = NARRATIVE_DEFAULTS[kind].title
   editorOverlay = document.createElement('div')
@@ -502,6 +511,13 @@ function openNarrativeEditor(mission: Mission | null, kind: NarrativeKind) {
       id: `statement-${factOpinionStatements.length + 1}`, category: 'fact',
       text: 'Нове твердження', explanation: 'Поясни дитині, чому це так.',
     })
+    else if (narrativeKind === 'click-trainer-game') clickTrainerRounds.push({
+      lead: 'Знайди потрібну картку.', target: { label: 'Покажи предмет', emoji: '🎯' },
+      options: [
+        { label: 'правильна картка', emoji: '✅', correct: true, feedback: 'Так, це вона.' },
+        { label: 'інша картка', emoji: '❌', correct: false, feedback: 'Це не та картка. Спробуй ще раз.' },
+      ],
+    })
     else scenarioItems.push({ id: `scenario-${scenarioItems.length + 1}`, emoji: '💬', text: 'Опиши ситуацію', options: [
       { label: 'Правильна дія', correct: true, feedback: 'Так, це правильна дія.' },
       { label: 'Неправильна дія', correct: false, feedback: 'Спробуй обрати безпечнішу дію.' },
@@ -512,8 +528,10 @@ function openNarrativeEditor(mission: Mission | null, kind: NarrativeKind) {
     try {
       const value = collectNarrativeMission()
       const count = value.kind === 'sequence-game' ? value.config.sets.length
-        : value.kind === 'fact-opinion-game' ? value.config.statements.length : value.config.items.length
-      const noun = value.kind === 'sequence-game' ? 'наборів' : value.kind === 'fact-opinion-game' ? 'тверджень' : 'ситуацій'
+        : value.kind === 'fact-opinion-game' ? value.config.statements.length
+        : value.kind === 'click-trainer-game' ? value.config.rounds.length : value.config.items.length
+      const noun = value.kind === 'sequence-game' ? 'наборів' : value.kind === 'fact-opinion-game' ? 'тверджень'
+        : value.kind === 'click-trainer-game' ? 'раундів' : 'ситуацій'
       showModal(`${count} ${noun} · структура коректна`)
     } catch (err) { showModal((err as Error).message) }
   })
@@ -528,11 +546,21 @@ function renderNarrativeItems() {
   const list = editorOverlay.querySelector<HTMLElement>('.narrative-item-list')!
   list.innerHTML = ''
   const count = narrativeKind === 'sequence-game' ? sequenceSets.length
-    : narrativeKind === 'fact-opinion-game' ? factOpinionStatements.length : scenarioItems.length
+    : narrativeKind === 'fact-opinion-game' ? factOpinionStatements.length
+    : narrativeKind === 'click-trainer-game' ? clickTrainerRounds.length : scenarioItems.length
   for (let index = 0; index < count; index++) {
     const block = document.createElement('fieldset')
     block.className = 'lf-block narrative-item-block'
-    if (narrativeKind === 'fact-opinion-game') {
+    if (narrativeKind === 'click-trainer-game') {
+      const round = clickTrainerRounds[index]
+      block.innerHTML = `<div class="admin-section-header"><strong>Раунд ${index + 1}</strong><button type="button" class="btn-adm-ghost ni-remove">Видалити</button></div>
+        <div><label class="adm-label">Підказка дитині</label><input aria-label="Підказка раунду ${index + 1}" class="adm-input adm-input--sm ni-lead" value="${esc(round.lead)}"></div>
+        <div class="adm-form-grid">
+          <div><label class="adm-label">Ціль — назва</label><input aria-label="Назва цілі раунду ${index + 1}" class="adm-input adm-input--sm ni-target-label" value="${esc(round.target.label)}"></div>
+          <div><label class="adm-label">Ціль — символ</label><input aria-label="Символ цілі раунду ${index + 1}" class="adm-input adm-input--sm ni-target-emoji" value="${esc(round.target.emoji)}"></div>
+        </div>
+        <div><label class="adm-label">Картки: <code>так/ні | символ | підпис | фідбек</code></label><textarea aria-label="Картки раунду ${index + 1}" class="adm-input ni-lines" rows="6">${esc(round.options.map(option => `${option.correct ? 'так' : 'ні'} | ${option.emoji} | ${option.label} | ${option.feedback}`).join('\n'))}</textarea></div>`
+    } else if (narrativeKind === 'fact-opinion-game') {
       const statement = factOpinionStatements[index]
       block.innerHTML = `<div class="admin-section-header"><strong>Твердження ${index + 1}</strong><button type="button" class="btn-adm-ghost ni-remove">Видалити</button></div>
         <div class="adm-form-grid adm-form-grid--4">
@@ -579,6 +607,7 @@ function renderNarrativeItems() {
     block.querySelector<HTMLButtonElement>('.ni-remove')!.addEventListener('click', () => {
       if (narrativeKind === 'sequence-game') sequenceSets.splice(index, 1)
       else if (narrativeKind === 'fact-opinion-game') factOpinionStatements.splice(index, 1)
+      else if (narrativeKind === 'click-trainer-game') clickTrainerRounds.splice(index, 1)
       else scenarioItems.splice(index, 1)
       renderNarrativeItems()
     })
@@ -592,7 +621,7 @@ function nonEmptyLines(value: string, label: string): string[] {
   return lines
 }
 
-function collectNarrativeMission(): AdminSequenceMissionInput | AdminScenarioMissionInput | AdminFactOpinionMissionInput {
+function collectNarrativeMission(): AdminSequenceMissionInput | AdminScenarioMissionInput | AdminFactOpinionMissionInput | AdminClickTrainerMissionInput {
   if (!editorOverlay) throw new Error('Редактор закрито')
   const common = {
     id: editorMission?.id ?? editorOverlay.querySelector<HTMLInputElement>('.ne-id')!.value.trim(),
@@ -603,6 +632,23 @@ function collectNarrativeMission(): AdminSequenceMissionInput | AdminScenarioMis
   const gameKey = editorOverlay.querySelector<HTMLInputElement>('.ne-key')!.value.trim()
   const topic = editorOverlay.querySelector<HTMLInputElement>('.ne-topic')!.value.trim()
   const blocks = [...editorOverlay.querySelectorAll<HTMLElement>('.narrative-item-block')]
+  if (narrativeKind === 'click-trainer-game') {
+    const rounds = blocks.map((block, index) => ({
+      lead: block.querySelector<HTMLInputElement>('.ni-lead')!.value.trim(),
+      target: {
+        label: block.querySelector<HTMLInputElement>('.ni-target-label')!.value.trim(),
+        emoji: block.querySelector<HTMLInputElement>('.ni-target-emoji')!.value.trim(),
+      },
+      options: nonEmptyLines(block.querySelector<HTMLTextAreaElement>('.ni-lines')!.value, `Раунд ${index + 1}`).map(line => {
+        const parts = line.split('|').map(part => part.trim())
+        if (parts.length !== 4 || !['так', 'ні'].includes(parts[0].toLocaleLowerCase('uk-UA')) || !parts[1] || !parts[2] || !parts[3]) {
+          throw new Error(`Раунд ${index + 1}: формат картки — так/ні | символ | підпис | фідбек`)
+        }
+        return { correct: parts[0].toLocaleLowerCase('uk-UA') === 'так', emoji: parts[1], label: parts[2], feedback: parts[3] }
+      }),
+    }))
+    return { ...common, kind: 'click-trainer-game', config: { gameKey, ...(topic ? { topic } : {}), rounds } }
+  }
   if (narrativeKind === 'fact-opinion-game') {
     const statements = factOpinionStatements.map(statement => ({
       id: statement.id.trim(),

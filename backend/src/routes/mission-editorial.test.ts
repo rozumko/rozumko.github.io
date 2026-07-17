@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
-import { EDITABLE_MISSION_KINDS, missionPublishedSnapshot, normalizeEditableMission, normalizeFactOpinionConfig, normalizeQuestionSetConfig, normalizeQuestionSetMission, normalizeScenarioConfig, normalizeSequenceConfig, normalizeSimulatorConfig, normalizeSortingConfig } from './mission-editorial.js'
+import { EDITABLE_MISSION_KINDS, missionPublishedSnapshot, normalizeClickTrainerConfig, normalizeEditableMission, normalizeFactOpinionConfig, normalizeQuestionSetConfig, normalizeQuestionSetMission, normalizeScenarioConfig, normalizeSequenceConfig, normalizeSimulatorConfig, normalizeSortingConfig } from './mission-editorial.js'
 import { SIMULATOR_MECHANICS_CONTRACTS } from './simulator-contracts.js'
 
 const ids = [
@@ -135,6 +135,34 @@ test('fact-opinion packs require balanced categories and https-only sources', ()
     track: 'ai-basics', grade: 1, config: { gameKey: 'level1', statements },
   })
   assert.equal(mission.kind, 'fact-opinion-game')
+})
+
+test('click-trainer rounds require exactly one correct card and feedback everywhere', () => {
+  const round = {
+    lead: 'Знайди монітор.', target: { label: 'Покажи монітор', emoji: '🖥️' },
+    options: [
+      { label: 'монітор', emoji: '🖥️', correct: true, feedback: 'Так.' },
+      { label: 'миша', emoji: '🖱️', correct: false, feedback: 'Це миша.' },
+    ],
+  }
+  const config = normalizeClickTrainerConfig({ gameKey: 'computer-parts', rounds: [round, round] })
+  assert.equal(config.rounds.length, 2)
+  assert.throws(() => normalizeClickTrainerConfig({ gameKey: 'computer-parts', rounds: [round] }), /від 2 до 12/)
+  const doubleCorrect = {
+    ...round,
+    options: round.options.map(option => ({ ...option, correct: true })),
+  }
+  assert.throws(() => normalizeClickTrainerConfig({ gameKey: 'bad', rounds: [round, doubleCorrect] }), /рівно одну правильну/)
+  const missingFeedback = {
+    ...round,
+    options: [round.options[0], { ...round.options[1], feedback: '' }],
+  }
+  assert.throws(() => normalizeClickTrainerConfig({ gameKey: 'bad', rounds: [round, missingFeedback] }), /фідбек/)
+  const mission = normalizeEditableMission({
+    id: 'click-trainer-test', title: 'Клік-тренажер', kind: 'click-trainer-game',
+    track: 'informatics', grade: 1, config: { gameKey: 'computer-parts', rounds: [round, round] },
+  })
+  assert.equal(mission.kind, 'click-trainer-game')
 })
 
 test('simulator packs must mirror mechanics nodes and may use only allowlisted targets', () => {

@@ -1146,6 +1146,16 @@ export interface AdminFactOpinionMissionInput {
   id: string; title: string; kind: 'fact-opinion-game'; track: QuestionTrack; grade: number
   config: { gameKey: string; topic?: string; statements: AdminFactOpinionStatement[] }
 }
+export interface AdminClickTrainerOption { label: string; emoji: string; correct: boolean; feedback: string }
+export interface AdminClickTrainerRound {
+  lead: string
+  target: { label: string; emoji: string }
+  options: AdminClickTrainerOption[]
+}
+export interface AdminClickTrainerMissionInput {
+  id: string; title: string; kind: 'click-trainer-game'; track: QuestionTrack; grade: number
+  config: { gameKey: string; topic?: string; rounds: AdminClickTrainerRound[] }
+}
 export interface AdminSimulatorTextVariant { source: string; value: string }
 export interface AdminSimulatorTransition {
   slot: string
@@ -1165,7 +1175,7 @@ export interface AdminSimulatorMissionInput {
 }
 export type AdminEditableMissionInput = AdminQuestionSetMissionInput | AdminSortingMissionInput
   | AdminSequenceMissionInput | AdminScenarioMissionInput | AdminFactOpinionMissionInput
-  | AdminSimulatorMissionInput
+  | AdminClickTrainerMissionInput | AdminSimulatorMissionInput
 
 export function createAdminMission(data: AdminEditableMissionInput): Promise<{ mission: Mission }> {
   return authRequest('/api/admin/missions', { method: 'POST', body: JSON.stringify(data) })

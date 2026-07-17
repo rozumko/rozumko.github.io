@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { normalizeFactOpinionPack, normalizeScenarioPack, normalizeSequencePack } from './narrative-pack-loader.ts'
+import { normalizeClickTrainerPack, normalizeFactOpinionPack, normalizeScenarioPack, normalizeSequencePack } from './narrative-pack-loader.ts'
 
 test('sequence pack validates ordered unique steps', () => {
   assert.equal(normalizeSequencePack({ gameKey: 'demo', version: 1, sets: [{
@@ -18,6 +18,22 @@ test('scenario pack requires one correct option and complete feedback', () => {
   assert.equal(normalizeScenarioPack(base, 'demo')?.length, 1)
   base.items[0].options[1].correct = true
   assert.equal(normalizeScenarioPack(base, 'demo'), null)
+})
+
+test('click-trainer pack requires one correct card per round with full feedback', () => {
+  const round = {
+    lead: 'Знайди монітор.', target: { label: 'Покажи монітор', emoji: '🖥️' },
+    options: [
+      { label: 'монітор', emoji: '🖥️', correct: true, feedback: 'Так.' },
+      { label: 'миша', emoji: '🖱️', correct: false, feedback: 'Це миша.' },
+    ],
+  }
+  assert.equal(normalizeClickTrainerPack({ gameKey: 'demo', version: 1, rounds: [round, round] }, 'demo')?.length, 2)
+  assert.equal(normalizeClickTrainerPack({ gameKey: 'other', version: 1, rounds: [round, round] }, 'demo'), null)
+  const doubleCorrect = { ...round, options: round.options.map(option => ({ ...option, correct: true })) }
+  assert.equal(normalizeClickTrainerPack({ gameKey: 'demo', version: 1, rounds: [round, doubleCorrect] }, 'demo'), null)
+  const missingFeedback = { ...round, options: [round.options[0], { ...round.options[1], feedback: '' }] }
+  assert.equal(normalizeClickTrainerPack({ gameKey: 'demo', version: 1, rounds: [round, missingFeedback] }, 'demo'), null)
 })
 
 test('fact-opinion pack requires balanced categories and https-only sources', () => {

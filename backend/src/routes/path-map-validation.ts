@@ -48,6 +48,8 @@ const ACTIVITY_KINDS: Record<string, (a: Record<string, unknown>) => string | nu
   sorting: a => ['attributes', 'infosort', 'multisort'].includes(a.game as string)
     ? null : 'sorting: невідома гра',
   'fact-opinion': a => a.level === 1 || a.level === 2 ? null : 'fact-opinion: level має бути 1 або 2',
+  'click-trainer': a => a.game === 'computer-parts'
+    ? optionalCount(a.count) : 'click-trainer: невідома гра',
   simulator: a => a.scenario === 'hardware' || a.scenario === 'software'
     ? null : 'simulator: невідомий сценарій',
   mission: a => {

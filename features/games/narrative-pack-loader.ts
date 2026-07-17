@@ -1,3 +1,4 @@
+import type { ClickTrainerRound } from './click-trainer-data.js'
 import type { FoCategory, FoStatement } from './fact-opinion-game.js'
 import type { ScenarioItem } from './scenarios-data.js'
 import type { SequenceSet } from './sequence-data.js'
@@ -5,6 +6,7 @@ import type { SequenceSet } from './sequence-data.js'
 const sequenceCache = new Map<string, SequenceSet[]>()
 const scenarioCache = new Map<string, ScenarioItem[]>()
 const factOpinionCache = new Map<string, FoStatement[]>()
+const clickTrainerCache = new Map<string, ClickTrainerRound[]>()
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const FO_CATEGORIES: readonly FoCategory[] = ['fact', 'opinion', 'myth']
 
@@ -94,6 +96,38 @@ export function normalizeFactOpinionPack(raw: unknown, gameKey: string): FoState
   return statements
 }
 
+export function normalizeClickTrainerPack(raw: unknown, gameKey: string): ClickTrainerRound[] | null {
+  if (typeof raw !== 'object' || raw === null) return null
+  const pack = raw as Record<string, unknown>
+  if (pack.gameKey !== gameKey || !Number.isInteger(pack.version) || (pack.version as number) < 1
+    || !Array.isArray(pack.rounds) || pack.rounds.length < 2 || pack.rounds.length > 12) return null
+  const rounds: ClickTrainerRound[] = []
+  for (const rawRound of pack.rounds) {
+    if (typeof rawRound !== 'object' || rawRound === null) return null
+    const round = rawRound as Record<string, unknown>
+    const target = round.target as Record<string, unknown> | null
+    const lead = value(round.lead, 200)
+    if (!lead || typeof target !== 'object' || target === null) return null
+    const targetLabel = value(target.label, 80)
+    const targetEmoji = value(target.emoji, 16)
+    if (!targetLabel || !targetEmoji || !Array.isArray(round.options)
+      || round.options.length < 2 || round.options.length > 6) return null
+    const options: ClickTrainerRound['options'] = []
+    for (const rawOption of round.options) {
+      if (typeof rawOption !== 'object' || rawOption === null) return null
+      const option = rawOption as Record<string, unknown>
+      const label = value(option.label, 80)
+      const emoji = value(option.emoji, 16)
+      const feedback = value(option.feedback, 240)
+      if (!label || !emoji || !feedback || typeof option.correct !== 'boolean') return null
+      options.push({ label, emoji, correct: option.correct, feedback })
+    }
+    if (options.filter(option => option.correct).length !== 1) return null
+    rounds.push({ lead, target: { label: targetLabel, emoji: targetEmoji }, options })
+  }
+  return rounds
+}
+
 async function loadPack<T>(url: string, normalize: (raw: unknown) => T | null, fallback: T): Promise<T> {
   try {
     const response = await fetch(url)
@@ -124,4 +158,12 @@ export async function loadFactOpinionPack(gameKey: string, fallback: FoStatement
   const statements = await loadPack(`/content-packs/fact-opinion-${encodeURIComponent(gameKey)}.json`, raw => normalizeFactOpinionPack(raw, gameKey), fallback)
   if (statements !== fallback) factOpinionCache.set(gameKey, statements)
   return statements
+}
+
+export async function loadClickTrainerPack(gameKey: string, fallback: ClickTrainerRound[]): Promise<ClickTrainerRound[]> {
+  const cached = clickTrainerCache.get(gameKey)
+  if (cached) return cached
+  const rounds = await loadPack(`/content-packs/click-trainer-${encodeURIComponent(gameKey)}.json`, raw => normalizeClickTrainerPack(raw, gameKey), fallback)
+  if (rounds !== fallback) clickTrainerCache.set(gameKey, rounds)
+  return rounds
 }

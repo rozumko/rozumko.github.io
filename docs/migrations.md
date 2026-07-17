@@ -146,6 +146,10 @@ level 2: fact/opinion/myth) as editable `fact-opinion-game` missions. Initial
 published snapshots point to bundled content; the first admin edit imports the
 statement list into the database as a draft.
 
+Migration `0043` registers the grade-1 click-trainer (find and click the right
+card) as an editable `click-trainer-game` mission using the same
+`legacyBundledContent` seed pattern.
+
 `GET /ready` and `GET /ping` perform the same check. Migration drift returns
 HTTP `503` with `{ "status": "error", "db": "migration_required" }` without
 exposing migration names or timestamps.

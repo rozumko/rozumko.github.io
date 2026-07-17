@@ -4,7 +4,8 @@ import { SIMULATOR_MECHANICS_CONTRACTS } from './simulator-contracts.js'
 export const MISSION_EDITORIAL_STATUSES = ['draft', 'review', 'published', 'archived'] as const
 // Single source of truth for every kind the editorial routes accept.
 export const EDITABLE_MISSION_KINDS = [
-  'question-set', 'sorting-game', 'sequence-game', 'scenario-game', 'fact-opinion-game', 'simulator-game',
+  'question-set', 'sorting-game', 'sequence-game', 'scenario-game', 'fact-opinion-game',
+  'click-trainer-game', 'simulator-game',
 ] as const
 export type MissionEditorialStatus = (typeof MISSION_EDITORIAL_STATUSES)[number]
 export type MissionSetPurpose = 'practice' | 'apply' | 'confirm'
@@ -72,6 +73,20 @@ export interface NormalizedScenarioMissionInput {
   grade: number
   config: { gameKey: string; topic?: string; items: ScenarioContentItem[] }
 }
+export interface ClickTrainerOptionContent { label: string; emoji: string; correct: boolean; feedback: string }
+export interface ClickTrainerRoundContent {
+  lead: string
+  target: { label: string; emoji: string }
+  options: ClickTrainerOptionContent[]
+}
+export interface NormalizedClickTrainerMissionInput {
+  id: string
+  title: string
+  kind: 'click-trainer-game'
+  track: QuestionTrack
+  grade: number
+  config: { gameKey: string; topic?: string; rounds: ClickTrainerRoundContent[] }
+}
 export const FACT_OPINION_CATEGORIES = ['fact', 'opinion', 'myth'] as const
 export type FactOpinionCategory = (typeof FACT_OPINION_CATEGORIES)[number]
 export interface FactOpinionStatementContent {
@@ -106,7 +121,7 @@ export interface NormalizedSimulatorMissionInput {
 }
 export type NormalizedMissionInput = NormalizedQuestionSetMissionInput | NormalizedSortingMissionInput
   | NormalizedSequenceMissionInput | NormalizedScenarioMissionInput | NormalizedFactOpinionMissionInput
-  | NormalizedSimulatorMissionInput
+  | NormalizedClickTrainerMissionInput | NormalizedSimulatorMissionInput
 
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -410,6 +425,48 @@ export function normalizeFactOpinionConfig(raw: unknown): NormalizedFactOpinionM
   return out
 }
 
+export function normalizeClickTrainerConfig(raw: unknown): NormalizedClickTrainerMissionInput['config'] {
+  if (typeof raw !== 'object' || raw === null) throw new Error('config має бути обʼєктом')
+  const config = raw as Record<string, unknown>
+  if (!Array.isArray(config.rounds) || config.rounds.length < 2 || config.rounds.length > 12) {
+    throw new Error('Тренажер має містити від 2 до 12 раундів')
+  }
+  const rounds = config.rounds.map((rawRound, index): ClickTrainerRoundContent => {
+    if (typeof rawRound !== 'object' || rawRound === null) throw new Error(`Раунд ${index + 1}: невалідний формат`)
+    const round = rawRound as Record<string, unknown>
+    const target = round.target as Record<string, unknown> | null
+    if (typeof target !== 'object' || target === null) throw new Error(`Раунд ${index + 1}: потрібна цільова картка`)
+    if (!Array.isArray(round.options) || round.options.length < 2 || round.options.length > 6) {
+      throw new Error(`Раунд ${index + 1}: від 2 до 6 карток вибору`)
+    }
+    const options = round.options.map((rawOption, optionIndex): ClickTrainerOptionContent => {
+      if (typeof rawOption !== 'object' || rawOption === null) throw new Error(`Раунд ${index + 1}, картка ${optionIndex + 1}: невалідний формат`)
+      const option = rawOption as Record<string, unknown>
+      if (typeof option.correct !== 'boolean') throw new Error(`Раунд ${index + 1}, картка ${optionIndex + 1}: correct має бути boolean`)
+      return {
+        label: requiredString(option.label, `Раунд ${index + 1}, картка ${optionIndex + 1}: підпис`, 80),
+        emoji: requiredString(option.emoji, `Раунд ${index + 1}, картка ${optionIndex + 1}: символ`, 16),
+        correct: option.correct,
+        feedback: requiredString(option.feedback, `Раунд ${index + 1}, картка ${optionIndex + 1}: фідбек`, 240),
+      }
+    })
+    if (options.filter(option => option.correct).length !== 1) {
+      throw new Error(`Раунд ${index + 1} повинен мати рівно одну правильну картку`)
+    }
+    return {
+      lead: requiredString(round.lead, `Раунд ${index + 1}: підказка`, 200),
+      target: {
+        label: requiredString(target.label, `Раунд ${index + 1}: назва цілі`, 80),
+        emoji: requiredString(target.emoji, `Раунд ${index + 1}: символ цілі`, 16),
+      },
+      options,
+    }
+  })
+  const out: NormalizedClickTrainerMissionInput['config'] = { gameKey: normalizeGameKey(config.gameKey), rounds }
+  if (config.topic !== undefined && config.topic !== null && config.topic !== '') out.topic = requiredString(config.topic, 'topic', 80)
+  return out
+}
+
 export function normalizeQuestionSetMission(raw: unknown): NormalizedQuestionSetMissionInput {
   if (typeof raw !== 'object' || raw === null) throw new Error('Невалідне тіло місії')
   const body = raw as Record<string, unknown>
@@ -447,6 +504,7 @@ export function normalizeEditableMission(raw: unknown): NormalizedMissionInput {
   if (body.kind === 'sequence-game') return { ...common, kind: 'sequence-game', config: normalizeSequenceConfig(body.config) }
   if (body.kind === 'scenario-game') return { ...common, kind: 'scenario-game', config: normalizeScenarioConfig(body.config) }
   if (body.kind === 'fact-opinion-game') return { ...common, kind: 'fact-opinion-game', config: normalizeFactOpinionConfig(body.config) }
+  if (body.kind === 'click-trainer-game') return { ...common, kind: 'click-trainer-game', config: normalizeClickTrainerConfig(body.config) }
   return { ...common, kind: 'simulator-game', config: normalizeSimulatorConfig(body.config) }
 }
 
