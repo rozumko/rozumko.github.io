@@ -701,7 +701,7 @@ test('teacher school-game form stays accessible on a phone', async ({ page }) =>
 })
 
 test('teacher lobby keeps the game code and QR card contained on desktop', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.setViewportSize({ width: 1366, height: 768 })
   await openTeacherDashboard(page)
   await page.locator('#school-create-btn').click()
   await expect(page.locator('#school-join-qr')).toHaveAttribute('data-ready', 'true')
@@ -724,6 +724,43 @@ test('teacher lobby keeps the game code and QR card contained on desktop', async
   expect(metrics.codeContained).toBe(true)
   expect(metrics.cardsAligned).toBeLessThan(2)
   expect(metrics.accessContained).toBe(true)
+
+  const actionMetrics = await page.locator('.school-live__join-info').evaluate(joinInfo => {
+    const linkRow = joinInfo.querySelector<HTMLElement>('.school-live__link-row')!.getBoundingClientRect()
+    const actions = joinInfo.querySelector<HTMLElement>('.school-live__actions')!.getBoundingClientRect()
+    const start = joinInfo.querySelector<HTMLElement>('#school-start-btn')!.getBoundingClientRect()
+    const cancel = joinInfo.querySelector<HTMLElement>('#school-cancel-btn')!.getBoundingClientRect()
+    return {
+      actionsBelowLink: actions.top > linkRow.bottom,
+      actionsContained: actions.left >= joinInfo.getBoundingClientRect().left && actions.right <= joinInfo.getBoundingClientRect().right,
+      actionsVisible: Math.max(start.bottom, cancel.bottom) <= window.innerHeight,
+    }
+  })
+  expect(actionMetrics).toEqual({ actionsBelowLink: true, actionsContained: true, actionsVisible: true })
+
+  await page.locator('#school-join-qr-open').click()
+  const dialogMetrics = await page.locator('.school-qr-dialog__card').evaluate(card => {
+    const hint = card.querySelector<HTMLElement>('.school-qr-dialog__hint')!.getBoundingClientRect()
+    const cardBox = card.getBoundingClientRect()
+    return {
+      noInternalScroll: card.scrollHeight <= card.clientHeight,
+      hintContained: hint.top >= cardBox.top && hint.bottom <= cardBox.bottom,
+      cardContained: cardBox.top >= 0 && cardBox.bottom <= window.innerHeight,
+    }
+  })
+  expect(dialogMetrics).toEqual({ noInternalScroll: true, hintContained: true, cardContained: true })
+
+  await page.setViewportSize({ width: 1920, height: 1080 })
+  const wideDialogMetrics = await page.locator('.school-qr-dialog__card').evaluate(card => {
+    const hint = card.querySelector<HTMLElement>('.school-qr-dialog__hint')!.getBoundingClientRect()
+    const cardBox = card.getBoundingClientRect()
+    return {
+      noInternalScroll: card.scrollHeight <= card.clientHeight,
+      hintContained: hint.top >= cardBox.top && hint.bottom <= cardBox.bottom,
+      cardContained: cardBox.top >= 0 && cardBox.bottom <= window.innerHeight,
+    }
+  })
+  expect(wideDialogMetrics).toEqual({ noInternalScroll: true, hintContained: true, cardContained: true })
 })
 
 test('teacher can start an accessible projector game from the default screen', async ({ page }) => {
