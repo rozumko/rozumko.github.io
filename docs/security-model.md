@@ -1,6 +1,6 @@
 # Security Model - Rozumko
 
-_Updated: 2026-07-10_
+_Updated: 2026-07-17_
 
 > **Implementation status legend.**
 >
@@ -10,7 +10,7 @@ _Updated: 2026-07-10_
 >   **before** the feature code. Nothing enforces them today because the
 >   feature does not exist.
 >
-> As of _2026-07-10_ the enforced surfaces are the **official olympiad flow**,
+> As of _2026-07-17_ the enforced surfaces are the **official olympiad flow**,
 > **teacher/admin auth**, **School Mode** (self-serve missions and the
 > anonymous classroom game), the **Home demo/lead slice** (consent-gated
 > demo attempts and reports), the **entitlement model** (backend access state,
@@ -172,6 +172,18 @@ This reduces persistence but does not remove XSS exposure: script execution in
 the teacher origin can still read `sessionStorage`. HttpOnly backend sessions
 or a stricter in-memory-only browser session remain a future hardening item.
 
+Redirect-based teacher and parent auth uses S256 PKCE. Signup, password
+recovery and Google OAuth callbacks accept only a `?code=` that is exchanged
+with the locally generated verifier; raw access/refresh tokens in URL fragments
+are rejected even if the fragment claims a trusted flow type. The temporary
+verifier and flow marker may use origin-scoped `localStorage` so an email link
+can open in another tab, but they contain no bearer credentials, expire after
+15 minutes for OAuth or 24 hours for email flows, and are deleted after a
+successful exchange. Password login and successful callback exchange force a
+full document reload before private API calls or dashboard rendering. A
+document holding a Supabase session never loads Turnstile; the third-party
+script is limited to the unauthenticated credential-grant document.
+
 ## Database And RLS
 
 The backend is the only component that accesses application tables. Migration
@@ -230,7 +242,7 @@ Account/profile deletion stays fail-closed until a retention policy is approved.
 - A parent authenticates with Supabase Auth. The JWT proves the Supabase user
   identity only; `GET /api/parent/me` reads account status and ownership from
   the application database. Parent authorization must not use JWT role claims
-  or the teacher/admin `app_users` auto-provisioning path.
+  or the teacher/admin `app_users` authorization path.
 - A child never receives Supabase Auth credentials and never registers an
   account. The parent creates a minimal profile containing only a display name
   and grade after recording the applicable consent.
@@ -239,6 +251,16 @@ Account/profile deletion stays fail-closed until a retention policy is approved.
   profile ID is routing context, not authorization; every API request still
   verifies ownership. As with teacher sessions, XSS can read `sessionStorage`,
   so an HttpOnly backend-session design remains a future hardening option.
+- Parent signup, recovery and Google OAuth follow the shared S256 PKCE callback
+  rules above. Email links must redirect to `parent.html`; they never deliver
+  bearer tokens in the URL.
+- Parent registration is directly discoverable through
+  `parent.html?mode=register`; the mode is consumed and removed from the URL
+  before the auth form continues.
+- The admin parent directory requires `requireAdmin` and exposes only adult
+  email, database status, email-verification state, account creation date and
+  aggregate child-profile count. It excludes child display names, grades,
+  progress, reports and Supabase auth identifiers.
 - Every parent route that reads or mutates a child profile accepts an explicit
   UUID `childProfileId`, validates it before database access, and verifies that
   the profile belongs to `req.parent.id`. A valid UUID without ownership
@@ -403,8 +425,9 @@ Frontend production build:
 
 - CSP is injected by `vite.config.ts`.
 - Normal pages allow scripts only from the application origin.
-- The teacher registration page loads the Turnstile widget lazily only for the
-  unauthenticated registration flow.
+- Teacher and parent auth pages load Turnstile lazily only for unauthenticated
+  signup, password-login and password-recovery grants. Authenticated callback
+  and dashboard documents never load the widget.
 - Inline handlers are not allowed on normal pages.
 - The static offline page has a narrow documented exception for its offline script.
 - GitHub Pages cannot enforce HTTP `frame-ancestors`. The frontend therefore
@@ -590,9 +613,14 @@ MVP/free-tier pilot blockers:
 - [x] Keep teacher self-registration enabled for the pilot with email
       confirmation, administrator approval and Turnstile bot protection.
 - [ ] Supabase Auth -> Bot and Abuse Protection: Turnstile is enabled and
-      enforced for signup.
+      enforced for signup, password login and password recovery.
 - [ ] Supabase Auth -> Rate Limits: review password login and signup limits
       using the controls available on the current Supabase plan.
+- [ ] Supabase Auth -> URL Configuration: allow only the exact production
+      `teacher.html` and `parent.html` callback URLs (plus explicit local/staging
+      URLs while needed); do not add a broad wildcard redirect.
+- [ ] Supabase Auth -> Providers: Google is enabled only when its OAuth client
+      and exact callback/redirect configuration have been reviewed.
 - [ ] Supabase Database: apply migration `0028` and verify RLS is enabled on
       application tables with no browser-facing permissive policies. Before
       applying `0028`, verify the backend `DATABASE_URL` role owns application

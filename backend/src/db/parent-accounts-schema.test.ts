@@ -74,10 +74,9 @@ test('міграція 0029 зареєстрована в журналі піс�
   assert.equal(entry!.idx, 29)
 })
 
-test('parent-зона не торкається teacher/admin auto-provisioning (app_users)', () => {
-  // Зріз 3 увімкнув /api/parent. Межа довіри лишається: батьківська
-  // авторизація не має імпортувати app_users чи lib/auth.ts (auto-provision
-  // вчителя). Порушення = змішування ідентичностей — security-model.md.
+test('parent authorization stays isolated from teacher/admin app_users', () => {
+  // Parent routes must not import app_users or the teacher/admin auth module;
+  // crossing this boundary would mix separate identity domains.
   for (const file of ['../routes/parent.ts', '../lib/parent-auth.ts']) {
     const src = readFileSync(join(__dirname, file), 'utf8')
     assert.ok(!/appUsers/.test(src), `${file} не має торкатися app_users`)

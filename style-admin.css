@@ -324,7 +324,8 @@
 .event-card,
 .question-item,
 .admin-result-row,
-.admin-teacher-row {
+.admin-teacher-row,
+.admin-parent-row {
   background: var(--adm-surface);
   border: 1px solid var(--adm-border);
   border-radius: var(--r-xl);
@@ -448,7 +449,8 @@
 
 /* ── Result / teacher row ────────────────────────────────────── */
 .admin-result-row,
-.admin-teacher-row {
+.admin-teacher-row,
+.admin-parent-row {
   padding: var(--sp-4);
   display: flex;
   align-items: center;
@@ -464,6 +466,7 @@
 .admin-row__actions { display: flex; flex-direction: column; align-items: flex-end; gap: var(--sp-2); }
 .badge--blocked { background: #fee2e2; color: #991b1b; border-radius: 4px; padding: 1px 6px; font-size: var(--font-size-xs); font-weight: 600; }
 .badge--pending { background: #fef9c3; color: #92400e; border-radius: 4px; padding: 1px 6px; font-size: var(--font-size-xs); font-weight: 600; }
+.badge--active { background: #dcfce7; color: #166534; border-radius: 4px; padding: 1px 6px; font-size: var(--font-size-xs); font-weight: 600; }
 
 /* ── Loading state in question list ─────────────────────────── */
 .admin-loading-text { color: var(--adm-text-muted); font-size: var(--font-size-sm); padding: var(--sp-4); }

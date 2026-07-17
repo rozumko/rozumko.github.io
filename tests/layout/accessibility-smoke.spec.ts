@@ -129,9 +129,11 @@ async function openAdminDashboard(page: Page) {
       const body = path === '/api/teacher/me'
         ? { id: 'admin-1', authUserId: 'auth-admin-1', role: 'admin', name: 'Test Admin' }
         : path === '/api/admin/stats'
-          ? { teachers: 0, codes: 0, results: 0, events: 0 }
+          ? { teachers: 0, parents: 0, codes: 0, results: 0, events: 0 }
           : path === '/api/admin/teachers'
             ? { teachers: [] }
+          : path === '/api/admin/parents'
+            ? { parents: [] }
           : path === '/api/admin/results'
               ? {
                   results: [{

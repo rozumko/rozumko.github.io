@@ -139,33 +139,13 @@
         </section>
 
         <section id="parent-signup">
-          <h2 class="doc-h2">Отримати нагадування</h2>
+          <h2 class="doc-h2">Створити батьківський акаунт</h2>
           <div class="doc-highlight doc-highlight--sky">
-            <p class="doc-highlight__heading">🏠 Домашній режим — незабаром</p>
-            <p>Залиште email — і ми повідомимо, коли відкриється повний домашній доступ із персональними звітами й регулярними місіями для вашої дитини.</p>
-            <form id="parent-signup-form" class="parent-signup-form" novalidate>
-              <div class="parent-signup-row">
-                <label for="signup-email" class="sr-only">Ваш email</label>
-                <input type="email" id="signup-email" class="signup-input"
-                       placeholder="Ваш email" autocomplete="email" maxlength="254" />
-                <label for="signup-grade" class="sr-only">Клас дитини</label>
-                <select id="signup-grade" class="signup-input">
-                  <option value="">Клас дитини</option>
-                  <option value="1">1 клас</option>
-                  <option value="2">2 клас</option>
-                  <option value="3">3 клас</option>
-                  <option value="4">4 клас</option>
-                </select>
-              </div>
-              <label class="signup-consent">
-                <input id="signup-consent" type="checkbox" />
-                <span>Я погоджуюся отримувати листи від Розумко та даю згоду на обробку email відповідно до <a href="privacy.html" class="doc-link">Політики конфіденційності</a>.</span>
-              </label>
-              <button type="submit" class="signup-btn">Повідомити мене</button>
-              <p id="signup-error" class="signup-error" aria-live="polite"></p>
-            </form>
-            <div id="signup-success" class="signup-success hidden">
-              ✓ Дякуємо! Ми напишемо, коли повний домашній режим відкриється.
+            <p class="doc-highlight__heading">🏠 Домашній кабінет уже доступний</p>
+            <p>Створіть акаунт дорослого, підтвердьте email і додайте окремий мінімальний профіль для кожної дитини.</p>
+            <div class="doc-btn-row">
+              <a href="parent.html?mode=register" class="doc-btn doc-btn--sky">Створити акаунт</a>
+              <a href="parent.html" class="doc-btn doc-btn--slate">Увійти</a>
             </div>
           </div>
         </section>
@@ -185,6 +165,5 @@
 
   <div id="site-footer"></div>
   <script type="module" src="layout.js"></script>
-  <script type="module" src="for-parents.js"></script>
 </body>
 </html>

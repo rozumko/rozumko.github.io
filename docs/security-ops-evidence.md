@@ -1,6 +1,6 @@
 # Security Operations Evidence
 
-_Updated: 2026-07-07_
+_Updated: 2026-07-17_
 
 Use this checklist as the source-of-truth template for security evidence before
 a pilot or production event. Do not commit screenshots, secrets, tokens,
@@ -12,7 +12,8 @@ from this repository.
 
 For the current MVP, treat these controls as **blocking before a public pilot**:
 
-- Supabase Auth Turnstile enforcement for teacher signup.
+- Supabase Auth Turnstile enforcement for signup, password login and recovery.
+- Exact teacher/parent redirect allowlists and reviewed Google provider setup.
 - Supabase Auth rate-limit review, documented with the limits available on the
   current plan.
 - Database migrations applied through `0028`, with the backend database role
@@ -52,9 +53,11 @@ backlog before higher traffic, paid campaigns or production-grade operations:
 |---|---|---|---|
 | Email confirmation | Enabled for teacher signup | Auth settings screenshot or export |  |
 | Teacher approval | New teachers remain pending until admin approval | Signup test result showing `ACCOUNT_PENDING` |  |
-| Turnstile | Bot and Abuse Protection enforces Turnstile for signup | Supabase Auth setting and failed signup without token |  |
+| Turnstile | Bot and Abuse Protection enforces Turnstile for signup, password login and password recovery | Supabase Auth setting and failed grants without a token |  |
 | Signup rate limits | Reviewed and appropriate for pilot traffic | Auth rate-limit settings screenshot/export |  |
 | Password login rate limits | Reviewed and appropriate for pilot traffic | Auth rate-limit settings screenshot/export |  |
+| Redirect allowlist | Exact production `teacher.html` and `parent.html` URLs are allowed; only explicit local/staging URLs are added temporarily and no broad wildcard is present | Redacted URL Configuration screenshot/export |  |
+| Google provider | Enabled only if the OAuth client and exact callback/redirect URLs have been reviewed | Redacted provider configuration and successful PKCE login result |  |
 | Stale users | Pending/blocked teacher accounts reviewed | Count and removal/retention decision |  |
 
 ## Supabase Database
@@ -132,4 +135,5 @@ curl.exe -i https://rozumko-github-io.onrender.com/ping
 | Rate limit | Repeated invalid-code attempts return `429` | Smoke output, run off-peak/staging |  |
 | Answer keys | Public/demo/official responses expose no answer keys | Network capture or smoke output |  |
 | Teacher session | Refresh works, session is tab-scoped, `localStorage.teacher_session` is absent, and residual XSS exposure of `sessionStorage` is accepted for MVP | Browser storage screenshot after login |  |
+| Redirect auth | Teacher and parent callbacks use `?code=` PKCE, reject bearer fragments, clean the URL, and load no Turnstile script after a session exists | Browser/network capture with tokens redacted |  |
 | Incident contacts | Operator has current incident contacts | Private contact list location |  |

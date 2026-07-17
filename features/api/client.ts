@@ -1,3 +1,11 @@
+import {
+  beginPkce,
+  clearPendingPkce,
+  readPendingPkce,
+  type AuthRedirectFlow,
+  type AuthSurface,
+} from '../auth/pkce.js'
+
 const ENV: Partial<ImportMetaEnv> = import.meta.env ?? {}
 const API_URL = ENV.VITE_API_URL || 'https://rozumko-github-io.onrender.com'
 const SUPABASE_URL = ENV.VITE_SUPABASE_URL || 'https://ivcufigpmamgkfxwulzl.supabase.co'
@@ -658,11 +666,17 @@ export async function loginParent(email: string, password: string, captchaToken?
     email: data.user?.email ?? email,
     activeChildProfileId: null,
   })
-  await registerParentAccount()
 }
 
 export async function registerParentAuth(email: string, password: string, captchaToken?: string): Promise<void> {
-  const body: Record<string, unknown> = { email, password, data: { account_type: 'parent' } }
+  const { codeChallenge, codeChallengeMethod } = await beginPkce('parent', 'signup')
+  const body: Record<string, unknown> = {
+    email,
+    password,
+    data: { account_type: 'parent' },
+    code_challenge: codeChallenge,
+    code_challenge_method: codeChallengeMethod,
+  }
   if (captchaToken) body.gotrue_meta_security = { captcha_token: captchaToken }
   const redirect = typeof window !== 'undefined' ? `${window.location.origin}/parent.html` : ''
   const query = redirect ? `?redirect_to=${encodeURIComponent(redirect)}` : ''
@@ -672,7 +686,10 @@ export async function registerParentAuth(email: string, password: string, captch
     body: JSON.stringify(body),
   })
   const data = await res.json()
-  if (!res.ok) throw new Error(data.error_description ?? data.msg ?? 'Помилка реєстрації')
+  if (!res.ok) {
+    clearPendingPkce('parent')
+    throw new Error(data.error_description ?? data.msg ?? 'Помилка реєстрації')
+  }
 }
 
 export async function logoutParent(): Promise<void> {
@@ -689,12 +706,21 @@ export async function logoutParent(): Promise<void> {
 // ─── Shared Supabase Auth helpers (teacher + parent) ────────────────────────
 
 /**
- * Requests a password-recovery email. Supabase redirects the user back to
- * `redirectPath` with #access_token=...&type=recovery in the URL hash.
- * CAPTCHA token goes via gotrue_meta_security (same contract as signup).
+ * Requests a password-recovery email for an S256 PKCE flow. Supabase redirects
+ * back with a one-time code; CAPTCHA uses the signup body contract.
  */
-export async function requestPasswordReset(email: string, redirectPath: string, captchaToken?: string): Promise<void> {
-  const body: Record<string, unknown> = { email }
+export async function requestPasswordReset(
+  email: string,
+  redirectPath: string,
+  surface: AuthSurface,
+  captchaToken?: string,
+): Promise<void> {
+  const { codeChallenge, codeChallengeMethod } = await beginPkce(surface, 'recovery')
+  const body: Record<string, unknown> = {
+    email,
+    code_challenge: codeChallenge,
+    code_challenge_method: codeChallengeMethod,
+  }
   if (captchaToken) body.gotrue_meta_security = { captcha_token: captchaToken }
   const redirect = typeof window !== 'undefined' ? `${window.location.origin}/${redirectPath}` : ''
   const query = redirect ? `?redirect_to=${encodeURIComponent(redirect)}` : ''
@@ -704,6 +730,7 @@ export async function requestPasswordReset(email: string, redirectPath: string, 
     body: JSON.stringify(body),
   })
   if (!res.ok) {
+    clearPendingPkce(surface)
     const data = await res.json().catch(() => ({}))
     throw new Error(data.error_description ?? data.msg ?? 'Не вдалося надіслати лист відновлення')
   }
@@ -727,13 +754,52 @@ export async function updateAuthPassword(accessToken: string, newPassword: strin
 }
 
 /**
- * URL for Google OAuth sign-in via Supabase. Requires the Google provider to be
- * enabled in Supabase Dashboard and redirectPath origin to be in the Redirect URLs
- * allowlist. Tokens come back in the URL hash (implicit flow, no `type` param).
+ * URL for Google OAuth sign-in via Supabase PKCE. The callback receives a
+ * single-use authorization code; bearer tokens from URL fragments are rejected.
  */
-export function googleSignInUrl(redirectPath: string): string {
+export async function googleSignInUrl(redirectPath: string, surface: AuthSurface): Promise<string> {
+  const { codeChallenge, codeChallengeMethod } = await beginPkce(surface, 'oauth')
   const redirect = `${window.location.origin}/${redirectPath}`
-  return `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirect)}`
+  const query = new URLSearchParams({
+    provider: 'google',
+    redirect_to: redirect,
+    code_challenge: codeChallenge,
+    code_challenge_method: codeChallengeMethod,
+  })
+  return `${SUPABASE_URL}/auth/v1/authorize?${query.toString()}`
+}
+
+export interface AuthCodeExchange {
+  accessToken: string
+  refreshToken: string
+  email: string
+  flow: AuthRedirectFlow
+}
+
+/** Exchanges a PKCE code only when this browser initiated the matching flow. */
+export async function exchangeAuthCode(surface: AuthSurface, authCode: string): Promise<AuthCodeExchange> {
+  const pending = readPendingPkce(surface)
+  if (!pending) {
+    throw new Error('Запит на вхід не знайдено або він застарів. Почніть вхід ще раз.')
+  }
+
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=pkce`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+    body: JSON.stringify({ auth_code: authCode, code_verifier: pending.verifier }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok || typeof data.access_token !== 'string' || typeof data.refresh_token !== 'string') {
+    throw new Error(data.error_description ?? data.msg ?? 'Не вдалося завершити безпечний вхід')
+  }
+
+  clearPendingPkce(surface)
+  return {
+    accessToken: data.access_token,
+    refreshToken: data.refresh_token,
+    email: typeof data.user?.email === 'string' ? data.user.email : '',
+    flow: pending.flow,
+  }
 }
 
 // ─── Teacher Auth (Supabase) ───────────────────────────────────────────────
@@ -759,10 +825,16 @@ export async function loginTeacher(email: string, password: string, captchaToken
 }
 
 export async function registerTeacher(email: string, password: string, school?: string, captchaToken?: string): Promise<any> {
-  // CAPTCHA-токен GoTrue читає САМЕ з gotrue_meta_security.captcha_token (перевірено
-  // проти живого Auth API). Плоский captcha_token ігнорується → "no captcha_token found".
-  // У supabase-js цей же шлях відповідає options.captchaToken.
-  const body: Record<string, unknown> = { email, password, data: { school: school || '' } }
+  // GoTrue reads CAPTCHA from gotrue_meta_security.captcha_token, matching
+  // supabase-js options.captchaToken; a top-level captcha_token is ignored.
+  const { codeChallenge, codeChallengeMethod } = await beginPkce('teacher', 'signup')
+  const body: Record<string, unknown> = {
+    email,
+    password,
+    data: { school: school || '' },
+    code_challenge: codeChallenge,
+    code_challenge_method: codeChallengeMethod,
+  }
   if (captchaToken) body.gotrue_meta_security = { captcha_token: captchaToken }
   // Confirmation email should land back on the teacher cabinet, not the Site URL.
   const redirect = typeof window !== 'undefined' ? `${window.location.origin}/teacher.html` : ''
@@ -773,10 +845,12 @@ export async function registerTeacher(email: string, password: string, school?: 
     body: JSON.stringify(body),
   })
   const data = await res.json()
-  if (!res.ok) throw new Error(data.error_description ?? data.msg ?? 'Помилка реєстрації')
-  // Не зберігаємо сесію під час signup: на сторінці реєстрації виконується
-  // сторонній Turnstile JS. Після підтвердження email користувач входить окремо
-  // на чисто перезавантаженій сторінці без зовнішнього скрипта.
+  if (!res.ok) {
+    clearPendingPkce('teacher')
+    throw new Error(data.error_description ?? data.msg ?? 'Помилка реєстрації')
+  }
+  // Signup never stores a session in the Turnstile document. The confirmation
+  // callback exchanges its PKCE code, then reloads before authenticated work.
   return data
 }
 
@@ -1025,8 +1099,20 @@ export function getSchoolSession(id: string): Promise<{ session: SchoolSessionIn
 
 // ─── Admin API ─────────────────────────────────────────────────────────────
 
-export function getAdminStats(): Promise<{ teachers: number; codes: number; results: number; events?: number }> {
+export function getAdminStats(): Promise<{ teachers: number; parents?: number; codes: number; results: number; events?: number }> {
   return authRequest('/api/admin/stats')
+}
+
+export interface AdminParentSummary {
+  email: string
+  status: string
+  emailVerified: boolean
+  profileCount: number
+  createdAt: string | null
+}
+
+export function getAdminParents(): Promise<{ parents: AdminParentSummary[] }> {
+  return authRequest('/api/admin/parents')
 }
 
 export function getAdminTeachers(): Promise<{ teachers: { id: string; email: string; name: string | null; status: string; createdAt: string }[] }> {

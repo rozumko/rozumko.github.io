@@ -1,4 +1,4 @@
-import { createRemoteJWKSet, jwtVerify } from 'jose'
+import { createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey } from 'jose'
 import { eq } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { appUsers } from '../db/schema.js'
@@ -12,31 +12,40 @@ interface SupabaseJwtPayload {
   user_metadata?: { school?: string; name?: string }
 }
 
-const JWKS = createRemoteJWKSet(
-  new URL(`${process.env.SUPABASE_URL}/auth/v1/.well-known/jwks.json`)
-)
+export interface SupabaseIdentity {
+  authUserId: string
+  email: string
+}
 
 /**
  * Verifies the Supabase JWT and returns the identity, or null.
  * Shared by requireAuth and the explicit teacher register-request route.
  */
-export async function verifySupabaseIdentity(
-  header: string | undefined,
-): Promise<{ authUserId: string; email: string } | null> {
-  if (!header?.startsWith('Bearer ')) return null
-  try {
-    const { payload: raw } = await jwtVerify(header.slice(7), JWKS, {
-      issuer:     `${process.env.SUPABASE_URL}/auth/v1`,
-      audience:   'authenticated',  // service/anon-key tokens carry a different aud
-      algorithms: ['ES256'],  // явно забороняємо alg:none та HMAC downgrade
-    })
-    const payload = raw as SupabaseJwtPayload
-    // Fail closed: anonymous sign-ins must never reach app_users.
-    if (!payload.sub || payload.is_anonymous === true) return null
-    return { authUserId: payload.sub, email: payload.email ?? '' }
-  } catch {
-    return null
+export function createSupabaseIdentityVerifier(getKey: JWTVerifyGetKey) {
+  return async (header: string | undefined): Promise<SupabaseIdentity | null> => {
+    if (!header?.startsWith('Bearer ')) return null
+    try {
+      const { payload: raw } = await jwtVerify(header.slice(7), getKey, {
+        issuer:     `${process.env.SUPABASE_URL}/auth/v1`,
+        audience:   'authenticated',
+        algorithms: ['ES256'],
+      })
+      const payload = raw as SupabaseJwtPayload
+      if (!payload.sub || payload.is_anonymous === true) return null
+      return { authUserId: payload.sub, email: payload.email ?? '' }
+    } catch {
+      return null
+    }
   }
+}
+
+let productionIdentityVerifier: ((header: string | undefined) => Promise<SupabaseIdentity | null>) | null = null
+
+export async function verifySupabaseIdentity(header: string | undefined): Promise<SupabaseIdentity | null> {
+  productionIdentityVerifier ??= createSupabaseIdentityVerifier(createRemoteJWKSet(
+    new URL(`${process.env.SUPABASE_URL}/auth/v1/.well-known/jwks.json`),
+  ))
+  return productionIdentityVerifier(header)
 }
 
 export async function requireAuth(req: FastifyRequest, reply: FastifyReply) {

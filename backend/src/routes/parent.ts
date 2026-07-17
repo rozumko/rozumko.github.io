@@ -21,13 +21,11 @@ import {
   type PathCatalogCandidatesLoader, type PathCatalogLoader,
 } from './path-catalog.js'
 
-// Батьківська зона (/api/parent) — зріз 3 плану learning-path.
-// Межі довіри (docs/security-model.md «Parent Accounts And Child Profiles»):
-// - JWT доводить лише ідентичність Supabase-користувача; статус і власність — з БД;
-// - НЕ app_users і НЕ teacher auto-provisioning: акаунт створюється явним /register;
-// - claim ліда вимагає одночасно parent auth + чинний lead-token + збіг
-//   ПІДТВЕРДЖЕНОГО email; лід чужого акаунта — 409 без переносу даних;
-// - кожен доступ до профілів скоупиться parent_account_id власника.
+// Parent-zone trust boundaries (docs/security-model.md):
+// - JWT proves only Supabase identity; the database owns status and ownership;
+// - parent identity never uses teacher/admin app_users authorization;
+// - lead claim requires parent auth, a valid lead token and verified email match;
+// - every profile operation is scoped to the owning parent_account_id.
 
 export interface ParentRoutesOptions {
   /** DI для тестів: підміна верифікації Supabase JWT без мережі. */

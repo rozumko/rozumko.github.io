@@ -462,9 +462,19 @@ test('requireAuth is read-only; teacher rows appear only via explicit register-r
   assert.match(authLib, /ACCOUNT_UNKNOWN/)
   assert.match(teacherRoute, /'\/register-request'/)
   assert.match(teacherRoute, /role:\s*'teacher',\s*status:\s*'pending'/)
+  assert.match(teacherRoute, /onConflictDoNothing\(\{\s*target:\s*appUsers\.authUserId\s*\}\)/)
 })
 
 test('admin teacher-status route cannot touch admin accounts', () => {
   const adminRoute = readFileSync(new URL('./routes/admin.ts', import.meta.url), 'utf8')
   assert.match(adminRoute, /eq\(appUsers\.id,\s*id\),\s*eq\(appUsers\.role,\s*'teacher'\)/)
+})
+
+test('admin parent directory is admin-only and excludes child identity fields', () => {
+  const adminRoute = readFileSync(new URL('./routes/admin.ts', import.meta.url), 'utf8')
+  const parentDirectory = readFileSync(new URL('./routes/admin-parents.ts', import.meta.url), 'utf8')
+
+  assert.match(adminRoute, /app\.get\('\/parents',\s*\{\s*preHandler:\s*requireAdmin\s*\}/)
+  assert.match(parentDirectory, /profileCount:\s*count\(homeChildProfiles\.id\)/)
+  assert.doesNotMatch(parentDirectory, /displayName|authUserId|grade|progress|report/i)
 })

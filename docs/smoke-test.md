@@ -1,6 +1,6 @@
 # Smoke Test - Rozumko
 
-_Updated: 2026-07-02_
+_Updated: 2026-07-17_
 
 Run this checklist before a real pilot.
 
@@ -31,6 +31,13 @@ Run this checklist before a real pilot.
       (the action succeeds without a manual re-login); `localStorage` contains
       no `teacher_session`. The refresh token remains in `sessionStorage` for
       the MVP and is still exposed to same-origin XSS.
+- [ ] Complete teacher email confirmation, password recovery and Google login
+      (if enabled); each callback uses `?code=`, ends on a clean URL and leaves
+      no `rozumko_auth_pkce_teacher` value after exchange.
+- [ ] Open a forged `teacher.html#access_token=...&type=signup` URL and confirm
+      it is rejected without creating a session.
+- [ ] After login/callback, confirm the authenticated document contains no
+      `challenges.cloudflare.com/turnstile` script.
 
 ## 3. Admin Setup
 
@@ -103,6 +110,18 @@ Run this checklist before a real pilot.
 - [ ] `POST /api/home/leads/:id/mission-report` stores a repeatable Club
       attempt and returns a parent-readable report
 
+## 6c. Parent Accounts And Admin Directory
+
+- [ ] Home and the public parent page expose a direct “Create account” action
+      that opens `parent.html?mode=register` in registration mode
+- [ ] The registration page removes `mode=register` from the address bar and
+      completes email confirmation through the PKCE callback
+- [ ] Admin “Parents” shows adult email, status, verification state, account
+      date and profile count
+- [ ] The admin parent response and UI contain no child display names, grades,
+      progress, reports or Supabase auth user IDs
+- [ ] A teacher token cannot access `GET /api/admin/parents`
+
 ## 7. Browser Security
 
 > Most of §7 and §8 are automated by `scripts/smoke-security.ps1`:
@@ -131,8 +150,13 @@ Run this checklist before a real pilot.
 - [ ] Repeat with rotating left-most `X-Forwarded-For`; rate-limit still returns `429`
 - [ ] Invalid UUIDs on admin and teacher routes return `400`, not `500`
 - [ ] Backend env has `RATE_LIMIT_STORE=memory` until shared rate limiting is implemented
-- [ ] Supabase Auth -> Bot and Abuse Protection has enforced Turnstile for signup
+- [ ] Supabase Auth -> Bot and Abuse Protection has enforced Turnstile for
+      signup, password login and password recovery
 - [ ] Supabase Auth -> Rate Limits has reviewed password login and signup limits
+- [ ] Supabase Auth URL Configuration contains exact production teacher/parent
+      callback URLs and no broad wildcard
+- [ ] Parent recovery callback uses `?code=` PKCE, cleans the URL, removes its
+      temporary verifier and loads no Turnstile script after exchange
 
 ## 9. Operational
 

@@ -370,6 +370,14 @@
   text-decoration: underline;
 }
 .adult-note--spaced { margin-top: var(--sp-8); }
+.home-parent-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+}
 
 /* ── App shell: сторінки режимів (home.html, school.html) ── */
 .app-page {

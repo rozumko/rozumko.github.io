@@ -16,6 +16,19 @@ test('mobile navigation exposes the parent cabinet', async ({ page }) => {
   await expect(action).toHaveAttribute('href', 'parent.html')
 })
 
+test('public parent entry points expose direct account registration', async ({ page }) => {
+  await page.goto('/home.html')
+  const signup = page.getByRole('link', { name: 'Створити батьківський акаунт' })
+  await expect(signup).toBeVisible()
+  await expect(signup).toHaveAttribute('href', 'parent.html?mode=register')
+  await expect(signup).toHaveClass(/kid-action/)
+
+  await page.goto('/for-parents.html')
+  await expect(page.getByRole('link', { name: 'Створити акаунт' })).toHaveAttribute('href', 'parent.html?mode=register')
+  await expect(page.getByText('Домашній кабінет уже доступний')).toBeVisible()
+  await expect(page.getByText('Домашній режим — незабаром')).toHaveCount(0)
+})
+
 test('Home path card follows all four ready grades', async ({ page }) => {
   await page.goto('/home.html')
   const card = page.locator('#home-path-card')

@@ -120,7 +120,7 @@ Checkout, subscription locks і повне curriculum-масштабування
      профілів між акаунтами, дитина ≠ адміністратор профілів).
 3.2. ✅ (2026-07-10) Auth батька — Supabase Auth; статус — із БД через
      `GET /api/parent/me`. Реалізовано ОКРЕМИМ `lib/parent-auth.ts` (не
-     розширенням auth.ts): жодного дотику до app_users/auto-provisioning —
+     розширенням auth.ts): жодного дотику до teacher/admin `app_users` authorization —
      захищено guard-тестом у parent-accounts-schema.test.ts. Акаунт
      створюється явним ідемпотентним `POST /api/parent/register`.
 3.3. ✅ Міграція 0029 (2026-07-10): окрема `home_parent_accounts` (1:1 із
