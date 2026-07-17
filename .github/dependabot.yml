@@ -11,6 +11,11 @@ updates:
     groups:
       frontend-dev-dependencies:
         dependency-type: development
+    ignore:
+      # typescript-eslint peer-requires typescript <6.1.0; TypeScript majors
+      # must be taken deliberately together with a typescript-eslint upgrade.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: npm
     directory: /backend
