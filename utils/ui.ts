@@ -129,3 +129,20 @@ export function friendlyError(msg: string): string {
     return msg
   return 'Помилка. Перевір дані і спробуй знову.'
 }
+
+/**
+ * Password-recovery errors: GoTrue messages are English and the generic
+ * friendlyError fallback hides the actual cause. Map the known ones,
+ * otherwise show the raw message so the user can report it.
+ */
+export function recoveryErrorMessage(msg: string): string {
+  if (/security purposes|only request this/i.test(msg))
+    return 'Зачекайте хвилину і спробуйте ще раз.'
+  if (/captcha/i.test(msg))
+    return 'Перевірка «я не робот» не пройшла. Оновіть сторінку та спробуйте ще раз.'
+  if (/error sending|recovery email|smtp/i.test(msg))
+    return 'Не вдалося надіслати лист — поштовий сервіс відхилив запит. Спробуйте пізніше.'
+  if (/rate limit|429|too many/i.test(msg))
+    return 'Вичерпано ліміт листів. Спробуйте за годину.'
+  return msg
+}
