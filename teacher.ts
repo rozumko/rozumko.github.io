@@ -445,7 +445,7 @@ forgotForm?.addEventListener('submit', async (e) => {
   if (widgetId === undefined || !window.turnstile) {
     if (forgotError) {
       forgotError.textContent = 'Захист від ботів ще завантажується. Спробуйте ще раз.'
-      forgotError.classList.remove('form-error--success')
+      forgotError.classList.remove('auth-message--success')
     }
     return
   }
@@ -453,13 +453,13 @@ forgotForm?.addEventListener('submit', async (e) => {
   if (!captchaToken) {
     if (forgotError) {
       forgotError.textContent = 'Підтвердіть, що ви не робот.'
-      forgotError.classList.remove('form-error--success')
+      forgotError.classList.remove('auth-message--success')
     }
     return
   }
   if (forgotError) {
     forgotError.textContent = ''
-    forgotError.classList.remove('form-error--success')
+    forgotError.classList.remove('auth-message--success')
   }
   forgotSubmitBtn!.disabled    = true
   forgotSubmitBtn!.textContent = 'Надсилання…'
@@ -467,7 +467,7 @@ forgotForm?.addEventListener('submit', async (e) => {
     await requestPasswordReset(email, 'teacher.html', 'teacher', captchaToken)
     if (forgotError) {
       forgotError.textContent = '✅ Якщо такий акаунт існує, лист уже в дорозі. Перевірте пошту (і папку «Спам»).'
-      forgotError.classList.add('form-error--success')
+      forgotError.classList.add('auth-message--success')
     }
   } catch (err) {
     if (forgotError) forgotError.textContent = recoveryErrorMessage((err as Error).message)
@@ -528,7 +528,7 @@ registerForm?.addEventListener('submit', async (e) => {
   if (turnstileWidgetId === undefined || !window.turnstile) {
     if (registerError) {
       registerError.textContent = 'Захист від ботів ще завантажується. Спробуйте ще раз.'
-      registerError.classList.remove('form-error--success')
+      registerError.classList.remove('auth-message--success')
     }
     return
   }
@@ -536,14 +536,14 @@ registerForm?.addEventListener('submit', async (e) => {
   if (!captchaToken) {
     if (registerError) {
       registerError.textContent = 'Підтвердіть, що ви не робот.'
-      registerError.classList.remove('form-error--success')
+      registerError.classList.remove('auth-message--success')
     }
     return
   }
 
   if (registerError) {
     registerError.textContent = ''
-    registerError.classList.remove('form-error--success')
+    registerError.classList.remove('auth-message--success')
   }
   registerSubmitBtn!.disabled    = true
   registerSubmitBtn!.textContent = 'Реєстрація…'
@@ -553,9 +553,9 @@ registerForm?.addEventListener('submit', async (e) => {
     hideColdStartBanner()
     if (registerError) {
       registerError.textContent = '✅ Реєстрацію надіслано! Перевірте пошту та підтвердіть email, потім увійдіть.'
-      registerError.classList.add('form-error--success')
+      registerError.classList.add('auth-message--success')
     }
-    // Токен Turnstile одноразовий — скидаємо перед можливою повторною спробою.
+    // Turnstile tokens are single-use, so reset before a possible retry.
     window.turnstile.reset(turnstileWidgetId)
     registerSubmitBtn!.disabled    = false
     registerSubmitBtn!.textContent = 'Створити кабінет'
@@ -563,7 +563,7 @@ registerForm?.addEventListener('submit', async (e) => {
     hideColdStartBanner()
     if (registerError) {
       registerError.textContent = friendlyError((err as Error).message)
-      registerError.classList.remove('form-error--success')
+      registerError.classList.remove('auth-message--success')
     }
     window.turnstile?.reset(turnstileWidgetId)
     registerSubmitBtn!.disabled    = false

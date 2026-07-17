@@ -2,70 +2,7 @@
    7. TEACHER PAGE  (teacher.html)
    ─────────────────────────────────────────────────────────────── */
 
-/* ── Auth-сторінка ──────────────────────────────────────────── */
-
-.teacher-auth-page {
-  background: linear-gradient(180deg, #f1f5ff 0%, #f8fafc 60%, #f1f5ff 100%);
-  min-height: 100vh;
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  padding: var(--sp-4);
-  padding-top: var(--sp-8);
-}
-@media (min-width: 640px) {
-  .teacher-auth-page { padding-top: var(--sp-12); }
-}
-
-.auth-page-wrap  { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; min-height: 100vh; min-height: 100dvh; padding: var(--sp-4); padding-top: var(--sp-8); }
-@media (min-width: 640px) { .auth-page-wrap { padding-top: var(--sp-12); } }
-.auth-page-inner { width: 100%; max-width: 28rem; }
-
-/* Картка входу */
-.auth-card {
-  background: rgba(255,255,255,0.97);
-  border-radius: var(--r-2xl);
-  box-shadow: var(--shadow-card);
-  border: 1px solid rgba(255,255,255,0.7);
-  overflow: hidden;
-  margin-bottom: var(--sp-4);
-}
-
-/* Кольорова шапка картки */
-.auth-card__header {
-  background: #0369a1;
-  color: #fff;
-  padding: var(--sp-6) var(--sp-8);
-}
-.auth-card__label,
-.auth-card__eyebrow {
-  font-size: var(--font-size-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  color: #fff;
-  margin-bottom: var(--sp-2);
-}
-.auth-card__title {
-  font-size: var(--font-size-2xl);
-  font-weight: 700;
-  margin-bottom: var(--sp-2);
-}
-@media (min-width: 640px) {
-  .auth-card__title { font-size: var(--font-size-3xl); }
-}
-.auth-card__sub {
-  font-size: var(--font-size-sm);
-  color: #fff;
-}
-
-/* Тіло картки */
-.auth-card__body {
-  padding: var(--sp-6) var(--sp-8);
-}
-
-/* Форма */
+/* Reusable teacher dashboard form controls. */
 .form-fields  { display: flex; flex-direction: column; gap: var(--sp-4); margin-bottom: var(--sp-6); }
 .form-group   { display: flex; flex-direction: column; }
 .form-label   { display: block; font-size: var(--font-size-sm); font-weight: 600; color: var(--clr-text-muted); margin-bottom: var(--sp-2); }
@@ -75,77 +12,9 @@
 .form-input--count     { width: 6rem; text-align: center; font-weight: 700; font-size: var(--font-size-lg); }
 .form-privacy-note     { font-size: var(--font-size-xs); color: var(--clr-text-faint); margin-bottom: var(--sp-4); }
 .form-privacy-note--spaced { margin-top: var(--sp-3); }
-.auth-register__title  { font-size: var(--font-size-xl); font-weight: 700; color: var(--clr-text); margin-bottom: var(--sp-5); }
-
-.form-error {
-  color: #e11d48;
-  font-size: var(--font-size-sm);
-  min-height: 1.25rem;
-  margin-bottom: var(--sp-4);
-}
-
-/* Розділювач «Ще немає кабінету?» */
-.form-error--success { color: var(--fb-ok-soft); }
-
-.auth-divider {
-  margin-top: var(--sp-6);
-  padding-top: var(--sp-6);
-  border-top: 1px solid var(--clr-border);
-  text-align: center;
-}
-.auth-divider__text {
-  font-size: var(--font-size-sm);
-  color: var(--clr-text-muted);
-  margin-bottom: var(--sp-3);
-}
-
-/* Перемикач login ↔ register */
-.auth-switch-hint {
-  margin-top: var(--sp-5);
-  padding-top: var(--sp-5);
-  border-top: 1px solid var(--clr-border);
-  text-align: center;
-  font-size: var(--font-size-sm);
-  color: var(--clr-text-muted);
-}
-.auth-switch-link {
-  background: none;
-  border: none;
-  padding: 0;
-  margin-left: var(--sp-1);
-  color: var(--clr-primary);
-  font-size: inherit;
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-.auth-switch-link:hover { color: var(--clr-primary-dark); }
-
-/* Футер auth-сторінки */
-.teacher-auth-footer {
-  margin-top: var(--sp-8);
-  padding: var(--sp-6) 0;
-  text-align: center;
-  color: var(--clr-text-faint);
-  font-size: var(--font-size-xs);
-}
-.teacher-auth-footer__links {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--sp-3);
-  margin-bottom: var(--sp-2);
-}
-.teacher-auth-footer__links a {
-  color: var(--clr-text-faint);
-  transition: color var(--transition-fast);
-}
-.teacher-auth-footer__links a:hover { color: var(--clr-text-muted); }
-
 /* ── Dashboard ──────────────────────────────────────────────── */
 
-/* Коли дашборд активний — скасовуємо flex-центрування auth-page на body */
+/* Reset the auth surface layout after authentication. */
 body.teacher-dashboard-active {
   display: block !important;
   padding: 0 !important;

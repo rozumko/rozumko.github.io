@@ -583,7 +583,7 @@ registerForm.addEventListener('submit', async event => {
   const button = $<HTMLButtonElement>('parent-register-submit')
   const password = $<HTMLInputElement>('parent-register-password').value
   registerError.textContent = ''
-  registerError.classList.remove('parent-error--success')
+  registerError.classList.remove('auth-message--success')
   if (password.length < 8) {
     registerError.textContent = 'Пароль має містити щонайменше 8 символів.'
     return
@@ -598,11 +598,11 @@ registerForm.addEventListener('submit', async event => {
   button.textContent = 'Створюємо…'
   try {
     await registerParentAuth($<HTMLInputElement>('parent-register-email').value.trim(), password, captchaToken)
-    registerError.classList.add('parent-error--success')
+    registerError.classList.add('auth-message--success')
     registerError.textContent = 'Перевірте пошту та підтвердьте email. Після цього поверніться й увійдіть.'
     registerForm.reset()
   } catch (error) {
-    registerError.classList.remove('parent-error--success')
+    registerError.classList.remove('auth-message--success')
     registerError.textContent = friendly(error)
   } finally {
     window.turnstile?.reset(registerWidgetId)
@@ -627,7 +627,7 @@ forgotForm.addEventListener('submit', async event => {
   const button = $<HTMLButtonElement>('parent-forgot-submit')
   const email = $<HTMLInputElement>('parent-forgot-email').value.trim()
   forgotError.textContent = ''
-  forgotError.classList.remove('parent-error--success')
+  forgotError.classList.remove('auth-message--success')
   if (!email) return
   const widgetId = turnstileWidgets.get('parent-turnstile-forgot')
   const captchaToken = window.turnstile?.getResponse(widgetId)
@@ -639,7 +639,7 @@ forgotForm.addEventListener('submit', async event => {
   button.textContent = 'Надсилаємо…'
   try {
     await requestPasswordReset(email, 'parent.html', 'parent', captchaToken)
-    forgotError.classList.add('parent-error--success')
+    forgotError.classList.add('auth-message--success')
     forgotError.textContent = 'Якщо такий акаунт існує, лист уже в дорозі. Перевірте пошту (і папку «Спам»).'
   } catch (error) {
     forgotError.textContent = recoveryErrorMessage((error as Error)?.message ?? 'Сталася помилка')

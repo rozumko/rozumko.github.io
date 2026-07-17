@@ -57,6 +57,55 @@ test('grade-1 anonymous progress stops after the first point and asks for an adu
   await expect(page.getByRole('button', { name: /Свято трьох суперсил/ })).toBeDisabled()
 })
 
+test('grade 1 sorting activity keeps its child-friendly presentation', async ({ page }) => {
+  await page.goto('/path.html?grade=1')
+  await page.locator('.path-node--open').click()
+
+  await expect(page.locator('.sg__item')).toBeVisible()
+  const presentation = await page.evaluate(() => {
+    const item = document.querySelector<HTMLElement>('.sg__item')!
+    const bin = document.querySelector<HTMLElement>('.sg__bin')!
+    return {
+      itemBackground: getComputedStyle(item).backgroundColor,
+      itemRadius: parseFloat(getComputedStyle(item).borderRadius),
+      binBorder: parseFloat(getComputedStyle(bin).borderTopWidth),
+      binHeight: bin.getBoundingClientRect().height,
+    }
+  })
+
+  expect(presentation.itemBackground).not.toBe('rgba(0, 0, 0, 0)')
+  expect(presentation.itemRadius).toBeGreaterThanOrEqual(16)
+  expect(presentation.binBorder).toBeGreaterThan(0)
+  expect(presentation.binHeight).toBeGreaterThanOrEqual(44)
+})
+
+test('grade 2 lesson activity keeps its card and primary action presentation', async ({ page }) => {
+  await page.goto('/path.html?grade=2')
+  await page.locator('.path-node--open').click()
+
+  await expect(page.locator('.lsn-card')).toBeVisible()
+  const presentation = await page.evaluate(() => {
+    const card = document.querySelector<HTMLElement>('.lsn-card')!
+    const next = document.querySelector<HTMLElement>('.lsn__next')!
+    return {
+      cardBackground: getComputedStyle(card).backgroundColor,
+      cardRadius: parseFloat(getComputedStyle(card).borderRadius),
+      cardBorder: parseFloat(getComputedStyle(card).borderTopWidth),
+      nextHeight: next.getBoundingClientRect().height,
+      nextBackgroundColor: getComputedStyle(next).backgroundColor,
+      nextBackground: getComputedStyle(next).backgroundImage,
+    }
+  })
+
+  expect(presentation.cardBackground).not.toBe('rgba(0, 0, 0, 0)')
+  expect(presentation.cardRadius).toBeGreaterThanOrEqual(16)
+  expect(presentation.cardBorder).toBeGreaterThan(0)
+  expect(presentation.nextHeight).toBeGreaterThanOrEqual(44)
+  expect(
+    presentation.nextBackgroundColor !== 'rgba(0, 0, 0, 0)' || presentation.nextBackground !== 'none',
+  ).toBe(true)
+})
+
 for (const path of [
   { grade: 3, start: 'g3-algorithms-start', title: 'Команда за командою', final: 'Експедиція трьох напрямів' },
   { grade: 4, start: 'g4-safety-start', title: 'Захисти цифровий світ', final: 'Фінал цифрового дослідника' },
@@ -75,6 +124,46 @@ for (const path of [
     await expect(page.locator('.path-node--open')).toHaveCount(0)
     await expect(page.locator('#path-parent-gate')).toBeVisible()
     await expect(page.getByRole('button', { name: new RegExp(path.final) })).toBeDisabled()
+  })
+
+  test(`grade ${path.grade} mission uses the shared quiz presentation`, async ({ page }) => {
+    await page.goto(`/path.html?grade=${path.grade}`)
+    await page.locator('.path-node--open').click()
+
+    await expect(page.locator('#mission-quiz')).toBeVisible()
+    await expect(page.locator('.quiz-question-card')).toBeVisible()
+    const presentation = await page.locator('#mission-quiz').evaluate((mission) => {
+      const card = mission.querySelector<HTMLElement>('.quiz-question-card')!
+      const answer = mission.querySelector<HTMLElement>('.quiz-option, .quiz-sort-item')!
+      const check = mission.querySelector<HTMLElement>('.quiz-check')
+      const cardStyle = getComputedStyle(card)
+      const answerStyle = getComputedStyle(answer)
+      const checkStyle = check ? getComputedStyle(check) : null
+      return {
+        cardBackground: cardStyle.backgroundColor,
+        cardBackgroundImage: cardStyle.backgroundImage,
+        cardRadius: parseFloat(cardStyle.borderRadius),
+        cardShadow: cardStyle.boxShadow,
+        answerBorder: parseFloat(answerStyle.borderTopWidth),
+        answerRadius: parseFloat(answerStyle.borderRadius),
+        answerDisplay: answerStyle.display,
+        checkHeight: check ? check.getBoundingClientRect().height : null,
+        checkBackground: checkStyle?.backgroundColor ?? null,
+      }
+    })
+
+    expect(
+      presentation.cardBackground !== 'rgba(0, 0, 0, 0)' || presentation.cardBackgroundImage !== 'none',
+    ).toBe(true)
+    expect(presentation.cardRadius).toBeGreaterThanOrEqual(16)
+    expect(presentation.cardShadow).not.toBe('none')
+    expect(presentation.answerBorder).toBeGreaterThanOrEqual(2)
+    expect(presentation.answerRadius).toBeGreaterThanOrEqual(12)
+    expect(presentation.answerDisplay).not.toBe('inline')
+    if (presentation.checkHeight !== null) {
+      expect(presentation.checkHeight).toBeGreaterThanOrEqual(44)
+      expect(presentation.checkBackground).not.toBe('rgba(0, 0, 0, 0)')
+    }
   })
 
 }
