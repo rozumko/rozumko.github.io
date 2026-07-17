@@ -11,6 +11,9 @@ import {
   logoutParent,
   registerParentAccount,
   registerParentAuth,
+  requestPasswordReset,
+  updateAuthPassword,
+  googleSignInUrl,
   setActiveParentProfile,
   storeParentSession,
   submitParentPathProgress,
@@ -39,11 +42,17 @@ const authSection = $('parent-auth')
 const dashboard = $('parent-dashboard')
 const loginMode = $('parent-login-mode')
 const registerMode = $('parent-register-mode')
+const forgotMode = $('parent-forgot-mode')
+const resetMode = $('parent-reset-mode')
 const loginForm = $<HTMLFormElement>('parent-login-form')
 const registerForm = $<HTMLFormElement>('parent-register-form')
+const forgotForm = $<HTMLFormElement>('parent-forgot-form')
+const resetForm = $<HTMLFormElement>('parent-reset-form')
 const profileForm = $<HTMLFormElement>('parent-profile-form')
 const loginError = $('parent-login-error')
 const registerError = $('parent-register-error')
+const forgotError = $('parent-forgot-error')
+const resetError = $('parent-reset-error')
 const profileError = $('parent-profile-error')
 const dashboardStatus = $('parent-dashboard-status')
 const profilesRoot = $('parent-profiles')
@@ -92,7 +101,8 @@ function findPendingPathImports(): PendingPathImport[] {
 
 let pendingImports = findPendingPathImports()
 
-let turnstileWidgetId: string | null = null
+// One widget per container: register form and forgot-password form have their own.
+const turnstileWidgets = new Map<string, string>()
 let turnstileLoad: Promise<void> | null = null
 
 function friendly(error: unknown): string {
@@ -105,45 +115,69 @@ function friendly(error: unknown): string {
 
 function showLogin() {
   registerMode.classList.add('hidden')
+  forgotMode.classList.add('hidden')
+  resetMode.classList.add('hidden')
   loginMode.classList.remove('hidden')
   $('parent-auth-title').textContent = 'Кабінет батьків'
   $('parent-auth-subtitle').textContent = 'Увійдіть, щоб дитина продовжила свій шлях на цьому пристрої.'
   $<HTMLInputElement>('parent-login-email').focus()
 }
 
-function renderTurnstile() {
-  if (turnstileWidgetId !== null || !window.turnstile) return
-  turnstileWidgetId = window.turnstile.render('parent-turnstile', { sitekey: TURNSTILE_SITE_KEY })
+function renderTurnstile(containerId: string) {
+  if (turnstileWidgets.has(containerId) || !window.turnstile) return
+  // Turnstile does not resolve bare element ids — pass the element itself.
+  const container = document.getElementById(containerId)
+  if (!container) return
+  turnstileWidgets.set(containerId, window.turnstile.render(container, { sitekey: TURNSTILE_SITE_KEY }))
 }
 
-function loadTurnstile(): Promise<void> {
+function loadTurnstile(containerId: string): Promise<void> {
   if (window.turnstile) {
-    renderTurnstile()
+    renderTurnstile(containerId)
     return Promise.resolve()
   }
-  if (turnstileLoad) return turnstileLoad
-  turnstileLoad = new Promise((resolve, reject) => {
-    window.onloadParentTurnstile = () => {
-      renderTurnstile()
-      resolve()
-    }
-    const script = document.createElement('script')
-    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onloadParentTurnstile'
-    script.async = true
-    script.defer = true
-    script.addEventListener('error', () => reject(new Error('Не вдалося завантажити захист від ботів.')))
-    document.head.appendChild(script)
-  })
-  return turnstileLoad
+  if (!turnstileLoad) {
+    turnstileLoad = new Promise((resolve, reject) => {
+      window.onloadParentTurnstile = () => resolve()
+      const script = document.createElement('script')
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onloadParentTurnstile'
+      script.async = true
+      script.defer = true
+      script.addEventListener('error', () => reject(new Error('Не вдалося завантажити захист від ботів.')))
+      document.head.appendChild(script)
+    })
+  }
+  return turnstileLoad.then(() => renderTurnstile(containerId))
 }
 
 function showRegister() {
   loginMode.classList.add('hidden')
+  forgotMode.classList.add('hidden')
   registerMode.classList.remove('hidden')
   $('parent-auth-title').textContent = 'Реєстрація для батьків'
   $('parent-auth-subtitle').textContent = 'Створіть свій акаунт. Дитячий профіль додасте після підтвердження email.'
   $<HTMLInputElement>('parent-register-email').focus()
-  void loadTurnstile().catch(error => { registerError.textContent = friendly(error) })
+  void loadTurnstile('parent-turnstile').catch(error => { registerError.textContent = friendly(error) })
+}
+
+function showForgot() {
+  loginMode.classList.add('hidden')
+  registerMode.classList.add('hidden')
+  forgotMode.classList.remove('hidden')
+  $('parent-auth-title').textContent = 'Відновлення паролю'
+  $('parent-auth-subtitle').textContent = 'Вкажіть email — надішлемо лист із посиланням для зміни паролю.'
+  $<HTMLInputElement>('parent-forgot-email').focus()
+  void loadTurnstile('parent-turnstile-forgot').catch(error => { forgotError.textContent = friendly(error) })
+}
+
+function showReset() {
+  loginMode.classList.add('hidden')
+  registerMode.classList.add('hidden')
+  forgotMode.classList.add('hidden')
+  resetMode.classList.remove('hidden')
+  $('parent-auth-title').textContent = 'Новий пароль'
+  $('parent-auth-subtitle').textContent = 'Придумайте новий пароль для входу в кабінет.'
+  $<HTMLInputElement>('parent-reset-password').focus()
 }
 
 function showAuth(message = '') {
@@ -422,9 +456,18 @@ async function init() {
   const hash = new URLSearchParams(window.location.hash.slice(1))
   const accessToken = hash.get('access_token')
   const refreshToken = hash.get('refresh_token')
+  // 'signup' | 'recovery' | ...; OAuth (Google) returns tokens WITHOUT type
+  const type = hash.get('type')
   if (accessToken) {
     storeParentSession({ accessToken, refreshToken: refreshToken ?? '', email: '', activeChildProfileId: null })
     history.replaceState(null, '', window.location.pathname)
+  }
+
+  if (accessToken && type === 'recovery') {
+    // Password-recovery link: ask for a new password before anything else.
+    showAuth()
+    showReset()
+    return
   }
 
   if (!getParentSession()) return showAuth()
@@ -469,7 +512,8 @@ registerForm.addEventListener('submit', async event => {
     registerError.textContent = 'Пароль має містити щонайменше 8 символів.'
     return
   }
-  const captchaToken = window.turnstile?.getResponse(turnstileWidgetId ?? undefined)
+  const registerWidgetId = turnstileWidgets.get('parent-turnstile')
+  const captchaToken = window.turnstile?.getResponse(registerWidgetId)
   if (!captchaToken) {
     registerError.textContent = 'Підтвердьте, що ви не робот.'
     return
@@ -485,9 +529,73 @@ registerForm.addEventListener('submit', async event => {
     registerError.classList.remove('parent-error--success')
     registerError.textContent = friendly(error)
   } finally {
-    window.turnstile?.reset(turnstileWidgetId ?? undefined)
+    window.turnstile?.reset(registerWidgetId)
     button.disabled = false
     button.textContent = 'Створити акаунт'
+  }
+})
+
+$('parent-show-forgot').addEventListener('click', showForgot)
+$('parent-hide-forgot').addEventListener('click', showLogin)
+
+$('parent-google-login').addEventListener('click', () => {
+  window.location.href = googleSignInUrl('parent.html')
+})
+
+forgotForm.addEventListener('submit', async event => {
+  event.preventDefault()
+  const button = $<HTMLButtonElement>('parent-forgot-submit')
+  const email = $<HTMLInputElement>('parent-forgot-email').value.trim()
+  forgotError.textContent = ''
+  forgotError.classList.remove('parent-error--success')
+  if (!email) return
+  const widgetId = turnstileWidgets.get('parent-turnstile-forgot')
+  const captchaToken = window.turnstile?.getResponse(widgetId)
+  if (!captchaToken) {
+    forgotError.textContent = 'Підтвердьте, що ви не робот.'
+    return
+  }
+  button.disabled = true
+  button.textContent = 'Надсилаємо…'
+  try {
+    await requestPasswordReset(email, 'parent.html', captchaToken)
+    forgotError.classList.add('parent-error--success')
+    forgotError.textContent = 'Якщо такий акаунт існує, лист уже в дорозі. Перевірте пошту (і папку «Спам»).'
+  } catch (error) {
+    forgotError.textContent = friendly(error)
+  } finally {
+    window.turnstile?.reset(widgetId)
+    button.disabled = false
+    button.textContent = 'Надіслати лист'
+  }
+})
+
+resetForm.addEventListener('submit', async event => {
+  event.preventDefault()
+  const button = $<HTMLButtonElement>('parent-reset-submit')
+  const password = $<HTMLInputElement>('parent-reset-password').value
+  resetError.textContent = ''
+  if (password.length < 8) {
+    resetError.textContent = 'Пароль має містити щонайменше 8 символів.'
+    return
+  }
+  const session = getParentSession()
+  if (!session?.accessToken) {
+    resetError.textContent = 'Посилання застаріло. Запросіть лист відновлення ще раз.'
+    return
+  }
+  button.disabled = true
+  button.textContent = 'Зберігаємо…'
+  try {
+    await updateAuthPassword(session.accessToken, password)
+    // Password is saved; enter the dashboard with the same session.
+    await registerParentAccount()
+    await loadDashboard()
+  } catch (error) {
+    resetError.textContent = friendly(error)
+  } finally {
+    button.disabled = false
+    button.textContent = 'Зберегти пароль'
   }
 })
 

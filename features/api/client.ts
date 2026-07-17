@@ -683,6 +683,56 @@ export async function logoutParent(): Promise<void> {
   }
 }
 
+// ─── Shared Supabase Auth helpers (teacher + parent) ────────────────────────
+
+/**
+ * Requests a password-recovery email. Supabase redirects the user back to
+ * `redirectPath` with #access_token=...&type=recovery in the URL hash.
+ * CAPTCHA token goes via gotrue_meta_security (same contract as signup).
+ */
+export async function requestPasswordReset(email: string, redirectPath: string, captchaToken?: string): Promise<void> {
+  const body: Record<string, unknown> = { email }
+  if (captchaToken) body.gotrue_meta_security = { captcha_token: captchaToken }
+  const redirect = typeof window !== 'undefined' ? `${window.location.origin}/${redirectPath}` : ''
+  const query = redirect ? `?redirect_to=${encodeURIComponent(redirect)}` : ''
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/recover${query}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.error_description ?? data.msg ?? 'Не вдалося надіслати лист відновлення')
+  }
+}
+
+/** Sets a new password for the session obtained from the recovery link. */
+export async function updateAuthPassword(accessToken: string, newPassword: string): Promise<void> {
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ password: newPassword }),
+  })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.error_description ?? data.msg ?? 'Не вдалося змінити пароль')
+  }
+}
+
+/**
+ * URL for Google OAuth sign-in via Supabase. Requires the Google provider to be
+ * enabled in Supabase Dashboard and redirectPath origin to be in the Redirect URLs
+ * allowlist. Tokens come back in the URL hash (implicit flow, no `type` param).
+ */
+export function googleSignInUrl(redirectPath: string): string {
+  const redirect = `${window.location.origin}/${redirectPath}`
+  return `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirect)}`
+}
+
 // ─── Teacher Auth (Supabase) ───────────────────────────────────────────────
 
 export async function loginTeacher(email: string, password: string): Promise<any> {

@@ -6,6 +6,7 @@ import {
   getTeacherMe, generateCodes, getTeacherClasses, getTeacherCodes,
   getTeacherRegistrationEvents, getTeacherRegistrations, getTeacherResults,
   cancelTeacherRegistration,
+  requestPasswordReset, updateAuthPassword, googleSignInUrl,
   getClassStudents, addClassStudent, updateClassStudent, deleteClassStudent,
   createSchoolSession, startSchoolSession, finishSchoolSession, getSchoolSession,
   TURNSTILE_SITE_KEY,
@@ -81,16 +82,19 @@ function hideColdStartBanner() {
 }
 
 // --- Init ---
-init()
+// The call itself is at the END of the module: the recovery branch touches
+// consts (resetMode etc.) that are declared below, so init must run after
+// the whole module is evaluated.
 
 async function init() {
   // Обробляємо #access_token=... після підтвердження email від Supabase
   const hash = new URLSearchParams(window.location.hash.slice(1))
   const accessToken  = hash.get('access_token')
   const refreshToken = hash.get('refresh_token')
-  const type         = hash.get('type') // 'signup' | 'recovery' | etc.
+  // 'signup' | 'magiclink' | 'recovery'; OAuth (Google) returns tokens WITHOUT type
+  const type         = hash.get('type')
 
-  if (accessToken && (type === 'signup' || type === 'magiclink' || type === 'recovery')) {
+  if (accessToken) {
     // Зберігаємо сесію з токена в хеші
     storeTeacherSession({
       accessToken,
@@ -99,6 +103,13 @@ async function init() {
     })
     // Очищаємо хеш з URL щоб токен не залишався в адресному рядку
     history.replaceState(null, '', window.location.pathname)
+  }
+
+  if (accessToken && type === 'recovery') {
+    // Password-recovery link: ask for a new password before anything else.
+    showAuth()
+    switchToReset()
+    return
   }
 
   const session = getTeacherSession()
@@ -179,27 +190,28 @@ declare global {
   interface Window { turnstile?: TurnstileApi; onloadTurnstileCallback?: () => void }
 }
 
-let turnstileWidgetId: string | null = null
+// One widget per container: register form and forgot-password form have their own.
+const turnstileWidgets = new Map<string, string>()
 let turnstileLoadPromise: Promise<void> | null = null
 const TURNSTILE_SCRIPT_ID = 'turnstile-api'
 
-function renderTurnstile(): void {
-  if (turnstileWidgetId !== null) return
-  const container = document.getElementById('turnstile-container')
+function renderTurnstile(containerId: string): void {
+  if (turnstileWidgets.has(containerId)) return
+  const container = document.getElementById(containerId)
   if (!container || !window.turnstile) return
-  turnstileWidgetId = window.turnstile.render(container, { sitekey: TURNSTILE_SITE_KEY })
+  turnstileWidgets.set(containerId, window.turnstile.render(container, { sitekey: TURNSTILE_SITE_KEY }))
 }
 
-function loadTurnstile(): Promise<void> {
+function loadTurnstile(containerId: string): Promise<void> {
   if (window.turnstile) {
-    renderTurnstile()
+    renderTurnstile(containerId)
     return Promise.resolve()
   }
-  if (turnstileLoadPromise) return turnstileLoadPromise
+  if (turnstileLoadPromise) return turnstileLoadPromise.then(() => renderTurnstile(containerId))
 
   turnstileLoadPromise = new Promise<void>((resolve, reject) => {
     window.onloadTurnstileCallback = () => {
-      renderTurnstile()
+      renderTurnstile(containerId)
       resolve()
     }
 
@@ -220,11 +232,12 @@ function switchToRegister() {
   // крайовий випадок зі stale token після невдалого bootstrap-запиту до API.
   void logoutTeacher()
   loginMode?.classList.add('hidden')
+  forgotMode?.classList.add('hidden')
   registerMode?.classList.remove('hidden')
   if (authCardTitle) authCardTitle.textContent = 'Реєстрація вчителя'
   if (authCardSub)   authCardSub.textContent   = 'Створіть кабінет для керування класами та результатами.'
   $maybe<HTMLInputElement>('reg-email')?.focus()
-  loadTurnstile().catch(err => {
+  loadTurnstile('turnstile-container').catch(err => {
     if (registerError) registerError.textContent = (err as Error).message
   })
 }
@@ -236,14 +249,136 @@ function switchToLogin() {
     return
   }
   registerMode?.classList.add('hidden')
+  forgotMode?.classList.add('hidden')
+  resetMode?.classList.add('hidden')
   loginMode?.classList.remove('hidden')
   if (authCardTitle) authCardTitle.textContent = 'Вхід для вчителя'
   if (authCardSub)   authCardSub.textContent   = 'Увійдіть, щоб керувати класами, кодами та результатами.'
   $maybe<HTMLInputElement>('login-email')?.focus()
 }
 
-$maybe<HTMLButtonElement>('show-register-btn')?.addEventListener('click', switchToRegister)
-$maybe<HTMLButtonElement>('hide-register-btn')?.addEventListener('click', switchToLogin)
+// ── Password recovery ────────────────────────────────────────────────────────
+const forgotMode      = $maybe('forgot-mode')
+const forgotForm      = $maybe<HTMLFormElement>('teacher-forgot-form')
+const forgotError     = $maybe('forgot-error')
+const forgotSubmitBtn = $maybe<HTMLButtonElement>('forgot-submit-btn')
+const resetMode       = $maybe('reset-mode')
+const resetForm       = $maybe<HTMLFormElement>('teacher-reset-form')
+const resetError      = $maybe('reset-error')
+const resetSubmitBtn  = $maybe<HTMLButtonElement>('reset-submit-btn')
+const FORGOT_TURNSTILE = 'turnstile-container-forgot'
+
+function switchToForgot() {
+  loginMode?.classList.add('hidden')
+  registerMode?.classList.add('hidden')
+  forgotMode?.classList.remove('hidden')
+  if (authCardTitle) authCardTitle.textContent = 'Відновлення паролю'
+  if (authCardSub)   authCardSub.textContent   = 'Вкажіть email — надішлемо лист із посиланням для зміни паролю.'
+  $maybe<HTMLInputElement>('forgot-email')?.focus()
+  loadTurnstile(FORGOT_TURNSTILE).catch(err => {
+    if (forgotError) forgotError.textContent = (err as Error).message
+  })
+}
+
+function switchToReset() {
+  loginMode?.classList.add('hidden')
+  registerMode?.classList.add('hidden')
+  forgotMode?.classList.add('hidden')
+  resetMode?.classList.remove('hidden')
+  if (authCardTitle) authCardTitle.textContent = 'Новий пароль'
+  if (authCardSub)   authCardSub.textContent   = 'Придумайте новий пароль для входу в кабінет.'
+  $maybe<HTMLInputElement>('reset-password')?.focus()
+}
+
+$maybe<HTMLButtonElement>('show-forgot-btn')?.addEventListener('click', switchToForgot)
+$maybe<HTMLButtonElement>('hide-forgot-btn')?.addEventListener('click', switchToLogin)
+
+forgotForm?.addEventListener('submit', async (e) => {
+  e.preventDefault()
+  const email = $maybe<HTMLInputElement>('forgot-email')?.value.trim() ?? ''
+  if (!email) return
+  const widgetId = turnstileWidgets.get(FORGOT_TURNSTILE)
+  if (widgetId === undefined || !window.turnstile) {
+    if (forgotError) {
+      forgotError.textContent = 'Захист від ботів ще завантажується. Спробуйте ще раз.'
+      forgotError.classList.remove('form-error--success')
+    }
+    return
+  }
+  const captchaToken = window.turnstile.getResponse(widgetId)
+  if (!captchaToken) {
+    if (forgotError) {
+      forgotError.textContent = 'Підтвердіть, що ви не робот.'
+      forgotError.classList.remove('form-error--success')
+    }
+    return
+  }
+  if (forgotError) {
+    forgotError.textContent = ''
+    forgotError.classList.remove('form-error--success')
+  }
+  forgotSubmitBtn!.disabled    = true
+  forgotSubmitBtn!.textContent = 'Надсилання…'
+  try {
+    await requestPasswordReset(email, 'teacher.html', captchaToken)
+    if (forgotError) {
+      forgotError.textContent = '✅ Якщо такий акаунт існує, лист уже в дорозі. Перевірте пошту (і папку «Спам»).'
+      forgotError.classList.add('form-error--success')
+    }
+  } catch (err) {
+    if (forgotError) forgotError.textContent = friendlyError((err as Error).message)
+  } finally {
+    window.turnstile?.reset(widgetId)
+    forgotSubmitBtn!.disabled    = false
+    forgotSubmitBtn!.textContent = 'Надіслати лист'
+  }
+})
+
+resetForm?.addEventListener('submit', async (e) => {
+  e.preventDefault()
+  const password = $maybe<HTMLInputElement>('reset-password')?.value ?? ''
+  if (password.length < 8) {
+    if (resetError) resetError.textContent = 'Пароль має містити щонайменше 8 символів.'
+    return
+  }
+  const session = getTeacherSession()
+  if (!session?.accessToken) {
+    if (resetError) resetError.textContent = 'Посилання застаріло. Запросіть лист відновлення ще раз.'
+    return
+  }
+  if (resetError) resetError.textContent = ''
+  resetSubmitBtn!.disabled    = true
+  resetSubmitBtn!.textContent = 'Збереження…'
+  try {
+    await updateAuthPassword(session.accessToken, password)
+  } catch (err) {
+    if (resetError) resetError.textContent = friendlyError((err as Error).message)
+    resetSubmitBtn!.disabled    = false
+    resetSubmitBtn!.textContent = 'Зберегти пароль'
+    return
+  }
+  // Password is saved; try to enter the dashboard with the same session.
+  showColdStartBanner()
+  try {
+    const me = await getTeacherMe()
+    hideColdStartBanner()
+    showDashboard(me.name || session.email)
+    await Promise.all([loadRegistrationEvents(), loadClasses(), loadRegistrations(), loadCodes(), loadResults()])
+  } catch (err) {
+    hideColdStartBanner()
+    switchToLogin()
+    loginError.textContent = isPendingError(err)
+      ? '✅ Пароль змінено, але акаунт ще очікує підтвердження адміністратора.'
+      : '✅ Пароль змінено. Увійдіть з новим паролем.'
+  }
+  resetSubmitBtn!.disabled    = false
+  resetSubmitBtn!.textContent = 'Зберегти пароль'
+})
+
+// ── Google OAuth ─────────────────────────────────────────────────────────────
+$maybe<HTMLButtonElement>('google-login-btn')?.addEventListener('click', () => {
+  window.location.href = googleSignInUrl('teacher.html')
+})
 
 registerForm?.addEventListener('submit', async (e) => {
   e.preventDefault()
@@ -253,7 +388,8 @@ registerForm?.addEventListener('submit', async (e) => {
   if (!email || !password) return
   // CAPTCHA обов'язкова і на клієнті, і в Supabase Auth. Якщо скрипт ще вантажиться
   // або впав, не надсилаємо запит, який гарантовано буде відхилено.
-  if (turnstileWidgetId === null || !window.turnstile) {
+  const turnstileWidgetId = turnstileWidgets.get('turnstile-container')
+  if (turnstileWidgetId === undefined || !window.turnstile) {
     if (registerError) {
       registerError.textContent = 'Захист від ботів ще завантажується. Спробуйте ще раз.'
       registerError.classList.remove('form-error--success')
@@ -293,7 +429,7 @@ registerForm?.addEventListener('submit', async (e) => {
       registerError.textContent = friendlyError((err as Error).message)
       registerError.classList.remove('form-error--success')
     }
-    if (turnstileWidgetId !== null) window.turnstile?.reset(turnstileWidgetId)
+    window.turnstile?.reset(turnstileWidgetId)
     registerSubmitBtn!.disabled    = false
     registerSubmitBtn!.textContent = 'Створити кабінет'
   }
@@ -1114,3 +1250,6 @@ $maybe<HTMLButtonElement>('school-new-btn')?.addEventListener('click', () => {
   $maybe('school-live')?.classList.add('hidden')
   schoolSetError('')
 })
+
+// Runs last so every const above is initialized (see the Init comment).
+void init()

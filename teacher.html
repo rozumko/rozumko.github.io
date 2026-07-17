@@ -75,10 +75,55 @@
               <p id="login-error" class="form-error" role="alert" aria-live="assertive"></p>
               <button type="submit" id="login-submit-btn" class="btn btn--teacher btn--full">Увійти</button>
             </form>
+            <div class="auth-divider">
+              <p class="auth-divider__text" aria-hidden="true">або</p>
+              <button type="button" id="google-login-btn" class="btn btn--secondary btn--full">
+              <i class="fab fa-google" aria-hidden="true"></i> Увійти через Google
+              </button>
+            </div>
             <p class="auth-switch-hint">
               Ще немає кабінету?
               <button id="show-register-btn" class="auth-switch-link">Зареєструватись</button>
             </p>
+            <p class="auth-switch-hint">
+              <button id="show-forgot-btn" class="auth-switch-link">Забули пароль?</button>
+            </p>
+          </div>
+
+          <!-- ── РЕЖИМ ВІДНОВЛЕННЯ ПАРОЛЮ (запит листа) ── -->
+          <div id="forgot-mode" class="hidden">
+            <form id="teacher-forgot-form" novalidate aria-describedby="forgot-error">
+              <div class="form-fields">
+                <div class="form-group">
+                  <label for="forgot-email" class="form-label">Електронна пошта</label>
+                  <input id="forgot-email" type="email" autocomplete="email"
+                    placeholder="teacher@school.ua" required class="form-input"/>
+                </div>
+              </div>
+              <!-- Turnstile is rendered here explicitly from teacher.ts -->
+              <div id="turnstile-container-forgot" class="form-group"></div>
+              <p id="forgot-error" class="form-error" role="alert" aria-live="assertive"></p>
+              <button type="submit" id="forgot-submit-btn" class="btn btn--teacher btn--full">Надіслати лист</button>
+            </form>
+            <p class="auth-switch-hint">
+              Згадали пароль?
+              <button id="hide-forgot-btn" class="auth-switch-link">Увійти</button>
+            </p>
+          </div>
+
+          <!-- ── РЕЖИМ НОВОГО ПАРОЛЮ (після переходу з листа) ── -->
+          <div id="reset-mode" class="hidden">
+            <form id="teacher-reset-form" novalidate aria-describedby="reset-error">
+              <div class="form-fields">
+                <div class="form-group">
+                  <label for="reset-password" class="form-label">Новий пароль (мінімум 8 символів)</label>
+                  <input id="reset-password" type="password" autocomplete="new-password"
+                    placeholder="••••••••" minlength="8" required class="form-input"/>
+                </div>
+              </div>
+              <p id="reset-error" class="form-error" role="alert" aria-live="assertive"></p>
+              <button type="submit" id="reset-submit-btn" class="btn btn--teacher btn--full">Зберегти пароль</button>
+            </form>
           </div>
 
           <!-- ── РЕЖИМ РЕЄСТРАЦІЇ ── -->
