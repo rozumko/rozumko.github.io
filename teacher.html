@@ -75,6 +75,11 @@
               <p id="login-error" class="form-error" role="alert" aria-live="assertive"></p>
               <button type="submit" id="login-submit-btn" class="btn btn--teacher btn--full">Увійти</button>
             </form>
+            <!-- Shown when the signed-in account has no teacher cabinet yet -->
+            <div id="register-request-box" class="hidden">
+              <p class="auth-switch-hint">Цей акаунт ще не має кабінету вчителя.</p>
+              <button type="button" id="register-request-btn" class="btn btn--success btn--full">Подати заявку вчителя</button>
+            </div>
             <div class="auth-divider">
               <p class="auth-divider__text" aria-hidden="true">або</p>
               <button type="button" id="google-login-btn" class="btn btn--secondary btn--full">

@@ -2,8 +2,8 @@ import type { FastifyInstance } from 'fastify'
 import { randomInt } from 'crypto'
 import { and, count, desc, eq, gte, inArray, lte } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { accessCodes, attempts, classStudents, eventQuestions, eventRegistrations, olympiadEvents, teacherClasses } from '../db/schema.js'
-import { requireAuth } from '../lib/auth.js'
+import { accessCodes, appUsers, attempts, classStudents, eventQuestions, eventRegistrations, olympiadEvents, teacherClasses } from '../db/schema.js'
+import { requireAuth, verifySupabaseIdentity } from '../lib/auth.js'
 import { assertEventCanAcceptRegistrations, assertRegistrationCanBeCancelled, normalizeRegistrationInput, normalizeTeacherClassInput } from './registration-validation.js'
 import { assertEventCanIssueCodes, resolveCodeExpiry } from './teacher-events-validation.js'
 
@@ -35,6 +35,33 @@ export async function teacherRoutes(app: FastifyInstance) {
   // GET /api/me
   app.get('/me', { preHandler: requireAuth }, async (req, reply) => {
     return reply.send(req.user)
+  })
+
+  // POST /api/teacher/register-request
+  // The ONLY place that creates a pending teacher row. Deliberately not behind
+  // requireAuth (which requires an existing row); the JWT alone proves identity.
+  // Idempotent: an existing row of any role/status is returned untouched.
+  app.post('/register-request', {
+    config: { rateLimit: { max: 5, timeWindow: '1 minute' } },
+  }, async (req, reply) => {
+    const identity = await verifySupabaseIdentity(req.headers.authorization)
+    if (!identity) return reply.code(401).send({ error: 'Потрібна авторизація' })
+    if (!identity.email) return reply.code(403).send({ error: 'Email не знайдено в токені' })
+
+    const [existing] = await db
+      .select({ status: appUsers.status })
+      .from(appUsers)
+      .where(eq(appUsers.authUserId, identity.authUserId))
+      .limit(1)
+    if (existing) return reply.send({ status: existing.status })
+
+    await db.insert(appUsers).values({
+      authUserId: identity.authUserId,
+      email: identity.email,
+      role: 'teacher',
+      status: 'pending',
+    })
+    return reply.code(201).send({ status: 'pending' })
   })
 
   // GET /api/teacher/events

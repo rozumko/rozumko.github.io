@@ -6,7 +6,7 @@ import {
   getTeacherMe, generateCodes, getTeacherClasses, getTeacherCodes,
   getTeacherRegistrationEvents, getTeacherRegistrations, getTeacherResults,
   cancelTeacherRegistration,
-  requestPasswordReset, updateAuthPassword, googleSignInUrl,
+  requestPasswordReset, updateAuthPassword, googleSignInUrl, registerTeacherRequest,
   getClassStudents, addClassStudent, updateClassStudent, deleteClassStudent,
   createSchoolSession, startSchoolSession, finishSchoolSession, getSchoolSession,
   TURNSTILE_SITE_KEY,
@@ -32,6 +32,24 @@ function isPendingError(err: unknown): boolean {
     || msg.includes('ACCOUNT_PENDING')
     || msg.includes('очікує підтвердження')
     || msg.includes('ще не підтверджено')
+}
+
+// Valid Supabase user without an app_users row: the backend no longer
+// auto-provisions, the teacher cabinet is requested explicitly.
+function isUnknownAccountError(err: unknown): boolean {
+  const apiErr = err as { code?: string; message?: string }
+  return apiErr.code === 'ACCOUNT_UNKNOWN'
+    || (apiErr.message ?? '').includes('ще не створено')
+}
+
+const PENDING_CREATED_MSG = '✅ Заявку подано! Кабінет очікує підтвердження адміністратора — після підтвердження увійдіть ще раз.'
+
+function showRegisterRequestBox() {
+  $maybe('register-request-box')?.classList.remove('hidden')
+}
+
+function hideRegisterRequestBox() {
+  $maybe('register-request-box')?.classList.add('hidden')
 }
 import { $, $maybe } from './utils/dom.js'
 import { avatarSrc, avatarLabel } from './avatars.js'
@@ -145,8 +163,26 @@ async function init() {
       await Promise.all([loadRegistrationEvents(), loadClasses(), loadRegistrations(), loadCodes(), loadResults()])
     } catch (err) {
       hideColdStartBanner()
-      // New account (Google sign-in or just-confirmed email) lands here with
-      // ACCOUNT_PENDING — without a message it looks like a silent failure.
+      if (isUnknownAccountError(err)) {
+        if (type === 'signup') {
+          // Came from the teacher signup confirmation email — intent is
+          // explicit, so file the request right away.
+          try {
+            await registerTeacherRequest()
+            showAuth(PENDING_CREATED_MSG)
+          } catch {
+            showAuth('Не вдалося створити кабінет. Спробуйте увійти ще раз.')
+          }
+        } else {
+          // Google/password sign-in without a cabinet (could be a parent):
+          // ask before creating anything.
+          showAuth()
+          showRegisterRequestBox()
+        }
+        return
+      }
+      // New account (just-confirmed email) lands here with ACCOUNT_PENDING —
+      // without a message it looks like a silent failure.
       if (isPendingError(err)) {
         showAuth('✅ Акаунт створено! Він очікує підтвердження адміністратора — після підтвердження увійдіть ще раз.')
         return
@@ -189,11 +225,33 @@ loginForm.addEventListener('submit', async (e) => {
   } catch (err) {
     hideColdStartBanner()
     const msg = (err as Error).message
-    loginError.textContent     = isPendingError(err)
-      ? '⏳ Акаунт очікує підтвердження адміністратора. Зверніться до організатора олімпіади.'
-      : friendlyError(msg)
+    if (isUnknownAccountError(err)) {
+      loginError.textContent = 'Вхід виконано, але кабінету вчителя ще немає.'
+      showRegisterRequestBox()
+    } else {
+      loginError.textContent = isPendingError(err)
+        ? '⏳ Акаунт очікує підтвердження адміністратора. Зверніться до організатора олімпіади.'
+        : friendlyError(msg)
+    }
     loginSubmitBtn.disabled    = false
     loginSubmitBtn.textContent = 'Увійти'
+  }
+})
+
+// Explicit teacher sign-up request (account exists in Supabase, no cabinet yet)
+$maybe<HTMLButtonElement>('register-request-btn')?.addEventListener('click', async (e) => {
+  const btn = e.currentTarget as HTMLButtonElement
+  btn.disabled = true
+  btn.textContent = 'Надсилання…'
+  try {
+    await registerTeacherRequest()
+    hideRegisterRequestBox()
+    loginError.textContent = PENDING_CREATED_MSG
+  } catch (err) {
+    loginError.textContent = friendlyError((err as Error).message)
+  } finally {
+    btn.disabled = false
+    btn.textContent = 'Подати заявку вчителя'
   }
 })
 
@@ -260,6 +318,7 @@ function switchToRegister() {
   // Реєстрація завжди починається без локальної teacher-сесії. Це також закриває
   // крайовий випадок зі stale token після невдалого bootstrap-запиту до API.
   void logoutTeacher()
+  hideRegisterRequestBox()
   loginMode?.classList.add('hidden')
   forgotMode?.classList.add('hidden')
   registerMode?.classList.remove('hidden')
@@ -298,6 +357,7 @@ const resetSubmitBtn  = $maybe<HTMLButtonElement>('reset-submit-btn')
 const FORGOT_TURNSTILE = 'turnstile-container-forgot'
 
 function switchToForgot() {
+  hideRegisterRequestBox()
   loginMode?.classList.add('hidden')
   registerMode?.classList.add('hidden')
   forgotMode?.classList.remove('hidden')

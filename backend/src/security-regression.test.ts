@@ -452,6 +452,18 @@ test('parent email verification never reads the user-writable JWT claim', () => 
   assert.match(parentRoute, /email_confirmed_at from auth\.users/)
 })
 
+test('requireAuth is read-only; teacher rows appear only via explicit register-request', () => {
+  const authLib = readFileSync(new URL('./lib/auth.ts', import.meta.url), 'utf8')
+  const teacherRoute = readFileSync(new URL('./routes/teacher.ts', import.meta.url), 'utf8')
+
+  // A parent (or any Supabase user) hitting a teacher endpoint must not
+  // create app_users rows as a side effect of authentication.
+  assert.doesNotMatch(authLib, /\.insert\(/)
+  assert.match(authLib, /ACCOUNT_UNKNOWN/)
+  assert.match(teacherRoute, /'\/register-request'/)
+  assert.match(teacherRoute, /role:\s*'teacher',\s*status:\s*'pending'/)
+})
+
 test('admin teacher-status route cannot touch admin accounts', () => {
   const adminRoute = readFileSync(new URL('./routes/admin.ts', import.meta.url), 'utf8')
   assert.match(adminRoute, /eq\(appUsers\.id,\s*id\),\s*eq\(appUsers\.role,\s*'teacher'\)/)

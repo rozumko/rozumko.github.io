@@ -16,56 +16,51 @@ const JWKS = createRemoteJWKSet(
   new URL(`${process.env.SUPABASE_URL}/auth/v1/.well-known/jwks.json`)
 )
 
-export async function requireAuth(req: FastifyRequest, reply: FastifyReply) {
-  const header = req.headers.authorization
-  if (!header?.startsWith('Bearer ')) {
-    return reply.code(401).send({ error: 'Потрібна авторизація' })
-  }
-
-  const token = header.slice(7)
-
-  let payload: SupabaseJwtPayload
+/**
+ * Verifies the Supabase JWT and returns the identity, or null.
+ * Shared by requireAuth and the explicit teacher register-request route.
+ */
+export async function verifySupabaseIdentity(
+  header: string | undefined,
+): Promise<{ authUserId: string; email: string } | null> {
+  if (!header?.startsWith('Bearer ')) return null
   try {
-    const result = await jwtVerify(token, JWKS, {
+    const { payload: raw } = await jwtVerify(header.slice(7), JWKS, {
       issuer:     `${process.env.SUPABASE_URL}/auth/v1`,
       audience:   'authenticated',  // service/anon-key tokens carry a different aud
       algorithms: ['ES256'],  // явно забороняємо alg:none та HMAC downgrade
     })
-    payload = result.payload as SupabaseJwtPayload
+    const payload = raw as SupabaseJwtPayload
+    // Fail closed: anonymous sign-ins must never reach app_users.
+    if (!payload.sub || payload.is_anonymous === true) return null
+    return { authUserId: payload.sub, email: payload.email ?? '' }
   } catch {
-    return reply.code(401).send({ error: 'Недійсний токен' })
+    return null
   }
+}
 
-  const authUserId = payload.sub
-  if (!authUserId) {
-    return reply.code(401).send({ error: 'Недійсний токен' })
+export async function requireAuth(req: FastifyRequest, reply: FastifyReply) {
+  const identity = await verifySupabaseIdentity(req.headers.authorization)
+  if (!identity) {
+    return reply.code(401).send({ error: 'Потрібна авторизація' })
   }
-
-  // Fail closed: anonymous sign-ins (if ever enabled in Supabase) must not
-  // reach the teacher auto-provisioning below.
-  if (payload.is_anonymous === true) {
-    return reply.code(401).send({ error: 'Недійсний токен' })
-  }
+  const { authUserId } = identity
 
   // Роль береться з БД, не з JWT
-  let [user] = await db
+  const [user] = await db
     .select()
     .from(appUsers)
     .where(eq(appUsers.authUserId, authUserId))
     .limit(1)
 
-  // Auto-provision: новий вчитель зареєструвався через Supabase Auth,
-  // але запис у appUsers ще не існує — створюємо з роллю 'teacher', status 'pending'.
-  // Адміністратор має вручну підтвердити акаунт через панель адміна.
+  // NO auto-provisioning here: requireAuth is read-only. A valid Supabase user
+  // without an app_users row (e.g. a parent opening teacher.html) gets a
+  // refusal; the teacher row is created only by the explicit
+  // POST /api/teacher/register-request.
   if (!user) {
-    const email = payload.email ?? ''
-    if (!email) return reply.code(403).send({ error: 'Email не знайдено в токені' })
-    await db
-      .insert(appUsers)
-      .values({ authUserId, email, role: 'teacher', status: 'pending' })
     return reply.code(403).send({
-      error: 'Акаунт очікує підтвердження адміністратора. Зверніться до організатора олімпіади.',
-      code: 'ACCOUNT_PENDING',
+      error: 'Кабінет вчителя ще не створено для цього акаунта.',
+      code: 'ACCOUNT_UNKNOWN',
     })
   }
 

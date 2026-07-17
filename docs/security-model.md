@@ -150,11 +150,16 @@ and ignores a transition target unless the runtime allowlist permits it.
 ## Teacher And Admin Authorization
 
 1. Supabase Auth returns a JWT after signup or login.
-2. The backend verifies the JWT before handling protected requests.
+2. The backend verifies the JWT (issuer, audience `authenticated`, ES256 only,
+   anonymous sign-ins rejected) before handling protected requests.
 3. The database decides the user's role and status.
-4. New teachers remain pending until an administrator approves them.
-5. Pending and blocked users cannot access protected teacher features.
-6. Admin routes additionally require the admin role.
+4. A teacher row is created only by the explicit
+   `POST /api/teacher/register-request`; authentication itself never writes to
+   `app_users`, so a parent (or any Supabase user) visiting teacher endpoints
+   gets `ACCOUNT_UNKNOWN` instead of a silently provisioned pending row.
+5. New teachers remain pending until an administrator approves them.
+6. Pending and blocked users cannot access protected teacher features.
+7. Admin routes additionally require the admin role.
 
 The frontend limits third-party scripts around authenticated flows. Keep
 avoiding unsafe HTML interpolation.
