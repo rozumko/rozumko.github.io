@@ -102,6 +102,9 @@ function findPendingPathImports(): PendingPathImport[] {
 
 let pendingImports = findPendingPathImports()
 
+// Set right before the redirect to Google; checked (and cleared) by init().
+const OAUTH_PENDING_KEY = 'rozumko_parent_oauth_pending'
+
 // One widget per container: register form and forgot-password form have their own.
 const turnstileWidgets = new Map<string, string>()
 let turnstileLoad: Promise<void> | null = null
@@ -460,7 +463,18 @@ async function init() {
   // 'signup' | 'recovery' | ...; OAuth (Google) returns tokens WITHOUT type
   const type = hash.get('type')
   if (accessToken) {
-    storeParentSession({ accessToken, refreshToken: refreshToken ?? '', email: '', activeChildProfileId: null })
+    // Anti-fixation: a typeless token is only trusted when THIS tab started the
+    // OAuth redirect (flag set by the Google button); see teacher.ts for details.
+    const trustedType = type === 'signup' || type === 'magiclink' || type === 'recovery'
+    let oauthPending = false
+    try {
+      oauthPending = sessionStorage.getItem(OAUTH_PENDING_KEY) === '1'
+      sessionStorage.removeItem(OAUTH_PENDING_KEY)
+    } catch { /* sessionStorage unavailable */ }
+
+    if (trustedType || oauthPending) {
+      storeParentSession({ accessToken, refreshToken: refreshToken ?? '', email: '', activeChildProfileId: null })
+    }
     history.replaceState(null, '', window.location.pathname)
   }
 
@@ -540,6 +554,8 @@ $('parent-show-forgot').addEventListener('click', showForgot)
 $('parent-hide-forgot').addEventListener('click', showLogin)
 
 $('parent-google-login').addEventListener('click', () => {
+  // The flag is what lets init() trust the typeless token on return.
+  try { sessionStorage.setItem(OAUTH_PENDING_KEY, '1') } catch { /* sessionStorage unavailable */ }
   window.location.href = googleSignInUrl('parent.html')
 })
 

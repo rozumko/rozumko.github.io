@@ -239,7 +239,9 @@ export async function adminRoutes(app: FastifyInstance) {
     const [updated] = await db
       .update(appUsers)
       .set({ status })
-      .where(eq(appUsers.id, id))
+      // The route manages teachers only: an admin account must not be
+      // blockable through it (defence against fat-finger and stolen sessions).
+      .where(and(eq(appUsers.id, id), eq(appUsers.role, 'teacher')))
       .returning({ id: appUsers.id, status: appUsers.status })
     if (!updated) return reply.code(404).send({ error: 'Користувача не знайдено' })
     return reply.send({ id: updated.id, status: updated.status })

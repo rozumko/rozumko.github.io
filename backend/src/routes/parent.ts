@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import { and, eq, isNull, inArray, desc } from 'drizzle-orm'
-import { db } from '../db/index.js'
+import { db, pool } from '../db/index.js'
 import {
   homeParentAccounts, homeLeads, homeChildProfiles,
   homeDemoAttempts, homeDemoReports, homeMissionAttempts, homeEntitlements,
@@ -38,12 +38,27 @@ export interface ParentRoutesOptions {
   pathCatalogLoader?: PathCatalogLoader
   /** DI for legacy clients without pathVersion; production scans immutable revisions. */
   pathCatalogCandidatesLoader?: PathCatalogCandidatesLoader
+  /**
+   * DI для тестів: чи підтверджено email. Продакшн читає auth.users.email_confirmed_at
+   * напряму з БД — JWT-claim user_metadata.email_verified user-writable і НЕ джерело правди.
+   */
+  emailConfirmedLoader?: (authUserId: string) => Promise<boolean>
+}
+
+/** Authoritative email confirmation: GoTrue's own auth.users table. */
+async function emailConfirmedInAuth(authUserId: string): Promise<boolean> {
+  const res = await pool.query(
+    'select email_confirmed_at from auth.users where id = $1::uuid',
+    [authUserId],
+  )
+  return res.rows[0]?.email_confirmed_at != null
 }
 
 export async function parentRoutes(app: FastifyInstance, opts: ParentRoutesOptions = {}) {
   const verifyToken = opts.verifyToken ?? verifyParentToken
   const pathProgressStore = opts.pathProgressStore ?? drizzlePathProgressStore
   const pathCatalogLoader = opts.pathCatalogLoader ?? loadPathCatalog
+  const emailConfirmed = opts.emailConfirmedLoader ?? emailConfirmedInAuth
   const pathCatalogCandidatesLoader = opts.pathCatalogCandidatesLoader
     ?? (opts.pathCatalogLoader
       ? async (pathId: string) => {
@@ -101,7 +116,9 @@ export async function parentRoutes(app: FastifyInstance, opts: ParentRoutesOptio
     } catch {
       return reply.code(403).send({ error: 'У токені немає коректного email' })
     }
-    const verifiedNow = payload.user_metadata?.email_verified === true
+    // Server-side source of truth; the JWT's user_metadata.email_verified is
+    // user-writable and must never gate the claim flow.
+    const verifiedNow = await emailConfirmed(payload.sub!)
 
     const existing = await loadAccount(payload.sub!)
     if (existing) {

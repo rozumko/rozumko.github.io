@@ -432,3 +432,27 @@ test('attempt finalization is protected against late answer races', () => {
   assert.match(finalization, /db\.transaction/)
   assert.match(finalization, /\.for\('update'\)/)
 })
+
+test('JWT verification pins audience and rejects anonymous sign-ins in both auth paths', () => {
+  const teacherAuth = readFileSync(new URL('./lib/auth.ts', import.meta.url), 'utf8')
+  const parentAuth = readFileSync(new URL('./lib/parent-auth.ts', import.meta.url), 'utf8')
+
+  assert.match(teacherAuth, /audience:\s*'authenticated'/)
+  assert.match(parentAuth, /audience:\s*'authenticated'/)
+  assert.match(teacherAuth, /is_anonymous === true/)
+  assert.match(parentAuth, /is_anonymous === true/)
+})
+
+test('parent email verification never reads the user-writable JWT claim', () => {
+  const parentRoute = readFileSync(new URL('./routes/parent.ts', import.meta.url), 'utf8')
+
+  // user_metadata.email_verified is raw_user_meta_data: any authenticated user
+  // can set it via PUT /auth/v1/user. Source of truth is auth.users only.
+  assert.doesNotMatch(parentRoute, /payload\.user_metadata/)
+  assert.match(parentRoute, /email_confirmed_at from auth\.users/)
+})
+
+test('admin teacher-status route cannot touch admin accounts', () => {
+  const adminRoute = readFileSync(new URL('./routes/admin.ts', import.meta.url), 'utf8')
+  assert.match(adminRoute, /eq\(appUsers\.id,\s*id\),\s*eq\(appUsers\.role,\s*'teacher'\)/)
+})

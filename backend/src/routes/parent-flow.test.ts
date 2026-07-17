@@ -201,9 +201,10 @@ function installFakeDb(state: State) {
 }
 
 // DI-верифікатор: токен → payload без мережі. 'verified' керує email_verified.
+// 'verified' — лише вміст JWT-claim'а (user-writable); справжнє підтвердження
+// email контролюється confirmedSubs у buildApp.
 const TOKENS: Record<string, { sub: string; email: string; verified: boolean }> = {
   'mama-verified':    { sub: 'auth-mama', email: 'Mama@Example.com', verified: true },
-  'mama-unverified':  { sub: 'auth-mama', email: 'Mama@Example.com', verified: false },
   'chuzhyi-verified': { sub: 'auth-chuzhyi', email: 'chuzhyi@example.com', verified: true },
 }
 
@@ -214,12 +215,19 @@ const SEED_MAPS = JSON.parse(readFileSync(
 const SEED_CATALOGS = new Map<string, CatalogPath | null>(
   SEED_MAPS.map(map => [map.pathId, catalogFromPoints(map.grade, map.points)]))
 
-async function buildApp(pathProgressStore?: PathProgressStore) {
+// Server-side email confirmation (auth.users) is what production consults now;
+// the JWT claim user_metadata.email_verified is forgeable and must be ignored.
+// Tests mutate the set mid-flow to model a user confirming email over time.
+async function buildApp(
+  pathProgressStore?: PathProgressStore,
+  confirmedSubs: Set<string> = new Set(['auth-mama', 'auth-chuzhyi']),
+) {
   const app = Fastify()
   await app.register(parentRoutes, {
     prefix: '/api/parent',
     pathProgressStore,
     pathCatalogLoader: async (pathId: string) => SEED_CATALOGS.get(pathId) ?? null,
+    emailConfirmedLoader: async (authUserId: string) => confirmedSubs.has(authUserId),
     verifyToken: async (header: string | undefined) => {
       const token = header?.startsWith('Bearer ') ? header.slice(7) : ''
       const known = TOKENS[token]
@@ -335,7 +343,8 @@ test('claim: повний успішний шлях + ідемпотентний
 test('claim-відмови: невалідний UUID → 400; чужий email → 403; без verified email → 403; чужий лід → 409', async () => {
   const state = createState()
   const restore = installFakeDb(state)
-  const app = await buildApp()
+  const confirmedSubs = new Set(['auth-mama'])
+  const app = await buildApp(undefined, confirmedSubs)
   try {
     await app.inject({ method: 'POST', url: '/api/parent/register', headers: auth('mama-verified') })
 
@@ -353,13 +362,16 @@ test('claim-відмови: невалідний UUID → 400; чужий email 
     assert.equal(wrongEmail.statusCode, 403)
     assert.equal(state.leads[1].parentAccountId, null, 'лід B не має бути привʼязаний')
 
-    // Той самий користувач, але без підтвердженого email — окремий акаунт-стан
+    // Той самий користувач, але auth.users ще не підтвердив email — окремий
+    // акаунт-стан. Токен свідомо 'mama-verified' (з підробленим claim'ом):
+    // server-side перевірка має його проігнорувати.
     const unverifiedState = createState()
     restore()
     const restore2 = installFakeDb(unverifiedState)
-    await app.inject({ method: 'POST', url: '/api/parent/register', headers: auth('mama-unverified') })
+    confirmedSubs.delete('auth-mama')
+    await app.inject({ method: 'POST', url: '/api/parent/register', headers: auth('mama-verified') })
     const unverified = await app.inject({
-      method: 'POST', url: '/api/parent/claim-lead', headers: auth('mama-unverified'),
+      method: 'POST', url: '/api/parent/claim-lead', headers: auth('mama-verified'),
       payload: { leadId: ids.leadA, leadToken: generateLeadToken(ids.leadA) },
     })
     assert.equal(unverified.statusCode, 403)
@@ -368,6 +380,7 @@ test('claim-відмови: невалідний UUID → 400; чужий email 
     // Чужий уже привʼязаний лід → 409 fail-closed, без переносу
     unverifiedState.leads[0].parentAccountId = ids.accountB
     const mamaState = unverifiedState
+    confirmedSubs.add('auth-mama')
     await app.inject({ method: 'POST', url: '/api/parent/register', headers: auth('mama-verified') })
     const conflict = await app.inject({
       method: 'POST', url: '/api/parent/claim-lead', headers: auth('mama-verified'),
@@ -377,6 +390,25 @@ test('claim-відмови: невалідний UUID → 400; чужий email 
     assert.equal(mamaState.leads[0].parentAccountId, ids.accountB, 'власник не змінився')
     restore2()
   } finally { await app.close() }
+})
+
+test('підроблений user_metadata.email_verified у JWT не обходить auth.users', async () => {
+  const state = createState()
+  const restore = installFakeDb(state)
+  // auth.users нікого не підтвердив; токен 'mama-verified' несе email_verified: true
+  const app = await buildApp(undefined, new Set())
+  try {
+    const reg = await app.inject({ method: 'POST', url: '/api/parent/register', headers: auth('mama-verified') })
+    assert.equal(reg.statusCode, 201)
+    assert.equal(reg.json().emailVerified, false, 'форджений claim не має ставити emailVerifiedAt')
+
+    const claim = await app.inject({
+      method: 'POST', url: '/api/parent/claim-lead', headers: auth('mama-verified'),
+      payload: { leadId: ids.leadA, leadToken: generateLeadToken(ids.leadA) },
+    })
+    assert.equal(claim.statusCode, 403, 'claim без server-side підтвердження email — відмова')
+    assert.equal(state.leads[0].parentAccountId, null)
+  } finally { restore(); await app.close() }
 })
 
 test('профілі: створення, ліміт, оновлення і ownership-404', async () => {
