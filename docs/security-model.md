@@ -218,6 +218,9 @@ School Mode is the low-risk classroom surface:
   and scoring happens only on the server;
 - one answer per participant per question, only for active sessions, only for
   questions issued to that session;
+- projector questions are available only to the authenticated owner of an
+  active School session, use the same answer-key sanitizer, and accept class
+  answers through server scoring that returns only `{ correct: boolean }`;
 - repeated unknown valid-format classroom join codes receive a short
   code-level cooldown; lobby retries for a real session are not counted so a
   class is not locked out before the teacher starts the game;

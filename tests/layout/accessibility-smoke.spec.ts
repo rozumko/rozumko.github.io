@@ -259,6 +259,10 @@ async function openTeacherDashboard(page: Page) {
                   ? { results: [] }
                   : path === '/api/school/sessions' && method === 'POST'
                     ? { session: schoolSession }
+                    : path === '/api/school/sessions/school-session-1/questions'
+                      ? { questions: [{ id: 'question-1', q: 'Що робить клавіатура?', type: 'choice', options: ['Вводить дані', 'Друкує на папері'] }] }
+                      : path === '/api/school/sessions/school-session-1/projector-answer' && method === 'POST'
+                        ? { correct: true }
                     : path === '/api/school/sessions/school-session-1'
                       ? {
                           session: schoolSession,
@@ -627,20 +631,33 @@ test('axe: /teacher.html dashboard', async ({ page }) => {
 test('teacher school-game form stays accessible on a phone', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 667 })
   await openTeacherDashboard(page)
-  await page.locator('[data-tab="school"]').click()
   await page.locator('#school-create-btn').click()
   await expect(page.locator('#school-live')).toBeVisible()
   await expect(page.locator('.school-topic-stat__bar')).toHaveCount(3)
   await expect(page.locator('.school-topic-stat__bar').nth(0)).toHaveAttribute('value', '30')
 
   const results = await new AxeBuilder({ page })
-    .include('#tab-school')
+    .include('#teacher-section-school')
     .withTags(WCAG_AA_TAGS)
     .analyze()
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
 
   expect(results.violations).toEqual([])
   expect(overflow).toBeLessThanOrEqual(0)
+})
+
+test('teacher can start an accessible projector game from the default screen', async ({ page }) => {
+  await openTeacherDashboard(page)
+  await page.locator('#school-projector-btn').click()
+  await expect(page.locator('#school-projector')).toBeVisible()
+  await expect(page.locator('#school-projector-question-text')).toHaveText('Що робить клавіатура?')
+
+  const results = await new AxeBuilder({ page })
+    .include('#school-projector')
+    .withTags(WCAG_AA_TAGS)
+    .analyze()
+
+  expect(results.violations).toEqual([])
 })
 
 test.describe('axe accessibility scan: rendered question mechanics', () => {

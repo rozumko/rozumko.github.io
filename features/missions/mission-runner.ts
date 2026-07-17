@@ -20,6 +20,8 @@ export interface MissionElements {
 
 export interface MissionOptions {
   showExplanation?: boolean
+  incorrectFeedback?: string
+  completeLabel?: string
   onComplete: (summary: MissionSummary) => void
   /**
    * Live-режим (просунутий School): ключі відповідей вирізані сервером, тож
@@ -36,6 +38,7 @@ export function runMission(
   opts: MissionOptions,
 ): void {
   const showExplanation = opts.showExplanation ?? true
+  const completeLabel = opts.completeLabel ?? 'Завершити місію'
   let currentIdx = 0
   let correct = 0
 
@@ -105,7 +108,7 @@ export function runMission(
               els.feedback.textContent = (err as Error).message
               els.feedback.className = 'quiz-feedback quiz-feedback--incorrect'
               els.nextBtn.classList.remove('hidden')
-              els.nextBtn.textContent = currentIdx + 1 < questions.length ? 'Далі →' : 'Завершити місію'
+              els.nextBtn.textContent = currentIdx + 1 < questions.length ? 'Далі →' : completeLabel
             })
         }
       },
@@ -117,7 +120,9 @@ export function runMission(
   }
 
   function showFeedback(isCorrect: boolean, q: RenderableQuestion) {
-    els.feedback.textContent = isCorrect ? '✓ Правильно!' : '✗ Майже! Подивись пояснення'
+    const incorrectFeedback = opts.incorrectFeedback
+      ?? (showExplanation && q.explanation ? 'Майже! Подивись пояснення' : 'Майже! Спробуй наступне завдання')
+    els.feedback.textContent = isCorrect ? '✓ Правильно!' : `✗ ${incorrectFeedback}`
     els.feedback.className = isCorrect
       ? 'quiz-feedback quiz-feedback--correct'
       : 'quiz-feedback quiz-feedback--incorrect'
@@ -130,7 +135,7 @@ export function runMission(
     // Після відповіді: варіанти віддають місце фідбеку/поясненню (див. style.css).
     document.body.classList.add('mission-answered')
     els.nextBtn.classList.remove('hidden')
-    els.nextBtn.textContent = currentIdx + 1 < questions.length ? 'Далі →' : 'Завершити місію'
+    els.nextBtn.textContent = currentIdx + 1 < questions.length ? 'Далі →' : completeLabel
   }
 
   function showNeutralFeedback() {
@@ -138,7 +143,7 @@ export function runMission(
     els.feedback.className = 'quiz-feedback quiz-feedback--correct'
     document.body.classList.add('mission-answered')
     els.nextBtn.classList.remove('hidden')
-    els.nextBtn.textContent = currentIdx + 1 < questions.length ? 'Далі →' : 'Завершити місію'
+    els.nextBtn.textContent = currentIdx + 1 < questions.length ? 'Далі →' : completeLabel
   }
 
   // onclick (не addEventListener) — щоб повторний запуск місії не накопичував слухачів.

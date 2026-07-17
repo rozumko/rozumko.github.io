@@ -179,7 +179,8 @@ Backend:
 
 - School Mode routes are implemented under `/api/school`: teacher session
   lifecycle (create/start/finish/state+leaderboard, scoped to the owning
-  teacher) and anonymous student join/answer with server-side scoring;
+  teacher), an owner-only projector question/scoring surface that never returns
+  answer keys, and anonymous student join/answer with server-side scoring;
 - Home Mode routes are implemented under `/api/home` for parent lead + consent,
   demo attempt/report, entitlement check and gated Club practice, specified in
   [home-demo-contract.md](./home-demo-contract.md); the provider-neutral
