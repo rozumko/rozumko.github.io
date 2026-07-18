@@ -357,10 +357,25 @@
             <option value="3">3 клас</option>
             <option value="4">4 клас</option>
           </select>
-          <select id="q-filter-type" class="adm-input adm-input--sm adm-input--auto">
-            <option value="">Всі типи</option>
-            <option value="false">Тренування</option>
-            <option value="true">Олімпіада</option>
+          <select id="q-filter-pool" class="adm-input adm-input--sm adm-input--auto">
+            <option value="">Всі пули</option>
+            <option value="false">Тренувальні</option>
+            <option value="true">Основний тур</option>
+          </select>
+          <select id="q-filter-mechanic" class="adm-input adm-input--sm adm-input--auto">
+            <option value="">Всі механіки</option>
+            <option value="choice">Вибір</option>
+            <option value="truefalse">Так/Ні</option>
+            <option value="input">Введення</option>
+            <option value="sort">Порядок</option>
+            <option value="sequence">Послідовність</option>
+            <option value="match">Пари</option>
+          </select>
+          <select id="q-filter-channel" class="adm-input adm-input--sm adm-input--auto">
+            <option value="">Всі розділи</option>
+            <option value="class_game">Класна гра</option>
+            <option value="path">Шлях учня</option>
+            <option value="olympiad_training">Олімпіада — тренування</option>
           </select>
           <select id="q-filter-difficulty" class="adm-input adm-input--sm adm-input--auto">
             <option value="">Всі рівні</option>
@@ -528,8 +543,27 @@
           </div>
           <div class="adm-checkbox-row adm-checkbox-row--end">
             <input type="checkbox" id="qf-olympiad"/>
-            <label for="qf-olympiad">Олімпіада</label>
+            <label for="qf-olympiad">Основний тур</label>
           </div>
+        </div>
+
+        <div class="qf-distribution">
+          <span class="adm-label">Де використовується</span>
+          <div class="qf-distribution__options">
+            <div class="adm-checkbox-row">
+              <input type="checkbox" id="qf-channel-class-game"/>
+              <label for="qf-channel-class-game">Класна гра</label>
+            </div>
+            <div class="adm-checkbox-row">
+              <input type="checkbox" id="qf-channel-path"/>
+              <label for="qf-channel-path">Шлях учня</label>
+            </div>
+            <div class="adm-checkbox-row">
+              <input type="checkbox" id="qf-channel-olympiad-training"/>
+              <label for="qf-channel-olympiad-training">Олімпіада — тренування</label>
+            </div>
+          </div>
+          <p class="admin-section-note">Основний тур не можна поєднувати з тренувальними розділами.</p>
         </div>
 
         <!-- Текст питання -->

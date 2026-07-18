@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify'
-import { eq, desc, count, and, asc, inArray, ilike, or, sql } from 'drizzle-orm'
+import { eq, desc, count, and, asc, inArray, ilike, or, sql, arrayContains } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { questions, questionRevisions, accessCodes, attempts, attemptQuestions, appUsers, olympiadEvents, eventQuestions, schoolSessions, schoolSessionQuestions, homeLeads, homeEntitlements, homeEntitlementEvents, homeParentAccounts, homePathProgress, missions, missionRevisions, microLessons, microLessonRevisions, pathMapRevisions, pathMaps, contentPublications, type QuestionTrack } from '../db/schema.js'
+import { questions, questionRevisions, accessCodes, attempts, attemptQuestions, appUsers, olympiadEvents, eventQuestions, schoolSessions, schoolSessionQuestions, homeLeads, homeEntitlements, homeEntitlementEvents, homeParentAccounts, homePathProgress, missions, missionRevisions, microLessons, microLessonRevisions, pathMapRevisions, pathMaps, contentPublications, type QuestionChannel, type QuestionTrack } from '../db/schema.js'
 import { normalizeLessonSlug, normalizeLessonStatus, normalizeLessonContent, lessonContentChanged } from './lesson-validation.js'
 import { contentFromLessonRevision, lessonPublishedSnapshot, lessonRevisionSnapshot } from './lesson-editorial.js'
 import { EDITABLE_MISSION_KINDS, missionPublishedSnapshot, missionSnapshot, normalizeEditableMission, normalizeMissionSlug, normalizeMissionStatus, type NormalizedMissionInput } from './mission-editorial.js'
@@ -20,6 +20,7 @@ import {
   restoredQuestionValues,
 } from './question-editorial.js'
 import { ALL_TOPICS, normalizeTopic, normalizeConceptKey, normalizeProgressionBand, type ConceptKey, type ProgressionBand } from '../lib/taxonomy.js'
+import { QUESTION_CHANNELS, assertQuestionDistribution, normalizeQuestionChannels } from '../lib/question-channels.js'
 import {
   EVENT_STATUSES,
   assertEventDateOrder,
@@ -527,9 +528,9 @@ export async function adminRoutes(app: FastifyInstance) {
     return reply.send({ results: allAttempts })
   })
 
-  // GET /api/admin/questions?grade=&isOlympiad=&difficulty=&track=&topic=&status=&search=
+  // GET /api/admin/questions?grade=&isOlympiad=&type=&channel=&difficulty=&track=&topic=&status=&search=
   app.get<{
-    Querystring: { grade?: string; isOlympiad?: string; difficulty?: string; track?: string; topic?: string; status?: string; search?: string }
+    Querystring: { grade?: string; isOlympiad?: string; type?: string; channel?: string; difficulty?: string; track?: string; topic?: string; status?: string; search?: string }
   }>('/questions', {
     preHandler: requireAdmin,
     schema: {
@@ -539,6 +540,8 @@ export async function adminRoutes(app: FastifyInstance) {
         properties: {
           grade:      { type: 'string', enum: ['1', '2', '3', '4'] },
           isOlympiad: { type: 'string', enum: ['true', 'false'] },
+          type:       { type: 'string', enum: ['choice', 'truefalse', 'input', 'sort', 'sequence', 'match'] },
+          channel:    { type: 'string', enum: [...QUESTION_CHANNELS] },
           difficulty: { type: 'string', enum: ['easy', 'medium', 'hard'] },
           track:      { type: 'string', enum: ['informatics', 'computational-thinking', 'ai-basics'] },
           topic:      { type: 'string', enum: ALL_TOPICS as string[] },
@@ -548,7 +551,7 @@ export async function adminRoutes(app: FastifyInstance) {
       },
     },
   }, async (req, reply) => {
-    const { grade, isOlympiad, difficulty, topic, status, search } = req.query
+    const { grade, isOlympiad, type, channel, difficulty, topic, status, search } = req.query
     let track: QuestionTrack | null
     try {
       track = normalizeQuestionTrack(req.query.track)
@@ -558,6 +561,8 @@ export async function adminRoutes(app: FastifyInstance) {
     const filters = []
     if (grade)      filters.push(eq(questions.grade,      Number(grade)))
     if (isOlympiad) filters.push(eq(questions.isOlympiad, isOlympiad === 'true'))
+    if (type)       filters.push(eq(questions.type,       type as QuestionType))
+    if (channel)    filters.push(arrayContains(questions.channels, [channel as QuestionChannel]))
     if (difficulty) filters.push(eq(questions.difficulty, difficulty))
     if (track)      filters.push(eq(questions.track,      track))
     if (topic)      filters.push(eq(questions.topic,      topic))
@@ -578,7 +583,7 @@ export async function adminRoutes(app: FastifyInstance) {
   // POST /api/admin/questions
   app.post<{
     Body: {
-      q: string; grade: number; difficulty: string; track?: QuestionTrack | null; isOlympiad: boolean
+      q: string; grade: number; difficulty: string; track?: QuestionTrack | null; isOlympiad: boolean; channels?: QuestionChannel[]
       topic?: string | null; conceptKey?: string | null; progressionBand?: string | null
       type?: string; options: string[] | Record<string, unknown>
       correct?: number; explanation?: string; code?: string; img?: string | null; imageAlt?: string | null
@@ -595,6 +600,7 @@ export async function adminRoutes(app: FastifyInstance) {
           difficulty:  { type: 'string', enum: ['easy', 'medium', 'hard'] },
           track:       { oneOf: [{ type: 'string', enum: ['informatics', 'computational-thinking', 'ai-basics'] }, { type: 'null' }] },
           isOlympiad:  { type: 'boolean' },
+          channels:    { type: 'array', uniqueItems: true, items: { type: 'string', enum: [...QUESTION_CHANNELS] } },
           topic:           { oneOf: [{ type: 'string', enum: ALL_TOPICS as string[] }, { type: 'null' }] },
           conceptKey:      { oneOf: [{ type: 'string' }, { type: 'null' }] },
           progressionBand: { oneOf: [{ type: 'string', enum: ['recognize', 'apply', 'reason'] }, { type: 'null' }] },
@@ -617,12 +623,15 @@ export async function adminRoutes(app: FastifyInstance) {
     let conceptKey: ConceptKey | null
     let progressionBand: ProgressionBand | null
     let media: { img: string | null; imageAlt: string | null }
+    let channels: QuestionChannel[]
     try {
       track           = normalizeQuestionTrack(req.body.track)
       topic           = normalizeTopic(req.body.topic, track)
       conceptKey      = normalizeConceptKey(req.body.conceptKey)
       progressionBand = normalizeProgressionBand(req.body.progressionBand)
       media             = normalizeQuestionMedia(req.body.img, req.body.imageAlt)
+      channels          = normalizeQuestionChannels(req.body.channels ?? [])
+      assertQuestionDistribution(isOlympiad, channels)
     } catch (err) {
       return reply.code(400).send({ error: (err as Error).message })
     }
@@ -639,7 +648,7 @@ export async function adminRoutes(app: FastifyInstance) {
       const [row] = await tx
         .insert(questions)
         .values({
-          q: q.trim(), grade, difficulty, track, topic, conceptKey, progressionBand, isOlympiad,
+          q: q.trim(), grade, difficulty, track, topic, conceptKey, progressionBand, isOlympiad, channels,
           type, options: shape.options as any, correct: shape.correct,
           explanation: explanation?.trim() || null, code: code?.trim() || null,
           ...media, editorialStatus: 'draft', createdBy: req.user!.id, updatedBy: req.user!.id,
@@ -662,7 +671,7 @@ export async function adminRoutes(app: FastifyInstance) {
     Params: { id: string }
     Body: {
       expectedEditVersion: number
-      q?: string; grade?: number; difficulty?: string; track?: QuestionTrack | null; isOlympiad?: boolean
+      q?: string; grade?: number; difficulty?: string; track?: QuestionTrack | null; isOlympiad?: boolean; channels?: QuestionChannel[]
       topic?: string | null; conceptKey?: string | null; progressionBand?: string | null
       type?: string; options?: string[] | Record<string, unknown>
       correct?: number | null; explanation?: string; code?: string; img?: string | null; imageAlt?: string | null
@@ -685,6 +694,7 @@ export async function adminRoutes(app: FastifyInstance) {
           difficulty:  { type: 'string', enum: ['easy', 'medium', 'hard'] },
           track:       { oneOf: [{ type: 'string', enum: ['informatics', 'computational-thinking', 'ai-basics'] }, { type: 'null' }] },
           isOlympiad:  { type: 'boolean' },
+          channels:    { type: 'array', uniqueItems: true, items: { type: 'string', enum: [...QUESTION_CHANNELS] } },
           topic:           { oneOf: [{ type: 'string', enum: ALL_TOPICS as string[] }, { type: 'null' }] },
           conceptKey:      { oneOf: [{ type: 'string' }, { type: 'null' }] },
           progressionBand: { oneOf: [{ type: 'string', enum: ['recognize', 'apply', 'reason'] }, { type: 'null' }] },
@@ -705,6 +715,7 @@ export async function adminRoutes(app: FastifyInstance) {
     let track: QuestionTrack | null | undefined
     let conceptKey: ConceptKey | null | undefined
     let progressionBand: ProgressionBand | null | undefined
+    let channels: QuestionChannel[] | undefined
 
     const [current] = await db
       .select()
@@ -724,12 +735,21 @@ export async function adminRoutes(app: FastifyInstance) {
       track           = b.track           !== undefined ? normalizeQuestionTrack(b.track) : undefined
       conceptKey      = b.conceptKey      !== undefined ? normalizeConceptKey(b.conceptKey) : undefined
       progressionBand = b.progressionBand !== undefined ? normalizeProgressionBand(b.progressionBand) : undefined
+      channels        = b.channels !== undefined ? normalizeQuestionChannels(b.channels) : undefined
       if (b.img !== undefined || b.imageAlt !== undefined) {
         media = normalizeQuestionMedia(
           b.img !== undefined ? b.img : current.img,
           b.imageAlt !== undefined ? b.imageAlt : current.imageAlt,
         )
       }
+    } catch (err) {
+      return reply.code(400).send({ error: (err as Error).message })
+    }
+
+    const nextIsOlympiad = b.isOlympiad !== undefined ? b.isOlympiad : Boolean(current.isOlympiad)
+    const nextChannels = channels !== undefined ? channels : current.channels
+    try {
+      assertQuestionDistribution(nextIsOlympiad, nextChannels)
     } catch (err) {
       return reply.code(400).send({ error: (err as Error).message })
     }
@@ -776,6 +796,7 @@ export async function adminRoutes(app: FastifyInstance) {
     if (conceptKey      !== undefined) updates.conceptKey      = conceptKey
     if (progressionBand !== undefined) updates.progressionBand = progressionBand
     if (b.isOlympiad  !== undefined) updates.isOlympiad  = b.isOlympiad
+    if (channels      !== undefined) updates.channels    = channels
     if (b.type        !== undefined) updates.type        = b.type
     // options/correct беремо з провалідованої форми (нормалізовані)
     if (b.options !== undefined || b.type !== undefined) updates.options = shape.options
@@ -789,7 +810,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
     const contentFields = [
       'q', 'options', 'correct', 'type', 'explanation', 'code', 'img', 'imageAlt',
-      'grade', 'difficulty', 'track', 'topic', 'conceptKey', 'progressionBand', 'isOlympiad',
+      'grade', 'difficulty', 'track', 'topic', 'conceptKey', 'progressionBand', 'isOlympiad', 'channels',
     ] as const
     if (contentFields.some(field => Object.prototype.hasOwnProperty.call(b, field))) {
       updates.version = current.version + 1
@@ -960,6 +981,12 @@ export async function adminRoutes(app: FastifyInstance) {
         normalizeQuestionTrack(restored.track)
         normalizeTopic(restored.topic, restored.track as QuestionTrack | null)
         normalizeQuestionMedia(restored.img, restored.imageAlt)
+        const restoredChannels = normalizeQuestionChannels(restored.channels ?? current.channels)
+        const restoredIsOlympiad = restored.isOlympiad !== undefined
+          ? Boolean(restored.isOlympiad)
+          : Boolean(current.isOlympiad)
+        assertQuestionDistribution(restoredIsOlympiad, restoredChannels)
+        restored.channels = restoredChannels
       } catch (err) {
         return reply.code(400).send({ error: `Ревізію неможливо відновити: ${(err as Error).message}` })
       }

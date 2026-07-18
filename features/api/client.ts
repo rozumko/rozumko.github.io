@@ -20,6 +20,8 @@ export const TURNSTILE_SITE_KEY = ENV.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAADdbJz
 
 export type QuestionType = 'choice' | 'truefalse' | 'input' | 'sort' | 'sequence' | 'match'
 export type QuestionTrack = 'informatics' | 'computational-thinking' | 'ai-basics'
+export type QuestionChannel = 'class_game' | 'path' | 'olympiad_training'
+export type PublicQuestionChannel = Exclude<QuestionChannel, 'class_game'>
 
 export interface Question {
   id: string
@@ -39,6 +41,7 @@ export interface Question {
   editorialStatus?: 'draft' | 'review' | 'published' | 'archived'
   grade?: number
   isOlympiad?: boolean
+  channels?: QuestionChannel[]
   a?: string[]                    // normalized alias для question-renderer (choice/truefalse)
   img?: string | null
   imageAlt?: string | null
@@ -228,11 +231,12 @@ export async function saveAnswer(attemptId: string, attemptToken: string, questi
 }
 
 export async function loadQuestions({
-  grade, isOlympiad, count, difficulty, track, hideAnswers,
-}: { grade?: number; isOlympiad?: boolean; count?: number; difficulty?: string; track?: QuestionTrack; hideAnswers?: boolean } = {}): Promise<Question[]> {
+  grade, isOlympiad, channel, count, difficulty, track, hideAnswers,
+}: { grade?: number; isOlympiad?: boolean; channel?: PublicQuestionChannel; count?: number; difficulty?: string; track?: QuestionTrack; hideAnswers?: boolean } = {}): Promise<Question[]> {
   const params = new URLSearchParams()
   if (grade      != null) params.set('grade',      String(grade))
   if (isOlympiad != null) params.set('isOlympiad', String(isOlympiad))
+  if (channel)            params.set('channel',     channel)
   if (count      != null) params.set('count',      String(count))
   if (difficulty)         params.set('difficulty', difficulty)
   if (track)              params.set('track',      track)
@@ -1515,10 +1519,12 @@ export function updateAdminPathMap(
   })
 }
 
-export function getAdminQuestions(params: { grade?: number | string; isOlympiad?: boolean | string; difficulty?: string; track?: QuestionTrack | string; topic?: string; status?: string; search?: string } = {}): Promise<{ questions: Question[] }> {
+export function getAdminQuestions(params: { grade?: number | string; isOlympiad?: boolean | string; type?: QuestionType | string; channel?: QuestionChannel | string; difficulty?: string; track?: QuestionTrack | string; topic?: string; status?: string; search?: string } = {}): Promise<{ questions: Question[] }> {
   const p = new URLSearchParams()
   if (params.grade      != null) p.set('grade',      String(params.grade))
   if (params.isOlympiad != null) p.set('isOlympiad', String(params.isOlympiad))
+  if (params.type)               p.set('type',       String(params.type))
+  if (params.channel)            p.set('channel',    String(params.channel))
   if (params.difficulty)         p.set('difficulty', params.difficulty)
   if (params.track)              p.set('track',      String(params.track))
   if (params.topic)              p.set('topic',      params.topic)

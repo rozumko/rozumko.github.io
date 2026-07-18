@@ -6,6 +6,7 @@ import { getPublicQuestionRequest } from './public-question-policy.ts'
 test('demo використовує лише тренувальний пул без ключів відповідей', () => {
   assert.deepEqual(getPublicQuestionRequest('demo', null), {
     isOlympiad: false,
+    channel: 'path',
     difficulty: 'hard',
     hideAnswers: true,
   })
@@ -14,6 +15,7 @@ test('demo використовує лише тренувальний пул б�
 test('practice API fallback використовує тренувальний пул без ключів', () => {
   assert.deepEqual(getPublicQuestionRequest('practice', 'medium'), {
     isOlympiad: false,
+    channel: 'olympiad_training',
     difficulty: 'medium',
     hideAnswers: true,
   })

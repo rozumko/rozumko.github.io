@@ -1,5 +1,6 @@
 import { validateQuestionShape, type QuestionType } from './question-input-validation.js'
-import type { QuestionEditorialStatus } from '../db/schema.js'
+import { questionDistributionIssues } from '../lib/question-channels.js'
+import type { QuestionChannel, QuestionEditorialStatus } from '../db/schema.js'
 
 export const QUESTION_EDITORIAL_STATUSES = ['draft', 'review', 'published', 'archived'] as const
 
@@ -37,6 +38,8 @@ export interface PublishableQuestion {
   topic: string | null
   img: string | null
   imageAlt: string | null
+  isOlympiad: boolean | null
+  channels: readonly QuestionChannel[]
 }
 
 export function questionReadinessIssues(question: PublishableQuestion): string[] {
@@ -56,6 +59,7 @@ export function questionReadinessIssues(question: PublishableQuestion): string[]
   } catch (error) {
     issues.push((error as Error).message)
   }
+  issues.push(...questionDistributionIssues(question.isOlympiad, question.channels))
   return issues
 }
 
@@ -70,7 +74,7 @@ export function questionSnapshot(row: Record<string, unknown>): Record<string, u
 export function restoredQuestionValues(snapshot: Record<string, unknown>): Record<string, unknown> {
   const allowed = [
     'q', 'code', 'type', 'options', 'correct', 'explanation', 'img', 'imageAlt',
-    'difficulty', 'track', 'topic', 'conceptKey', 'progressionBand', 'meta', 'grade', 'isOlympiad',
+    'difficulty', 'track', 'topic', 'conceptKey', 'progressionBand', 'meta', 'grade', 'isOlympiad', 'channels',
   ] as const
   const legacyKeys: Record<string, string> = {
     imageAlt: 'image_alt', conceptKey: 'concept_key', progressionBand: 'progression_band', isOlympiad: 'is_olympiad',

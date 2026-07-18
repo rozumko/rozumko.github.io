@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyReply, preHandlerHookHandler } from 'fastify'
-import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, sql, arrayContains } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { questions, schoolSessions, schoolSessionQuestions, schoolParticipants, schoolAnswers } from '../db/schema.js'
 import { requireAuth } from '../lib/auth.js'
@@ -162,6 +162,7 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
     const filters = [
       eq(questions.isOlympiad, false),
       eq(questions.editorialStatus, 'published'),
+      arrayContains(questions.channels, ['class_game']),
       eq(questions.grade, req.body.grade),
     ]
     if (difficulty) filters.push(eq(questions.difficulty, difficulty))

@@ -309,6 +309,13 @@
       "when": 1784764800000,
       "tag": "0043_seed_click_trainer_missions",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1784851200000,
+      "tag": "0044_add_question_channels",
+      "breakpoints": true
     }
   ]
 }

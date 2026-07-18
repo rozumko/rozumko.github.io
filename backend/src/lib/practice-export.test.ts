@@ -7,7 +7,7 @@ function row(overrides: Partial<ExportableQuestionRow> = {}): ExportableQuestion
     id: 'q-1', q: '2+2?', code: null, type: 'choice', options: ['4', '5'],
     correct: 0, explanation: null, difficulty: 'easy', track: null, topic: null,
     img: null, imageAlt: null, conceptKey: null, progressionBand: null, version: 1,
-    grade: 1, isOlympiad: false,
+    grade: 1, isOlympiad: false, channels: ['olympiad_training'],
     ...overrides,
   }
 }
@@ -15,14 +15,26 @@ function row(overrides: Partial<ExportableQuestionRow> = {}): ExportableQuestion
 test('sanitizeForStaticBundle: олімпіадне питання валить експорт (fail closed)', () => {
   assert.throws(
     () => sanitizeForStaticBundle([row(), row({ id: 'q-2', isOlympiad: true })]),
-    /не може потрапити/,
+    /not explicitly marked as training/,
   )
 })
 
-test('sanitizeForStaticBundle: isOlympiad=false і null проходять, поле стрипається', () => {
-  const out = sanitizeForStaticBundle([row(), row({ id: 'q-2', isOlympiad: null })])
-  assert.equal(out.length, 2)
-  for (const q of out) assert.equal('isOlympiad' in q, false)
+test('sanitizeForStaticBundle: only explicit isOlympiad=false passes and the field is stripped', () => {
+  const out = sanitizeForStaticBundle([row()])
+  assert.equal(out.length, 1)
+  for (const q of out) {
+    assert.equal('isOlympiad' in q, false)
+    assert.equal('channels' in q, false)
+  }
+})
+
+test('sanitizeForStaticBundle: legacy null isOlympiad fails closed', () => {
+  const legacy = { ...row(), isOlympiad: null } as unknown as ExportableQuestionRow
+  assert.throws(() => sanitizeForStaticBundle([legacy]), /not explicitly marked as training/)
+})
+
+test('sanitizeForStaticBundle: question outside olympiad_training fails closed', () => {
+  assert.throws(() => sanitizeForStaticBundle([row({ channels: ['path'] })]), /olympiad_training/)
 })
 
 test('sanitizeForStaticBundle: рядки без валідного grade пропускаються', () => {

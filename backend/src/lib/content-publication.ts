@@ -1,5 +1,5 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
-import { and, asc, eq, inArray, isNotNull, ne } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNotNull, ne, arrayContains } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { microLessons, missions, pathMaps, questions } from '../db/schema.js'
 
@@ -22,7 +22,11 @@ export async function buildContentPublicationManifest(): Promise<ContentPublicat
   // before the next content family is read.
   const practiceQuestions = await db
     .select({ id: questions.id, version: questions.version, editVersion: questions.editVersion })
-    .from(questions).where(and(eq(questions.isOlympiad, false), eq(questions.editorialStatus, 'published')))
+    .from(questions).where(and(
+      eq(questions.isOlympiad, false),
+      eq(questions.editorialStatus, 'published'),
+      arrayContains(questions.channels, ['olympiad_training']),
+    ))
     .orderBy(asc(questions.id))
   const lessons = await db.select({ id: microLessons.id, version: microLessons.publishedVersion }).from(microLessons)
     .where(and(isNotNull(microLessons.publishedVersion), ne(microLessons.status, 'archived')))
