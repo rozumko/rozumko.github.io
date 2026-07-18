@@ -79,9 +79,20 @@
       <button data-tab="missions"   class="admin-tab"><i class="fas fa-rocket" aria-hidden="true"></i> Місії</button>
       <button data-tab="lessons"    class="admin-tab"><i class="fas fa-book-open" aria-hidden="true"></i> Уроки</button>
       <button data-tab="path"       class="admin-tab"><i class="fas fa-map-signs" aria-hidden="true"></i> Шлях</button>
-      <button data-tab="publication" class="admin-tab"><i class="fas fa-cloud-upload-alt" aria-hidden="true"></i> Публікація</button>
+      <button data-tab="publication" class="admin-tab"><i class="fas fa-clipboard-list" aria-hidden="true"></i> Журнал сайту</button>
       <button data-tab="help"       class="admin-tab"><i class="fas fa-life-ring" aria-hidden="true"></i> Довідка</button>
     </nav>
+
+    <section id="content-delivery-banner" class="content-delivery-banner hidden" aria-live="polite">
+      <div class="content-delivery-banner__message">
+        <i class="fas fa-cloud-upload-alt" aria-hidden="true"></i>
+        <div>
+          <strong id="content-delivery-title">Є зміни для відкритого сайту</strong>
+          <p id="content-delivery-detail">Онови сайт один раз, коли завершиш редагування.</p>
+        </div>
+      </div>
+      <button id="content-delivery-action" class="btn-adm-sky" type="button">Оновити сайт</button>
+    </section>
 
     <main id="main-content" class="admin-main">
 
@@ -314,15 +325,15 @@
         <p id="pm-error" class="adm-form-error" role="alert"></p>
       </section>
 
-      <!-- Вкладка: Публікація -->
+      <!-- Вкладка: журнал оновлень сайту -->
       <section id="tab-publication" class="tab-panel hidden">
         <div class="admin-section-header">
           <div>
-            <h2 class="admin-section-title">Публікація контенту</h2>
-            <p class="admin-section-note">Один запуск збирає лише опубліковані версії питань, уроків, місій і карт, перевіряє їхній склад та доставляє дітям. Кожен запуск зберігається в журналі.</p>
+            <h2 class="admin-section-title">Журнал оновлень сайту</h2>
+            <p class="admin-section-note">Розширений журнал запусків, перевірок і помилок. Один запуск доставляє всі накопичені зміни статичних питань, уроків, місій і карт.</p>
           </div>
           <button id="publish-content-btn" class="btn-adm-sky" type="button">
-            <i class="fas fa-cloud-upload-alt" aria-hidden="true"></i> Опублікувати для дітей
+            <i class="fas fa-cloud-upload-alt" aria-hidden="true"></i> Оновити сайт зараз
           </button>
         </div>
         <p id="publication-status" class="admin-section-note" role="status" aria-live="polite">Завантаження стану…</p>
@@ -347,9 +358,8 @@
           <select id="q-filter-status" class="adm-input adm-input--sm adm-input--auto">
             <option value="">Всі статуси</option>
             <option value="draft">Чернетки</option>
-            <option value="review">На перевірці</option>
             <option value="published">Опубліковані</option>
-            <option value="archived">Архів</option>
+            <option value="archived">Зняті з публікації</option>
           </select>
           <select id="q-filter-grade" class="adm-input adm-input--sm adm-input--auto">
             <option value="">Всі класи</option>
@@ -414,17 +424,17 @@
               <li><strong>Опиши призначення.</strong> Обери клас, складність, напрям, тему та розділи, де питання має з’являтися.</li>
               <li><strong>Заповни завдання.</strong> Додай текст, варіанти або інші дані механіки, правильну відповідь і зрозуміле пояснення.</li>
               <li><strong>Перевір вигляд.</strong> Скористайся попереднім переглядом і перевір формулювання, відповідь та зображення.</li>
-              <li><strong>Передай на перевірку.</strong> Після рев’ю опублікуй схвалену версію.</li>
-              <li><strong>Достав контент дітям.</strong> Для оновлення перевіреного набору на дитячих сторінках скористайся вкладкою «Публікація».</li>
+              <li><strong>Опублікуй.</strong> Система ще раз перевірить усі обов’язкові поля й одразу активує живі розділи.</li>
+              <li><strong>Онови відкритий сайт.</strong> Якщо з’явиться плашка про накопичені зміни, натисни «Оновити сайт» один раз після завершення роботи.</li>
             </ol>
           </article>
 
           <article class="admin-form-card admin-help-card">
             <h3 class="admin-help-card__title">Де використовується</h3>
             <dl class="admin-help-definitions">
-              <div><dt>Класна гра</dt><dd>Питання для спільної гри вчителя з класом.</dd></div>
-              <div><dt>Шлях учня</dt><dd>Питання для домашніх місій і навчального шляху.</dd></div>
-              <div><dt>Олімпіада — тренування</dt><dd>Підготовчі питання, доступні без коду основного туру.</dd></div>
+              <div><dt>Школа — класна гра</dt><dd>Питання активується в живій класній грі одразу після публікації.</dd></div>
+              <div><dt>Home Club</dt><dd>Питання активується у захищених домашніх місіях одразу після публікації.</dd></div>
+              <div><dt>Відкрита практика, демо та Шлях</dt><dd>Питання входить до статичного набору й з’являється після оновлення сайту.</dd></div>
               <div><dt>Олімпіада — основний тур</dt><dd>Захищені питання офіційної події, що видаються лише учасникам із кодом.</dd></div>
             </dl>
             <p class="admin-help-callout">Тренувальне питання можна додати до кількох розділів. Основний тур завжди окремий і не поєднується з ними.</p>
@@ -434,9 +444,8 @@
             <h3 class="admin-help-card__title">Статуси питання</h3>
             <dl class="admin-help-definitions">
               <div><dt>Чернетка</dt><dd>Можна редагувати або видалити. Діти її не бачать.</dd></div>
-              <div><dt>На перевірці</dt><dd>Питання готове до редакторського перегляду; призначення вже має бути визначене.</dd></div>
               <div><dt>Опубліковано</dt><dd>Схвалена версія зафіксована і більше не змінюється.</dd></div>
-              <div><dt>Архів</dt><dd>Питання не потрапляє до нових добірок, але його історія зберігається.</dd></div>
+              <div><dt>Знято з публікації</dt><dd>Питання не потрапляє до нових добірок, але його історія зберігається.</dd></div>
             </dl>
             <p class="admin-help-callout">Щоб змінити опубліковане питання, створи з нього нову версію-чернетку. Це захищає вже проведені сесії та результати.</p>
           </article>
@@ -630,15 +639,15 @@
           <div class="qf-distribution__options">
             <div class="adm-checkbox-row">
               <input type="checkbox" id="qf-channel-class-game"/>
-              <label for="qf-channel-class-game">Класна гра</label>
+              <label for="qf-channel-class-game">Школа — класна гра</label>
             </div>
             <div class="adm-checkbox-row">
               <input type="checkbox" id="qf-channel-path"/>
-              <label for="qf-channel-path">Шлях учня</label>
+              <label for="qf-channel-path">Home Club</label>
             </div>
             <div class="adm-checkbox-row">
               <input type="checkbox" id="qf-channel-olympiad-training"/>
-              <label for="qf-channel-olympiad-training">Олімпіада — тренування</label>
+              <label for="qf-channel-olympiad-training">Відкрита практика, демо та Шлях</label>
             </div>
           </div>
           <p class="admin-section-note">Основний тур не можна поєднувати з тренувальними розділами.</p>

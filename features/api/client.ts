@@ -1482,7 +1482,19 @@ export interface AdminContentPublication {
   completedAt: string | null
 }
 
-export function getAdminContentPublications(): Promise<{ publications: AdminContentPublication[] }> {
+export interface AdminContentDeliveryState {
+  currentManifestSha256: string
+  deployedManifestSha256: string | null
+  pendingChanges: boolean
+  activePublicationId: string | null
+  activePublicationStatus: 'queued' | 'running' | null
+  activeMatchesCurrent: boolean
+}
+
+export function getAdminContentPublications(): Promise<{
+  publications: AdminContentPublication[]
+  deliveryState: AdminContentDeliveryState
+}> {
   return authRequest('/api/admin/content-publications')
 }
 

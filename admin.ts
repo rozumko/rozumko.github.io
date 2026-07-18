@@ -10,7 +10,7 @@ import { initQuestionsTab, loadQuestionsTab  } from './features/admin/questions-
 import { initMissionsTab,  loadMissionsTab   } from './features/admin/missions-tab.js'
 import { initLessonsTab,   loadLessonsTab    } from './features/admin/lessons-tab.js'
 import { initPathTab,      loadPathTab       } from './features/admin/path-tab.js'
-import { initPublicationTab, loadPublicationTab } from './features/admin/publication-tab.js'
+import { initPublicationTab, loadPublicationTab, refreshContentDeliveryBanner } from './features/admin/publication-tab.js'
 import { friendlyError } from './features/admin/ui.js'
 import { $, $maybe } from './utils/dom.js'
 
@@ -119,6 +119,7 @@ function showDashboard(nameOrEmail: string) {
   adminPanel.classList.remove('hidden')
   emailDisplay.textContent = nameOrEmail
   refreshStats()
+  void refreshContentDeliveryBanner()
   loadEvents()
   loadTeachers()
   loadParents()

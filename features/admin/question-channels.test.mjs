@@ -4,6 +4,9 @@ import test from 'node:test'
 
 const adminHtml = readFileSync(new URL('../../admin.html', import.meta.url), 'utf8')
 const questionsTab = readFileSync(new URL('./questions-tab.ts', import.meta.url), 'utf8')
+const lessonsTab = readFileSync(new URL('./lessons-tab.ts', import.meta.url), 'utf8')
+const missionsTab = readFileSync(new URL('./missions-tab.ts', import.meta.url), 'utf8')
+const publicationTab = readFileSync(new URL('./publication-tab.ts', import.meta.url), 'utf8')
 const apiClient = readFileSync(new URL('../api/client.ts', import.meta.url), 'utf8')
 
 test('question editor exposes mutually exclusive main-round and training-channel controls', () => {
@@ -38,4 +41,22 @@ test('admin help explains the complete question workflow in plain language', () 
   assert.match(adminHtml, /Олімпіада — основний тур/)
   assert.match(adminHtml, /Статуси питання/)
   assert.match(adminHtml, /Перевір перед публікацією/)
+})
+
+test('single-editor workflow publishes drafts directly and keeps review as backend compatibility only', () => {
+  assert.doesNotMatch(adminHtml, /<option value="review">/)
+  assert.match(questionsTab, /status === 'draft' \|\| status === 'review' \? 'published'/)
+  assert.match(lessonsTab, /lesson\.status === 'draft' \|\| lesson\.status === 'review' \? 'published'/)
+  assert.match(missionsTab, /status === 'draft' \|\| status === 'review' \? 'published'/)
+  assert.match(questionsTab, /Зняти з публікації/)
+})
+
+test('admin surfaces accumulated static changes through one site-update banner', () => {
+  for (const id of ['content-delivery-banner', 'content-delivery-title', 'content-delivery-detail', 'content-delivery-action']) {
+    assert.match(adminHtml, new RegExp(`id="${id}"`))
+  }
+  assert.match(adminHtml, /Журнал сайту/)
+  assert.match(publicationTab, /deliveryState\.pendingChanges/)
+  assert.match(publicationTab, /activeMatchesCurrent/)
+  assert.match(apiClient, /deliveryState: AdminContentDeliveryState/)
 })

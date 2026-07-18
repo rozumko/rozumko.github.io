@@ -3,7 +3,8 @@ import { createHmac } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 import {
-  contentManifestSha256, emptyContentFamilies, publicationCallbackMessage, verifyPublicationCallback,
+  contentManifestSha256, emptyContentFamilies, publicationCallbackMessage, summarizeContentDeliveryState,
+  verifyPublicationCallback,
   type ContentPublicationManifest, type PublicationCallbackBody,
 } from './content-publication.js'
 
@@ -17,6 +18,28 @@ test('publication manifest hash is stable and content-sensitive', () => {
   assert.equal(contentManifestSha256(manifest), contentManifestSha256(structuredClone(manifest)))
   const changed = structuredClone(manifest); changed.paths[0].version++
   assert.notEqual(contentManifestSha256(manifest), contentManifestSha256(changed))
+})
+
+test('content delivery state distinguishes pending and actively publishing manifests', () => {
+  assert.deepEqual(summarizeContentDeliveryState('current', 'deployed', null), {
+    currentManifestSha256: 'current',
+    deployedManifestSha256: 'deployed',
+    pendingChanges: true,
+    activePublicationId: null,
+    activePublicationStatus: null,
+    activeMatchesCurrent: false,
+  })
+  assert.deepEqual(summarizeContentDeliveryState('current', 'deployed', {
+    id: 'publication', status: 'running', expectedManifestSha256: 'current',
+  }), {
+    currentManifestSha256: 'current',
+    deployedManifestSha256: 'deployed',
+    pendingChanges: true,
+    activePublicationId: 'publication',
+    activePublicationStatus: 'running',
+    activeMatchesCurrent: true,
+  })
+  assert.equal(summarizeContentDeliveryState('current', 'current', null).pendingChanges, false)
 })
 
 test('publication manifest avoids parallel database reads for the constrained exporter role', async () => {

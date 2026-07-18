@@ -7,15 +7,16 @@ import { esc, showModal, showConfirm } from './ui.js'
 import { $ } from '../../utils/dom.js'
 import { createFocusTrap } from '../../utils/focus-trap.js'
 import { mountLesson } from '../../features/lessons/lesson-runner.js'
+import { refreshContentDeliveryBanner } from './publication-tab.js'
 
-// Micro-lesson authoring. Publishing freezes a reviewed revision; the separate
-// publication tab deploys all child-facing static bundles as one audited set.
+// Micro-lesson authoring. Publishing freezes an immutable revision; the site
+// update action deploys all child-facing static bundles as one audited set.
 
 const STATUS_LABELS: Record<AdminMicroLesson['status'], string> = {
   draft:     'Чернетка',
-  review:    'На перевірці',
+  review:    'Готовий до публікації',
   published: 'Опубліковано',
-  archived:  'Архів',
+  archived:  'Знято з публікації',
 }
 
 let allLessons: AdminMicroLesson[] = []
@@ -66,10 +67,10 @@ function renderLessons() {
     el.className = 'question-item'
     const statusBadge = lesson.status === 'published' ? 'qi-badge--easy'
       : lesson.status === 'draft' ? 'qi-badge--medium' : 'qi-badge--type'
-    const nextStatus = lesson.status === 'draft' ? 'review' : lesson.status === 'review' ? 'published'
+    const nextStatus = lesson.status === 'draft' || lesson.status === 'review' ? 'published'
       : lesson.status === 'published' ? 'archived' : lesson.publishedVersion ? 'published' : 'draft'
-    const nextLabel = lesson.status === 'draft' ? 'На перевірку' : lesson.status === 'review' ? 'Опублікувати'
-      : lesson.status === 'published' ? 'Архівувати' : lesson.publishedVersion ? 'Опублікувати знову' : 'У чернетки'
+    const nextLabel = lesson.status === 'draft' || lesson.status === 'review' ? 'Опублікувати'
+      : lesson.status === 'published' ? 'Зняти з публікації' : lesson.publishedVersion ? 'Опублікувати знову' : 'Повернути в чернетки'
     el.innerHTML = `
       <div class="question-item__left">
         <div class="question-item__badges">
@@ -109,6 +110,7 @@ async function toggleStatus(lesson: AdminMicroLesson, next: AdminMicroLesson['st
     try {
       await setAdminLessonStatus(lesson.id, next, lesson.editVersion)
       await loadLessonsTab()
+      void refreshContentDeliveryBanner()
     } catch (err) {
       showModal((err as Error).message)
     }
@@ -172,6 +174,7 @@ async function openHistory(lesson: AdminMicroLesson) {
           try {
             await restoreAdminLessonRevision(lesson.id, revision.editVersion, lesson.editVersion)
             await loadLessonsTab()
+            void refreshContentDeliveryBanner()
           } catch (err) { showModal((err as Error).message) }
         })
       })
@@ -297,6 +300,7 @@ async function save() {
     }
     closeEditor()
     await loadLessonsTab()
+    void refreshContentDeliveryBanner()
   } catch (err) {
     errorEl.textContent = (err as Error).message
   } finally {

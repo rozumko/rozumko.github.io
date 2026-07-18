@@ -16,6 +16,34 @@ export interface ContentPublicationManifest extends Record<string, unknown> {
   paths: Array<{ id: string; version: number }>
 }
 
+export interface ContentDeliveryState {
+  currentManifestSha256: string
+  deployedManifestSha256: string | null
+  pendingChanges: boolean
+  activePublicationId: string | null
+  activePublicationStatus: 'queued' | 'running' | null
+  activeMatchesCurrent: boolean
+}
+
+export function summarizeContentDeliveryState(
+  currentManifestSha256: string,
+  deployedManifestSha256: string | null,
+  activePublication: {
+    id: string
+    status: 'queued' | 'running'
+    expectedManifestSha256: string
+  } | null,
+): ContentDeliveryState {
+  return {
+    currentManifestSha256,
+    deployedManifestSha256,
+    pendingChanges: currentManifestSha256 !== deployedManifestSha256,
+    activePublicationId: activePublication?.id ?? null,
+    activePublicationStatus: activePublication?.status ?? null,
+    activeMatchesCurrent: activePublication?.expectedManifestSha256 === currentManifestSha256,
+  }
+}
+
 export async function buildContentPublicationManifest(): Promise<ContentPublicationManifest> {
   // Keep export compatible with the deliberately low connection limit of the
   // read-only content_exporter role. Each awaited query releases its pool slot

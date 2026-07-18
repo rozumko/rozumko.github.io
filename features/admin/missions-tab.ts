@@ -23,6 +23,7 @@ import { createFocusTrap } from '../../utils/focus-trap.js'
 import { $ } from '../../utils/dom.js'
 import { esc, showConfirm, showModal } from './ui.js'
 import { TOPIC_LABELS, TOPICS_BY_TRACK } from './taxonomy.js'
+import { refreshContentDeliveryBanner } from './publication-tab.js'
 
 const TRACK_LABELS: Record<string, string> = {
   informatics: 'Інформатика', 'computational-thinking': 'Обчислювальне мислення', 'ai-basics': 'Основи ШІ',
@@ -36,7 +37,7 @@ const FO_CATEGORY_OPTIONS: Array<{ value: AdminFactOpinionStatement['category'];
   { value: 'fact', label: '✅ Факт' }, { value: 'opinion', label: '💬 Думка' }, { value: 'myth', label: '🔮 Міф' },
 ]
 const STATUS_LABELS: Record<string, string> = {
-  draft: 'Чернетка', review: 'На перевірці', published: 'Опублікована', active: 'Опублікована', archived: 'Архів',
+  draft: 'Чернетка', review: 'Готова до публікації', published: 'Опублікована', active: 'Опублікована', archived: 'Знята з публікації',
 }
 
 let allMissions: Mission[] = []
@@ -99,10 +100,10 @@ function missionCard(mission: Mission): HTMLElement {
     || (mission.kind === 'click-trainer-game' && !Array.isArray(mission.config?.rounds))
   const needsImport = needsSortingImport || needsNarrativeImport
     || (mission.kind === 'simulator-game' && !Array.isArray(mission.config?.nodes))
-  const nextStatus: Mission['status'] = status === 'draft' ? 'review' : status === 'review' ? 'published'
+  const nextStatus: Mission['status'] = status === 'draft' || status === 'review' ? 'published'
     : status === 'published' ? 'archived' : mission.publishedVersion ? 'published' : 'draft'
-  const nextLabel = status === 'draft' ? 'На перевірку' : status === 'review' ? 'Опублікувати'
-    : status === 'published' ? 'Архівувати' : mission.publishedVersion ? 'Опублікувати знову' : 'У чернетки'
+  const nextLabel = status === 'draft' || status === 'review' ? 'Опублікувати'
+    : status === 'published' ? 'Зняти з публікації' : mission.publishedVersion ? 'Опублікувати знову' : 'Повернути в чернетки'
   const sets = mission.kind === 'question-set' && Array.isArray(mission.config?.questionSets)
     ? mission.config.questionSets as AdminMissionQuestionSet[] : []
   const el = document.createElement('div')
@@ -141,7 +142,11 @@ function missionCard(mission: Mission): HTMLElement {
         openSimulatorEditor(mission); return
       }
       showConfirm(`${nextLabel} місію «${mission.title}»?`, async () => {
-        try { await setAdminMissionStatus(mission.id, nextStatus, mission.editVersion ?? 1); await loadMissionsTab() }
+        try {
+          await setAdminMissionStatus(mission.id, nextStatus, mission.editVersion ?? 1)
+          await loadMissionsTab()
+          void refreshContentDeliveryBanner()
+        }
         catch (err) { showModal((err as Error).message) }
       })
     })
@@ -296,7 +301,7 @@ async function saveMission() {
     const data = collectMission()
     if (editorMission) await updateAdminMission(editorMission.id, { ...data, expectedEditVersion: editorMission.editVersion ?? 1 })
     else await createAdminMission(data)
-    closeEditor(); await loadMissionsTab()
+    closeEditor(); await loadMissionsTab(); void refreshContentDeliveryBanner()
   } catch (err) { error.textContent = (err as Error).message }
   finally { save.disabled = false }
 }
@@ -441,7 +446,7 @@ async function saveSortingMission() {
     const data = collectSortingMission()
     if (editorMission) await updateAdminMission(editorMission.id, { ...data, expectedEditVersion: editorMission.editVersion ?? 1 })
     else await createAdminMission(data)
-    closeEditor(); await loadMissionsTab()
+    closeEditor(); await loadMissionsTab(); void refreshContentDeliveryBanner()
   } catch (err) { error.textContent = (err as Error).message }
   finally { save.disabled = false }
 }
@@ -693,7 +698,7 @@ async function saveNarrativeMission() {
     const data = collectNarrativeMission()
     if (editorMission) await updateAdminMission(editorMission.id, { ...data, expectedEditVersion: editorMission.editVersion ?? 1 })
     else await createAdminMission(data)
-    closeEditor(); await loadMissionsTab()
+    closeEditor(); await loadMissionsTab(); void refreshContentDeliveryBanner()
   } catch (err) { error.textContent = (err as Error).message }
   finally { save.disabled = false }
 }
@@ -867,7 +872,7 @@ async function saveSimulatorMission() {
     const data = collectSimulatorMission()
     if (editorMission) await updateAdminMission(editorMission.id, { ...data, expectedEditVersion: editorMission.editVersion ?? 1 })
     else await createAdminMission(data)
-    closeEditor(); await loadMissionsTab()
+    closeEditor(); await loadMissionsTab(); void refreshContentDeliveryBanner()
   } catch (err) { error.textContent = (err as Error).message }
   finally { save.disabled = false }
 }
@@ -884,7 +889,11 @@ async function openHistory(mission: Mission) {
       item.innerHTML = `<div class="question-item__left"><p class="question-item__text">Редакція ${revision.editVersion} · ${esc(revision.action)}</p><p class="question-item__meta">${esc(new Date(revision.createdAt).toLocaleString('uk-UA'))}</p></div>${revision.editVersion !== mission.editVersion ? '<button type="button" class="btn-adm-sky btn--sm mh-restore">Відновити</button>' : ''}`
       item.querySelector<HTMLButtonElement>('.mh-restore')?.addEventListener('click', () => {
         close(); showConfirm(`Відновити редакцію ${revision.editVersion} як чернетку?`, async () => {
-          try { await restoreAdminMissionRevision(mission.id, revision.editVersion, mission.editVersion ?? 1); await loadMissionsTab() }
+          try {
+            await restoreAdminMissionRevision(mission.id, revision.editVersion, mission.editVersion ?? 1)
+            await loadMissionsTab()
+            void refreshContentDeliveryBanner()
+          }
           catch (err) { showModal((err as Error).message) }
         })
       }); list.appendChild(item)

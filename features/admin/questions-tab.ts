@@ -8,6 +8,7 @@ import { renderQuestion }  from '../../utils/question-renderer.js'
 import { esc, showModal, showConfirm }  from './ui.js'
 import { $, $maybe } from '../../utils/dom.js'
 import { TOPIC_LABELS, fillTopicSelect } from './taxonomy.js'
+import { refreshContentDeliveryBanner } from './publication-tab.js'
 
 let currentQuestions: Question[] = []
 
@@ -44,9 +45,9 @@ const TYPE_LABELS: Record<QuestionType, string> = {
   match:     'Пари',
 }
 const CHANNEL_LABELS: Record<QuestionChannel, string> = {
-  class_game: 'Класна гра',
-  path: 'Шлях учня',
-  olympiad_training: 'Олімпіада — тренування',
+  class_game: 'Школа — класна гра',
+  path: 'Home Club',
+  olympiad_training: 'Відкрита практика, демо та Шлях',
 }
 const CHANNEL_INPUTS: Record<QuestionChannel, string> = {
   class_game: 'qf-channel-class-game',
@@ -54,7 +55,7 @@ const CHANNEL_INPUTS: Record<QuestionChannel, string> = {
   olympiad_training: 'qf-channel-olympiad-training',
 }
 const STATUS_LABELS: Record<NonNullable<Question['editorialStatus']>, string> = {
-  draft: 'Чернетка', review: 'На перевірці', published: 'Опубліковано', archived: 'Архів',
+  draft: 'Чернетка', review: 'Готове до публікації', published: 'Опубліковано', archived: 'Знято з публікації',
 }
 const STATUS_BADGES: Record<NonNullable<Question['editorialStatus']>, string> = {
   draft: 'qi-badge--medium', review: 'qi-badge--type', published: 'qi-badge--easy', archived: 'qi-badge--type',
@@ -165,8 +166,8 @@ function buildQuestionCard(q: Question): HTMLElement {
   const correctHint = describeCorrectAnswer(q)
   const status = q.editorialStatus ?? 'published'
   const immutable = Boolean(q.publishedAt) || status === 'published'
-  const nextStatus = status === 'draft' ? 'review' : status === 'review' ? 'published' : status === 'published' ? 'archived' : immutable ? 'published' : 'draft'
-  const nextLabel = status === 'draft' ? 'На перевірку' : status === 'review' ? 'Опублікувати' : status === 'published' ? 'Архівувати' : immutable ? 'Опублікувати знову' : 'У чернетки'
+  const nextStatus = status === 'draft' || status === 'review' ? 'published' : status === 'published' ? 'archived' : immutable ? 'published' : 'draft'
+  const nextLabel = status === 'draft' || status === 'review' ? 'Опублікувати' : status === 'published' ? 'Зняти з публікації' : immutable ? 'Опублікувати знову' : 'Повернути в чернетки'
   const el = document.createElement('div')
   el.className = 'question-item'
   el.innerHTML = `
@@ -207,6 +208,7 @@ function buildQuestionCard(q: Question): HTMLElement {
       try {
         await setQuestionEditorialStatus(q.id, nextStatus, q.editVersion ?? 1)
         await loadQuestionsTab()
+        void refreshContentDeliveryBanner()
       } catch (err) { showModal((err as Error).message) }
     })
   })
@@ -217,6 +219,7 @@ function buildQuestionCard(q: Question): HTMLElement {
         try {
           await deleteQuestion(q.id)
           await loadQuestionsTab()
+          void refreshContentDeliveryBanner()
         } catch (err) {
           showModal((err as Error).message)
         }
@@ -385,6 +388,7 @@ async function handleSubmit(e: Event) {
     else    await createQuestion(data)
     closeQuestionModal()
     await loadQuestionsTab()
+    void refreshContentDeliveryBanner()
   } catch (err) {
     qfError.textContent = (err as Error).message
   } finally {
