@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify'
-import { and, desc, eq, inArray, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, sql, arrayContains } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { questions, homeLeads, homeChildProfiles, homeDemoAttempts, homeDemoReports, homeEntitlements, homeMissionAttempts } from '../db/schema.js'
 import { hasHomeAccess } from './home-entitlement.js'
@@ -147,6 +147,7 @@ async function loadSanitizedPracticeQuestions(options: {
   } as const
   const filters = [
     eq(questions.editorialStatus, 'published'),
+    arrayContains(questions.channels, ['path']),
     ...practiceFilterPlan(options).map(f => eq(practiceColumns[f.column], f.value)),
   ]
 
@@ -188,6 +189,7 @@ async function scoreEventsFromPracticePool(events: DemoAttemptEvent[]): Promise<
     .from(questions)
     .where(and(
       eq(questions.isOlympiad, false),
+      arrayContains(questions.channels, ['path']),
       inArray(questions.editorialStatus, ['published', 'archived']),
       inArray(questions.id, questionIds),
     ))

@@ -12,7 +12,7 @@
 import { mkdirSync, writeFileSync } from 'fs'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, arrayContains } from 'drizzle-orm'
 import { db } from '../src/db/index.js'
 import { questions } from '../src/db/schema.js'
 import { sanitizeForStaticBundle, groupByGrade } from '../src/lib/practice-export.js'
@@ -39,9 +39,14 @@ const rows = await db
     version:     questions.version,
     grade:       questions.grade,
     isOlympiad:  questions.isOlympiad,
+    channels:    questions.channels,
   })
   .from(questions)
-  .where(and(eq(questions.isOlympiad, false), eq(questions.editorialStatus, 'published')))
+  .where(and(
+    eq(questions.isOlympiad, false),
+    eq(questions.editorialStatus, 'published'),
+    arrayContains(questions.channels, ['olympiad_training']),
+  ))
 
 if (rows.length === 0) {
   throw new Error('No published practice questions: the export role cannot read public.questions (RLS/GRANT) or published content is gone.')

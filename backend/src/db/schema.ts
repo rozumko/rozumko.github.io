@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm'
 import { pgTable, text, integer, boolean, timestamp, jsonb, uuid, unique } from 'drizzle-orm/pg-core'
 
 /**
@@ -11,6 +12,7 @@ import { pgTable, text, integer, boolean, timestamp, jsonb, uuid, unique } from 
  */
 export type QuestionType = 'choice' | 'truefalse' | 'input' | 'sort' | 'sequence' | 'match'
 export type QuestionTrack = 'informatics' | 'computational-thinking' | 'ai-basics'
+export type QuestionChannel = 'class_game' | 'path' | 'olympiad_training'
 export type QuestionEditorialStatus = 'draft' | 'review' | 'published' | 'archived'
 
 export const questions = pgTable('questions', {
@@ -38,7 +40,8 @@ export const questions = pgTable('questions', {
   // Редакційні метадані без окремих колонок (reviewStatus, isCore, джерело імпорту…)
   meta:        jsonb('meta').$type<Record<string, unknown>>(),
   grade:       integer('grade'),
-  isOlympiad:  boolean('is_olympiad').default(false),
+  isOlympiad:  boolean('is_olympiad').notNull().default(false),
+  channels:    text('channels').array().notNull().default(sql`ARRAY[]::text[]`).$type<QuestionChannel[]>(),
   createdBy:   text('created_by'),
   updatedBy:   text('updated_by'),
   reviewedBy:  text('reviewed_by'),

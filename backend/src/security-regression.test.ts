@@ -126,6 +126,8 @@ test('публічний API питань відхиляє небезпечні 
     'count=0',
     'count=999',
     'isOlympiad=true',
+    'channel=class_game',
+    'channel=unknown',
   ]) {
     const response = await app.inject({ method: 'GET', url: `/api/questions?${query}` })
     assert.equal(response.statusCode, 400, query)
@@ -207,7 +209,7 @@ test('публічний API питань фільтрує олімпіадні 
     .from(questions)
     .where(capturedWhere as any)
     .toSQL()
-  assert.deepEqual(sql.params, [false, 'published', 'ai-basics'])
+  assert.deepEqual(sql.params, [false, 'published', '{"path"}', 'ai-basics'])
 })
 
 test('критичні UUID-параметри відхиляються до звернення до БД', async () => {

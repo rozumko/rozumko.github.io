@@ -10,6 +10,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const raw = readFileSync(join(__dirname, '../../../scripts/questions.json'), 'utf8')
 const data = (JSON.parse(raw) as Record<string, unknown>[]).map(question => ({
   ...question,
+  channels: question.isOlympiad === true ? [] : ['class_game', 'path', 'olympiad_training'],
   editorialStatus: 'published' as const,
   publishedAt: new Date(),
 }))

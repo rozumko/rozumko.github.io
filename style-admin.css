@@ -529,6 +529,8 @@
 }
 .question-modal-title { color: var(--adm-text); font-weight: 700; font-size: var(--font-size-lg); margin-bottom: var(--sp-5); }
 .qf-space { display: flex; flex-direction: column; gap: var(--sp-4); }
+.qf-distribution { display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-3); border: 1px solid var(--adm-border); border-radius: var(--r-lg); }
+.qf-distribution__options { display: flex; flex-wrap: wrap; gap: var(--sp-4); }
 .qf-section { display: flex; flex-direction: column; gap: var(--sp-3); }
 .qf-option-row { display: flex; align-items: center; gap: var(--sp-2); }
 .qf-radio { width: 1rem; height: 1rem; cursor: pointer; }

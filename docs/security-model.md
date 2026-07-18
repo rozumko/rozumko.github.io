@@ -410,8 +410,13 @@ Backend:
 - Render adds one reverse-proxy hop. Fastify must use `trustProxy: 1`, never
   `trustProxy: true`, so clients cannot spoof `X-Forwarded-For` and bypass
   rate limits.
-- No-code practice UIs load the static practice bundle from GitHub Pages.
-  Home Demo uses `GET /api/questions` with safe answer stripping and a track
+- No-code olympiad-training UIs load only `olympiad_training` questions from
+  the static practice bundle on GitHub Pages. Home Demo and Club use only the
+  `path` channel, while School Mode uses only `class_game`. Empty channels are
+  fail-closed, and main-round (`is_olympiad=true`) questions cannot have any
+  training channel. Home Demo uses `GET /api/questions?channel=path`; the
+  allowlisted practice fallback may request `channel=olympiad_training`, while
+  `class_game` is rejected by this public endpoint. Responses use safe answer stripping and a track
   allowlist (`informatics`, `computational-thinking`, `ai-basics`) so keys do
   not reach the browser. Club practice questions are issued only by
   `GET /api/home/leads/:id/club/questions`, which requires a valid lead token
@@ -464,6 +469,8 @@ npm test
 - every application table is covered by the RLS enablement migration;
 - public question query validation rejects unsafe values;
 - public questions are filtered to `isOlympiad=false`;
+- question channels are fail-closed: School, Home and static olympiad training
+  each query only their allowlisted channel, while main-round questions have none;
 - public questions strip answer keys by default; demo responses strip answer
   keys explicitly;
 - critical UUID parameters fail with `400` before database access;

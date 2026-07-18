@@ -1,14 +1,17 @@
 import type { FastifyInstance } from 'fastify'
-import { eq, and, sql } from 'drizzle-orm'
+import { eq, and, sql, arrayContains } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { questions, type QuestionTrack } from '../db/schema.js'
 import { stripOptionKeys } from './question-sanitize.js'
 import { ALL_TOPICS } from '../lib/taxonomy.js'
+import type { QuestionChannel } from '../db/schema.js'
+
+type PublicQuestionChannel = Exclude<QuestionChannel, 'class_game'>
 
 export async function questionsRoutes(app: FastifyInstance) {
   // GET /api/questions?grade=4&isOlympiad=false&count=10&difficulty=hard&track=ai-basics
   app.get<{
-    Querystring: { grade?: string; isOlympiad?: string; count?: string; difficulty?: string; track?: string; topic?: string; hideAnswers?: string }
+    Querystring: { grade?: string; isOlympiad?: string; channel?: PublicQuestionChannel; count?: string; difficulty?: string; track?: string; topic?: string; hideAnswers?: string }
   }>('/', {
     schema: {
       querystring: {
@@ -17,6 +20,7 @@ export async function questionsRoutes(app: FastifyInstance) {
         properties: {
           grade:       { type: 'string', enum: ['1', '2', '3', '4'] },
           isOlympiad:  { type: 'string', enum: ['false'] },
+          channel:     { type: 'string', enum: ['path', 'olympiad_training'] },
           count:       { type: 'string', pattern: '^(?:[1-9]|[1-4][0-9]|50)$' },
           difficulty:  { type: 'string', enum: ['easy', 'medium', 'hard'] },
           track:       { type: 'string', enum: ['informatics', 'computational-thinking', 'ai-basics'] },
@@ -31,9 +35,14 @@ export async function questionsRoutes(app: FastifyInstance) {
     const difficulty = req.query.difficulty
     const track      = req.query.track as QuestionTrack | undefined
     const topic      = req.query.topic
+    const channel    = req.query.channel ?? 'path'
     // Публічний endpoint видає лише тренувальні питання. Олімпіадні питання
     // студент отримує тільки після POST /api/student/exchange-code.
-    const filters = [eq(questions.isOlympiad, false), eq(questions.editorialStatus, 'published')]
+    const filters = [
+      eq(questions.isOlympiad, false),
+      eq(questions.editorialStatus, 'published'),
+      arrayContains(questions.channels, [channel]),
+    ]
     if (grade      !== undefined) filters.push(eq(questions.grade,      grade))
     if (difficulty)               filters.push(eq(questions.difficulty,  difficulty))
     if (track)                    filters.push(eq(questions.track,       track))

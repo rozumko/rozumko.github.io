@@ -1,7 +1,7 @@
 import {
   getAdminQuestions, createQuestion, updateQuestion, deleteQuestion,
   setQuestionEditorialStatus, getQuestionRevisions, restoreQuestionRevision,
-  type Question, type QuestionType,
+  type Question, type QuestionChannel, type QuestionType,
 } from '../../features/api/client.js'
 import { createFocusTrap } from '../../utils/focus-trap.js'
 import { renderQuestion }  from '../../utils/question-renderer.js'
@@ -43,11 +43,36 @@ const TYPE_LABELS: Record<QuestionType, string> = {
   sequence:  'Послідовність',
   match:     'Пари',
 }
+const CHANNEL_LABELS: Record<QuestionChannel, string> = {
+  class_game: 'Класна гра',
+  path: 'Шлях учня',
+  olympiad_training: 'Олімпіада — тренування',
+}
+const CHANNEL_INPUTS: Record<QuestionChannel, string> = {
+  class_game: 'qf-channel-class-game',
+  path: 'qf-channel-path',
+  olympiad_training: 'qf-channel-olympiad-training',
+}
 const STATUS_LABELS: Record<NonNullable<Question['editorialStatus']>, string> = {
   draft: 'Чернетка', review: 'На перевірці', published: 'Опубліковано', archived: 'Архів',
 }
 const STATUS_BADGES: Record<NonNullable<Question['editorialStatus']>, string> = {
   draft: 'qi-badge--medium', review: 'qi-badge--type', published: 'qi-badge--easy', archived: 'qi-badge--type',
+}
+
+function selectedChannels(): QuestionChannel[] {
+  return (Object.entries(CHANNEL_INPUTS) as [QuestionChannel, string][])
+    .filter(([, inputId]) => $<HTMLInputElement>(inputId).checked)
+    .map(([channel]) => channel)
+}
+
+function syncDistributionUI(): void {
+  const isMainRound = $<HTMLInputElement>('qf-olympiad').checked
+  for (const inputId of Object.values(CHANNEL_INPUTS)) {
+    const input = $<HTMLInputElement>(inputId)
+    if (isMainRound) input.checked = false
+    input.disabled = isMainRound
+  }
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
@@ -71,6 +96,13 @@ export function initQuestionsTab() {
   $<HTMLSelectElement>('qf-track').addEventListener('change', (e) => {
     fillTopicSelect($<HTMLSelectElement>('qf-topic'), (e.target as HTMLSelectElement).value, 'Без теми')
   })
+  $<HTMLInputElement>('qf-olympiad').addEventListener('change', syncDistributionUI)
+  for (const inputId of Object.values(CHANNEL_INPUTS)) {
+    $<HTMLInputElement>(inputId).addEventListener('change', event => {
+      if ((event.target as HTMLInputElement).checked) $<HTMLInputElement>('qf-olympiad').checked = false
+      syncDistributionUI()
+    })
+  }
   $<HTMLInputElement>('qf-img').addEventListener('input', (e) => {
     const prev = $maybe<HTMLImageElement>('qf-img-preview')
     const url  = (e.target as HTMLInputElement).value.trim()
@@ -88,15 +120,17 @@ export async function loadQuestionsTab() {
   list.innerHTML = '<p class="admin-loading-text">Завантаження…</p>'
   try {
     const grade      = $<HTMLSelectElement>('q-filter-grade').value || undefined
-    const typeRaw    = $<HTMLSelectElement>('q-filter-type').value
-    const isOlympiad = typeRaw !== '' ? typeRaw === 'true' : undefined
+    const poolRaw    = $<HTMLSelectElement>('q-filter-pool').value
+    const isOlympiad = poolRaw !== '' ? poolRaw === 'true' : undefined
+    const type       = $<HTMLSelectElement>('q-filter-mechanic').value || undefined
+    const channel    = $<HTMLSelectElement>('q-filter-channel').value || undefined
     const difficulty = $<HTMLSelectElement>('q-filter-difficulty').value || undefined
     const track      = $<HTMLSelectElement>('q-filter-track').value || undefined
     const topic      = $<HTMLSelectElement>('q-filter-topic').value || undefined
     const status     = $<HTMLSelectElement>('q-filter-status').value || undefined
     const search     = $<HTMLInputElement>('q-filter-search').value.trim() || undefined
 
-    const { questions } = await getAdminQuestions({ grade, isOlympiad, difficulty, track, topic, status, search })
+    const { questions } = await getAdminQuestions({ grade, isOlympiad, type, channel, difficulty, track, topic, status, search })
     currentQuestions = questions
 
     $('q-count').textContent = `${questions.length} питань`
@@ -144,8 +178,10 @@ function buildQuestionCard(q: Question): HTMLElement {
         ${trackLabel ? `<span class="qi-badge qi-badge--practice">${esc(trackLabel)}</span>` : ''}
         ${q.topic ? `<span class="qi-badge qi-badge--type">${esc(TOPIC_LABELS[q.topic] ?? q.topic)}</span>` : ''}
         ${q.isOlympiad
-          ? '<span class="qi-badge qi-badge--olympiad">Олімпіада</span>'
-          : '<span class="qi-badge qi-badge--practice">Тренування</span>'}
+          ? '<span class="qi-badge qi-badge--olympiad">Основний тур</span>'
+          : (q.channels?.length
+              ? q.channels.map(channel => `<span class="qi-badge qi-badge--practice">${esc(CHANNEL_LABELS[channel] ?? channel)}</span>`).join('')
+              : '<span class="qi-badge qi-badge--type">Без розділу</span>')}
       </div>
       <p class="question-item__text">${esc(q.q)}</p>
       ${q.code ? `<p class="question-item__code">${esc(q.code.split('\n')[0])}…</p>` : ''}
@@ -266,6 +302,10 @@ export function openQuestionModal(q: Question | null, duplicate = false) {
   $<HTMLSelectElement>('qf-concept').value              = q?.conceptKey ?? ''
   $<HTMLSelectElement>('qf-band').value                 = q?.progressionBand ?? ''
   ;($<HTMLInputElement>('qf-olympiad')).checked         = q?.isOlympiad ?? false
+  for (const [channel, inputId] of Object.entries(CHANNEL_INPUTS) as [QuestionChannel, string][]) {
+    $<HTMLInputElement>(inputId).checked = q?.channels?.includes(channel) ?? false
+  }
+  syncDistributionUI()
   $<HTMLTextAreaElement>('qf-q').value                  = q?.q ?? ''
   $<HTMLTextAreaElement>('qf-explanation').value        = q?.explanation ?? ''
   $<HTMLTextAreaElement>('qf-code').value               = q?.code ?? ''
@@ -326,6 +366,7 @@ async function handleSubmit(e: Event) {
     conceptKey:  $<HTMLSelectElement>('qf-concept').value || null,
     progressionBand: ($<HTMLSelectElement>('qf-band').value || null) as 'recognize' | 'apply' | 'reason' | null,
     isOlympiad:  $<HTMLInputElement>('qf-olympiad').checked,
+    channels:    selectedChannels(),
     explanation: $<HTMLTextAreaElement>('qf-explanation').value.trim(),
     code:        $<HTMLTextAreaElement>('qf-code').value.trim() || undefined,
     img:         $<HTMLInputElement>('qf-img').value.trim() || null,

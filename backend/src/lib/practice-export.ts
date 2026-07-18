@@ -22,10 +22,11 @@ export interface ExportableQuestionRow {
   progressionBand: string | null
   version: number
   grade: number | null
-  isOlympiad: boolean | null
+  isOlympiad: boolean
+  channels: string[]
 }
 
-export type BundleQuestion = Omit<ExportableQuestionRow, 'isOlympiad' | 'grade'> & { grade: number }
+export type BundleQuestion = Omit<ExportableQuestionRow, 'isOlympiad' | 'channels' | 'grade'> & { grade: number }
 
 /**
  * Пропускає в бандл лише не-олімпіадні питання з валідним класом.
@@ -37,11 +38,14 @@ export type BundleQuestion = Omit<ExportableQuestionRow, 'isOlympiad' | 'grade'>
 export function sanitizeForStaticBundle(rows: ExportableQuestionRow[]): BundleQuestion[] {
   const out: BundleQuestion[] = []
   for (const row of rows) {
-    if (row.isOlympiad === true) {
-      throw new Error(`Олімпіадне питання ${row.id} не може потрапити в статичний бандл`)
+    if (row.isOlympiad !== false) {
+      throw new Error(`Question ${row.id} is not explicitly marked as training content`)
+    }
+    if (!row.channels.includes('olympiad_training')) {
+      throw new Error(`Question ${row.id} is not assigned to the olympiad_training channel`)
     }
     if (row.grade == null || row.grade < 1 || row.grade > 4) continue
-    const { isOlympiad: _oly, ...rest } = row
+    const { isOlympiad: _oly, channels: _channels, ...rest } = row
     out.push({ ...rest, grade: row.grade })
   }
   return out.sort((a, b) => a.id.localeCompare(b.id))

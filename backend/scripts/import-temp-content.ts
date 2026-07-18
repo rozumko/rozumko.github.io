@@ -23,6 +23,7 @@ import { validateQuestionShape } from '../src/routes/question-input-validation.j
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const require = createRequire(import.meta.url)
 const DRY_RUN = process.argv.includes('--dry-run')
+const TRAINING_CHANNELS: NonNullable<NewQuestion['channels']> = ['class_game', 'path', 'olympiad_training']
 
 // ── ct_quiz → computational-thinking ─────────────────────────────────────────
 
@@ -77,6 +78,7 @@ function loadCtQuiz(): NewQuestion[] {
         progressionBand: item.progressionBand as NewQuestion['progressionBand'],
         grade:       Number(grade),
         isOlympiad:  false,
+        channels:    TRAINING_CHANNELS,
         meta: {
           source: 'ct_quiz',
           sourceId: item.id,
@@ -158,6 +160,7 @@ function loadAltCs(): NewQuestion[] {
           progressionBand: 'recognize',
           grade:       Number(grade),
           isOlympiad:  false,
+          channels:    TRAINING_CHANNELS,
           meta: { source: 'alt_cs', topicId: topic.id, topicTitle: topic.title },
         })
       }
@@ -197,6 +200,7 @@ function loadTypedSource(folder: string, track: NewQuestion['track']): NewQuesti
       progressionBand: item.progressionBand as NewQuestion['progressionBand'],
       grade:       item.grade,
       isOlympiad:  false,
+      channels:    TRAINING_CHANNELS,
       meta: { source: folder },
     }
   })
@@ -251,6 +255,7 @@ function loadMixedMechanics(): NewQuestion[] {
       progressionBand: m.progressionBand as NewQuestion['progressionBand'],
       grade:       m.grade,
       isOlympiad:  false,
+      channels:    TRAINING_CHANNELS,
       meta: { source: 'mixed_mechanics' },
     }
   })
