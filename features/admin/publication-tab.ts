@@ -56,9 +56,12 @@ export async function refreshContentDeliveryBanner() {
   }
 }
 
-function renderDeliveryBanner(state: AdminContentDeliveryState) {
+function renderDeliveryBanner(state: AdminContentDeliveryState | undefined) {
   const banner = $('content-delivery-banner')
   const action = $<HTMLButtonElement>('content-delivery-action')
+  // Tolerate an older backend that predates deliveryState during a deploy skew
+  // (Pages and Render deploy independently): hide the banner instead of crashing.
+  if (!state) { banner.classList.add('hidden'); return }
   if (state.activePublicationStatus) {
     banner.classList.remove('hidden')
     action.classList.add('hidden')
@@ -81,8 +84,8 @@ function renderDeliveryBanner(state: AdminContentDeliveryState) {
   banner.classList.add('hidden')
 }
 
-function scheduleRefresh(state: AdminContentDeliveryState) {
-  if (!state.activePublicationStatus || $maybe('admin-panel')?.classList.contains('hidden')) return
+function scheduleRefresh(state: AdminContentDeliveryState | undefined) {
+  if (!state?.activePublicationStatus || $maybe('admin-panel')?.classList.contains('hidden')) return
   pollTimer = setTimeout(() => {
     if ($maybe('tab-publication')?.classList.contains('hidden')) void refreshContentDeliveryBanner()
     else void loadPublicationTab()
@@ -102,11 +105,11 @@ export async function loadPublicationTab() {
     const { publications, deliveryState } = await getAdminContentPublications()
     renderDeliveryBanner(deliveryState)
     renderPublications(publications)
-    const active = Boolean(deliveryState.activePublicationStatus)
+    const active = Boolean(deliveryState?.activePublicationStatus)
     setPublicationControlsDisabled(active)
     $('publication-status').textContent = active
       ? 'Публікація виконується. Статус оновлюється автоматично.'
-      : deliveryState.pendingChanges
+      : deliveryState?.pendingChanges
         ? 'Є накопичені зміни, які ще не доставлені на відкритий сайт.'
         : 'Відкритий сайт має актуальну версію контенту.'
     scheduleRefresh(deliveryState)
