@@ -48,6 +48,12 @@ When adding a content table, extend the role policies in the same change.
 
 ## Publication Contract
 
+The everyday admin workflow shows a single site-update banner whenever the
+current published manifest differs from the last successful deployment. Live
+database-backed surfaces do not wait for this banner. Static changes accumulate
+until the administrator starts one audited update; the detailed run history
+remains available in the advanced site journal.
+
 1. An administrator starts a publication in the admin panel.
 2. The backend records the exact published question, lesson, mission and path
    versions plus their SHA-256 manifest.

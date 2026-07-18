@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify'
-import { eq, desc, count, and, asc, inArray, ilike, or, sql, arrayContains } from 'drizzle-orm'
+import { eq, desc, count, and, asc, inArray, ilike, or, sql, arrayContains, isNotNull } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { questions, questionRevisions, accessCodes, attempts, attemptQuestions, appUsers, olympiadEvents, eventQuestions, schoolSessions, schoolSessionQuestions, homeLeads, homeEntitlements, homeEntitlementEvents, homeParentAccounts, homePathProgress, missions, missionRevisions, microLessons, microLessonRevisions, pathMapRevisions, pathMaps, contentPublications, type QuestionChannel, type QuestionTrack } from '../db/schema.js'
 import { normalizeLessonSlug, normalizeLessonStatus, normalizeLessonContent, lessonContentChanged } from './lesson-validation.js'
@@ -33,6 +33,7 @@ import {
   buildContentPublicationManifest,
   contentManifestSha256,
   dispatchContentPublication,
+  summarizeContentDeliveryState,
 } from '../lib/content-publication.js'
 import { listAdminParents } from './admin-parents.js'
 
@@ -151,7 +152,28 @@ export async function adminRoutes(app: FastifyInstance) {
   app.get('/content-publications', { preHandler: requireAdmin }, async (_req, reply) => {
     const publications = await db.select().from(contentPublications)
       .orderBy(desc(contentPublications.createdAt)).limit(20)
-    return reply.send({ publications })
+    const currentManifest = await buildContentPublicationManifest()
+    const currentManifestSha256 = contentManifestSha256(currentManifest)
+    const [lastSucceeded] = await db.select({
+      publishedManifestSha256: contentPublications.publishedManifestSha256,
+    }).from(contentPublications).where(and(
+      eq(contentPublications.status, 'succeeded'),
+      isNotNull(contentPublications.publishedManifestSha256),
+      isNotNull(contentPublications.completedAt),
+    )).orderBy(desc(contentPublications.completedAt)).limit(1)
+    const active = publications.find(item => item.status === 'queued' || item.status === 'running')
+    const deliveryState = summarizeContentDeliveryState(
+      currentManifestSha256,
+      lastSucceeded?.publishedManifestSha256 ?? null,
+      active && (active.status === 'queued' || active.status === 'running')
+        ? {
+            id: active.id,
+            status: active.status,
+            expectedManifestSha256: active.expectedManifestSha256,
+          }
+        : null,
+    )
+    return reply.send({ publications, deliveryState })
   })
 
   app.post('/content-publications', { preHandler: requireAdmin }, async (req, reply) => {

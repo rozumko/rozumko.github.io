@@ -210,6 +210,14 @@ async function openAdminDashboard(page: Page) {
                               startedAt: '2026-07-16T10:00:01.000Z',
                               completedAt: '2026-07-16T10:01:00.000Z',
                             }],
+                            deliveryState: {
+                              currentManifestSha256: 'a'.repeat(64),
+                              deployedManifestSha256: 'a'.repeat(64),
+                              pendingChanges: false,
+                              activePublicationId: null,
+                              activePublicationStatus: null,
+                              activeMatchesCurrent: false,
+                            },
                           }
                   : { questions: [] }
 

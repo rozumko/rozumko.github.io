@@ -2,6 +2,7 @@ import {
   createAdminContentPublication,
   getAdminContentPublications,
   type AdminContentPublication,
+  type AdminContentDeliveryState,
 } from '../api/client.js'
 import { $, $maybe } from '../../utils/dom.js'
 import { esc, formatDate, showConfirm, showModal } from './ui.js'
@@ -14,14 +15,86 @@ const STATUS_LABELS: Record<AdminContentPublication['status'], string> = {
 }
 
 let pollTimer: ReturnType<typeof setTimeout> | undefined
+let refreshInFlight = false
+let refreshQueued = false
 
 export function initPublicationTab() {
-  $('publish-content-btn').addEventListener('click', () => {
-    showConfirm(
-      'Опублікувати всі перевірені версії питань, уроків, місій і карт шляху для дітей?',
-      () => { void startPublication() },
-    )
-  })
+  for (const buttonId of ['publish-content-btn', 'content-delivery-action']) {
+    $(buttonId).addEventListener('click', () => {
+      showConfirm(
+        'Оновити відкритий сайт одним запуском? До нього увійдуть усі накопичені зміни опублікованого контенту.',
+        () => { void startPublication() },
+      )
+    })
+  }
+}
+
+export async function refreshContentDeliveryBanner() {
+  // Coalesce bursts of content edits into at most one trailing refresh: the
+  // server rebuilds the manifest on each GET, so overlapping calls would waste
+  // work. The trailing pass guarantees we still render the latest state.
+  if (refreshInFlight) { refreshQueued = true; return }
+  refreshInFlight = true
+  try {
+    do {
+      refreshQueued = false
+      if (pollTimer) clearTimeout(pollTimer)
+      try {
+        const { deliveryState } = await getAdminContentPublications()
+        renderDeliveryBanner(deliveryState)
+        scheduleRefresh(deliveryState)
+      } catch {
+        const banner = $('content-delivery-banner')
+        banner.classList.remove('hidden')
+        $('content-delivery-title').textContent = 'Не вдалося перевірити стан відкритого сайту'
+        $('content-delivery-detail').textContent = 'Відкрий журнал сайту та повтори перевірку.'
+        $<HTMLButtonElement>('content-delivery-action').classList.add('hidden')
+      }
+    } while (refreshQueued)
+  } finally {
+    refreshInFlight = false
+  }
+}
+
+function renderDeliveryBanner(state: AdminContentDeliveryState | undefined) {
+  const banner = $('content-delivery-banner')
+  const action = $<HTMLButtonElement>('content-delivery-action')
+  // Tolerate an older backend that predates deliveryState during a deploy skew
+  // (Pages and Render deploy independently): hide the banner instead of crashing.
+  if (!state) { banner.classList.add('hidden'); return }
+  if (state.activePublicationStatus) {
+    banner.classList.remove('hidden')
+    action.classList.add('hidden')
+    $('content-delivery-title').textContent = state.activePublicationStatus === 'running'
+      ? 'Відкритий сайт оновлюється'
+      : 'Оновлення відкритого сайту в черзі'
+    $('content-delivery-detail').textContent = state.activeMatchesCurrent
+      ? 'Усі накопичені зміни входять до поточного запуску.'
+      : 'Поточний запуск завершується; новіші зміни залишаться для наступного оновлення.'
+    return
+  }
+  if (state.pendingChanges) {
+    banner.classList.remove('hidden')
+    action.classList.remove('hidden')
+    action.disabled = false
+    $('content-delivery-title').textContent = 'Є зміни для відкритого сайту'
+    $('content-delivery-detail').textContent = 'Опубліковані зміни накопичено. Онови статичний сайт один раз, коли завершиш редагування.'
+    return
+  }
+  banner.classList.add('hidden')
+}
+
+function scheduleRefresh(state: AdminContentDeliveryState | undefined) {
+  if (!state?.activePublicationStatus || $maybe('admin-panel')?.classList.contains('hidden')) return
+  pollTimer = setTimeout(() => {
+    if ($maybe('tab-publication')?.classList.contains('hidden')) void refreshContentDeliveryBanner()
+    else void loadPublicationTab()
+  }, 8000)
+}
+
+function setPublicationControlsDisabled(disabled: boolean) {
+  $<HTMLButtonElement>('publish-content-btn').disabled = disabled
+  $<HTMLButtonElement>('content-delivery-action').disabled = disabled
 }
 
 export async function loadPublicationTab() {
@@ -29,16 +102,17 @@ export async function loadPublicationTab() {
   const list = $('publication-list')
   list.innerHTML = '<p class="admin-loading-text">Завантаження…</p>'
   try {
-    const { publications } = await getAdminContentPublications()
+    const { publications, deliveryState } = await getAdminContentPublications()
+    renderDeliveryBanner(deliveryState)
     renderPublications(publications)
-    const active = publications.some(item => item.status === 'queued' || item.status === 'running')
-    $<HTMLButtonElement>('publish-content-btn').disabled = active
+    const active = Boolean(deliveryState?.activePublicationStatus)
+    setPublicationControlsDisabled(active)
     $('publication-status').textContent = active
       ? 'Публікація виконується. Статус оновлюється автоматично.'
-      : 'Готово до нової публікації.'
-    if (active && !$maybe('tab-publication')?.classList.contains('hidden')) {
-      pollTimer = setTimeout(() => { void loadPublicationTab() }, 8000)
-    }
+      : deliveryState?.pendingChanges
+        ? 'Є накопичені зміни, які ще не доставлені на відкритий сайт.'
+        : 'Відкритий сайт має актуальну версію контенту.'
+    scheduleRefresh(deliveryState)
   } catch (err) {
     list.innerHTML = `<p class="admin-list-error">${esc((err as Error).message)}</p>`
     $('publication-status').textContent = 'Не вдалося отримати стан публікацій.'
@@ -46,14 +120,13 @@ export async function loadPublicationTab() {
 }
 
 async function startPublication() {
-  const button = $<HTMLButtonElement>('publish-content-btn')
-  button.disabled = true
+  setPublicationControlsDisabled(true)
   $('publication-status').textContent = 'Фіксуємо перевірені версії та запускаємо публікацію…'
   try {
     await createAdminContentPublication()
     await loadPublicationTab()
   } catch (err) {
-    button.disabled = false
+    setPublicationControlsDisabled(false)
     showModal((err as Error).message)
     await loadPublicationTab()
   }

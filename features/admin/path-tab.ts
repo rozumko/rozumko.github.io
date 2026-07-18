@@ -5,6 +5,7 @@ import {
 import { esc, showModal, showConfirm } from './ui.js'
 import { $ } from '../../utils/dom.js'
 import { createFocusTrap } from '../../utils/focus-trap.js'
+import { refreshContentDeliveryBanner } from './publication-tab.js'
 
 // Form-based path point editor with an SVG preview. The database is the source
 // of truth; the audited publication tab deploys child-facing static bundles.
@@ -436,9 +437,10 @@ async function saveMap() {
     maps = maps.map(existing => existing.pathId === map.pathId ? map : existing)
     resetWorking()
     renderPathTab()
+    void refreshContentDeliveryBanner()
     showModal(bumpedSteps.length
-      ? `Збережено (v${map.version}). Підняті версії кроків: ${bumpedSteps.join(', ')}. Для доставки дітям запусти загальну публікацію.`
-      : `Збережено (v${map.version}). Для доставки дітям запусти загальну публікацію.`)
+      ? `Збережено (v${map.version}). Підняті версії кроків: ${bumpedSteps.join(', ')}. Відкритий сайт можна оновити через верхню плашку.`
+      : `Збережено (v${map.version}). Відкритий сайт можна оновити через верхню плашку.`)
   } catch (err) {
     $('pm-error').textContent = (err as Error).message
   } finally {
