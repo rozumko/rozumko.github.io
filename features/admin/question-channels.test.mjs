@@ -56,7 +56,7 @@ test('admin surfaces accumulated static changes through one site-update banner',
     assert.match(adminHtml, new RegExp(`id="${id}"`))
   }
   assert.match(adminHtml, /Журнал сайту/)
-  assert.match(publicationTab, /deliveryState\.pendingChanges/)
+  assert.match(publicationTab, /deliveryState\??\.pendingChanges/)
   assert.match(publicationTab, /activeMatchesCurrent/)
   assert.match(apiClient, /deliveryState: AdminContentDeliveryState/)
 })
