@@ -80,6 +80,7 @@
       <button data-tab="lessons"    class="admin-tab"><i class="fas fa-book-open" aria-hidden="true"></i> Уроки</button>
       <button data-tab="path"       class="admin-tab"><i class="fas fa-map-signs" aria-hidden="true"></i> Шлях</button>
       <button data-tab="publication" class="admin-tab"><i class="fas fa-cloud-upload-alt" aria-hidden="true"></i> Публікація</button>
+      <button data-tab="help"       class="admin-tab"><i class="fas fa-life-ring" aria-hidden="true"></i> Довідка</button>
     </nav>
 
     <main id="main-content" class="admin-main">
@@ -357,11 +358,6 @@
             <option value="3">3 клас</option>
             <option value="4">4 клас</option>
           </select>
-          <select id="q-filter-pool" class="adm-input adm-input--sm adm-input--auto">
-            <option value="">Всі пули</option>
-            <option value="false">Тренувальні</option>
-            <option value="true">Основний тур</option>
-          </select>
           <select id="q-filter-mechanic" class="adm-input adm-input--sm adm-input--auto">
             <option value="">Всі механіки</option>
             <option value="choice">Вибір</option>
@@ -371,11 +367,12 @@
             <option value="sequence">Послідовність</option>
             <option value="match">Пари</option>
           </select>
-          <select id="q-filter-channel" class="adm-input adm-input--sm adm-input--auto">
+          <select id="q-filter-section" class="adm-input adm-input--sm adm-input--auto">
             <option value="">Всі розділи</option>
             <option value="class_game">Класна гра</option>
             <option value="path">Шлях учня</option>
             <option value="olympiad_training">Олімпіада — тренування</option>
+            <option value="main_round">Олімпіада — основний тур</option>
           </select>
           <select id="q-filter-difficulty" class="adm-input adm-input--sm adm-input--auto">
             <option value="">Всі рівні</option>
@@ -398,6 +395,87 @@
 
         <!-- Список питань -->
         <div id="questions-list" class="admin-list admin-list--sm"></div>
+      </section>
+
+      <!-- Вкладка: Довідка -->
+      <section id="tab-help" class="tab-panel hidden" aria-labelledby="admin-help-title">
+        <div class="admin-section-header">
+          <div>
+            <h2 id="admin-help-title" class="admin-section-title">Як працювати з питаннями</h2>
+            <p class="admin-section-note">Коротка інструкція від створення чернетки до появи перевіреного питання у потрібному розділі платформи.</p>
+          </div>
+        </div>
+
+        <div class="admin-help-grid">
+          <article class="admin-form-card admin-help-card admin-help-card--wide">
+            <h3 class="admin-help-card__title">Рекомендований порядок роботи</h3>
+            <ol class="admin-help-steps">
+              <li><strong>Створи чернетку.</strong> У вкладці «Питання» натисни «Додати питання».</li>
+              <li><strong>Опиши призначення.</strong> Обери клас, складність, напрям, тему та розділи, де питання має з’являтися.</li>
+              <li><strong>Заповни завдання.</strong> Додай текст, варіанти або інші дані механіки, правильну відповідь і зрозуміле пояснення.</li>
+              <li><strong>Перевір вигляд.</strong> Скористайся попереднім переглядом і перевір формулювання, відповідь та зображення.</li>
+              <li><strong>Передай на перевірку.</strong> Після рев’ю опублікуй схвалену версію.</li>
+              <li><strong>Достав контент дітям.</strong> Для оновлення перевіреного набору на дитячих сторінках скористайся вкладкою «Публікація».</li>
+            </ol>
+          </article>
+
+          <article class="admin-form-card admin-help-card">
+            <h3 class="admin-help-card__title">Де використовується</h3>
+            <dl class="admin-help-definitions">
+              <div><dt>Класна гра</dt><dd>Питання для спільної гри вчителя з класом.</dd></div>
+              <div><dt>Шлях учня</dt><dd>Питання для домашніх місій і навчального шляху.</dd></div>
+              <div><dt>Олімпіада — тренування</dt><dd>Підготовчі питання, доступні без коду основного туру.</dd></div>
+              <div><dt>Олімпіада — основний тур</dt><dd>Захищені питання офіційної події, що видаються лише учасникам із кодом.</dd></div>
+            </dl>
+            <p class="admin-help-callout">Тренувальне питання можна додати до кількох розділів. Основний тур завжди окремий і не поєднується з ними.</p>
+          </article>
+
+          <article class="admin-form-card admin-help-card">
+            <h3 class="admin-help-card__title">Статуси питання</h3>
+            <dl class="admin-help-definitions">
+              <div><dt>Чернетка</dt><dd>Можна редагувати або видалити. Діти її не бачать.</dd></div>
+              <div><dt>На перевірці</dt><dd>Питання готове до редакторського перегляду; призначення вже має бути визначене.</dd></div>
+              <div><dt>Опубліковано</dt><dd>Схвалена версія зафіксована і більше не змінюється.</dd></div>
+              <div><dt>Архів</dt><dd>Питання не потрапляє до нових добірок, але його історія зберігається.</dd></div>
+            </dl>
+            <p class="admin-help-callout">Щоб змінити опубліковане питання, створи з нього нову версію-чернетку. Це захищає вже проведені сесії та результати.</p>
+          </article>
+
+          <article class="admin-form-card admin-help-card">
+            <h3 class="admin-help-card__title">Механіки відповіді</h3>
+            <ul class="admin-help-list">
+              <li><strong>Вибір</strong> — одна правильна відповідь із кількох.</li>
+              <li><strong>Так/Ні</strong> — перевірка твердження.</li>
+              <li><strong>Введення</strong> — коротка текстова або числова відповідь.</li>
+              <li><strong>Порядок</strong> — розташування готових елементів у правильній черзі.</li>
+              <li><strong>Послідовність</strong> — продовження заданої закономірності.</li>
+              <li><strong>Пари</strong> — зіставлення елементів двох списків.</li>
+            </ul>
+          </article>
+
+          <article class="admin-form-card admin-help-card">
+            <h3 class="admin-help-card__title">Як не плутати поля</h3>
+            <dl class="admin-help-definitions">
+              <div><dt>Розділ</dt><dd>Визначає, де користувач побачить питання.</dd></div>
+              <div><dt>Напрям і тема</dt><dd>Описують навчальний зміст і допомагають формувати добірки.</dd></div>
+              <div><dt>CT-навичка</dt><dd>Показує, яку навичку обчислювального мислення тренує завдання.</dd></div>
+              <div><dt>Рівень дії</dt><dd>Розрізняє впізнавання, застосування та міркування.</dd></div>
+              <div><dt>Складність</dt><dd>Оцінює складність саме для вибраного класу.</dd></div>
+            </dl>
+          </article>
+
+          <article class="admin-form-card admin-help-card admin-help-card--wide">
+            <h3 class="admin-help-card__title">Перевір перед публікацією</h3>
+            <ul class="admin-help-checklist">
+              <li>Формулювання коротке й зрозуміле для вибраного класу.</li>
+              <li>Правильна відповідь позначена без двозначності.</li>
+              <li>Пояснення допомагає зрозуміти спосіб розв’язання, а не лише повторює відповідь.</li>
+              <li>Розділ, напрям, тема, навичка та складність відповідають змісту.</li>
+              <li>Зображення має змістовний опис для доступності.</li>
+              <li>Попередній перегляд виглядає коректно на вузькому екрані.</li>
+            </ul>
+          </article>
+        </div>
       </section>
 
     </main>
