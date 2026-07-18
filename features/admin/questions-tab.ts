@@ -120,10 +120,11 @@ export async function loadQuestionsTab() {
   list.innerHTML = '<p class="admin-loading-text">Завантаження…</p>'
   try {
     const grade      = $<HTMLSelectElement>('q-filter-grade').value || undefined
-    const poolRaw    = $<HTMLSelectElement>('q-filter-pool').value
-    const isOlympiad = poolRaw !== '' ? poolRaw === 'true' : undefined
+    const section    = $<HTMLSelectElement>('q-filter-section').value
+    const isMainRound = section === 'main_round'
+    const isOlympiad = section ? isMainRound : undefined
     const type       = $<HTMLSelectElement>('q-filter-mechanic').value || undefined
-    const channel    = $<HTMLSelectElement>('q-filter-channel').value || undefined
+    const channel    = section && !isMainRound ? section as QuestionChannel : undefined
     const difficulty = $<HTMLSelectElement>('q-filter-difficulty').value || undefined
     const track      = $<HTMLSelectElement>('q-filter-track').value || undefined
     const topic      = $<HTMLSelectElement>('q-filter-topic').value || undefined
