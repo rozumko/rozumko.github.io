@@ -521,7 +521,10 @@
 .avatar-btn img {
   display: block;
   width: clamp(3.25rem, 17vw, 5rem);
-  height: clamp(3.25rem, 17vw, 5rem);
+  /* height:auto + aspect-ratio keep the image square even when the global
+     img max-width:100% shrinks it inside a narrow grid cell */
+  height: auto;
+  aspect-ratio: 1;
   border-radius: var(--r-md);
 }
 .avatar-btn:hover { transform: translateY(-2px); }
@@ -933,6 +936,21 @@
   font-size: var(--font-size-xl);
   font-weight: 800;
   color: var(--clr-text);
+}
+.finish-card__identity {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+}
+.finish-card__avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid var(--clr-brand);
+  background: var(--clr-surface-subtle);
+  object-fit: contain;
+  flex-shrink: 0;
 }
 .finish-card__stars {
   font-size: 2.6rem;

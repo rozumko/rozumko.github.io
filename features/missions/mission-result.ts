@@ -30,7 +30,7 @@ export function starRating(percent: number): number {
 
 /** Дитяче підбадьорення за відсотком (без тиску й оцінок). */
 export function encouragement(percent: number): string {
-  if (percent >= 90) return 'Неймовірно! Ти справжній майстер мислення! 🏆'
+  if (percent >= 90) return 'Неймовірно! Ти справжній знавець інформатики! 🏆'
   if (percent >= 70) return 'Чудова робота! Так тримати! 🌟'
   if (percent >= 40) return 'Гарний старт! Ще трохи практики — і буде супер! 💪'
   return 'Головне — ти спробував! Зіграймо ще раз? 🚀'

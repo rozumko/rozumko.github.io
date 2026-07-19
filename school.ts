@@ -8,8 +8,10 @@ import {
   type Question,
 } from './features/api/client.js'
 import { runMission, type MissionElements } from './features/missions/mission-runner.js'
+import { shuffleDeck } from './features/missions/question-shuffle.js'
 import { encouragement, starRating, type MissionSummary } from './features/missions/mission-result.js'
 import { AVATARS, avatarLabel, avatarSrc } from './avatars.js'
+import { launchConfetti, playVictorySound } from './utils/celebrate.js'
 
 // School Mode — класна гра за кодом вчителя.
 // Аватар і нікнейм — єдині дані учня, без ПІБ та реєстрації.
@@ -145,10 +147,13 @@ function startSchoolMission(participantId: string, participantToken: string, que
   show(quizEl)
   setMissionActive(true)
   showStudentIdentity(selectedAvatar, currentNickname)
-  runMission(els, questions, {
+  // Anti-peeking: per-participant order of questions and options. Indices are
+  // mapped back to the original option order before hitting the server.
+  const deck = shuffleDeck(questions, participantId)
+  runMission(els, deck.questions, {
     showExplanation: false,
     submitAnswer: (questionId, answer) =>
-      submitSchoolAnswer(participantId, participantToken, questionId, answer)
+      submitSchoolAnswer(participantId, participantToken, questionId, deck.toOriginalAnswer(questionId, answer))
         .then(r => r.correct),
     onComplete: showResult,
   })
@@ -250,12 +255,21 @@ function showResult(summary: MissionSummary) {
   hide(quizEl)
   els.progressBar.style.width = '100%'
   const stars = starRating(summary.percent)
+  const resultAvatar = $maybe<HTMLImageElement>('result-avatar')
+  if (resultAvatar) {
+    resultAvatar.src = avatarSrc(selectedAvatar)
+    resultAvatar.alt = avatarLabel(selectedAvatar)
+    resultAvatar.classList.remove('hidden')
+  }
   $('result-mission-label').textContent = `Класна гра • ${currentNickname}`
   $('result-stars').textContent   = '⭐'.repeat(stars) + '☆'.repeat(3 - stars)
   $('result-score').textContent   = `${summary.correct} з ${summary.total}`
   $('result-percent').textContent = `${summary.percent}%`
   $('result-message').textContent = encouragement(summary.percent)
   show(resultEl)
+  // Celebration: sound always, confetti from 1 star up (>=40%)
+  playVictorySound()
+  if (stars >= 1) launchConfetti()
 }
 
 $maybe('mission-retry-btn')?.addEventListener('click', showIntro)

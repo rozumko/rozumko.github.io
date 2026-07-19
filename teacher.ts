@@ -9,7 +9,8 @@ import {
   requestPasswordReset, updateAuthPassword, googleSignInUrl, exchangeAuthCode, registerTeacherRequest,
   getClassStudents, addClassStudent, updateClassStudent, deleteClassStudent,
   createSchoolSession, startSchoolSession, finishSchoolSession, getSchoolSession,
-  getSchoolSessionQuestions, submitSchoolProjectorAnswer,
+  getSchoolSessionQuestions, submitSchoolProjectorAnswer, getSchoolParticipantAnswers,
+  type SchoolParticipantAnswer,
   TURNSTILE_SITE_KEY,
   type TeacherClass, type ClassStudent, type EventRegistration, type TeacherEvent, type Attempt,
   type SchoolSessionInfo, type Question,
@@ -1311,13 +1312,15 @@ function renderSchoolStatus() {
     finished: '🏁 Завершено',
   }
   if (statusEl) statusEl.textContent = labels[schoolSession.status] ?? schoolSession.status
+  // The click-a-student hint applies only once the breakdown is available
+  $maybe('school-detail-hint')?.classList.toggle('hidden', schoolSession.status === 'lobby')
   $maybe('school-start-btn')?.classList.toggle('hidden', schoolSession.status !== 'lobby')
   $maybe('school-cancel-btn')?.classList.toggle('hidden', schoolSession.status !== 'lobby')
   $maybe('school-finish-btn')?.classList.toggle('hidden', schoolSession.status !== 'active')
   $maybe('school-new-btn')?.classList.toggle('hidden', schoolSession.status !== 'finished')
 }
 
-function renderSchoolLeaderboard(participants: { avatar: string; nickname: string; score: number }[]) {
+function renderSchoolLeaderboard(participants: { id: string; avatar: string; nickname: string; score: number }[]) {
   const board = $maybe('school-leaderboard')
   if (!board) return
   const count = $maybe('school-participant-count')
@@ -1326,13 +1329,88 @@ function renderSchoolLeaderboard(participants: { avatar: string; nickname: strin
     board.innerHTML = '<p class="school-leaderboard__empty">Поки нікого. Учні відкривають посилання або вводять код на сторінці «Шкільний режим».</p>'
     return
   }
+  // In lobby the breakdown endpoint is blocked (409) — no question texts
+  // before start, so the rows are not clickable yet.
+  const detailAvailable = schoolSession?.status !== 'lobby'
   board.innerHTML = participants.map((p, i) => `
-    <div class="school-leaderboard__row">
+    <button type="button" class="school-leaderboard__row${p.id === schoolDetailParticipantId ? ' school-leaderboard__row--active' : ''}"
+            data-participant-id="${esc(p.id)}" aria-expanded="${p.id === schoolDetailParticipantId}"${detailAvailable ? '' : ' disabled'}>
       <span class="school-leaderboard__rank">${i + 1}</span>
       <img class="school-leaderboard__avatar" src="${esc(avatarSrc(p.avatar))}" alt="${esc(avatarLabel(p.avatar))}" width="32" height="32" />
       <span class="school-leaderboard__name">${esc(p.nickname)}</span>
       <span class="school-leaderboard__score">${p.score}</span>
-    </div>`).join('')
+    </button>`).join('')
+  // onclick (not addEventListener): innerHTML is re-rendered by polling every 5s
+  board.onclick = (e) => {
+    const row = (e.target as HTMLElement).closest<HTMLElement>('[data-participant-id]')
+    const pid = row?.dataset.participantId
+    if (!pid) return
+    if (pid === schoolDetailParticipantId) closeParticipantDetail()
+    else void openParticipantDetail(pid)
+  }
+}
+
+// ── Per-participant answer breakdown ─────────────────────────────────────────
+// The teacher sees what the child picked and where they erred. The server
+// never returns answer keys — only the chosen-answer text and correctness.
+
+let schoolDetailParticipantId: string | null = null
+
+function closeParticipantDetail() {
+  schoolDetailParticipantId = null
+  const panel = $maybe('school-participant-detail')
+  if (panel) { panel.classList.add('hidden'); panel.innerHTML = '' }
+  document.querySelectorAll('.school-leaderboard__row--active').forEach(r => {
+    r.classList.remove('school-leaderboard__row--active')
+    r.setAttribute('aria-expanded', 'false')
+  })
+}
+
+async function openParticipantDetail(participantId: string) {
+  if (!schoolSession) return
+  const panel = $maybe('school-participant-detail')
+  if (!panel) return
+  schoolDetailParticipantId = participantId
+  panel.classList.remove('hidden')
+  if (!panel.innerHTML) panel.innerHTML = '<p class="school-participant-detail__loading">Завантажуємо відповіді…</p>'
+  document.querySelectorAll<HTMLElement>('.school-leaderboard__row').forEach(r => {
+    const active = r.dataset.participantId === participantId
+    r.classList.toggle('school-leaderboard__row--active', active)
+    r.setAttribute('aria-expanded', String(active))
+  })
+  try {
+    const { participant, answers } = await getSchoolParticipantAnswers(schoolSession.id, participantId)
+    // The teacher may have switched to another participant mid-request
+    if (schoolDetailParticipantId !== participantId) return
+    panel.innerHTML = `
+      <div class="school-participant-detail__head">
+        <img class="school-leaderboard__avatar" src="${esc(avatarSrc(participant.avatar))}" alt="" width="32" height="32" />
+        <strong class="school-participant-detail__name">${esc(participant.nickname)}</strong>
+        <span class="school-participant-detail__score">${answers.filter(a => a.isCorrect).length} з ${answers.length}</span>
+        <button type="button" id="school-detail-close" class="school-participant-detail__close" aria-label="Закрити розбір відповідей">✕</button>
+      </div>
+      ${answers.map(a => renderAnswerRow(a)).join('')}`
+    $maybe('school-detail-close')?.addEventListener('click', closeParticipantDetail)
+  } catch {
+    if (schoolDetailParticipantId !== participantId) return
+    panel.innerHTML = '<p class="school-participant-detail__loading">Не вдалося завантажити відповіді. Спробуйте ще раз.</p>'
+  }
+}
+
+function renderAnswerRow(a: SchoolParticipantAnswer): string {
+  const state = !a.answered ? 'empty' : a.isCorrect ? 'correct' : 'incorrect'
+  const icon  = !a.answered ? '·' : a.isCorrect ? '✓' : '✗'
+  const answerLine = !a.answered
+    ? 'Без відповіді'
+    : `Відповідь: ${esc(a.answerText ?? '')}`
+  return `
+    <div class="school-answer-row school-answer-row--${state}">
+      <span class="school-answer-row__icon" aria-hidden="true">${icon}</span>
+      <div class="school-answer-row__body">
+        <p class="school-answer-row__q">${a.position + 1}. ${esc(a.q)}</p>
+        <p class="school-answer-row__a">${answerLine}</p>
+      </div>
+    </div>`
 }
 
 // Зведення за темами: слабші зверху, колірний індикатор засвоєння.
@@ -1368,6 +1446,10 @@ async function refreshSchoolSession() {
     renderSchoolStatus()
     renderSchoolLeaderboard(participants)
     renderSchoolTopicStats(topicStats)
+    // Refresh an open breakdown together with the leaderboard while live
+    if (schoolDetailParticipantId && session.status !== 'finished') {
+      void openParticipantDetail(schoolDetailParticipantId)
+    }
     if (session.status === 'finished' && schoolPollTimer) {
       clearInterval(schoolPollTimer)
       schoolPollTimer = null
@@ -1416,6 +1498,7 @@ function setSchoolCreateBusy(busy: boolean) {
 
 function resetSchoolView() {
   closeSchoolQrDialog()
+  closeParticipantDetail()
   schoolSession = null
   if (schoolPollTimer) { clearInterval(schoolPollTimer); schoolPollTimer = null }
   $maybe('school-live')?.classList.add('hidden')

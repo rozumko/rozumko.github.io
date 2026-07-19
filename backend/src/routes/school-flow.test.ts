@@ -52,6 +52,7 @@ function installFakeDb(state: ReturnType<typeof createState>) {
     joins: unknown[] = []
     from(t: unknown) { this.table = t; return this }
     innerJoin(t: unknown) { this.joins.push(t); return this }
+    leftJoin(t: unknown) { this.joins.push(t); return this }
     where() { return this }
     orderBy() { return this }
     limit() { return this }
@@ -59,6 +60,11 @@ function installFakeDb(state: ReturnType<typeof createState>) {
     rows() {
       if (isTable(this.table, schema.schoolSessions)) {
         return state.sessionExists ? [state.session] : []
+      }
+      if (isTable(this.table, schema.schoolSessionQuestions) && this.joins.includes(schema.schoolAnswers)) {
+        // Teacher breakdown: one row per issued question + this participant's answer
+        const { q, type, options } = state.question
+        return [{ position: 0, q, type, topic: null, options, answer: 1, isCorrect: false }]
       }
       if (isTable(this.table, schema.schoolParticipants)) {
         if (this.joins.includes(schema.schoolSessions) && state.participant) {
@@ -366,6 +372,46 @@ test('school: projector answers are scored on the server without returning an an
         payload: { questionId: ids.foreignQuestion, answer: 0 },
       })
       assert.equal(foreign.statusCode, 400, foreign.body)
+    })
+  } finally { restore() }
+})
+
+test('school: teacher participant breakdown returns answer text + correctness, never keys', async () => {
+  const state = createState()
+  state.participant = { id: ids.participant, sessionId: ids.session, avatar: AVATAR, nickname: 'Маша', score: 0 }
+  const restore = installFakeDb(state)
+  try {
+    await withApp(async (app) => {
+      const res = await app.inject({
+        method: 'GET',
+        url: `/api/school/sessions/${ids.session}/participants/${ids.participant}/answers`,
+      })
+      assert.equal(res.statusCode, 200, res.body)
+      const body = res.json()
+      assert.equal(body.participant.nickname, 'Маша')
+      assert.equal(body.answers.length, 1)
+      // Fake DB stores answer index 1 (wrong) → resolved to option text "5"
+      assert.equal(body.answers[0].answerText, '5')
+      assert.equal(body.answers[0].isCorrect, false)
+      assert.equal(body.answers[0].answered, true)
+      // Answer keys and explanations never reach the browser (School surface rule)
+      assert.ok(!res.body.includes('"correct"'), 'answer key leaked in breakdown response')
+      assert.ok(!res.body.includes('"explanation"'), 'explanation leaked in breakdown response')
+      // Lobby sessions must not reveal question texts before start (409)
+      state.session.status = 'lobby'
+      const lobby = await app.inject({
+        method: 'GET',
+        url: `/api/school/sessions/${ids.session}/participants/${ids.participant}/answers`,
+      })
+      assert.equal(lobby.statusCode, 409, lobby.body)
+      state.session.status = 'active'
+      // Participant not in this session → 404
+      state.participant = null
+      const missing = await app.inject({
+        method: 'GET',
+        url: `/api/school/sessions/${ids.session}/participants/${ids.participant}/answers`,
+      })
+      assert.equal(missing.statusCode, 404, missing.body)
     })
   } finally { restore() }
 })
