@@ -622,9 +622,10 @@ MVP/free-tier pilot blockers:
 
 - [x] Keep teacher self-registration enabled for the pilot with email
       confirmation, administrator approval and Turnstile bot protection.
-- [ ] Supabase Auth -> SMTP: configure a production SMTP provider and verify
+- [x] Supabase Auth -> SMTP: configure a production SMTP provider and verify
       confirmation and recovery delivery to external teacher and parent
-      addresses; do not rely on the default test-only SMTP service.
+      addresses; do not rely on the default test-only SMTP service. Keep the
+      production templates in `docs/auth-email-templates.md`.
 - [x] Supabase Auth -> Bot and Abuse Protection: Turnstile is enabled and
       enforced for signup, password login and password recovery.
 - [x] Supabase Auth -> Rate Limits: review password login and signup limits

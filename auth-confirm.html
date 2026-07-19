@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="referrer" content="no-referrer" />
+  <title>Розумко — Підтвердження дії</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="tokens.css" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style-auth.css" />
+</head>
+<body class="teacher-auth-page auth-surface auth-surface--teacher">
+  <a href="#main-content" class="skip-link">Перейти до основного контенту</a>
+
+  <header class="auth-topbar">
+    <a href="index.html" class="auth-topbar__brand" aria-label="Розумко — на головну">Розумко</a>
+    <a href="index.html" class="auth-topbar__back">← На головну</a>
+  </header>
+
+  <main id="main-content" class="auth-main">
+    <section class="auth-card" aria-labelledby="auth-confirm-title">
+      <div class="auth-card__header">
+        <p class="auth-card__eyebrow">Безпечний перехід</p>
+        <h1 class="auth-card__title" id="auth-confirm-title">Підтвердження дії</h1>
+        <p class="auth-card__sub">Перевірте дію перед переходом до кабінету.</p>
+      </div>
+      <div class="auth-card__body">
+        <p id="auth-confirm-message" class="auth-message" role="status" aria-live="polite">
+          Перевіряємо посилання…
+        </p>
+        <button id="auth-confirm-button" class="auth-button auth-button--primary hidden" type="button" hidden>
+          Продовжити
+        </button>
+        <p class="auth-switch"><a href="index.html">Скасувати й повернутися на головну</a></p>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="auth-confirm.js"></script>
+</body>
+</html>

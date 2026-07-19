@@ -740,6 +740,21 @@ export async function requestPasswordReset(
   }
 }
 
+export type AuthEmailActionType = 'signup' | 'recovery'
+
+/** Builds the single trusted provider URL used after the local confirmation page. */
+export function buildAuthConfirmationUrl(
+  tokenHash: string,
+  type: AuthEmailActionType,
+  redirectTo: string,
+): string {
+  const verificationUrl = new URL('/auth/v1/verify', SUPABASE_URL)
+  verificationUrl.searchParams.set('token', tokenHash)
+  verificationUrl.searchParams.set('type', type)
+  verificationUrl.searchParams.set('redirect_to', redirectTo)
+  return verificationUrl.href
+}
+
 /** Sets a new password for the session obtained from the recovery link. */
 export async function updateAuthPassword(accessToken: string, newPassword: string): Promise<void> {
   const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
