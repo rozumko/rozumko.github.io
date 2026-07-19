@@ -451,8 +451,11 @@ body.teacher-dashboard-active {
 
 /* School game management */
 .school-create-card,
-.school-live { display: grid; gap: var(--sp-5); }
+/* minmax(0,1fr) + min-width:0: the track must shrink below content
+   min-content on phones, otherwise the page gets horizontal overflow */
+.school-live { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); }
 .school-live__panel {
+  min-width: 0;
   padding: clamp(var(--sp-4), 3vw, var(--sp-6));
   border: 1px solid var(--clr-border);
   border-radius: var(--r-lg);
