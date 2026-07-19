@@ -22,6 +22,8 @@ export interface MissionOptions {
   showExplanation?: boolean
   incorrectFeedback?: string
   completeLabel?: string
+  initialCompleted?: number
+  totalQuestions?: number
   onComplete: (summary: MissionSummary) => void
   /**
    * Live-режим (просунутий School): ключі відповідей вирізані сервером, тож
@@ -39,6 +41,15 @@ export function runMission(
 ): void {
   const showExplanation = opts.showExplanation ?? true
   const completeLabel = opts.completeLabel ?? 'Завершити місію'
+  const initialCompletedOption = opts.initialCompleted
+  const initialCompleted = typeof initialCompletedOption === 'number' && Number.isFinite(initialCompletedOption)
+    ? Math.max(0, Math.floor(initialCompletedOption))
+    : 0
+  const totalQuestionsOption = opts.totalQuestions
+  const requestedTotal = typeof totalQuestionsOption === 'number' && Number.isFinite(totalQuestionsOption)
+    ? Math.floor(totalQuestionsOption)
+    : initialCompleted + questions.length
+  const totalQuestions = Math.max(initialCompleted + questions.length, requestedTotal)
   let currentIdx = 0
   let correct = 0
 
@@ -46,8 +57,9 @@ export function runMission(
     const q = questions[currentIdx]
     const questionCard = els.questionText.closest<HTMLElement>('.quiz-question-card')
 
-    els.progressText.textContent = `${currentIdx + 1} / ${questions.length}`
-    els.progressBar.style.width = `${((currentIdx + 1) / questions.length) * 100}%`
+    const progress = initialCompleted + currentIdx + 1
+    els.progressText.textContent = `${progress} / ${totalQuestions}`
+    els.progressBar.style.width = `${(progress / totalQuestions) * 100}%`
     els.questionText.textContent = String(q.q ?? '')
 
     // Optional question image. Keep behavior consistent across mission surfaces.
