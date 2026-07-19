@@ -9,7 +9,7 @@ import {
 } from './features/api/client.js'
 import { runMission, type MissionElements } from './features/missions/mission-runner.js'
 import { shuffleDeck } from './features/missions/question-shuffle.js'
-import { encouragement, starRating, type MissionSummary } from './features/missions/mission-result.js'
+import { encouragement, missionSummary, starRating, type MissionSummary } from './features/missions/mission-result.js'
 import { AVATARS, avatarLabel, avatarSrc } from './avatars.js'
 import { launchConfetti, playVictorySound } from './utils/celebrate.js'
 
@@ -18,6 +18,39 @@ import { launchConfetti, playVictorySound } from './utils/celebrate.js'
 
 function randomAvatar(): string {
   return AVATARS[Math.floor(Math.random() * AVATARS.length)] ?? AVATARS[0]
+}
+
+// ── Reload resume ────────────────────────────────────────────────────────────
+// The participant identity survives a page reload in sessionStorage (tab-scoped,
+// gone when the tab closes — keeps School Mode ephemeral). On load we silently
+// rejoin the same participant instead of creating a leaderboard duplicate.
+
+const SCHOOL_PARTICIPANT_KEY = 'school_participant'
+
+interface StoredParticipant {
+  participantId: string
+  participantToken: string
+  avatar: string
+  nickname: string
+}
+
+function saveStoredParticipant(p: StoredParticipant) {
+  try { sessionStorage.setItem(SCHOOL_PARTICIPANT_KEY, JSON.stringify(p)) } catch { /* unavailable */ }
+}
+
+function loadStoredParticipant(): StoredParticipant | null {
+  try {
+    const raw = sessionStorage.getItem(SCHOOL_PARTICIPANT_KEY)
+    if (!raw) return null
+    const p = JSON.parse(raw) as StoredParticipant
+    if (typeof p?.participantId === 'string' && typeof p?.participantToken === 'string'
+      && typeof p?.avatar === 'string' && typeof p?.nickname === 'string') return p
+    return null
+  } catch { return null }
+}
+
+function clearStoredParticipant() {
+  try { sessionStorage.removeItem(SCHOOL_PARTICIPANT_KEY) } catch { /* unavailable */ }
 }
 
 let selectedAvatar: string = randomAvatar()
@@ -61,6 +94,7 @@ function clearWaitingPoll() {
 function showIntro() {
   clearWaitingPoll()
   setMissionActive(false)
+  clearStoredParticipant()
   currentParticipantId = ''
   currentParticipantToken = ''
   setSelectedAvatar(randomAvatar(), false)
@@ -82,6 +116,15 @@ function showStudentIdentity(slug: string, nickname: string) {
 
 function setSelectedAvatar(slug: string, syncServer: boolean) {
   selectedAvatar = slug
+  // Keep the stored identity in sync so a reload restores the picked hero
+  if (currentParticipantId && currentParticipantToken) {
+    saveStoredParticipant({
+      participantId: currentParticipantId,
+      participantToken: currentParticipantToken,
+      avatar: slug,
+      nickname: currentNickname,
+    })
+  }
   avatarWrap?.querySelectorAll<HTMLButtonElement>('button').forEach(btn => {
     btn.setAttribute('aria-pressed', String(btn.dataset.avatar === slug))
   })
@@ -139,7 +182,12 @@ function showWaitingStatus(status: string) {
   if (statusEl) statusEl.textContent = status
 }
 
-function startSchoolMission(participantId: string, participantToken: string, questions: Question[]) {
+interface MissionResume {
+  answeredQuestionIds: string[]
+  score: number
+}
+
+function startSchoolMission(participantId: string, participantToken: string, questions: Question[], resume?: MissionResume) {
   clearWaitingPoll()
   hide(introEl)
   hide(waitEl)
@@ -149,13 +197,27 @@ function startSchoolMission(participantId: string, participantToken: string, que
   showStudentIdentity(selectedAvatar, currentNickname)
   // Anti-peeking: per-participant order of questions and options. Indices are
   // mapped back to the original option order before hitting the server.
+  // The shuffle is seeded by participantId, so a resumed run keeps the order.
   const deck = shuffleDeck(questions, participantId)
-  runMission(els, deck.questions, {
+  const answered = new Set(resume?.answeredQuestionIds ?? [])
+  const remaining = deck.questions.filter(q => !answered.has(String(q.id)))
+  const priorCorrect = resume?.score ?? 0
+  const totalCount = deck.questions.length
+
+  if (!remaining.length) {
+    // Everything was answered before the reload — straight to the result
+    showResult(missionSummary(priorCorrect, totalCount))
+    return
+  }
+
+  runMission(els, remaining, {
     showExplanation: false,
     submitAnswer: (questionId, answer) =>
       submitSchoolAnswer(participantId, participantToken, questionId, deck.toOriginalAnswer(questionId, answer))
         .then(r => r.correct),
-    onComplete: showResult,
+    // A resumed run replays only the remaining questions; the final summary
+    // adds the server-confirmed score earned before the reload.
+    onComplete: s => showResult(missionSummary(priorCorrect + s.correct, totalCount)),
   })
 }
 
@@ -165,7 +227,10 @@ function startWaitingPoll(participantId: string, participantToken: string) {
     try {
       const session = await getSchoolParticipantSession(participantId, participantToken)
       if (session.status === 'active' && session.questions.length > 0) {
-        startSchoolMission(participantId, participantToken, session.questions)
+        startSchoolMission(participantId, participantToken, session.questions, {
+          answeredQuestionIds: session.answeredQuestionIds ?? [],
+          score: session.score ?? 0,
+        })
       } else if (session.status === 'lobby') {
         showWaitingStatus('Очікуємо старт...')
       } else if (session.status === 'finished') {
@@ -229,6 +294,12 @@ joinBtn?.addEventListener('click', async () => {
     const joined = await joinSchoolSession(code, avatarForJoin, nickname)
     currentParticipantId = joined.participantId
     currentParticipantToken = joined.participantToken
+    saveStoredParticipant({
+      participantId: joined.participantId,
+      participantToken: joined.participantToken,
+      avatar: selectedAvatar,
+      nickname,
+    })
     if (joined.status === 'active' && joined.questions.length > 0) {
       startSchoolMission(joined.participantId, joined.participantToken, joined.questions)
     } else {
@@ -273,3 +344,33 @@ function showResult(summary: MissionSummary) {
 }
 
 $maybe('mission-retry-btn')?.addEventListener('click', showIntro)
+
+// On load: silently rejoin the same participant after a reload instead of
+// creating a leaderboard duplicate via a fresh join.
+async function resumeStoredParticipant() {
+  const stored = loadStoredParticipant()
+  if (!stored) return
+  currentNickname = stored.nickname
+  currentParticipantId = stored.participantId
+  currentParticipantToken = stored.participantToken
+  showWaitingRoom(stored.avatar, stored.nickname, 'Відновлюємо гру…')
+  try {
+    const session = await getSchoolParticipantSession(stored.participantId, stored.participantToken)
+    if (session.status === 'active' && session.questions.length > 0) {
+      startSchoolMission(stored.participantId, stored.participantToken, session.questions, {
+        answeredQuestionIds: session.answeredQuestionIds ?? [],
+        score: session.score ?? 0,
+      })
+    } else if (session.status === 'lobby') {
+      showWaitingRoom(stored.avatar, stored.nickname)
+      startWaitingPoll(stored.participantId, stored.participantToken)
+    } else {
+      showIntro()
+    }
+  } catch {
+    // Stale identity (403/404) or a network failure — clean join form
+    showIntro()
+  }
+}
+
+void resumeStoredParticipant()

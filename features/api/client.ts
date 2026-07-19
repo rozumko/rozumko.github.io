@@ -286,6 +286,9 @@ export async function getSchoolParticipantSession(participantId: string, partici
   grade: number
   questions: Question[]
   questionsCount: number
+  // Resume after reload: the participant's own answered ids + server score
+  score?: number
+  answeredQuestionIds?: string[]
 }> {
   const data = await request(`/api/school/participants/${encodeURIComponent(participantId)}/session`, {
     headers: { 'X-Participant-Token': participantToken },
