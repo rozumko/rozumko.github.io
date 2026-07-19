@@ -1,8 +1,11 @@
 # Render Operations Runbook - Rozumko
 
-_Updated: 2026-07-14_
+_Updated: 2026-07-19_
 
-The backend runs on Render from `backend/render.yaml`.
+The production backend is the Render service `rozumko.github.io` at
+`https://rozumko-github-io.onrender.com`. `backend/render.yaml` is the intended
+service declaration; verify the live dashboard matches it after every manual
+Render configuration change.
 
 ## Current Deployment Rules
 

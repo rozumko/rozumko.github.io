@@ -24,6 +24,8 @@ Run this checklist before a real pilot.
 
 ## 2. Teacher Signup Policy
 
+- [ ] Custom SMTP is enabled in Supabase Auth; confirmation and recovery emails
+      reach external teacher and parent test addresses
 - [ ] Decide whether pilot signup is public or invitation-only in Supabase Auth settings
 - [ ] If public: register a teacher, confirm `ACCOUNT_PENDING`, activate via admin, then log in
 - [ ] If invitation-only: verify an uninvited signup is rejected
@@ -159,6 +161,7 @@ Run this checklist before a real pilot.
 - [ ] Supabase Auth -> Bot and Abuse Protection has enforced Turnstile for
       signup, password login and password recovery
 - [ ] Supabase Auth -> Rate Limits has reviewed password login and signup limits
+- [ ] Supabase Auth -> SMTP uses a production provider and external delivery is verified
 - [ ] Supabase Auth URL Configuration contains exact production teacher/parent
       callback URLs and no broad wildcard
 - [ ] Parent recovery callback uses `?code=` PKCE, cleans the URL, removes its

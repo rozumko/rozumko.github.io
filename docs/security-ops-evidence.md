@@ -13,6 +13,8 @@ from this repository.
 For the current MVP, treat these controls as **blocking before a public pilot**:
 
 - Supabase Auth Turnstile enforcement for signup, password login and recovery.
+- Custom SMTP enabled and delivery verified to external teacher and parent
+  addresses; the Supabase default SMTP is not used for production signup.
 - Exact teacher/parent redirect allowlists and reviewed Google provider setup.
 - Supabase Auth rate-limit review, documented with the limits available on the
   current plan.
@@ -52,6 +54,7 @@ backlog before higher traffic, paid campaigns or production-grade operations:
 | Control | Expected state | Evidence to capture | Status |
 |---|---|---|---|
 | Email confirmation | Enabled for teacher signup | Auth settings screenshot or export |  |
+| SMTP delivery | Custom SMTP enabled; confirmation and recovery messages reach external teacher and parent addresses | Redacted SMTP settings and delivery test result |  |
 | Teacher approval | New teachers remain pending until admin approval | Signup test result showing `ACCOUNT_PENDING` |  |
 | Turnstile | Bot and Abuse Protection enforces Turnstile for signup, password login and password recovery | Supabase Auth setting and failed grants without a token |  |
 | Signup rate limits | Reviewed and appropriate for pilot traffic | Auth rate-limit settings screenshot/export |  |

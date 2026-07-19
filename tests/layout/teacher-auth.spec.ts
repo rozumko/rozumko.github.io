@@ -85,3 +85,43 @@ test('teacher leaves an authenticated document before loading the registration w
   expect(await page.evaluate(() => Number(sessionStorage.getItem('__teacher_auth_loads')))).toBeGreaterThanOrEqual(2)
   expect(await page.evaluate(() => sessionStorage.getItem('teacher_session'))).toBeNull()
 })
+
+test('teacher registration request sends a valid JSON body', async ({ page }) => {
+  await page.addInitScript(() => {
+    sessionStorage.setItem('teacher_session', JSON.stringify({
+      accessToken: 'google-access',
+      refreshToken: 'google-refresh',
+      email: 'teacher@example.com',
+    }))
+    window.fetch = async (input, init) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+      if (url.endsWith('/api/teacher/me')) {
+        return new Response(JSON.stringify({ error: 'Teacher account is not created', code: 'ACCOUNT_UNKNOWN' }), {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      }
+      if (url.endsWith('/api/teacher/register-request')) {
+        ;(window as any).__teacherRegistrationBody = init?.body
+        if (init?.headers && new Headers(init.headers).get('Content-Type') === 'application/json' && !init.body) {
+          return new Response(JSON.stringify({ error: 'Body cannot be empty when content-type is application/json' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        }
+        return new Response(JSON.stringify({ status: 'pending' }), {
+          status: 201,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      }
+      throw new Error(`Unexpected request: ${url}`)
+    }
+  })
+
+  await page.goto('/teacher.html')
+  await page.locator('#register-request-btn').click()
+
+  await expect(page.locator('#login-error')).toContainText('Заявку подано')
+  await expect(page.locator('#register-request-box')).toBeHidden()
+  expect(await page.evaluate(() => (window as any).__teacherRegistrationBody)).toBe('{}')
+})

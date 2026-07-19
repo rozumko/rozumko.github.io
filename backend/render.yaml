@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: megarozum-backend
+    name: rozumko.github.io
     runtime: node
     rootDir: backend
     buildCommand: npm install && npm run build

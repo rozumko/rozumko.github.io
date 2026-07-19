@@ -622,22 +622,25 @@ MVP/free-tier pilot blockers:
 
 - [x] Keep teacher self-registration enabled for the pilot with email
       confirmation, administrator approval and Turnstile bot protection.
-- [ ] Supabase Auth -> Bot and Abuse Protection: Turnstile is enabled and
+- [ ] Supabase Auth -> SMTP: configure a production SMTP provider and verify
+      confirmation and recovery delivery to external teacher and parent
+      addresses; do not rely on the default test-only SMTP service.
+- [x] Supabase Auth -> Bot and Abuse Protection: Turnstile is enabled and
       enforced for signup, password login and password recovery.
-- [ ] Supabase Auth -> Rate Limits: review password login and signup limits
+- [x] Supabase Auth -> Rate Limits: review password login and signup limits
       using the controls available on the current Supabase plan.
-- [ ] Supabase Auth -> URL Configuration: allow only the exact production
+- [x] Supabase Auth -> URL Configuration: allow only the exact production
       `teacher.html` and `parent.html` callback URLs (plus explicit local/staging
       URLs while needed); do not add a broad wildcard redirect.
-- [ ] Supabase Auth -> Providers: Google is enabled only when its OAuth client
+- [x] Supabase Auth -> Providers: Google is enabled only when its OAuth client
       and exact callback/redirect configuration have been reviewed.
 - [ ] Supabase Database: apply migration `0028` and verify RLS is enabled on
       application tables with no browser-facing permissive policies. Before
       applying `0028`, verify the backend `DATABASE_URL` role owns application
       tables or has `BYPASSRLS`, otherwise RLS without policies can break API
       reads.
-- [ ] Render: backend service is synced from `backend/render.yaml`.
-- [ ] Render: keep one backend instance while `RATE_LIMIT_STORE=memory`.
+- [x] Render: backend service is synced from `backend/render.yaml`.
+- [x] Render: keep one backend instance while `RATE_LIMIT_STORE=memory`.
 - [ ] Render: `/health` is configured; the read-only migration startup guard
       passes; live checks for `/health`, `/ready` and `/ping` pass after deploy.
 - [ ] GitHub: protect `main` from direct pushes, force pushes and deletions;
