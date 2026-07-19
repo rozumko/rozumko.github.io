@@ -158,6 +158,7 @@ async function loadParticipantWithSession(participantId: string) {
     .select({
       id: schoolParticipants.id,
       sessionId: schoolParticipants.sessionId,
+      score: schoolParticipants.score,
       status: schoolSessions.status,
       grade: schoolSessions.grade,
     })
@@ -512,11 +513,22 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
       ? await loadSessionQuestions(participant.sessionId)
       : []
 
+    // Resume support after a page reload: the participant's own answered
+    // question ids + server-trusted score. No keys, no other kids' data.
+    const answered = participant.status === 'active'
+      ? await db
+          .select({ questionId: schoolAnswers.questionId })
+          .from(schoolAnswers)
+          .where(eq(schoolAnswers.participantId, participant.id))
+      : []
+
     return reply.send({
       status: participant.status,
       grade: participant.grade,
       questions: questionsForPlayer,
       questionsCount: questionsForPlayer.length,
+      score: participant.score,
+      answeredQuestionIds: answered.map(a => a.questionId),
     })
   })
 

@@ -71,11 +71,16 @@ function installFakeDb(state: ReturnType<typeof createState>) {
           return [{
             id: state.participant.id,
             sessionId: state.participant.sessionId,
+            score: state.participant.score,
             status: state.session.status,
             grade: state.session.grade,
           }]
         }
         return state.participant ? [state.participant] : []
+      }
+      if (isTable(this.table, schema.schoolAnswers)) {
+        // Participant's own answered ids for the resume payload
+        return [...state.answers].map(key => ({ questionId: key.split(':')[1] }))
       }
       if (isTable(this.table, schema.schoolSessionQuestions) && this.joins.includes(schema.questions)) {
         // Render payload for classroom clients, without answer keys
@@ -323,6 +328,25 @@ test('school: participant session polling issues questions only after teacher st
       assert.equal('explanation' in body.questions[0], false)
       assert.equal(body.questions[0].img, '/questions/addition.webp')
       assert.equal(body.questions[0].imageAlt, 'Four blocks arranged as two plus two')
+      // Resume payload: no answers yet
+      assert.deepEqual(body.answeredQuestionIds, [])
+      assert.equal(body.score, 0)
+
+      // After answering, polling reports the own answered id + server score
+      const answer = await app.inject({
+        method: 'POST', url: `/api/school/participants/${ids.participant}/answer`,
+        headers: { 'X-Participant-Token': token },
+        payload: { questionId: ids.question, answer: 0 },
+      })
+      assert.equal(answer.statusCode, 200, answer.body)
+      const resumed = await app.inject({
+        method: 'GET',
+        url: `/api/school/participants/${ids.participant}/session`,
+        headers: { 'X-Participant-Token': token },
+      })
+      const resumedBody = resumed.json()
+      assert.deepEqual(resumedBody.answeredQuestionIds, [ids.question])
+      assert.equal(resumedBody.score, 1)
     })
   } finally { restore() }
 })
