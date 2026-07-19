@@ -25,7 +25,7 @@ test('missionSummary: відсоток округлюється', () => {
 })
 
 test('encouragement: рівні за відсотком', () => {
-  assert.match(encouragement(100), /майстер/)
+  assert.match(encouragement(100), /знавець інформатики/)
   assert.match(encouragement(75), /Чудова/)
   assert.match(encouragement(50), /старт/)
   assert.match(encouragement(10), /спробував/)

@@ -1116,6 +1116,24 @@ export function getSchoolSession(id: string): Promise<{ session: SchoolSessionIn
   return authRequest(`/api/school/sessions/${encodeURIComponent(id)}`)
 }
 
+// Per-question breakdown for one participant. The server resolves the child's
+// answer into display text and never returns answer keys or explanations.
+export interface SchoolParticipantAnswer {
+  position: number
+  q: string
+  topic: string | null
+  answered: boolean
+  isCorrect: boolean | null
+  answerText: string | null
+}
+
+export function getSchoolParticipantAnswers(sessionId: string, participantId: string): Promise<{
+  participant: SchoolParticipantRow
+  answers: SchoolParticipantAnswer[]
+}> {
+  return authRequest(`/api/school/sessions/${encodeURIComponent(sessionId)}/participants/${encodeURIComponent(participantId)}/answers`)
+}
+
 export async function getSchoolSessionQuestions(id: string): Promise<{ questions: Question[] }> {
   const data = await authRequest(`/api/school/sessions/${encodeURIComponent(id)}/questions`)
   data.questions = (data.questions ?? []).map(normalizeQuestion)

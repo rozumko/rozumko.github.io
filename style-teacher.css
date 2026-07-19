@@ -451,12 +451,22 @@ body.teacher-dashboard-active {
 
 /* School game management */
 .school-create-card,
-.school-live {
+/* minmax(0,1fr) + min-width:0: the track must shrink below content
+   min-content on phones, otherwise the page gets horizontal overflow */
+.school-live { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); }
+.school-live__panel {
+  min-width: 0;
   padding: clamp(var(--sp-4), 3vw, var(--sp-6));
   border: 1px solid var(--clr-border);
   border-radius: var(--r-lg);
   background: #fff;
   box-shadow: var(--shadow-sm);
+}
+.school-live__heading--panel {
+  margin-bottom: var(--sp-4);
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--clr-border);
+  font-size: var(--font-size-lg);
 }
 .school-create {
   display: grid;
@@ -545,7 +555,66 @@ body.teacher-dashboard-active {
 .school-live__stats { margin-top: var(--sp-6); }
 .school-live__stats-hint { margin: 0 0 var(--sp-3); color: var(--clr-text-muted); font-size: var(--font-size-sm); }
 .school-leaderboard__empty { color: var(--clr-text-muted); }
-.school-leaderboard__row { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid var(--clr-border); }
+.school-leaderboard__row {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border: 0;
+  border-bottom: 1px solid var(--clr-border);
+  border-radius: var(--r-sm);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color .12s ease;
+}
+.school-leaderboard__row:hover:not(:disabled) { background: var(--clr-sky-light); }
+.school-leaderboard__row:disabled { cursor: default; }
+.school-leaderboard__row:focus-visible { outline: 2px solid var(--clr-sky); outline-offset: -2px; }
+.school-leaderboard__row--active { background: var(--clr-sky-light); }
+
+/* Розбір відповідей одного учня */
+.school-participant-detail {
+  margin-top: var(--sp-4);
+  padding: var(--sp-4);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-md);
+  background: var(--clr-surface-subtle, #f8fafc);
+}
+.school-participant-detail__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-3);
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--clr-border);
+}
+.school-participant-detail__name { flex: 1; font-weight: 700; }
+.school-participant-detail__score { color: var(--clr-text-muted); font-weight: 700; }
+.school-participant-detail__close {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-full);
+  background: #fff;
+  cursor: pointer;
+}
+.school-participant-detail__close:hover { background: var(--clr-sky-light); }
+.school-participant-detail__loading { margin: 0; color: var(--clr-text-muted); }
+.school-answer-row { display: flex; gap: var(--sp-3); padding: var(--sp-2) 0; border-bottom: 1px dashed var(--clr-border); }
+.school-answer-row:last-child { border-bottom: 0; }
+.school-answer-row__icon { width: 1.5rem; font-weight: 800; text-align: center; flex-shrink: 0; }
+.school-answer-row--correct .school-answer-row__icon { color: var(--fb-ok-soft, #16a34a); }
+.school-answer-row--incorrect .school-answer-row__icon { color: var(--clr-danger, #dc2626); }
+.school-answer-row--empty .school-answer-row__icon { color: var(--clr-text-muted); }
+.school-answer-row__body { min-width: 0; }
+.school-answer-row__q { margin: 0; font-weight: 600; }
+.school-answer-row__a { margin: 2px 0 0; color: var(--clr-text-muted); font-size: var(--font-size-sm); overflow-wrap: anywhere; }
+.school-answer-row--incorrect .school-answer-row__a { color: var(--clr-danger, #dc2626); }
 .school-leaderboard__rank { width: var(--sp-6); font-weight: 800; }
 .school-leaderboard__avatar { border-radius: var(--r-sm); }
 .school-leaderboard__name { flex: 1; font-weight: 600; }

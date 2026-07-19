@@ -61,6 +61,35 @@ function isUniqueViolation(e: unknown): boolean {
   return typeof e === 'object' && e !== null && (e as { code?: string }).code === '23505'
 }
 
+// Human-readable form of a stored participant answer for the teacher view.
+// Display-only: resolves via the question's public options, never the key.
+function describeAnswer(type: string | null, options: unknown, answer: unknown): string {
+  const t = type ?? 'choice'
+  if (t === 'choice' && typeof answer === 'number' && Array.isArray(options)) {
+    return String(options[answer] ?? `Варіант ${answer + 1}`)
+  }
+  if (t === 'truefalse' && typeof answer === 'number') {
+    return answer === 0 ? 'Так' : 'Ні'
+  }
+  const struct = options && typeof options === 'object' && !Array.isArray(options)
+    ? options as Record<string, unknown>
+    : {}
+  if (t === 'sequence' && typeof answer === 'number' && Array.isArray(struct.choices)) {
+    return String((struct.choices as unknown[])[answer] ?? `Варіант ${answer + 1}`)
+  }
+  if ((t === 'sort' || t === 'algorithm') && Array.isArray(answer) && Array.isArray(struct.items)) {
+    const items = struct.items as unknown[]
+    return answer.map(i => String(items[Number(i)] ?? '?')).join(' → ')
+  }
+  if (t === 'match' && Array.isArray(answer) && Array.isArray(struct.left) && Array.isArray(struct.right)) {
+    const left = struct.left as unknown[]
+    const right = struct.right as unknown[]
+    return answer.map((r, i) => `${String(left[i] ?? '?')} → ${String(right[Number(r)] ?? '?')}`).join('; ')
+  }
+  if (typeof answer === 'string') return answer
+  return JSON.stringify(answer ?? '')
+}
+
 async function loadSessionQuestions(sessionId: string) {
   const qs = await db
     .select({
@@ -264,6 +293,83 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
       },
       participants,
       topicStats,
+    })
+  })
+
+  // ── Teacher: per-participant answer breakdown for an own session ──────────
+  // Returns the participant's chosen answer as display text + correctness per
+  // question. Never returns the answer key or explanation (School surface rule:
+  // answer keys never reach the browser — docs/security-model.md).
+  app.get<{ Params: { id: string; participantId: string } }>('/sessions/:id/participants/:participantId/answers', {
+    preHandler: authorizeTeacher,
+    schema: {
+      params: {
+        type: 'object',
+        required: ['id', 'participantId'],
+        properties: {
+          id:            { type: 'string', format: 'uuid' },
+          participantId: { type: 'string', format: 'uuid' },
+        },
+      } as const,
+    },
+  }, async (req, reply) => {
+    const [session] = await db
+      .select({ id: schoolSessions.id, status: schoolSessions.status })
+      .from(schoolSessions)
+      .where(and(eq(schoolSessions.id, req.params.id), eq(schoolSessions.teacherId, req.user!.id)))
+      .limit(1)
+    if (!session) return reply.code(404).send({ error: 'Сесію не знайдено' })
+    // Question texts are issued to School surfaces only once the session is
+    // active (docs/security-model.md); the breakdown includes them, so the
+    // lobby state is blocked the same way as the projector question feed.
+    if (session.status === 'lobby') {
+      return reply.code(409).send({ error: 'Сесію ще не розпочато' })
+    }
+
+    const [participant] = await db
+      .select({
+        id: schoolParticipants.id,
+        avatar: schoolParticipants.avatar,
+        nickname: schoolParticipants.nickname,
+        score: schoolParticipants.score,
+      })
+      .from(schoolParticipants)
+      .where(and(
+        eq(schoolParticipants.id, req.params.participantId),
+        eq(schoolParticipants.sessionId, session.id),
+      ))
+      .limit(1)
+    if (!participant) return reply.code(404).send({ error: 'Учасника не знайдено' })
+
+    const rows = await db
+      .select({
+        position:  schoolSessionQuestions.position,
+        q:         questions.q,
+        type:      questions.type,
+        topic:     questions.topic,
+        options:   questions.options,
+        answer:    schoolAnswers.answer,
+        isCorrect: schoolAnswers.isCorrect,
+      })
+      .from(schoolSessionQuestions)
+      .innerJoin(questions, eq(schoolSessionQuestions.questionId, questions.id))
+      .leftJoin(schoolAnswers, and(
+        eq(schoolAnswers.questionId, schoolSessionQuestions.questionId),
+        eq(schoolAnswers.participantId, participant.id),
+      ))
+      .where(eq(schoolSessionQuestions.sessionId, session.id))
+      .orderBy(asc(schoolSessionQuestions.position))
+
+    return reply.send({
+      participant,
+      answers: rows.map(r => ({
+        position:   r.position,
+        q:          r.q,
+        topic:      r.topic,
+        answered:   r.isCorrect !== null,
+        isCorrect:  r.isCorrect,
+        answerText: r.isCorrect === null ? null : describeAnswer(r.type, r.options, r.answer),
+      })),
     })
   })
 
