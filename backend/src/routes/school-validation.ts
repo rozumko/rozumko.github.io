@@ -20,6 +20,9 @@ export function isValidAvatar(avatar: unknown): avatar is string {
 export function normalizeNickname(raw: unknown): string {
   const cleaned = String(raw ?? '')
     .replace(/\p{Cc}/gu, ' ') // керуючі символи -> пробіл
+    // Strip HTML metacharacters at the source (defense-in-depth): rendering is
+    // already escaped everywhere, but a nickname never needs < > " ' &.
+    .replace(/[<>"'&]/g, '')
     .replace(/\s+/g, ' ')     // згорнути пробіли
     .trim()
   if (!cleaned) throw new Error('Введи імʼя або прізвисько')
