@@ -223,6 +223,66 @@ for (const vp of [VIEWPORTS[0], VIEWPORTS[1], VIEWPORTS[4], VIEWPORTS[5]]) {
 }
 
 // Демо-олімпіада: інший стан фідбек-зони (кнопка «Пропустити» + навігатор чипів)
+test.describe('school answer layout stability', () => {
+  test.use({ viewport: { width: 1920, height: 870 } })
+
+  test('answer cards keep their height while the server checks the response', async ({ page }) => {
+    await page.addInitScript(() => {
+      const originalFetch = window.fetch.bind(window)
+      window.fetch = async (input, init) => {
+        const url = input instanceof Request ? input.url : String(input)
+        if (url.includes('/api/school/join')) {
+          return new Response(JSON.stringify({
+            participantId: '00000000-0000-4000-8000-0000000000a2',
+            participantToken: 'token-1',
+            status: 'active',
+            grade: 3,
+            questions: [{
+              id: '00000000-0000-4000-8000-0000000000a3',
+              q: 'Which tool is used to point and click on the screen?',
+              code: null,
+              type: 'choice',
+              options: ['A pencil', 'A mouse or finger', 'A fork', 'A spoon'],
+              img: null,
+              imageAlt: null,
+            }],
+            questionsCount: 1,
+          }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+        }
+        if (url.includes('/api/school/participants/') && url.endsWith('/answer')) {
+          await new Promise(resolve => window.setTimeout(resolve, 600))
+          return new Response(JSON.stringify({ correct: true }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        }
+        return originalFetch(input, init)
+      }
+    })
+
+    await page.goto('/school.html')
+    await page.locator('#join-code').fill('123456')
+    await page.locator('#join-nickname').fill('Tester')
+    await page.locator('#join-btn').click()
+    await expect(page.locator('body')).toHaveClass(/mission-active/)
+
+    const options = page.locator('#quiz-options')
+    const firstOption = options.locator('.quiz-option').first()
+    const before = await options.boundingBox()
+    const fontSize = await firstOption.evaluate(el => Number.parseFloat(getComputedStyle(el).fontSize))
+    expect(fontSize).toBeGreaterThanOrEqual(24)
+
+    await firstOption.click()
+    await expect(page.locator('#quiz-feedback')).toHaveText('Перевіряємо…')
+    const checking = await options.boundingBox()
+    expect(checking!.height).toBeCloseTo(before!.height, 0)
+
+    await expect(page.locator('#quiz-next-btn')).toBeVisible()
+    const answered = await options.boundingBox()
+    expect(answered!.height).toBeCloseTo(before!.height, 0)
+  })
+})
+
 test.describe('quiz-fit @ демо-олімпіада 1366x625', () => {
   test.use({ viewport: { width: 1366, height: 625 } })
 

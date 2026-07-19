@@ -113,6 +113,9 @@ export function runMission(
         if (opts.submitAnswer) {
           els.feedback.textContent = 'Перевіряємо…'
           els.feedback.className = 'quiz-feedback'
+          // Move feedback out of the flex flow immediately so the answer grid
+          // keeps the same height while the server is scoring the response.
+          document.body.classList.add('mission-answered')
           opts.submitAnswer(String(q.id), result)
             .then(isCorrect => {
               if (isCorrect == null) {

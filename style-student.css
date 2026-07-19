@@ -951,7 +951,7 @@ body:has(.result-overlay.active) .student-screen {
      в зоні варіантів (--stack: sort/match) та в картці питання. */
   --qf-gap: clamp(var(--sp-2), 1.6vh, var(--sp-5));
   --qf-font-question: clamp(1.25rem, 3.2vh, 2.5rem);
-  --qf-font-option: clamp(1rem, 2.3vh, 1.5rem);
+  --qf-font-option: clamp(1.2rem, 3vh, 2rem);
   --qf-option-min-h: clamp(3.25rem, 9vh, 7.5rem);
   --qf-card-pad: clamp(var(--sp-4), 3vh, var(--sp-8));
 }
@@ -1052,6 +1052,7 @@ body.mission-active #mission-quiz .quiz-options--two > button {
 }
 
 body.mission-active #mission-quiz .quiz-feedback-wrap {
+  position: absolute;
   min-height: 0;
   margin-bottom: 0;
 }
@@ -1442,7 +1443,7 @@ body.mission-active.mission-answered #mission-quiz .quiz-feedback-wrap {
   body.mission-active #mission-quiz .quiz-option,
   body.mission-active #mission-quiz .quiz-options--two > button {
     padding: var(--sp-4);
-    font-size: clamp(1rem, 4.6vw, 1.45rem);
+    font-size: clamp(1.125rem, 5vw, 1.5rem);
   }
 }
 
