@@ -976,7 +976,7 @@ export function getTeacherMe(): Promise<{ id: string; authUserId: string; role: 
 
 /** Explicit teacher sign-up request — the only way a pending teacher row appears. */
 export function registerTeacherRequest(): Promise<{ status: string }> {
-  return authRequest('/api/teacher/register-request', { method: 'POST' })
+  return authRequest('/api/teacher/register-request', { method: 'POST', body: JSON.stringify({}) })
 }
 
 export function getTeacherEvents(): Promise<{ events: TeacherEvent[] }> {
