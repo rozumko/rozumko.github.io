@@ -1669,13 +1669,17 @@ function openProjector(questions: Question[]) {
   projectorTrapCleanup?.()
   projectorTrapCleanup = createFocusTrap(projectorOverlay, () => { void closeProjector() })
 
+  // Per-question outcomes for the completion screen (client-side, this run only)
+  const questionResults: { n: number; q: string; correct: boolean }[] = []
   runMission(projectorEls, questions, {
     showExplanation: false,
-    incorrectFeedback: 'Майже! Обговоріть відповідь разом.',
+    incorrectFeedback: 'Неправильна відповідь',
     completeLabel: 'Завершити гру',
     submitAnswer: async (questionId, answer) => {
       if (!schoolSession) throw new Error('Сесію завершено')
       const result = await submitSchoolProjectorAnswer(schoolSession.id, questionId, answer)
+      const idx = questions.findIndex(item => String(item.id) === questionId)
+      questionResults.push({ n: idx + 1, q: String(questions[idx]?.q ?? ''), correct: result.correct })
       return result.correct
     },
     onComplete: async summary => {
@@ -1683,6 +1687,7 @@ function openProjector(questions: Question[]) {
       $maybe('school-projector-complete')?.classList.remove('hidden')
       const result = $maybe('school-projector-result')
       if (result) result.textContent = `Правильних відповідей: ${summary.correct} із ${summary.total}.`
+      renderProjectorBreakdown(questionResults)
       if (schoolSession?.status === 'active') {
         try {
           await finishSchoolSession(schoolSession.id)
@@ -1691,6 +1696,19 @@ function openProjector(questions: Question[]) {
       }
     },
   })
+}
+
+// ✓/✗ list of this run's questions so the class sees what to revisit
+function renderProjectorBreakdown(rows: { n: number; q: string; correct: boolean }[]) {
+  const box = $maybe('school-projector-breakdown')
+  if (!box) return
+  if (!rows.length) { box.classList.add('hidden'); box.innerHTML = ''; return }
+  box.innerHTML = rows.map(r => `
+    <div class="school-answer-row school-answer-row--${r.correct ? 'correct' : 'incorrect'}">
+      <span class="school-answer-row__icon" aria-hidden="true">${r.correct ? '✓' : '✗'}</span>
+      <p class="school-answer-row__q">${r.n}. ${esc(r.q)}</p>
+    </div>`).join('')
+  box.classList.remove('hidden')
 }
 
 async function closeProjector() {
@@ -1735,7 +1753,20 @@ $maybe<HTMLButtonElement>('school-projector-btn')?.addEventListener('click', asy
 })
 
 $maybe<HTMLButtonElement>('school-projector-fullscreen-btn')?.addEventListener('click', () => {
-  if (projectorOverlay?.requestFullscreen) void projectorOverlay.requestFullscreen()
+  if (document.fullscreenElement === projectorOverlay) {
+    void document.exitFullscreen()
+  } else if (projectorOverlay?.requestFullscreen) {
+    void projectorOverlay.requestFullscreen()
+  }
+})
+// Escape also leaves fullscreen — keep the toggle label in sync either way
+document.addEventListener('fullscreenchange', () => {
+  const btn = $maybe('school-projector-fullscreen-btn')
+  if (!btn) return
+  const active = document.fullscreenElement === projectorOverlay
+  btn.innerHTML = active
+    ? '<i class="fas fa-compress" aria-hidden="true"></i> Звичайний розмір'
+    : '<i class="fas fa-expand" aria-hidden="true"></i> На весь екран'
 })
 $maybe<HTMLButtonElement>('school-projector-close-btn')?.addEventListener('click', () => { void closeProjector() })
 $maybe<HTMLButtonElement>('school-projector-new-btn')?.addEventListener('click', () => { void closeProjector() })

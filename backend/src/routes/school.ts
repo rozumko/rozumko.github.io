@@ -19,6 +19,15 @@ import type { QuestionTrack } from '../db/schema.js'
 
 const QUESTION_TRACKS = ['informatics', 'computational-thinking', 'ai-basics'] as const
 
+// A session the teacher never explicitly finished must not stay joinable
+// forever (kids could rejoin with a stale code hours later). After the TTL
+// the join code auto-expires: the session is closed and join returns 409.
+const SESSION_JOIN_TTL_MS = 2 * 60 * 60 * 1000
+
+function isSessionExpired(createdAt: Date | null): boolean {
+  return createdAt != null && Date.now() - createdAt.getTime() > SESSION_JOIN_TTL_MS
+}
+
 export interface SchoolRoutesOptions {
   authorizeTeacher?: preHandlerHookHandler
 }
@@ -455,7 +464,7 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
     try { nickname = normalizeNickname(req.body.nickname) } catch (e) { return reply.code(400).send({ error: (e as Error).message }) }
 
     const [session] = await db
-      .select({ id: schoolSessions.id, status: schoolSessions.status, grade: schoolSessions.grade })
+      .select({ id: schoolSessions.id, status: schoolSessions.status, grade: schoolSessions.grade, createdAt: schoolSessions.createdAt })
       .from(schoolSessions)
       .where(eq(schoolSessions.joinCode, req.body.code))
       .limit(1)
@@ -465,6 +474,12 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
     }
     clearCodeThrottle(SCHOOL_JOIN_CODE_THROTTLE_SCOPE, req.body.code)
     if (session.status === 'finished') return reply.code(409).send({ error: 'Сесію вже завершено' })
+    if (isSessionExpired(session.createdAt)) {
+      await db.update(schoolSessions)
+        .set({ status: 'finished', finishedAt: new Date() })
+        .where(eq(schoolSessions.id, session.id))
+      return reply.code(409).send({ error: 'Сесію вже завершено' })
+    }
 
     const [participant] = await db.insert(schoolParticipants)
       .values({ sessionId: session.id, avatar: req.body.avatar, nickname })

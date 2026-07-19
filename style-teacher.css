@@ -943,6 +943,13 @@ body.teacher-projector-active { overflow: hidden !important; }
   text-align: center;
 }
 .school-projector__complete > i { color: var(--clr-sky-dark); font-size: 3rem; }
+.school-projector__breakdown {
+  max-height: 38vh;
+  margin: 0 0 var(--sp-5);
+  overflow-y: auto;
+  text-align: left;
+}
+.school-projector__breakdown .school-answer-row__q { margin: 0; font-size: var(--font-size-base, 1rem); color: var(--clr-text); }
 .school-projector__complete h2 { margin: var(--sp-3) 0 var(--sp-2); }
 .school-projector__complete p { margin-bottom: var(--sp-5); color: var(--clr-text-muted); font-size: var(--font-size-lg); }
 

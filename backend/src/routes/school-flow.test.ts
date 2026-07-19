@@ -24,7 +24,7 @@ const AVATAR = SCHOOL_AVATARS[0]
 
 function createState() {
   return {
-    session: { id: ids.session, joinCode: '123456', status: 'active', grade: 2, difficulty: 'easy', questionsCount: 1 },
+    session: { id: ids.session, joinCode: '123456', status: 'active', grade: 2, difficulty: 'easy', questionsCount: 1, createdAt: new Date() },
     sessionExists: true,
     question: {
       id: ids.question,
@@ -254,6 +254,20 @@ test('school: cannot answer when session is not active (409)', async () => {
       state.session.status = 'lobby' // ще не запущено
       const res = await app.inject({ method: 'POST', url: `/api/school/participants/${ids.participant}/answer`, headers: { 'X-Participant-Token': token }, payload: { questionId: ids.question, answer: 0 } })
       assert.equal(res.statusCode, 409, res.body)
+    })
+  } finally { restore() }
+})
+
+test('school: join with a stale code (past the session TTL) is rejected with 409', async () => {
+  const state = createState()
+  state.session.createdAt = new Date(Date.now() - 3 * 60 * 60 * 1000) // 3h old > 2h TTL
+  const restore = installFakeDb(state)
+  try {
+    await withApp(async (app) => {
+      const res = await app.inject({ method: 'POST', url: '/api/school/join', payload: { code: '123456', avatar: AVATAR, nickname: 'Запізнілий' } })
+      assert.equal(res.statusCode, 409, res.body)
+      assert.match(res.json().error, /завершено/)
+      assert.equal(state.participant, null, 'expired session must not create a participant')
     })
   } finally { restore() }
 })
