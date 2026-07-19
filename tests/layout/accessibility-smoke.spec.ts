@@ -6,6 +6,7 @@ const AXE_PAGES = [
   '/home.html',
   '/path.html',
   '/parent.html',
+  '/auth-confirm.html',
   '/school.html',
   '/student.html',
   '/teacher.html',

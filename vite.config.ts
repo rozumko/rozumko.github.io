@@ -156,6 +156,7 @@ export default defineConfig(({ mode }) => {
           'olympiad-enter': resolve(__dirname, 'olympiad-enter.html'),
           teacher:          resolve(__dirname, 'teacher.html'),
           parent:           resolve(__dirname, 'parent.html'),
+          'auth-confirm':    resolve(__dirname, 'auth-confirm.html'),
           admin:            resolve(__dirname, 'admin.html'),
           'framing-blocked': resolve(__dirname, 'framing-blocked.html'),
           offline:          resolve(__dirname, 'offline.html'),
