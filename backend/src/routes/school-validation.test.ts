@@ -33,6 +33,15 @@ test('normalizeNickname: зберігає звичайні пробіли й д�
   assert.equal(normalizeNickname('Маша   К'), 'Маша К')
 })
 
+test('normalizeNickname: прибирає HTML-метасимволи (< > " \' &)', () => {
+  assert.equal(normalizeNickname('<b>Маша</b>'), 'bМаша/b')
+  assert.equal(normalizeNickname('Tom&Jerry'), 'TomJerry')
+  assert.equal(normalizeNickname('"><script>'), 'script')
+  assert.equal(normalizeNickname("O'Brien"), 'OBrien')
+  // Рядок лише з метасимволів згортається в порожній → відхиляється як порожній
+  assert.throws(() => normalizeNickname('<>&"\''), /Введи/)
+})
+
 test('normalizeNickname: відхиляє порожнє', () => {
   assert.throws(() => normalizeNickname('   '), /Введи/)
   assert.throws(() => normalizeNickname(''), /Введи/)
