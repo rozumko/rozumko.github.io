@@ -10,6 +10,7 @@ import {
 import { runMission, type MissionElements } from './features/missions/mission-runner.js'
 import { shuffleDeck } from './features/missions/question-shuffle.js'
 import { encouragement, missionSummary, starRating, type MissionSummary } from './features/missions/mission-result.js'
+import { isStaleParticipantError, prepareSchoolMissionResume } from './features/missions/school-resume.js'
 import { AVATARS, avatarLabel, avatarSrc } from './avatars.js'
 import { launchConfetti, playVictorySound } from './utils/celebrate.js'
 
@@ -199,10 +200,11 @@ function startSchoolMission(participantId: string, participantToken: string, que
   // mapped back to the original option order before hitting the server.
   // The shuffle is seeded by participantId, so a resumed run keeps the order.
   const deck = shuffleDeck(questions, participantId)
-  const answered = new Set(resume?.answeredQuestionIds ?? [])
-  const remaining = deck.questions.filter(q => !answered.has(String(q.id)))
-  const priorCorrect = resume?.score ?? 0
-  const totalCount = deck.questions.length
+  const { remaining, completedCount, priorCorrect, totalCount } = prepareSchoolMissionResume(
+    deck.questions,
+    resume?.answeredQuestionIds ?? [],
+    resume?.score ?? 0,
+  )
 
   if (!remaining.length) {
     // Everything was answered before the reload — straight to the result
@@ -212,6 +214,8 @@ function startSchoolMission(participantId: string, participantToken: string, que
 
   runMission(els, remaining, {
     showExplanation: false,
+    initialCompleted: completedCount,
+    totalQuestions: totalCount,
     submitAnswer: (questionId, answer) =>
       submitSchoolAnswer(participantId, participantToken, questionId, deck.toOriginalAnswer(questionId, answer))
         .then(r => r.correct),
@@ -238,8 +242,14 @@ function startWaitingPoll(participantId: string, participantToken: string) {
         showIntro()
         errorEl.textContent = 'Гру вже завершено. Попроси вчителя створити нову.'
       }
-    } catch {
-      showWaitingStatus('Зв’язок нестабільний. Пробуємо ще раз...')
+    } catch (err) {
+      if (isStaleParticipantError(err)) {
+        clearWaitingPoll()
+        showIntro()
+        errorEl.textContent = 'Не вдалося відновити участь. Приєднайся до гри ще раз.'
+      } else {
+        showWaitingStatus('Зв’язок нестабільний. Пробуємо ще раз...')
+      }
     }
   }, 2000)
 }
@@ -367,9 +377,14 @@ async function resumeStoredParticipant() {
     } else {
       showIntro()
     }
-  } catch {
-    // Stale identity (403/404) or a network failure — clean join form
-    showIntro()
+  } catch (err) {
+    if (isStaleParticipantError(err)) {
+      showIntro()
+      errorEl.textContent = 'Не вдалося відновити участь. Приєднайся до гри ще раз.'
+      return
+    }
+    showWaitingRoom(stored.avatar, stored.nickname, 'Зв’язок нестабільний. Пробуємо відновити гру...')
+    startWaitingPoll(stored.participantId, stored.participantToken)
   }
 }
 

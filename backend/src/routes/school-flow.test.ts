@@ -39,7 +39,7 @@ function createState() {
     },
     participant: null as null | { id: string; sessionId: string; avatar: string; nickname: string; score: number },
     issuedContains: true, // Whether the question belongs to the issued session set
-    answers: new Set<string>(),
+    answers: new Map<string, boolean>(),
   }
 }
 
@@ -80,7 +80,7 @@ function installFakeDb(state: ReturnType<typeof createState>) {
       }
       if (isTable(this.table, schema.schoolAnswers)) {
         // Participant's own answered ids for the resume payload
-        return [...state.answers].map(key => ({ questionId: key.split(':')[1] }))
+        return [...state.answers].map(([key, isCorrect]) => ({ questionId: key.split(':')[1], isCorrect }))
       }
       if (isTable(this.table, schema.schoolSessionQuestions) && this.joins.includes(schema.questions)) {
         // Render payload for classroom clients, without answer keys
@@ -115,8 +115,8 @@ function installFakeDb(state: ReturnType<typeof createState>) {
       }
       if (isTable(this.table, schema.schoolAnswers)) {
         const key = `${this.inserted.participantId}:${this.inserted.questionId}`
-        if (state.answers.has(key)) return [] // конфлікт UNIQUE → вже відповів
-        state.answers.add(key)
+        if (state.answers.has(key)) return [] // UNIQUE conflict: this question was already answered
+        state.answers.set(key, Boolean(this.inserted.isCorrect))
         return [{ id: 'answer-1' }]
       }
       throw new Error('Unhandled fake insert')
@@ -339,6 +339,9 @@ test('school: participant session polling issues questions only after teacher st
         payload: { questionId: ids.question, answer: 0 },
       })
       assert.equal(answer.statusCode, 200, answer.body)
+      // Resume must derive both fields from the same answer rows, even if the
+      // denormalized leaderboard score is temporarily stale.
+      if (state.participant) state.participant.score = 0
       const resumed = await app.inject({
         method: 'GET',
         url: `/api/school/participants/${ids.participant}/session`,
