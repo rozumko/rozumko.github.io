@@ -37,6 +37,47 @@ test('snapshots serialize dates and restore only authored content', () => {
   assert.deepEqual(restoredQuestionValues({ ...snapshot, correct: 0, updatedBy: 'admin' }), { q: 'Текст', correct: 0 })
 })
 
+// Regression: nullable fields were declared as oneOf [{type}, {null}], and with
+// Fastify's default AJV coercion `null` matched BOTH branches → every match/sort/input
+// question save (correct: null) failed schema validation with a generic 400.
+// Schema validation runs BEFORE preHandler, so a payload that passes the schema
+// on an unauthenticated request must reach auth and get 401, not a schema 400.
+test('admin question body schema accepts nulls in nullable fields', async () => {
+  process.env.SUPABASE_URL ??= 'https://test.supabase.co'
+  const [{ default: Fastify }, { adminRoutes }] = await Promise.all([
+    import('fastify'),
+    import('./admin.js'),
+  ])
+  const app = Fastify()
+  await app.register(adminRoutes, { prefix: '/api/admin' })
+
+  const matchQuestion = {
+    q: 'Зʼєднай джерело інформації з тим, як ми нею користуємось.',
+    type: 'match',
+    options: { left: ['Книжка', 'Радіо'], right: ['Читаємо', 'Слухаємо'], pairs: [0, 1] },
+    correct: null,
+    grade: 1, difficulty: 'medium',
+    track: null, topic: null, conceptKey: null, progressionBand: null,
+    isOlympiad: false, channels: [],
+    explanation: 'Текст читаємо, звук слухаємо.',
+    img: null, imageAlt: null,
+  }
+  const questionUrl = '/api/admin/questions/00000000-0000-4000-8000-0000000000c1'
+
+  const updated = await app.inject({ method: 'PUT', url: questionUrl, payload: { ...matchQuestion, expectedEditVersion: 1 } })
+  assert.equal(updated.statusCode, 401)
+
+  const created = await app.inject({ method: 'POST', url: '/api/admin/questions', payload: matchQuestion })
+  assert.equal(created.statusCode, 401)
+
+  // Invalid values must still be rejected by the schema itself
+  for (const bad of [{ correct: -1 }, { track: 'unknown-track' }, { progressionBand: 'guess' }]) {
+    const rejected = await app.inject({ method: 'PUT', url: questionUrl, payload: { ...matchQuestion, ...bad, expectedEditVersion: 1 } })
+    assert.equal(rejected.statusCode, 400, JSON.stringify(bad))
+  }
+  await app.close()
+})
+
 test('published question rows are immutable and child issuance is publication-gated', () => {
   const admin = readFileSync(new URL('./admin.ts', import.meta.url), 'utf8')
   const publicQuestions = readFileSync(new URL('./questions.ts', import.meta.url), 'utf8')
