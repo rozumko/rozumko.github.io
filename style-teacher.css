@@ -775,14 +775,14 @@ body.teacher-projector-active { overflow: hidden !important; }
   text-wrap: balance;
   overflow-wrap: anywhere;
 }
+/* Frameless: the assets have real transparency, so the image sits directly on
+   the white card and spans the question block height. A definite viewport
+   height (not %) keeps the grid row from inflating to the intrinsic size. */
 .school-projector__question-card .quiz-image {
   display: block;
   width: 100%;
-  max-height: min(40vh, 24rem);
+  height: min(28vh, 19rem);
   object-fit: contain;
-  border: 3px solid #334155;
-  border-radius: 1rem;
-  background: #fff;
 }
 .school-projector__question-card .quiz-image.hidden { display: none; }
 .school-projector .quiz-code {
@@ -893,11 +893,11 @@ body.teacher-projector-active { overflow: hidden !important; }
 .school-projector__stage:has(.quiz-match-row, .quiz-sort-row) .quiz-question-text {
   font-size: clamp(1.5rem, 2.8vw, 2.6rem);
 }
-.school-projector__stage:has(.quiz-match-row, .quiz-sort-row) .quiz-image {
-  max-height: min(15vh, 9rem);
-}
 .school-projector__stage:has(.quiz-match-row, .quiz-sort-row) .quiz-feedback-wrap {
   min-height: 3rem;
+}
+.school-projector__stage:has(.quiz-match-row, .quiz-sort-row) .quiz-image {
+  height: min(13vh, 9rem);
 }
 .school-projector__stage:has(.quiz-match-row, .quiz-sort-row) .quiz-sort-item,
 .school-projector__stage:has(.quiz-match-row, .quiz-sort-row) .quiz-match-left {
