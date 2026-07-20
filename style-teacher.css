@@ -903,13 +903,22 @@ body.teacher-projector-active { overflow: hidden !important; }
 .school-projector__stage:has(.quiz-match-row, .quiz-sort-row, .quiz-seq) .quiz-match-left {
   padding: clamp(0.6rem, 1.1vh, 0.9rem) clamp(0.9rem, 1.4vw, 1.25rem);
 }
-/* Sequence: the given-chips strip plus stacked answers need shorter option
-   cards than the big choice grid. */
+/* Sequence: short answers sit in two columns under the given-chips strip,
+   with lower option cards than the big choice grid. */
 .school-projector__stage:has(.quiz-seq) .quiz-option {
-  min-height: 3.6rem;
-  padding: 0.55rem 1rem;
+  min-height: 4rem;
+  padding: 0.6rem 1rem;
 }
-.school-projector__stage:has(.quiz-seq) .quiz-options--stack { gap: 0.6rem; }
+.school-projector__stage:has(.quiz-seq) .quiz-options--stack {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+/* The given-chips strip is a child of the options container — span both
+   columns so answers start on their own row below it. */
+.school-projector__stage:has(.quiz-seq) .quiz-options--stack .quiz-seq {
+  grid-column: 1 / -1;
+}
 /* The generic projector select is width:100%; inside a match row it must share
    the row with the left card instead of squeezing it into a letter column. */
 .school-projector .quiz-match-row .quiz-select {

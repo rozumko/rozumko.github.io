@@ -20,6 +20,7 @@ import { openCertModal, awardLabel, percent, getAward } from './utils/certificat
 import { TOPICS_BY_TRACK, TOPIC_LABELS } from './features/missions/topics.js'
 import type { SchoolTopicStat } from './features/api/client.js'
 import { runMission, type MissionElements } from './features/missions/mission-runner.js'
+import { shuffleDeck } from './features/missions/question-shuffle.js'
 import { createFocusTrap } from './utils/focus-trap.js'
 
 // Header label next to the logout button: always contains the email so the
@@ -1659,8 +1660,12 @@ $maybe<HTMLButtonElement>('school-cancel-btn')?.addEventListener('click', () => 
   )
 })
 
-function openProjector(questions: Question[]) {
+function openProjector(rawQuestions: Question[]) {
   if (!schoolSession || !projectorOverlay || !projectorEls) return
+  // Authors often put the correct option first; the class sees a shuffled
+  // deck. Answers are mapped back to original indexes for server scoring.
+  const deck = shuffleDeck(rawQuestions, `projector-${schoolSession.id}`)
+  const questions = deck.questions
   $maybe('school-create-panel')?.classList.add('hidden')
   $maybe('school-projector-stage')?.classList.remove('hidden')
   $maybe('school-projector-complete')?.classList.add('hidden')
@@ -1677,7 +1682,7 @@ function openProjector(questions: Question[]) {
     completeLabel: 'Завершити гру',
     submitAnswer: async (questionId, answer) => {
       if (!schoolSession) throw new Error('Сесію завершено')
-      const result = await submitSchoolProjectorAnswer(schoolSession.id, questionId, answer)
+      const result = await submitSchoolProjectorAnswer(schoolSession.id, questionId, deck.toOriginalAnswer(questionId, answer))
       const idx = questions.findIndex(item => String(item.id) === questionId)
       questionResults.push({ n: idx + 1, q: String(questions[idx]?.q ?? ''), correct: result.correct })
       return result.correct

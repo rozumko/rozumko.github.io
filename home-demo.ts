@@ -1,6 +1,7 @@
 import './frontend-security.js'
 import { $, $maybe } from './utils/dom.js'
 import { runMission, type MissionElements } from './features/missions/mission-runner.js'
+import { shuffleDeck } from './features/missions/question-shuffle.js'
 import {
   createHomeLead, submitHomeDemoReport, getHomeClub, submitHomeMissionReport,
   loadHomeClubQuestions,
@@ -187,16 +188,19 @@ async function startDemo(preset: TrackPreset, mode: 'demo' | 'club' = 'demo') {
     const questions = mode === 'club'
       ? await loadClubQuestions(preset)
       : await loadDemoQuestions(preset)
+    // Authors often put the correct option first — shuffle per run. The server
+    // report scores by ORIGINAL indexes, so recorded answers are mapped back.
+    const deck = shuffleDeck(questions, `home-${Date.now()}-${Math.random()}`)
 
     questionShownAt = Date.now()
     selectTouches = 0
 
-    runMission(els, questions, {
+    runMission(els, deck.questions, {
       showExplanation: false,
       // Ключів у браузері немає → renderer віддає сиру відповідь. Дитині
       // показуємо нейтральний прогрес, а correctness рахує серверний звіт.
       submitAnswer: (questionId, answer) => {
-        recordEvent(questionId, answer)
+        recordEvent(questionId, deck.toOriginalAnswer(questionId, answer))
         return Promise.resolve(null)
       },
       onComplete: showCompletion,
