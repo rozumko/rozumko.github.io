@@ -5,6 +5,7 @@ import { loadStaticQuestions } from './features/missions/static-questions.js'
 import { saveAnswer, finishAttempt, sendHeartbeat } from './features/api/client.js'
 import { createAnswerQueue, type AnswerQueue } from './features/olympiad/answer-queue.js'
 import { renderQuestion, type RenderableQuestion } from './utils/question-renderer.js'
+import { resolveQuestionImage } from './utils/question-image.js'
 import { showModal, showConfirm } from './utils/ui.js'
 import { $, $maybe } from './utils/dom.js'
 import { createFocusTrap } from './utils/focus-trap.js'
@@ -419,10 +420,14 @@ function showQuestion() {
   ;(quizProgressBar as HTMLElement).style.width = `${(currentIdx / questions.length) * 100}%`
   quizQuestionEl.textContent         = q.q as string
 
-  if (q.img && quizImage && quizImageBtn) {
-    quizImage.src    = q.img as string
+  // Explicit q.img or a default from public/assets/basics/ (by type/topic/concept);
+  // null for code questions — the code block is the visual there.
+  const image = quizImage && quizImageBtn ? resolveQuestionImage(q) : null
+  if (image && quizImage && quizImageBtn) {
+    quizImage.src    = image.src
+    quizImage.alt    = image.alt
     quizImageBtn.classList.remove('hidden')
-    quizImageBtn.onclick = () => openLightbox(q.img as string, q.q as string)
+    quizImageBtn.onclick = () => openLightbox(image.src, q.q as string)
   } else {
     quizImageBtn?.classList.add('hidden')
     if (quizImage) {
