@@ -880,7 +880,36 @@ body.teacher-projector-active { overflow: hidden !important; }
 .school-projector .quiz-check:hover:not(:disabled),
 .school-projector .btn-next:hover { background: #1e3a8a; }
 .school-projector .quiz-sort-row,
-.school-projector .quiz-match-row { display: flex; align-items: center; gap: clamp(0.6rem, 1vw, 1rem); }
+.school-projector .quiz-match-row { display: flex; align-items: center; gap: clamp(0.6rem, 1vw, 1rem); margin: 0; }
+.school-projector .quiz-sort-row + .quiz-sort-row,
+.school-projector .quiz-match-row + .quiz-match-row { margin-top: clamp(0.55rem, 1.1vh, 0.9rem); }
+/* Row-list mechanics (match/sort) need the vertical budget below the card:
+   compress the question card so all rows and the check button fit unscrolled. */
+.school-projector__stage:has(.quiz-match-row, .quiz-sort-row) .school-projector__question-card {
+  min-height: clamp(6rem, 15vh, 10rem);
+  margin-bottom: clamp(0.5rem, 1vh, 0.8rem);
+  padding: clamp(0.9rem, 1.4vw, 1.4rem);
+}
+.school-projector__stage:has(.quiz-match-row, .quiz-sort-row) .quiz-question-text {
+  font-size: clamp(1.5rem, 2.8vw, 2.6rem);
+}
+.school-projector__stage:has(.quiz-match-row, .quiz-sort-row) .quiz-image {
+  max-height: min(15vh, 9rem);
+}
+.school-projector__stage:has(.quiz-match-row, .quiz-sort-row) .quiz-feedback-wrap {
+  min-height: 3rem;
+}
+.school-projector__stage:has(.quiz-match-row, .quiz-sort-row) .quiz-sort-item,
+.school-projector__stage:has(.quiz-match-row, .quiz-sort-row) .quiz-match-left {
+  padding: clamp(0.6rem, 1.1vh, 0.9rem) clamp(0.9rem, 1.4vw, 1.25rem);
+}
+/* The generic projector select is width:100%; inside a match row it must share
+   the row with the left card instead of squeezing it into a letter column. */
+.school-projector .quiz-match-row .quiz-select {
+  width: auto;
+  flex: 1.5 1 0;
+  min-width: 0;
+}
 .school-projector .quiz-sort-num { width: 2.5rem; flex-shrink: 0; color: #0f172a; font-size: 1.35rem; font-weight: 900; text-align: right; }
 .school-projector .quiz-sort-item,
 .school-projector .quiz-match-left {
@@ -899,7 +928,9 @@ body.teacher-projector-active { overflow: hidden !important; }
 .school-projector .quiz-match-left--correct { border-color: #166534; background: #dcfce7; color: #052e16; }
 .school-projector .quiz-sort-item--incorrect,
 .school-projector .quiz-match-left--incorrect { border-color: #b91c1c; background: #fee2e2; color: #450a0a; }
-.school-projector .quiz-move-group { display: flex; flex-direction: column; gap: 0.35rem; flex-shrink: 0; }
+/* Horizontal pair: a vertical stack would double the row height and push the
+   check button off the projector screen. */
+.school-projector .quiz-move-group { display: flex; flex-direction: row; gap: 0.35rem; flex-shrink: 0; }
 .school-projector .quiz-move {
   width: 3.25rem;
   height: 3.25rem;
