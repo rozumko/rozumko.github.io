@@ -885,24 +885,31 @@ body.teacher-projector-active { overflow: hidden !important; }
 .school-projector .quiz-match-row + .quiz-match-row { margin-top: clamp(0.55rem, 1.1vh, 0.9rem); }
 /* Row-list mechanics (match/sort) need the vertical budget below the card:
    compress the question card so all rows and the check button fit unscrolled. */
-.school-projector__stage:has(.quiz-match-row, .quiz-sort-row) .school-projector__question-card {
+.school-projector__stage:has(.quiz-match-row, .quiz-sort-row, .quiz-seq) .school-projector__question-card {
   min-height: clamp(6rem, 15vh, 10rem);
   margin-bottom: clamp(0.5rem, 1vh, 0.8rem);
   padding: clamp(0.9rem, 1.4vw, 1.4rem);
 }
-.school-projector__stage:has(.quiz-match-row, .quiz-sort-row) .quiz-question-text {
+.school-projector__stage:has(.quiz-match-row, .quiz-sort-row, .quiz-seq) .quiz-question-text {
   font-size: clamp(1.5rem, 2.8vw, 2.6rem);
 }
-.school-projector__stage:has(.quiz-match-row, .quiz-sort-row) .quiz-feedback-wrap {
+.school-projector__stage:has(.quiz-match-row, .quiz-sort-row, .quiz-seq) .quiz-feedback-wrap {
   min-height: 3rem;
 }
-.school-projector__stage:has(.quiz-match-row, .quiz-sort-row) .quiz-image {
+.school-projector__stage:has(.quiz-match-row, .quiz-sort-row, .quiz-seq) .quiz-image {
   height: min(13vh, 9rem);
 }
-.school-projector__stage:has(.quiz-match-row, .quiz-sort-row) .quiz-sort-item,
-.school-projector__stage:has(.quiz-match-row, .quiz-sort-row) .quiz-match-left {
+.school-projector__stage:has(.quiz-match-row, .quiz-sort-row, .quiz-seq) .quiz-sort-item,
+.school-projector__stage:has(.quiz-match-row, .quiz-sort-row, .quiz-seq) .quiz-match-left {
   padding: clamp(0.6rem, 1.1vh, 0.9rem) clamp(0.9rem, 1.4vw, 1.25rem);
 }
+/* Sequence: the given-chips strip plus stacked answers need shorter option
+   cards than the big choice grid. */
+.school-projector__stage:has(.quiz-seq) .quiz-option {
+  min-height: 3.6rem;
+  padding: 0.55rem 1rem;
+}
+.school-projector__stage:has(.quiz-seq) .quiz-options--stack { gap: 0.6rem; }
 /* The generic projector select is width:100%; inside a match row it must share
    the row with the left card instead of squeezing it into a letter column. */
 .school-projector .quiz-match-row .quiz-select {
@@ -976,7 +983,7 @@ body.teacher-projector-active { overflow: hidden !important; }
 .school-projector .btn-next.hidden { display: none !important; }
 .school-projector__complete {
   width: min(38rem, 100%);
-  margin: 12vh auto 0;
+  margin: clamp(1rem, 5vh, 3.5rem) auto 0;
   padding: var(--sp-10) var(--sp-6);
   border: 1px solid var(--clr-border);
   border-radius: var(--r-lg);

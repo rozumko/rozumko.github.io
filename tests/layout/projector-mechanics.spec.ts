@@ -24,6 +24,15 @@ const QUESTIONS = [
     conceptKey: 'algorithms',
   },
   {
+    id: 'q-seq',
+    q: 'Світлофор перемикається по колу. Що після зеленого?',
+    type: 'sequence',
+    options: {},
+    given: ['🔴', '🟡', '🟢'],
+    choices: ['Червоний', 'Зелений', 'Жовтий'],
+    conceptKey: 'patterns',
+  },
+  {
     id: 'q-choice',
     q: 'На екрані вискочило віконце із чужою грою. Що робити?',
     type: 'choice',
@@ -115,17 +124,30 @@ test('projector match keeps horizontal rows and fits the screen', async ({ page 
   expect(sortCheck!.y + sortCheck!.height).toBeLessThanOrEqual(768)
   await expectNoProjectorScroll(page)
 
-  // Answer sort, then choice: the reported scrollbar case — answered state
-  // with feedback and next must fit for choice as well
+  // Answer sort, then sequence: given-chips strip plus stacked answers
   await page.locator('#school-projector-options .quiz-check').click()
   await expect(page.locator('#school-projector-next-btn')).toBeVisible()
   await expectNoProjectorScroll(page)
   await page.locator('#school-projector-next-btn').click()
 
+  await expect(page.locator('#school-projector-question-text')).toContainText('Світлофор')
+  await expectNoProjectorScroll(page)
+  await page.locator('#school-projector-options .quiz-option').first().click()
+  await expect(page.locator('#school-projector-next-btn')).toBeVisible()
+  await expectNoProjectorScroll(page)
+  await page.locator('#school-projector-next-btn').click()
+
+  // Choice: the reported scrollbar case — answered state with feedback and
+  // next must fit for choice as well
   await expect(page.locator('#school-projector-question-text')).toContainText('віконце')
   await expect(page.locator('#school-projector-options .quiz-option')).toHaveCount(4)
   await expectNoProjectorScroll(page)
   await page.locator('#school-projector-options .quiz-option').last().click()
   await expect(page.locator('#school-projector-next-btn')).toBeVisible()
+  await expectNoProjectorScroll(page)
+
+  // Completion screen fits without scrolling too
+  await page.locator('#school-projector-next-btn').click()
+  await expect(page.locator('#school-projector-complete')).toBeVisible()
   await expectNoProjectorScroll(page)
 })
