@@ -19,6 +19,7 @@ import { CLICK_TRAINER_COMPUTER_PARTS } from './features/games/click-trainer-dat
 import { HARDWARE_SCENARIO, SOFTWARE_SCENARIO } from './features/games/simulator-data.js'
 import { loadSimulatorScenario } from './features/games/simulator-content-loader.js'
 import { runMission, type MissionElements } from './features/missions/mission-runner.js'
+import { shuffleDeck } from './features/missions/question-shuffle.js'
 import { loadStaticQuestions } from './features/missions/static-questions.js'
 import {
   PATHS_BY_GRADE, isUnlocked,
@@ -390,7 +391,9 @@ async function startActivityStep(
     els.options.innerHTML = ''
     const questions = await loadMissionQuestions(a)
     if (run !== activeRun) return
-    runMission(els, questions, {
+    // Scoring is local (practice pool): shuffleDeck remaps `correct` itself.
+    const deck = shuffleDeck(questions, `path-${Date.now()}-${Math.random()}`)
+    runMission(els, deck.questions, {
       showExplanation: true,
       onComplete: s => complete(fromMissionSummary(s, activityContext(p, step))),
     })

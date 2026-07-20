@@ -17,14 +17,15 @@ const BASICS = '/assets/basics/'
 const NEUTRAL_LAPTOP = 'thinks_laptop.webp'
 const NEUTRAL_TABLET = 'thinks_tablet.webp'
 
-/** Mechanic-specific defaults. 'choice' and 'input' are intentionally absent —
- *  they fall through to topic/concept so the image reflects the subject. */
+/** Mechanic-specific defaults. 'choice', 'input' and 'sequence' are
+ *  intentionally absent — they fall through to topic/concept so the image
+ *  reflects the subject (a sandwich next to a traffic-light sequence read as
+ *  part of the task). */
 const BY_TYPE: Record<string, string> = {
   truefalse: 'yes_or_no.webp',          // mascot between a check and a cross
   match:     'pairs.webp',              // mascot connecting card pairs
   sort:      'thinks_numbers.webp',     // number cards out of order
   algorithm: 'thinks_numbers.webp',     // legacy alias of 'sort' in the renderer
-  sequence:  'thinks_sandwich.webp',    // numbered steps 1–6
 }
 
 /** CT concepts (conceptKey; also the topics of the computational-thinking track). */
