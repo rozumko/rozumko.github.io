@@ -749,7 +749,7 @@ body.teacher-projector-active { overflow: hidden !important; }
   transition: width 180ms ease-out;
 }
 .school-projector__question-card {
-  min-height: clamp(11rem, 31vh, 21rem);
+  min-height: clamp(10rem, 28vh, 19rem);
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   place-items: center;
@@ -781,7 +781,7 @@ body.teacher-projector-active { overflow: hidden !important; }
 .school-projector__question-card .quiz-image {
   display: block;
   width: 100%;
-  height: min(28vh, 19rem);
+  height: min(25vh, 17rem);
   object-fit: contain;
 }
 .school-projector__question-card .quiz-image.hidden { display: none; }
@@ -957,8 +957,19 @@ body.teacher-projector-active { overflow: hidden !important; }
   font-weight: 900;
 }
 .school-projector .quiz-seq-arrow { color: #334155; font-size: 1.7rem; font-weight: 900; }
-.school-projector .quiz-feedback-wrap { min-height: 4rem; text-align: center; }
-.school-projector .quiz-feedback { margin: 0.3rem 0; color: #0f172a; font-size: clamp(1.2rem, 2vw, 1.7rem); font-weight: 900; }
+/* Feedback and the next button share one horizontal row: stacked they add
+   ~110px after an answer and push the screen into a scrollbar. */
+.school-projector .quiz-feedback-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem 1.25rem;
+  min-height: 4rem;
+  text-align: center;
+}
+.school-projector .quiz-feedback { margin: 0; color: #0f172a; font-size: clamp(1.2rem, 2vw, 1.7rem); font-weight: 900; }
+.school-projector .quiz-feedback-wrap .btn-next { min-height: 3.4rem; padding: 0.55rem 1.4rem; }
 .school-projector .quiz-feedback--correct { color: #116236; }
 .school-projector .quiz-feedback--incorrect { color: #a11212; }
 .school-projector .quiz-explanation { margin: 0.3rem auto 0.8rem; color: #24324a; font-size: clamp(1rem, 1.5vw, 1.25rem); font-weight: 650; }
