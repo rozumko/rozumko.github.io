@@ -23,6 +23,13 @@ const QUESTIONS = [
     items: ['Взяти хліб', 'Намастити масло', 'Покласти сир', "З'їсти"],
     conceptKey: 'algorithms',
   },
+  {
+    id: 'q-choice',
+    q: 'На екрані вискочило віконце із чужою грою. Що робити?',
+    type: 'choice',
+    options: ['Натискати всі кнопки підряд', 'Сховати планшет під подушку', 'Натиснути «Завантажити»', 'Покликати дорослого і нічого не натискати'],
+    topic: 'digital-safety',
+  },
 ]
 
 async function openProjector(page: Page) {
@@ -93,10 +100,12 @@ test('projector match keeps horizontal rows and fits the screen', async ({ page 
   expect(checkBox!.y + checkBox!.height).toBeLessThanOrEqual(768)
   await expectNoProjectorScroll(page)
 
-  // Advance to sort and check it also fits without scrolling
+  // Answer match: feedback + next button join the flow — still no scrolling
   const selects = page.locator('#school-projector-options select')
   for (let i = 0; i < 3; i++) await selects.nth(i).selectOption({ index: i + 1 })
   await page.locator('#school-projector-options .quiz-check').click()
+  await expect(page.locator('#school-projector-next-btn')).toBeVisible()
+  await expectNoProjectorScroll(page)
   await page.locator('#school-projector-next-btn').click()
 
   await expect(page.locator('#school-projector-question-text')).toContainText('Розстав')
@@ -104,5 +113,19 @@ test('projector match keeps horizontal rows and fits the screen', async ({ page 
   await expect(page.locator('#school-projector-options .quiz-sort-row')).toHaveCount(4)
   const sortCheck = await page.locator('#school-projector-options .quiz-check').boundingBox()
   expect(sortCheck!.y + sortCheck!.height).toBeLessThanOrEqual(768)
+  await expectNoProjectorScroll(page)
+
+  // Answer sort, then choice: the reported scrollbar case — answered state
+  // with feedback and next must fit for choice as well
+  await page.locator('#school-projector-options .quiz-check').click()
+  await expect(page.locator('#school-projector-next-btn')).toBeVisible()
+  await expectNoProjectorScroll(page)
+  await page.locator('#school-projector-next-btn').click()
+
+  await expect(page.locator('#school-projector-question-text')).toContainText('віконце')
+  await expect(page.locator('#school-projector-options .quiz-option')).toHaveCount(4)
+  await expectNoProjectorScroll(page)
+  await page.locator('#school-projector-options .quiz-option').last().click()
+  await expect(page.locator('#school-projector-next-btn')).toBeVisible()
   await expectNoProjectorScroll(page)
 })
