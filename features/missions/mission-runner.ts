@@ -1,4 +1,5 @@
 import { renderQuestion, type RenderableQuestion } from '../../utils/question-renderer.js'
+import { resolveQuestionImage } from '../../utils/question-image.js'
 import { missionSummary, type MissionSummary } from './mission-result.js'
 
 // Клієнтський, surface-agnostic runner місії для School Mode.
@@ -62,12 +63,13 @@ export function runMission(
     els.progressBar.style.width = `${(progress / totalQuestions) * 100}%`
     els.questionText.textContent = String(q.q ?? '')
 
-    // Optional question image. Keep behavior consistent across mission surfaces.
+    // Question image: explicit q.img or a default from public/assets/basics/
+    // (resolved by type/topic/concept). Keep behavior consistent across surfaces.
     if (els.image) {
-      const img = q.img as string | undefined
-      if (img) {
-        els.image.src = img
-        els.image.alt = String(q.imageAlt ?? 'Зображення до питання')
+      const image = resolveQuestionImage(q)
+      if (image) {
+        els.image.src = image.src
+        els.image.alt = image.alt
         els.image.classList.remove('hidden')
       } else {
         els.image.src = ''
