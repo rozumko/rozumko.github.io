@@ -7,10 +7,10 @@
   max-width: 560px;
   margin: 0 auto;
   aspect-ratio: 3 / 4;
-  /* Крапкова текстура полотна (як у Mimo) — не конкурує з вузлами. */
+  /* Крапкова текстура полотна (як у Mimo) + мʼякий градієнт-підклад. */
   background:
-    radial-gradient(var(--clr-border-light) 1.4px, transparent 1.6px) 0 0 / 24px 24px,
-    var(--clr-surface-subtle);
+    radial-gradient(var(--clr-border) 1.6px, transparent 1.8px) 0 0 / 22px 22px,
+    linear-gradient(180deg, var(--clr-surface-subtle), #eef2ff);
   border: 2px solid var(--clr-border-light);
   border-radius: 24px;
   overflow: visible;
@@ -158,8 +158,8 @@
 }
 
 @keyframes path-pulse {
-  0%, 100% { box-shadow: 0 3px 0 rgba(15, 23, 42, 0.12), 0 0 0 0 rgba(59, 130, 246, 0.45); }
-  50%      { box-shadow: 0 3px 0 rgba(15, 23, 42, 0.12), 0 0 0 10px rgba(59, 130, 246, 0); }
+  0%, 100% { box-shadow: 0 3px 0 rgba(15, 23, 42, 0.12), 0 0 0 0 rgba(59, 130, 246, 0.55); }
+  50%      { box-shadow: 0 3px 0 rgba(15, 23, 42, 0.12), 0 0 0 14px rgba(59, 130, 246, 0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -228,25 +228,27 @@ body.path-activity-active #path-done > * {
 .path-bonus__item:hover, .path-bonus__item:focus-visible { border-color: var(--clr-primary); transform: translateY(-1px); }
 .path-bonus__finish { margin-top: var(--sp-2); }
 
-/* ── Маскот Розумко (привітання + екран завершення) ──────────── */
-.mascot {
-  --mascot-flip: 1;
+/* ── Маскот Розумко (привітання + екран завершення) ───────────
+   Власний неймспейс rz-mascot: клас .mascot вже зайнятий вітриною
+   головної (style-app.css) і ламав би цей flex-лейаут. */
+.rz-mascot {
+  --rz-mascot-flip: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--sp-2);
 }
-.mascot--right { --mascot-flip: -1; }
-.mascot__img {
+.rz-mascot--right { --rz-mascot-flip: -1; }
+.rz-mascot__img {
   flex: none;
-  width: clamp(64px, 20vw, 112px);
+  width: clamp(72px, 20vw, 116px);
   height: auto;
-  transform: scaleX(var(--mascot-flip));
+  transform: scaleX(var(--rz-mascot-flip));
   filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .15));
 }
-.mascot__bubble {
+.rz-mascot__bubble {
   position: relative;
-  max-width: 16rem;
+  max-width: 17rem;
   margin: 0;
   padding: var(--sp-2) var(--sp-3);
   background: var(--clr-surface);
@@ -254,9 +256,10 @@ body.path-activity-active #path-done > * {
   border-radius: 14px;
   font-weight: 600;
   line-height: 1.3;
+  text-align: left;
   box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
 }
-.mascot__bubble::after {
+.rz-mascot__bubble::after {
   content: "";
   position: absolute;
   top: 50%;
@@ -264,15 +267,15 @@ body.path-activity-active #path-done > * {
   border: 8px solid transparent;
   transform: translateY(-50%);
 }
-.mascot--left  .mascot__bubble::after { left: -14px;  border-right-color: var(--clr-border); }
-.mascot--right .mascot__bubble::after { right: -14px; border-left-color: var(--clr-border); }
+.rz-mascot--left  .rz-mascot__bubble::after { left: -14px;  border-right-color: var(--clr-border); }
+.rz-mascot--right .rz-mascot__bubble::after { right: -14px; border-left-color: var(--clr-border); }
 
 @media (prefers-reduced-motion: no-preference) {
-  .mascot--celebrate .mascot__img { animation: mascot-bounce .6s ease; }
+  .rz-mascot--celebrate .rz-mascot__img { animation: rz-mascot-bounce .6s ease; }
 }
-@keyframes mascot-bounce {
-  0%, 100% { transform: translateY(0) scaleX(var(--mascot-flip)); }
-  30%      { transform: translateY(-10px) scaleX(var(--mascot-flip)); }
+@keyframes rz-mascot-bounce {
+  0%, 100% { transform: translateY(0) scaleX(var(--rz-mascot-flip)); }
+  30%      { transform: translateY(-10px) scaleX(var(--rz-mascot-flip)); }
 }
 
 .path-greeting { margin: var(--sp-2) auto var(--sp-3); }

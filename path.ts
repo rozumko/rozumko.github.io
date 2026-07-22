@@ -166,7 +166,7 @@ function renderMap() {
   // Маскот вітає лише на свіжій карті (перший візит) — далі не захаращуємо.
   if (completedInMap.length === 0) {
     greetingEl.classList.remove('hidden')
-    renderMascot(greetingEl, { message: 'Привіт! Обери світлу точку — і почнемо пригоду! 👆', side: 'left' })
+    renderMascot(greetingEl, { message: 'Привіт! Я Розумко 🤖 Тисни на кружечок, що світиться, — і почнемо пригоду!', side: 'left' })
   } else {
     greetingEl.classList.add('hidden')
     greetingEl.textContent = ''
@@ -467,10 +467,10 @@ function finishPoint(p: PathPoint, results: ActivityResult[], run: number) {
     : ''
 
   // Praise line varies by stars; celebratory bounce on the completion screen.
-  const praise = progress.bestStars >= 3 ? 'Бездоганно! 🌟'
-    : progress.bestStars === 2 ? 'Чудова робота!'
-    : progress.bestStars === 1 ? 'Гарний початок — рухаймось далі!'
-    : 'Точку пройдено! Кожен крок важливий.'
+  const praise = progress.bestStars >= 3 ? 'Супер! Аж три зірки! 🌟'
+    : progress.bestStars === 2 ? 'Чудова робота! 💪'
+    : progress.bestStars === 1 ? 'Молодець! Уперед до нових пригод!'
+    : 'Точку пройдено! Так тримати!'
   renderMascot(doneMascot, { message: praise, side: 'right', celebrate: true })
 
   // Aggregate practice evidence across the point's activities.
