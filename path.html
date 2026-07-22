@@ -29,6 +29,7 @@
     <section id="path-map-screen">
       <h1 class="app-title">Карта пригод</h1>
       <p class="app-subtitle" id="path-subtitle">Проходь точки — відкривай нові!</p>
+      <div id="path-greeting" class="path-greeting hidden"></div>
       <section id="path-parent-gate" class="path-parent-gate hidden" aria-labelledby="path-parent-gate-title" tabindex="-1">
         <span class="path-parent-gate__icon" aria-hidden="true">🔐</span>
         <div>
@@ -82,9 +83,11 @@
     <!-- DONE: точка пройдена -->
     <section id="path-done" class="hidden">
       <div class="finish-card">
-        <p id="path-done-icon" class="finish-card__stars" aria-hidden="true">🏆</p>
+        <div id="path-done-mascot" class="finish-card__mascot"></div>
         <p id="path-done-title" class="finish-card__label"></p>
         <p id="path-done-stars" class="finish-card__stars"></p>
+        <div id="path-done-stats" class="finish-stats" aria-label="Підсумок точки"></div>
+        <div id="path-done-skills" class="finish-skills"></div>
         <p id="path-done-message" class="finish-card__message"></p>
       </div>
       <div class="app-actions">

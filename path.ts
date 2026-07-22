@@ -28,6 +28,8 @@ import {
 import { loadGradeMap } from './features/path/path-loader.js'
 import { createProgressStore } from './features/path/progress-store.js'
 import { syncPathProgress } from './features/path/path-sync.js'
+import { renderMascot } from './features/path/mascot.js'
+import { TOPIC_SHORT } from './features/missions/topics.js'
 import {
   getParentPathProgress, getParentSession, submitParentPathProgress,
 } from './features/api/client.js'
@@ -89,6 +91,10 @@ const puzzlesRoot  = $('path-puzzles-root')
 const foRoot       = $('path-fo-root')
 const missionQuiz  = $('mission-quiz')
 const doneEl       = $('path-done')
+const doneMascot   = $('path-done-mascot')
+const doneStats    = $('path-done-stats')
+const doneSkills   = $('path-done-skills')
+const greetingEl   = $('path-greeting')
 const parentGate   = $('path-parent-gate')
 const parentGateLink = $<HTMLAnchorElement>('path-parent-gate-link')
 
@@ -156,6 +162,15 @@ function renderMap() {
   const completedInMap = [...completed].filter(id => mapPointIds.has(id))
   const anonymousGate = !activeChildProfileId && completedInMap.length > 0
   parentGate.classList.toggle('hidden', !anonymousGate)
+
+  // Маскот вітає лише на свіжій карті (перший візит) — далі не захаращуємо.
+  if (completedInMap.length === 0) {
+    greetingEl.classList.remove('hidden')
+    renderMascot(greetingEl, { message: 'Привіт! Обери світлу точку — і почнемо пригоду! 👆', side: 'left' })
+  } else {
+    greetingEl.classList.add('hidden')
+    greetingEl.textContent = ''
+  }
 
   // Ребра: від кожної передумови до точки. Координати = відсотки viewBox 100×100.
   edgesSvg.innerHTML = map.points.flatMap(p =>
@@ -450,6 +465,53 @@ function finishPoint(p: PathPoint, results: ActivityResult[], run: number) {
   $('path-done-stars').textContent = progress.bestStars
     ? '⭐'.repeat(progress.bestStars) + '☆'.repeat(3 - progress.bestStars)
     : ''
+
+  // Praise line varies by stars; celebratory bounce on the completion screen.
+  const praise = progress.bestStars >= 3 ? 'Бездоганно! 🌟'
+    : progress.bestStars === 2 ? 'Чудова робота!'
+    : progress.bestStars === 1 ? 'Гарний початок — рухаймось далі!'
+    : 'Точку пройдено! Кожен крок важливий.'
+  renderMascot(doneMascot, { message: praise, side: 'right', celebrate: true })
+
+  // Aggregate practice evidence across the point's activities.
+  const graded = results.filter(r => r.total > 0)
+  const totalItems = graded.reduce((sum, r) => sum + r.total, 0)
+  const correctItems = graded.reduce((sum, r) => sum + r.correct, 0)
+  const accuracy = totalItems ? Math.round((correctItems / totalItems) * 100) : null
+  doneStats.innerHTML = ''
+  const tiles: Array<{ value: string; label: string }> = []
+  if (totalItems) tiles.push({ value: String(totalItems), label: 'Завдань' })
+  if (accuracy !== null) tiles.push({ value: `${accuracy}%`, label: 'Влучність' })
+  for (const t of tiles) {
+    const tile = document.createElement('div')
+    tile.className = 'finish-stat'
+    const value = document.createElement('span')
+    value.className = 'finish-stat__value'
+    value.textContent = t.value
+    const label = document.createElement('span')
+    label.className = 'finish-stat__label'
+    label.textContent = t.label
+    tile.append(value, label)
+    doneStats.append(tile)
+  }
+
+  // «Суперсили» — унікальні теми, які тренує ця точка (дитячі підписи).
+  const topics = [...new Set(p.curriculum.map(c => c.topic))]
+  doneSkills.innerHTML = ''
+  if (topics.length) {
+    const title = document.createElement('p')
+    title.className = 'finish-skills__title'
+    title.textContent = topics.length > 1 ? 'Прокачані суперсили:' : 'Прокачана суперсила:'
+    const chips = document.createElement('div')
+    chips.className = 'finish-skills__chips'
+    for (const topic of topics) {
+      const chip = document.createElement('span')
+      chip.className = 'finish-skill'
+      chip.textContent = `⚡ ${TOPIC_SHORT[topic] ?? topic}`
+      chips.append(chip)
+    }
+    doneSkills.append(title, chips)
+  }
   const unlockedNow = map.points.filter(x =>
     !store.isCompleted(x.id) && x.unlockAfter.includes(p.id) && isUnlocked(x, new Set(store.completedIds())),
   )
