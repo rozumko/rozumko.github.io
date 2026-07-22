@@ -54,6 +54,41 @@ export function runMission(
   let currentIdx = 0
   let correct = 0
 
+  // Combo streak: a practice-only delight. Disabled in live/olympiad flows
+  // (submitAnswer present) so a timed, server-scored run stays distraction-free.
+  const comboEnabled = !opts.submitAnswer
+  let streak = 0
+  let comboEl: HTMLElement | null = null
+  if (comboEnabled) {
+    const header = els.progressText.parentElement
+    if (header) {
+      // Reuse across mission replays (path reuses the same DOM) — never stack duplicates.
+      comboEl = header.querySelector<HTMLElement>('.quiz-combo')
+      if (!comboEl) {
+        comboEl = document.createElement('span')
+        comboEl.className = 'quiz-combo'
+        comboEl.setAttribute('aria-live', 'polite')
+        header.appendChild(comboEl)
+      }
+      comboEl.hidden = true
+      comboEl.textContent = ''
+    }
+  }
+
+  function updateCombo() {
+    if (!comboEl) return
+    if (streak >= 2) {
+      comboEl.textContent = `🔥 ${streak} поспіль!`
+      comboEl.hidden = false
+      comboEl.classList.remove('quiz-combo--pop')
+      void comboEl.offsetWidth // reflow to restart the pop animation
+      comboEl.classList.add('quiz-combo--pop')
+    } else {
+      comboEl.hidden = true
+      comboEl.textContent = ''
+    }
+  }
+
   function showQuestion() {
     const q = questions[currentIdx]
     const questionCard = els.questionText.closest<HTMLElement>('.quiz-question-card')
@@ -150,6 +185,11 @@ export function runMission(
     els.feedback.className = isCorrect
       ? 'quiz-feedback quiz-feedback--correct'
       : 'quiz-feedback quiz-feedback--incorrect'
+
+    if (comboEnabled) {
+      streak = isCorrect ? streak + 1 : 0
+      updateCombo()
+    }
 
     if (showExplanation && q.explanation) {
       els.explanation.textContent = String(q.explanation)
