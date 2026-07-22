@@ -1020,6 +1020,31 @@ body.mission-active #mission-quiz .quiz-progress-header {
   margin-bottom: var(--sp-2);
 }
 
+/* Combo streak badge (practice only) — sits at the header's trailing edge. */
+.quiz-combo {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #fb923c, #f97316);
+  color: #fff;
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  line-height: 1.4;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(249, 115, 22, 0.35);
+}
+.quiz-combo[hidden] { display: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .quiz-combo--pop { animation: quiz-combo-pop 0.35s ease; }
+}
+@keyframes quiz-combo-pop {
+  0%   { transform: scale(0.7); opacity: 0.4; }
+  60%  { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
 body.mission-active #mission-quiz .quiz-question-card {
   align-self: stretch;
   min-height: 0;
