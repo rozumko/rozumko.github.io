@@ -19,14 +19,14 @@ export function renderMascot(host: HTMLElement, opts: MascotOptions): void {
   host.textContent = ''
 
   const wrap = document.createElement('div')
-  wrap.className = `mascot mascot--${side}${opts.celebrate ? ' mascot--celebrate' : ''}`
+  wrap.className = `rz-mascot rz-mascot--${side}${opts.celebrate ? ' rz-mascot--celebrate' : ''}`
 
   const bubble = document.createElement('p')
-  bubble.className = 'mascot__bubble'
+  bubble.className = 'rz-mascot__bubble'
   bubble.textContent = opts.message
 
   const img = document.createElement('img')
-  img.className = 'mascot__img'
+  img.className = 'rz-mascot__img'
   img.src = MASCOT_SRC
   img.alt = ''
   img.width = 128
