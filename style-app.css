@@ -1219,10 +1219,9 @@
 }
 .pz-cycle--set { border-style: solid; border-color: var(--clr-brand); background: var(--clr-sky-light); }
 
-/* .pz__feedback / .pz-done — у спільному каркасі ігор нижче */
+/* .pz__feedback (типографіка) / .pz-done — у спільному каркасі ігор нижче */
 .pz__feedback { text-align: center; }
 .pz__actions { display: flex; gap: var(--sp-3); justify-content: center; flex-wrap: wrap; }
-.pz-done__title { margin-bottom: var(--sp-5); }
 
 /* Один екран: головоломки як fixed-оверлей (як mission-active) */
 body.puzzle-active { overflow: hidden; }
