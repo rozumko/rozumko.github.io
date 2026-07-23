@@ -70,6 +70,8 @@ export function validateAuthored(file: string, index: number, q: AuthoredQuestio
   const track = q.track as QuestionTrack
   if (!TRACKS.includes(track)) { push(`track має бути одним із ${TRACKS.join(' | ')}`); return errs }
   if (!QUESTION_TYPES.includes(q.type as QuestionType)) { push(`невідомий type «${String(q.type)}»`); return errs }
+  if (q.type === 'choice' && (!Array.isArray(q.options) || q.options.length !== 4))
+    push('choice must have exactly 4 answer options')
   if (typeof q.q !== 'string' || q.q.trim() === '') push('q обовʼязкове, непорожній рядок')
   if (typeof q.explanation !== 'string' || q.explanation.trim() === '') push('explanation обовʼязкове')
   if (!Number.isInteger(q.grade) || (q.grade as number) < 1 || (q.grade as number) > 4)
@@ -82,10 +84,10 @@ export function validateAuthored(file: string, index: number, q: AuthoredQuestio
   try { normalizeTopic(q.topic, track) } catch (e) { push((e as Error).message) }
   try {
     const ck = normalizeConceptKey(q.conceptKey)
+    if (track === 'computational-thinking' && !ck)
+      push('для computational-thinking conceptKey обовʼязковий і має дорівнювати topic')
     if (track === 'computational-thinking' && ck && ck !== q.topic)
       push('для computational-thinking conceptKey має дорівнювати topic')
-    if (track !== 'computational-thinking' && ck)
-      push('conceptKey задають лише для computational-thinking')
   } catch (e) { push((e as Error).message) }
 
   try {

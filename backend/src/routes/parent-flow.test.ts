@@ -566,7 +566,7 @@ test('path progress: completion is persisted, listed and idempotent', async () =
     })
     const payload = {
       pathId: 'grade-2', pointId: 'g2-info-start',
-      results: [pathResult('path:g2-info-start:theory'), pathResult('path:g2-info-start:infosort')],
+      results: [{ ...pathResult('path:g2-info-start:theory'), activityVersion: 2 }, pathResult('path:g2-info-start:infosort')],
     }
 
     const first = await app.inject({
@@ -613,7 +613,7 @@ test('path progress: unknown versions and locked points fail without writes', as
       payload: {
         pathId: 'grade-2', pointId: 'g2-info-start',
         results: [
-          pathResult('path:g2-info-start:theory'),
+          { ...pathResult('path:g2-info-start:theory'), activityVersion: 2 },
           { ...pathResult('path:g2-info-start:infosort'), activityVersion: 2 },
         ],
       },

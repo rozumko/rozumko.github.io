@@ -284,7 +284,7 @@ export const GRADE4_PATH: GradePathMap = {
 
 export const GRADE2_PATH: GradePathMap = {
   grade: 2,
-  version: 1,
+  version: 2,
   title: 'Шлях 2 класу',
   points: [
     {
@@ -293,7 +293,7 @@ export const GRADE2_PATH: GradePathMap = {
       icon: '📡',
       curriculum: [{ track: 'informatics', topic: 'information' }],
       activities: [
-        { id: 'theory', version: 1, title: 'Теорія', activity: { kind: 'lesson', lessonId: 'info-senses-g2' }, required: true },
+        { id: 'theory', version: 2, title: 'Теорія', activity: { kind: 'lesson', lessonId: 'info-questions-g2' }, required: true },
         { id: 'infosort', version: 1, title: 'ІнфоСорт', activity: { kind: 'sorting', game: 'infosort' }, required: true },
       ],
       unlockAfter: [],
@@ -326,7 +326,10 @@ export const GRADE2_PATH: GradePathMap = {
       title: 'Збери свій компʼютер',
       icon: '🔧',
       curriculum: [{ track: 'informatics', topic: 'computer-systems' }],
-      activities: [{ id: 'assembly-hardware', version: 1, title: 'Майстерня компʼютера', activity: { kind: 'simulator', scenario: 'hardware' }, required: true }],
+      activities: [
+        { id: 'theory', version: 1, title: 'Теорія', activity: { kind: 'lesson', lessonId: 'computer-parts-g2' }, required: true },
+        { id: 'assembly-hardware', version: 1, title: 'Майстерня компʼютера', activity: { kind: 'simulator', scenario: 'hardware' }, required: true },
+      ],
       unlockAfter: ['g2-info-start'],
       x: 50, y: 32,
     },
@@ -354,7 +357,7 @@ export const GRADE2_PATH: GradePathMap = {
       icon: '🛡️',
       curriculum: [{ track: 'informatics', topic: 'digital-safety' }],
       activities: [
-        { id: 'theory', version: 1, title: 'Теорія', activity: { kind: 'lesson', lessonId: 'private-info-g2' }, required: true },
+        { id: 'theory', version: 2, title: 'Теорія', activity: { kind: 'lesson', lessonId: 'safety-personal-data-footprint-g2' }, required: true },
         { id: 'safety-scenarios', version: 1, title: 'Як вчинити?', activity: { kind: 'scenarios', count: 4 }, required: true },
         { id: 'digital-safety-mission', version: 1, title: 'Місія про приватні дані', activity: { kind: 'mission', track: 'informatics', topic: 'digital-safety' }, required: true },
       ],
@@ -367,7 +370,7 @@ export const GRADE2_PATH: GradePathMap = {
       icon: '🤖',
       curriculum: [{ track: 'computational-thinking', topic: 'algorithms' }],
       activities: [
-        { id: 'theory', version: 1, title: 'Теорія', activity: { kind: 'lesson', lessonId: 'algorithms-order-g2' }, required: true },
+        { id: 'theory', version: 2, title: 'Теорія', activity: { kind: 'lesson', lessonId: 'algo-linear-routes-g2' }, required: true },
         // Тематичне закріплення теорії замість generic-головоломок (зріз 3).
         { id: 'algorithms-sequence', version: 1, title: 'Впорядкуй кроки', activity: { kind: 'sequence', count: 3 }, required: true },
         { id: 'algorithms-mission', version: 1, title: 'Місія про алгоритми', activity: { kind: 'mission', track: 'computational-thinking', topic: 'algorithms', count: 5 }, required: true },

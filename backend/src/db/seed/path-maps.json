@@ -299,11 +299,13 @@
     "pathId": "grade-2",
     "grade": 2,
     "title": "Шлях 2 класу",
+    "version": 2,
     "points": [
       {
         "id": "g2-info-start",
         "title": "Як ми отримуємо інформацію",
         "icon": "📡",
+        "access": "free",
         "curriculum": [
           {
             "track": "informatics",
@@ -313,11 +315,12 @@
         "activities": [
           {
             "id": "theory",
-            "version": 1,
+            "version": 2,
             "title": "Теорія",
             "activity": {
               "kind": "lesson",
-              "lessonId": "info-senses-g2"
+              "lessonId": "info-questions-g2",
+              "lessonVersion": 1
             },
             "required": true
           },
@@ -326,21 +329,21 @@
             "version": 1,
             "title": "ІнфоСорт",
             "activity": {
-              "kind": "sorting",
-              "game": "infosort"
+              "game": "infosort",
+              "kind": "sorting"
             },
             "required": true
           }
         ],
         "unlockAfter": [],
         "x": 50,
-        "y": 6,
-        "access": "free"
+        "y": 6
       },
       {
         "id": "g2-ct-multisort",
         "title": "Сортуємо за різними правилами",
         "icon": "🔀",
+        "access": "free",
         "curriculum": [
           {
             "track": "computational-thinking",
@@ -353,8 +356,8 @@
             "version": 1,
             "title": "Мульти-Сортування",
             "activity": {
-              "kind": "sorting",
-              "game": "multisort"
+              "game": "multisort",
+              "kind": "sorting"
             },
             "required": true
           }
@@ -363,13 +366,13 @@
           "g2-info-start"
         ],
         "x": 22,
-        "y": 22,
-        "access": "free"
+        "y": 22
       },
       {
         "id": "g2-fact-opinion",
         "title": "Факт чи думка?",
         "icon": "🧐",
+        "access": "free",
         "curriculum": [
           {
             "track": "informatics",
@@ -396,13 +399,13 @@
           "g2-info-start"
         ],
         "x": 78,
-        "y": 22,
-        "access": "free"
+        "y": 22
       },
       {
         "id": "g2-assembly",
         "title": "Збери свій компʼютер",
         "icon": "🔧",
+        "access": "free",
         "curriculum": [
           {
             "track": "informatics",
@@ -410,6 +413,17 @@
           }
         ],
         "activities": [
+          {
+            "id": "theory",
+            "version": 1,
+            "title": "Теорія",
+            "activity": {
+              "kind": "lesson",
+              "lessonId": "computer-parts-g2",
+              "lessonVersion": 1
+            },
+            "required": true
+          },
           {
             "id": "assembly-hardware",
             "version": 1,
@@ -425,13 +439,13 @@
           "g2-info-start"
         ],
         "x": 50,
-        "y": 32,
-        "access": "free"
+        "y": 32
       },
       {
         "id": "g2-ct-patterns",
         "title": "Знаходимо закономірність",
         "icon": "🧩",
+        "access": "free",
         "curriculum": [
           {
             "track": "computational-thinking",
@@ -453,13 +467,13 @@
           "g2-ct-multisort"
         ],
         "x": 16,
-        "y": 49,
-        "access": "free"
+        "y": 49
       },
       {
         "id": "g2-ai-perception",
         "title": "Як ШІ розпізнає обʼєкти",
         "icon": "👁️",
+        "access": "free",
         "curriculum": [
           {
             "track": "ai-basics",
@@ -473,8 +487,8 @@
             "title": "Місія про розпізнавання",
             "activity": {
               "kind": "mission",
-              "track": "ai-basics",
-              "topic": "ai-perception"
+              "topic": "ai-perception",
+              "track": "ai-basics"
             },
             "required": true
           }
@@ -483,13 +497,13 @@
           "g2-fact-opinion"
         ],
         "x": 57,
-        "y": 51,
-        "access": "free"
+        "y": 51
       },
       {
         "id": "g2-digital-safety",
         "title": "Що не можна повідомляти онлайн",
         "icon": "🛡️",
+        "access": "free",
         "curriculum": [
           {
             "track": "informatics",
@@ -499,11 +513,12 @@
         "activities": [
           {
             "id": "theory",
-            "version": 1,
+            "version": 2,
             "title": "Теорія",
             "activity": {
               "kind": "lesson",
-              "lessonId": "private-info-g2"
+              "lessonId": "safety-personal-data-footprint-g2",
+              "lessonVersion": 1
             },
             "required": true
           },
@@ -523,8 +538,8 @@
             "title": "Місія про приватні дані",
             "activity": {
               "kind": "mission",
-              "track": "informatics",
-              "topic": "digital-safety"
+              "topic": "digital-safety",
+              "track": "informatics"
             },
             "required": true
           }
@@ -533,13 +548,13 @@
           "g2-fact-opinion"
         ],
         "x": 86,
-        "y": 51,
-        "access": "free"
+        "y": 51
       },
       {
         "id": "g2-ct-algorithms",
         "title": "Будуємо точний алгоритм",
         "icon": "🤖",
+        "access": "free",
         "curriculum": [
           {
             "track": "computational-thinking",
@@ -549,11 +564,12 @@
         "activities": [
           {
             "id": "theory",
-            "version": 1,
+            "version": 2,
             "title": "Теорія",
             "activity": {
               "kind": "lesson",
-              "lessonId": "algorithms-order-g2"
+              "lessonId": "algo-linear-routes-g2",
+              "lessonVersion": 1
             },
             "required": true
           },
@@ -573,9 +589,9 @@
             "title": "Місія про алгоритми",
             "activity": {
               "kind": "mission",
-              "track": "computational-thinking",
+              "count": 5,
               "topic": "algorithms",
-              "count": 5
+              "track": "computational-thinking"
             },
             "required": true
           }
@@ -584,13 +600,13 @@
           "g2-ct-patterns"
         ],
         "x": 29,
-        "y": 68,
-        "access": "free"
+        "y": 68
       },
       {
         "id": "g2-final",
         "title": "Фінальна місія трьох напрямів",
         "icon": "🏰",
+        "access": "free",
         "curriculum": [
           {
             "track": "informatics",
@@ -612,12 +628,12 @@
             "title": "Фінальна місія",
             "activity": {
               "kind": "mission",
+              "count": 9,
               "tracks": [
                 "informatics",
                 "computational-thinking",
                 "ai-basics"
-              ],
-              "count": 9
+              ]
             },
             "required": true
           }
@@ -628,8 +644,7 @@
           "g2-digital-safety"
         ],
         "x": 52,
-        "y": 88,
-        "access": "free"
+        "y": 88
       }
     ]
   },

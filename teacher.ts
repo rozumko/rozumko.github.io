@@ -17,7 +17,8 @@ import {
 } from './features/api/client.js'
 import { esc, friendlyError, recoveryErrorMessage, showConfirm, showModal } from './utils/ui.js'
 import { openCertModal, awardLabel, percent, getAward } from './utils/certificate.js'
-import { TOPICS_BY_TRACK, TOPIC_LABELS } from './features/missions/topics.js'
+import { TOPIC_LABELS } from './features/missions/topics.js'
+import { SCHOOL_TOPICS, schoolTopicToSessionFilter } from './features/school/school-topics.js'
 import type { SchoolTopicStat } from './features/api/client.js'
 import { runMission, type MissionElements } from './features/missions/mission-runner.js'
 import { shuffleDeck } from './features/missions/question-shuffle.js'
@@ -1469,9 +1470,10 @@ function startSchoolPolling() {
 function populateSchoolTopics() {
   const topicSel = $maybe<HTMLSelectElement>('school-topic')
   if (!topicSel) return
-  const topics = TOPICS_BY_TRACK['informatics']
   topicSel.innerHTML = '<option value="">Будь-яка тема</option>' +
-    topics.map(t => `<option value="${t}">${TOPIC_LABELS[t] ?? t}</option>`).join('')
+    SCHOOL_TOPICS.map(topic => (
+      `<option value="${esc(topic.id)}" title="${esc(topic.description)}">${esc(topic.label)}</option>`
+    )).join('')
 }
 
 populateSchoolTopics()
@@ -1480,12 +1482,14 @@ populateSchoolTopics()
 // "My questions" source can extend this payload without rebuilding the form.
 function classroomSessionPayload() {
   const difficulty = $<HTMLSelectElement>('school-difficulty').value
-  const topic = $<HTMLSelectElement>('school-topic').value
+  const schoolTopicId = $<HTMLSelectElement>('school-topic').value
+  const topicFilter = schoolTopicId ? schoolTopicToSessionFilter(schoolTopicId) : null
   return {
     grade: Number($<HTMLSelectElement>('school-grade').value),
-    track: 'informatics',
+    track: topicFilter?.track ?? 'informatics',
     ...(difficulty ? { difficulty } : {}),
-    ...(topic ? { topic } : {}),
+    ...(schoolTopicId ? { schoolTopicId } : {}),
+    ...(topicFilter?.topic ? { topic: topicFilter.topic } : {}),
     questionsCount: Number($<HTMLSelectElement>('school-count').value),
   }
 }
