@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyReply, preHandlerHookHandler } from 'fastify'
-import { and, asc, desc, eq, inArray, sql, arrayContains } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, notInArray, sql, arrayContains } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { questions, schoolSessions, schoolSessionQuestions, schoolParticipants, schoolAnswers } from '../db/schema.js'
 import { requireAuth } from '../lib/auth.js'
@@ -14,6 +14,7 @@ import {
   recordCodeFailure,
 } from './code-throttle.js'
 import { ALL_TOPICS, normalizeTopic } from '../lib/taxonomy.js'
+import { SCHOOL_TOPIC_IDS, resolveSchoolTopicSelection } from '../lib/school-topics.js'
 import { createVerifiedResourceRateLimit, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW } from '../lib/rate-limit-policy.js'
 import type { QuestionTrack } from '../db/schema.js'
 
@@ -172,7 +173,7 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
   const authorizeTeacher = opts.authorizeTeacher ?? requireAuth
 
   // ── Вчитель: створити сесію ──────────────────────────────────────────────
-  app.post<{ Body: { grade: number; difficulty?: string; questionsCount?: number; track?: string; topic?: string } }>('/sessions', {
+  app.post<{ Body: { grade: number; difficulty?: string; questionsCount?: number; track?: string; topic?: string; schoolTopicId?: string } }>('/sessions', {
     preHandler: authorizeTeacher,
     schema: {
       body: {
@@ -185,16 +186,19 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
           questionsCount: { type: 'integer', minimum: 1, maximum: 30 },
           track:          { type: 'string', enum: [...QUESTION_TRACKS] },
           topic:          { type: 'string', enum: ALL_TOPICS as string[] },
+          schoolTopicId:  { type: 'string', enum: SCHOOL_TOPIC_IDS as unknown as string[] },
         },
       },
     },
   }, async (req, reply) => {
     let difficulty: 'easy' | 'medium' | 'hard' | null
     try { difficulty = normalizeDifficulty(req.body.difficulty) } catch (e) { return reply.code(400).send({ error: (e as Error).message }) }
-    const track = (req.body.track ?? null) as QuestionTrack | null
+    let schoolTopic
+    try { schoolTopic = resolveSchoolTopicSelection(req.body.schoolTopicId) } catch (e) { return reply.code(400).send({ error: (e as Error).message }) }
+    const track = schoolTopic?.track ?? (req.body.track ?? null) as QuestionTrack | null
     // topic валідний лише в парі зі своїм track (fail-closed, як в адмінці)
     let topic: string | null
-    try { topic = normalizeTopic(req.body.topic, track) } catch (e) { return reply.code(400).send({ error: (e as Error).message }) }
+    try { topic = schoolTopic?.topic ?? normalizeTopic(req.body.topic, track) } catch (e) { return reply.code(400).send({ error: (e as Error).message }) }
     const wanted = req.body.questionsCount ?? 10
 
     const filters = [
@@ -207,12 +211,26 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
     if (track)      filters.push(eq(questions.track, track))
     if (topic)      filters.push(eq(questions.topic, topic))
 
-    const picked = await db
-      .select({ id: questions.id })
-      .from(questions)
-      .where(and(...filters))
-      .orderBy(sql`random()`)
-      .limit(wanted)
+    let picked = schoolTopic?.preferredConceptKeys?.length
+      ? await db
+        .select({ id: questions.id })
+        .from(questions)
+        .where(and(...filters, inArray(questions.conceptKey, [...schoolTopic.preferredConceptKeys])))
+        .orderBy(sql`random()`)
+        .limit(wanted)
+      : []
+
+    const fallbackFilters = [...filters]
+    if (picked.length > 0) fallbackFilters.push(notInArray(questions.id, picked.map(row => row.id)))
+    if (picked.length < wanted) {
+      const fallback = await db
+        .select({ id: questions.id })
+        .from(questions)
+        .where(and(...fallbackFilters))
+        .orderBy(sql`random()`)
+        .limit(wanted - picked.length)
+      picked = [...picked, ...fallback]
+    }
 
     if (picked.length === 0) {
       return reply.code(422).send({ error: 'Немає тренувальних питань для цих параметрів' })
