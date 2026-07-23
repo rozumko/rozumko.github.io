@@ -2,7 +2,7 @@
  "pathId": "grade-2",
  "grade": 2,
  "title": "Шлях 2 класу",
- "version": 1,
+ "version": 2,
  "points": [
   {
    "id": "g2-info-start",
@@ -18,11 +18,12 @@
    "activities": [
     {
      "id": "theory",
-     "version": 1,
+     "version": 2,
      "title": "Теорія",
      "activity": {
       "kind": "lesson",
-      "lessonId": "info-senses-g2"
+      "lessonId": "info-questions-g2",
+      "lessonVersion": 1
      },
      "required": true
     },
@@ -116,6 +117,17 @@
    ],
    "activities": [
     {
+     "id": "theory",
+     "version": 1,
+     "title": "Теорія",
+     "activity": {
+      "kind": "lesson",
+      "lessonId": "computer-parts-g2",
+      "lessonVersion": 1
+     },
+     "required": true
+    },
+    {
      "id": "assembly-hardware",
      "version": 1,
      "title": "Майстерня компʼютера",
@@ -204,11 +216,12 @@
    "activities": [
     {
      "id": "theory",
-     "version": 1,
+     "version": 2,
      "title": "Теорія",
      "activity": {
       "kind": "lesson",
-      "lessonId": "private-info-g2"
+      "lessonId": "safety-personal-data-footprint-g2",
+      "lessonVersion": 1
      },
      "required": true
     },
@@ -254,11 +267,12 @@
    "activities": [
     {
      "id": "theory",
-     "version": 1,
+     "version": 2,
      "title": "Теорія",
      "activity": {
       "kind": "lesson",
-      "lessonId": "algorithms-order-g2"
+      "lessonId": "algo-linear-routes-g2",
+      "lessonVersion": 1
      },
      "required": true
     },

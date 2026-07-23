@@ -16,9 +16,9 @@ import { catalogFromPoints, type CatalogPath } from './path-catalog.js'
 // один канонічний файл замість дубля структури в коді тестів.
 const HERE = dirname(fileURLToPath(import.meta.url))
 const SEED_MAPS = JSON.parse(readFileSync(join(HERE, '../db/seed/path-maps.json'), 'utf8')) as
-  Array<{ pathId: string; grade: number; title: string; points: unknown[] }>
+  Array<{ pathId: string; grade: number; title: string; version?: number; points: unknown[] }>
 const CATALOGS: Record<string, CatalogPath> = Object.fromEntries(SEED_MAPS.map(map => {
-  const catalog = catalogFromPoints(map.grade, map.points)
+  const catalog = catalogFromPoints(map.grade, map.points, map.version)
   assert.ok(catalog, `Seed-карта ${map.pathId} не проходить catalogFromPoints`)
   return [map.pathId, catalog]
 }))
@@ -38,7 +38,7 @@ test('valid completion uses the backend catalog and produces a stable event key'
   const body = {
     pathId: 'grade-2',
     pointId: 'g2-info-start',
-    results: [result('path:g2-info-start:theory'), result('path:g2-info-start:infosort')],
+    results: [result('path:g2-info-start:theory', 2), result('path:g2-info-start:infosort')],
   }
   const first = validatePathCompletion(CATALOGS['grade-2'], 2, body)
   const second = validatePathCompletion(CATALOGS['grade-2'], 2, body)
@@ -47,14 +47,14 @@ test('valid completion uses the backend catalog and produces a stable event key'
   if (first.ok && second.ok) {
     assert.equal(first.eventKey, second.eventKey)
     assert.equal(first.sessionStars, 2)
-    assert.equal(first.pathVersion, 1)
+    assert.equal(first.pathVersion, 2)
   }
 })
 
 test('path revision participates in event identity', () => {
   const body = {
     pathId: 'grade-2', pathVersion: 4, pointId: 'g2-info-start',
-    results: [result('path:g2-info-start:theory'), result('path:g2-info-start:infosort')],
+    results: [result('path:g2-info-start:theory', 2), result('path:g2-info-start:infosort')],
   }
   const v4 = catalogFromPoints(2, SEED_MAPS.find(map => map.pathId === 'grade-2')!.points, 4)!
   const v5 = catalogFromPoints(2, SEED_MAPS.find(map => map.pathId === 'grade-2')!.points, 5)!
@@ -94,7 +94,7 @@ for (const sample of [
 }
 
 test('multi-activity point requires the exact activity set and immutable versions', () => {
-  const theory = result('path:g2-ct-algorithms:theory', 1, '2026-07-10T09:58:00.000Z')
+  const theory = result('path:g2-ct-algorithms:theory', 2, '2026-07-10T09:58:00.000Z')
   const sequence = result('path:g2-ct-algorithms:algorithms-sequence', 1, '2026-07-10T10:02:00.000Z')
   const mission = result('path:g2-ct-algorithms:algorithms-mission')
   const valid = validatePathCompletion(CATALOGS['grade-2'], 2, {
@@ -114,7 +114,7 @@ test('multi-activity point requires the exact activity set and immutable version
 })
 
 test('lesson completion records an explicit positive content version', () => {
-  const theory = result('path:g2-info-start:theory')
+  const theory = result('path:g2-info-start:theory', 2)
   const practice = result('path:g2-info-start:infosort')
   assert.equal(validatePathCompletion(CATALOGS['grade-2'], 2, {
     pathId: 'grade-2', pointId: 'g2-info-start', results: [theory, practice],
@@ -127,7 +127,7 @@ test('lesson completion records an explicit positive content version', () => {
 
 test('grade, trust, score shape and client time fail closed', () => {
   // Повний required-набір точки, щоб кожен кейс падав саме через свою мутацію.
-  const theory = result('path:g2-info-start:theory')
+  const theory = result('path:g2-info-start:theory', 2)
   const base = result('path:g2-info-start:infosort')
   assert.equal(validatePathCompletion(CATALOGS['grade-2'], 3, { pathId: 'grade-2', pointId: 'g2-info-start', results: [theory, base] }).ok, false)
   assert.equal(validatePathCompletion(CATALOGS['grade-2'], 2, {
@@ -150,12 +150,12 @@ test('бонусні кроки: приймається підмножина, з
     id: 'bonus-puzzles', version: 2, title: 'Бонус',
     activity: { kind: 'puzzles', count: 2 }, required: false,
   })
-  const catalog = catalogFromPoints(2, points, 1)
+  const catalog = catalogFromPoints(2, points, map.version)
   assert.ok(catalog)
   assert.deepEqual(catalog.points['g2-info-start'].optionalActivities,
     { 'path:g2-info-start:bonus-puzzles': 2 })
 
-  const theory = result('path:g2-info-start:theory')
+  const theory = result('path:g2-info-start:theory', 2)
   const infosort = result('path:g2-info-start:infosort')
   const requiredOnly = validatePathCompletion(catalog, 2, {
     pathId: 'grade-2', pointId: 'g2-info-start', results: [theory, infosort],
@@ -228,6 +228,7 @@ test('0033 path_maps schema is constrained, RLS-protected, seeded and journaled'
   assert.match(sql, /CHECK \(status IN \('draft', 'published'\)\)/)
   assert.match(sql, /CHECK \(path_id ~ '\^grade-\[1-4\]\$'\)/)
   assert.match(sql, /ALTER TABLE public\.path_maps ENABLE ROW LEVEL SECURITY/)
+  assert.match(sql, /INSERT INTO public\.path_maps \(path_id, grade, title, version, points\) VALUES/)
   assert.match(journal, /"tag": "0033_add_path_maps"/)
   // Seed ідемпотентний і містить всі чотири карти з канонічного файлу.
   assert.equal((sql.match(/ON CONFLICT \(path_id\) DO NOTHING/g) ?? []).length, 4)
@@ -259,7 +260,14 @@ test('0035 seeds every canonical published lesson referenced by Grade 2', () => 
   const here = dirname(fileURLToPath(import.meta.url))
   const sql = readFileSync(join(here, '../../drizzle/0035_seed_micro_lessons.sql'), 'utf8')
   const journal = readFileSync(join(here, '../../drizzle/meta/_journal.json'), 'utf8')
-  for (const lessonId of ['info-senses-g2', 'algorithms-order-g2', 'private-info-g2']) {
+  const grade2 = SEED_MAPS.find(map => map.pathId === 'grade-2')!
+  const lessonIds = new Set<string>()
+  for (const point of grade2.points as Array<{ activities?: Array<{ activity?: { kind?: string; lessonId?: string } }> }>) {
+    for (const step of point.activities ?? []) {
+      if (step.activity?.kind === 'lesson' && step.activity.lessonId) lessonIds.add(step.activity.lessonId)
+    }
+  }
+  for (const lessonId of lessonIds) {
     assert.match(sql, new RegExp(`'${lessonId}'`))
   }
   assert.match(sql, /'published'/)
