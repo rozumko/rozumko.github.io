@@ -69,6 +69,9 @@ only the access state needed to provide the service.
 7. Keep the experience touch-friendly for web, PWA and app clients.
 8. Keep all clients on one backend and one set of scoring/access rules.
 
+For mobile learning-loop and gamification decisions, see
+[App Reference: Ethical Mobile Learning Loop For Rozumko](./app-reference.md).
+
 ## Content Direction
 
 Current state (2026-07): the platform pivoted from an olympiad to an educational
