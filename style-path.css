@@ -32,6 +32,8 @@
   text-align: left;
 }
 .path-parent-gate.hidden { display: none; }
+/* Variant on the point-completion screen: sits between card and actions. */
+.path-parent-gate--done { margin: var(--sp-4) auto; }
 .path-parent-gate__icon { font-size: 2.4rem; }
 .path-parent-gate h2 { margin: 0 0 4px; font-size: 1.2rem; }
 .path-parent-gate p { margin: 0 0 var(--sp-3); color: var(--clr-text-muted); line-height: 1.45; }

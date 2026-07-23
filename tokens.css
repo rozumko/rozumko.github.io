@@ -23,6 +23,8 @@
   /* ── Статуси ────────────────────────────────────────────────── */
   --clr-success:        #22c55e;
   --clr-danger:         #ef4444;
+  --clr-danger-light:   #fee2e2;   /* red-100 — фон wrong-стану відповіді в іграх */
+  --clr-danger-soft:    #fecaca;   /* red-200 — спалах кошика при помилці (сортування) */
   --clr-warning:        #f59e0b;
   --clr-warning-light:  #fef3c7;
   --clr-warning-text:   #78350f;
@@ -60,6 +62,7 @@
   --sp-4:   1rem;      /* 16px */
   --sp-5:   1.25rem;   /* 20px */
   --sp-6:   1.5rem;    /* 24px */
+  --sp-7:   1.75rem;   /* 28px — used by btn-next, school-wait-card */
   --sp-8:   2rem;      /* 32px */
   --sp-10:  2.5rem;    /* 40px */
   --sp-12:  3rem;      /* 48px */

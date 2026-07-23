@@ -12,6 +12,8 @@ import {
   practiceFilterPlan,
   type DemoAttemptEvent, type HomeDemoTrack, type ScoredDemoItem,
 } from './home-validation.js'
+import { sendEmail } from '../lib/email.js'
+import { buildDemoReportEmail } from '../lib/report-email.js'
 
 // Home Mode, зріз 1: parent lead + consent → приймання сирих подій демо-місії →
 // СЕРВЕРНИЙ скоринг → батьківський звіт. Контракт: docs/home-demo-contract.md.
@@ -260,11 +262,11 @@ export async function homeRoutes(app: FastifyInstance) {
     }
 
     // Consent-gate: без збереженого ліда (= згоди) нічого не пишемо.
-    const [lead] = await db.select({ id: homeLeads.id }).from(homeLeads)
+    const [lead] = await db.select({ id: homeLeads.id, parentEmail: homeLeads.parentEmail }).from(homeLeads)
       .where(eq(homeLeads.id, req.params.id)).limit(1)
     if (!lead) return reply.code(404).send({ error: 'Лід не знайдено' })
 
-    const [profile] = await db.select({ id: homeChildProfiles.id }).from(homeChildProfiles)
+    const [profile] = await db.select({ id: homeChildProfiles.id, displayName: homeChildProfiles.displayName }).from(homeChildProfiles)
       .where(eq(homeChildProfiles.leadId, lead.id)).limit(1)
     if (!profile) return reply.code(404).send({ error: 'Профіль дитини не знайдено' })
 
@@ -318,7 +320,15 @@ export async function homeRoutes(app: FastifyInstance) {
     // Гонка двох одночасних подач: UNIQUE переміг інший запит → його звіт уже є/буде.
     if (!attempt) return reply.code(409).send({ error: 'Звіт для цієї місії вже формується' })
 
-    return reply.code(201).send({ report })
+    // Повний аналіз їде батькові на пошту (Resend). Awaited, щоб чесно віддати
+    // emailSent: фронт показує розгорнутий звіт на сторінці лише як fallback.
+    const letter = buildDemoReportEmail(report, {
+      childName: profile.displayName,
+      grade: req.body.grade,
+    })
+    const emailSent = await sendEmail({ to: lead.parentEmail, ...letter }, req.log)
+
+    return reply.code(201).send({ report, emailSent })
   })
 
   // ── Батько: перечитати збережений звіт ────────────────────────────────────

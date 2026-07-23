@@ -42,7 +42,7 @@ export function mountSortingGame(root: HTMLElement, levels: SortingLevel[], opts
         </div>
       </div>
       <div class="sg__item-wrap"><div class="sg__item" aria-live="polite"><span class="sg__item-emoji" aria-hidden="true"></span><span class="sg__item-label sr-only"></span></div></div>
-      <p class="sg__hint">Куди належить цей предмет? Натисни кошик!</p>
+      <p class="sg__hint" aria-live="polite">Куди належить цей предмет? Натисни кошик!</p>
       <div class="sg__bins" role="group" aria-label="Кошики для сортування"></div>
       <div class="sg__done hidden">
         <p class="sg__done-emoji">🏆</p>
@@ -110,6 +110,7 @@ export function mountSortingGame(root: HTMLElement, levels: SortingLevel[], opts
     const level = levels[levelIdx]
     queue = shuffle(level.items.map(i => ({ emoji: i.emoji, bin: i.bin, label: i.label })))
     el.instruction.textContent = level.instruction
+    setHintWrong(false)
     el.bins.innerHTML = ''
     level.bins.forEach((bin, i) => {
       const btn = document.createElement('button')
@@ -130,6 +131,14 @@ export function mountSortingGame(root: HTMLElement, levels: SortingLevel[], opts
     el.item.classList.add('sg__item--pop')
   }
 
+  const HINT_DEFAULT = 'Куди належить цей предмет? Натисни кошик!'
+  const HINT_WRONG = 'Ой, не туди! Подумай і спробуй ще раз 🙈'
+
+  function setHintWrong(wrong: boolean) {
+    el.hint.textContent = wrong ? HINT_WRONG : HINT_DEFAULT
+    el.hint.classList.toggle('sg__hint--wrong', wrong)
+  }
+
   function place(binId: string, btn: HTMLButtonElement) {
     if (locked || !queue.length) return
     const current = queue[0]
@@ -138,22 +147,26 @@ export function mountSortingGame(root: HTMLElement, levels: SortingLevel[], opts
       streak++
       bestStreak = Math.max(bestStreak, streak)
       renderStreak()
+      setHintWrong(false)
       btn.classList.add('sg__bin--correct')
       setTimeout(() => btn.classList.remove('sg__bin--correct'), 350)
       if (!queue.length) return nextLevel()
       showItem()
     } else {
+      // Wrong pick: shake + red flash on the bin AND a clear text cue, so the
+      // child never reads silence as "the site is stuck".
       mistakes++
       streak = 0
       renderStreak()
       locked = true
+      setHintWrong(true)
       el.item.classList.add('sg__item--shake')
       btn.classList.add('sg__bin--wrong')
       setTimeout(() => {
         el.item.classList.remove('sg__item--shake')
         btn.classList.remove('sg__bin--wrong')
         locked = false
-      }, 450)
+      }, 700)
     }
   }
 

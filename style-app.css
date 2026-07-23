@@ -922,7 +922,16 @@
 .info-card a:hover { text-decoration: underline; }
 .demo-report__summary { font-weight: 700; }
 .demo-report__heading { margin-top: var(--sp-3); font-weight: 700; }
-.demo-report__next { margin-top: var(--sp-3); }
+.demo-report__next { margin-top: var(--sp-3); font-weight: 700; color: var(--clr-text); }
+/* home.html не тягне style-docs.css, тож у звіту власний список (не doc-list) */
+.demo-report__list {
+  list-style: disc;
+  margin: var(--sp-1) 0 0;
+  padding-left: 1.4rem;
+  display: grid;
+  gap: var(--sp-1);
+}
+.demo-report__muted { margin-top: var(--sp-2); font-size: var(--font-size-sm); color: var(--clr-text-faint); }
 
 /* Дитячий фінал місії */
 .finish-card {
@@ -1029,6 +1038,11 @@
   max-width: 34rem;
   margin: 0 auto;
   text-align: center;
+  /* Карткова обгортка — як у решти ігор (спільний каркас нижче) */
+  background: var(--clr-surface);
+  border: 2px solid var(--clr-border-light);
+  border-radius: 20px;
+  padding: clamp(var(--sp-4), 3vw, var(--sp-6));
 }
 .sg__top {
   display: flex;
@@ -1094,17 +1108,25 @@
 }
 .sg__bin:hover { transform: translateY(-2px); }
 .sg__bin--0 { background: #dcfce7; color: var(--fb-ok-soft); border-color: #86efac; }
-.sg__bin--1 { background: #fee2e2; color: var(--fb-err-soft); border-color: #fca5a5; }
+.sg__bin--1 { background: var(--clr-danger-light); color: var(--fb-err-soft); border-color: #fca5a5; }
 .sg__bin--2 { background: #e0f2fe; color: #0369a1; border-color: #7dd3fc; }
 .sg__bin--correct { transform: scale(1.08); border-style: solid; }
-.sg__bin--wrong   { animation: sg-shake 0.4s ease; }
-.sg__done { padding: var(--sp-6) 0; }
-.sg__done-emoji { font-size: 4rem; margin-bottom: var(--sp-2); }
-.sg__done-title {
-  font-size: var(--font-size-xl);
-  font-weight: 800;
-  margin-bottom: var(--sp-2);
+/* Wrong pick: red flash beats the bin's own pastel so the error is unmissable.
+   Color cue stays even under prefers-reduced-motion (only the shake goes). */
+.sg__bin.sg__bin--wrong {
+  animation: sg-shake 0.4s ease;
+  border-style: solid;
+  border-color: var(--clr-danger);
+  background: var(--clr-danger-soft);
+  color: var(--fb-err-soft);
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, .25);
 }
+@media (prefers-reduced-motion: reduce) {
+  .sg__item--shake, .sg__bin.sg__bin--wrong { animation: none; }
+}
+.sg__hint--wrong { color: var(--fb-err-soft); font-weight: 800; }
+/* .sg__done / -title / -stars — у спільному фінальному блоці ігор нижче */
+.sg__done-emoji { font-size: 4rem; margin-bottom: var(--sp-2); }
 .sg__done-sub {
   color: var(--clr-text-muted);
   margin-bottom: var(--sp-5);
@@ -1135,18 +1157,11 @@
 .sg__streak--bump { animation: sg-pop 0.25s ease; }
 .sg__bin--3 { background: #f3e8ff; color: #7e22ce; border-color: #d8b4fe; }
 .sg__bin--4 { background: #fef9c3; color: #a16207; border-color: #fde047; }
-.sg__done-stars {
-  font-size: 2.5rem;
-  letter-spacing: 0.25rem;
-  margin-bottom: var(--sp-2);
-}
 
 /* ── Логічні головоломки (features/games/puzzle-*) — один екран ───────────── */
 .pz { max-width: 40rem; margin: 0 auto; display: flex; flex-direction: column; gap: var(--sp-4); }
 .pz__top { display: flex; align-items: center; gap: var(--sp-3); }
-.pz__progress { font-weight: 800; color: var(--clr-text-muted); font-size: var(--font-size-sm); white-space: nowrap; }
-.pz__bar { flex: 1; height: 10px; background: #e2e8f0; border-radius: 6px; overflow: hidden; }
-.pz__bar-fill { height: 100%; background: #3b82f6; border-radius: 6px; transition: width .25s ease; }
+/* .pz__progress / __bar / __bar-fill — у спільному каркасі ігор нижче */
 
 .pz-card {
   background: var(--clr-surface, #fff);
@@ -1163,19 +1178,19 @@
 }
 .pz-card__instruction { color: var(--clr-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--sp-5); }
 .pz-card__body { display: flex; flex-direction: column; gap: var(--sp-2); align-items: center; }
-.pz-card__answer { margin-top: var(--sp-5); padding-top: var(--sp-4); border-top: 1px dashed #e2e8f0; }
+.pz-card__answer { margin-top: var(--sp-5); padding-top: var(--sp-4); border-top: 1px dashed var(--clr-border); }
 
 .pz-line { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--sp-2); }
 .pz-tok--val {
   min-width: 2.8rem; text-align: center; font-size: var(--font-size-2xl, 1.5rem); font-weight: 800;
-  background: #eff6ff; color: #1d4ed8; border-radius: var(--r-lg, .75rem); padding: var(--sp-2) var(--sp-3);
+  background: var(--clr-surface-muted); color: var(--clr-brand-dark); border-radius: var(--r-lg, .75rem); padding: var(--sp-2) var(--sp-3);
 }
 .pz-tok--op { font-size: var(--font-size-2xl, 1.5rem); font-weight: 800; color: var(--clr-text-muted); }
 .pz-input {
   width: 3.6rem; height: 3.2rem; text-align: center; font-size: var(--font-size-2xl, 1.5rem); font-weight: 800;
   border: 3px dashed #93c5fd; border-radius: var(--r-lg, .75rem); background: #f8fafc; color: var(--clr-text);
 }
-.pz-input:focus { outline: none; border-style: solid; border-color: #3b82f6; }
+.pz-input:focus { outline: none; border-style: solid; border-color: var(--clr-brand); }
 
 /* inline «?» слот — заповнюється варіантом із ряду під рівнянням */
 .pz-slot {
@@ -1183,35 +1198,30 @@
   font-size: var(--font-size-2xl, 1.5rem); font-weight: 800; border: 3px dashed #93c5fd;
   border-radius: var(--r-lg, .75rem); background: #f8fafc; color: var(--clr-text);
 }
-.pz-slot--set { border-style: solid; border-color: #3b82f6; background: #dbeafe; }
+.pz-slot--set { border-style: solid; border-color: var(--clr-brand); background: var(--clr-sky-light); }
 
 .pz-opts { display: flex; flex-wrap: wrap; gap: var(--sp-3); justify-content: center; }
 .pz-opt {
   min-width: 3.2rem; padding: var(--sp-3) var(--sp-4); font-size: var(--font-size-xl); font-weight: 800;
   border-radius: var(--r-lg, .75rem); border: 2px solid #cbd5e1; background: #fff; cursor: pointer;
 }
-.pz-opt--on { background: #dbeafe; border-color: #3b82f6; }
+.pz-opt--on { background: var(--clr-sky-light); border-color: var(--clr-brand); }
 
 .pz-grid { display: grid; grid-template-columns: repeat(var(--pz-size), 1fr); gap: var(--sp-2); max-width: 20rem; margin: 0 auto; }
 .pz-cell {
   aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-  background: #eff6ff; border-radius: var(--r-lg, .75rem); font-size: var(--font-size-2xl, 1.5rem); font-weight: 800; color: #1d4ed8;
+  background: var(--clr-surface-muted); border-radius: var(--r-lg, .75rem); font-size: var(--font-size-2xl, 1.5rem); font-weight: 800; color: var(--clr-brand-dark);
 }
 .pz-cell .pz-input { width: 90%; height: 82%; }
 .pz-cycle {
   width: 90%; height: 82%; font-size: var(--font-size-2xl, 1.5rem); font-weight: 800;
   border: 3px dashed #93c5fd; border-radius: var(--r-lg, .75rem); background: #f8fafc; cursor: pointer;
 }
-.pz-cycle--set { border-style: solid; border-color: #3b82f6; background: #dbeafe; }
+.pz-cycle--set { border-style: solid; border-color: var(--clr-brand); background: var(--clr-sky-light); }
 
-.pz__feedback { text-align: center; font-weight: 700; min-height: 1.4em; margin: 0; }
-.pz__feedback--ok  { color: var(--fb-ok-soft); }
-.pz__feedback--bad { color: var(--fb-err-soft); }
+/* .pz__feedback (типографіка) / .pz-done — у спільному каркасі ігор нижче */
+.pz__feedback { text-align: center; }
 .pz__actions { display: flex; gap: var(--sp-3); justify-content: center; flex-wrap: wrap; }
-
-.pz-done { text-align: center; padding: var(--sp-6) 0; }
-.pz-done__stars { font-size: 2.75rem; letter-spacing: .25rem; margin-bottom: var(--sp-2); }
-.pz-done__title { font-size: var(--font-size-xl); font-weight: 800; margin-bottom: var(--sp-5); }
 
 /* Один екран: головоломки як fixed-оверлей (як mission-active) */
 body.puzzle-active { overflow: hidden; }
@@ -1270,54 +1280,113 @@ body.puzzle-active #puzzle-area .app-actions { margin: 0; width: 100%; }
   .home-path-hero__copy { justify-items: center; }
 }
 
-/* ── Гра «Факт чи думка?» (features/games/fact-opinion-game.ts) ──────────── */
-.fo { display: flex; flex-direction: column; gap: var(--sp-4); max-width: 40rem; margin: 0 auto; }
-.fo__top { display: flex; align-items: center; gap: var(--sp-3); }
-.fo__progress { font-weight: 800; color: var(--clr-text-faint); min-width: 3.5rem; }
-.fo__bar { flex: 1; height: 8px; background: var(--clr-surface-muted); border-radius: 999px; overflow: hidden; }
-.fo__bar-fill { height: 100%; width: 0; background: var(--clr-primary); border-radius: 999px; transition: width .3s ease; }
-
-.fo-card {
+/* ── Ігри: спільний каркас ────────────────────────────────────────────────
+   Один спек для всіх рушіїв: fo (факт/думка), ct (клік-тренер), sq (кроки),
+   sc (сценарії), sim (симулятор), lsn (урок), pz (головоломки), sg
+   (сортування — done-блок). Контейнер, прогрес-бар, картка, стани
+   right/wrong, фідбек і фінальний екран. Нижче — лише специфіка ігор. */
+.fo, .ct, .sq, .sc, .sim, .lsn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  max-width: 40rem;
+  margin: 0 auto;
+}
+.fo__top, .ct__top, .sq__top, .sc__top, .lsn__top { display: flex; align-items: center; gap: var(--sp-3); }
+.fo__progress, .ct__progress, .sq__progress, .sc__progress, .lsn__progress, .pz__progress {
+  font-weight: 800;
+  color: var(--clr-text-faint);
+  min-width: 3.5rem;
+  white-space: nowrap;
+}
+.fo__bar, .ct__bar, .sq__bar, .sc__bar, .pz__bar {
+  flex: 1;
+  height: 8px;
+  background: var(--clr-surface-muted);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.fo__bar-fill, .ct__bar-fill, .sq__bar-fill, .sc__bar-fill, .pz__bar-fill {
+  height: 100%;
+  width: 0;
+  background: var(--clr-primary);
+  border-radius: 999px;
+  transition: width .3s ease;
+}
+.fo-card, .ct-card, .sq-card, .sc-card, .sim-card, .lsn-card {
   background: var(--clr-surface);
   border: 2px solid var(--clr-border-light);
   border-radius: 20px;
   padding: clamp(var(--sp-4), 3vw, var(--sp-6));
-  text-align: center;
 }
+.fo-card, .ct-card, .sim-card { text-align: center; }
+/* Кнопки-відповіді: єдина база + однакові стани right/wrong */
+.fo-answer, .ct-option, .sc-answer, .lsn-answer, .sim-choice, .sq-step {
+  font: inherit;
+  font-weight: 700;
+  border: 2px solid var(--clr-border);
+  background: var(--clr-surface);
+  cursor: pointer;
+  transition: transform .12s ease, border-color .12s ease;
+}
+.sc-answer, .lsn-answer, .sim-choice {
+  text-align: left;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: 14px;
+}
+.sc-answer:hover:not(:disabled), .lsn-answer:hover:not(:disabled), .sim-choice:hover, .sq-step:hover,
+.sc-answer:focus-visible, .lsn-answer:focus-visible, .sim-choice:focus-visible, .sq-step:focus-visible {
+  border-color: var(--clr-primary);
+  transform: translateY(-1px);
+}
+.fo-answer:disabled, .ct-option:disabled, .sc-answer:disabled, .lsn-answer:disabled { cursor: default; opacity: .75; }
+.fo-answer--right:disabled, .ct-option--right:disabled, .sc-answer--right:disabled, .lsn-answer--right:disabled {
+  opacity: 1; background: var(--clr-emerald-light); border-color: var(--clr-emerald);
+}
+.fo-answer--wrong:disabled, .ct-option--wrong:disabled, .sc-answer--wrong:disabled, .lsn-answer--wrong:disabled {
+  opacity: 1; background: var(--clr-danger-light); border-color: var(--clr-danger);
+}
+.fo__feedback, .ct__feedback, .sq__feedback, .sc__feedback, .lsn__feedback, .pz__feedback {
+  font-weight: 800;
+  min-height: 1.4em;
+  margin: 0;
+}
+.fo__feedback--ok, .ct__feedback--ok, .sq__feedback--ok, .sc__feedback--ok, .lsn__feedback--ok, .pz__feedback--ok { color: var(--clr-emerald-dark); }
+.fo__feedback--bad, .ct__feedback--bad, .sq__feedback--bad, .sc__feedback--bad, .lsn__feedback--bad, .pz__feedback--bad { color: var(--clr-danger); }
+.fo__next, .ct__next, .sq__next, .sq__retry, .sc__next, .lsn__next { margin-top: var(--sp-3); }
+/* Фінал гри: однакові зірки й заголовок у всіх рушіїв */
+.sg__done, .pz-done, .fo-done, .ct-done, .sq-done, .sc-done { text-align: center; padding: var(--sp-6) 0; }
+.sg__done-stars, .pz-done__stars, .fo-done__stars, .ct-done__stars, .sq-done__stars, .sc-done__stars {
+  font-size: 2.5rem;
+  letter-spacing: .25rem;
+  margin: 0 0 var(--sp-2);
+}
+.sg__done-title, .pz-done__title, .fo-done__title, .ct-done__title, .sq-done__title, .sc-done__title {
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  margin: 0 0 var(--sp-2);
+}
+
+/* ── Гра «Факт чи думка?» (features/games/fact-opinion-game.ts) ──────────── */
 .fo-card__text { font-size: clamp(1.1rem, 2.6vw, 1.4rem); font-weight: 800; margin: 0 0 var(--sp-3); }
 .fo-card__hint { color: var(--clr-text-faint); margin: 0 0 var(--sp-4); }
 .fo-card__answers { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-3); }
 
 .fo-answer {
-  font: inherit; font-weight: 800; font-size: 1.05rem;
+  font-weight: 800; font-size: 1.05rem;
   padding: var(--sp-3) var(--sp-5);
   border-radius: 16px;
-  border: 3px solid var(--clr-border);
-  background: var(--clr-surface);
-  cursor: pointer;
-  transition: transform .12s ease, border-color .12s ease;
+  border-width: 3px;
 }
 .fo-answer:hover:not(:disabled), .fo-answer:focus-visible { transform: translateY(-2px); }
 .fo-answer--fact    { border-color: var(--clr-emerald); }
 .fo-answer--opinion { border-color: var(--clr-sky); }
 .fo-answer--myth    { border-color: var(--track-ai); }
-.fo-answer:disabled { cursor: default; opacity: .75; }
-.fo-answer--right:disabled { opacity: 1; background: var(--clr-emerald-light); border-color: var(--clr-emerald); }
-.fo-answer--wrong:disabled { opacity: 1; background: #fee2e2; border-color: var(--clr-danger); }
 
-.fo__feedback { font-weight: 800; min-height: 1.4em; margin: 0; }
-.fo__feedback--ok  { color: var(--clr-emerald-dark); }
-.fo__feedback--bad { color: var(--clr-danger); }
 .fo__explanation { margin: var(--sp-2) 0 0; color: var(--clr-text-muted); }
 .fo__source { margin: var(--sp-2) 0 0; font-size: .92rem; color: var(--clr-text-faint); }
-.fo__next { margin-top: var(--sp-3); }
-
-.fo-done { text-align: center; padding: var(--sp-6) 0; }
-.fo-done__stars { font-size: 2rem; margin: 0 0 var(--sp-2); }
-.fo-done__title { font-weight: 800; font-size: 1.2rem; margin: 0 0 var(--sp-4); }
 
 /* ── Симулятори (features/games/simulator-engine.ts) ─────────────────────── */
-.sim { display: flex; flex-direction: column; gap: var(--sp-4); max-width: 40rem; margin: 0 auto; }
 .sim__statuses { display: flex; flex-wrap: wrap; gap: var(--sp-2); justify-content: center; }
 .sim-status {
   font-size: .82rem; font-weight: 700;
@@ -1326,15 +1395,8 @@ body.puzzle-active #puzzle-area .app-actions { margin: 0; width: 100%; }
   border: 1px solid var(--clr-border-light);
 }
 .sim-status--on { background: var(--clr-emerald-light); color: var(--clr-emerald-dark); border-color: var(--clr-emerald); }
-.sim-status--danger { background: #fee2e2; color: #b91c1c; border-color: var(--clr-danger); }
+.sim-status--danger { background: var(--clr-danger-light); color: var(--fb-err-soft); border-color: var(--clr-danger); }
 
-.sim-card {
-  background: var(--clr-surface);
-  border: 2px solid var(--clr-border-light);
-  border-radius: 20px;
-  padding: clamp(var(--sp-4), 3vw, var(--sp-6));
-  text-align: center;
-}
 .sim-card__icon { font-size: 2.6rem; line-height: 1; margin-bottom: var(--sp-3); }
 .sim-card__text { font-size: 1.05rem; font-weight: 600; margin: 0; white-space: pre-line; text-align: left; }
 .sim-card__info {
@@ -1346,69 +1408,25 @@ body.puzzle-active #puzzle-area .app-actions { margin: 0; width: 100%; }
 }
 
 .sim__choices { display: flex; flex-direction: column; gap: var(--sp-2); }
-.sim-choice {
-  font: inherit; font-weight: 700; text-align: left;
-  padding: var(--sp-3) var(--sp-4);
-  border-radius: 14px;
-  border: 2px solid var(--clr-border);
-  background: var(--clr-surface);
-  cursor: pointer;
-  transition: transform .12s ease, border-color .12s ease;
-}
-.sim-choice:hover, .sim-choice:focus-visible { border-color: var(--clr-primary); transform: translateY(-1px); }
 
-/* ── Гра «Впорядкуй кроки» (features/games/sequence-game.ts) ─────────────── */
-.ct { display: flex; flex-direction: column; gap: var(--sp-4); max-width: 40rem; margin: 0 auto; }
-.ct__top { display: flex; align-items: center; gap: var(--sp-3); }
-.ct__progress { font-weight: 800; color: var(--clr-text-faint); min-width: 3.5rem; }
-.ct__bar { flex: 1; height: 8px; background: var(--clr-surface-muted); border-radius: 999px; overflow: hidden; }
-.ct__bar-fill { height: 100%; width: 0; background: var(--clr-primary); border-radius: 999px; transition: width .3s ease; }
-.ct-card {
-  background: var(--clr-surface);
-  border-radius: var(--radius-lg);
-  padding: var(--sp-5);
-  box-shadow: var(--shadow-sm);
-  text-align: center;
-}
+/* ── Клік-тренер (features/games/click-trainer.ts) ───────────────────────── */
 .ct-card__lead { font-size: clamp(1.05rem, 2.5vw, 1.3rem); font-weight: 800; margin: 0 0 var(--sp-3); }
 .ct-card__target {
   display: inline-flex; align-items: center; gap: var(--sp-2);
   padding: var(--sp-2) var(--sp-4); margin: 0 0 var(--sp-4);
-  border: 2px dashed var(--clr-primary); border-radius: var(--radius-lg);
+  border: 2px dashed var(--clr-primary); border-radius: var(--r-lg);
 }
 .ct-card__target-emoji { font-size: 1.6rem; }
 .ct-card__options { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: var(--sp-3); }
 .ct-option {
   display: flex; flex-direction: column; align-items: center; gap: var(--sp-1);
-  padding: var(--sp-3); font: inherit; font-weight: 700; cursor: pointer;
-  background: var(--clr-surface); border: 2px solid var(--clr-surface-muted);
-  border-radius: var(--radius-lg); transition: transform .12s ease;
+  padding: var(--sp-3);
+  border-radius: var(--r-lg);
 }
 .ct-option:hover:not(:disabled), .ct-option:focus-visible { transform: translateY(-2px); border-color: var(--clr-primary); }
-.ct-option:disabled { cursor: default; opacity: .75; }
 .ct-option__emoji { font-size: 2rem; }
-.ct-option--right:disabled { opacity: 1; background: var(--clr-emerald-light); border-color: var(--clr-emerald); }
-.ct-option--wrong:disabled { opacity: 1; background: #fee2e2; border-color: var(--clr-danger); }
-.ct__feedback { font-weight: 800; min-height: 1.4em; margin: 0; }
-.ct__feedback--ok  { color: var(--clr-emerald-dark); }
-.ct__feedback--bad { color: var(--clr-danger); }
-.ct__next { margin-top: var(--sp-3); }
-.ct-done { text-align: center; padding: var(--sp-6) 0; }
-.ct-done__stars { font-size: 2rem; margin: 0 0 var(--sp-2); }
-.ct-done__title { font-weight: 800; font-size: 1.2rem; margin: 0; }
 
-.sq { display: flex; flex-direction: column; gap: var(--sp-4); max-width: 40rem; margin: 0 auto; }
-.sq__top { display: flex; align-items: center; gap: var(--sp-3); }
-.sq__progress { font-weight: 800; color: var(--clr-text-faint); min-width: 3.5rem; }
-.sq__bar { flex: 1; height: 8px; background: var(--clr-surface-muted); border-radius: 999px; overflow: hidden; }
-.sq__bar-fill { height: 100%; width: 0; background: var(--clr-primary); border-radius: 999px; transition: width .3s ease; }
-
-.sq-card {
-  background: var(--clr-surface);
-  border: 2px solid var(--clr-border-light);
-  border-radius: 20px;
-  padding: clamp(var(--sp-4), 3vw, var(--sp-6));
-}
+/* ── Гра «Впорядкуй кроки» (features/games/sequence-game.ts) ─────────────── */
 .sq-card__title { font-size: clamp(1.05rem, 2.5vw, 1.3rem); font-weight: 800; margin: 0 0 var(--sp-1); }
 .sq-card__hint { color: var(--clr-text-faint); margin: 0 0 var(--sp-3); }
 
@@ -1425,7 +1443,7 @@ body.puzzle-active #puzzle-area .app-actions { margin: 0; width: 100%; }
 .sq-slot::before { content: counter(sq-slot) "."; font-weight: 800; color: var(--clr-text-faint); }
 .sq-slot--filled { border-style: solid; color: inherit; }
 .sq-slot--right { border-color: var(--clr-emerald); background: var(--clr-emerald-light); }
-.sq-slot--wrong { border-color: var(--clr-danger); background: #fee2e2; }
+.sq-slot--wrong { border-color: var(--clr-danger); background: var(--clr-danger-light); }
 .sq-slot__step {
   font: inherit; font-weight: 700; text-align: left;
   background: none; border: none; cursor: pointer; padding: 4px 0;
@@ -1435,84 +1453,26 @@ body.puzzle-active #puzzle-area .app-actions { margin: 0; width: 100%; }
 
 .sq-card__pool { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 .sq-step {
-  font: inherit; font-weight: 700;
   padding: var(--sp-2) var(--sp-3);
   border-radius: 12px;
-  border: 2px solid var(--clr-border);
-  background: var(--clr-surface);
-  cursor: pointer;
-  transition: transform .12s ease, border-color .12s ease;
 }
-.sq-step:hover, .sq-step:focus-visible { border-color: var(--clr-primary); transform: translateY(-1px); }
-
-.sq__feedback { font-weight: 800; min-height: 1.4em; margin: 0; }
-.sq__feedback--ok  { color: var(--clr-emerald-dark); }
-.sq__feedback--bad { color: var(--clr-danger); }
-.sq__next, .sq__retry { margin-top: var(--sp-3); }
-
-.sq-done { text-align: center; padding: var(--sp-6) 0; }
-.sq-done__stars { font-size: 2rem; margin: 0 0 var(--sp-2); }
-.sq-done__title { font-weight: 800; font-size: 1.2rem; margin: 0; }
 
 /* ── Гра «Як вчинити?» (features/games/scenarios-game.ts) ────────────────── */
-.sc { display: flex; flex-direction: column; gap: var(--sp-4); max-width: 40rem; margin: 0 auto; }
-.sc__top { display: flex; align-items: center; gap: var(--sp-3); }
-.sc__progress { font-weight: 800; color: var(--clr-text-faint); min-width: 3.5rem; }
-.sc__bar { flex: 1; height: 8px; background: var(--clr-surface-muted); border-radius: 999px; overflow: hidden; }
-.sc__bar-fill { height: 100%; width: 0; background: var(--clr-primary); border-radius: 999px; transition: width .3s ease; }
-
-.sc-card {
-  background: var(--clr-surface);
-  border: 2px solid var(--clr-border-light);
-  border-radius: 20px;
-  padding: clamp(var(--sp-4), 3vw, var(--sp-6));
-}
 .sc-card__emoji { font-size: 2.2rem; line-height: 1; margin: 0 0 var(--sp-2); text-align: center; }
 .sc-card__text { font-size: clamp(1.05rem, 2.5vw, 1.3rem); font-weight: 800; margin: 0 0 var(--sp-2); }
 .sc-card__hint { color: var(--clr-text-faint); margin: 0 0 var(--sp-4); }
 .sc-card__answers { display: flex; flex-direction: column; gap: var(--sp-2); }
-.sc-answer {
-  font: inherit; font-weight: 700; text-align: left;
-  padding: var(--sp-3) var(--sp-4);
-  border-radius: 14px;
-  border: 2px solid var(--clr-border);
-  background: var(--clr-surface);
-  cursor: pointer;
-  transition: transform .12s ease, border-color .12s ease;
-}
-.sc-answer:hover:not(:disabled), .sc-answer:focus-visible { border-color: var(--clr-primary); transform: translateY(-1px); }
-.sc-answer:disabled { cursor: default; opacity: .75; }
-.sc-answer--right:disabled { opacity: 1; background: var(--clr-emerald-light); border-color: var(--clr-emerald); }
-.sc-answer--wrong:disabled { opacity: 1; background: #fee2e2; border-color: var(--clr-danger); }
-
-.sc__feedback { font-weight: 800; min-height: 1.4em; margin: 0; }
-.sc__feedback--ok  { color: var(--clr-emerald-dark); }
-.sc__feedback--bad { color: var(--clr-danger); }
-.sc__next { margin-top: var(--sp-3); }
-
-.sc-done { text-align: center; padding: var(--sp-6) 0; }
-.sc-done__stars { font-size: 2rem; margin: 0 0 var(--sp-2); }
-.sc-done__title { font-weight: 800; font-size: 1.2rem; margin: 0; }
 
 /* ── Мікро-урок (features/lessons/lesson-runner.ts) ──────────────────────── */
-.lsn { display: flex; flex-direction: column; gap: var(--sp-4); max-width: 40rem; margin: 0 auto; }
-.lsn__top { display: flex; align-items: center; gap: var(--sp-3); }
 .lsn__badge {
   font-size: .82rem; font-weight: 700;
   padding: 4px 10px; border-radius: 999px;
   background: var(--clr-surface-muted); color: var(--clr-text-faint);
   border: 1px solid var(--clr-border-light);
 }
-.lsn__progress { font-weight: 800; color: var(--clr-text-faint); }
 .lsn__skip { margin-left: auto; }
 .lsn__title { font-size: clamp(1.1rem, 2.6vw, 1.35rem); font-weight: 800; margin: 0; }
 
-.lsn-card {
-  background: var(--clr-surface);
-  border: 2px solid var(--clr-border-light);
-  border-radius: 20px;
-  padding: clamp(var(--sp-4), 3vw, var(--sp-6));
-}
 .lsn-card__title { font-size: 1.1rem; font-weight: 800; margin: 0 0 var(--sp-3); }
 .lsn-card__image {
   display: block; margin: 0 auto var(--sp-3);
@@ -1522,19 +1482,6 @@ body.puzzle-active #puzzle-area .app-actions { margin: 0; width: 100%; }
 .lsn-card__hint { color: var(--clr-text-faint); font-weight: 700; margin: 0 0 var(--sp-3); }
 
 .lsn-check__answers { display: flex; flex-direction: column; gap: var(--sp-2); margin-top: var(--sp-4); }
-.lsn-answer {
-  font: inherit; font-weight: 700; text-align: left;
-  padding: var(--sp-3) var(--sp-4);
-  border-radius: 14px;
-  border: 2px solid var(--clr-border);
-  background: var(--clr-surface);
-  cursor: pointer;
-  transition: transform .12s ease, border-color .12s ease;
-}
-.lsn-answer:hover:not(:disabled), .lsn-answer:focus-visible { border-color: var(--clr-primary); transform: translateY(-1px); }
-.lsn-answer:disabled { cursor: default; opacity: .75; }
-.lsn-answer--right:disabled { opacity: 1; background: var(--clr-emerald-light); border-color: var(--clr-emerald); }
-.lsn-answer--wrong:disabled { opacity: 1; background: #fee2e2; border-color: var(--clr-danger); }
 
 .lsn-video { display: flex; justify-content: center; }
 .lsn-video__player {
@@ -1543,11 +1490,7 @@ body.puzzle-active #puzzle-area .app-actions { margin: 0; width: 100%; }
   aspect-ratio: 9 / 16; object-fit: contain;
 }
 
-.lsn__feedback { font-weight: 800; min-height: 1.4em; margin: 0; }
-.lsn__feedback--ok  { color: var(--clr-emerald-dark); }
-.lsn__feedback--bad { color: var(--clr-danger); }
 .lsn__explanation { margin: var(--sp-2) 0 0; color: var(--clr-text-muted); }
-.lsn__next { margin-top: var(--sp-3); }
 
 body.path-activity-active #path-lesson-root:not(.hidden) {
   flex: 1;

@@ -373,7 +373,7 @@ export async function submitHomeDemoReport(
   leadId: string,
   leadToken: string,
   payload: HomeDemoAttemptPayload,
-): Promise<{ report: HomeDemoReport }> {
+): Promise<{ report: HomeDemoReport; emailSent?: boolean }> {
   return request(`/api/home/leads/${leadId}/demo-report`, {
     method: 'POST',
     headers: { 'X-Lead-Token': leadToken },

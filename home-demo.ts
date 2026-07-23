@@ -323,7 +323,7 @@ async function unlockReport() {
       { grade: selectedGrade as 1 | 2 | 3 | 4, ...(displayName ? { displayName } : {}) },
     )
     lead = { id: created.leadId, token: created.leadToken }
-    const { report } = await submitHomeDemoReport(lead.id, lead.token, {
+    const { report, emailSent } = await submitHomeDemoReport(lead.id, lead.token, {
       missionId:      `demo-${currentTrack.track}-grade${selectedGrade}`,
       missionVersion: MISSION_VERSION,
       track:          currentTrack.track,
@@ -332,7 +332,10 @@ async function unlockReport() {
       finishedAt:     new Date().toISOString(),
       events,
     })
-    renderReport(report)
+    // Full analysis travels by email; the page shows a short confirmation.
+    // If the letter didn't go out, fall back to the full inline report.
+    if (emailSent) renderReportSentConfirmation(report, email)
+    else renderReport(report)
     hide($('parent-gate'))
     show($('demo-report'))
     void refreshClubBlock()
@@ -344,42 +347,42 @@ async function unlockReport() {
   }
 }
 
+function addNode(parent: HTMLElement, tag: string, text: string, className?: string) {
+  const el = document.createElement(tag)
+  el.textContent = text
+  if (className) el.className = className
+  parent.appendChild(el)
+  return el
+}
+
+/** Повний звіт на сторінці: Club-практика і fallback, коли лист не надіслано. */
 function renderReport(report: HomeDemoReport) {
   const box = $('demo-report-body')
   box.innerHTML = ''
 
-  const add = (parent: HTMLElement, tag: string, text: string, className?: string) => {
-    const el = document.createElement(tag)
-    el.textContent = text
-    if (className) el.className = className
-    parent.appendChild(el)
-    return el
-  }
+  addNode(box, 'p', `Виконано: ${report.correct} з ${report.total} завдань.`, 'demo-report__summary')
 
-  add(box, 'p', `Виконано: ${report.correct} з ${report.total} завдань.`, 'demo-report__summary')
+  const addList = (heading: string, items: string[]) => {
+    if (!items.length) return
+    addNode(box, 'p', heading, 'demo-report__heading')
+    const ul = document.createElement('ul')
+    ul.className = 'demo-report__list'
+    items.forEach(s => addNode(ul, 'li', s))
+    box.appendChild(ul)
+  }
+  addList('💪 Що виходить добре:', report.strengths)
+  addList('🌱 Зона росту:', report.struggles)
+  addList('🔍 Що ми помітили:', report.patterns.map(p => p.evidence))
+  addNode(box, 'p', `👉 Наступний крок: ${report.nextMission.reason}`, 'demo-report__next')
+}
 
-  if (report.strengths.length) {
-    add(box, 'p', 'Що виходить добре:', 'demo-report__heading')
-    const ul = document.createElement('ul')
-    ul.className = 'doc-list'
-    report.strengths.forEach(s => add(ul, 'li', s))
-    box.appendChild(ul)
-  }
-  if (report.struggles.length) {
-    add(box, 'p', 'Зона росту:', 'demo-report__heading')
-    const ul = document.createElement('ul')
-    ul.className = 'doc-list'
-    report.struggles.forEach(s => add(ul, 'li', s))
-    box.appendChild(ul)
-  }
-  if (report.patterns.length) {
-    add(box, 'p', 'Що ми помітили:', 'demo-report__heading')
-    const ul = document.createElement('ul')
-    ul.className = 'doc-list'
-    report.patterns.forEach(p => add(ul, 'li', p.evidence))
-    box.appendChild(ul)
-  }
-  add(box, 'p', `Наступний крок: ${report.nextMission.reason}`, 'demo-report__next')
+/** Демо-гейт: лист із повним аналізом пішов — на сторінці лише підтвердження. */
+function renderReportSentConfirmation(report: HomeDemoReport, email: string) {
+  const box = $('demo-report-body')
+  box.innerHTML = ''
+  addNode(box, 'p', `Виконано: ${report.correct} з ${report.total} завдань.`, 'demo-report__summary')
+  addNode(box, 'p', `Повний аналіз — що виходить добре, зона росту й наступний крок — ми надіслали на ${email}.`)
+  addNode(box, 'p', 'Якщо листа не видно, зазирніть у «Спам» або «Промоакції».', 'demo-report__muted')
 }
 
 // ── Інтро: вибір класу і напряму ──────────────────────────────

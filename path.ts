@@ -97,6 +97,8 @@ const doneSkills   = $('path-done-skills')
 const greetingEl   = $('path-greeting')
 const parentGate   = $('path-parent-gate')
 const parentGateLink = $<HTMLAnchorElement>('path-parent-gate-link')
+const doneSave     = $('path-done-save')
+const doneSaveLink = $<HTMLAnchorElement>('path-done-save-link')
 
 const els: MissionElements = {
   progressText: $('quiz-progress-text'),
@@ -125,6 +127,7 @@ if (!requestedMap) {
 } else {
   $('path-subtitle').textContent = `${map.title} · проходь точки — відкривай нові!`
   parentGateLink.href = `parent.html?continuePath=grade-${map.grade}`
+  doneSaveLink.href = `parent.html?continuePath=grade-${map.grade}`
 }
 
 // ── Рендер карти ──────────────────────────────────────────────
@@ -515,11 +518,14 @@ function finishPoint(p: PathPoint, results: ActivityResult[], run: number) {
   const unlockedNow = map.points.filter(x =>
     !store.isCompleted(x.id) && x.unlockAfter.includes(p.id) && isUnlocked(x, new Set(store.completedIds())),
   )
-  $('path-done-message').textContent = !activeChildProfileId
-    ? 'Точку пройдено! Поклич дорослого, щоб зберегти шлях і відкрити наступні пригоди.'
-    : unlockedNow.length
+  // Anonymous runs keep further points locked until the path is saved
+  // (anonymousGate in renderMap), so only signed-in kids see the unlock list.
+  $('path-done-message').textContent = activeChildProfileId && unlockedNow.length
     ? `Точку пройдено! Відкрилось: ${unlockedNow.map(x => `${x.icon} ${x.title}`).join(', ')}`
     : 'Точку пройдено! Молодець!'
+  // Anonymous run: the save-path CTA lives right on this screen, so the child
+  // doesn't have to go back to the map to discover it.
+  doneSave.classList.toggle('hidden', Boolean(activeChildProfileId))
   show(doneEl)
   $('path-done-map-btn').focus()
 }

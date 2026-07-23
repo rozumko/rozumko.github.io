@@ -133,7 +133,7 @@ export interface DemoReport {
   nextMission: { missionId: string; reason: string }
 }
 
-const TRACK_LABELS: Record<HomeDemoTrack, string> = {
+export const TRACK_LABELS: Record<HomeDemoTrack, string> = {
   'informatics': 'інформатики',
   'computational-thinking': 'обчислювального мислення',
   'ai-basics': 'основ ШІ',
