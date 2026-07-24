@@ -32,6 +32,18 @@ test('lower grade maps do not contain system simulators', () => {
 const g2 = SEED_MAPS.find(map => map.pathId === 'grade-2')!
 const clone = () => JSON.parse(JSON.stringify(g2.points)) as Array<Record<string, unknown>>
 
+function linearPoints(count: number): Array<Record<string, unknown>> {
+  const [base] = clone()
+  return Array.from({ length: count }, (_, index) => ({
+    ...JSON.parse(JSON.stringify(base)),
+    id: `g2-year-point-${index + 1}`,
+    title: `Річна точка ${index + 1}`,
+    unlockAfter: index === 0 ? [] : [`g2-year-point-${index}`],
+    x: [50, 18, 82, 34, 66][index % 5],
+    y: Math.min(94, 6 + (index % 9) * 10),
+  }))
+}
+
 test('валідація fail-closed: цикл, два старти, битий unlockAfter, невідомий kind', () => {
   const cycle = clone()
   ;(cycle[0].unlockAfter as string[]).push(cycle[cycle.length - 1].id as string)
@@ -64,6 +76,11 @@ test('валідація fail-closed: цикл, два старти, битий 
     ;(lessonStep.activity as Record<string, unknown>).lessonVersion = 0
     assert.throws(() => validatePathMapPoints(badLessonVersion), /lessonVersion/)
   }
+})
+
+test('admin path validation accepts a yearly 40-point map and rejects 41 points', () => {
+  assert.equal(validatePathMapPoints(linearPoints(40)).length, 40)
+  assert.throws(() => validatePathMapPoints(linearPoints(41)), /40/)
 })
 
 function badRequiredSteps(points: Array<Record<string, unknown>>) {

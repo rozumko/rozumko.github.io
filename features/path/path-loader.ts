@@ -9,6 +9,7 @@ import type { GradePathMap, PathPoint } from './path-data.js'
 const TRACKS = new Set(['informatics', 'computational-thinking', 'ai-basics'])
 const POINT_ID_RE = /^g[1-4]-[a-z0-9-]+$/
 const STEP_ID_RE = /^[a-z0-9-]+$/
+const MAX_POINTS = 40
 
 function validCount(value: unknown): boolean {
   return value === undefined || (Number.isInteger(value) && (value as number) >= 1 && (value as number) <= 12)
@@ -85,7 +86,7 @@ export function normalizeMapBundle(raw: unknown, grade: number): GradePathMap | 
   if (bundle.grade !== grade) return null
   if (!Number.isInteger(bundle.version) || (bundle.version as number) < 1) return null
   if (typeof bundle.title !== 'string' || !bundle.title || bundle.title.length > 160) return null
-  if (!Array.isArray(bundle.points) || !bundle.points.length || bundle.points.length > 20) return null
+  if (!Array.isArray(bundle.points) || !bundle.points.length || bundle.points.length > MAX_POINTS) return null
   if (!bundle.points.every(point => isValidPoint(point, grade))) return null
 
   const points = bundle.points as PathPoint[]

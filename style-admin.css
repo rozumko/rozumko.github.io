@@ -777,6 +777,18 @@
 }
 
 /* ── Вкладка «Шлях» (features/admin/path-tab.ts) ─────────────────────────── */
+.pm-coverage { margin: var(--sp-3) 0 var(--sp-4); }
+.pm-coverage-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: var(--sp-2); }
+.pm-coverage-card {
+  border: 1px solid var(--adm-border);
+  border-radius: var(--r-md);
+  background: rgba(15, 23, 42, 0.42);
+  padding: var(--sp-3);
+}
+.pm-coverage-card span { display: block; color: var(--adm-text-muted); font-size: var(--font-size-xs); }
+.pm-coverage-card strong { display: block; color: var(--adm-text); font-size: var(--font-size-lg); margin-top: 2px; }
+.pm-coverage-card--warn { border-color: rgba(245, 158, 11, 0.55); }
+.pm-coverage-card--ok { border-color: rgba(16, 185, 129, 0.55); }
 .pm-layout { display: grid; grid-template-columns: minmax(260px, 1fr) 2fr; gap: var(--sp-4); align-items: start; }
 @media (max-width: 900px) { .pm-layout { grid-template-columns: 1fr; } }
 .pm-preview {

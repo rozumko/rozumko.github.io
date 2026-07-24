@@ -28,7 +28,7 @@ export interface PathPointInput {
 const TRACKS = ['informatics', 'computational-thinking', 'ai-basics'] as const
 const POINT_ID_RE = /^g[1-4]-[a-z0-9-]+$/
 const STEP_ID_RE = /^[a-z0-9-]+$/
-const MAX_POINTS = 20
+const MAX_POINTS = 40
 const MAX_STEPS = 6
 
 // Шейпи активностей: kind → обовʼязкові/опційні поля. Синхронно з
