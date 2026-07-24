@@ -497,8 +497,8 @@ function renderMap() {
   const completed = new Set(store.completedIds())
   const mapPointIds = new Set(map.points.map(p => p.id))
   const completedInMap = [...completed].filter(id => mapPointIds.has(id))
-  const anonymousGate = !activeChildProfileId && completedInMap.length > 0
-  parentGate.classList.toggle('hidden', !anonymousGate)
+  const shouldPromptSave = !activeChildProfileId && completedInMap.length > 0
+  parentGate.classList.toggle('hidden', !shouldPromptSave)
 
   // Маскот вітає лише на свіжій карті (перший візит) — далі не захаращуємо.
   if (completedInMap.length === 0) {
@@ -525,7 +525,7 @@ function renderMap() {
     const progress = store.getPoint(p.id)
     const done = progress?.status === 'completed'
     const started = progress?.status === 'started'
-    const open = !anonymousGate && isUnlocked(p, completed)
+    const open = isUnlocked(p, completed)
     const stars = progress?.bestStars ?? 0
 
     const btn = document.createElement('button')
@@ -860,8 +860,8 @@ function finishPoint(p: PathPoint, results: ActivityResult[], run: number) {
   const unlockedNow = map.points.filter(x =>
     !store.isCompleted(x.id) && x.unlockAfter.includes(p.id) && isUnlocked(x, new Set(store.completedIds())),
   )
-  // Anonymous runs keep further points locked until the path is saved
-  // (anonymousGate in renderMap), so only signed-in kids see the unlock list.
+  // Anonymous runs can continue locally; the save-path CTA stays visible so
+  // adults can later attach the local progress to a parent profile.
   $('path-done-message').textContent = activeChildProfileId && unlockedNow.length
     ? `Точку пройдено! Відкрилось: ${unlockedNow.map(x => `${x.icon} ${x.title}`).join(', ')}`
     : 'Точку пройдено! Молодець!'
