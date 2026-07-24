@@ -16,6 +16,19 @@ test('усі seed-карти проходять адмін-валідацію', 
   }
 })
 
+test('lower grade maps do not contain system simulators', () => {
+  const lowerGradeMaps = SEED_MAPS.filter(map => map.grade <= 2)
+  for (const map of lowerGradeMaps) {
+    for (const point of map.points as Array<{ id: string; activities?: Array<{ activity?: { kind?: string } }> }>) {
+      assert.equal(
+        point.activities?.some(step => step.activity?.kind === 'simulator'),
+        false,
+        `${map.pathId}:${point.id} must not contain simulator activity`,
+      )
+    }
+  }
+})
+
 const g2 = SEED_MAPS.find(map => map.pathId === 'grade-2')!
 const clone = () => JSON.parse(JSON.stringify(g2.points)) as Array<Record<string, unknown>>
 

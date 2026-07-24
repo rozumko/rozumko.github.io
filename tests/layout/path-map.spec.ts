@@ -44,6 +44,8 @@ test('grade 1 has its own nine-point path with one visual starting activity', as
   await expect(page.locator('.path-node--open')).toHaveCount(1)
   await expect(page.locator('.path-node--open')).toHaveAccessibleName(/Знайди спільну ознаку/)
   await expect(page.locator('.path-node--locked')).toHaveCount(8)
+  await expect(page.locator('.path-node--locked').first()).toHaveAccessibleName(/попереду/)
+  await expect(page.locator('.path-node--locked .path-node__badge').first()).not.toHaveText('🔒')
 })
 
 test('grade-1 anonymous progress stops after the first point and asks for an adult', async ({ page }) => {
@@ -183,6 +185,8 @@ test('свіжий профіль: 9 точок, відкрита лише ст�
   await expect(page.locator('.path-node--open')).toHaveCount(1)
   await expect(page.locator('.path-node--open')).toHaveAccessibleName(/Як ми отримуємо інформацію/)
   await expect(page.locator('.path-node--locked')).toHaveCount(8)
+  await expect(page.locator('.path-node--locked').first()).toHaveAccessibleName(/попереду/)
+  await expect(page.locator('.path-node--locked .path-node__badge').first()).not.toHaveText('🔒')
 })
 
 test('анонімна стартова точка показує adult gate замість відкритих гілок', async ({ page }) => {

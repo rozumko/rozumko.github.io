@@ -47,7 +47,7 @@ test('valid completion uses the backend catalog and produces a stable event key'
   if (first.ok && second.ok) {
     assert.equal(first.eventKey, second.eventKey)
     assert.equal(first.sessionStars, 2)
-    assert.equal(first.pathVersion, 2)
+    assert.equal(first.pathVersion, 3)
   }
 })
 
