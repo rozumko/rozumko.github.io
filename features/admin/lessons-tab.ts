@@ -1,12 +1,15 @@
 import {
   getAdminLessons, createAdminLesson, updateAdminLesson, setAdminLessonStatus,
-  getAdminLessonRevisions, restoreAdminLessonRevision,
+  getAdminLessonRevisions, restoreAdminLessonRevision, getAdminPathMaps,
   type AdminMicroLesson, type AdminLessonContent, type AdminLessonCard, type AdminLessonCheckQuestion,
+  type AdminPathMap,
 } from '../../features/api/client.js'
 import { esc, showModal, showConfirm } from './ui.js'
 import { $ } from '../../utils/dom.js'
 import { createFocusTrap } from '../../utils/focus-trap.js'
 import { mountLesson } from '../../features/lessons/lesson-runner.js'
+import type { PathPoint } from '../../features/path/path-data.js'
+import { TOPIC_LABELS } from './taxonomy.js'
 import { refreshContentDeliveryBanner } from './publication-tab.js'
 
 // Micro-lesson authoring. Publishing freezes an immutable revision; the site
@@ -18,12 +21,51 @@ const STATUS_LABELS: Record<AdminMicroLesson['status'], string> = {
   published: 'Опубліковано',
   archived:  'Знято з публікації',
 }
+const TRACK_LABELS: Record<string, string> = {
+  informatics: 'Інформатика',
+  'computational-thinking': 'Обчислювальне мислення',
+  'ai-basics': 'Основи ШІ',
+}
 
 let allLessons: AdminMicroLesson[] = []
+let lessonUsageById = new Map<string, LessonUsage[]>()
 let editingId: string | null = null
 let editorTrapRemove: (() => void) | null = null
 
+interface LessonUsage {
+  grade: number
+  pointId: string
+  pointTitle: string
+  tracks: string[]
+  topics: string[]
+}
+
 export function initLessonsTab() {
+  $<HTMLInputElement>('l-filter-search').addEventListener('input', renderLessons)
+  $<HTMLInputElement>('l-filter-search').addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      const input = event.currentTarget as HTMLInputElement
+      input.value = ''
+      renderLessons()
+    }
+  })
+  $<HTMLSelectElement>('l-filter-status').addEventListener('change', renderLessons)
+  $<HTMLSelectElement>('l-filter-grade').addEventListener('change', renderLessons)
+  $<HTMLSelectElement>('l-filter-track').addEventListener('change', event => {
+    fillLessonTopicSelect((event.currentTarget as HTMLSelectElement).value)
+    renderLessons()
+  })
+  $<HTMLSelectElement>('l-filter-topic').addEventListener('change', renderLessons)
+  $<HTMLSelectElement>('l-filter-usage').addEventListener('change', renderLessons)
+  $<HTMLButtonElement>('l-filter-reset').addEventListener('click', () => {
+    $<HTMLInputElement>('l-filter-search').value = ''
+    $<HTMLSelectElement>('l-filter-status').value = ''
+    $<HTMLSelectElement>('l-filter-grade').value = ''
+    $<HTMLSelectElement>('l-filter-track').value = ''
+    fillLessonTopicSelect('')
+    $<HTMLSelectElement>('l-filter-usage').value = ''
+    renderLessons()
+  })
   $('add-lesson-btn').addEventListener('click', () => openEditor(null))
   $('lf-add-card').addEventListener('click', () => addCardRow())
   $('lf-add-check').addEventListener('click', () => addCheckRow())
@@ -36,8 +78,10 @@ export async function loadLessonsTab() {
   const list = $('lessons-list')
   list.innerHTML = '<p class="admin-loading-text">Завантаження…</p>'
   try {
-    const { lessons } = await getAdminLessons()
+    const [{ lessons }, { maps }] = await Promise.all([getAdminLessons(), getAdminPathMaps()])
     allLessons = lessons
+    lessonUsageById = collectLessonUsage(maps)
+    fillLessonTopicSelect($<HTMLSelectElement>('l-filter-track').value)
     renderLessons()
   } catch (err) {
     list.innerHTML = ''
@@ -48,21 +92,104 @@ export async function loadLessonsTab() {
   }
 }
 
+function collectLessonUsage(maps: AdminPathMap[]): Map<string, LessonUsage[]> {
+  const usage = new Map<string, LessonUsage[]>()
+  for (const map of maps) {
+    for (const point of map.points as PathPoint[]) {
+      for (const step of point.activities) {
+        if (step.activity.kind !== 'lesson') continue
+        const lessonId = step.activity.lessonId
+        const item: LessonUsage = {
+          grade: map.grade,
+          pointId: point.id,
+          pointTitle: point.title,
+          tracks: [...new Set(point.curriculum.map(tag => tag.track))],
+          topics: [...new Set(point.curriculum.map(tag => tag.topic))],
+        }
+        usage.set(lessonId, [...(usage.get(lessonId) ?? []), item])
+      }
+    }
+  }
+  return usage
+}
+
+function fillLessonTopicSelect(track: string) {
+  const select = $<HTMLSelectElement>('l-filter-topic')
+  const prev = select.value
+  const topics = new Set<string>()
+  for (const usages of lessonUsageById.values()) {
+    for (const item of usages) {
+      if (!track || item.tracks.includes(track)) {
+        for (const topic of item.topics) topics.add(topic)
+      }
+    }
+  }
+  const sortedTopics = [...topics].sort((a, b) =>
+    (TOPIC_LABELS[a] ?? a).localeCompare(TOPIC_LABELS[b] ?? b, 'uk'))
+  select.innerHTML = '<option value="">Усі теми</option>' +
+    sortedTopics.map(topic => `<option value="${esc(topic)}">${esc(TOPIC_LABELS[topic] ?? topic)}</option>`).join('')
+  select.value = sortedTopics.includes(prev) ? prev : ''
+  select.disabled = sortedTopics.length === 0
+}
+
+function filteredLessons(): AdminMicroLesson[] {
+  const search = $<HTMLInputElement>('l-filter-search').value.trim().toLowerCase()
+  const rawStatus = $<HTMLSelectElement>('l-filter-status').value
+  const status = rawStatus === 'lesson-review' ? 'review' : rawStatus
+  const grade = $<HTMLSelectElement>('l-filter-grade').value
+  const track = $<HTMLSelectElement>('l-filter-track').value
+  const topic = $<HTMLSelectElement>('l-filter-topic').value
+  const usageFilter = $<HTMLSelectElement>('l-filter-usage').value
+
+  return allLessons.filter(lesson => {
+    const usage = lessonUsageById.get(lesson.id) ?? []
+    if (status && lesson.status !== status) return false
+    if (grade && !usage.some(item => item.grade === Number(grade))) return false
+    if (track && !usage.some(item => item.tracks.includes(track))) return false
+    if (topic && !usage.some(item => item.topics.includes(topic))) return false
+    if (usageFilter === 'used' && !usage.length) return false
+    if (usageFilter === 'unused' && usage.length) return false
+    if (search) {
+      const haystack = [
+        lesson.id, lesson.title, STATUS_LABELS[lesson.status],
+        ...usage.flatMap(item => [
+          item.pointId, item.pointTitle, `${item.grade} клас`,
+          ...item.tracks.map(trackId => TRACK_LABELS[trackId] ?? trackId),
+          ...item.topics.map(topicId => TOPIC_LABELS[topicId] ?? topicId),
+        ]),
+      ].join(' ').toLowerCase()
+      if (!haystack.includes(search)) return false
+    }
+    return true
+  })
+}
+
+function usageBadges(lesson: AdminMicroLesson): string {
+  const usage = lessonUsageById.get(lesson.id) ?? []
+  if (!usage.length) return '<span class="qi-badge qi-badge--type">поза картою</span>'
+  return usage.map(item => {
+    const topics = item.topics.map(topic => TOPIC_LABELS[topic] ?? topic).join(', ')
+    return `<span class="qi-badge qi-badge--practice">${item.grade} клас · ${esc(item.pointTitle)}${topics ? ` · ${esc(topics)}` : ''}</span>`
+  }).join('')
+}
+
 function renderLessons() {
   const list = $('lessons-list')
-  $('l-count').textContent = `${allLessons.length} уроків`
+  const filtered = filteredLessons()
+  const usedCount = allLessons.filter(lesson => (lessonUsageById.get(lesson.id) ?? []).length > 0).length
+  $('l-count').textContent = `${filtered.length} із ${allLessons.length} уроків · на карті: ${usedCount}`
 
-  if (!allLessons.length) {
+  if (!filtered.length) {
     list.innerHTML = `
       <div class="admin-empty-state"><div>
         <i class="fas fa-book-open admin-empty-state__icon" aria-hidden="true"></i>
-        <p class="admin-empty-state__title">Уроків ще немає</p>
+        <p class="admin-empty-state__title">${allLessons.length ? 'Уроків за цими фільтрами не знайдено' : 'Уроків ще немає'}</p>
       </div></div>`
     return
   }
 
   list.innerHTML = ''
-  for (const lesson of allLessons) {
+  for (const lesson of filtered) {
     const el = document.createElement('div')
     el.className = 'question-item'
     const statusBadge = lesson.status === 'published' ? 'qi-badge--easy'
@@ -78,6 +205,7 @@ function renderLessons() {
           <span class="qi-badge qi-badge--type">карток: ${lesson.cards.length}</span>
           <span class="qi-badge qi-badge--type">питань: ${lesson.checkQuestions.length}</span>
           ${lesson.videoUrl ? '<span class="qi-badge qi-badge--practice">відео</span>' : ''}
+          ${usageBadges(lesson)}
         </div>
         <p class="question-item__text">${esc(lesson.title)}</p>
         <p class="question-item__meta">${esc(lesson.id)} · робоча v${lesson.version} · редакція ${lesson.editVersion}${lesson.publishedVersion ? ` · опублікована v${lesson.publishedVersion}` : ''}</p>
