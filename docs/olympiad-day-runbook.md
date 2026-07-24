@@ -1,6 +1,6 @@
 # Olympiad Day Runbook - Rozumko
 
-_Updated: 2026-06-30_
+_Updated: 2026-07-24_
 
 Use this checklist for a live school pilot or public olympiad. Keep a printed
 copy available during the event.
@@ -101,11 +101,24 @@ Actions:
 
 ### Classroom Internet Fails
 
+The attempt timer already tolerates a short blackout. The **server** measures the
+gap between client heartbeats and credits a capped grace pause of up to
+**10 minutes per attempt** (`GRACE_CAP_SECONDS`). Two limits matter during an
+event:
+
+- the hard event end (`ends_at`) is **never** extended by pause, so a long
+  outage close to the deadline still costs real time;
+- a student cannot answer while offline; queued answers are sent when
+  connectivity returns.
+
 Actions:
 
 1. Teacher pauses the class.
-2. If the outage is short, students keep tabs open and continue when internet returns.
-3. If the outage is long, the teacher switches to the paper fallback.
+2. If the outage is short (under ~10 minutes), students keep tabs open — do not
+   close or refresh — and continue when internet returns; the grace pause covers
+   it.
+3. If the outage is longer, or the event end is near, the teacher switches to
+   the paper fallback.
 4. Event owner decides after the lesson whether to re-run the class.
 
 ### Teacher Cannot Log In

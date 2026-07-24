@@ -14,8 +14,11 @@ _Мета: підняти проєкт локально, зрозуміти ме
 
 ## 0. Вимоги
 
-- **Node.js 20+** (бекенд і фронтенд на одному `@types/node` 25).
-- **Git** з налаштованим GitHub-доступом до приватного репозиторію.
+- **Node.js 22** — саме її ставить CI; 20+ достатньо локально (бекенд і фронтенд
+  на одному `@types/node` 25).
+- **Git** з налаштованим GitHub-доступом. Репозиторій **публічний** — це свідоме
+  рішення (див. [ADR-0005](./adr/0005-public-repo-secret-hygiene.md)): жодне
+  реальне значення секрету не потрапляє в комміт, `.env` лишається локальним.
 - Доступ до **Supabase-проєкту** (URL + ключі) — попроси в мейнтейнера.
 - Редактор: VS Code рекомендований (TypeScript, ESLint із коробки).
 
@@ -116,12 +119,17 @@ npm run dev               # http://localhost:5173
 Прогони локально перед push:
 
 ```bash
-# Frontend (корінь)
-npm run typecheck && npm test && npm run build
+# Frontend (корінь) — рівно те, що ганяє job `frontend`
+npm run typecheck && npm run lint && npm test && npm run build && npm run test:layout
 
-# Backend
+# Backend — job `backend`
 cd backend && npm run build && npm test
 ```
+
+`npm run test:layout` потребує Playwright Chromium (`npx playwright install
+--with-deps chromium`) і ганяє свіжий `dist/`, тому запускай його після `build`.
+Job `backend` у CI перевіряє типи через `npx tsc --noEmit`; локальний
+`npm run build` покриває це саме й додатково збирає вихід.
 
 Серед тестів є **security regression tests** (стрипінг ключів відповідей,
 розділення Школа/Дім/Олімпіада, `isOlympiad` тощо). Якщо такий тест почервонів
@@ -137,10 +145,13 @@ cd backend && npm run build && npm test
 | HTTP-запит із фронтенду | `features/api/client.ts` — **єдина** точка всіх запитів |
 | Рендер питання (choice/sort/match/…) | `utils/question-renderer.ts` |
 | Логіку місій / відбір питань | `features/missions/` (`pickMissionQuestions`) |
-| Ігри (сортування, головоломки) | `features/games/` → `games.html` |
+| Ігри (сортування, sequence, сценарії, факт/думка, клік-тренажер, симулятори, головоломки) | `features/games/` → `games.html` |
+| Мікро-уроки (відео → картки → квіз) | `features/lessons/` (`lesson-runner.ts`) |
+| Карта пригод Home Mode | `features/path/` (`path-data`, `progress-store`, `path-sync`) |
 | Квіз-рушій олімпіади | `features/olympiad/` |
 | Вкладки адмінки | `features/admin/` |
-| Роут бекенду | `backend/src/routes/` (student, attempt, teacher, admin, questions, school, home) |
+| Роут бекенду | `backend/src/routes/` (student, attempt, teacher, admin, questions, school, home, parent) |
+| Редакційний цикл контенту | `backend/src/routes/*-editorial.ts` (question/lesson/mission) |
 | Auth-middleware | `backend/src/lib/auth.ts` (`requireAuth`, `requireAdmin`) |
 | Валідацію таксономії | `backend/src/lib/taxonomy.ts` (`TOPICS_BY_TRACK`, fail-closed) |
 | Схему/міграції БД | `backend/src/db/`, `backend/drizzle/` |
@@ -160,8 +171,9 @@ cd backend && npm run build && npm test
   `POST /api/student/exchange-code`.
 - Весь доступ до БД — через бекенд. Прямих запитів фронтенду до Supabase-таблиць
   немає.
-- Публічний `GET /api/questions` віддає лише тренувальні питання. Олімпіадні —
-  тільки через обмін коду.
+- Публічний `GET /api/questions` віддає лише тренувальні питання і тільки в
+  межах дозволеного каналу (`path` або `olympiad_training`; `class_game` він
+  відхиляє). Олімпіадні — тільки через обмін коду.
 - Для нових ID у params/body/query додавай UUID-валідацію **до** звернення до БД.
 - Не чіпай `trustProxy: 1` → `true`. Не перейменовуй `isOlympiad`.
 

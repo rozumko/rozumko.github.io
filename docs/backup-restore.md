@@ -1,6 +1,6 @@
 # Backup And Restore Runbook - Rozumko
 
-_Updated: 2026-06-30_
+_Updated: 2026-07-24_
 
 This runbook describes how to prove that PostgreSQL backups can be restored
 before a pilot or paid olympiad. Keep real database URLs, passwords and backup
@@ -26,16 +26,45 @@ files outside the public repository.
 
 ## What To Back Up
 
-The database is the operational source of truth for:
+Back up the whole application database — the sections below only explain what is
+at stake if a restore is incomplete.
+
+Olympiad and School:
 
 - olympiad events and question assignments;
 - teacher accounts and approval state;
 - class registrations and generated codes;
 - attempts, saved answers and final scores;
-- optional teacher-side student labels.
+- optional teacher-side student labels;
+- School sessions, participants and answers (short-lived, but a live classroom
+  game cannot be resumed without them).
 
-Frontend assets and backend code are recovered from Git and deployments, not
-from the database backup.
+Home and parent data — irreplaceable, because it cannot be regenerated from
+Git or from the content pipeline:
+
+- `home_leads`, including the **parent consent record** (policy version and
+  acceptance timestamp). Losing it means losing the legal basis for storing
+  child progress;
+- `home_parent_accounts` and `home_child_profiles` (parent ownership);
+- `home_entitlements` and `home_entitlement_events` — paid access state and its
+  audit trail. A stale restore can silently grant or revoke paid access;
+- `home_payment_events` — provider idempotency rows. Restoring an older
+  snapshot can make an already-processed webhook replay as new;
+- `home_demo_attempts`, `home_demo_reports`, `home_mission_attempts`;
+- `home_path_progress` and `home_path_events` (child learning-path progress).
+
+Content, now database-owned:
+
+- `questions` and `question_revisions`, `micro_lessons` and
+  `micro_lesson_revisions`, `missions` and `mission_revisions` — including the
+  published snapshots the static export reads;
+- `path_maps` and the immutable `path_map_revisions`. Losing a revision row
+  invalidates already deployed bundles that reference it;
+- `content_publications` (publication audit trail).
+
+Frontend assets and backend code are recovered from Git and deployments. Static
+content bundles under `public/` are re-exported from the restored database, so
+they are only as current as the database snapshot.
 
 ## 24 Hours Before A Live Event
 
@@ -101,11 +130,24 @@ npm run db:migrate
 7. Start or deploy the backend against the restored database.
 8. Verify:
 
-- [ ] `GET /ping` returns `db: ok`.
+- [ ] `GET /ping` returns `db: ok` (this also proves the migration journal
+      check passes against the restored schema).
 - [ ] Admin can see events.
 - [ ] Teacher/admin results route returns without `500`.
 - [ ] A known restored event has expected question assignments.
 - [ ] Attempt rows and finished scores are present when expected.
+- [ ] A known parent account resolves through `GET /api/parent/me` and still
+      owns its child profiles.
+- [ ] A lead with a consent record still has its policy version and
+      `accepted_at`.
+- [ ] Entitlement state for a known lead matches what it was before the restore;
+      the audit trail is present.
+- [ ] Learning-path progress for one child profile is present, and the
+      `path_map_revisions` row referenced by the deployed bundle still exists.
+- [ ] `cd backend && npm run export:all-content` succeeds against the restored
+      database and produces non-empty bundles (an empty content family means the
+      export role lost its `GRANT`/RLS policy — see
+      `docs/content-publication.md`).
 
 9. Remove local environment variables when finished:
 
