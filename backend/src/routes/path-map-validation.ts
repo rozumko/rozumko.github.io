@@ -28,6 +28,11 @@ export interface PathPointInput {
 const TRACKS = ['informatics', 'computational-thinking', 'ai-basics'] as const
 const POINT_ID_RE = /^g[1-4]-[a-z0-9-]+$/
 const STEP_ID_RE = /^[a-z0-9-]+$/
+const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+const REGISTRY_MISSION_KINDS = [
+  'sorting-game', 'sequence-game', 'scenario-game',
+  'fact-opinion-game', 'click-trainer-game', 'simulator-game',
+] as const
 const MAX_POINTS = 40
 const MAX_STEPS = 6
 
@@ -41,6 +46,22 @@ const ACTIVITY_KINDS: Record<string, (a: Record<string, unknown>) => string | nu
     if (a.lessonVersion !== undefined
       && (!Number.isInteger(a.lessonVersion) || (a.lessonVersion as number) < 1)) return 'lesson: невалідний lessonVersion'
     return null
+  },
+  'mission-ref': a => {
+    if (typeof a.missionId !== 'string' || a.missionId.length > 80 || !SLUG_RE.test(a.missionId)) {
+      return 'mission-ref: невалідний missionId'
+    }
+    if (!REGISTRY_MISSION_KINDS.includes(a.missionKind as never)) return 'mission-ref: невідомий тип місії'
+    if (a.missionVersion !== undefined
+      && (!Number.isInteger(a.missionVersion) || (a.missionVersion as number) < 1)) return 'mission-ref: невалідний missionVersion'
+    const countError = optionalCount(a.count)
+    if (countError) return countError
+    if (a.missionKind === 'simulator-game') {
+      return a.scenarioKey === 'assembly-hardware' || a.scenarioKey === 'assembly-software'
+        ? null : 'mission-ref: невідомий scenarioKey'
+    }
+    return typeof a.gameKey === 'string' && a.gameKey.length <= 64 && SLUG_RE.test(a.gameKey)
+      ? null : 'mission-ref: невалідний gameKey'
   },
   sequence: a => optionalCount(a.count),
   scenarios: a => optionalCount(a.count),
@@ -185,6 +206,17 @@ export function pathMapLessonIds(points: PathPointInput[]): string[] {
   for (const point of points) {
     for (const step of point.activities) {
       if (step.activity.kind === 'lesson') ids.add(step.activity.lessonId as string)
+    }
+  }
+  return [...ids].sort()
+}
+
+/** Stable mission references used by admin-save and export integrity checks. */
+export function pathMapMissionIds(points: PathPointInput[]): string[] {
+  const ids = new Set<string>()
+  for (const point of points) {
+    for (const step of point.activities) {
+      if (step.activity.kind === 'mission-ref') ids.add(step.activity.missionId as string)
     }
   }
   return [...ids].sort()

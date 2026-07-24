@@ -83,6 +83,37 @@ test('admin path validation accepts a yearly 40-point map and rejects 41 points'
   assert.throws(() => validatePathMapPoints(linearPoints(41)), /40/)
 })
 
+test('admin path validation accepts registry mission references and rejects malformed ones', () => {
+  const points = clone()
+  ;((points[0].activities as Array<Record<string, unknown>>)[0].activity as Record<string, unknown>) = {
+    kind: 'mission-ref',
+    missionId: 'game-sorting-information-grade2',
+    missionKind: 'sorting-game',
+    gameKey: 'infosort-g2',
+    missionVersion: 1,
+  }
+  assert.doesNotThrow(() => validatePathMapPoints(points))
+
+  const badGameKey = clone()
+  ;((badGameKey[0].activities as Array<Record<string, unknown>>)[0].activity as Record<string, unknown>) = {
+    kind: 'mission-ref',
+    missionId: 'game-sorting-information-grade2',
+    missionKind: 'sorting-game',
+    gameKey: '../bad',
+  }
+  assert.throws(() => validatePathMapPoints(badGameKey), /gameKey/)
+
+  const badVersion = clone()
+  ;((badVersion[0].activities as Array<Record<string, unknown>>)[0].activity as Record<string, unknown>) = {
+    kind: 'mission-ref',
+    missionId: 'game-sorting-information-grade2',
+    missionKind: 'sorting-game',
+    gameKey: 'infosort-g2',
+    missionVersion: 0,
+  }
+  assert.throws(() => validatePathMapPoints(badVersion), /missionVersion/)
+})
+
 function badRequiredSteps(points: Array<Record<string, unknown>>) {
   return points[0].activities as Array<Record<string, unknown> & { required: boolean }>
 }

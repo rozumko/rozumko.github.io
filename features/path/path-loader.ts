@@ -9,6 +9,11 @@ import type { GradePathMap, PathPoint } from './path-data.js'
 const TRACKS = new Set(['informatics', 'computational-thinking', 'ai-basics'])
 const POINT_ID_RE = /^g[1-4]-[a-z0-9-]+$/
 const STEP_ID_RE = /^[a-z0-9-]+$/
+const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+const REGISTRY_MISSION_KINDS = new Set([
+  'sorting-game', 'sequence-game', 'scenario-game',
+  'fact-opinion-game', 'click-trainer-game', 'simulator-game',
+])
 const MAX_POINTS = 40
 
 function validCount(value: unknown): boolean {
@@ -24,6 +29,17 @@ function isValidActivity(raw: unknown): boolean {
         && /^[a-z0-9-]+$/.test(activity.lessonId)
         && (activity.lessonVersion === undefined
           || (Number.isInteger(activity.lessonVersion) && (activity.lessonVersion as number) >= 1))
+    case 'mission-ref':
+      return typeof activity.missionId === 'string' && activity.missionId.length <= 80 && SLUG_RE.test(activity.missionId)
+        && REGISTRY_MISSION_KINDS.has(activity.missionKind as string)
+        && (activity.missionVersion === undefined
+          || (Number.isInteger(activity.missionVersion) && (activity.missionVersion as number) >= 1))
+        && validCount(activity.count)
+        && (
+          activity.missionKind === 'simulator-game'
+            ? activity.scenarioKey === 'assembly-hardware' || activity.scenarioKey === 'assembly-software'
+            : typeof activity.gameKey === 'string' && activity.gameKey.length <= 64 && SLUG_RE.test(activity.gameKey)
+        )
     case 'sequence':
     case 'scenarios':
     case 'puzzles':

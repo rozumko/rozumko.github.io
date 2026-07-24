@@ -71,6 +71,37 @@ test('поле access приймає free/club/відсутнє, інше — н
   assert.equal(normalizeMapBundle(badAccess, 2), null)
 })
 
+test('bundle accepts registry mission references and rejects malformed ones', () => {
+  const bundle = bundleFor(2)
+  bundle.points[0].activities[0].activity = {
+    kind: 'mission-ref',
+    missionId: 'game-sorting-information-grade2',
+    missionKind: 'sorting-game',
+    gameKey: 'infosort-g2',
+    missionVersion: 1,
+  }
+  assert.ok(normalizeMapBundle(bundle, 2))
+
+  const badGameKey = bundleFor(2)
+  badGameKey.points[0].activities[0].activity = {
+    kind: 'mission-ref',
+    missionId: 'game-sorting-information-grade2',
+    missionKind: 'sorting-game',
+    gameKey: '../bad',
+  }
+  assert.equal(normalizeMapBundle(badGameKey, 2), null)
+
+  const badVersion = bundleFor(2)
+  badVersion.points[0].activities[0].activity = {
+    kind: 'mission-ref',
+    missionId: 'game-sorting-information-grade2',
+    missionKind: 'sorting-game',
+    gameKey: 'infosort-g2',
+    missionVersion: 0,
+  }
+  assert.equal(normalizeMapBundle(badVersion, 2), null)
+})
+
 test('річний bundle приймає до 40 точок і відхиляє 41', () => {
   const forty = bundleFor(2)
   forty.points = linearPoints(40)

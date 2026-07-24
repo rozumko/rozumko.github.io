@@ -570,6 +570,29 @@ function activityContext(p: PathPoint, step: PathActivityStep, contentVersion?: 
   }
 }
 
+function requirePack<T>(items: T[], title: string): T[] {
+  if (!items.length) throw new Error(`Активність «${title}» ще не опублікована або недоступна. Перевір інтернет і спробуй ще раз.`)
+  return items
+}
+
+function sequenceFallback(gameKey: string) {
+  return gameKey === 'algorithms-g2' ? SEQUENCE_SETS_G2 : []
+}
+
+function scenarioFallback(gameKey: string) {
+  return gameKey === 'digital-safety' ? SCENARIOS_DIGITAL_SAFETY : []
+}
+
+function factOpinionFallback(gameKey: string) {
+  if (gameKey === 'level1') return FO_LEVEL1_STATEMENTS
+  if (gameKey === 'level2') return FO_LEVEL2_STATEMENTS
+  return []
+}
+
+function clickTrainerFallback(gameKey: string) {
+  return gameKey === 'computer-parts' ? CLICK_TRAINER_COMPUTER_PARTS : []
+}
+
 async function startPoint(p: PathPoint) {
   const run = ++activeRun
   errorEl.textContent = ''
@@ -689,6 +712,56 @@ async function startActivityStep(
       allowSkip: store.isCompleted(p.id),
       onComplete: s => complete(fromLessonSummary(s, activityContext(p, step, lesson.version))),
     })
+  } else if (a.kind === 'mission-ref') {
+    if (a.missionKind === 'sorting-game') {
+      show(sortingRoot)
+      const levels = requirePack(await loadSortingPack(a.gameKey!, SORTING_GAMES[a.gameKey!] ?? []), step.title)
+      if (run !== activeRun) return
+      mountSortingGame(sortingRoot, levels, {
+        onComplete: s => complete(fromSortingSummary(s, activityContext(p, step, a.missionVersion))),
+      })
+    } else if (a.missionKind === 'sequence-game') {
+      show(foRoot)
+      const sets = requirePack(await loadSequencePack(a.gameKey!, sequenceFallback(a.gameKey!)), step.title)
+      if (run !== activeRun) return
+      mountSequenceGame(foRoot, sets, {
+        round: a.count,
+        onComplete: s => complete(fromGameSummary(s, activityContext(p, step, a.missionVersion))),
+      })
+    } else if (a.missionKind === 'scenario-game') {
+      show(foRoot)
+      const items = requirePack(await loadScenarioPack(a.gameKey!, scenarioFallback(a.gameKey!)), step.title)
+      if (run !== activeRun) return
+      mountScenarios(foRoot, items, {
+        onComplete: s => complete(fromGameSummary(s, activityContext(p, step, a.missionVersion))),
+      })
+    } else if (a.missionKind === 'fact-opinion-game') {
+      show(foRoot)
+      const statements = requirePack(await loadFactOpinionPack(a.gameKey!, factOpinionFallback(a.gameKey!)), step.title)
+      if (run !== activeRun) return
+      mountFactOpinion(foRoot, statements, {
+        onComplete: s => complete(fromGameSummary(s, activityContext(p, step, a.missionVersion))),
+      })
+    } else if (a.missionKind === 'click-trainer-game') {
+      show(foRoot)
+      const rounds = requirePack(await loadClickTrainerPack(a.gameKey!, clickTrainerFallback(a.gameKey!)), step.title)
+      if (run !== activeRun) return
+      mountClickTrainer(foRoot, rounds, {
+        round: a.count,
+        onComplete: s => complete(fromGameSummary(s, activityContext(p, step, a.missionVersion))),
+      })
+    } else if (a.missionKind === 'simulator-game') {
+      show(foRoot)
+      const scenario = a.scenarioKey === 'assembly-software' ? SOFTWARE_SCENARIO : HARDWARE_SCENARIO
+      const loaded = await loadSimulatorScenario(scenario)
+      if (run !== activeRun) return
+      mountSimulator(foRoot, loaded, {
+        onComplete: s => complete(fromGameSummary(
+          { correct: Math.max(0, s.steps - s.mistakes), total: Math.max(1, s.steps), stars: s.stars },
+          activityContext(p, step, a.missionVersion),
+        )),
+      })
+    }
   } else if (a.kind === 'sequence') {
     show(foRoot)
     const sets = await loadSequencePack('algorithms-g2', SEQUENCE_SETS_G2)
