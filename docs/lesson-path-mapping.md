@@ -173,8 +173,8 @@ references its `lessonId` and the lesson is published/exported.
 | `g1-internet-basics` | 1 | Networks content exists, but current grade 1 path only has safety, not internet concepts. | `net-what-is-internet-g1`, `net-websites-and-browser-g1`, `net-safe-internet-g1` |
 | `g1-data-basics` | 1 | Tables/charts are stronger than the existing sorting/pattern points. | `data-simple-tables-g1`, `data-simple-charts-g1` |
 | `g1-programming-intro` | 1 | The "first program" lesson is more advanced than the current algorithms point. | `algo-first-program-g1` |
-| `g2-data-tables` | 2 | Grade 2 has full data/table/chart coverage, but no explicit Home data point. | `data-collection-g2`, `data-tables-g2`, `data-charts-g2` |
-| `g2-digital-creation` | 2 | Digital content/files lessons are complete but not represented in the current grade 2 path. | `tools-text-editing-g2`, `tools-presentation-g2`, `tools-files-project-g2` |
+| `g2-data-tables` | 2 | Grade 2 has full data/table/chart coverage, but Home needs a table/chart interaction before this is a true candidate. | `data-collection-g2`, `data-tables-g2`, `data-charts-g2` |
+| `g2-digital-creation` | 2 | Digital content/files lessons are complete, but Home needs a child-safe creation/workspace interaction before this is a true candidate. | `tools-text-editing-g2`, `tools-presentation-g2`, `tools-files-project-g2` |
 | `g2-internet-search` | 2 | Networks/search lessons are complete but not represented in the current grade 2 path. | `net-network-and-internet-g2`, `net-search-g2`, `net-safe-sharing-g2` |
 
 ## Product Decision

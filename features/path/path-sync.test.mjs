@@ -61,17 +61,16 @@ test('sync sends a complete point (theory + game), acknowledges it and merges se
 
 test('sync groups all required activities into one point completion', async () => {
   const store = createProgressStore(storage(), 'child-a')
-  store.recordResults('g2-ct-algorithms', [
-    { ...activity('path:g2-ct-algorithms:theory', '2026-07-10T09:58:00Z', 3), activityVersion: 2 },
-    activity('path:g2-ct-algorithms:algorithms-sequence', '2026-07-10T10:00:00Z', 3),
-    activity('path:g2-ct-algorithms:algorithms-mission', '2026-07-10T10:02:00Z', 1),
+  store.recordResults('g2-info-check-protect', [
+    { ...activity('path:g2-info-check-protect:theory', '2026-07-10T09:58:00Z', 3), activityVersion: 2 },
+    activity('path:g2-info-check-protect:safety-scenarios', '2026-07-10T10:00:00Z', 1),
   ])
   const api = fakeApi()
   const result = await syncPathProgress(store, GRADE2_PATH, 'child-a', api)
-  assert.equal(result.syncedEvents, 3)
+  assert.equal(result.syncedEvents, 2)
   assert.equal(api.submissions.length, 1)
-  assert.equal(api.submissions[0].results.length, 3)
-  // (3 + 3 + 1) / 3 → 2.33 → round = 2
+  assert.equal(api.submissions[0].results.length, 2)
+  // (3 + 1) / 2 → 2
   assert.equal(api.progress[0].bestStars, 2)
 })
 

@@ -279,12 +279,12 @@ export const GRADE4_PATH: GradePathMap = {
   ],
 }
 
-// ── Пілот: 2 клас ────────────────────────────────────────────────────────────
-// 9 points: start, three branching tracks, and a shared final mission.
+// Grade 2 live island 1: information, trust, and safe checking. Later islands
+// will add the broader computational-thinking and AI track arcs from the yearly plan.
 
 export const GRADE2_PATH: GradePathMap = {
   grade: 2,
-  version: 3,
+  version: 4,
   title: 'Шлях 2 класу',
   points: [
     {
@@ -297,16 +297,34 @@ export const GRADE2_PATH: GradePathMap = {
         { id: 'infosort', version: 1, title: 'ІнфоСорт', activity: { kind: 'sorting', game: 'infosort' }, required: true },
       ],
       unlockAfter: [],
-      x: 50, y: 6,
+      x: 50, y: 8,
     },
     {
-      id: 'g2-ct-multisort',
-      title: 'Сортуємо за різними правилами',
-      icon: '🔀',
-      curriculum: [{ track: 'computational-thinking', topic: 'classification' }],
-      activities: [{ id: 'multisort', version: 1, title: 'Мульти-Сортування', activity: { kind: 'sorting', game: 'multisort' }, required: true }],
+      id: 'g2-info-presentation',
+      title: 'Подай інформацію по-різному',
+      icon: '🎨',
+      curriculum: [{ track: 'informatics', topic: 'information' }],
+      activities: [{ id: 'presentation-mission', version: 1, title: 'Способи подання', activity: { kind: 'mission', track: 'informatics', topic: 'information', count: 4 }, required: true }],
       unlockAfter: ['g2-info-start'],
-      x: 22, y: 22,
+      x: 6, y: 31,
+    },
+    {
+      id: 'g2-info-processes',
+      title: 'Дії з інформацією',
+      icon: '🔄',
+      curriculum: [{ track: 'informatics', topic: 'information' }],
+      activities: [{ id: 'processes-mission', version: 1, title: 'Отримай, збережи, передай', activity: { kind: 'mission', track: 'informatics', topic: 'information', count: 4 }, required: true }],
+      unlockAfter: ['g2-info-presentation'],
+      x: 66, y: 36,
+    },
+    {
+      id: 'g2-info-signs-carriers',
+      title: 'Знаки й носії',
+      icon: '🪧',
+      curriculum: [{ track: 'informatics', topic: 'information' }],
+      activities: [{ id: 'infosort', version: 1, title: 'ІнфоСорт', activity: { kind: 'sorting', game: 'infosort' }, required: true }],
+      unlockAfter: ['g2-info-processes'],
+      x: 84, y: 53,
     },
     {
       id: 'g2-fact-opinion',
@@ -318,84 +336,48 @@ export const GRADE2_PATH: GradePathMap = {
       ],
       // Рівень 2: факт / думка / міф (рівень 1 — дві категорії для 1 класу).
       activities: [{ id: 'fact-opinion-l2', version: 1, title: 'Факт, думка чи міф', activity: { kind: 'fact-opinion', level: 2 }, required: true }],
-      unlockAfter: ['g2-info-start'],
-      x: 78, y: 22,
+      unlockAfter: ['g2-info-signs-carriers'],
+      x: 40, y: 66,
     },
     {
-      id: 'g2-assembly',
-      title: 'Частини компʼютера',
-      icon: '🔧',
-      curriculum: [{ track: 'informatics', topic: 'computer-systems' }],
-      activities: [
-        { id: 'theory', version: 1, title: 'Теорія', activity: { kind: 'lesson', lessonId: 'computer-parts-g2' }, required: true },
-        { id: 'computer-parts-click', version: 1, title: 'Знайди частини компʼютера', activity: { kind: 'click-trainer', game: 'computer-parts', count: 6 }, required: true },
-      ],
-      unlockAfter: ['g2-info-start'],
-      x: 50, y: 32,
-    },
-    {
-      id: 'g2-ct-patterns',
-      title: 'Знаходимо закономірність',
-      icon: '🧩',
-      curriculum: [{ track: 'computational-thinking', topic: 'patterns' }],
-      activities: [{ id: 'patterns-puzzles', version: 1, title: 'Головоломки із закономірностями', activity: { kind: 'puzzles' }, required: true }],
-      unlockAfter: ['g2-ct-multisort'],
-      x: 16, y: 49,
-    },
-    {
-      id: 'g2-ai-perception',
-      title: 'Як ШІ розпізнає обʼєкти',
-      icon: '👁️',
-      curriculum: [{ track: 'ai-basics', topic: 'ai-perception' }],
-      activities: [{ id: 'ai-perception-mission', version: 1, title: 'Місія про розпізнавання', activity: { kind: 'mission', track: 'ai-basics', topic: 'ai-perception' }, required: true }],
-      unlockAfter: ['g2-fact-opinion'],
-      x: 57, y: 51,
-    },
-    {
-      id: 'g2-digital-safety',
-      title: 'Що не можна повідомляти онлайн',
+      id: 'g2-info-check-protect',
+      title: 'Перевіряємо і захищаємося',
       icon: '🛡️',
-      curriculum: [{ track: 'informatics', topic: 'digital-safety' }],
-      activities: [
-        { id: 'theory', version: 2, title: 'Теорія', activity: { kind: 'lesson', lessonId: 'safety-personal-data-footprint-g2' }, required: true },
-        { id: 'safety-scenarios', version: 1, title: 'Як вчинити?', activity: { kind: 'scenarios', count: 4 }, required: true },
-        { id: 'digital-safety-mission', version: 1, title: 'Місія про приватні дані', activity: { kind: 'mission', track: 'informatics', topic: 'digital-safety' }, required: true },
-      ],
-      unlockAfter: ['g2-fact-opinion'],
-      x: 86, y: 51,
-    },
-    {
-      id: 'g2-ct-algorithms',
-      title: 'Будуємо точний алгоритм',
-      icon: '🤖',
-      curriculum: [{ track: 'computational-thinking', topic: 'algorithms' }],
-      activities: [
-        { id: 'theory', version: 2, title: 'Теорія', activity: { kind: 'lesson', lessonId: 'algo-linear-routes-g2' }, required: true },
-        // Тематичне закріплення теорії замість generic-головоломок (зріз 3).
-        { id: 'algorithms-sequence', version: 1, title: 'Впорядкуй кроки', activity: { kind: 'sequence', count: 3 }, required: true },
-        { id: 'algorithms-mission', version: 1, title: 'Місія про алгоритми', activity: { kind: 'mission', track: 'computational-thinking', topic: 'algorithms', count: 5 }, required: true },
-      ],
-      unlockAfter: ['g2-ct-patterns'],
-      x: 29, y: 68,
-    },
-    {
-      id: 'g2-final',
-      title: 'Фінальна місія трьох напрямів',
-      icon: '🏰',
       curriculum: [
         { track: 'informatics', topic: 'information' },
-        { track: 'computational-thinking', topic: 'logic' },
+        { track: 'informatics', topic: 'digital-safety' },
+      ],
+      activities: [
+        { id: 'theory', version: 2, title: 'Теорія', activity: { kind: 'lesson', lessonId: 'safety-personal-data-footprint-g2' }, required: true },
+        { id: 'safety-scenarios', version: 1, title: 'Як вчинити?', activity: { kind: 'scenarios', count: 3 }, required: true },
+      ],
+      unlockAfter: ['g2-fact-opinion'],
+      x: 16, y: 81,
+    },
+    {
+      id: 'g2-info-check',
+      title: 'Детектив фактів',
+      icon: '🧭',
+      curriculum: [
+        { track: 'informatics', topic: 'information' },
         { track: 'ai-basics', topic: 'ai-ethics-safety' },
       ],
-      activities: [{
-        id: 'final-three-tracks',
-        version: 1,
-        title: 'Фінальна місія',
-        activity: { kind: 'mission', tracks: ['informatics', 'computational-thinking', 'ai-basics'], count: 9 },
-        required: true,
-      }],
-      unlockAfter: ['g2-ct-algorithms', 'g2-ai-perception', 'g2-digital-safety'],
-      x: 52, y: 88,
+      activities: [{ id: 'info-check-mission', version: 1, title: 'Тематична перевірка', activity: { kind: 'mission', track: 'informatics', topic: 'information', count: 6 }, required: true }],
+      unlockAfter: ['g2-info-check-protect'],
+      x: 56, y: 93,
+    },
+    {
+      id: 'g2-review-info-1',
+      title: 'Згадай факти й повідомлення',
+      icon: '🔁',
+      curriculum: [
+        { track: 'informatics', topic: 'information' },
+        { track: 'computational-thinking', topic: 'classification' },
+        { track: 'ai-basics', topic: 'ai-ethics-safety' },
+      ],
+      activities: [{ id: 'review-info-mission', version: 1, title: 'Повторення', activity: { kind: 'mission', tracks: ['informatics', 'computational-thinking', 'ai-basics'], count: 6 }, required: true }],
+      unlockAfter: ['g2-info-check'],
+      x: 91, y: 76,
     },
   ],
 }
