@@ -158,7 +158,7 @@ references its `lessonId` and the lesson is published/exported.
 | `g2-info-start` | already has `info-senses-g2` | add or replace with selected grade 2 information lessons after review |
 | `g2-digital-safety` | already has `private-info-g2` | add selected safety lessons as theory steps or alternate lesson variants |
 | `g2-ct-algorithms` | already has `algorithms-order-g2` | add selected algorithm lessons, especially `algo-properties-g2`, `algo-linear-routes-g2`, `algo-program-test-debug-g2` |
-| `g2-assembly` | simulator only | add one computer-systems lesson before the simulator |
+| `g2-assembly` | lesson + click trainer | keep grade 2 focused on recognizing computer parts; hardware assembly simulator starts from grade 3 |
 | `g1-info-senses` | sorting activity only | add one entry information lesson |
 | `g1-sort-start` | sorting activity only | add one short data/features lesson if reading load is acceptable |
 | `g1-ct-algorithms` | mission only | add one short algorithm lesson |

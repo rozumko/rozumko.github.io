@@ -710,6 +710,14 @@ function simulatorScenario() {
   return simulatorScenarioKey === 'assembly-software' ? SOFTWARE_SCENARIO : HARDWARE_SCENARIO
 }
 
+function simulatorAllowedGrades() {
+  return simulatorScenarioKey === 'assembly-software' ? [4] : [3, 4]
+}
+
+function simulatorDefaultGrade() {
+  return simulatorAllowedGrades()[0] ?? 3
+}
+
 function resetSimulatorNodes() {
   simulatorNodes = cloneData(defaultSimulatorPack(simulatorScenario()).nodes)
 }
@@ -737,7 +745,7 @@ function openSimulatorEditor(mission: Mission | null) {
         <div class="adm-form-grid adm-form-grid--4">
           <div><label class="adm-label">ID</label><input aria-label="ID симулятора" class="adm-input adm-input--sm adm-input--code sie-id" value="${esc(mission?.id ?? '')}" ${mission ? 'disabled' : ''}></div>
           <div><label class="adm-label">Назва</label><input aria-label="Назва симулятора" class="adm-input adm-input--sm sie-title" value="${esc(mission?.title ?? simulatorScenario().title)}"></div>
-          <div><label class="adm-label">Клас</label><select aria-label="Клас симулятора" class="adm-input adm-input--sm sie-grade">${[1,2,3,4].map(g => `<option value="${g}" ${(mission?.grade ?? (simulatorScenarioKey === 'assembly-software' ? 4 : 2)) === g ? 'selected' : ''}>${g} клас</option>`).join('')}</select></div>
+          <div><label class="adm-label">Клас</label><select aria-label="Клас симулятора" class="adm-input adm-input--sm sie-grade">${simulatorAllowedGrades().map(g => `<option value="${g}" ${(mission?.grade ?? simulatorDefaultGrade()) === g ? 'selected' : ''}>${g} клас</option>`).join('')}</select></div>
           <div><label class="adm-label">Напрям</label><select aria-label="Напрям симулятора" class="adm-input adm-input--sm sie-track">${Object.entries(TRACK_LABELS).map(([value,label]) => `<option value="${value}" ${(mission?.track ?? 'informatics') === value ? 'selected' : ''}>${label}</option>`).join('')}</select></div>
           <div><label class="adm-label">Code-owned механіка</label><select aria-label="Механіка симулятора" class="adm-input adm-input--sm sie-scenario" ${mission ? 'disabled' : ''}><option value="assembly-hardware">Збірка ПК</option><option value="assembly-software">Налаштування ОС</option></select></div>
           <div><label class="adm-label">Версія механіки</label><input aria-label="Версія механіки" class="adm-input adm-input--sm" value="1" disabled></div>
@@ -756,7 +764,7 @@ function openSimulatorEditor(mission: Mission | null) {
     simulatorScenarioKey = scenarioSelect.value
     resetSimulatorNodes()
     editorOverlay!.querySelector<HTMLInputElement>('.sie-title')!.value = simulatorScenario().title
-    editorOverlay!.querySelector<HTMLSelectElement>('.sie-grade')!.value = simulatorScenarioKey === 'assembly-software' ? '4' : '2'
+    editorOverlay!.querySelector<HTMLSelectElement>('.sie-grade')!.innerHTML = simulatorAllowedGrades().map(g => `<option value="${g}" ${simulatorDefaultGrade() === g ? 'selected' : ''}>${g} клас</option>`).join('')
     renderSimulatorNodes()
   })
   renderSimulatorNodes()
@@ -853,12 +861,17 @@ function renderSimulatorNodes() {
 function collectSimulatorMission(): AdminSimulatorMissionInput {
   if (!editorOverlay) throw new Error('Редактор закрито')
   const topic = editorOverlay.querySelector<HTMLInputElement>('.sie-topic')!.value.trim()
+  const grade = Number(editorOverlay.querySelector<HTMLSelectElement>('.sie-grade')!.value)
+  const allowedGrades = simulatorAllowedGrades()
+  if (!allowedGrades.includes(grade)) {
+    throw new Error('Симулятор збірки ПК доступний з 3 класу, а налаштування ОС - з 4 класу.')
+  }
   return {
     id: editorMission?.id ?? editorOverlay.querySelector<HTMLInputElement>('.sie-id')!.value.trim(),
     title: editorOverlay.querySelector<HTMLInputElement>('.sie-title')!.value.trim(),
     kind: 'simulator-game',
     track: editorOverlay.querySelector<HTMLSelectElement>('.sie-track')!.value as AdminSimulatorMissionInput['track'],
-    grade: Number(editorOverlay.querySelector<HTMLSelectElement>('.sie-grade')!.value),
+    grade,
     config: { scenarioKey: simulatorScenarioKey, mechanicsVersion: 1, ...(topic ? { topic } : {}), nodes: simulatorNodes },
   }
 }

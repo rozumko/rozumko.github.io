@@ -284,7 +284,7 @@ export const GRADE4_PATH: GradePathMap = {
 
 export const GRADE2_PATH: GradePathMap = {
   grade: 2,
-  version: 2,
+  version: 3,
   title: 'Шлях 2 класу',
   points: [
     {
@@ -323,12 +323,12 @@ export const GRADE2_PATH: GradePathMap = {
     },
     {
       id: 'g2-assembly',
-      title: 'Збери свій компʼютер',
+      title: 'Частини компʼютера',
       icon: '🔧',
       curriculum: [{ track: 'informatics', topic: 'computer-systems' }],
       activities: [
         { id: 'theory', version: 1, title: 'Теорія', activity: { kind: 'lesson', lessonId: 'computer-parts-g2' }, required: true },
-        { id: 'assembly-hardware', version: 1, title: 'Майстерня компʼютера', activity: { kind: 'simulator', scenario: 'hardware' }, required: true },
+        { id: 'computer-parts-click', version: 1, title: 'Знайди частини компʼютера', activity: { kind: 'click-trainer', game: 'computer-parts', count: 6 }, required: true },
       ],
       unlockAfter: ['g2-info-start'],
       x: 50, y: 32,

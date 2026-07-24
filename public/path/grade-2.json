@@ -2,7 +2,7 @@
  "pathId": "grade-2",
  "grade": 2,
  "title": "Шлях 2 класу",
- "version": 2,
+ "version": 3,
  "points": [
   {
    "id": "g2-info-start",
@@ -106,7 +106,7 @@
   },
   {
    "id": "g2-assembly",
-   "title": "Збери свій компʼютер",
+   "title": "Частини компʼютера",
    "icon": "🔧",
    "access": "free",
    "curriculum": [
@@ -128,12 +128,13 @@
      "required": true
     },
     {
-     "id": "assembly-hardware",
+     "id": "computer-parts-click",
      "version": 1,
-     "title": "Майстерня компʼютера",
+     "title": "Знайди частини компʼютера",
      "activity": {
-      "kind": "simulator",
-      "scenario": "hardware"
+      "kind": "click-trainer",
+      "game": "computer-parts",
+      "count": 6
      },
      "required": true
     }

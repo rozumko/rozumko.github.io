@@ -200,10 +200,10 @@ function renderMap() {
     btn.disabled = !open && !done
     const state = done
       ? `виконано${stars ? `, ${stars} з 3 зірок` : ''}`
-      : open ? 'доступно' : 'ще зачинено'
+      : open ? 'доступно' : 'попереду'
     btn.setAttribute('aria-label', `${p.title} — ${state}`)
     btn.innerHTML = `
-      <span class="path-node__badge" aria-hidden="true">${done ? '✓' : open ? p.icon : '🔒'}</span>
+      <span class="path-node__badge" aria-hidden="true">${done ? '✓' : p.icon}</span>
       <span class="path-node__label" aria-hidden="true">${p.title}</span>
       ${done && stars ? `<span class="path-node__stars" aria-hidden="true">${'⭐'.repeat(stars)}</span>` : ''}`
     if (open || done) btn.addEventListener('click', () => { void startPoint(p) })
