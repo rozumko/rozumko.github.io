@@ -623,8 +623,8 @@ test('path progress: unknown versions and locked points fail without writes', as
     const locked = await app.inject({
       method: 'POST', url: `/api/parent/profiles/${ids.profileA}/path-progress`, headers: auth('mama-verified'),
       payload: {
-        pathId: 'grade-2', pointId: 'g2-ct-multisort',
-        results: [pathResult('path:g2-ct-multisort:multisort')],
+        pathId: 'grade-2', pointId: 'g2-info-presentation',
+        results: [pathResult('path:g2-info-presentation:presentation-mission')],
       },
     })
     assert.equal(locked.statusCode, 409)

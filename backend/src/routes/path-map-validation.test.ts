@@ -77,26 +77,26 @@ test('bumpChangedStepVersions: зміна активності бампає, і�
   assert.deepEqual(same.points, prev)
 
   const edited = clone()
-  const algorithms = edited.find(point => point.id === 'g2-ct-algorithms')!
-  const steps = algorithms.activities as Array<Record<string, unknown>>
-  ;(steps.find(step => step.id === 'algorithms-sequence')!.activity as Record<string, unknown>).count = 4
+  const checkProtect = edited.find(point => point.id === 'g2-info-check-protect')!
+  const steps = checkProtect.activities as Array<Record<string, unknown>>
+  ;(steps.find(step => step.id === 'safety-scenarios')!.activity as Record<string, unknown>).count = 4
   steps.push({
     id: 'bonus-puzzles', version: 1, title: 'Бонус',
     activity: { kind: 'puzzles', count: 2 }, required: false,
   })
   const result = bumpChangedStepVersions(prev, validatePathMapPoints(edited))
-  assert.deepEqual(result.bumped, ['g2-ct-algorithms:algorithms-sequence'])
-  const savedSteps = result.points.find(point => point.id === 'g2-ct-algorithms')!.activities
-  assert.equal(savedSteps.find(step => step.id === 'algorithms-sequence')!.version, 2)
+  assert.deepEqual(result.bumped, ['g2-info-check-protect:safety-scenarios'])
+  const savedSteps = result.points.find(point => point.id === 'g2-info-check-protect')!.activities
+  assert.equal(savedSteps.find(step => step.id === 'safety-scenarios')!.version, 2)
   assert.equal(savedSteps.find(step => step.id === 'bonus-puzzles')!.version, 1)
   // Клієнтський version у запиті ігнорується на користь prev+1 — редактор
   // не може «відкотити» версію кроку.
   const forged = JSON.parse(JSON.stringify(edited)) as Array<Record<string, unknown>>
-  ;(forged.find(p => p.id === 'g2-ct-algorithms')!.activities as Array<Record<string, unknown>>)
-    .find(step => step.id === 'algorithms-sequence')!.version = 99
+  ;(forged.find(p => p.id === 'g2-info-check-protect')!.activities as Array<Record<string, unknown>>)
+    .find(step => step.id === 'safety-scenarios')!.version = 99
   const forgedResult = bumpChangedStepVersions(prev, validatePathMapPoints(forged))
-  assert.equal(forgedResult.points.find(p => p.id === 'g2-ct-algorithms')!
-    .activities.find(step => step.id === 'algorithms-sequence')!.version, 2)
+  assert.equal(forgedResult.points.find(p => p.id === 'g2-info-check-protect')!
+    .activities.find(step => step.id === 'safety-scenarios')!.version, 2)
 })
 
 test('bumpChangedStepVersions never reuses a deleted historical step version', () => {

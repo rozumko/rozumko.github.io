@@ -47,7 +47,7 @@ test('valid completion uses the backend catalog and produces a stable event key'
   if (first.ok && second.ok) {
     assert.equal(first.eventKey, second.eventKey)
     assert.equal(first.sessionStars, 2)
-    assert.equal(first.pathVersion, 3)
+    assert.equal(first.pathVersion, 4)
   }
 })
 
@@ -94,21 +94,20 @@ for (const sample of [
 }
 
 test('multi-activity point requires the exact activity set and immutable versions', () => {
-  const theory = result('path:g2-ct-algorithms:theory', 2, '2026-07-10T09:58:00.000Z')
-  const sequence = result('path:g2-ct-algorithms:algorithms-sequence', 1, '2026-07-10T10:02:00.000Z')
-  const mission = result('path:g2-ct-algorithms:algorithms-mission')
+  const theory = result('path:g2-info-check-protect:theory', 2, '2026-07-10T09:58:00.000Z')
+  const scenarios = result('path:g2-info-check-protect:safety-scenarios', 1, '2026-07-10T10:02:00.000Z')
   const valid = validatePathCompletion(CATALOGS['grade-2'], 2, {
-    pathId: 'grade-2', pointId: 'g2-ct-algorithms', results: [sequence, theory, mission],
+    pathId: 'grade-2', pointId: 'g2-info-check-protect', results: [scenarios, theory],
   })
   assert.equal(valid.ok, true)
 
   const missing = validatePathCompletion(CATALOGS['grade-2'], 2, {
-    pathId: 'grade-2', pointId: 'g2-ct-algorithms', results: [theory, mission],
+    pathId: 'grade-2', pointId: 'g2-info-check-protect', results: [theory],
   })
   assert.deepEqual(missing, { ok: false, error: 'Не всі обовʼязкові активності завершено' })
 
   const stale = validatePathCompletion(CATALOGS['grade-2'], 2, {
-    pathId: 'grade-2', pointId: 'g2-ct-algorithms', results: [theory, mission, { ...sequence, activityVersion: 2 }],
+    pathId: 'grade-2', pointId: 'g2-info-check-protect', results: [theory, { ...scenarios, activityVersion: 2 }],
   })
   assert.deepEqual(stale, { ok: false, error: 'Невідома активність або версія' })
 })
@@ -189,10 +188,10 @@ test('бонусні кроки: приймається підмножина, з
   assert.deepEqual(bonusWithoutRequired, { ok: false, error: 'Не всі обовʼязкові активності завершено' })
 })
 
-test('unlock prerequisites require every predecessor', () => {
-  const final = CATALOGS['grade-2'].points['g2-final']
-  assert.equal(hasPathPrerequisites(final, ['g2-ct-algorithms', 'g2-ai-perception']), false)
-  assert.equal(hasPathPrerequisites(final, ['g2-ct-algorithms', 'g2-ai-perception', 'g2-digital-safety']), true)
+test('unlock prerequisites gate each linear point on its predecessor', () => {
+  const review = CATALOGS['grade-2'].points['g2-review-info-1']
+  assert.equal(hasPathPrerequisites(review, []), false)
+  assert.equal(hasPathPrerequisites(review, ['g2-info-check']), true)
 })
 
 test('0031 schema is idempotent, constrained, RLS-protected and journaled', () => {
