@@ -93,9 +93,7 @@ function injectFooter(): void {
               <li><a href="for-students.html">Для учнів</a></li>
               <li><a href="for-parents.html">Для батьків</a></li>
               <li><a href="for-teachers.html">Для вчителів</a></li>
-              <li><a href="standards.html">Відповідність стандарту</a></li>
-              <li><a href="home.html">Домашні місії</a></li>
-              <li><a href="school.html">Шкільний режим</a></li>
+              <li><a href="standards.html">Наші стандарти</a></li>
             </ul>
           </div>
           <div>
@@ -116,7 +114,7 @@ function injectFooter(): void {
           </div>
         </nav>
         <div class="site-footer__copy">
-          <p>&copy; 2024–2026 Розумко. Усі права захищені.</p>
+          <p>&copy; 2026 Розумко. Усі права захищені.</p>
         </div>
       </div>
     </footer>`

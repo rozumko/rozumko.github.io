@@ -543,6 +543,7 @@ button {
 @media (min-width: 640px) {
   .footer-col--wide {
     grid-column: span 1;
+    text-align: left;
   }
 }
 
