@@ -48,12 +48,12 @@ test('grade 1 has its own nine-point path with one visual starting activity', as
   await expect(page.locator('.path-node--locked .path-node__badge').first()).not.toHaveText('🔒')
 })
 
-test('grade-1 anonymous progress stops after the first point and asks for an adult', async ({ page }) => {
+test('grade-1 anonymous progress unlocks the next points and asks an adult to save', async ({ page }) => {
   await page.addInitScript(([key, value]) => localStorage.setItem(key, value),
     [STORAGE_KEY, progressWith(['g1-sort-start'])] as const)
   await page.goto('/path.html?grade=1')
   await expect(page.locator('.path-node--done')).toHaveCount(1)
-  await expect(page.locator('.path-node--open')).toHaveCount(0)
+  await expect(page.locator('.path-node--open')).toHaveCount(3)
   await expect(page.locator('#path-parent-gate')).toBeVisible()
   await expect(page.locator('#path-parent-gate-link')).toHaveAttribute('href', 'parent.html?continuePath=grade-1')
   await expect(page.getByRole('button', { name: /Свято трьох суперсил/ })).toBeDisabled()
@@ -123,7 +123,7 @@ for (const path of [
       [STORAGE_KEY, progressWith([path.start])])
     await page.reload()
     await expect(page.locator('.path-node--done')).toHaveCount(1)
-    await expect(page.locator('.path-node--open')).toHaveCount(0)
+    await expect(page.locator('.path-node--open')).toHaveCount(3)
     await expect(page.locator('#path-parent-gate')).toBeVisible()
     await expect(page.getByRole('button', { name: new RegExp(path.final) })).toBeDisabled()
   })
@@ -212,12 +212,13 @@ test('розпочата точка має неповну обводку і не
   await expect(page.getByRole('button', { name: /Подай інформацію по-різному/ })).toBeDisabled()
 })
 
-test('анонімна стартова точка показує adult gate замість відкритих гілок', async ({ page }) => {
+test('анонімна стартова точка відкриває наступну і показує non-blocking save CTA', async ({ page }) => {
   await page.addInitScript(([key, value]) => localStorage.setItem(key, value),
     [STORAGE_KEY, progressWith(['g2-info-start'])] as const)
   await page.goto('/path.html?grade=2')
   await expect(page.locator('.path-node--done')).toHaveCount(1)
-  await expect(page.locator('.path-node--open')).toHaveCount(0)
+  await expect(page.locator('.path-node--open')).toHaveCount(1)
+  await expect(page.locator('.path-node--open')).toHaveAccessibleName(/Подай інформацію по-різному/)
   await expect(page.locator('#path-parent-gate')).toBeVisible()
   const gateAndMap = await page.evaluate(() => {
     const gate = document.querySelector('#path-parent-gate')!.getBoundingClientRect()
@@ -239,7 +240,7 @@ test('grade-1 completion does not block grade-2 anonymous start', async ({ page 
   await expect(page.locator('.path-node--open')).toHaveAccessibleName(/Як ми отримуємо інформацію/)
 })
 
-test('anonymous local history cannot bypass the adult gate', async ({ page }) => {
+test('anonymous local history unlocks later grade-2 points while prompting save', async ({ page }) => {
   await page.addInitScript(([key, value]) => localStorage.setItem(key, value),
     [STORAGE_KEY, progressWith([
       'g2-info-start', 'g2-info-presentation', 'g2-info-processes',
@@ -248,8 +249,8 @@ test('anonymous local history cannot bypass the adult gate', async ({ page }) =>
   await page.goto('/path.html?grade=2')
   const final = page.getByRole('button', { name: /Згадай факти й повідомлення/ })
   await expect(final).toBeDisabled()
-  // Even a legacy local history with all prerequisites cannot unlock more
-  // content without an explicitly selected parent-owned profile.
+  // Local browser history can keep the child moving; the parent CTA remains
+  // non-blocking so the progress can be attached to a profile later.
   await page.addInitScript(([key, value]) => localStorage.setItem(key, value),
     [STORAGE_KEY, progressWith([
       'g2-info-start', 'g2-info-presentation', 'g2-info-processes',
@@ -257,7 +258,7 @@ test('anonymous local history cannot bypass the adult gate', async ({ page }) =>
       'g2-info-check',
     ])] as const)
   await page.reload()
-  await expect(page.getByRole('button', { name: /Згадай факти й повідомлення/ })).toBeDisabled()
+  await expect(page.getByRole('button', { name: /Згадай факти й повідомлення/ })).toBeEnabled()
   await expect(page.locator('#path-parent-gate')).toBeVisible()
 })
 
@@ -398,7 +399,7 @@ async function completeLessonTheory(page: Page) {
   }
 }
 
-test('a real anonymous activity persists the first point and shows the adult gate', async ({ page }) => {
+test('a real anonymous activity persists the first point and keeps the next point playable', async ({ page }) => {
   const binByItem = new Map<string, string>()
   for (const level of INFO_SORT_LEVELS) {
     const labels = new Map(level.bins.map(bin => [bin.id, bin.label]))
@@ -428,7 +429,8 @@ test('a real anonymous activity persists the first point and shows the adult gat
   await expect(page.locator('#path-done')).toBeVisible()
   await page.locator('#path-done-map-btn').click()
   await expect(page.locator('.path-node--done')).toHaveCount(1)
-  await expect(page.locator('.path-node--open')).toHaveCount(0)
+  await expect(page.locator('.path-node--open')).toHaveCount(1)
+  await expect(page.locator('.path-node--open')).toHaveAccessibleName(/Подай інформацію по-різному/)
   await expect(page.locator('#path-parent-gate')).toBeVisible()
   await expectElementInViewport(page, '#path-parent-gate')
   const stored = await page.evaluate(key => localStorage.getItem(key), STORAGE_KEY)
