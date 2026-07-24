@@ -287,6 +287,37 @@
         </div>
         <p class="admin-section-note">Статус «Опубліковано» фіксує перевірену версію уроку. Щоб доставити всі перевірені зміни дітям, скористайся вкладкою «Публікація».</p>
         <div class="admin-filter-bar">
+          <input id="l-filter-search" class="adm-input adm-input--sm" type="search"
+                 placeholder="Пошук за назвою, id або точкою" aria-label="Пошук уроків"/>
+          <select id="l-filter-status" class="adm-input adm-input--sm adm-input--auto" aria-label="Статус уроку">
+            <option value="">Усі статуси</option>
+            <option value="draft">Чернетки</option>
+            <option value="lesson-review">Готові до публікації</option>
+            <option value="published">Опубліковані</option>
+            <option value="archived">Зняті</option>
+          </select>
+          <select id="l-filter-grade" class="adm-input adm-input--sm adm-input--auto" aria-label="Клас уроку">
+            <option value="">Усі класи</option>
+            <option value="1">1 клас</option>
+            <option value="2">2 клас</option>
+            <option value="3">3 клас</option>
+            <option value="4">4 клас</option>
+          </select>
+          <select id="l-filter-track" class="adm-input adm-input--sm adm-input--auto" aria-label="Напрям уроку">
+            <option value="">Усі напрями</option>
+            <option value="informatics">Інформатика</option>
+            <option value="computational-thinking">Обчислювальне мислення</option>
+            <option value="ai-basics">Основи ШІ</option>
+          </select>
+          <select id="l-filter-topic" class="adm-input adm-input--sm adm-input--auto" aria-label="Тема уроку" disabled>
+            <option value="">Усі теми</option>
+          </select>
+          <select id="l-filter-usage" class="adm-input adm-input--sm adm-input--auto" aria-label="Привʼязка до карти">
+            <option value="">Усі уроки</option>
+            <option value="used">Є на карті</option>
+            <option value="unused">Поза картою</option>
+          </select>
+          <button id="l-filter-reset" class="btn-adm-ghost btn--sm">Скинути</button>
           <span id="l-count" class="admin-filter-count"></span>
         </div>
         <div id="lessons-list" class="admin-list admin-list--sm"></div>
