@@ -1,11 +1,12 @@
 import {
-  getAdminPathMaps, updateAdminPathMap, getAdminLessons,
-  type AdminPathMap,
+  getAdminPathMaps, updateAdminPathMap, getAdminLessons, getAdminQuestions,
+  type AdminPathMap, type AdminMicroLesson, type Question,
 } from '../../features/api/client.js'
 import { esc, showModal, showConfirm } from './ui.js'
 import { $ } from '../../utils/dom.js'
 import { createFocusTrap } from '../../utils/focus-trap.js'
 import { refreshContentDeliveryBanner } from './publication-tab.js'
+import { TOPIC_LABELS } from './taxonomy.js'
 
 // Form-based path point editor with an SVG preview. The database is the source
 // of truth; the audited publication tab deploys child-facing static bundles.
@@ -39,9 +40,18 @@ const KIND_LABELS: Record<string, string> = {
 const TRACK_COLORS: Record<string, string> = {
   informatics: '#0ea5e9', 'computational-thinking': '#8b5cf6', 'ai-basics': '#f59e0b',
 }
+const TRACK_LABELS: Record<string, string> = {
+  informatics: 'Інформатика',
+  'computational-thinking': 'Обчислювальне мислення',
+  'ai-basics': 'Основи ШІ',
+}
+const PRACTICE_KINDS = new Set(['mission', 'sequence', 'scenarios', 'puzzles', 'sorting', 'fact-opinion', 'click-trainer', 'simulator'])
+const MAX_PATH_POINTS = 40
 
 let maps: AdminPathMap[] = []
 let lessonIds: string[] = []
+let lessonsById = new Map<string, AdminMicroLesson>()
+let pathQuestions: Question[] = []
 let currentPathId = 'grade-2'
 let workingPoints: PointJson[] = []
 let workingTitle = ''
@@ -86,9 +96,15 @@ export async function loadPathTab() {
   const status = $('pm-status')
   status.textContent = 'Завантаження…'
   try {
-    const [{ maps: loadedMaps }, { lessons }] = await Promise.all([getAdminPathMaps(), getAdminLessons()])
+    const [{ maps: loadedMaps }, { lessons }, { questions }] = await Promise.all([
+      getAdminPathMaps(),
+      getAdminLessons(),
+      getAdminQuestions({ channel: 'path', status: 'published' }),
+    ])
     maps = loadedMaps
+    lessonsById = new Map(lessons.map(lesson => [lesson.id, lesson]))
     lessonIds = lessons.filter(lesson => lesson.publishedVersion && lesson.status !== 'archived').map(lesson => lesson.id).sort()
+    pathQuestions = questions
     loaded = true
     resetWorking()
     renderPathTab()
@@ -122,11 +138,12 @@ function renderPathTab() {
   const titleInput = $<HTMLInputElement>('pm-title')
   if (titleInput.value !== workingTitle) titleInput.value = workingTitle
   titleInput.disabled = !map
-  $<HTMLButtonElement>('pm-add-point').disabled = !map
+  $<HTMLButtonElement>('pm-add-point').disabled = !map || workingPoints.length >= MAX_PATH_POINTS
   $<HTMLButtonElement>('pm-save').disabled = !map
   $('pm-status').textContent = map
     ? `${workingTitle} · v${map.version} · точок: ${workingPoints.length}${dirty ? ' · ✳ не збережено' : ''}`
     : 'Карту не знайдено (міграції 0033–0034 застосовані?)'
+  renderCoverage()
   renderPreview()
   renderPointsList()
 }
@@ -149,10 +166,132 @@ function renderPreview() {
   box.innerHTML = `<svg viewBox="0 0 100 105" role="img" aria-label="Схема карти">${edges}${nodes}</svg>`
 }
 
+interface PointCoverage {
+  kind: string
+  hasLesson: boolean
+  hasPractice: boolean
+  lessonIssues: string[]
+  missionQuestions: number
+  requestedQuestions: number
+  issues: string[]
+}
+
+function pointKind(point: PointJson): string {
+  const id = point.id.toLowerCase()
+  const title = point.title.toLowerCase()
+  if (id.includes('final') || title.includes('фінал')) return 'Фінал'
+  if (id.includes('review') || title.includes('згадай') || title.includes('повтор')) return 'Повторення'
+  if (id.includes('check') || title.includes('тест') || title.includes('детектив')) return 'Тематична перевірка'
+  if (point.activities.some(step => step.activity.kind === 'lesson')) return 'Урок'
+  return 'Закріплення'
+}
+
+function countQuestionsForMission(point: PointJson, activity: Record<string, unknown>): number {
+  const grade = Number(currentPathId.replace('grade-', ''))
+  const tracks = Array.isArray(activity.tracks)
+    ? activity.tracks as string[]
+    : typeof activity.track === 'string'
+      ? [activity.track]
+      : [...new Set(point.curriculum.map(tag => tag.track))]
+  const topics = typeof activity.topic === 'string'
+    ? [activity.topic]
+    : [...new Set(point.curriculum.map(tag => tag.topic))]
+
+  return pathQuestions.filter(question =>
+    question.grade === grade
+    && (!tracks.length || (question.track && tracks.includes(question.track)))
+    && (!topics.length || (question.topic && topics.includes(question.topic)))
+  ).length
+}
+
+function coverageForPoint(point: PointJson): PointCoverage {
+  const lessonIssues: string[] = []
+  let hasLesson = false
+  let hasPractice = false
+  let missionQuestions = 0
+  let requestedQuestions = 0
+
+  for (const step of point.activities) {
+    if (step.activity.kind === 'lesson') {
+      hasLesson = true
+      const lessonId = step.activity.lessonId as string | undefined
+      const lesson = lessonId ? lessonsById.get(lessonId) : null
+      if (!lessonId) {
+        lessonIssues.push('lessonId не задано')
+      } else if (!lesson?.publishedVersion || lesson.status === 'archived') {
+        lessonIssues.push(`${lessonId}: не опубліковано`)
+      } else if (!lesson.checkQuestions.length) {
+        lessonIssues.push(`${lessonId}: немає перевірки`)
+      }
+    }
+    if (PRACTICE_KINDS.has(step.activity.kind)) {
+      hasPractice = true
+      if (step.activity.kind === 'mission') {
+        const requested = Number.isInteger(step.activity.count) ? step.activity.count as number : 4
+        const available = countQuestionsForMission(point, step.activity)
+        requestedQuestions += requested
+        missionQuestions += available
+      }
+    }
+  }
+
+  const issues: string[] = []
+  if (!point.curriculum.length) issues.push('немає curriculum')
+  if (!point.activities.some(step => step.required)) issues.push('немає обовʼязкового кроку')
+  if (!hasLesson && !hasPractice) issues.push('немає уроку або практики')
+  if (lessonIssues.length) issues.push(...lessonIssues)
+  if (requestedQuestions > 0 && missionQuestions < requestedQuestions) {
+    issues.push(`питань ${missionQuestions}/${requestedQuestions}`)
+  }
+
+  return {
+    kind: pointKind(point),
+    hasLesson,
+    hasPractice,
+    lessonIssues,
+    missionQuestions,
+    requestedQuestions,
+    issues,
+  }
+}
+
+function tagLabel(tag: { track: string; topic: string }): string {
+  return `${TRACK_LABELS[tag.track] ?? tag.track}: ${TOPIC_LABELS[tag.topic] ?? tag.topic}`
+}
+
+function renderCoverage() {
+  const box = $('pm-coverage')
+  if (!currentMap()) {
+    box.innerHTML = ''
+    return
+  }
+  const coverages = workingPoints.map(point => coverageForPoint(point))
+  const withLessons = coverages.filter(item => item.hasLesson).length
+  const withPractice = coverages.filter(item => item.hasPractice).length
+  const withIssues = coverages.filter(item => item.issues.length).length
+  const checks = coverages.filter(item => item.kind === 'Тематична перевірка' || item.kind === 'Фінал').length
+  box.innerHTML = `
+    <div class="pm-coverage-summary">
+      <div class="pm-coverage-card"><span>Точки</span><strong>${workingPoints.length}/${MAX_PATH_POINTS}</strong></div>
+      <div class="pm-coverage-card"><span>З уроком</span><strong>${withLessons}</strong></div>
+      <div class="pm-coverage-card"><span>З практикою</span><strong>${withPractice}</strong></div>
+      <div class="pm-coverage-card"><span>Перевірки</span><strong>${checks}</strong></div>
+      <div class="pm-coverage-card ${withIssues ? 'pm-coverage-card--warn' : 'pm-coverage-card--ok'}"><span>Потребують уваги</span><strong>${withIssues}</strong></div>
+    </div>`
+}
+
 function renderPointsList() {
   const list = $('pm-points')
   list.innerHTML = ''
   for (const point of workingPoints) {
+    const coverage = coverageForPoint(point)
+    const tags = point.curriculum.map(tagLabel).join(' · ')
+    const issueBadges = coverage.issues.length
+      ? coverage.issues.map(issue => `<span class="qi-badge qi-badge--medium">${esc(issue)}</span>`).join('')
+      : '<span class="qi-badge qi-badge--easy">наповнення ок</span>'
+    const questionBadge = coverage.requestedQuestions
+      ? `<span class="qi-badge qi-badge--type">питань: ${coverage.missionQuestions}/${coverage.requestedQuestions}</span>`
+      : ''
     const el = document.createElement('div')
     el.className = 'question-item'
     const steps = point.activities
@@ -162,10 +301,15 @@ function renderPointsList() {
       <div class="question-item__left">
         <div class="question-item__badges">
           ${point.access === 'club' ? '<span class="qi-badge qi-badge--medium">🔒 клуб</span>' : '<span class="qi-badge qi-badge--easy">безкоштовно</span>'}
+          <span class="qi-badge qi-badge--grade">${esc(coverage.kind)}</span>
+          ${coverage.hasLesson ? '<span class="qi-badge qi-badge--practice">урок</span>' : ''}
+          ${coverage.hasPractice ? '<span class="qi-badge qi-badge--practice">практика</span>' : ''}
+          ${questionBadge}
+          ${issueBadges}
           <span class="qi-badge qi-badge--type">${esc(String(point.x))}:${esc(String(point.y))}</span>
         </div>
         <p class="question-item__text">${esc(point.icon)} ${esc(point.title)}</p>
-        <p class="question-item__meta">${esc(point.id)} · ${esc(steps)}</p>
+        <p class="question-item__meta">${esc(point.id)} · ${esc(tags)} · ${esc(steps)}</p>
       </div>
       <div class="question-item__actions">
         <button type="button" class="btn-adm-ghost pm-edit">Редагувати</button>
@@ -177,18 +321,53 @@ function renderPointsList() {
 
 // ── Редактор точки ────────────────────────────────────────────
 
+function nextPointId(): string {
+  const gradePrefix = currentPathId.replace('grade-', 'g')
+  const used = new Set(workingPoints.map(point => point.id))
+  for (let index = workingPoints.length + 1; index <= MAX_PATH_POINTS + 10; index += 1) {
+    const id = `${gradePrefix}-new-point-${index}`
+    if (!used.has(id)) return id
+  }
+  return `${gradePrefix}-new-point`
+}
+
+function newPointTemplate(): PointJson {
+  const previous = workingPoints[workingPoints.length - 1]
+  const tag = previous?.curriculum[0] ?? { track: 'informatics', topic: 'information' }
+  const index = workingPoints.length
+  const xPattern = [50, 18, 82, 34, 66]
+  return {
+    id: nextPointId(),
+    title: 'Нова точка',
+    icon: '✨',
+    access: 'club',
+    curriculum: [{ ...tag }],
+    activities: [{
+      id: 'practice',
+      version: 1,
+      title: 'Практика',
+      activity: { kind: 'mission', track: tag.track, topic: tag.topic, count: 4 },
+      required: true,
+    }],
+    unlockAfter: previous ? [previous.id] : [],
+    x: xPattern[index % xPattern.length],
+    y: Math.min(94, 10 + (index % 9) * 10),
+  }
+}
+
 function openPointEditor(point: PointJson | null) {
+  const draft = point ?? newPointTemplate()
   editingPointId = point?.id ?? null
   $('point-modal-title').textContent = point ? `Точка: ${point.title}` : 'Нова точка'
   $('pf-error').textContent = ''
   const idInput = $<HTMLInputElement>('pf-id')
-  idInput.value = point?.id ?? `${currentPathId.replace('grade-', 'g')}-`
+  idInput.value = draft.id
   idInput.disabled = !!point // на id посилаються unlockAfter і activityId результатів
-  $<HTMLInputElement>('pf-title').value = point?.title ?? ''
-  $<HTMLInputElement>('pf-icon').value = point?.icon ?? ''
-  $<HTMLSelectElement>('pf-access').value = point?.access ?? 'free'
-  $<HTMLInputElement>('pf-x').value = String(point?.x ?? 50)
-  $<HTMLInputElement>('pf-y').value = String(point?.y ?? 50)
+  $<HTMLInputElement>('pf-title').value = draft.title
+  $<HTMLInputElement>('pf-icon').value = draft.icon
+  $<HTMLSelectElement>('pf-access').value = draft.access ?? 'free'
+  $<HTMLInputElement>('pf-x').value = String(draft.x)
+  $<HTMLInputElement>('pf-y').value = String(draft.y)
   $<HTMLButtonElement>('pf-delete').classList.toggle('hidden', !point)
 
   const unlock = $('pf-unlock')
@@ -200,15 +379,15 @@ function openPointEditor(point: PointJson | null) {
     const checkbox = document.createElement('input')
     checkbox.type = 'checkbox'
     checkbox.value = other.id
-    checkbox.checked = !!point?.unlockAfter.includes(other.id)
+    checkbox.checked = draft.unlockAfter.includes(other.id)
     label.append(checkbox, ` ${other.icon} ${other.title}`)
     unlock.appendChild(label)
   }
 
   $('pf-tags').innerHTML = ''
-  for (const tag of point?.curriculum ?? [{ track: 'informatics', topic: '' }]) addTagRow(tag)
+  for (const tag of draft.curriculum) addTagRow(tag)
   $('pf-steps').innerHTML = ''
-  for (const step of point?.activities ?? []) addStepRow(step)
+  for (const step of draft.activities) addStepRow(step)
 
   $('point-modal').classList.remove('hidden')
   pointModalTrapRemove?.()

@@ -9,6 +9,18 @@ function bundleFor(grade) {
   return JSON.parse(JSON.stringify({ pathId: `grade-${grade}`, grade, version: map.version, title: map.title, points: map.points }))
 }
 
+function linearPoints(count) {
+  const base = bundleFor(2).points[0]
+  return Array.from({ length: count }, (_, index) => ({
+    ...JSON.parse(JSON.stringify(base)),
+    id: `g2-year-point-${index + 1}`,
+    title: `Річна точка ${index + 1}`,
+    unlockAfter: index === 0 ? [] : [`g2-year-point-${index}`],
+    x: [50, 18, 82, 34, 66][index % 5],
+    y: Math.min(94, 6 + (index % 9) * 10),
+  }))
+}
+
 test('вбудовані карти проходять нормалізацію бандла (формат export:path сумісний)', () => {
   for (const grade of [1, 2, 3, 4]) {
     const map = normalizeMapBundle(bundleFor(grade), grade)
@@ -57,6 +69,16 @@ test('поле access приймає free/club/відсутнє, інше — н
   const badAccess = bundleFor(2)
   badAccess.points[0].access = 'premium'
   assert.equal(normalizeMapBundle(badAccess, 2), null)
+})
+
+test('річний bundle приймає до 40 точок і відхиляє 41', () => {
+  const forty = bundleFor(2)
+  forty.points = linearPoints(40)
+  assert.equal(normalizeMapBundle(forty, 2)?.points.length, 40)
+
+  const fortyOne = bundleFor(2)
+  fortyOne.points = linearPoints(41)
+  assert.equal(normalizeMapBundle(fortyOne, 2), null)
 })
 
 test('повна bundle-валідація відхиляє цикл, битий activity shape і координати', () => {
