@@ -37,6 +37,25 @@ test('recordResult: перше проходження створює completed-�
   assert.equal(store.pendingQueue().length, 1)
 })
 
+test('startPoint: розпочата точка не вважається завершеною і не потрапляє в чергу', () => {
+  const store = createProgressStore(fakeStorage())
+  const p = store.startPoint('p1', '2026-07-10T09:55:00Z')
+  assert.equal(p.status, 'started')
+  assert.equal(p.bestStars, 0)
+  assert.equal(store.isCompleted('p1'), false)
+  assert.deepEqual(store.completedIds(), [])
+  assert.equal(store.pendingQueue().length, 0)
+})
+
+test('startPoint: не затирає вже завершену точку', () => {
+  const store = createProgressStore(fakeStorage())
+  store.recordResult('p1', result('2026-07-10T10:00:00Z', 3))
+  const p = store.startPoint('p1', '2026-07-10T11:00:00Z')
+  assert.equal(p.status, 'completed')
+  assert.equal(p.bestStars, 3)
+  assert.equal(p.attempts, 1)
+})
+
 test('recordResults зберігає map version і batch для офлайн replay', () => {
   const store = createProgressStore(fakeStorage())
   store.recordResults('p1', [

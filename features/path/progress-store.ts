@@ -13,9 +13,10 @@ export interface StorageLike {
 
 export interface PointProgress {
   pointId: string
-  status: 'completed'
+  status: 'started' | 'completed'
   bestStars: number
   attempts: number
+  startedAt?: string
   updatedAt: string
 }
 
@@ -93,6 +94,24 @@ export function createProgressStore(storage: StorageLike, profileKey = 'local') 
     }
   }
 
+  function startPoint(pointId: string, at = new Date().toISOString()): PointProgress {
+    const state = load()
+    const existing = state.points[pointId]
+    if (existing?.status === 'completed') return existing
+
+    const progress: PointProgress = {
+      pointId,
+      status: 'started',
+      bestStars: existing?.bestStars ?? 0,
+      attempts: existing?.attempts ?? 0,
+      startedAt: existing?.startedAt ?? at,
+      updatedAt: at,
+    }
+    state.points[pointId] = progress
+    save(state)
+    return progress
+  }
+
   /**
    * Записує завершення точки. Ідемпотентно за (pointId, completedAt):
    * повторний виклик із тим самим результатом нічого не змінює.
@@ -121,6 +140,7 @@ export function createProgressStore(storage: StorageLike, profileKey = 'local') 
         status: 'completed',
         bestStars: Math.max(existing?.bestStars ?? 0, sessionStars),
         attempts: (existing?.attempts ?? 0) + 1,
+        ...(existing?.startedAt ? { startedAt: existing.startedAt } : {}),
         updatedAt,
       }
       save(state)
@@ -143,7 +163,9 @@ export function createProgressStore(storage: StorageLike, profileKey = 'local') 
   }
 
   function completedIds(): string[] {
-    return Object.keys(load().points)
+    return Object.values(load().points)
+      .filter(point => point.status === 'completed')
+      .map(point => point.pointId)
   }
 
   /** Черга несинхронізованих результатів (для майбутнього серверного синку). */
@@ -186,7 +208,7 @@ export function createProgressStore(storage: StorageLike, profileKey = 'local') 
     storage.removeItem(storageKey)
   }
 
-  return { recordResult, recordResults, getPoint, isCompleted, completedIds, pendingQueue, ackQueue, mergeServer, clearPoint, reset }
+  return { startPoint, recordResult, recordResults, getPoint, isCompleted, completedIds, pendingQueue, ackQueue, mergeServer, clearPoint, reset }
 }
 
 export type ProgressStore = ReturnType<typeof createProgressStore>

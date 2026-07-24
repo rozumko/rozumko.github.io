@@ -178,15 +178,38 @@ test('unknown grade shows placeholder, not a fallback map', async ({ page }) => 
   await expect(page.getByRole('link', { name: '← На головну' })).toBeVisible()
 })
 
-test('свіжий профіль: 9 точок, відкрита лише стартова', async ({ page }) => {
+test('свіжий профіль: 8 точок першого острова, відкрита лише стартова', async ({ page }) => {
   await page.goto('/path.html?grade=2')
   const nodes = page.locator('.path-node')
-  await expect(nodes).toHaveCount(9)
+  await expect(nodes).toHaveCount(8)
   await expect(page.locator('.path-node--open')).toHaveCount(1)
   await expect(page.locator('.path-node--open')).toHaveAccessibleName(/Як ми отримуємо інформацію/)
-  await expect(page.locator('.path-node--locked')).toHaveCount(8)
+  await expect(page.locator('.path-node--locked')).toHaveCount(7)
   await expect(page.locator('.path-node--locked').first()).toHaveAccessibleName(/попереду/)
   await expect(page.locator('.path-node--locked .path-node__badge').first()).not.toHaveText('🔒')
+})
+
+test('розпочата точка має неповну обводку і не відкриває наступну', async ({ page }) => {
+  await page.addInitScript(([key, value]) => localStorage.setItem(key, value),
+    [STORAGE_KEY, JSON.stringify({
+      version: 1,
+      points: {
+        'g2-info-start': {
+          pointId: 'g2-info-start',
+          status: 'started',
+          bestStars: 0,
+          attempts: 0,
+          startedAt: '2026-07-10T09:55:00Z',
+          updatedAt: '2026-07-10T09:55:00Z',
+        },
+      },
+      queue: [],
+    })] as const)
+  await page.goto('/path.html?grade=2')
+  await expect(page.locator('.path-node--started')).toHaveCount(1)
+  await expect(page.locator('.path-node--started')).toHaveAccessibleName(/розпочато/)
+  await expect(page.locator('.path-node--open')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /Подай інформацію по-різному/ })).toBeDisabled()
 })
 
 test('анонімна стартова точка показує adult gate замість відкритих гілок', async ({ page }) => {
@@ -219,21 +242,22 @@ test('grade-1 completion does not block grade-2 anonymous start', async ({ page 
 test('anonymous local history cannot bypass the adult gate', async ({ page }) => {
   await page.addInitScript(([key, value]) => localStorage.setItem(key, value),
     [STORAGE_KEY, progressWith([
-      'g2-info-start', 'g2-ct-multisort', 'g2-fact-opinion',
-      'g2-ct-patterns', 'g2-ai-perception', 'g2-digital-safety',
+      'g2-info-start', 'g2-info-presentation', 'g2-info-processes',
+      'g2-info-signs-carriers', 'g2-fact-opinion', 'g2-info-check-protect',
     ])] as const)
   await page.goto('/path.html?grade=2')
-  const final = page.getByRole('button', { name: /Фінальна місія/ })
+  const final = page.getByRole('button', { name: /Згадай факти й повідомлення/ })
   await expect(final).toBeDisabled()
   // Even a legacy local history with all prerequisites cannot unlock more
   // content without an explicitly selected parent-owned profile.
   await page.addInitScript(([key, value]) => localStorage.setItem(key, value),
     [STORAGE_KEY, progressWith([
-      'g2-info-start', 'g2-ct-multisort', 'g2-fact-opinion',
-      'g2-ct-patterns', 'g2-ai-perception', 'g2-digital-safety', 'g2-ct-algorithms',
+      'g2-info-start', 'g2-info-presentation', 'g2-info-processes',
+      'g2-info-signs-carriers', 'g2-fact-opinion', 'g2-info-check-protect',
+      'g2-info-check',
     ])] as const)
   await page.reload()
-  await expect(page.getByRole('button', { name: /Фінальна місія/ })).toBeDisabled()
+  await expect(page.getByRole('button', { name: /Згадай факти й повідомлення/ })).toBeDisabled()
   await expect(page.locator('#path-parent-gate')).toBeVisible()
 })
 
@@ -247,6 +271,46 @@ for (const vp of [{ name: 'mobile-375', width: 375, height: 812 }, { name: 'desk
     expect(overflow).toBeLessThanOrEqual(0)
   })
 }
+
+test('yearly preview renders all four 40-point paths', async ({ page }) => {
+  await page.goto('/path.html?preview=yearly')
+  await expect(page.locator('.yearly-grade')).toHaveCount(4)
+  await expect(page.locator('.yearly-island-slider')).toHaveCount(4)
+  await expect(page.locator('.yearly-island')).toHaveCount(20)
+  await expect(page.locator('.yearly-point')).toHaveCount(160)
+  await expect(page.locator('.yearly-point--placeholder')).not.toHaveCount(0)
+  await page.locator('.yearly-point').first().click()
+  await expect(page.locator('.yearly-point--selected')).toHaveCount(1)
+})
+
+test('yearly preview uses desktop island slides with varied routes', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await page.goto('/path.html?preview=yearly&grade=2')
+  await expect(page.locator('.yearly-island-slider')).toHaveCount(1)
+  await expect(page.locator('.yearly-island-slider__dot')).toHaveCount(5)
+  await expect(page.locator('.yearly-island-slider')).toHaveAttribute('data-active-island', '1')
+  const routeShapes = await page.locator('.yearly-island__route path').evaluateAll(paths =>
+    paths.slice(0, 2).map(path => path.getAttribute('d')))
+  expect(routeShapes[0]).not.toBe(routeShapes[1])
+
+  await page.getByRole('button', { name: 'Наступний острів' }).click()
+  await expect(page.locator('.yearly-island-slider')).toHaveAttribute('data-active-island', '2')
+  const activeOffset = await page.locator('.yearly-island-slider__track')
+    .evaluate(track => getComputedStyle(track).getPropertyValue('--active-island').trim())
+  expect(activeOffset).toBe('1')
+})
+
+test('yearly preview can focus on one grade without horizontal scroll on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 })
+  await page.goto('/path.html?preview=yearly&grade=2')
+  await expect(page.locator('.yearly-grade')).toHaveCount(1)
+  await expect(page.locator('.yearly-island')).toHaveCount(5)
+  await expect(page.locator('.yearly-island-slider__controls')).toBeHidden()
+  await expect(page.locator('.yearly-point')).toHaveCount(40)
+  const overflow = await page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth)
+  expect(overflow).toBeLessThanOrEqual(0)
+})
 
 for (const grade of [1, 2, 3, 4]) {
   test(`grade ${grade} mobile map nodes do not overlap`, async ({ page }) => {
@@ -396,7 +460,7 @@ test('selected parent profile loads its server snapshot without mixing local pro
     }))
     localStorage.setItem('rozumko:path-progress:v1:local', JSON.stringify({
       version: 1,
-      points: { 'g2-final': { pointId: 'g2-final', status: 'completed', bestStars: 3, attempts: 1, updatedAt: '2026-07-10T09:00:00Z' } },
+      points: { 'g2-review-info-1': { pointId: 'g2-review-info-1', status: 'completed', bestStars: 3, attempts: 1, updatedAt: '2026-07-10T09:00:00Z' } },
       queue: [],
     }))
     const originalFetch = window.fetch.bind(window)
@@ -418,7 +482,8 @@ test('selected parent profile loads its server snapshot without mixing local pro
   expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem('parent_session') ?? 'null')?.activeChildProfileId)).toBe(profileId)
   await expect.poll(() => page.evaluate(() => (window as any).__parentRequests.length)).toBeGreaterThan(0)
   await expect(page.locator('.path-node--done')).toHaveCount(1)
-  await expect(page.locator('.path-node--open')).toHaveCount(3)
-  await expect(page.getByRole('button', { name: /Фінальна місія/ })).toBeDisabled()
+  await expect(page.locator('.path-node--open')).toHaveCount(1)
+  await expect(page.locator('.path-node--open')).toHaveAccessibleName(/Подай інформацію по-різному/)
+  await expect(page.getByRole('button', { name: /Згадай факти й повідомлення/ })).toBeDisabled()
   expect(await page.evaluate(() => (window as any).__parentRequests)).toContain('Bearer parent-access')
 })

@@ -1,4 +1,5 @@
 import './frontend-security.js'
+import yearlyPathPlan from './docs/yearly-home-path-v1.md?raw'
 import { $, $maybe } from './utils/dom.js'
 import { mountSortingGame } from './features/games/sorting-game.js'
 import { SORTING_ATTRIBUTES_LEVELS, INFO_SORT_LEVELS, MULTISORT_LEVELS, type SortingLevel } from './features/games/sorting-data.js'
@@ -51,8 +52,10 @@ const SORTING_GAMES: Record<string, SortingLevel[]> = {
 const EDGE_NODE_GAP = 1.5
 
 const savedGrade = getSavedGrade()
-const queryGradeRaw = new URLSearchParams(window.location.search).get('grade')
+const searchParams = new URLSearchParams(window.location.search)
+const queryGradeRaw = searchParams.get('grade')
 const queryGrade = queryGradeRaw !== null ? Number(queryGradeRaw) : null
+const isYearlyPreview = searchParams.get('preview') === 'yearly'
 const requestedGrade = queryGrade !== null && Number.isInteger(queryGrade) && queryGrade > 0
   ? queryGrade
   : savedGrade
@@ -115,7 +118,338 @@ const els: MissionElements = {
 function show(el: HTMLElement) { el.classList.remove('hidden') }
 function hide(el: HTMLElement) { el.classList.add('hidden') }
 
-if (!requestedMap) {
+interface YearlyPreviewPoint {
+  grade: number
+  no: number
+  id: string
+  type: string
+  title: string
+  topic: string
+  status: 'ready' | 'candidate' | 'placeholder'
+}
+
+interface YearlyPreviewSlot {
+  x: number
+  y: number
+  label: 'left' | 'right'
+}
+
+const YEARLY_PREVIEW_ROUTES: readonly (readonly YearlyPreviewSlot[])[] = [
+  [
+    { x: 50, y: 10, label: 'right' },
+    { x: 26, y: 23, label: 'left' },
+    { x: 68, y: 36, label: 'right' },
+    { x: 78, y: 50, label: 'left' },
+    { x: 42, y: 63, label: 'left' },
+    { x: 20, y: 77, label: 'right' },
+    { x: 58, y: 88, label: 'right' },
+    { x: 82, y: 72, label: 'left' },
+  ],
+  [
+    { x: 18, y: 22, label: 'right' },
+    { x: 38, y: 12, label: 'right' },
+    { x: 60, y: 20, label: 'left' },
+    { x: 80, y: 36, label: 'left' },
+    { x: 64, y: 54, label: 'left' },
+    { x: 38, y: 60, label: 'right' },
+    { x: 22, y: 78, label: 'right' },
+    { x: 52, y: 88, label: 'right' },
+  ],
+  [
+    { x: 24, y: 12, label: 'right' },
+    { x: 48, y: 24, label: 'right' },
+    { x: 76, y: 18, label: 'left' },
+    { x: 62, y: 40, label: 'left' },
+    { x: 34, y: 48, label: 'right' },
+    { x: 18, y: 66, label: 'right' },
+    { x: 44, y: 82, label: 'right' },
+    { x: 76, y: 72, label: 'left' },
+  ],
+  [
+    { x: 50, y: 12, label: 'right' },
+    { x: 72, y: 24, label: 'left' },
+    { x: 80, y: 45, label: 'left' },
+    { x: 58, y: 58, label: 'left' },
+    { x: 36, y: 48, label: 'right' },
+    { x: 22, y: 65, label: 'right' },
+    { x: 42, y: 84, label: 'right' },
+    { x: 70, y: 78, label: 'left' },
+  ],
+  [
+    { x: 18, y: 18, label: 'right' },
+    { x: 38, y: 32, label: 'right' },
+    { x: 30, y: 54, label: 'right' },
+    { x: 52, y: 70, label: 'right' },
+    { x: 74, y: 58, label: 'left' },
+    { x: 82, y: 34, label: 'left' },
+    { x: 62, y: 18, label: 'left' },
+    { x: 48, y: 88, label: 'right' },
+  ],
+] as const
+
+function previewSlots(islandIndex: number, pointCount: number): readonly YearlyPreviewSlot[] {
+  return YEARLY_PREVIEW_ROUTES[islandIndex % YEARLY_PREVIEW_ROUTES.length].slice(0, pointCount)
+}
+
+function previewRoutePath(slots: readonly YearlyPreviewSlot[]): string {
+  return slots
+    .map((slot, index) => `${index === 0 ? 'M' : 'L'} ${slot.x} ${slot.y}`)
+    .join(' ')
+}
+
+function parseYearlyPathPlan(raw: string): Map<number, YearlyPreviewPoint[]> {
+  const result = new Map<number, YearlyPreviewPoint[]>()
+  for (const grade of [1, 2, 3, 4]) result.set(grade, [])
+  for (const line of raw.split(/\r?\n/)) {
+    const trimmedLine = line.trimStart()
+    if (!trimmedLine.startsWith('|')) continue
+    const cells = trimmedLine.split('|').slice(1, -1).map(cell => cell.trim())
+    const status = cells[5]
+    if (
+      cells.length < 6
+      || !/^\d+$/.test(cells[0])
+      || !['ready', 'candidate', 'placeholder'].includes(status)
+    ) continue
+    const id = cells[1].replace(/`/g, '')
+    const rowGrade = Number(id.match(/^g([1-4])-/)?.[1])
+    if (!Number.isInteger(rowGrade) || !result.has(rowGrade)) continue
+    result.get(rowGrade)!.push({
+      grade: rowGrade,
+      no: Number(cells[0]),
+      id,
+      type: cells[2],
+      title: cells[3],
+      topic: cells[4],
+      status: status as YearlyPreviewPoint['status'],
+    })
+  }
+  return result
+}
+
+function previewTrackClass(point: YearlyPreviewPoint): string {
+  if (point.id.includes('final') || point.id.includes('fact-opinion')) return 'yearly-point--cross'
+  if (point.id.includes('ai')) return 'yearly-point--ai'
+  if (/(ct|algo|logic|pattern|debug|repetition|review-algo)/.test(point.id)) return 'yearly-point--think'
+  return 'yearly-point--inf'
+}
+
+function previewIcon(point: YearlyPreviewPoint): string {
+  const id = point.id
+  if (id.includes('final')) return '🏁'
+  if (id.includes('review')) return '🔁'
+  if (id.includes('check')) return '🧭'
+  if (id.includes('ai')) return '✨'
+  if (id.includes('safety')) return '🛡️'
+  if (/(data|table|chart)/.test(id)) return '📊'
+  if (/(computer|device|file|software|assembly|tools)/.test(id)) return '💻'
+  if (/(internet|network|search)/.test(id)) return '🌐'
+  if (/(algo|ct|logic|pattern|debug|repetition)/.test(id)) return '🧩'
+  if (/(fact|info)/.test(id)) return '💬'
+  return '●'
+}
+
+function previewStatusLabel(status: YearlyPreviewPoint['status']): string {
+  if (status === 'ready') return 'є контент'
+  if (status === 'candidate') return 'можна зібрати'
+  return 'ескіз'
+}
+
+function setupYearlyIslandSlider(
+  slider: HTMLElement,
+  track: HTMLElement,
+  dots: HTMLButtonElement[],
+  prev: HTMLButtonElement,
+  next: HTMLButtonElement,
+) {
+  let activeIsland = 0
+  const islands = track.querySelectorAll<HTMLElement>('.yearly-island')
+  const setActiveIsland = (index: number) => {
+    activeIsland = Math.max(0, Math.min(index, islands.length - 1))
+    track.style.setProperty('--active-island', String(activeIsland))
+    prev.disabled = activeIsland === 0
+    next.disabled = activeIsland === islands.length - 1
+    dots.forEach((dot, dotIndex) => {
+      dot.classList.toggle('yearly-island-slider__dot--active', dotIndex === activeIsland)
+      dot.setAttribute('aria-current', dotIndex === activeIsland ? 'step' : 'false')
+    })
+    slider.setAttribute('data-active-island', String(activeIsland + 1))
+  }
+  prev.addEventListener('click', () => setActiveIsland(activeIsland - 1))
+  next.addEventListener('click', () => setActiveIsland(activeIsland + 1))
+  dots.forEach((dot, dotIndex) => dot.addEventListener('click', () => setActiveIsland(dotIndex)))
+  slider.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault()
+      setActiveIsland(activeIsland - 1)
+    } else if (event.key === 'ArrowRight') {
+      event.preventDefault()
+      setActiveIsland(activeIsland + 1)
+    }
+  })
+  setActiveIsland(0)
+}
+
+function renderYearlyPreview() {
+  document.body.classList.add('yearly-preview-page')
+  setActivityMode(false)
+  hide(activityEl)
+  hide(doneEl)
+  parentGate.classList.add('hidden')
+
+  const parsed = parseYearlyPathPlan(yearlyPathPlan)
+  const selectedGrade = queryGrade !== null && Number.isInteger(queryGrade) && queryGrade >= 1 && queryGrade <= 4
+    ? queryGrade
+    : null
+  const grades = selectedGrade ? [selectedGrade] : [1, 2, 3, 4]
+
+  mapScreen.classList.add('yearly-preview')
+  mapScreen.innerHTML = ''
+
+  const title = document.createElement('h1')
+  title.className = 'app-title'
+  title.textContent = selectedGrade ? `Повний шлях ${selectedGrade} класу` : 'Повний річний шлях'
+  const subtitle = document.createElement('p')
+  subtitle.className = 'app-subtitle yearly-preview__subtitle'
+  subtitle.textContent = 'Усі точки відкриті для огляду; ескізи показують місця майбутнього контенту.'
+
+  const nav = document.createElement('nav')
+  nav.className = 'yearly-preview__nav'
+  nav.setAttribute('aria-label', 'Класи')
+  for (const grade of [1, 2, 3, 4]) {
+    const link = document.createElement('a')
+    link.className = 'yearly-preview__grade-link'
+    if (selectedGrade === grade) link.classList.add('yearly-preview__grade-link--active')
+    link.href = `path.html?preview=yearly&grade=${grade}`
+    link.textContent = `${grade} клас`
+    nav.append(link)
+  }
+  if (selectedGrade) {
+    const all = document.createElement('a')
+    all.className = 'yearly-preview__grade-link'
+    all.href = 'path.html?preview=yearly'
+    all.textContent = 'Усі класи'
+    nav.append(all)
+  }
+
+  mapScreen.append(title, subtitle, nav)
+
+  for (const grade of grades) {
+    const points = parsed.get(grade) ?? []
+    const section = document.createElement('section')
+    section.className = 'yearly-grade'
+    section.id = `yearly-grade-${grade}`
+    section.setAttribute('aria-labelledby', `yearly-grade-${grade}-title`)
+
+    const gradeHeader = document.createElement('div')
+    gradeHeader.className = 'yearly-grade__header'
+    const gradeTitle = document.createElement('h2')
+    gradeTitle.id = `yearly-grade-${grade}-title`
+    gradeTitle.textContent = `${grade} клас`
+    const gradeMeta = document.createElement('p')
+    gradeMeta.textContent = `${points.length} точок · 5 островів приблизно по 8 занять`
+    gradeHeader.append(gradeTitle, gradeMeta)
+    section.append(gradeHeader)
+
+    const islandCount = Math.ceil(points.length / 8)
+    const slider = document.createElement('div')
+    slider.className = 'yearly-island-slider'
+    slider.tabIndex = 0
+    slider.setAttribute('aria-label', `Острови ${grade} класу`)
+
+    const sliderControls = document.createElement('div')
+    sliderControls.className = 'yearly-island-slider__controls'
+    const prev = document.createElement('button')
+    prev.type = 'button'
+    prev.className = 'yearly-island-slider__arrow'
+    prev.setAttribute('aria-label', 'Попередній острів')
+    prev.textContent = '‹'
+    const next = document.createElement('button')
+    next.type = 'button'
+    next.className = 'yearly-island-slider__arrow'
+    next.setAttribute('aria-label', 'Наступний острів')
+    next.textContent = '›'
+    const dotsWrap = document.createElement('div')
+    dotsWrap.className = 'yearly-island-slider__dots'
+    const dots: HTMLButtonElement[] = []
+    for (let islandIndex = 0; islandIndex < islandCount; islandIndex += 1) {
+      const dot = document.createElement('button')
+      dot.type = 'button'
+      dot.className = 'yearly-island-slider__dot'
+      dot.textContent = String(islandIndex + 1)
+      dot.setAttribute('aria-label', `Показати острів ${islandIndex + 1}`)
+      dots.push(dot)
+      dotsWrap.append(dot)
+    }
+    sliderControls.append(prev, dotsWrap, next)
+
+    const viewport = document.createElement('div')
+    viewport.className = 'yearly-island-slider__viewport'
+    const track = document.createElement('div')
+    track.className = 'yearly-island-slider__track'
+
+    for (let islandIndex = 0; islandIndex < islandCount; islandIndex += 1) {
+      const slice = points.slice(islandIndex * 8, islandIndex * 8 + 8)
+      const island = document.createElement('section')
+      island.className = 'yearly-island'
+      island.setAttribute('aria-label', `${grade} клас, острів ${islandIndex + 1}`)
+
+      const islandHeader = document.createElement('div')
+      islandHeader.className = 'yearly-island__header'
+      const islandTitle = document.createElement('h3')
+      islandTitle.textContent = `Острів ${islandIndex + 1}`
+      const range = document.createElement('span')
+      range.textContent = `точки ${slice[0]?.no ?? 0}-${slice[slice.length - 1]?.no ?? 0}`
+      islandHeader.append(islandTitle, range)
+
+      const path = document.createElement('div')
+      path.className = 'yearly-island__path'
+      const slots = previewSlots(islandIndex, slice.length)
+      const routeSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+      routeSvg.classList.add('yearly-island__route')
+      routeSvg.setAttribute('viewBox', '0 0 100 100')
+      routeSvg.setAttribute('preserveAspectRatio', 'none')
+      routeSvg.setAttribute('aria-hidden', 'true')
+      routeSvg.innerHTML = `<path d="${previewRoutePath(slots)}" />`
+      path.append(routeSvg)
+
+      for (const [pointIndex, point] of slice.entries()) {
+        const slot = slots[pointIndex]
+        const button = document.createElement('button')
+        button.type = 'button'
+        button.className = `yearly-point ${previewTrackClass(point)} yearly-point--${point.status} yearly-point--label-${slot.label}`
+        button.style.setProperty('--map-x', `${slot.x}%`)
+        button.style.setProperty('--map-y', `${slot.y}%`)
+        button.setAttribute('aria-label', `${point.no}. ${point.title} — ${point.type}, ${previewStatusLabel(point.status)}`)
+        button.innerHTML = `
+          <span class="yearly-point__number" aria-hidden="true">${point.no}</span>
+          <span class="yearly-point__visual" aria-hidden="true">${previewIcon(point)}</span>
+          <span class="yearly-point__caption">
+            <span class="yearly-point__title">${point.title}</span>
+            <span class="yearly-point__meta">${point.type} · ${point.topic}</span>
+            <span class="yearly-point__status">${previewStatusLabel(point.status)}</span>
+          </span>
+        `
+        button.addEventListener('click', () => {
+          button.closest('.yearly-grade')?.querySelectorAll('.yearly-point--selected')
+            .forEach(node => node.classList.remove('yearly-point--selected'))
+          button.classList.add('yearly-point--selected')
+        })
+        path.append(button)
+      }
+      island.append(islandHeader, path)
+      track.append(island)
+    }
+    viewport.append(track)
+    slider.append(sliderControls, viewport)
+    section.append(slider)
+    setupYearlyIslandSlider(slider, track, dots, prev, next)
+    mapScreen.append(section)
+  }
+}
+
+if (isYearlyPreview) {
+  renderYearlyPreview()
+} else if (!requestedMap) {
   $('path-subtitle').textContent = `Карта ${requestedGrade} класу ще готується — повертайся незабаром!`
   document.getElementById('path-map')!.classList.add('path-map--unavailable')
   parentGate.classList.add('hidden')
@@ -188,18 +522,25 @@ function renderMap() {
 
   nodesBox.innerHTML = ''
   for (const p of map.points) {
-    const done = completed.has(p.id)
+    const progress = store.getPoint(p.id)
+    const done = progress?.status === 'completed'
+    const started = progress?.status === 'started'
     const open = !anonymousGate && isUnlocked(p, completed)
-    const stars = store.getPoint(p.id)?.bestStars ?? 0
+    const stars = progress?.bestStars ?? 0
 
     const btn = document.createElement('button')
     btn.type = 'button'
-    btn.className = `path-node ${trackClass(p)} ${done ? 'path-node--done' : open ? 'path-node--open' : 'path-node--locked'}`
+    const stateClass = done ? 'path-node--done'
+      : started ? 'path-node--started'
+      : open ? 'path-node--open'
+      : 'path-node--locked'
+    btn.className = `path-node ${trackClass(p)} ${stateClass}`
     btn.style.left = `${p.x}%`
     btn.style.top = `${p.y}%`
     btn.disabled = !open && !done
     const state = done
       ? `виконано${stars ? `, ${stars} з 3 зірок` : ''}`
+      : started ? 'розпочато'
       : open ? 'доступно' : 'попереду'
     btn.setAttribute('aria-label', `${p.title} — ${state}`)
     btn.innerHTML = `
@@ -243,6 +584,7 @@ async function startPoint(p: PathPoint) {
     errorEl.textContent = 'Для цієї точки ще не додано обов’язкової активності.'
     return
   }
+  store.startPoint(p.id)
 
   try {
     await startActivityStep(p, requiredSteps, 0, [], run, results => offerBonus(p, results, run))
@@ -570,7 +912,7 @@ function backToMap() {
 $('path-back-btn').addEventListener('click', backToMap)
 $('path-done-map-btn').addEventListener('click', backToMap)
 
-if (requestedMap) {
+if (requestedMap && !isYearlyPreview) {
   renderMap()
   schedulePathSync()
   // Свіжа карта з бандла (правки з адмінки без релізу коду). Оновлюємо лише
