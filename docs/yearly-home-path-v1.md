@@ -251,7 +251,7 @@ _Створено: 2026-07-24._
 | Кошик | Точки 2 класу | Рішення |
 |---|---|---|
 | Поточні рушії | `g2-computer-choose-device`, `g2-computer-input-output`, `g2-computer-system`, `g2-internet-search`, retention для `g2-ct-algorithms`, `g2-digital-safety`, `g2-ai-perception` | можна збирати першим розширеним зрізом |
-| Потрібен table/chart engine | `g2-data-tables`, `g2-data-chart-read`, `g2-data-chart-fix` | лишаються `placeholder`, доки не вирішено формат таблиць і діаграм |
+| Потрібен table/chart engine | `g2-data-tables`, `g2-data-charts`, `g3-data-charts` | лишаються `placeholder`, доки не вирішено формат таблиць і діаграм |
 | Потрібен creation/workspace engine | `g2-digital-creation` | лишається `placeholder`, доки немає дитячого інструмента створення |
 | Потрібен train-the-model engine | `g2-ai-needs-examples`, старші AI-data/fairness точки | окреме продуктове рішення для AI-треку 3-4 класів |
 

@@ -83,7 +83,7 @@
       </span>
       <div class="vitrina-hero__text">
         <h1 class="vitrina-title">Місії для розумників 1–4 класів</h1>
-        <p class="vitrina-tagline">10–15 хвилин гри: логіка, алгоритми й перші безпечні ідеї про ШІ</p>
+        <p class="vitrina-tagline">10–15 хвилин на день: інформатика, розвиток мислення та знайомство з ШІ</p>
       </div>
     </section>
 
@@ -94,10 +94,8 @@
     <div class="mode-doors">
       <a href="home.html" class="mode-door mode-door--home">
         <span class="mode-door__icon" aria-hidden="true">
-          <svg viewBox="0 0 48 48" width="44" height="44" aria-hidden="true" focusable="false">
-            <path d="M8 22 L24 8 L40 22 V40 a2 2 0 0 1 -2 2 H10 a2 2 0 0 1 -2 -2 Z" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"/>
-            <rect x="20" y="28" width="8" height="14" rx="1.5" fill="currentColor"/>
-          </svg>
+          <img src="/assets/basics/icon-house.webp" width="72" height="72" alt=""
+               loading="lazy" decoding="async" />
         </span>
         <span class="mode-door__title">Я вдома</span>
         <span class="mode-door__desc">Обери місію і грай</span>
@@ -105,14 +103,8 @@
       </a>
       <a href="school.html" class="mode-door mode-door--school">
         <span class="mode-door__icon" aria-hidden="true">
-          <svg viewBox="0 0 48 48" width="44" height="44" aria-hidden="true" focusable="false">
-            <rect x="5"  y="12" width="11" height="11" rx="3" fill="currentColor"/>
-            <rect x="19" y="12" width="11" height="11" rx="3" fill="currentColor"/>
-            <rect x="33" y="12" width="11" height="11" rx="3" fill="currentColor"/>
-            <rect x="5"  y="26" width="11" height="11" rx="3" fill="currentColor" opacity="0.45"/>
-            <rect x="19" y="26" width="11" height="11" rx="3" fill="currentColor" opacity="0.45"/>
-            <rect x="33" y="26" width="11" height="11" rx="3" fill="currentColor" opacity="0.45"/>
-          </svg>
+          <img src="/assets/basics/icon-school-desk.webp" width="72" height="72" alt=""
+               loading="lazy" decoding="async" />
         </span>
         <span class="mode-door__title">Я в класі</span>
         <span class="mode-door__desc">Є код від вчителя?</span>
@@ -134,6 +126,37 @@
            alt="" loading="lazy" decoding="async" />
     </section>
 
+    <!-- ТРИ РЕЖИМИ: як платформа працює вдома, у класі та на подіях -->
+    <section class="modes-section" aria-labelledby="modes-heading">
+      <h2 id="modes-heading" class="info-section__title">Три режими</h2>
+      <ul class="modes-grid">
+        <li class="mode-card mode-card--home">
+          <span class="mode-card__head">
+            <img class="mode-card__icon" src="/assets/basics/icon-house-front.webp"
+                 width="52" height="52" alt="" loading="lazy" decoding="async" />
+            <span class="mode-card__title">Домашній</span>
+          </span>
+          <span class="mode-card__desc">Щоденні місії на карті пригод для самостійної гри вдома</span>
+        </li>
+        <li class="mode-card mode-card--school">
+          <span class="mode-card__head">
+            <img class="mode-card__icon" src="/assets/basics/icon-desk-front.webp"
+                 width="52" height="52" alt="" loading="lazy" decoding="async" />
+            <span class="mode-card__title">Шкільний</span>
+          </span>
+          <span class="mode-card__desc">Інтерактивні тести та завдання з інформатики для всього класу</span>
+        </li>
+        <li class="mode-card mode-card--olympiad">
+          <span class="mode-card__head">
+            <img class="mode-card__icon" src="/assets/basics/icon-kubok-front.webp"
+                 width="52" height="52" alt="" loading="lazy" decoding="async" />
+            <span class="mode-card__title">Олімпіадний</span>
+          </span>
+          <span class="mode-card__desc">Сезонні події для перевірки знань учнів</span>
+        </li>
+      </ul>
+    </section>
+
     <!-- БЕЗПЕКА: маскот зі щитом ліворуч + текст -->
     <section class="info-section safety-section" aria-labelledby="safety-heading">
       <img class="info-section__art" src="/mascot-shield.png" width="230" height="325"
@@ -145,7 +168,7 @@
         <ul class="safety-list">
           <li>Без реєстрації дитини та збору персональних даних</li>
           <li>Без рекламних трекерів, cookie й профілювання дітей</li>
-          <li>Шкільний режим безкоштовний; результати перевіряються чесно й автоматично</li>
+          <li>Безкоштовний шкільний режим для вчителів</li>
         </ul>
       </div>
     </section>

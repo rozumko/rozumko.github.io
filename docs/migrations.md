@@ -1,6 +1,6 @@
 # Database Migrations - Rozumko
 
-_Updated: 2026-07-14_
+_Updated: 2026-07-24_
 
 ## Source Of Truth
 
@@ -50,6 +50,15 @@ environments receive the same schema.
 | `0033_add_path_maps` | Learning-path structure in DB (seeded from path-data.ts; validation source of truth) |
 | `0034_add_path_map_revisions` | Immutable learning-path revisions + revision recorded on Home path events |
 | `0035_seed_micro_lessons` | Canonical published Grade 2 lessons required by the seeded path map |
+| `0036_add_question_editorial_workflow` | Question draft/review/published/archived state + immutable `question_revisions` (RLS enabled) |
+| `0037_add_lesson_editorial_workflow` | Same audited workflow and revisions for micro-lessons, plus the published snapshot read by the export |
+| `0038_add_mission_editorial_workflow` | Same audited workflow and revisions for missions; verified question-set references |
+| `0039_seed_sequence_scenario_missions` | Registers the existing sequence and digital-safety scenario games as editable missions |
+| `0040_seed_simulator_missions` | Registers the two code-owned computer simulators as editable missions |
+| `0041_add_content_publications` | Audited static-publication queue with a frozen manifest, one active job (RLS enabled) |
+| `0042_seed_fact_opinion_missions` | Registers the two fact-opinion games (fact/opinion, fact/opinion/myth) |
+| `0043_seed_click_trainer_missions` | Registers the grade-1 click-trainer game |
+| `0044_add_question_channels` | `questions.channels`: fail-closed delivery channels (`path`, `class_game`, `olympiad_training`) |
 
 `0012` is intentionally idempotent: production received the columns manually
 before the SQL was incorporated into Drizzle history.
@@ -150,6 +159,15 @@ Migration `0043` registers the grade-1 click-trainer (find and click the right
 card) as an editable `click-trainer-game` mission using the same
 `legacyBundledContent` seed pattern.
 
+Migration `0044` adds `questions.channels` — the explicit list of surfaces a
+question may be delivered to. Home and the learning path read only `path`,
+School Mode only `class_game`, and the static olympiad-training export only
+`olympiad_training`; an empty channel list means the question is issued nowhere,
+and main-round (`is_olympiad = true`) questions must carry no training channel.
+Deploy this migration before backend code that filters public, School or Home
+question queries by channel; the fail-closed rules and their regression tests
+are documented in `docs/security-model.md`.
+
 `GET /ready` and `GET /ping` perform the same check. Migration drift returns
 HTTP `503` with `{ "status": "error", "db": "migration_required" }` without
 exposing migration names or timestamps.
@@ -169,7 +187,11 @@ transaction mode on port `6543`, because Drizzle migrations use advisory locks.
 
 ## RLS Verification
 
-All current application tables had RLS enabled when checked on 2026-05-31.
+Migration `0028` enabled RLS on every application table that existed at that
+revision; each later table migration (`0029`, `0031`-`0034`, `0036`-`0038`,
+`0041`) enables it in the same migration. A regression test in
+`backend/src/security-regression.test.ts` fails if an application table is not
+covered, so this is enforced rather than periodically re-checked by hand.
 For a new table:
 
 ```sql

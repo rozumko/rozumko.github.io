@@ -1,6 +1,6 @@
 # Security Model - Rozumko
 
-_Updated: 2026-07-17_
+_Updated: 2026-07-24_
 
 > **Implementation status legend.**
 >
@@ -10,13 +10,17 @@ _Updated: 2026-07-17_
 >   **before** the feature code. Nothing enforces them today because the
 >   feature does not exist.
 >
-> As of _2026-07-17_ the enforced surfaces are the **official olympiad flow**,
+> As of _2026-07-24_ the enforced surfaces are the **official olympiad flow**,
 > **teacher/admin auth**, **School Mode** (self-serve missions and the
 > anonymous classroom game), the **Home demo/lead slice** (consent-gated
 > demo attempts and reports), the **entitlement model** (backend access state,
 > admin manual control, audit trail), gated **Club practice missions** and the
 > provider-neutral **payment webhook verification boundary**, the
-> **parent account/profile API** and **client-unverified Home path progress**.
+> **parent account/profile API**, **client-unverified Home path progress**, the
+> **audited editorial cycle plus static content publication** (see
+> [ADR-0006](./adr/0006-database-owned-published-content.md)) and **channel-scoped
+> question delivery** (see
+> [ADR-0007](./adr/0007-question-delivery-channels.md)).
 > **Provider checkout, provider-specific webhook adapters, full subscription UI,
 > AIG JSON-template generation and multi-client session rules are [PLANNED].**
 
@@ -188,10 +192,12 @@ script is limited to the unauthenticated credential-grant document.
 
 The backend is the only component that accesses application tables. Migration
 `0028_enable_rls_all_application_tables` enables Row Level Security on every
-application table that existed at that revision; later table migrations,
-including `0036` for `question_revisions`, enable RLS in the same migration.
-Migrations `0037` and `0038` apply the same rule to
-`micro_lesson_revisions` and `mission_revisions`.
+application table that existed at that revision; every later table migration
+enables RLS in the same migration — `0029` and `0031` (parent accounts and path
+progress), `0032`-`0034` (micro-lessons, path maps and their immutable
+revisions), `0036`-`0038` (`question_revisions`, `micro_lesson_revisions`,
+`mission_revisions`) and `0041` (`content_publications`). A regression test
+fails if any application table is left uncovered.
 No permissive browser-facing policies are created, so accidental Supabase Data
 API/grant exposure remains deny-by-default.
 No frontend code may call Supabase Data API tables directly.
@@ -451,14 +457,22 @@ Every pull request and every push to `main` runs `.github/workflows/backend-ci.y
 It must pass before merge:
 
 ```bash
+# job `frontend`
 npm run typecheck
+npm run lint
 npm test
 npm run build
+npm run test:layout   # Playwright Chromium, layout + axe
 
+# job `backend`
 cd backend
-npm run build
+npx tsc --noEmit
 npm test
 ```
+
+A branch ruleset on `main` (no bypass, active since 2026-07-16) requires both
+jobs, blocks force pushes and blocks branch deletion, so every change lands
+through a pull request.
 
 `backend/src/security-regression.test.ts` protects the audited invariants:
 
@@ -635,18 +649,21 @@ MVP/free-tier pilot blockers:
       URLs while needed); do not add a broad wildcard redirect.
 - [x] Supabase Auth -> Providers: Google is enabled only when its OAuth client
       and exact callback/redirect configuration have been reviewed.
-- [ ] Supabase Database: apply migration `0028` and verify RLS is enabled on
-      application tables with no browser-facing permissive policies. Before
-      applying `0028`, verify the backend `DATABASE_URL` role owns application
-      tables or has `BYPASSRLS`, otherwise RLS without policies can break API
-      reads.
+- [x] Supabase Database: migration `0028` is applied in production (later
+      migrations `0029`-`0031` were deployed on 2026-07-10 on top of it) and RLS
+      is enabled on application tables with no browser-facing permissive
+      policies. For a new environment, verify before applying `0028` that the
+      backend `DATABASE_URL` role owns application tables or has `BYPASSRLS`,
+      otherwise RLS without policies can break API reads.
 - [x] Render: backend service is synced from `backend/render.yaml`.
 - [x] Render: keep one backend instance while `RATE_LIMIT_STORE=memory`.
 - [ ] Render: `/health` is configured; the read-only migration startup guard
       passes; live checks for `/health`, `/ready` and `/ping` pass after deploy.
-- [ ] GitHub: protect `main` from direct pushes, force pushes and deletions;
-      require Project CI, Pages and Supply Chain checks before merge where the
-      current GitHub plan exposes those controls.
+- [x] GitHub: `main` is protected by a no-bypass branch ruleset (since
+      2026-07-16) that rejects direct pushes, force pushes and branch deletion
+      and requires the `frontend` and `backend` Project CI jobs before merge.
+      Pages and Supply Chain checks are not required by the ruleset on the
+      current plan; add them if the plan later exposes those controls.
 - [ ] After backend deployment, run the security section in `docs/smoke-test.md`.
 - [ ] Before a pilot/release, complete a private copy of
       `docs/security-ops-evidence.md`.
@@ -656,6 +673,13 @@ MVP/free-tier pilot blockers:
 Deferred until higher traffic, paid campaigns or production-grade operations:
 
 - [ ] Add a shared rate-limit store before increasing backend instances.
+- [ ] **Open question — verify the real proxy depth in production.** `trustProxy: 1`
+      assumes exactly one reverse-proxy hop (Render). If any CDN or proxy sits in
+      front of the backend, the client IP the limiter keys on is the proxy's, not
+      the visitor's, which blurs per-IP limits into one shared bucket. Confirm
+      with server-side diagnostics of the received `X-Forwarded-For` chain — not
+      from client-side observation — and adjust the hop count together with the
+      spoofing regression tests if it turns out to be more than one.
 - [ ] Move authenticated frontend pages behind a host that can enforce HTTP
       `Content-Security-Policy: frame-ancestors`.
 - [ ] Run and record a restore drill on a non-production database.

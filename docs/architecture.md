@@ -1,6 +1,6 @@
 # Architecture - Rozumko
 
-_Updated: 2026-07-17_
+_Updated: 2026-07-24_
 
 > **Implementation status legend.** This document mixes shipped design with
 > forward-looking direction. Sections are tagged:
@@ -11,7 +11,7 @@ _Updated: 2026-07-17_
 >   schema, routes and the security regression tests listed in
 >   `security-model.md`.
 >
-> As of _2026-07-02_ the shipped surfaces are the **official olympiad flow**
+> As of _2026-07-24_ the shipped surfaces are the **official olympiad flow**
 > (events, access codes, attempts, server-side scoring, teacher/admin panels)
 > and **School Mode** (basic self-serve missions on `/school` plus the
 > advanced anonymous classroom-game backend: sessions, join codes,
@@ -20,8 +20,13 @@ _Updated: 2026-07-17_
 > demo UI on `/home`), the **entitlement model** (backend access state with
 > admin manual control and audit trail) and the first gated Club practice
 > mission slice are also implemented, along with a provider-neutral verified
-> payment webhook boundary. **Provider checkout/adapters, subscription UI and
-> AIG JSON-template content generation remain [PLANNED].**
+> payment webhook boundary. Shipped since then: **parent accounts and child
+> profiles** (`/api/parent`), the **Home learning path** (`path.html`,
+> `path_maps` + immutable revisions, client-unverified progress),
+> **micro-lessons** (`features/lessons/`), the full **editorial content cycle**
+> for questions, lessons and missions, **audited static content publication**
+> and **question delivery channels**. **Provider checkout/adapters, subscription
+> UI and AIG JSON-template content generation remain [PLANNED].**
 
 ## Overview
 
@@ -58,15 +63,22 @@ The platform includes these student-facing event and practice modes:
 | Mode | Code | Questions | Scoring |
 |---|---|---|---|
 | Practice | No | Static practice bundle generated from `isOlympiad=false` (`public/questions/grade-N.json`, carries `track`/`topic`) | Local feedback; answer keys are intentionally bundled |
-| Home Demo | No | `GET /api/questions` with safe answer stripping and `track=<direction>` | No child score; parent report is server-scored after consent |
+| Home Demo | No | `GET /api/questions?channel=path` with safe answer stripping and `track=<direction>` | No child score; parent report is server-scored after consent |
 | Home Club Practice | Parent lead token + active entitlement | `GET /api/home/leads/:id/club/questions` | Server-side report after each paid practice mission |
 | Official olympiad | Yes | Fixed event selection from the backend | Server-side only |
 
 `student.html` and `/school` self-serve no-code practice missions load the
 static bundle from GitHub Pages, so children do not wait for backend cold starts
-and anonymous classes do not consume backend rate-limit budget. Home Demo uses
-`GET /api/questions?isOlympiad=false&track=...` with safe answer stripping so
-answer keys do not reach the browser before the parent-reporting flow. Club
+and anonymous classes do not consume backend rate-limit budget.
+
+Question delivery is channel-scoped (migration `0044`, `questions.channels`).
+Home Demo uses `GET /api/questions?channel=path&track=...` — `channel` defaults
+to `path`, the public endpoint accepts only `path` and `olympiad_training`, and
+`class_game` is rejected there. Answer keys are stripped either way, so no key
+reaches the browser before the parent-reporting flow. Main-round
+(`isOlympiad=true`) questions carry no training channel at all and the public
+endpoint rejects `isOlympiad=true` outright. See `docs/security-model.md` for
+the fail-closed channel rules. Club
 practice questions are issued only by the lead-token route
 `GET /api/home/leads/:id/club/questions`, which checks active entitlement first.
 Official olympiad questions are still issued only through code exchange.
@@ -104,8 +116,11 @@ is re-exported by `features/admin/taxonomy.ts`. AIG item models should emit the
 same taxonomy fields when that engine lands.
 
 A missions registry (`missions` table, migration 0022) records logical missions
-by stable slug: `kind` (`question-set` today, `sorting-game` for the built-in
-games), `track`, `grade`, `version`, `status`, `config jsonb`. It is deliberately
+by stable slug: `kind`, `track`, `grade`, `version`, `status`, `config jsonb`.
+The kinds the editorial routes accept are the single `EDITABLE_MISSION_KINDS`
+constant — `question-set`, `sorting-game`, `sequence-game`, `scenario-game`,
+`fact-opinion-game`, `click-trainer-game`, `simulator-game` — enforced by a
+regression test; generated puzzles stay read-only code. It is deliberately
 **not** FK-linked from `home_demo_attempts` / `home_mission_attempts` — `missionId`
 there stays a logical identifier per the Home contract; the registry is a
 management/visibility layer (read-only admin "Місії" tab, `GET /api/admin/missions`).
@@ -159,10 +174,17 @@ Frontend structure:
 - `features/missions/` — reusable mission runner (implemented; used by
   `/school` for both self-serve practice and live classroom games);
 - `features/games/` — client-side game engines: sorting (`sorting-game.ts`:
-  tap-based, stars + streak; `sorting-data.ts`) and logic puzzles
-  (`puzzle-engine.ts` + `puzzle-data.ts`: 5 parametric CT puzzle types by grade,
-  emoji/tap for grade 1, numbers for 2+). Served from `games.html`, linked from
-  `home.html` and `school.html`; registered in the `missions` table;
+  tap-based, stars + streak; `sorting-data.ts`), sequence, scenario,
+  fact-opinion, click-trainer and the computer simulators (each with a
+  fail-closed content-pack loader that falls back to bundled last-known-good
+  JSON), plus logic puzzles (`puzzle-engine.ts` + `puzzle-data.ts`:
+  5 parametric CT puzzle types by grade, emoji/tap for grade 1, numbers for 2+).
+  Served from `games.html`, linked from `home.html` and `school.html`; every
+  kind except the generated puzzles is registered and editable in the `missions`
+  table;
+- `features/lessons/` — micro-lessons (`lesson-runner.ts`: video -> cards ->
+  quiz). A path point references an explicit `lessonId`; the runner reads the
+  published snapshot exported to `public/lessons/`, never a draft;
 - `features/admin/` — admin tabs incl. the privacy-minimized parent account
   directory, `missions-tab.ts` (registry) and taxonomy UI copy;
 - `parent.html` + `parent.ts` — parent login/registration, profile creation,
@@ -384,7 +406,8 @@ To keep conditions fair:
 
 Current implemented tables **[IMPLEMENTED]**:
 
-- `questions`
+- `questions` (taxonomy, editorial status, delivery `channels`)
+- `question_revisions` (immutable question snapshots, admin-only)
 - `olympiad_events`
 - `event_questions`
 - `access_codes`
@@ -398,6 +421,13 @@ Current implemented tables **[IMPLEMENTED]**:
 - `school_session_questions`
 - `school_participants`
 - `school_answers`
+- `missions` (logical mission registry + editorial status/snapshot)
+- `mission_revisions` (immutable mission snapshots, admin-only)
+- `micro_lessons` (authoring table + published snapshot read by the export)
+- `micro_lesson_revisions` (immutable lesson snapshots, admin-only)
+- `path_maps` (learning-path structure, validation source of truth)
+- `path_map_revisions` (immutable map revisions; keep older exported bundles valid)
+- `content_publications` (audited static-publication queue, one active job)
 - `home_leads` (parent email + consent record)
 - `home_child_profiles`
 - `home_demo_attempts` (raw events + telemetry, mission id/version)

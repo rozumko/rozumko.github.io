@@ -7,10 +7,16 @@ Lightsail or another standard Linux host without rewriting application logic.
 
 ## Current Production Shape
 
-- Frontend: static Vite build on GitHub Pages.
-- Backend: Node.js/Fastify service on Render.
+- Frontend: static Vite build on GitHub Pages, served on the custom domain
+  `https://rozumko.com` (the `rozumko.github.io` origin stays valid). Both, plus
+  `https://www.rozumko.com`, are in `CORS_ALLOWED_ORIGINS`
+  (`backend/src/lib/security-config.ts`), and Supabase Auth redirect URLs and
+  the email templates in `docs/auth-email-templates.md` point at
+  `https://rozumko.com`. A domain change touches all three places at once.
+- Backend: Node.js/Fastify service on Render
+  (`https://rozumko-github-io.onrender.com`).
 - Database: PostgreSQL through `DATABASE_URL`.
-- Auth: Supabase Auth for teachers/admins only.
+- Auth: Supabase Auth for teachers, admins and parents; children have no accounts.
 
 ## Portability Rules
 

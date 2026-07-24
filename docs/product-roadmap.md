@@ -1,16 +1,21 @@
 # Product Direction - Rozumko
 
-_Updated: 2026-07-02_
+_Updated: 2026-07-24_
 
 > **This is product direction, not a status report.** Shipped today: the
 > **Official events** flow (codes, timing, server-side scoring, teacher/admin
 > panels, browser certificates), **School Mode** (self-serve missions plus the
 > anonymous classroom game) and the first **Home/Rozumko Club** slices are
 > shipped: `/home`, parent lead + consent, child profile, server-scored parent
-> report, entitlement state and gated Club practice missions. **Payment
-> provider checkout/webhooks, full subscription UI, richer parent account UX
-> and AIG JSON-templates are [PLANNED]** — see the implementation-status legend
-> in [architecture.md](./architecture.md).
+> report, entitlement state and gated Club practice missions. Since then also
+> shipped: **parent accounts with several child profiles**, the **Home learning
+> path** («Карта пригод», 4 grade maps with client-unverified progress sync),
+> **micro-lessons** as theory before a challenge, six game mechanics beyond
+> sorting, and **Content Studio** — the audited draft/review/published cycle for
+> questions, lessons and missions plus one-click static content publication.
+> **Payment provider checkout/webhooks, full subscription UI and AIG
+> JSON-templates are [PLANNED]** — see the implementation-status legend in
+> [architecture.md](./architecture.md).
 
 ## Positioning
 
@@ -76,14 +81,19 @@ For mobile learning-loop and gamification decisions, see
 
 Current state (2026-07): the platform pivoted from an olympiad to an educational
 platform across three directions — `informatics`, `computational-thinking`,
-`ai-basics`. The question bank is 482 items (choice plus truefalse/sort/
+`ai-basics`. The question bank is 673 items (informatics 312,
+computational-thinking 217, ai-basics 144; choice plus truefalse/sort/
 sequence/match/input mechanics), fully tagged by a two-axis taxonomy
 (`topic` + `concept_key`, see `docs/content-taxonomy.md`), aligned to НУШ and
 Cambridge Primary Computing 0059 / Digital Literacy 0072. Direction selection is
-live in Home Demo and the School free-mission picker. Three sorting games
-(classification, information, multi-attribute abstraction) run on a shared engine
-and are registered in the `missions` table. Next content gaps: broaden ai-basics
-and per-topic depth, curate mission question sets, then the AIG engine below.
+live in Home Demo and the School free-mission picker. Beyond question sets there
+are six authored game mechanics (sorting, sequence, scenario, fact-opinion,
+click-trainer, simulators) plus generated logic puzzles, all registered in the
+`missions` table, and micro-lessons that carry the theory before a challenge on
+the Home path. Content is authored in the database through the audited editorial
+cycle and reaches children only as a published snapshot exported to static
+bundles. Next content gaps: broaden ai-basics and per-topic depth, fill the
+yearly path plan in `docs/yearly-home-path-v1.md`, then the AIG engine below.
 
 Mission content should be repeatable, parameterized and versioned. A mission
 mechanic can be reused in different contexts when the data and scoring

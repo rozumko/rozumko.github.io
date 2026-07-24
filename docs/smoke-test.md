@@ -1,6 +1,6 @@
 # Smoke Test - Rozumko
 
-_Updated: 2026-07-17_
+_Updated: 2026-07-24_
 
 Run this checklist before a real pilot.
 
@@ -140,6 +140,10 @@ Run this checklist before a real pilot.
 - [ ] Public `GET /api/questions?isOlympiad=false` response contains no answer keys
 - [ ] Public `GET /api/questions?isOlympiad=false&hideAnswers=false` still contains no answer keys
 - [ ] Public `GET /api/questions?isOlympiad=true` returns `400`
+- [ ] Public `GET /api/questions?channel=class_game` returns `400`; `channel=path`
+      and `channel=olympiad_training` return only questions carrying that channel
+- [ ] Public `GET /api/questions` without `channel` defaults to `path` and never
+      returns a main-round question
 - [ ] Public `GET /api/questions?count=abc`, `count=-5`, `count=0`, `count=999` return `400`
 - [ ] `/api/attempt/:id/finish` returns only `{ score, total }`
 - [ ] Teacher/admin results contain no raw `answers`
