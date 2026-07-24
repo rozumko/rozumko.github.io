@@ -1,6 +1,6 @@
 import {
-  getAdminPathMaps, updateAdminPathMap, getAdminLessons, getAdminQuestions,
-  type AdminPathMap, type AdminMicroLesson, type Question,
+  getAdminPathMaps, updateAdminPathMap, getAdminLessons, getAdminQuestions, getAdminMissions,
+  type AdminPathMap, type AdminMicroLesson, type Mission, type Question,
 } from '../../features/api/client.js'
 import { esc, showModal, showConfirm } from './ui.js'
 import { $ } from '../../utils/dom.js'
@@ -33,6 +33,7 @@ interface PointJson {
 }
 
 const KIND_LABELS: Record<string, string> = {
+  'mission-ref': 'Гра з реєстру',
   lesson: '📖 урок', mission: '🚀 місія', sequence: '👣 кроки', scenarios: '💬 ситуації',
   puzzles: '🧩 головоломки', sorting: '🧺 сортування', 'fact-opinion': '🧐 факт/думка',
   'click-trainer': '👆 клік-тренажер', simulator: '🔧 симулятор',
@@ -45,12 +46,23 @@ const TRACK_LABELS: Record<string, string> = {
   'computational-thinking': 'Обчислювальне мислення',
   'ai-basics': 'Основи ШІ',
 }
-const PRACTICE_KINDS = new Set(['mission', 'sequence', 'scenarios', 'puzzles', 'sorting', 'fact-opinion', 'click-trainer', 'simulator'])
+const PRACTICE_KINDS = new Set(['mission-ref', 'mission', 'sequence', 'scenarios', 'puzzles', 'sorting', 'fact-opinion', 'click-trainer', 'simulator'])
+const REGISTRY_MISSION_KINDS = new Set(['sorting-game', 'sequence-game', 'scenario-game', 'fact-opinion-game', 'click-trainer-game', 'simulator-game'])
+const REGISTRY_MISSION_LABELS: Record<string, string> = {
+  'sorting-game': 'Сортування',
+  'sequence-game': 'Кроки',
+  'scenario-game': 'Ситуації',
+  'fact-opinion-game': 'Факт/думка',
+  'click-trainer-game': 'Клік-тренажер',
+  'simulator-game': 'Симулятор',
+}
 const MAX_PATH_POINTS = 40
 
 let maps: AdminPathMap[] = []
 let lessonIds: string[] = []
 let lessonsById = new Map<string, AdminMicroLesson>()
+let missions: Mission[] = []
+let missionsById = new Map<string, Mission>()
 let pathQuestions: Question[] = []
 let currentPathId = 'grade-2'
 let workingPoints: PointJson[] = []
@@ -96,15 +108,18 @@ export async function loadPathTab() {
   const status = $('pm-status')
   status.textContent = 'Завантаження…'
   try {
-    const [{ maps: loadedMaps }, { lessons }, { questions }] = await Promise.all([
+    const [{ maps: loadedMaps }, { lessons }, { questions }, { missions: loadedMissions }] = await Promise.all([
       getAdminPathMaps(),
       getAdminLessons(),
       getAdminQuestions({ channel: 'path', status: 'published' }),
+      getAdminMissions(),
     ])
     maps = loadedMaps
     lessonsById = new Map(lessons.map(lesson => [lesson.id, lesson]))
     lessonIds = lessons.filter(lesson => lesson.publishedVersion && lesson.status !== 'archived').map(lesson => lesson.id).sort()
     pathQuestions = questions
+    missions = loadedMissions
+    missionsById = new Map(missions.map(mission => [mission.id, mission]))
     loaded = true
     resetWorking()
     renderPathTab()
@@ -204,6 +219,68 @@ function countQuestionsForMission(point: PointJson, activity: Record<string, unk
   ).length
 }
 
+function currentGrade(): number {
+  return Number(currentPathId.replace('grade-', ''))
+}
+
+function registryMissionReferences(): Map<string, Array<{ key: string; label: string }>> {
+  const refs = new Map<string, Array<{ key: string; label: string }>>()
+  for (const point of workingPoints) {
+    for (const step of point.activities) {
+      if (step.activity.kind !== 'mission-ref' || typeof step.activity.missionId !== 'string') continue
+      refs.set(step.activity.missionId, [
+        ...(refs.get(step.activity.missionId) ?? []),
+        { key: `${point.id}/${step.id}`, label: `${point.title} / ${step.title}` },
+      ])
+    }
+  }
+  return refs
+}
+
+function missionGameKey(mission: Mission): string {
+  return typeof mission.config?.gameKey === 'string' ? mission.config.gameKey : ''
+}
+
+function missionScenarioKey(mission: Mission): string {
+  return typeof mission.config?.scenarioKey === 'string' ? mission.config.scenarioKey : ''
+}
+
+function playableRegistryMissions(): Mission[] {
+  const grade = currentGrade()
+  return missions
+    .filter(mission => mission.grade === grade && REGISTRY_MISSION_KINDS.has(mission.kind))
+    .sort((a, b) => `${a.kind}:${a.title}`.localeCompare(`${b.kind}:${b.title}`, 'uk'))
+}
+
+function registryMissionLabel(mission: Mission, excludeRefKey = ''): string {
+  const refs = (registryMissionReferences().get(mission.id) ?? [])
+    .filter(ref => ref.key !== excludeRefKey)
+    .map(ref => ref.label)
+  const status = mission.publishedVersion && mission.status !== 'archived' ? 'опубліковано' : mission.status
+  const used = refs.length ? ` · вже в: ${refs.join(', ')}` : ''
+  return `${REGISTRY_MISSION_LABELS[mission.kind] ?? mission.kind} · ${mission.title} · ${status}${used}`
+}
+
+function missionRefActivity(mission: Mission): Record<string, unknown> & { kind: string } {
+  const activity: Record<string, unknown> & { kind: string } = {
+    kind: 'mission-ref',
+    missionId: mission.id,
+    missionKind: mission.kind,
+  }
+  if (mission.kind === 'simulator-game') activity.scenarioKey = missionScenarioKey(mission)
+  else activity.gameKey = missionGameKey(mission)
+  return activity
+}
+
+function missionSelectOptions(selectedId = '', excludeRefKey = ''): Array<[string, string]> {
+  const options = playableRegistryMissions().map(mission => [mission.id, registryMissionLabel(mission, excludeRefKey)] as [string, string])
+  if (selectedId && !options.some(([id]) => id === selectedId)) {
+    const mission = missionsById.get(selectedId)
+    options.unshift([selectedId, mission ? registryMissionLabel(mission, excludeRefKey) : `${selectedId} · не знайдено`])
+  }
+  return options.length ? options : [['', 'Немає ігрових місій для цього класу']]
+}
+
 function coverageForPoint(point: PointJson): PointCoverage {
   const lessonIssues: string[] = []
   let hasLesson = false
@@ -226,6 +303,21 @@ function coverageForPoint(point: PointJson): PointCoverage {
     }
     if (PRACTICE_KINDS.has(step.activity.kind)) {
       hasPractice = true
+      if (step.activity.kind === 'mission-ref') {
+        const missionId = step.activity.missionId as string | undefined
+        const mission = missionId ? missionsById.get(missionId) : null
+        if (!missionId) {
+          lessonIssues.push('missionId не задано')
+        } else if (!mission) {
+          lessonIssues.push(`${missionId}: місію не знайдено`)
+        } else {
+          if (!REGISTRY_MISSION_KINDS.has(mission.kind)) lessonIssues.push(`${missionId}: тип не для шляху`)
+          if (!mission.publishedVersion || mission.status === 'archived') lessonIssues.push(`${missionId}: не опубліковано`)
+          if (mission.grade !== currentGrade()) lessonIssues.push(`${missionId}: ${mission.grade} клас`)
+          const refs = registryMissionReferences().get(missionId) ?? []
+          if (refs.length > 1) lessonIssues.push(`${missionId}: дубль у ${refs.map(ref => ref.label).join(', ')}`)
+        }
+      }
       if (step.activity.kind === 'mission') {
         const requested = Number.isInteger(step.activity.count) ? step.activity.count as number : 4
         const available = countQuestionsForMission(point, step.activity)
@@ -472,6 +564,20 @@ function renderStepParams(row: HTMLElement, activity: Record<string, unknown> & 
       field('Урок', select('pf-param-lesson', known.map(id => [id, id]), activity.lessonId as string | undefined))
       break
     }
+    case 'mission-ref': {
+      const missionId = typeof activity.missionId === 'string' ? activity.missionId : ''
+      const pointId = $<HTMLInputElement>('pf-id').value.trim()
+      const stepId = row.querySelector<HTMLInputElement>('.pf-step-id')?.value.trim() ?? ''
+      const missionSelect = select('pf-param-mission-id', missionSelectOptions(missionId, `${pointId}/${stepId}`), missionId)
+      missionSelect.addEventListener('change', () => {
+        const mission = missionsById.get(missionSelect.value)
+        const titleInput = row.querySelector<HTMLInputElement>('.pf-step-title')
+        if (mission && titleInput && !titleInput.value.trim()) titleInput.value = mission.title
+      })
+      field('Гра з реєстру', missionSelect)
+      field('Кількість (для кроків/раундів, порожньо = всі)', numberInput('pf-param-count', activity.count))
+      break
+    }
     case 'mission': {
       field('Напрям (порожньо = будь-який)', select('pf-param-track', [
         ['', '—'], ['informatics', 'Інформатика'],
@@ -521,6 +627,12 @@ function collectStep(row: HTMLElement): StepJson {
   const readValue = (selector: string) => row.querySelector<HTMLInputElement | HTMLSelectElement>(selector)?.value?.trim() ?? ''
 
   if (kind === 'lesson') activity.lessonId = readValue('.pf-param-lesson')
+  if (kind === 'mission-ref') {
+    const missionId = readValue('.pf-param-mission-id')
+    const mission = missionsById.get(missionId)
+    if (mission) Object.assign(activity, missionRefActivity(mission))
+    else activity.missionId = missionId
+  }
   if (kind === 'sorting' || kind === 'click-trainer') activity.game = readValue('.pf-param-game')
   if (kind === 'fact-opinion') activity.level = Number(readValue('.pf-param-level'))
   if (kind === 'simulator') activity.scenario = readValue('.pf-param-scenario')

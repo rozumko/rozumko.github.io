@@ -12,9 +12,9 @@ import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import { and, eq, isNotNull, ne } from 'drizzle-orm'
 import { db } from '../src/db/index.js'
-import { microLessons, pathMaps } from '../src/db/schema.js'
+import { microLessons, missions, pathMaps } from '../src/db/schema.js'
 import { catalogFromPoints } from '../src/routes/path-catalog.js'
-import { pathMapLessonIds, validatePathMapPoints } from '../src/routes/path-map-validation.js'
+import { pathMapLessonIds, pathMapMissionIds, validatePathMapPoints } from '../src/routes/path-map-validation.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const OUT_DIR = join(__dirname, '../../public/path')
@@ -25,6 +25,8 @@ if (rows.length === 0) {
 }
 const publishedLessons = new Set((await db.select({ id: microLessons.id }).from(microLessons)
   .where(and(isNotNull(microLessons.publishedVersion), ne(microLessons.status, 'archived')))).map(lesson => lesson.id))
+const publishedMissions = new Set((await db.select({ id: missions.id }).from(missions)
+  .where(and(isNotNull(missions.publishedVersion), ne(missions.status, 'archived')))).map(mission => mission.id))
 
 mkdirSync(OUT_DIR, { recursive: true })
 for (const row of rows) {
@@ -35,6 +37,11 @@ for (const row of rows) {
   for (const lessonId of pathMapLessonIds(points)) {
     if (!publishedLessons.has(lessonId)) {
       throw new Error(`Path ${row.pathId} references unpublished lesson ${lessonId}`)
+    }
+  }
+  for (const missionId of pathMapMissionIds(points)) {
+    if (!publishedMissions.has(missionId)) {
+      throw new Error(`Path ${row.pathId} references unpublished mission ${missionId}`)
     }
   }
   const bundle = {

@@ -5,7 +5,7 @@ import { questions, questionRevisions, accessCodes, attempts, attemptQuestions, 
 import { normalizeLessonSlug, normalizeLessonStatus, normalizeLessonContent, lessonContentChanged } from './lesson-validation.js'
 import { contentFromLessonRevision, lessonPublishedSnapshot, lessonRevisionSnapshot } from './lesson-editorial.js'
 import { EDITABLE_MISSION_KINDS, missionPublishedSnapshot, missionSnapshot, normalizeEditableMission, normalizeMissionSlug, normalizeMissionStatus, type NormalizedMissionInput } from './mission-editorial.js'
-import { validatePathMapPoints, bumpChangedStepVersions, pathMapLessonIds, type PathPointInput } from './path-map-validation.js'
+import { validatePathMapPoints, bumpChangedStepVersions, pathMapLessonIds, pathMapMissionIds, type PathPointInput } from './path-map-validation.js'
 import { invalidatePathCatalogCache } from './path-catalog.js'
 import { ENTITLEMENT_STATUSES, normalizeEntitlementStatus, applyEntitlementChange } from './home-entitlement.js'
 import { requireAdmin } from '../lib/auth.js'
@@ -49,6 +49,18 @@ function snapshotLessonVersions(points: PathPointInput[], versions: ReadonlyMap<
       ? {
         ...step,
         activity: { ...step.activity, lessonVersion: versions.get(step.activity.lessonId as string) },
+      }
+      : step),
+  }))
+}
+
+function snapshotMissionVersions(points: PathPointInput[], versions: ReadonlyMap<string, number>): PathPointInput[] {
+  return points.map(point => ({
+    ...point,
+    activities: point.activities.map(step => step.activity.kind === 'mission-ref'
+      ? {
+        ...step,
+        activity: { ...step.activity, missionVersion: versions.get(step.activity.missionId as string) },
       }
       : step),
   }))
@@ -1527,6 +1539,45 @@ export async function adminRoutes(app: FastifyInstance) {
           }
           nextPoints = snapshotLessonVersions(nextPoints,
             new Map(lessons.map(lesson => [lesson.id, lesson.publishedVersion ?? lesson.version])))
+
+          const missionIds = pathMapMissionIds(nextPoints)
+          const missionRows = missionIds.length
+            ? await tx.select({
+              id: missions.id, kind: missions.kind, title: missions.title, track: missions.track, grade: missions.grade,
+              version: missions.version, publishedVersion: missions.publishedVersion, status: missions.status,
+              config: missions.config, publishedSnapshot: missions.publishedSnapshot,
+            })
+              .from(missions).where(inArray(missions.id, missionIds)).for('share')
+            : []
+          const missionById = new Map(missionRows.map(mission => [mission.id, mission]))
+          for (const missionId of missionIds) {
+            const mission = missionById.get(missionId)
+            if (!mission) throw new Error(`Місію «${missionId}» не знайдено`)
+            if (existing.status === 'published' && (!mission.publishedVersion || mission.status === 'archived')) {
+              throw new Error(`Місія «${missionId}» не опублікована`)
+            }
+            const source = mission.publishedSnapshot ?? {
+              id: mission.id, title: mission.title, kind: mission.kind,
+              track: mission.track, grade: mission.grade, config: mission.config,
+            }
+            const snapshot = normalizeEditableMission(source)
+            if (snapshot.grade !== grade) throw new Error(`Місія «${missionId}» належить до ${snapshot.grade} класу, а карта — до ${grade}`)
+            for (const point of nextPoints) {
+              for (const step of point.activities) {
+                if (step.activity.kind !== 'mission-ref' || step.activity.missionId !== missionId) continue
+                if (step.activity.missionKind !== snapshot.kind) throw new Error(`${point.id}/${step.id}: тип місії «${missionId}» змінився`)
+                if (snapshot.kind === 'simulator-game') {
+                  if (step.activity.scenarioKey !== snapshot.config.scenarioKey) {
+                    throw new Error(`${point.id}/${step.id}: scenarioKey місії «${missionId}» не збігається`)
+                  }
+                } else if (!('gameKey' in snapshot.config) || step.activity.gameKey !== snapshot.config.gameKey) {
+                  throw new Error(`${point.id}/${step.id}: gameKey місії «${missionId}» не збігається`)
+                }
+              }
+            }
+          }
+          nextPoints = snapshotMissionVersions(nextPoints,
+            new Map(missionRows.map(mission => [mission.id, mission.publishedVersion ?? mission.version])))
 
           const prevPoints = validatePathMapPoints(existing.points)
           const revisions = await tx.select({ points: pathMapRevisions.points })

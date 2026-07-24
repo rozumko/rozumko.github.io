@@ -7,6 +7,15 @@ import type { QuestionTrack } from '../api/client.js'
 
 export type PathActivity =
   | { kind: 'lesson'; lessonId: string }
+  | {
+    kind: 'mission-ref'
+    missionId: string
+    missionKind: 'sorting-game' | 'sequence-game' | 'scenario-game' | 'fact-opinion-game' | 'click-trainer-game' | 'simulator-game'
+    gameKey?: string
+    scenarioKey?: 'assembly-hardware' | 'assembly-software'
+    missionVersion?: number
+    count?: number
+  }
   | { kind: 'sequence'; count?: number }
   | { kind: 'scenarios'; count?: number }
   | { kind: 'sorting'; game: 'attributes' | 'infosort' | 'multisort' }
