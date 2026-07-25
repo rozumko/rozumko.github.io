@@ -162,8 +162,20 @@
   box-shadow: 0 3px 0 rgba(15, 23, 42, 0.12), 0 0 0 4px rgba(16, 185, 129, 0.18);
 }
 
+/* A locked point must differ from an open one WITHOUT relying on the pulse:
+   reduced-motion switches that animation off, which left open and locked
+   badges pixel-identical (same white fill, full-strength track ring, own
+   emoji) — nine identical invitations, eight of which do nothing. Colour and
+   contrast carry the state instead, so it survives reduced motion. */
 .path-node--locked { cursor: default; }
-.path-node--locked .path-node__badge { animation: none; }
+.path-node--locked .path-node__badge {
+  animation: none;
+  filter: grayscale(1);
+  opacity: 0.45;
+  border-color: var(--clr-border);
+  box-shadow: 0 3px 0 rgba(15, 23, 42, 0.08);
+}
+.path-node--locked .path-node__label { opacity: 0.75; }
 
 .path-node:focus-visible { outline: none; }
 .path-node:focus-visible .path-node__badge {
