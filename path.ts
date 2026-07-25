@@ -842,7 +842,7 @@ async function loadMissionQuestions(a: Extract<PathActivity, { kind: 'mission' }
     const mixed: Awaited<ReturnType<typeof loadStaticQuestions>> = []
     for (const [index, track] of a.tracks.entries()) {
       const trackCount = baseCount + (index < remainder ? 1 : 0)
-      const questions = await loadStaticQuestions(map.grade, { count: trackCount, track })
+      const questions = await loadStaticQuestions(map.grade, { count: trackCount, track, band: a.band ?? null })
       if (questions.length < trackCount) {
         throw new Error('Для фінальної місії поки недостатньо завдань з усіх трьох напрямів.')
       }
@@ -854,10 +854,13 @@ async function loadMissionQuestions(a: Extract<PathActivity, { kind: 'mission' }
     }
     return mixed
   }
+  // Widening fallbacks: topic → track → whole grade. `band` rides along on all
+  // of them because it only reorders the pool and never shrinks it.
+  const band = a.band ?? null
   const attempts = [
-    { count, track: a.track ?? null, topic: a.topic ?? null },
-    { count, track: a.track ?? null },
-    { count },
+    { count, track: a.track ?? null, topic: a.topic ?? null, band },
+    { count, track: a.track ?? null, band },
+    { count, band },
   ]
   const MIN = Math.min(count, 3)
   let picked: Awaited<ReturnType<typeof loadStaticQuestions>> = []

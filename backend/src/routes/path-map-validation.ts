@@ -1,4 +1,5 @@
 import { catalogFromPoints } from './path-catalog.js'
+import { PROGRESSION_BANDS } from '../lib/taxonomy.js'
 
 // Валідація карти шляху для адмін-редагування (fail-closed: автор бачить
 // помилку в редакторі, дитина не бачить биту карту). Доповнює
@@ -79,6 +80,9 @@ const ACTIVITY_KINDS: Record<string, (a: Record<string, unknown>) => string | nu
       || !a.tracks.every(track => TRACKS.includes(track as never)))) return 'mission: невідомі tracks'
     if (a.topic !== undefined && (typeof a.topic !== 'string' || !a.topic || a.topic.length > 120)) {
       return 'mission: невалідний topic'
+    }
+    if (a.band !== undefined && !PROGRESSION_BANDS.includes(a.band as never)) {
+      return 'mission: невідомий band'
     }
     return optionalCount(a.count)
   },

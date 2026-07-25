@@ -196,6 +196,35 @@ No permissive browser-facing policies are created, so accidental Supabase Data
 API/grant exposure remains deny-by-default.
 No frontend code may call Supabase Data API tables directly.
 
+### Database TLS
+
+Supabase presents a chain signed by its own CA (`prod-ca-2021`), which is not in
+the system trust store. Verifying against system CAs alone therefore fails with
+`self-signed certificate in certificate chain`.
+
+`src/db/pool-ssl.ts` states the intent explicitly rather than inheriting `pg`'s
+`sslmode` mapping: always `rejectUnauthorized: true`, plus the CA when
+`SUPABASE_DB_CA_CERT` is set. This matters because pg 8.x treats `require` as
+`verify-full`, while pg v9 will switch it to weaker libpq semantics — the
+warning `SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases
+for 'verify-full'` in the Render log is that deprecation notice.
+
+Changing this on production has a required order; skipping a step fails the
+deploy at `db:migrate:check:prod`, before the server starts:
+
+1. `SUPABASE_DB_CA_CERT` in the Render environment (Supabase dashboard →
+   Project Settings → Database → SSL Configuration → Download certificate;
+   paste the PEM including the `BEGIN CERTIFICATE` line).
+2. Only then `sslmode=verify-full` in `DATABASE_URL`.
+
+`sslmode=no-verify` remains a deliberate opt-out: encrypted, unverified. It is
+the fallback that restores service if the CA is wrong or missing. Omitting
+`sslmode` entirely is NOT a fallback — `pg` then configures no TLS at all and
+the database connection is plaintext.
+
+The CI content exporter pins the same CA through `NODE_EXTRA_CA_CERTS`
+(`deploy.yml`), which is why that path worked while the runtime did not.
+
 ## Surface Data Boundaries — School **[IMPLEMENTED]**, Home Demo/Entitlement/Club Practice **[IMPLEMENTED]**, Payment Webhook Boundary **[IMPLEMENTED]**, Provider Checkout **[PLANNED]**, Olympiad **[IMPLEMENTED]/[PLANNED]**
 
 _The School side is enforced by the shipped classroom-game backend

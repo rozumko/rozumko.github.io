@@ -7,6 +7,10 @@ import type { GradePathMap, PathPoint } from './path-data.js'
 // нові класи додаються кодом (фолбек мусить існувати).
 
 const TRACKS = new Set(['informatics', 'computational-thinking', 'ai-basics'])
+// Mirrors PROGRESSION_BANDS in backend/src/lib/taxonomy.ts. Both validators must
+// accept `band`, or an exported map carrying it is rejected here and the app
+// silently falls back to the built-in map.
+const PROGRESSION_BANDS = new Set(['recognize', 'apply', 'reason'])
 const POINT_ID_RE = /^g[1-4]-[a-z0-9-]+$/
 const STEP_ID_RE = /^[a-z0-9-]+$/
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
@@ -58,6 +62,7 @@ function isValidActivity(raw: unknown): boolean {
         && (activity.tracks === undefined || (Array.isArray(activity.tracks)
           && activity.tracks.length > 0 && activity.tracks.every(track => TRACKS.has(track as string))))
         && (activity.topic === undefined || (typeof activity.topic === 'string' && !!activity.topic))
+        && (activity.band === undefined || PROGRESSION_BANDS.has(activity.band as string))
     default:
       return false
   }

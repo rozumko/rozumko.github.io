@@ -20,6 +20,8 @@ export const TURNSTILE_SITE_KEY = ENV.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAADdbJz
 
 export type QuestionType = 'choice' | 'truefalse' | 'input' | 'sort' | 'sequence' | 'match'
 export type QuestionTrack = 'informatics' | 'computational-thinking' | 'ai-basics'
+/** Progression stage of an item. Mirrors PROGRESSION_BANDS in backend/src/lib/taxonomy.ts. */
+export type ProgressionBand = 'recognize' | 'apply' | 'reason'
 export type QuestionChannel = 'class_game' | 'path' | 'olympiad_training'
 export type PublicQuestionChannel = Exclude<QuestionChannel, 'class_game'>
 
@@ -35,7 +37,7 @@ export interface Question {
   track?: QuestionTrack | null
   topic?: string | null           // предметна тема в межах track (docs/content-taxonomy.md)
   conceptKey?: string | null      // CT-навичка (крос-напрямкова)
-  progressionBand?: 'recognize' | 'apply' | 'reason' | null
+  progressionBand?: ProgressionBand | null
   version?: number
   editVersion?: number
   editorialStatus?: 'draft' | 'review' | 'published' | 'archived'
