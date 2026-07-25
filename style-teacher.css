@@ -470,15 +470,11 @@ body.teacher-dashboard-active {
 }
 .school-create {
   display: grid;
-  grid-template-columns: minmax(8rem, .75fr) minmax(15rem, 1.5fr) minmax(10rem, 1fr);
+  grid-template-columns: minmax(7rem, .7fr) minmax(14rem, 1.5fr) minmax(9rem, .9fr) minmax(7rem, .7fr);
   gap: var(--sp-4);
 }
 .school-create__field { display: flex; flex-direction: column; gap: var(--sp-1); font-weight: 600; }
 .school-create__select { width: 100%; min-height: 3rem; }
-.school-create__advanced { margin-top: var(--sp-4); color: var(--clr-text-muted); }
-.school-create__advanced summary { width: max-content; font-weight: 700; cursor: pointer; }
-.school-create__advanced[open] summary { margin-bottom: var(--sp-3); }
-.school-create__advanced .school-create__field { max-width: 15rem; }
 .school-create__actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); margin-top: var(--sp-6); }
 .school-create__action {
   min-height: 4.5rem;
@@ -491,6 +487,50 @@ body.teacher-dashboard-active {
 .school-create__action span { display: grid; gap: 2px; }
 .school-create__action strong { font-size: var(--font-size-base); }
 .school-create__action small { font-weight: 500; opacity: 1; }
+/* Question check between "create" and "the class sees it" */
+.school-preview {
+  min-width: 0;
+  margin-top: var(--sp-5);
+  padding: clamp(var(--sp-4), 3vw, var(--sp-6));
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-lg);
+  background: var(--clr-surface);
+}
+.school-preview__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.school-preview__title { font-size: var(--font-size-xl); }
+.school-preview__meta { margin-top: var(--sp-1); color: var(--clr-text-muted); font-size: var(--font-size-sm); }
+/* Ten questions must not push the action buttons off the screen */
+.school-preview__list {
+  display: grid;
+  gap: var(--sp-3);
+  max-height: 28rem;
+  margin: var(--sp-4) 0 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+.school-preview__item {
+  display: grid;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-md);
+  background: var(--clr-surface-muted);
+}
+.school-preview__q { font-weight: 700; }
+.school-preview__answer {
+  padding-left: var(--sp-3);
+  border-left: 3px solid var(--clr-emerald);
+}
+.school-preview__note { color: var(--clr-text-muted); font-size: var(--font-size-sm); }
+.school-preview__tags { display: flex; flex-wrap: wrap; gap: var(--sp-2); color: var(--clr-text-muted); font-size: var(--font-size-sm); }
+.school-preview__actions { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-top: var(--sp-4); }
 .school-live__lobby { display: grid; grid-template-columns: minmax(18rem, .65fr) minmax(24rem, 1.35fr); gap: var(--sp-5); align-items: start; }
 .school-live__access { display: grid; gap: var(--sp-3); }
 .school-live__code-card {
@@ -1017,6 +1057,8 @@ body.teacher-projector-active { overflow: hidden !important; }
 @media (max-width: 760px) {
   .school-create { grid-template-columns: 1fr; }
   .school-create__actions { grid-template-columns: 1fr; }
+  .school-preview__head { flex-direction: column; }
+  .school-preview__actions > .btn { width: 100%; }
   .school-live__lobby { grid-template-columns: 1fr; }
   .school-live__link-row { align-items: stretch; flex-direction: column; }
   .school-projector__header { align-items: flex-start; flex-direction: column; }

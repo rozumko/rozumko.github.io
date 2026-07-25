@@ -101,6 +101,27 @@ function describeAnswer(type: string | null, options: unknown, answer: unknown):
   return JSON.stringify(answer ?? '')
 }
 
+// Ready-to-read form of the answer key for the teacher preview. Mirrors where
+// each type keeps its key (see scoreAttempt): choice/truefalse/sequence in the
+// `correct` column, sort in options.correctOrder, match in options.pairs,
+// input in options.answer. Returns TEXT, never the raw key structures.
+function describeCorrectAnswer(type: string | null, options: unknown, correct: number | null): string | null {
+  const t = type ?? 'choice'
+  const struct = options && typeof options === 'object' && !Array.isArray(options)
+    ? options as Record<string, unknown>
+    : {}
+  if (t === 'sort' || t === 'algorithm') {
+    return Array.isArray(struct.correctOrder) ? describeAnswer(t, options, struct.correctOrder) : null
+  }
+  if (t === 'match') {
+    return Array.isArray(struct.pairs) ? describeAnswer(t, options, struct.pairs) : null
+  }
+  if (t === 'input') {
+    return struct.answer == null ? null : String(struct.answer)
+  }
+  return correct == null ? null : describeAnswer(t, options, correct)
+}
+
 async function loadSessionQuestions(sessionId: string) {
   const qs = await db
     .select({
@@ -397,6 +418,55 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
         answered:   r.isCorrect !== null,
         isCorrect:  r.isCorrect,
         answerText: r.isCorrect === null ? null : describeAnswer(r.type, r.options, r.answer),
+      })),
+    })
+  })
+
+  // ── Вчитель: попередній перегляд питань своєї сесії ───────────────────────
+  // The teacher decides what the class plays, so the owner of a lobby/active
+  // session sees the questions WITH the key before the game starts. Deliberate
+  // exception to "answer keys never reach the browser", scoped to the
+  // authenticated owner and to text: no raw `correct` value and no nested key
+  // structures leave the server (docs/security-model.md).
+  app.get<{ Params: { id: string } }>('/sessions/:id/preview', {
+    preHandler: authorizeTeacher,
+    schema: { params: uuidParam },
+  }, async (req, reply) => {
+    const [session] = await db
+      .select({ id: schoolSessions.id, status: schoolSessions.status })
+      .from(schoolSessions)
+      .where(and(eq(schoolSessions.id, req.params.id), eq(schoolSessions.teacherId, req.user!.id)))
+      .limit(1)
+    if (!session) return reply.code(404).send({ error: 'Сесію не знайдено' })
+    if (session.status === 'finished') return reply.code(409).send({ error: 'Сесію вже завершено' })
+
+    const rows = await db
+      .select({
+        id:          questions.id,
+        position:    schoolSessionQuestions.position,
+        q:           questions.q,
+        type:        questions.type,
+        topic:       questions.topic,
+        difficulty:  questions.difficulty,
+        options:     questions.options,
+        correct:     questions.correct,
+        explanation: questions.explanation,
+      })
+      .from(schoolSessionQuestions)
+      .innerJoin(questions, eq(schoolSessionQuestions.questionId, questions.id))
+      .where(eq(schoolSessionQuestions.sessionId, session.id))
+      .orderBy(asc(schoolSessionQuestions.position))
+
+    return reply.send({
+      questions: rows.map(r => ({
+        id:          r.id,
+        position:    r.position,
+        q:           r.q,
+        type:        r.type,
+        topic:       r.topic,
+        difficulty:  r.difficulty,
+        answerText:  describeCorrectAnswer(r.type, r.options, r.correct),
+        explanation: r.explanation,
       })),
     })
   })

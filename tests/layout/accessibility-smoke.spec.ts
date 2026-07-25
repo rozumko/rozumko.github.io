@@ -268,6 +268,19 @@ async function openTeacherDashboard(page: Page) {
                   ? { results: [] }
                   : path === '/api/school/sessions' && method === 'POST'
                     ? { session: schoolSession }
+                    : path === '/api/school/sessions/school-session-1/preview'
+                      ? {
+                          questions: [{
+                            id: 'question-1',
+                            position: 0,
+                            q: 'Що робить клавіатура?',
+                            type: 'choice',
+                            topic: 'information',
+                            difficulty: 'easy',
+                            answerText: 'Вводить дані',
+                            explanation: null,
+                          }],
+                        }
                     : path === '/api/school/sessions/school-session-1/questions'
                       ? {
                           questions: [{
@@ -652,6 +665,15 @@ test('teacher school-game form stays accessible on a phone', async ({ page }) =>
   await page.setViewportSize({ width: 375, height: 667 })
   await openTeacherDashboard(page)
   await page.locator('#school-create-btn').click()
+  // The deck is checked before the class gets the code
+  await expect(page.locator('#school-preview')).toBeVisible()
+  await expect(page.locator('.school-preview__answer')).toHaveText('Відповідь: Вводить дані')
+  const previewResults = await new AxeBuilder({ page })
+    .include('#school-preview')
+    .withTags(WCAG_AA_TAGS)
+    .analyze()
+  expect(previewResults.violations).toEqual([])
+  await page.locator('#school-preview-start-btn').click()
   await expect(page.locator('#school-live')).toBeVisible()
   const qr = page.locator('#school-join-qr')
   await expect(qr).toHaveAttribute('data-ready', 'true')
@@ -713,6 +735,7 @@ test('teacher lobby keeps the game code and QR card contained on desktop', async
   await page.setViewportSize({ width: 1366, height: 768 })
   await openTeacherDashboard(page)
   await page.locator('#school-create-btn').click()
+  await page.locator('#school-preview-start-btn').click()
   await expect(page.locator('#school-join-qr')).toHaveAttribute('data-ready', 'true')
 
   const metrics = await page.locator('.school-live__access').evaluate(access => {
@@ -776,6 +799,7 @@ test('teacher can start an accessible projector game from the default screen', a
   await page.setViewportSize({ width: 1366, height: 768 })
   await openTeacherDashboard(page)
   await page.locator('#school-projector-btn').click()
+  await page.locator('#school-preview-start-btn').click()
   await expect(page.locator('#school-projector')).toBeVisible()
   await expect(page.locator('#school-projector-question-text')).toHaveText('Що робить клавіатура?')
   await expect(page.getByText('Гра на великому екрані')).toHaveCount(0)

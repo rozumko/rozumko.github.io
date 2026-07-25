@@ -49,7 +49,9 @@ function installFakeDb(state: ReturnType<typeof createState>) {
 
   class SelectQuery {
     table: unknown
+    fields: Record<string, unknown> | undefined
     joins: unknown[] = []
+    constructor(fields?: Record<string, unknown>) { this.fields = fields }
     from(t: unknown) { this.table = t; return this }
     innerJoin(t: unknown) { this.joins.push(t); return this }
     leftJoin(t: unknown) { this.joins.push(t); return this }
@@ -83,8 +85,12 @@ function installFakeDb(state: ReturnType<typeof createState>) {
         return [...state.answers].map(([key, isCorrect]) => ({ questionId: key.split(':')[1], isCorrect }))
       }
       if (isTable(this.table, schema.schoolSessionQuestions) && this.joins.includes(schema.questions)) {
-        // Render payload for classroom clients, without answer keys
-        const { id, q, code, type, options, img, imageAlt } = state.question
+        const { id, q, code, type, options, img, imageAlt, correct, explanation } = state.question
+        // Only the teacher preview selects the key columns; classroom render
+        // payloads never ask for them.
+        if (this.fields && 'correct' in this.fields) {
+          return [{ id, position: 0, q, type, topic: 'information', difficulty: 'easy', options, correct, explanation }]
+        }
         return [{ id, q, code, type, options, img, imageAlt }]
       }
       if (isTable(this.table, schema.schoolSessionQuestions)) {
@@ -152,7 +158,7 @@ function installFakeDb(state: ReturnType<typeof createState>) {
     }
   }
 
-  db.select = (() => new SelectQuery()) as unknown as typeof db.select
+  db.select = ((fields?: Record<string, unknown>) => new SelectQuery(fields)) as unknown as typeof db.select
   db.insert = ((t: unknown) => new InsertQuery(t)) as unknown as typeof db.insert
   db.update = ((t: unknown) => new UpdateQuery(t)) as unknown as typeof db.update
 
@@ -389,6 +395,57 @@ test('school: projector questions are sanitized and available only for an active
       state.session.status = 'finished'
       const finished = await app.inject({ method: 'GET', url: `/api/school/sessions/${ids.session}/questions` })
       assert.equal(finished.statusCode, 409, finished.body)
+    })
+  } finally { restore() }
+})
+
+test('school: teacher preview gives the owner the key as text, and only before the game ends', async () => {
+  const state = createState()
+  state.session.status = 'lobby'
+  const restore = installFakeDb(state)
+  const url = `/api/school/sessions/${ids.session}/preview`
+  try {
+    await withApp(async (app) => {
+      const res = await app.inject({ method: 'GET', url })
+      assert.equal(res.statusCode, 200, res.body)
+      const body = res.json()
+      assert.equal(body.questions.length, 1)
+      assert.equal(body.questions[0].q, '2+2?')
+      assert.equal(body.questions[0].answerText, '4') // key index 0 → option text
+      assert.equal(body.questions[0].explanation, 'Addition')
+      // The teacher gets rendered text only — no raw key column, no raw options.
+      assert.ok(!res.body.includes('"correct"'), 'raw answer key leaked in preview response')
+      assert.ok(!res.body.includes('"options"'), 'raw options leaked in preview response')
+
+      state.session.status = 'finished'
+      const finished = await app.inject({ method: 'GET', url })
+      assert.equal(finished.statusCode, 409, finished.body)
+
+      // A session owned by another teacher is not found for this one
+      state.session.status = 'lobby'
+      state.sessionExists = false
+      const foreign = await app.inject({ method: 'GET', url })
+      assert.equal(foreign.statusCode, 404, foreign.body)
+    })
+  } finally { restore() }
+})
+
+test('school: preview resolves nested keys to text without shipping the key structure', async () => {
+  const state = createState()
+  state.session.status = 'lobby'
+  state.question = {
+    ...state.question,
+    type: 'sort',
+    options: { items: ['Намастити масло', 'Взяти хліб'], correctOrder: [1, 0] } as never,
+    correct: null as never,
+  }
+  const restore = installFakeDb(state)
+  try {
+    await withApp(async (app) => {
+      const res = await app.inject({ method: 'GET', url: `/api/school/sessions/${ids.session}/preview` })
+      assert.equal(res.statusCode, 200, res.body)
+      assert.equal(res.json().questions[0].answerText, 'Взяти хліб → Намастити масло')
+      assert.ok(!res.body.includes('correctOrder'), 'nested answer key leaked in preview response')
     })
   } finally { restore() }
 })

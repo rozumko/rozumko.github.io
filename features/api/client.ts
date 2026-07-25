@@ -1172,6 +1172,23 @@ export function getSchoolParticipantAnswers(sessionId: string, participantId: st
   return authRequest(`/api/school/sessions/${encodeURIComponent(sessionId)}/participants/${encodeURIComponent(participantId)}/answers`)
 }
 
+// Teacher-only look at the questions a session will actually play, with the
+// answer resolved to text by the server (see docs/security-model.md).
+export interface SchoolPreviewQuestion {
+  id: string
+  position: number
+  q: string
+  type: string | null
+  topic: string | null
+  difficulty: string | null
+  answerText: string | null
+  explanation: string | null
+}
+
+export function getSchoolSessionPreview(id: string): Promise<{ questions: SchoolPreviewQuestion[] }> {
+  return authRequest(`/api/school/sessions/${encodeURIComponent(id)}/preview`)
+}
+
 export async function getSchoolSessionQuestions(id: string): Promise<{ questions: Question[] }> {
   const data = await authRequest(`/api/school/sessions/${encodeURIComponent(id)}/questions`)
   data.questions = (data.questions ?? []).map(normalizeQuestion)
