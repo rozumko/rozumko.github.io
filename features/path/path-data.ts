@@ -1,4 +1,4 @@
-import type { QuestionTrack } from '../api/client.js'
+import type { ProgressionBand, QuestionTrack } from '../api/client.js'
 
 // Built-in Home Mode fallback. The authored source of truth is path_maps in the
 // database; public/path bundles deliver reviewed revisions without a code release.
@@ -23,7 +23,10 @@ export type PathActivity =
   | { kind: 'fact-opinion'; level: 1 | 2 }
   | { kind: 'click-trainer'; game: 'computer-parts'; count?: number }
   | { kind: 'simulator'; scenario: 'hardware' | 'software' }
-  | { kind: 'mission'; track?: QuestionTrack; tracks?: QuestionTrack[]; topic?: string; count?: number }
+  // `band` biases question selection toward a progression stage (recognize →
+  // apply → reason) so a point can open on recall and finish on reasoning.
+  // A preference, not a filter — see pickMissionQuestions.
+  | { kind: 'mission'; track?: QuestionTrack; tracks?: QuestionTrack[]; topic?: string; count?: number; band?: ProgressionBand }
 
 export interface CurriculumTag {
   track: QuestionTrack

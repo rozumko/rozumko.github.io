@@ -42,6 +42,45 @@ test('pickMissionQuestions: обрізає до count', () => {
   assert.equal(pickMissionQuestions(pool, { count: 2 }).length, 2)
 })
 
+// band задає порядок, але НЕ ріже пул: у межах однієї теми в кожному банді
+// лежить 1–5 питань, а деякі банди порожні (`information` — тільки recognize).
+// Фільтрація віддавала б місії менше питань, ніж вона просила.
+const bandPool = [
+  { id: 'r1', topic: 'logic', progressionBand: 'recognize' },
+  { id: 'a1', topic: 'logic', progressionBand: 'apply' },
+  { id: 'a2', topic: 'logic', progressionBand: 'apply' },
+  { id: 'x1', topic: 'logic', progressionBand: 'reason' },
+]
+
+test('pickMissionQuestions: band виводить свій банд наперед', () => {
+  const picked = pickMissionQuestions(bandPool, { count: 2, band: 'apply' })
+  assert.deepEqual(picked.map(q => q.progressionBand), ['apply', 'apply'])
+})
+
+test('pickMissionQuestions: band не зменшує кількість, коли свого банду мало', () => {
+  const picked = pickMissionQuestions(bandPool, { count: 4, band: 'recognize' })
+  assert.equal(picked.length, 4, 'місія мусить отримати стільки питань, скільки просила')
+  assert.equal(picked[0].progressionBand, 'recognize')
+})
+
+test('pickMissionQuestions: порожній band не робить місію порожньою', () => {
+  const onlyRecognize = [
+    { id: 'i1', topic: 'information', progressionBand: 'recognize' },
+    { id: 'i2', topic: 'information', progressionBand: 'recognize' },
+  ]
+  const picked = pickMissionQuestions(onlyRecognize, { count: 2, band: 'reason' })
+  assert.equal(picked.length, 2)
+})
+
+test('pickMissionQuestions: band не скасовує фільтри track/topic', () => {
+  const mixed = [
+    { id: 'keep', topic: 'logic', progressionBand: 'apply' },
+    { id: 'drop', topic: 'data', progressionBand: 'apply' },
+  ]
+  const picked = pickMissionQuestions(mixed, { count: 5, topic: 'logic', band: 'apply' })
+  assert.deepEqual(picked.map(q => q.id), ['keep'])
+})
+
 test('pickMissionQuestions: без difficulty бере весь пул і не мутує вхід', () => {
   const before = pool.map(q => q.id).join()
   const picked = pickMissionQuestions(pool, { count: 10 })
