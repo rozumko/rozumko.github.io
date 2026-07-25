@@ -34,10 +34,14 @@ test('question bank presents one section filter while preserving secure query ma
   assert.match(apiClient, /p\.set\('type',\s+String\(params\.type\)\)/)
 })
 
-test('admin help explains the complete question workflow in plain language', () => {
+test('admin help explains the complete content and path workflow in plain language', () => {
   assert.match(adminHtml, /data-tab="help"/)
   assert.match(adminHtml, /id="tab-help"/)
-  assert.match(adminHtml, /Рекомендований порядок роботи/)
+  assert.match(adminHtml, /Активність у шляху/)
+  assert.match(adminHtml, /ID активності/)
+  assert.match(adminHtml, /Ключ гри/)
+  assert.match(adminHtml, /Приклад структури острова/)
+  assert.match(adminHtml, /Гра з реєстру/)
   assert.match(adminHtml, /Олімпіада — основний тур/)
   assert.match(adminHtml, /Статуси питання/)
   assert.match(adminHtml, /Перевір перед публікацією/)
