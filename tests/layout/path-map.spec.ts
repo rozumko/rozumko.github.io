@@ -1,7 +1,9 @@
 import { test, expect, type Page } from '@playwright/test'
 import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { INFO_SORT_LEVELS } from '../../features/games/sorting-data'
+import {
+  INFO_SORT_LEVELS, MULTISORT_LEVELS, SORTING_ATTRIBUTES_LEVELS, type SortingLevel,
+} from '../../features/games/sorting-data'
 import { GRADE2_PATH } from '../../features/path/path-data'
 
 // Карта пригод (path.html): вузли, поступове відкривання, відсутність
@@ -416,18 +418,56 @@ test('a downloaded map revision waits until the active point is closed', async (
 /**
  * Answer key for the sorting activity, taken from the PUBLISHED pack.
  *
- * The browser plays public/content-packs/sorting-infosort.json (exported from
- * the database), while this spec used to build its key from the code-side
- * INFO_SORT_LEVELS fallback. Any pack edited in Admin therefore failed the
- * publication deploy with `missing bin for …`, so the content pipeline could not
- * be used without breaking CI. Read the same file the app fetches; the constant
- * stays as the fallback for a checkout without an exported pack.
+ * Admin can attach different registry sorting packs to this point, so the test
+ * reads the actual gameKey from the exported path and then opens that pack.
+ * Code-side sorting constants are used only when no exported pack exists.
  */
-function sortingAnswerKey(): { binByItem: Map<string, string>; totalItems: number } {
-  const packPath = fileURLToPath(new URL('../../public/content-packs/sorting-infosort.json', import.meta.url))
-  const levels: typeof INFO_SORT_LEVELS = existsSync(packPath)
-    ? JSON.parse(readFileSync(packPath, 'utf8')).levels
-    : INFO_SORT_LEVELS
+type SortingPack = { levels?: SortingLevel[] }
+type PathActivityForTest = {
+  kind?: string
+  missionKind?: string
+  gameKey?: string
+  game?: string
+}
+type PathPointForTest = {
+  unlockAfter?: string[]
+  activities?: Array<{ activity?: PathActivityForTest }>
+}
+type PathBundleForTest = { points?: PathPointForTest[] }
+
+const SORTING_FALLBACKS: Record<string, SortingLevel[]> = {
+  attributes: SORTING_ATTRIBUTES_LEVELS,
+  infosort: INFO_SORT_LEVELS,
+  multisort: MULTISORT_LEVELS,
+}
+
+function readJsonFile<T>(url: URL): T | null {
+  const path = fileURLToPath(url)
+  return existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) as T : null
+}
+
+function firstPlayableSortingGameKey(): string {
+  const exported = readJsonFile<PathBundleForTest>(new URL('../../public/path/grade-2.json', import.meta.url))
+  const points = exported?.points ?? GRADE2_PATH.points
+  const start = points.find(point => Array.isArray(point.unlockAfter) && point.unlockAfter.length === 0) ?? points[0]
+  const sortingStep = start?.activities?.find(step => {
+    const activity = step.activity
+    return (activity?.kind === 'mission-ref' && activity.missionKind === 'sorting-game' && typeof activity.gameKey === 'string')
+      || activity?.kind === 'sorting'
+  })
+  const activity = sortingStep?.activity
+  if (activity?.kind === 'mission-ref' && activity.missionKind === 'sorting-game' && typeof activity.gameKey === 'string') {
+    return activity.gameKey
+  }
+  if (activity?.kind === 'sorting' && typeof activity.game === 'string') return activity.game
+  return 'infosort'
+}
+
+function sortingAnswerKey(): { binByItem: Map<string, string>; totalItems: number; fileName: string } {
+  const gameKey = firstPlayableSortingGameKey()
+  const fileName = `sorting-${gameKey}.json`
+  const pack = readJsonFile<SortingPack>(new URL(`../../public/content-packs/${fileName}`, import.meta.url))
+  const levels = Array.isArray(pack?.levels) ? pack.levels : SORTING_FALLBACKS[gameKey] ?? INFO_SORT_LEVELS
 
   const binByItem = new Map<string, string>()
   let totalItems = 0
@@ -436,7 +476,7 @@ function sortingAnswerKey(): { binByItem: Map<string, string>; totalItems: numbe
     for (const item of level.items) binByItem.set(item.label, labels.get(item.bin)!)
     totalItems += level.items.length
   }
-  return { binByItem, totalItems }
+  return { binByItem, totalItems, fileName }
 }
 
 /** Проходить мікро-урок точки: картки — «Далі», перевірочні питання — перша відповідь + «Далі». */
@@ -456,7 +496,7 @@ async function completeLessonTheory(page: Page) {
 }
 
 test('a real anonymous activity persists the first point and keeps the next point playable', async ({ page }) => {
-  const { binByItem, totalItems } = sortingAnswerKey()
+  const { binByItem, totalItems, fileName } = sortingAnswerKey()
 
   await page.setViewportSize({ width: 375, height: 812 })
   await page.goto('/path.html?grade=2')
@@ -475,7 +515,7 @@ test('a real anonymous activity persists the first point and keeps the next poin
   for (let i = 0; i < totalItems; i += 1) {
     const item = await page.locator('.sg__item-label').textContent()
     const bin = item ? binByItem.get(item) : undefined
-    expect(bin, `у пакеті sorting-infosort.json немає кошика для «${item}»`).toBeTruthy()
+    expect(bin, `у пакеті ${fileName} немає кошика для «${item}»`).toBeTruthy()
     await page.locator('.sg__bin', { hasText: bin! }).click()
   }
 

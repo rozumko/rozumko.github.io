@@ -22,7 +22,7 @@ import {
 import { createFocusTrap } from '../../utils/focus-trap.js'
 import { $ } from '../../utils/dom.js'
 import { esc, showConfirm, showModal } from './ui.js'
-import { TOPIC_LABELS, TOPICS_BY_TRACK } from './taxonomy.js'
+import { CT_CONCEPTS, TOPIC_LABELS, TOPICS_BY_TRACK } from './taxonomy.js'
 import { refreshContentDeliveryBanner } from './publication-tab.js'
 
 const TRACK_LABELS: Record<string, string> = {
@@ -46,6 +46,38 @@ let editorMission: Mission | null = null
 let workingSets: AdminMissionQuestionSet[] = []
 let editorOverlay: HTMLElement | null = null
 let editorTrapRemove: (() => void) | null = null
+
+function selectOptions(values: readonly string[], selected: string, emptyLabel: string): string {
+  const known = new Set(values)
+  const options = [`<option value="">${emptyLabel}</option>`]
+  for (const value of values) {
+    options.push(`<option value="${esc(value)}" ${selected === value ? 'selected' : ''}>${esc(TOPIC_LABELS[value] ?? value)}</option>`)
+  }
+  if (selected && !known.has(selected)) {
+    options.push(`<option value="${esc(selected)}" selected>${esc(selected)} (поза словником)</option>`)
+  }
+  return options.join('')
+}
+
+function fillMissionTopicSelect(trackSelect: HTMLSelectElement, topicSelect: HTMLSelectElement, selected = '') {
+  const topics = (TOPICS_BY_TRACK as Record<string, readonly string[]>)[trackSelect.value] ?? []
+  topicSelect.innerHTML = selectOptions(topics, selected, 'Без теми')
+  topicSelect.disabled = topics.length === 0
+}
+
+function wireMissionTopicSelect(trackSelector: string, topicSelector: string, selected = '') {
+  if (!editorOverlay) return
+  const trackSelect = editorOverlay.querySelector<HTMLSelectElement>(trackSelector)!
+  const topicSelect = editorOverlay.querySelector<HTMLSelectElement>(topicSelector)!
+  fillMissionTopicSelect(trackSelect, topicSelect, selected)
+  trackSelect.addEventListener('change', () => { fillMissionTopicSelect(trackSelect, topicSelect) })
+}
+
+function fillConceptSelect(selector: string, selected = '') {
+  if (!editorOverlay) return
+  const select = editorOverlay.querySelector<HTMLSelectElement>(selector)!
+  select.innerHTML = selectOptions(CT_CONCEPTS, selected, 'Без концепту')
+}
 
 export function initMissionsTab() {
   $<HTMLSelectElement>('m-filter-track').addEventListener('change', renderMissions)
@@ -356,8 +388,8 @@ function openSortingEditor(mission: Mission | null) {
           <div><label class="adm-label">Клас</label><select aria-label="Клас гри" class="adm-input adm-input--sm se-grade">${[1,2,3,4].map(g => `<option value="${g}" ${mission?.grade === g ? 'selected' : ''}>${g} клас</option>`).join('')}</select></div>
           <div><label class="adm-label">Напрям</label><select aria-label="Напрям гри" class="adm-input adm-input--sm se-track">${Object.entries(TRACK_LABELS).map(([value,label]) => `<option value="${value}" ${mission?.track === value ? 'selected' : ''}>${label}</option>`).join('')}</select></div>
           <div><label class="adm-label">Ключ гри</label><input aria-label="Ключ гри" class="adm-input adm-input--sm adm-input--code se-key" value="${esc(inferredGameKey)}"></div>
-          <div><label class="adm-label">Тема</label><input aria-label="Тема гри" class="adm-input adm-input--sm se-topic" value="${esc(typeof config.topic === 'string' ? config.topic : '')}"></div>
-          <div><label class="adm-label">Концепт</label><input aria-label="Концепт гри" class="adm-input adm-input--sm se-concept" value="${esc(typeof config.conceptKey === 'string' ? config.conceptKey : '')}"></div>
+          <div><label class="adm-label">Тема</label><select aria-label="Тема гри" class="adm-input adm-input--sm se-topic"></select></div>
+          <div><label class="adm-label">Концепт</label><select aria-label="Концепт гри" class="adm-input adm-input--sm se-concept"></select></div>
         </div>
         <div class="admin-section-header"><span class="adm-label">Рівні гри</span><button type="button" class="btn-adm-ghost se-add-level">Додати рівень</button></div>
         <p class="admin-section-note">Кошики: один рядок <code>id | назва</code>. Предмети: <code>символ | підпис | id кошика</code>.</p>
@@ -367,6 +399,8 @@ function openSortingEditor(mission: Mission | null) {
       </form>
     </div>`
   document.body.appendChild(editorOverlay)
+  wireMissionTopicSelect('.se-track', '.se-topic', typeof config.topic === 'string' ? config.topic : '')
+  fillConceptSelect('.se-concept', typeof config.conceptKey === 'string' ? config.conceptKey : '')
   renderSortingLevels()
   editorOverlay.querySelector<HTMLButtonElement>('.se-close')!.addEventListener('click', closeEditor)
   editorOverlay.querySelector<HTMLButtonElement>('.se-add-level')!.addEventListener('click', () => { sortingLevels.push(blankSortingLevel()); renderSortingLevels() })
@@ -425,8 +459,8 @@ function collectSortingMission(): AdminSortingMissionInput {
   const config: AdminSortingMissionInput['config'] = {
     gameKey: editorOverlay.querySelector<HTMLInputElement>('.se-key')!.value.trim(), levels: sortingLevels,
   }
-  const topic = editorOverlay.querySelector<HTMLInputElement>('.se-topic')!.value.trim()
-  const conceptKey = editorOverlay.querySelector<HTMLInputElement>('.se-concept')!.value.trim()
+  const topic = editorOverlay.querySelector<HTMLSelectElement>('.se-topic')!.value.trim()
+  const conceptKey = editorOverlay.querySelector<HTMLSelectElement>('.se-concept')!.value.trim()
   if (topic) config.topic = topic
   if (conceptKey) config.conceptKey = conceptKey
   return {
@@ -499,7 +533,7 @@ function openNarrativeEditor(mission: Mission | null, kind: NarrativeKind) {
           <div><label class="adm-label">Клас</label><select aria-label="Клас гри" class="adm-input adm-input--sm ne-grade">${[1,2,3,4].map(g => `<option value="${g}" ${mission?.grade === g || (!mission && g === 2) ? 'selected' : ''}>${g} клас</option>`).join('')}</select></div>
           <div><label class="adm-label">Напрям</label><select aria-label="Напрям гри" class="adm-input adm-input--sm ne-track">${Object.entries(TRACK_LABELS).map(([value,label]) => `<option value="${value}" ${mission?.track === value ? 'selected' : ''}>${label}</option>`).join('')}</select></div>
           <div><label class="adm-label">Ключ гри</label><input aria-label="Ключ гри" class="adm-input adm-input--sm adm-input--code ne-key" value="${esc(typeof config.gameKey === 'string' ? config.gameKey : defaultKey)}"></div>
-          <div><label class="adm-label">Тема</label><input aria-label="Тема гри" class="adm-input adm-input--sm ne-topic" value="${esc(typeof config.topic === 'string' ? config.topic : '')}"></div>
+          <div><label class="adm-label">Тема</label><select aria-label="Тема гри" class="adm-input adm-input--sm ne-topic"></select></div>
         </div>
         <div class="admin-section-header"><span class="adm-label">${NARRATIVE_DEFAULTS[kind].sectionLabel}</span><button type="button" class="btn-adm-ghost ne-add">Додати</button></div>
         <div class="narrative-item-list qf-space"></div>
@@ -508,6 +542,7 @@ function openNarrativeEditor(mission: Mission | null, kind: NarrativeKind) {
       </form>
     </div>`
   document.body.appendChild(editorOverlay)
+  wireMissionTopicSelect('.ne-track', '.ne-topic', typeof config.topic === 'string' ? config.topic : '')
   renderNarrativeItems()
   editorOverlay.querySelector<HTMLButtonElement>('.ne-close')!.addEventListener('click', closeEditor)
   editorOverlay.querySelector<HTMLButtonElement>('.ne-add')!.addEventListener('click', () => {
@@ -635,7 +670,7 @@ function collectNarrativeMission(): AdminSequenceMissionInput | AdminScenarioMis
     grade: Number(editorOverlay.querySelector<HTMLSelectElement>('.ne-grade')!.value),
   }
   const gameKey = editorOverlay.querySelector<HTMLInputElement>('.ne-key')!.value.trim()
-  const topic = editorOverlay.querySelector<HTMLInputElement>('.ne-topic')!.value.trim()
+  const topic = editorOverlay.querySelector<HTMLSelectElement>('.ne-topic')!.value.trim()
   const blocks = [...editorOverlay.querySelectorAll<HTMLElement>('.narrative-item-block')]
   if (narrativeKind === 'click-trainer-game') {
     const rounds = blocks.map((block, index) => ({
@@ -749,7 +784,7 @@ function openSimulatorEditor(mission: Mission | null) {
           <div><label class="adm-label">Напрям</label><select aria-label="Напрям симулятора" class="adm-input adm-input--sm sie-track">${Object.entries(TRACK_LABELS).map(([value,label]) => `<option value="${value}" ${(mission?.track ?? 'informatics') === value ? 'selected' : ''}>${label}</option>`).join('')}</select></div>
           <div><label class="adm-label">Code-owned механіка</label><select aria-label="Механіка симулятора" class="adm-input adm-input--sm sie-scenario" ${mission ? 'disabled' : ''}><option value="assembly-hardware">Збірка ПК</option><option value="assembly-software">Налаштування ОС</option></select></div>
           <div><label class="adm-label">Версія механіки</label><input aria-label="Версія механіки" class="adm-input adm-input--sm" value="1" disabled></div>
-          <div><label class="adm-label">Тема</label><input aria-label="Тема симулятора" class="adm-input adm-input--sm sie-topic" value="${esc(typeof config.topic === 'string' ? config.topic : '')}"></div>
+          <div><label class="adm-label">Тема</label><select aria-label="Тема симулятора" class="adm-input adm-input--sm sie-topic"></select></div>
         </div>
         <p class="admin-section-note">Редаговані поля: символи, всі текстові варіанти, довідки, підписи дій і дозволені навігаційні переходи. State actions та системні переходи позначені як заблоковані.</p>
         <div class="simulator-node-list qf-space"></div>
@@ -758,6 +793,7 @@ function openSimulatorEditor(mission: Mission | null) {
       </form>
     </div>`
   document.body.appendChild(editorOverlay)
+  wireMissionTopicSelect('.sie-track', '.sie-topic', typeof config.topic === 'string' ? config.topic : '')
   const scenarioSelect = editorOverlay.querySelector<HTMLSelectElement>('.sie-scenario')!
   scenarioSelect.value = simulatorScenarioKey
   scenarioSelect.addEventListener('change', () => {
@@ -860,7 +896,7 @@ function renderSimulatorNodes() {
 
 function collectSimulatorMission(): AdminSimulatorMissionInput {
   if (!editorOverlay) throw new Error('Редактор закрито')
-  const topic = editorOverlay.querySelector<HTMLInputElement>('.sie-topic')!.value.trim()
+  const topic = editorOverlay.querySelector<HTMLSelectElement>('.sie-topic')!.value.trim()
   const grade = Number(editorOverlay.querySelector<HTMLSelectElement>('.sie-grade')!.value)
   const allowedGrades = simulatorAllowedGrades()
   if (!allowedGrades.includes(grade)) {
