@@ -4,6 +4,7 @@ import { and, count, desc, eq, gte, inArray, lte } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { accessCodes, appUsers, attempts, classStudents, eventQuestions, eventRegistrations, olympiadEvents, teacherClasses } from '../db/schema.js'
 import { requireAuth, verifySupabaseIdentity, type SupabaseIdentity } from '../lib/auth.js'
+import { emailConfirmedInAuth } from '../lib/email-confirmation.js'
 import { assertEventCanAcceptRegistrations, assertRegistrationCanBeCancelled, normalizeRegistrationInput, normalizeTeacherClassInput } from './registration-validation.js'
 import { assertEventCanIssueCodes, resolveCodeExpiry } from './teacher-events-validation.js'
 
@@ -31,24 +32,46 @@ function generateCode(exclude: Set<string> = new Set()): string {
 }
 
 export interface TeacherRegistrationStore {
-  registerPending(identity: SupabaseIdentity): Promise<{ status: string; created: boolean }>
+  register(identity: SupabaseIdentity, emailConfirmed: boolean): Promise<{ status: string; created: boolean }>
 }
 
 export interface TeacherRoutesOptions {
   verifyIdentity?: (header: string | undefined) => Promise<SupabaseIdentity | null>
   registrationStore?: TeacherRegistrationStore
+  /** DI for tests. Production reads auth.users — see lib/email-confirmation.ts. */
+  emailConfirmedLoader?: (authUserId: string) => Promise<boolean>
 }
 
 const drizzleTeacherRegistrationStore: TeacherRegistrationStore = {
-  async registerPending(identity) {
+  async register(identity, emailConfirmed) {
+    // A confirmed email is what activation means. Manual admin approval stays
+    // available for blocking and for role changes, but it is no longer the gate
+    // every organic signup has to pass — that gate turned all teacher traffic
+    // into a dead end.
     const [created] = await db.insert(appUsers).values({
       authUserId: identity.authUserId,
       email: identity.email,
       role: 'teacher',
-      status: 'pending',
+      status: emailConfirmed ? 'active' : 'pending',
     }).onConflictDoNothing({ target: appUsers.authUserId }).returning({ status: appUsers.status })
 
     if (created) return { status: created.status, created: true }
+
+    // Promote a row filed before its email was confirmed. requireAuth refuses a
+    // pending row, so this route is the only place the account can move forward.
+    // Scoped to teacher+pending on purpose: `blocked` must stay blocked, and an
+    // admin row's status is the admin's business, not a user action's.
+    if (emailConfirmed) {
+      const [promoted] = await db.update(appUsers)
+        .set({ status: 'active' })
+        .where(and(
+          eq(appUsers.authUserId, identity.authUserId),
+          eq(appUsers.role, 'teacher'),
+          eq(appUsers.status, 'pending'),
+        ))
+        .returning({ status: appUsers.status })
+      if (promoted) return { status: promoted.status, created: false }
+    }
 
     const [existing] = await db
       .select({ status: appUsers.status })
@@ -63,6 +86,7 @@ const drizzleTeacherRegistrationStore: TeacherRegistrationStore = {
 export async function teacherRoutes(app: FastifyInstance, opts: TeacherRoutesOptions = {}) {
   const verifyIdentity = opts.verifyIdentity ?? verifySupabaseIdentity
   const registrationStore = opts.registrationStore ?? drizzleTeacherRegistrationStore
+  const emailConfirmed = opts.emailConfirmedLoader ?? emailConfirmedInAuth
 
   // GET /api/me
   app.get('/me', { preHandler: requireAuth }, async (req, reply) => {
@@ -70,9 +94,10 @@ export async function teacherRoutes(app: FastifyInstance, opts: TeacherRoutesOpt
   })
 
   // POST /api/teacher/register-request
-  // The ONLY place that creates a pending teacher row. Deliberately not behind
-  // requireAuth (which requires an existing row); the JWT alone proves identity.
-  // Idempotent: an existing row of any role/status is returned untouched.
+  // The ONLY place that creates or activates a teacher row. Deliberately not
+  // behind requireAuth (which requires an existing, non-pending row); the JWT
+  // alone proves identity. Idempotent. A confirmed email yields an active
+  // account; anything else is returned untouched.
   app.post('/register-request', {
     config: { rateLimit: { max: 5, timeWindow: '1 minute' } },
   }, async (req, reply) => {
@@ -80,7 +105,7 @@ export async function teacherRoutes(app: FastifyInstance, opts: TeacherRoutesOpt
     if (!identity) return reply.code(401).send({ error: 'Потрібна авторизація' })
     if (!identity.email) return reply.code(403).send({ error: 'Email не знайдено в токені' })
 
-    const registration = await registrationStore.registerPending(identity)
+    const registration = await registrationStore.register(identity, await emailConfirmed(identity.authUserId))
     return reply.code(registration.created ? 201 : 200).send({ status: registration.status })
   })
 

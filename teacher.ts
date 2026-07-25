@@ -48,7 +48,8 @@ function isUnknownAccountError(err: unknown): boolean {
     || (apiErr.message ?? '').includes('ще не створено')
 }
 
-const PENDING_CREATED_MSG = '✅ Заявку подано! Кабінет очікує підтвердження адміністратора — після підтвердження увійдіть ще раз.'
+const PENDING_CREATED_MSG = '✅ Кабінет створено! Лишилось підтвердити email за посиланням у листі — після цього увійдіть ще раз.'
+const ACTIVATED_MSG = '✅ Кабінет готовий! Увійдіть, щоб почати.'
 
 function showRegisterRequestBox() {
   $maybe('register-request-box')?.classList.remove('hidden')
@@ -216,8 +217,15 @@ async function init() {
           // Came from the teacher signup confirmation email — intent is
           // explicit, so file the request right away.
           try {
-            await registerTeacherRequest()
+            const { status } = await registerTeacherRequest()
             clearTeacherCallbackFlow()
+            // Arriving from the confirmation email means the email is confirmed,
+            // so the cabinet is already active — no second sign-in needed.
+            if (status === 'active') {
+              const me = await getTeacherMe()
+              showDashboard(teacherLabel(me, session.email))
+              return
+            }
             showAuth(PENDING_CREATED_MSG)
           } catch {
             showAuth('Не вдалося створити кабінет. Спробуйте увійти ще раз.')
@@ -230,11 +238,25 @@ async function init() {
         }
         return
       }
-      // New account (just-confirmed email) lands here with ACCOUNT_PENDING —
-      // without a message it looks like a silent failure.
+      // ACCOUNT_PENDING means the row exists but is not active. Since a
+      // confirmed email now activates it, retry through register-request (which
+      // is idempotent and promotes a confirmed pending row) before giving up.
+      // Without this, an account filed before its email was confirmed could
+      // never move forward: requireAuth refuses it, so nothing calls the one
+      // route that can activate it.
       if (isPendingError(err)) {
         clearTeacherCallbackFlow()
-        showAuth('✅ Акаунт створено! Він очікує підтвердження адміністратора — після підтвердження увійдіть ще раз.')
+        try {
+          const { status } = await registerTeacherRequest()
+          if (status === 'active') {
+            const me = await getTeacherMe()
+            showDashboard(teacherLabel(me, session.email))
+            return
+          }
+        } catch {
+          // Fall through to the message below.
+        }
+        showAuth('Ще один крок: підтвердьте email за посиланням у листі, який ми надіслали. Після цього увійдіть знову.')
         return
       }
       // authRequest чистить сесію, якщо refresh-токен теж мертвий. Тоді показуємо
@@ -338,10 +360,10 @@ $maybe<HTMLButtonElement>('register-request-btn')?.addEventListener('click', asy
   btn.disabled = true
   btn.textContent = 'Надсилання…'
   try {
-    await registerTeacherRequest()
+    const { status } = await registerTeacherRequest()
     clearTeacherCallbackFlow()
     hideRegisterRequestBox()
-    loginError.textContent = PENDING_CREATED_MSG
+    loginError.textContent = status === 'active' ? ACTIVATED_MSG : PENDING_CREATED_MSG
   } catch (err) {
     loginError.textContent = friendlyError((err as Error).message)
   } finally {

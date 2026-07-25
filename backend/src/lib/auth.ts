@@ -73,9 +73,13 @@ export async function requireAuth(req: FastifyRequest, reply: FastifyReply) {
     })
   }
 
+  // `pending` now means "email not confirmed yet" in the normal flow: a
+  // confirmed email activates the account via POST /api/teacher/register-request.
+  // The old copy pointed teachers at an olympiad organiser, which was both a
+  // dead end and wrong positioning for School Mode.
   if (user.status === 'pending') {
     return reply.code(403).send({
-      error: 'Акаунт ще не підтверджено адміністратором. Зверніться до організатора олімпіади.',
+      error: 'Підтвердьте email за посиланням у листі, який ми надіслали, — після цього кабінет відкриється.',
       code: 'ACCOUNT_PENDING',
     })
   }
