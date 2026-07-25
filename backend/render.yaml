@@ -19,9 +19,10 @@ services:
         sync: false
       - key: ATTEMPT_SECRET
         sync: false
-      # Optional: the connection is verified with or without it. Supplying the
-      # Supabase CA narrows trust from the whole system store to one CA. Same
-      # value as the SUPABASE_DB_CA_CERT secret already used by deploy.yml.
+      # Optional override. The Supabase root CA ships with the code
+      # (backend/certs/), so the connection is verified without this value.
+      # Set it only to pin a different CA — e.g. after a Supabase rotation —
+      # without waiting for a release. See docs/security-model.md "Database TLS".
       - key: SUPABASE_DB_CA_CERT
         sync: false
       # Optional until a payment provider is selected: without this value the

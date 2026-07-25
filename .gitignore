@@ -8,6 +8,11 @@ node_modules/
 .env.*.local
 *.key
 *.pem
+*.crt
+# Виняток: публічний кореневий CA Supabase. Він не секрет — сервер віддає його
+# в кожному TLS-рукостисканні, — і саме тому їде з кодом: перевірене зʼєднання
+# не має залежати від env-змінної, яку хтось забув виставити.
+!backend/certs/supabase-prod-ca-2021.crt
 serviceAccountKey.json
 firebase-adminsdk*.json
 # (Firebase більше не використовується, але залишаємо для безпеки)

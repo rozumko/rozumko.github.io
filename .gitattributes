@@ -1,0 +1,4 @@
+# Certificates are byte-exact material, not text: line-ending normalisation on
+# checkout must never touch them. The bundled Supabase CA is read and handed
+# straight to Node's TLS stack (backend/src/db/pool-ssl.ts).
+*.crt -text

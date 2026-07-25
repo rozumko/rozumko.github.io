@@ -10,7 +10,10 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      DATABASE_URL: "postgresql://rozumko:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/rozumko"
+      # sslmode=disable is required, not decorative: TLS is on by default and
+      # this Postgres container serves plaintext on a private network. Every
+      # remote database must NOT carry this parameter.
+      DATABASE_URL: "postgresql://rozumko:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/rozumko?sslmode=disable"
       SUPABASE_URL: "${SUPABASE_URL:?set SUPABASE_URL}"
       ATTEMPT_SECRET: "${ATTEMPT_SECRET:?set ATTEMPT_SECRET}"
       RATE_LIMIT_STORE: memory
