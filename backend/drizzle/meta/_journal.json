@@ -316,6 +316,13 @@
       "when": 1784851200000,
       "tag": "0044_add_question_channels",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1784937600000,
+      "tag": "0045_add_home_funnel_counters",
+      "breakpoints": true
     }
   ]
 }

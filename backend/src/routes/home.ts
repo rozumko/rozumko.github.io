@@ -1,7 +1,11 @@
 import type { FastifyInstance } from 'fastify'
 import { and, desc, eq, inArray, sql, arrayContains } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { questions, homeLeads, homeChildProfiles, homeDemoAttempts, homeDemoReports, homeEntitlements, homeMissionAttempts } from '../db/schema.js'
+import { questions, homeLeads, homeChildProfiles, homeDemoAttempts, homeDemoReports, homeEntitlements, homeMissionAttempts, homeFunnelCounters } from '../db/schema.js'
+import {
+  HOME_FUNNEL_STEPS, HOME_FUNNEL_TRACKS, normalizeFunnelKey,
+  type HomeFunnelStep,
+} from './home-funnel.js'
 import { hasHomeAccess } from './home-entitlement.js'
 import { scoreAttempt, type AnswerValue } from './attempt-validation.js'
 import { stripOptionKeys } from './question-sanitize.js'
@@ -36,6 +40,19 @@ const clubQuestionsQuery = {
     track:      { type: 'string', enum: [...HOME_DEMO_TRACKS] },
     difficulty: { type: 'string', enum: ['easy', 'medium', 'hard'] },
     count:      { type: 'string', pattern: '^(?:[1-9]|[1-4][0-9]|50)$' },
+  },
+} as const
+
+// Крок воронки. Тіло свідомо мінімальне: крок + два грубих виміри. Нічого,
+// що ідентифікує відвідувача, сюди не приймається — див. home-funnel.ts.
+const funnelBody = {
+  type: 'object',
+  required: ['step'],
+  additionalProperties: false,
+  properties: {
+    step:  { type: 'string', enum: [...HOME_FUNNEL_STEPS] },
+    grade: { type: 'integer', minimum: 1, maximum: 4 },
+    track: { type: 'string', enum: [...HOME_FUNNEL_TRACKS] },
   },
 } as const
 
@@ -217,7 +234,41 @@ async function scoreEventsFromPracticePool(events: DemoAttemptEvent[]): Promise<
   }))
 }
 
+/**
+ * Інкремент знеособленого лічильника воронки.
+ * Fail-open: телеметрія ніколи не має ламати екран дитини, тож помилка запису
+ * логується і ковтається — сторінка про неї не дізнається.
+ */
+async function bumpFunnel(
+  app: FastifyInstance,
+  raw: { step: HomeFunnelStep; grade?: number; track?: string },
+): Promise<void> {
+  try {
+    const key = normalizeFunnelKey(raw)
+    await db.insert(homeFunnelCounters)
+      .values({ bucketDate: sql`CURRENT_DATE`, step: key.step, grade: key.grade, track: key.track, count: 1 })
+      .onConflictDoUpdate({
+        target: [homeFunnelCounters.bucketDate, homeFunnelCounters.step, homeFunnelCounters.grade, homeFunnelCounters.track],
+        set: { count: sql`${homeFunnelCounters.count} + 1`, updatedAt: new Date() },
+      })
+  } catch (err) {
+    app.log.warn({ err }, 'home funnel counter failed')
+  }
+}
+
 export async function homeRoutes(app: FastifyInstance) {
+  // ── Воронка: знеособлений лічильник кроку ─────────────────────────────────
+  // Відкритий роут без автентифікації — на цьому етапі відвідувач анонімний за
+  // визначенням. Захист від сміття: allowlist кроків/вимірів у схемі + ліміт
+  // частоти. Дані агрегатні, тож зіпсувати можна лише точність, не приватність.
+  app.post<{ Body: { step: HomeFunnelStep; grade?: number; track?: string } }>('/funnel', {
+    config: { rateLimit: { max: 60, timeWindow: '1 minute' } },
+    schema: { body: funnelBody },
+  }, async (req, reply) => {
+    await bumpFunnel(app, req.body)
+    return reply.code(204).send()
+  })
+
   // ── Батько: створити лід (email + згода + профіль дитини) ─────────────────
   app.post<{ Body: { parentEmail: string; consent: { policyVersion: string; acceptedAt: string }; childProfile: { displayName?: string; grade: number } } }>('/leads', {
     config: { rateLimit: { max: 10, timeWindow: '1 minute' } },
@@ -244,6 +295,10 @@ export async function homeRoutes(app: FastifyInstance) {
       displayName,
       grade: req.body.childProfile.grade,
     }).returning({ id: homeChildProfiles.id })
+
+    // Останній крок воронки рахуємо на сервері: тут згода вже є, і клієнт не
+    // може ані підробити цей крок, ані загубити його на дорозі.
+    await bumpFunnel(app, { step: 'parent_lead', grade: req.body.childProfile.grade })
 
     return reply.code(201).send({
       leadId:         lead.id,

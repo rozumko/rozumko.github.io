@@ -188,6 +188,25 @@ Notes:
 - `home_demo_attempts` — child profile FK, missionId, missionVersion, track,
   server timestamps, raw events (jsonb);
 - `home_demo_reports` — attempt FK, generated report (jsonb), report version.
+- `home_funnel_counters` — **aggregates only**, no FK to anything: one row per
+  `(bucket_date, step, grade, track)` with a counter. This is the one Home
+  table written before consent, and it is allowed precisely because it stores
+  nothing individual — no visitor, session, IP or user-agent column exists, so
+  a single child's path cannot be reconstructed from it. Counters answer "how
+  many times did this step happen", never "who". Steps are a closed allowlist
+  (`home_open`, `path_start`, `practice_start`, `practice_complete`,
+  `parent_gate_view`, `parent_lead`); `parent_lead` is counted server-side
+  inside `POST /api/home/leads`, the rest are reported by the page.
+
+| Route | Auth | Purpose |
+|---|---|---|
+| `POST /api/home/funnel` | none (rate-limited) | Increment one anonymous counter. Body is `{ step, grade?, track? }` with `additionalProperties: false` and enum-checked values, so the open route cannot invent a new dimension. Fail-open: a storage error is logged and swallowed, never surfaced to the child's page. |
+| `GET /api/admin/home-funnel?days=N` | admin | Read the aggregated funnel. |
+
+Known and accepted tradeoff: counters measure events, not unique people (two
+tabs = two `home_open`), and an open endpoint can be spammed to distort
+counts. Both degrade precision only — never privacy — and the funnel is used
+for direction ("where does it drop"), not for cohort analysis.
 
 ## Security Regression Tests
 

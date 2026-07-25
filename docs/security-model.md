@@ -311,6 +311,13 @@ School Mode is the low-risk classroom surface:
 Home Mode is the parent-led commercial surface:
 
 - parent consent is required before storing child progress;
+- the only pre-consent write is `home_funnel_counters`, and it is aggregate by
+  construction: one counter per `(date, step, grade, track)`, no visitor,
+  session, IP or user-agent column, so it cannot describe an individual. The
+  open write route accepts a closed allowlist of steps and dimensions
+  (`additionalProperties: false`) and fails open on storage errors; the
+  boundary is fixed by `routes/home-funnel.test.ts` and disclosed in
+  `privacy.html` §9.5;
 - child profiles are created by the parent or responsible adult;
 - individual reports and diplomas are based on Home Mode data, not imported
   from anonymous classroom sessions;
