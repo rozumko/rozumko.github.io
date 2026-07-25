@@ -24,8 +24,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Covers src/ AND scripts/ — the exporters run against the production
+      # database during deploy, so a schema drift must fail here, not there.
       - name: Type check
-        run: npx tsc --noEmit
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
 
       - name: Run tests
         run: npm test

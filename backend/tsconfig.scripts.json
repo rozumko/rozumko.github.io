@@ -1,0 +1,15 @@
+{
+  // `scripts/` runs against the production database during deploy (deploy.yml)
+  // but sits outside tsconfig.json's `include`, so neither `npm run build` nor
+  // `tsc --noEmit` ever saw it: a renamed column in src/db/schema.ts stayed
+  // green in CI and only surfaced mid-deploy. This config type-checks both.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    // Exporters import shared game content from ../features/games, and one of
+    // those modules is plain JS — both must be in the program to be checked.
+    "rootDir": "..",
+    "allowJs": true
+  },
+  "include": ["src", "scripts"]
+}

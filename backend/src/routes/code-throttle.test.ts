@@ -7,6 +7,8 @@ import {
   MAX_CODE_THROTTLE_BUCKETS,
   recordCodeFailure,
   resetCodeThrottleForTests,
+  STUDENT_CODE_THROTTLE_SCOPE,
+  STUDENT_CODE_IP_THROTTLE_SCOPE,
 } from './code-throttle.js'
 
 test('code throttle blocks after repeated failures and then cools down', () => {
@@ -60,4 +62,54 @@ test('code throttle caps buckets and evicts the oldest key', () => {
 
   recordCodeFailure(scope, oldestCode, start + 300 + MAX_CODE_THROTTLE_BUCKETS)
   assert.deepEqual(getCodeThrottleStatus(scope, oldestCode, start + 301 + MAX_CODE_THROTTLE_BUCKETS), { allowed: true })
+})
+
+// The per-code scope only slows down someone hammering a single code. An
+// enumerator walking the whole code space gets a brand-new bucket per guess and
+// never trips it — that is what the per-IP scope exists to stop.
+test('per-code scope does not stop enumeration of many different codes', () => {
+  resetCodeThrottleForTests()
+  const start = 2_000_000
+
+  for (let i = 0; i < 200; i++) {
+    const code = `KIT${String(i).padStart(4, '0')}`
+    assert.deepEqual(getCodeThrottleStatus(STUDENT_CODE_THROTTLE_SCOPE, code, start + i), { allowed: true })
+    recordCodeFailure(STUDENT_CODE_THROTTLE_SCOPE, code, start + i)
+  }
+})
+
+test('per-IP scope blocks enumeration after its own threshold', () => {
+  resetCodeThrottleForTests()
+  const ip = '203.0.113.9'
+  const start = 3_000_000
+
+  for (let i = 0; i < 19; i++) {
+    assert.deepEqual(getCodeThrottleStatus(STUDENT_CODE_IP_THROTTLE_SCOPE, ip, start + i), { allowed: true })
+    recordCodeFailure(STUDENT_CODE_IP_THROTTLE_SCOPE, ip, start + i)
+  }
+
+  // 20th failure trips the block.
+  assert.deepEqual(getCodeThrottleStatus(STUDENT_CODE_IP_THROTTLE_SCOPE, ip, start + 19), { allowed: true })
+  recordCodeFailure(STUDENT_CODE_IP_THROTTLE_SCOPE, ip, start + 19)
+
+  const blocked = getCodeThrottleStatus(STUDENT_CODE_IP_THROTTLE_SCOPE, ip, start + 20)
+  assert.equal(blocked.allowed, false)
+
+  // Threshold is looser than the per-code one: a classroom behind one NAT
+  // address must not lock itself out on a handful of typos.
+  assert.equal(blocked.allowed === false && blocked.retryAfterSeconds > 5 * 60, true)
+})
+
+test('per-IP threshold is independent of the per-code threshold', () => {
+  resetCodeThrottleForTests()
+  const ip = '198.51.100.4'
+  const start = 4_000_000
+
+  for (let i = 0; i < 6; i++) recordCodeFailure(STUDENT_CODE_IP_THROTTLE_SCOPE, ip, start + i)
+
+  // Six failures would already have blocked a per-code bucket.
+  assert.deepEqual(getCodeThrottleStatus(STUDENT_CODE_IP_THROTTLE_SCOPE, ip, start + 7), { allowed: true })
+  recordCodeFailure('some-code-scope', 'ABC123', start)
+  for (let i = 1; i < 5; i++) recordCodeFailure('some-code-scope', 'ABC123', start + i)
+  assert.equal(getCodeThrottleStatus('some-code-scope', 'ABC123', start + 6).allowed, false)
 })
