@@ -27,3 +27,35 @@ test('sanitizeOlympiadQuestion стрипає лише options, лишає ін�
   assert.equal((s.options as Record<string, unknown>)['correctOrder'], undefined)
   assert.deepEqual((s.options as Record<string, unknown>)['items'], ['a'])
 })
+
+// Defence in depth: every call site currently projects the answer columns away
+// in its SELECT, so this never fires in production today. It exists so that
+// adding `explanation: questions.explanation` to one query — the kind of change
+// that looks harmless in review — cannot leak answer keys to a child's browser.
+test('sanitizeOlympiadQuestion drops top-level correct and explanation columns', () => {
+  const leaked = sanitizeOlympiadQuestion({
+    id: 'q1',
+    q: '2 + 2?',
+    type: 'choice',
+    options: ['4', '5'],
+    correct: 0,
+    explanation: 'Basic addition',
+  } as Record<string, unknown> & { options: unknown })
+
+  assert.equal('correct' in leaked, false)
+  assert.equal('explanation' in leaked, false)
+  assert.equal(leaked.q, '2 + 2?')
+  assert.deepEqual(leaked.options, ['4', '5'])
+})
+
+test('sanitizeOlympiadQuestion strips answer keys nested in options at the same time', () => {
+  const leaked = sanitizeOlympiadQuestion({
+    id: 'q2',
+    type: 'sort',
+    options: { items: ['a', 'b'], correctOrder: [1, 0] },
+    correct: null,
+  } as Record<string, unknown> & { options: unknown })
+
+  assert.equal('correct' in leaked, false)
+  assert.deepEqual(leaked.options, { items: ['a', 'b'] })
+})

@@ -13,6 +13,7 @@ import {
 } from './student-validation.js'
 import {
   STUDENT_CODE_THROTTLE_SCOPE,
+  STUDENT_CODE_IP_THROTTLE_SCOPE,
   clearCodeThrottle,
   getCodeThrottleStatus,
   recordCodeFailure,
@@ -21,6 +22,27 @@ import { getRemainingSeconds } from './attempt-timing.js'
 import { RATE_LIMIT_MAX, RATE_LIMIT_WINDOW } from '../lib/rate-limit-policy.js'
 
 export { generateAttemptToken, verifyAttemptToken }
+
+/**
+ * Both code endpoints are gated by two independent throttles: per code (one
+ * code hammered repeatedly) and per IP (many different codes enumerated). The
+ * stricter remaining cooldown wins.
+ */
+function resolveCodeThrottle(
+  code: string,
+  ip: string,
+): { allowed: true } | { allowed: false; retryAfterSeconds: number } {
+  const byCode = getCodeThrottleStatus(STUDENT_CODE_THROTTLE_SCOPE, code)
+  const byIp = getCodeThrottleStatus(STUDENT_CODE_IP_THROTTLE_SCOPE, ip)
+  if (byCode.allowed && byIp.allowed) return { allowed: true }
+  return {
+    allowed: false,
+    retryAfterSeconds: Math.max(
+      byCode.allowed ? 0 : byCode.retryAfterSeconds,
+      byIp.allowed ? 0 : byIp.retryAfterSeconds,
+    ),
+  }
+}
 
 export async function studentRoutes(app: FastifyInstance) {
   // GET /api/student/validate-code?code=XXX
@@ -40,7 +62,7 @@ export async function studentRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: e.message })
     }
 
-    const throttle = getCodeThrottleStatus(STUDENT_CODE_THROTTLE_SCOPE, normalized)
+    const throttle = resolveCodeThrottle(normalized, req.ip)
     if (!throttle.allowed) {
       return reply
         .code(429)
@@ -63,8 +85,11 @@ export async function studentRoutes(app: FastifyInstance) {
 
     if (!accessCode) {
       recordCodeFailure(STUDENT_CODE_THROTTLE_SCOPE, normalized)
+      recordCodeFailure(STUDENT_CODE_IP_THROTTLE_SCOPE, req.ip)
       return reply.code(404).send({ error: 'Код не знайдено' })
     }
+    // Only the per-code bucket is cleared: letting one known-good code reset the
+    // per-IP counter would hand an enumerator a free reset after every few misses.
     clearCodeThrottle(STUDENT_CODE_THROTTLE_SCOPE, normalized)
     if (accessCode.expiresAt && accessCode.expiresAt < new Date())
       return reply.code(410).send({ error: 'Код застарів' })
@@ -119,7 +144,7 @@ export async function studentRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: e.message })
     }
 
-    const throttle = getCodeThrottleStatus(STUDENT_CODE_THROTTLE_SCOPE, normalized)
+    const throttle = resolveCodeThrottle(normalized, req.ip)
     if (!throttle.allowed) {
       return reply
         .code(429)
@@ -136,6 +161,7 @@ export async function studentRoutes(app: FastifyInstance) {
 
     if (!accessCode) {
       recordCodeFailure(STUDENT_CODE_THROTTLE_SCOPE, normalized)
+      recordCodeFailure(STUDENT_CODE_IP_THROTTLE_SCOPE, req.ip)
       return reply.code(404).send({ error: 'Код не знайдено' })
     }
     clearCodeThrottle(STUDENT_CODE_THROTTLE_SCOPE, normalized)

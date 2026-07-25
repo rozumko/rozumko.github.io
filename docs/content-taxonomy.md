@@ -20,6 +20,14 @@
 (інкремент бекендом при змістовній правці), `meta jsonb` (редакційні дані:
 reviewStatus, isCore, джерело імпорту).
 
+**`channels` — це не третя вісь класифікації, а межа видачі** (міграція 0044).
+`topic`/`concept_key` відповідають на «про що питання», `channels` — «де його
+дозволено показати»: `path` (Дім і карта пригод), `class_game` (Школа),
+`olympiad_training` (статичний practice-експорт). Порожній список = питання не
+видається ніде; питання основного туру (`is_olympiad = true`) не має жодного
+тренувального каналу. Не змішуй ці поняття в одному селекті адмінки —
+обґрунтування в [ADR-0007](./adr/0007-question-delivery-channels.md).
+
 Джерела: типова програма НУШ (інформатична освітня галузь, 1–4 кл.),
 Cambridge Primary Computing 0059 (strands: Computational Thinking, Programming,
 Managing Data, Networks & Digital Communication, Computer Systems),

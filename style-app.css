@@ -132,6 +132,52 @@
   .safety-list { text-align: left; max-width: 24rem; margin-inline: auto; }
 }
 
+/* ── Три режими: інформаційні картки ── */
+.modes-section {
+  text-align: center;
+}
+.modes-grid {
+  list-style: none;
+  display: grid;
+  gap: var(--sp-4);
+  margin-top: var(--sp-4);
+}
+@media (min-width: 720px) {
+  .modes-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+.mode-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  min-width: 0;
+  padding: var(--sp-5);
+  border-radius: var(--r-xl);
+  border: 2px solid transparent;
+  text-align: left;
+}
+.mode-card__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+.mode-card__icon {
+  flex-shrink: 0;
+  width: clamp(44px, 11vw, 52px);
+  height: auto;
+}
+.mode-card__title {
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+}
+.mode-card__desc {
+  color: var(--clr-text-muted);
+  line-height: 1.5;
+}
+.mode-card--home     { background: #fff7ed; border-color: #fcd34d; color: #7c2d12; }
+.mode-card--school   { background: #eff6ff; border-color: #93c5fd; color: var(--clr-primary-dark); }
+.mode-card--olympiad { background: #f5f3ff; border-color: #c4b5fd; color: #5b21b6; }
+
 /* ── Банер сезонної події: порожній слот невидимий ── */
 .event-banner {
   display: flex;
@@ -209,6 +255,11 @@
   color: var(--clr-primary-dark);
 }
 .mode-door__icon { margin-bottom: var(--sp-2); }
+.mode-door__icon img {
+  width: clamp(56px, 14vw, 72px);
+  height: auto;
+  filter: drop-shadow(0 6px 12px rgba(15, 23, 42, .14));
+}
 .mode-door__title {
   font-size: var(--font-size-2xl);
   font-weight: 800;
@@ -470,9 +521,14 @@
   text-align: center;
   color: var(--clr-text);
 }
+/* `outline: none` on :focus also killed the global :focus-visible ring, and the
+   replacement border alone is ~1.7:1 against the resting border — far under the
+   3:1 that WCAG 2.4.11 needs. Suppress the ring only for pointer focus. */
 .code-input-lg:focus {
-  outline: none;
   border-color: var(--clr-brand);
+}
+.code-input-lg:focus:not(:focus-visible) {
+  outline: none;
 }
 .code-input-lg::placeholder {
   font-size: 1.05rem;
@@ -493,8 +549,10 @@
   color: var(--clr-text);
 }
 .field-input:focus {
-  outline: none;
   border-color: var(--clr-brand);
+}
+.field-input:focus:not(:focus-visible) {
+  outline: none;
 }
 .avatar-row {
   display: grid;
@@ -1132,8 +1190,11 @@
   margin-bottom: var(--sp-5);
 }
 .sg__item-emoji { font-size: 4.5rem; line-height: 1; }
+/* Visible, not sr-only: emoji alone are ambiguous across platforms, so a child
+   who misreads the object gets scored for misclassifying it. Every level in
+   sorting-data.ts already ships a label. */
 .sg__item-label {
-  font-size: var(--font-size-base);
+  font-size: var(--kid-text);
   font-weight: 700;
   color: var(--clr-text);
 }
