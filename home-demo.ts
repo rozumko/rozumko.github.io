@@ -9,6 +9,7 @@ import {
 } from './features/api/client.js'
 import { loadStaticQuestions } from './features/missions/static-questions.js'
 import { getSavedGrade, saveGrade } from './utils/grade.js'
+import { createFocusTrap } from './utils/focus-trap.js'
 import { PATHS_BY_GRADE } from './features/path/path-data.js'
 
 // Home Demo (зріз 2 контракту docs/home-demo-contract.md).
@@ -81,6 +82,10 @@ let lead: { id: string; token: string } | null = null
 let missionMode: 'demo' | 'club' = 'demo'
 let questionShownAt = 0
 let selectTouches = 0 // повторні зміни select-ів (match) — сигнал невпевненості
+// Токен запуску: вихід посеред завантаження не має домальовувати місію, що
+// вже нікому не потрібна. Кнопка входу — щоб повернути на неї фокус на виході.
+let activeRun = 0
+let lastTrackBtn: HTMLElement | null = null
 
 type RawAnswer = number | string | number[]
 
@@ -170,6 +175,7 @@ function recordEvent(questionId: string, answer: RawAnswer) {
 
 // ── Запуск місії (демо або Club practice) ─────────────────────
 async function startDemo(preset: TrackPreset, mode: 'demo' | 'club' = 'demo') {
+  const run = ++activeRun
   hide(introEl)
   hide(resultEl)
   errorEl.textContent = ''
@@ -188,6 +194,7 @@ async function startDemo(preset: TrackPreset, mode: 'demo' | 'club' = 'demo') {
     const questions = mode === 'club'
       ? await loadClubQuestions(preset)
       : await loadDemoQuestions(preset)
+    if (run !== activeRun) return
     // Authors often put the correct option first — shuffle per run. The server
     // report scores by ORIGINAL indexes, so recorded answers are mapped back.
     const deck = shuffleDeck(questions, `home-${Date.now()}-${Math.random()}`)
@@ -206,11 +213,60 @@ async function startDemo(preset: TrackPreset, mode: 'demo' | 'club' = 'demo') {
       onComplete: showCompletion,
     })
   } catch (err) {
+    if (run !== activeRun) return
     setMissionActive(false)
     hide(quizEl)
     show(introEl)
     errorEl.textContent = (err as Error).message
   }
+}
+
+// ── Вихід з місії посеред проходження ─────────────────────────
+// Дитина не має опинятися в пастці: практика не зобовʼязує дійти до кінця.
+// Підтвердження показуємо ЛИШЕ коли є що втрачати (є хоч одна відповідь) —
+// інакше діалог на першому питанні був би зайвим кроком до виходу.
+const exitConfirmEl = $('quiz-exit-confirm')
+let releaseExitTrap: (() => void) | null = null
+
+function exitConfirmOpen() { return exitConfirmEl.classList.contains('active') }
+
+function openExitConfirm() {
+  exitConfirmEl.classList.add('active')
+  releaseExitTrap = createFocusTrap(exitConfirmEl, closeExitConfirm)
+}
+
+function closeExitConfirm() {
+  if (!exitConfirmOpen()) return
+  exitConfirmEl.classList.remove('active')
+  releaseExitTrap?.()
+  releaseExitTrap = null
+}
+
+function requestExit() {
+  if (events.length === 0) { exitMission(); return }
+  openExitConfirm()
+}
+
+function exitMission() {
+  closeExitConfirm()
+  // Відповіді, що ще летять у runMission, більше не мають малювати екран.
+  activeRun += 1
+  setMissionActive(false)
+  hide(quizEl)
+  hide(resultEl)
+  events = []
+  currentTrack = null
+  els.options.innerHTML = ''
+  els.feedback.textContent = ''
+  els.feedback.className = 'quiz-feedback'
+  els.explanation.textContent = ''
+  els.explanation.classList.add('hidden')
+  els.nextBtn.classList.add('hidden')
+  document.body.classList.remove('mission-answered')
+  errorEl.textContent = ''
+  show(introEl)
+  // Фокус повертаємо на кнопку, з якої дитина зайшла в місію.
+  lastTrackBtn?.focus()
 }
 
 // ── Емоційне завершення + parent gate ─────────────────────────
@@ -422,8 +478,25 @@ document.querySelectorAll<HTMLElement>('.home-grade-btn').forEach(btn => {
 document.querySelectorAll<HTMLElement>('.home-track-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const preset = TRACKS[btn.dataset['track'] ?? '']
-    if (preset) startDemo(preset)
+    if (!preset) return
+    lastTrackBtn = btn
+    startDemo(preset)
   })
+})
+
+$maybe<HTMLButtonElement>('quiz-exit-btn')?.addEventListener('click', requestExit)
+$maybe<HTMLButtonElement>('quiz-exit-stay')?.addEventListener('click', closeExitConfirm)
+$maybe<HTMLButtonElement>('quiz-exit-yes')?.addEventListener('click', exitMission)
+// Клік по підкладці = «Продовжити»: безпечний бік для випадкового тапу.
+exitConfirmEl.addEventListener('click', (e) => { if (e.target === exitConfirmEl) closeExitConfirm() })
+// Escape: у діалозі його ловить focus-trap, у самій місії — відкриває вихід.
+// Подію з середини діалогу пропускаємо: focus-trap уже закрив його на цьому ж
+// натисканні, і без перевірки той самий Escape відкрив би діалог знову.
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape' || exitConfirmOpen()) return
+  if (exitConfirmEl.contains(e.target as Node)) return
+  if (!document.body.classList.contains('mission-active')) return
+  requestExit()
 })
 
 $maybe('demo-retry-btn')?.addEventListener('click', () => {
