@@ -34,6 +34,21 @@ test('analytics allowlist excludes child and application surfaces', () => {
   }
 })
 
+test('first-party home funnel counters are disclosed and stay non-identifying', async () => {
+  const client = await readFile(new URL('../api/client.ts', import.meta.url), 'utf8')
+  const funnel = client.match(/export function recordHomeFunnelStep[\s\S]*?\n\}/)?.[0] ?? ''
+
+  assert.ok(funnel, 'recordHomeFunnelStep не знайдено у клієнті')
+  // Лічильник відправляє лише крок і два грубих виміри — нічого про людину.
+  assert.doesNotMatch(funnel, /localStorage|sessionStorage|document\.cookie|crypto\.randomUUID|navigator\./)
+  assert.match(funnel, /body\.grade = dims\.grade/)
+  assert.match(funnel, /body\.track = dims\.track/)
+
+  // Політика має описувати цей збір до того, як він почне працювати.
+  assert.match(privacyHtml, /власні знеособлені лічильники кроків/)
+  assert.match(privacyHtml, /Жодного ідентифікатора відвідувача, IP-адреси, cookie чи localStorage/)
+})
+
 test('public privacy copy matches the analytics boundary', () => {
   assert.match(indexHtml, /Без рекламних трекерів, cookie й профілювання дітей/)
   assert.match(privacyHtml, /Cloudflare Web Analytics/)

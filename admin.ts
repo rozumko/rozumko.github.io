@@ -11,6 +11,7 @@ import { initMissionsTab,  loadMissionsTab   } from './features/admin/missions-t
 import { initLessonsTab,   loadLessonsTab    } from './features/admin/lessons-tab.js'
 import { initPathTab,      loadPathTab       } from './features/admin/path-tab.js'
 import { initPublicationTab, loadPublicationTab, refreshContentDeliveryBanner } from './features/admin/publication-tab.js'
+import { initFunnelPanel, loadFunnelPanel } from './features/admin/funnel-panel.js'
 import { friendlyError } from './features/admin/ui.js'
 import { $, $maybe } from './utils/dom.js'
 
@@ -101,6 +102,7 @@ document.querySelectorAll<HTMLElement>('.admin-tab').forEach(tab => {
     tab.classList.add('tab-active')
     const tabName = tab.dataset['tab']
     if (tabName) $maybe(`tab-${tabName}`)?.classList.remove('hidden')
+    if (tabName === 'overview')  loadFunnelPanel()
     if (tabName === 'events')    loadEvents()
     if (tabName === 'teachers')  loadTeachers()
     if (tabName === 'parents')   loadParents()
@@ -119,6 +121,7 @@ function showDashboard(nameOrEmail: string) {
   adminPanel.classList.remove('hidden')
   emailDisplay.textContent = nameOrEmail
   refreshStats()
+  loadFunnelPanel()
   void refreshContentDeliveryBanner()
   loadEvents()
   loadTeachers()
@@ -156,3 +159,4 @@ initMissionsTab()
 initLessonsTab()
 initPathTab()
 initPublicationTab()
+initFunnelPanel()

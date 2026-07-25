@@ -4,8 +4,9 @@ import { runMission, type MissionElements } from './features/missions/mission-ru
 import { shuffleDeck } from './features/missions/question-shuffle.js'
 import {
   createHomeLead, submitHomeDemoReport, getHomeClub, submitHomeMissionReport,
-  loadHomeClubQuestions,
+  loadHomeClubQuestions, recordHomeFunnelStep,
   type Question, type HomeDemoTrack, type HomeDemoEvent, type HomeDemoReport, type HomeClubState,
+  type HomeFunnelStep,
 } from './features/api/client.js'
 import { loadStaticQuestions } from './features/missions/static-questions.js'
 import { getSavedGrade, saveGrade } from './utils/grade.js'
@@ -86,6 +87,18 @@ let selectTouches = 0 // повторні зміни select-ів (match) — с�
 // вже нікому не потрібна. Кнопка входу — щоб повернути на неї фокус на виході.
 let activeRun = 0
 let lastTrackBtn: HTMLElement | null = null
+
+// ── Воронка: знеособлені лічильники кроків ────────────────────────────────
+// Один крок рахуємо не більше разу на завантаження сторінки — інакше дитина,
+// що двічі перезапустила тренування, виглядала б як двоє відвідувачів, і
+// конверсія між кроками стала б брехливою.
+const firedFunnelSteps = new Set<HomeFunnelStep>()
+
+function trackStep(step: HomeFunnelStep, dims: { track?: HomeDemoTrack } = {}) {
+  if (firedFunnelSteps.has(step)) return
+  firedFunnelSteps.add(step)
+  recordHomeFunnelStep(step, { grade: selectedGrade, ...dims })
+}
 
 type RawAnswer = number | string | number[]
 
@@ -183,6 +196,7 @@ async function startDemo(preset: TrackPreset, mode: 'demo' | 'club' = 'demo') {
   missionMode = mode
   events = []
   startedAtIso = new Date().toISOString()
+  trackStep('practice_start', { track: preset.track })
 
   show(quizEl)
   setMissionActive(true)
@@ -274,6 +288,7 @@ function showCompletion() {
   setMissionActive(false)
   hide(quizEl)
   els.progressBar.style.width = '100%'
+  trackStep('practice_complete', { ...(currentTrack ? { track: currentTrack.track } : {}) })
 
   $('result-track-label').textContent = currentTrack ? `${currentTrack.label} • ${selectedGrade} клас` : 'Місію завершено!'
   $('result-stars').textContent = '🏆'
@@ -293,6 +308,7 @@ function showCompletion() {
   hide($('club-block'))
   show($('parent-gate'))
   show(resultEl)
+  trackStep('parent_gate_view')
 }
 
 async function submitClubReport() {
@@ -510,4 +526,10 @@ $maybe<HTMLButtonElement>('gate-submit-btn')?.addEventListener('click', unlockRe
 // кнопка дає перезапитати стан без перепроходження демо.
 $maybe<HTMLButtonElement>('club-refresh-btn')?.addEventListener('click', () => { void refreshClubBlock() })
 
+// Карта — головна дія сторінки; клік по ній рахуємо до переходу.
+$maybe<HTMLAnchorElement>('home-path-card')?.addEventListener('click', () => {
+  if (!$maybe('home-path-card')?.classList.contains('mission-card--unavailable')) trackStep('path_start')
+})
+
 highlightGrade(selectedGrade)
+trackStep('home_open')

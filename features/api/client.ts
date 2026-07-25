@@ -360,6 +360,39 @@ export interface HomeDemoReport {
   nextMission: { missionId: string; reason: string }
 }
 
+// ── Воронка Home Mode ───────────────────────────────────────────────────────
+// Знеособлений лічильник кроку: сервер тримає лише агрегати
+// (дата × крок × клас × напрям), жодного ідентифікатора відвідувача не існує.
+// Контракт межі — backend/src/routes/home-funnel.ts.
+export const HOME_FUNNEL_STEPS = [
+  'home_open', 'path_start', 'practice_start',
+  'practice_complete', 'parent_gate_view', 'parent_lead',
+] as const
+export type HomeFunnelStep = typeof HOME_FUNNEL_STEPS[number]
+
+/**
+ * Fire-and-forget: телеметрія ніколи не має затримати або зламати екран дитини,
+ * тож помилка мережі тут — не подія. `keepalive` доносить лічильник, навіть
+ * якщо сторінка закривається одразу після кроку.
+ */
+export function recordHomeFunnelStep(
+  step: HomeFunnelStep,
+  dims: { grade?: number; track?: HomeDemoTrack } = {},
+): void {
+  const body: Record<string, unknown> = { step }
+  if (dims.grade && dims.grade >= 1 && dims.grade <= 4) body.grade = dims.grade
+  if (dims.track) body.track = dims.track
+
+  try {
+    void fetch(`${API_URL}/api/home/funnel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      keepalive: true,
+    }).catch(() => {})
+  } catch { /* телеметрія не має права ламати сторінку */ }
+}
+
 export async function createHomeLead(
   parentEmail: string,
   consent: { policyVersion: string; acceptedAt: string },
@@ -1160,6 +1193,22 @@ export function submitSchoolProjectorAnswer(
 
 export function getAdminStats(): Promise<{ teachers: number; parents?: number; codes: number; results: number; events?: number }> {
   return authRequest('/api/admin/stats')
+}
+
+export interface AdminFunnelStep {
+  step: HomeFunnelStep
+  count: number
+  conversionFromPrev: number | null
+}
+
+export interface AdminHomeFunnel {
+  days: number
+  steps: AdminFunnelStep[]
+  byGrade: Array<{ grade: number; steps: AdminFunnelStep[] }>
+}
+
+export function getAdminHomeFunnel(days = 30): Promise<AdminHomeFunnel> {
+  return authRequest(`/api/admin/home-funnel?days=${days}`)
 }
 
 export interface AdminParentSummary {

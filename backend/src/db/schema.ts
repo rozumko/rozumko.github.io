@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { pgTable, text, integer, boolean, timestamp, jsonb, uuid, unique } from 'drizzle-orm/pg-core'
+import { pgTable, text, integer, smallint, date, boolean, timestamp, jsonb, uuid, unique, primaryKey } from 'drizzle-orm/pg-core'
 
 /**
  * Типи питань:
@@ -580,3 +580,20 @@ export const homeMissionAttempts = pgTable('home_mission_attempts', {
 })
 
 export type HomeMissionAttempt = typeof homeMissionAttempts.$inferSelect
+
+// Знеособлені лічильники воронки Home Mode. Один рядок = (дата, крок, клас,
+// напрям) → лічильник. Ані відвідувача, ані сесії, ані IP тут немає і не може
+// зʼявитися: до згоди батька нічого індивідуального не зберігається
+// (docs/security-model.md). Деталі й наслідки — routes/home-funnel.ts.
+export const homeFunnelCounters = pgTable('home_funnel_counters', {
+  bucketDate: date('bucket_date').notNull().default(sql`CURRENT_DATE`),
+  step:       text('step').notNull(),
+  grade:      smallint('grade').notNull().default(0),
+  track:      text('track').notNull().default('none'),
+  count:      integer('count').notNull().default(0),
+  updatedAt:  timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.bucketDate, t.step, t.grade, t.track] }),
+}))
+
+export type HomeFunnelCounter = typeof homeFunnelCounters.$inferSelect

@@ -1,13 +1,14 @@
 import type { FastifyInstance } from 'fastify'
 import { eq, desc, count, and, asc, inArray, ilike, or, sql, arrayContains, isNotNull } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { questions, questionRevisions, accessCodes, attempts, attemptQuestions, appUsers, olympiadEvents, eventQuestions, schoolSessions, schoolSessionQuestions, homeLeads, homeEntitlements, homeEntitlementEvents, homeParentAccounts, homePathProgress, missions, missionRevisions, microLessons, microLessonRevisions, pathMapRevisions, pathMaps, contentPublications, type QuestionChannel, type QuestionTrack } from '../db/schema.js'
+import { questions, questionRevisions, accessCodes, attempts, attemptQuestions, appUsers, olympiadEvents, eventQuestions, schoolSessions, schoolSessionQuestions, homeLeads, homeEntitlements, homeEntitlementEvents, homeParentAccounts, homePathProgress, missions, missionRevisions, microLessons, microLessonRevisions, pathMapRevisions, pathMaps, contentPublications, homeFunnelCounters, type QuestionChannel, type QuestionTrack } from '../db/schema.js'
 import { normalizeLessonSlug, normalizeLessonStatus, normalizeLessonContent, lessonContentChanged } from './lesson-validation.js'
 import { contentFromLessonRevision, lessonPublishedSnapshot, lessonRevisionSnapshot } from './lesson-editorial.js'
 import { EDITABLE_MISSION_KINDS, missionPublishedSnapshot, missionSnapshot, normalizeEditableMission, normalizeMissionSlug, normalizeMissionStatus, type NormalizedMissionInput } from './mission-editorial.js'
 import { validatePathMapPoints, bumpChangedStepVersions, pathMapLessonIds, pathMapMissionIds, type PathPointInput } from './path-map-validation.js'
 import { invalidatePathCatalogCache } from './path-catalog.js'
 import { ENTITLEMENT_STATUSES, normalizeEntitlementStatus, applyEntitlementChange } from './home-entitlement.js'
+import { summarizeFunnel } from './home-funnel.js'
 import { requireAdmin } from '../lib/auth.js'
 import { assertQuestionsBelongToGrade, normalizeEventQuestionSelection } from './event-questions-validation.js'
 import { validateQuestionShape, type QuestionType } from './question-input-validation.js'
@@ -233,6 +234,40 @@ export async function adminRoutes(app: FastifyInstance) {
       db.select({ events:   count() }).from(olympiadEvents).where(eq(olympiadEvents.status, 'active')),
     ])
     return reply.send({ teachers, parents, codes, results, events })
+  })
+
+  // GET /api/admin/home-funnel?days=30
+  // Знеособлена воронка Home Mode. Читає лише агрегати — індивідуальних рядків
+  // у джерелі не існує (див. routes/home-funnel.ts).
+  app.get<{ Querystring: { days?: string } }>('/home-funnel', {
+    preHandler: requireAdmin,
+    schema: {
+      querystring: {
+        type: 'object',
+        additionalProperties: false,
+        properties: { days: { type: 'string', pattern: '^(?:[1-9]|[1-8][0-9]|9[0-9]|1[0-7][0-9]|180)$' } },
+      },
+    },
+  }, async (req, reply) => {
+    const days = Number(req.query.days ?? '30')
+    const rows = await db
+      .select({
+        step:  homeFunnelCounters.step,
+        grade: homeFunnelCounters.grade,
+        count: sql<number>`sum(${homeFunnelCounters.count})::int`,
+      })
+      .from(homeFunnelCounters)
+      .where(sql`${homeFunnelCounters.bucketDate} > CURRENT_DATE - ${days}::int`)
+      .groupBy(homeFunnelCounters.step, homeFunnelCounters.grade)
+
+    return reply.send({
+      days,
+      steps: summarizeFunnel(rows.map(r => ({ step: r.step, count: r.count }))),
+      byGrade: [1, 2, 3, 4].map(grade => ({
+        grade,
+        steps: summarizeFunnel(rows.filter(r => r.grade === grade).map(r => ({ step: r.step, count: r.count }))),
+      })),
+    })
   })
 
   // GET /api/admin/parents
