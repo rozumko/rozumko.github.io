@@ -64,6 +64,12 @@ async function openProjector(page: Page) {
       const body = path === '/api/teacher/me'
         ? { id: 't1', authUserId: 'a1', role: 'teacher', name: 'T' }
         : path === '/api/school/sessions' && method === 'POST' ? { session: schoolSession }
+        : path === '/api/school/sessions/s1/preview'
+          ? { questions: questions.map((item, position) => ({
+              id: item.id, position, q: item.q, type: item.type,
+              topic: null, difficulty: null,
+              answerText: 'Правильна відповідь', explanation: null,
+            })) }
         : path === '/api/school/sessions/s1/questions' ? { questions }
         : path === '/api/school/sessions/s1/finish' && method === 'POST' ? { status: 'finished' }
         : path === '/api/school/sessions/s1/start' && method === 'POST' ? { status: 'active' }
@@ -74,6 +80,8 @@ async function openProjector(page: Page) {
   await page.goto('/teacher.html')
   await expect(page.locator('#dashboard-section')).toBeVisible()
   await page.locator('#school-projector-btn').click()
+  await expect(page.locator('#school-preview')).toBeVisible()
+  await page.locator('#school-preview-start-btn').click()
   await expect(page.locator('#school-projector')).toBeVisible()
 }
 

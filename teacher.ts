@@ -10,7 +10,8 @@ import {
   getClassStudents, addClassStudent, updateClassStudent, deleteClassStudent,
   createSchoolSession, startSchoolSession, finishSchoolSession, getSchoolSession,
   getSchoolSessionQuestions, submitSchoolProjectorAnswer, getSchoolParticipantAnswers,
-  type SchoolParticipantAnswer,
+  getSchoolSessionPreview,
+  type SchoolParticipantAnswer, type SchoolPreviewQuestion,
   TURNSTILE_SITE_KEY,
   type TeacherClass, type ClassStudent, type EventRegistration, type TeacherEvent, type Attempt,
   type SchoolSessionInfo, type Question,
@@ -1523,10 +1524,102 @@ function setSchoolCreateBusy(busy: boolean) {
   if (projectorBtn) projectorBtn.disabled = busy
 }
 
+// ── Question check before the class sees anything ──────────────────────────
+// Questions are picked server-side when the session is created, so an accurate
+// preview needs a real session: both launch buttons create it in lobby, the
+// teacher checks the deck, and only then the code (or the projector) appears.
+type SchoolLaunchMode = 'code' | 'projector'
+let previewSession: SchoolSessionInfo | null = null
+let previewMode: SchoolLaunchMode = 'code'
+
+const DIFFICULTY_LABELS: Record<string, string> = { easy: 'легка', medium: 'середня', hard: 'складна' }
+
+function setSchoolPreviewBusy(busy: boolean) {
+  for (const id of ['school-preview-start-btn', 'school-preview-reroll-btn', 'school-preview-cancel-btn']) {
+    const btn = $maybe<HTMLButtonElement>(id)
+    if (btn) btn.disabled = busy
+  }
+}
+
+function hideSchoolPreview() {
+  previewSession = null
+  $maybe('school-preview')?.classList.add('hidden')
+}
+
+function renderSchoolPreview(session: SchoolSessionInfo, questions: SchoolPreviewQuestion[]) {
+  const topicSelect = $maybe<HTMLSelectElement>('school-topic')
+  const meta = $maybe('school-preview-meta')
+  if (meta) {
+    const topicLabel = topicSelect?.selectedOptions[0]?.textContent?.trim() || 'Будь-яка тема'
+    const difficulty = DIFFICULTY_LABELS[session.difficulty ?? ''] ?? 'будь-яка'
+    meta.textContent = `${session.grade} клас · ${topicLabel} · складність: ${difficulty} · питань: ${questions.length}`
+  }
+
+  const list = $maybe('school-preview-list')
+  if (list) {
+    list.innerHTML = questions.map((question, index) => {
+      const topic = question.topic ? (TOPIC_LABELS[question.topic] ?? question.topic) : ''
+      return `
+        <li class="school-preview__item">
+          <p class="school-preview__q">${index + 1}. ${esc(question.q)}</p>
+          ${question.answerText ? `<p class="school-preview__answer"><strong>Відповідь:</strong> ${esc(question.answerText)}</p>` : ''}
+          ${question.explanation ? `<p class="school-preview__note">${esc(question.explanation)}</p>` : ''}
+          ${topic ? `<p class="school-preview__tags">${esc(topic)}</p>` : ''}
+        </li>`
+    }).join('')
+  }
+
+  const startBtn = $maybe<HTMLButtonElement>('school-preview-start-btn')
+  if (startBtn) {
+    startBtn.innerHTML = previewMode === 'projector'
+      ? '<i class="fas fa-tv" aria-hidden="true"></i> Запустити на екрані'
+      : '<i class="fas fa-mobile-alt" aria-hidden="true"></i> Показати код класу'
+  }
+}
+
+async function openSchoolPreview(mode: SchoolLaunchMode) {
+  schoolSetError('')
+  setSchoolCreateBusy(true)
+  setSchoolPreviewBusy(true)
+  try {
+    const { session } = await createSchoolSession(classroomSessionPayload())
+    previewSession = session
+    previewMode = mode
+    const { questions } = await getSchoolSessionPreview(session.id)
+    renderSchoolPreview(session, questions)
+    $maybe('school-create-panel')?.classList.add('hidden')
+    $maybe('school-preview')?.classList.remove('hidden')
+    $maybe<HTMLButtonElement>('school-preview-start-btn')?.focus()
+  } catch (err) {
+    // A session created without a usable preview would linger as a joinable
+    // lobby with no UI behind it.
+    if (previewSession) {
+      try { await finishSchoolSession(previewSession.id) } catch { /* best-effort cleanup */ }
+      previewSession = null
+    }
+    const apiErr = err as Error & { status?: number }
+    schoolSetError(apiErr.status === 422
+      ? `${apiErr.message}. Спробуйте іншу тему, складність або клас.`
+      : friendlyError(apiErr.message))
+  } finally {
+    setSchoolCreateBusy(false)
+    setSchoolPreviewBusy(false)
+  }
+}
+
+async function discardPreviewSession() {
+  const session = previewSession
+  hideSchoolPreview()
+  if (session) {
+    try { await finishSchoolSession(session.id) } catch { /* the lobby expires on its own */ }
+  }
+}
+
 function resetSchoolView() {
   closeSchoolQrDialog()
   closeParticipantDetail()
   schoolSession = null
+  hideSchoolPreview()
   if (schoolPollTimer) { clearInterval(schoolPollTimer); schoolPollTimer = null }
   $maybe('school-live')?.classList.add('hidden')
   $maybe('school-create-panel')?.classList.remove('hidden')
@@ -1626,19 +1719,55 @@ function showSchoolLobby(session: SchoolSessionInfo) {
   startSchoolPolling()
 }
 
-$maybe<HTMLButtonElement>('school-create-btn')?.addEventListener('click', async () => {
-  schoolSetError('')
-  setSchoolCreateBusy(true)
+$maybe<HTMLButtonElement>('school-create-btn')?.addEventListener('click', () => {
+  void openSchoolPreview('code')
+})
+
+$maybe<HTMLButtonElement>('school-preview-reroll-btn')?.addEventListener('click', async () => {
+  const mode = previewMode
+  setSchoolPreviewBusy(true)
+  await discardPreviewSession()
+  await openSchoolPreview(mode)
+})
+
+$maybe<HTMLButtonElement>('school-preview-cancel-btn')?.addEventListener('click', async () => {
+  setSchoolPreviewBusy(true)
   try {
-    const { session } = await createSchoolSession(classroomSessionPayload())
-    showSchoolLobby(session)
-  } catch (err) {
-    const apiErr = err as Error & { status?: number }
-    schoolSetError(apiErr.status === 422
-      ? `${apiErr.message}. Спробуйте іншу тему, складність або клас.`
-      : friendlyError(apiErr.message))
+    await discardPreviewSession()
+    $maybe('school-create-panel')?.classList.remove('hidden')
+    schoolSetError('')
+    $maybe<HTMLSelectElement>('school-topic')?.focus()
   } finally {
-    setSchoolCreateBusy(false)
+    setSchoolPreviewBusy(false)
+  }
+})
+
+$maybe<HTMLButtonElement>('school-preview-start-btn')?.addEventListener('click', async () => {
+  const session = previewSession
+  if (!session) return
+  setSchoolPreviewBusy(true)
+  try {
+    if (previewMode === 'code') {
+      hideSchoolPreview()
+      showSchoolLobby(session)
+      return
+    }
+    schoolSession = session
+    await startSchoolSession(session.id)
+    schoolSession.status = 'active'
+    const { questions } = await getSchoolSessionQuestions(session.id)
+    hideSchoolPreview()
+    openProjector(questions)
+  } catch (err) {
+    // If the session was already started but questions failed to load, close it
+    // on the server so we do not leak a lingering active session with no UI.
+    if (schoolSession?.status === 'active') {
+      try { await finishSchoolSession(schoolSession.id) } catch { /* best-effort cleanup */ }
+    }
+    resetSchoolView()
+    schoolSetError(friendlyError((err as Error).message))
+  } finally {
+    setSchoolPreviewBusy(false)
   }
 })
 
@@ -1756,31 +1885,8 @@ async function closeProjector() {
   resetSchoolView()
 }
 
-$maybe<HTMLButtonElement>('school-projector-btn')?.addEventListener('click', async () => {
-  schoolSetError('')
-  setSchoolCreateBusy(true)
-  try {
-    const { session } = await createSchoolSession(classroomSessionPayload())
-    schoolSession = session
-    await startSchoolSession(session.id)
-    schoolSession.status = 'active'
-    const { questions } = await getSchoolSessionQuestions(session.id)
-    openProjector(questions)
-  } catch (err) {
-    const apiErr = err as Error & { status?: number }
-    const message = apiErr.status === 422
-      ? `${apiErr.message}. Спробуйте іншу тему, складність або клас.`
-      : friendlyError(apiErr.message)
-    // If the session was already started but questions failed to load, close it
-    // on the server so we do not leak a lingering active session with no UI.
-    if (schoolSession?.status === 'active') {
-      try { await finishSchoolSession(schoolSession.id) } catch { /* best-effort cleanup */ }
-    }
-    resetSchoolView()
-    schoolSetError(message)
-  } finally {
-    setSchoolCreateBusy(false)
-  }
+$maybe<HTMLButtonElement>('school-projector-btn')?.addEventListener('click', () => {
+  void openSchoolPreview('projector')
 })
 
 $maybe<HTMLButtonElement>('school-projector-fullscreen-btn')?.addEventListener('click', () => {

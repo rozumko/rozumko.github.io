@@ -417,10 +417,6 @@
                 <option value="hard">Складна</option>
               </select>
             </label>
-          </div>
-
-          <details class="school-create__advanced">
-            <summary>Додаткові налаштування</summary>
             <label class="school-create__field">Кількість запитань
               <select id="school-count" class="form-input school-create__select">
                 <option value="5">5</option>
@@ -428,7 +424,7 @@
                 <option value="15">15</option>
               </select>
             </label>
-          </details>
+          </div>
 
           <div class="school-create__actions">
             <button id="school-create-btn" class="btn btn--success school-create__action">
@@ -441,6 +437,28 @@
             </button>
           </div>
         </div>
+        <!-- Question check before the class sees anything -->
+        <section id="school-preview" class="school-preview hidden" aria-labelledby="school-preview-title">
+          <div class="school-preview__head">
+            <div>
+              <h2 id="school-preview-title" class="school-preview__title">Перевірте питання</h2>
+              <p id="school-preview-meta" class="school-preview__meta"></p>
+            </div>
+            <button id="school-preview-reroll-btn" class="btn btn--secondary" type="button">
+              <i class="fas fa-rotate" aria-hidden="true"></i> Інша добірка
+            </button>
+          </div>
+          <ol id="school-preview-list" class="school-preview__list"></ol>
+          <div class="school-preview__actions">
+            <button id="school-preview-start-btn" class="btn btn--teacher" type="button">
+              <i class="fas fa-play" aria-hidden="true"></i> Продовжити
+            </button>
+            <button id="school-preview-cancel-btn" class="btn btn--danger" type="button">
+              <i class="fas fa-times" aria-hidden="true"></i> Скасувати
+            </button>
+          </div>
+        </section>
+
         <p id="school-error" class="quiz-feedback quiz-feedback--incorrect" aria-live="polite"></p>
 
         <!-- Active classroom game -->
