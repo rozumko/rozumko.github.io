@@ -445,13 +445,27 @@ test('JWT verification pins audience and rejects anonymous sign-ins in both auth
   assert.match(parentAuth, /is_anonymous === true/)
 })
 
-test('parent email verification never reads the user-writable JWT claim', () => {
+test('email verification never reads the user-writable JWT claim', () => {
   const parentRoute = readFileSync(new URL('./routes/parent.ts', import.meta.url), 'utf8')
+  const teacherRoute = readFileSync(new URL('./routes/teacher.ts', import.meta.url), 'utf8')
+  const emailConfirmation = readFileSync(new URL('./lib/email-confirmation.ts', import.meta.url), 'utf8')
 
   // user_metadata.email_verified is raw_user_meta_data: any authenticated user
   // can set it via PUT /auth/v1/user. Source of truth is auth.users only.
+  // Comments stripped: the module documents the forbidden field by name on
+  // purpose, so match against code only.
+  const codeOnly = (source: string) => source
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\/\/.*$/gm, '')
+
   assert.doesNotMatch(parentRoute, /payload\.user_metadata/)
-  assert.match(parentRoute, /email_confirmed_at from auth\.users/)
+  assert.doesNotMatch(codeOnly(emailConfirmation), /user_metadata|email_verified/)
+  assert.match(emailConfirmation, /email_confirmed_at from auth\.users/)
+
+  // Both consumers go through the one shared query. Teacher self-activation
+  // grants cabinet access off this signal, so the two must not drift apart.
+  assert.match(parentRoute, /emailConfirmedInAuth/)
+  assert.match(teacherRoute, /emailConfirmedInAuth/)
 })
 
 test('requireAuth is read-only; teacher rows appear only via explicit register-request', () => {
@@ -463,8 +477,16 @@ test('requireAuth is read-only; teacher rows appear only via explicit register-r
   assert.doesNotMatch(authLib, /\.insert\(/)
   assert.match(authLib, /ACCOUNT_UNKNOWN/)
   assert.match(teacherRoute, /'\/register-request'/)
-  assert.match(teacherRoute, /role:\s*'teacher',\s*status:\s*'pending'/)
   assert.match(teacherRoute, /onConflictDoNothing\(\{\s*target:\s*appUsers\.authUserId\s*\}\)/)
+
+  // The new row is active ONLY off the auth.users signal — never a bare 'active'.
+  assert.match(teacherRoute, /role:\s*'teacher',\s*status:\s*emailConfirmed \? 'active' : 'pending'/)
+
+  // Self-activation may only move a teacher row out of `pending`. `blocked` must
+  // stay blocked, and an admin row's status must never change from a user action,
+  // or confirming an email would become a way to grant yourself admin.
+  assert.match(teacherRoute, /eq\(appUsers\.role, 'teacher'\)/)
+  assert.match(teacherRoute, /eq\(appUsers\.status, 'pending'\)/)
 })
 
 test('admin teacher-status route cannot touch admin accounts', () => {

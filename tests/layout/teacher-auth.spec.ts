@@ -121,7 +121,42 @@ test('teacher registration request sends a valid JSON body', async ({ page }) =>
   await page.goto('/teacher.html')
   await page.locator('#register-request-btn').click()
 
-  await expect(page.locator('#login-error')).toContainText('Заявку подано')
+  // Mock answers `pending`, so the copy must name the one action left: confirm
+  // the email. The exact wording is free to change; the instruction is not.
+  await expect(page.locator('#login-error')).toContainText(/email/i)
   await expect(page.locator('#register-request-box')).toBeHidden()
   expect(await page.evaluate(() => (window as any).__teacherRegistrationBody)).toBe('{}')
+})
+
+// Self-activation: a confirmed email makes register-request return `active`, and
+// the teacher must not be told to wait for anyone.
+test('an activated registration request does not ask the teacher to wait', async ({ page }) => {
+  await page.addInitScript(() => {
+    sessionStorage.setItem('teacher_session', JSON.stringify({
+      accessToken: 'google-access',
+      refreshToken: 'google-refresh',
+      email: 'teacher@example.com',
+    }))
+    window.fetch = async (input) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+      if (url.endsWith('/api/teacher/me')) {
+        return new Response(JSON.stringify({ error: 'Teacher account is not created', code: 'ACCOUNT_UNKNOWN' }), {
+          status: 403, headers: { 'Content-Type': 'application/json' },
+        })
+      }
+      if (url.endsWith('/api/teacher/register-request')) {
+        return new Response(JSON.stringify({ status: 'active' }), {
+          status: 201, headers: { 'Content-Type': 'application/json' },
+        })
+      }
+      throw new Error(`Unexpected request: ${url}`)
+    }
+  })
+
+  await page.goto('/teacher.html')
+  await page.locator('#register-request-btn').click()
+
+  await expect(page.locator('#login-error')).toContainText('готовий')
+  await expect(page.locator('#login-error')).not.toContainText(/адміністратор/i)
+  await expect(page.locator('#register-request-box')).toBeHidden()
 })

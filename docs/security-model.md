@@ -161,7 +161,18 @@ and ignores a transition target unless the runtime allowlist permits it.
    `POST /api/teacher/register-request`; authentication itself never writes to
    `app_users`, so a parent (or any Supabase user) visiting teacher endpoints
    gets `ACCOUNT_UNKNOWN` instead of a silently provisioned pending row.
-5. New teachers remain pending until an administrator approves them.
+5. A confirmed email activates the account. `register-request` reads
+   `auth.users.email_confirmed_at` (via `lib/email-confirmation.ts`, never the
+   user-writable `user_metadata.email_verified` claim) and files the row as
+   `active`; an unconfirmed one stays `pending`. The same route promotes a row
+   filed before its email was confirmed, because `requireAuth` refuses a pending
+   row and nothing else could move it forward.
+   Promotion is scoped to `role = 'teacher' AND status = 'pending'`: `blocked`
+   stays blocked, and an admin row's status never changes from a user action —
+   otherwise confirming an email would be a way to grant yourself admin.
+   Manual admin control remains for blocking and role changes. It is no longer a
+   gate on every signup: that made all organic teacher traffic a dead end, and
+   tied activation to one person being present.
 6. Pending and blocked users cannot access protected teacher features.
 7. Admin routes additionally require the admin role.
 
@@ -215,8 +226,29 @@ the system trust store. Verifying against system CAs alone therefore fails with
 warning `SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases
 for 'verify-full'` in the Render log is that deprecation notice.
 
-Changing this on production has a required order; skipping a step fails the
-deploy at `db:migrate:check:prod`, before the server starts:
+**Current production state: `sslmode=no-verify` — encrypted, not verified. This
+is a deliberate deferral, not an oversight.** Two attempts to enable
+`verify-full` failed with `self-signed certificate in certificate chain`, and on
+free-tier infrastructure before launch the remaining risk does not justify more
+cycles: the connection is already encrypted, so an attacker would need active
+MITM between Render and Supabase, and the database holds no real user data yet.
+The plaintext connection — the part that actually mattered — is gone.
+
+Revisit when either becomes true: real user data lands in the database, or the
+infrastructure moves to a paid tier / dedicated server. The move changes the host
+and its certificate anyway, so doing this twice is wasted work. `resolvePoolSsl`
+already pins the CA as soon as one is supplied; no code change will be needed.
+
+If a future attempt fails again, the likely causes in order: the connection
+string points at the Supavisor pooler (`aws-0-*.pooler.supabase.com`), which
+`prod-ca-2021.crt` does not sign; or the PEM reached the environment with literal
+`\n` instead of newlines, which makes Node ignore it silently. Prefer a Render
+Secret File plus `NODE_EXTRA_CA_CERTS` over an inline env var — that ADDS to the
+system store instead of replacing it, and is the combination already proven in
+`deploy.yml`.
+
+The order below is required; skipping a step fails the deploy at
+`db:migrate:check:prod`, before the server starts:
 
 1. `SUPABASE_DB_CA_CERT` in the Render environment (Supabase dashboard →
    Project Settings → Database → SSL Configuration → Download certificate;

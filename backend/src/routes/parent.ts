@@ -6,6 +6,7 @@ import {
   homeDemoAttempts, homeDemoReports, homeMissionAttempts, homeEntitlements,
 } from '../db/schema.js'
 import { verifyParentToken, type ParentTokenVerifier, type ParentJwtPayload } from '../lib/parent-auth.js'
+import { emailConfirmedInAuth } from '../lib/email-confirmation.js'
 import { normalizeParentEmail, normalizeChildDisplayName, verifyLeadToken } from './home-validation.js'
 import { hasHomeAccess } from './home-entitlement.js'
 import {
@@ -41,15 +42,6 @@ export interface ParentRoutesOptions {
    * напряму з БД — JWT-claim user_metadata.email_verified user-writable і НЕ джерело правди.
    */
   emailConfirmedLoader?: (authUserId: string) => Promise<boolean>
-}
-
-/** Authoritative email confirmation: GoTrue's own auth.users table. */
-async function emailConfirmedInAuth(authUserId: string): Promise<boolean> {
-  const res = await pool.query(
-    'select email_confirmed_at from auth.users where id = $1::uuid',
-    [authUserId],
-  )
-  return res.rows[0]?.email_confirmed_at != null
 }
 
 export async function parentRoutes(app: FastifyInstance, opts: ParentRoutesOptions = {}) {
