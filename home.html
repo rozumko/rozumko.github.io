@@ -50,7 +50,7 @@
 
       <a id="home-path-card" href="path.html?grade=1" class="home-path-hero" aria-labelledby="home-path-card-title home-path-card-meta">
         <span class="home-path-hero__art" aria-hidden="true">
-          <span>🏕️</span><span>🗺️</span><span>🏰</span>
+          <img src="/assets/basics/map-kids.webp" alt="" width="1024" height="694" decoding="async" />
         </span>
         <span class="home-path-hero__copy">
           <span class="home-path-hero__eyebrow">Твоя навчальна пригода</span>
@@ -84,12 +84,13 @@
 
       <p id="demo-error" class="quiz-feedback quiz-feedback--incorrect app-error" aria-live="polite"></p>
 
-      <p class="app-section-label home-secondary-title">Ігри та головоломки</p>
+      <p class="app-section-label home-secondary-title">Або просто пограй</p>
       <div class="mission-grid home-games-grid">
         <a href="games.html" class="mission-card mission-card--think">
-          <span class="mission-card__icon" aria-hidden="true">🧺</span>
+          <img class="mission-card__img" src="/assets/basics/thinks_sorting.webp" alt="" aria-hidden="true" width="1254" height="1254" />
           <span class="mission-card__title">Ігри та головоломки</span>
-          <span class="mission-card__meta">Сортування та логічні головоломки · без реєстрації</span>
+          <span class="mission-card__desc">Розклади предмети за ознакою та розв'яжи головоломки</span>
+          <span class="mission-card__meta">4 гри · 2 без реєстрації</span>
         </a>
       </div>
 
@@ -109,6 +110,8 @@
     <!-- QUIZ: демо-місія (розмітка й ID — спільний контракт з mission-runner) -->
     <section id="mission-quiz" class="hidden">
       <div class="quiz-progress-header">
+        <button id="quiz-exit-btn" class="btn-quiz-exit" type="button"
+                aria-label="Вийти з тренування" title="Вийти з тренування">✕</button>
         <span id="quiz-progress-text" class="quiz-progress-text"></span>
       </div>
       <div class="quiz-progress-bar-wrap" aria-hidden="true">
@@ -175,6 +178,21 @@
     </section>
 
   </main>
+
+  <!-- Вихід із тренування підтверджуємо ЛИШЕ коли є що втрачати (є відповіді).
+       Безпечна дія — фокус за замовчуванням і перша в порядку читання. -->
+  <div id="quiz-exit-confirm" class="quit-overlay" role="alertdialog" aria-modal="true"
+       aria-labelledby="quiz-exit-title" aria-describedby="quiz-exit-text">
+    <div class="quit-card">
+      <span class="quit-card__icon" aria-hidden="true">👋</span>
+      <h2 id="quiz-exit-title" class="quit-card__title">Вийти з тренування?</h2>
+      <p id="quiz-exit-text" class="quit-card__text">Твої відповіді не збережуться — почнемо спочатку.</p>
+      <div class="quit-card__actions">
+        <button id="quiz-exit-stay" class="kid-action" type="button">Продовжити</button>
+        <button id="quiz-exit-yes" class="btn-ghost" type="button">Вийти</button>
+      </div>
+    </div>
+  </div>
 
   <div id="site-footer"></div>
   <script type="module" src="layout.js"></script>

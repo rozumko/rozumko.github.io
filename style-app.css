@@ -1091,6 +1091,39 @@
   }
 }
 
+/* ── Вихід із тренування ────────────────────────────────────────────────────
+   Дитина ніколи не замкнена в місії. Іконка стоїть на початку шапки прогресу
+   (перше, що читається), тап-зона — дитячий мінімум, підпис — тільки для
+   скрінрідера: ✕ у цьому місці зчитується однозначно й не з'їдає ширину. */
+.btn-quiz-exit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--kid-tap);
+  height: var(--kid-tap);
+  padding: 0;
+  border: none;
+  border-radius: var(--r-full);
+  background: var(--clr-surface-subtle);
+  color: var(--clr-text-muted);
+  font-family: var(--font-family);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+.btn-quiz-exit:hover { background: var(--clr-border); color: var(--clr-text); }
+.btn-quiz-exit:focus-visible {
+  outline: 3px solid var(--clr-focus-ring);
+  outline-offset: 3px;
+}
+
+/* Місія — fixed-оверлей із z-index 90, тож діалог має лягти НАД нею. */
+#quiz-exit-confirm { z-index: 100; }
+#quiz-exit-confirm .quit-card { max-width: 24rem; }
+#quiz-exit-confirm .quit-card__actions { grid-template-columns: 1fr; }
+
 /* ── Гра «Розумне сортування» (features/games) ──────────────────────────── */
 .sg {
   max-width: 34rem;
@@ -1325,8 +1358,8 @@ body.puzzle-active #puzzle-area .app-actions { margin: 0; width: 100%; }
 }
 .home-path-hero:hover { transform: translateY(-3px); box-shadow: 0 20px 46px rgb(37 99 235 / 24%); }
 .home-path-hero:focus-visible { outline: 4px solid rgb(37 99 235 / 32%); outline-offset: 4px; }
-.home-path-hero__art { display: flex; align-items: flex-end; justify-content: center; gap: 4px; font-size: clamp(2.6rem, 7vw, 5rem); }
-.home-path-hero__art span:nth-child(2) { transform: translateY(-18px); }
+.home-path-hero__art { display: flex; align-items: center; justify-content: center; }
+.home-path-hero__art img { width: 100%; max-width: 22rem; height: auto; }
 .home-path-hero__copy { display: grid; justify-items: start; gap: 7px; }
 .home-path-hero__eyebrow { color: var(--clr-primary-dark); font-size: .78rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
 .home-path-hero__title { font-size: clamp(1.45rem, 3vw, 2.2rem); font-weight: 900; }
@@ -1337,7 +1370,7 @@ body.puzzle-active #puzzle-area .app-actions { margin: 0; width: 100%; }
 
 @media (max-width: 640px) {
   .home-path-hero { grid-template-columns: 1fr; gap: var(--sp-3); text-align: center; }
-  .home-path-hero__art { font-size: 3.2rem; }
+  .home-path-hero__art img { max-width: 15rem; }
   .home-path-hero__copy { justify-items: center; }
 }
 

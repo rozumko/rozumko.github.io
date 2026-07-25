@@ -222,6 +222,90 @@ for (const vp of [VIEWPORTS[0], VIEWPORTS[1], VIEWPORTS[4], VIEWPORTS[5]]) {
   })
 }
 
+// Вихід із домашнього тренування: дитина не має бути замкнена в місії.
+// Контракт — підтвердження лише тоді, коли є що втрачати.
+test.describe('home practice exit', () => {
+  test.use({ viewport: { width: 1280, height: 800 } })
+
+  async function openPractice(page: Page) {
+    await routeQuestions(page, 'medium')
+    await page.goto('/home.html')
+    await page.locator('.home-grade-btn[data-grade="3"]').click()
+    await page.locator('.home-track-btn[data-track="computational-thinking"]').click()
+    await expect(page.locator('body')).toHaveClass(/mission-active/)
+    await expect(page.locator('#quiz-question-text')).not.toHaveText('')
+  }
+
+  test('exit before the first answer leaves without a confirmation step', async ({ page }) => {
+    await openPractice(page)
+    await page.locator('#quiz-exit-btn').click()
+    await expect(page.locator('#quiz-exit-confirm')).not.toHaveClass(/active/)
+    await expect(page.locator('body')).not.toHaveClass(/mission-active/)
+    await expect(page.locator('#demo-intro')).toBeVisible()
+    // Фокус повертається на кнопку, з якої дитина зайшла в місію.
+    await expect(page.locator('.home-track-btn[data-track="computational-thinking"]')).toBeFocused()
+  })
+
+  test('exit after an answer confirms first and can be cancelled', async ({ page }) => {
+    await openPractice(page)
+    await answerCurrentQuestion(page)
+    await expect(page.locator('body')).toHaveClass(/mission-answered/)
+
+    await page.locator('#quiz-exit-btn').click()
+    const dialog = page.locator('#quiz-exit-confirm')
+    await expect(dialog).toHaveClass(/active/)
+    // Безпечна дія тримає фокус — випадковий Enter не викидає з місії.
+    await expect(page.locator('#quiz-exit-stay')).toBeFocused()
+
+    await page.locator('#quiz-exit-stay').click()
+    await expect(dialog).not.toHaveClass(/active/)
+    await expect(page.locator('body')).toHaveClass(/mission-active/)
+
+    await page.locator('#quiz-exit-btn').click()
+    await page.locator('#quiz-exit-yes').click()
+    await expect(dialog).not.toHaveClass(/active/)
+    await expect(page.locator('body')).not.toHaveClass(/mission-active/)
+    await expect(page.locator('#demo-intro')).toBeVisible()
+  })
+
+  test('Escape opens the exit dialog and a second Escape closes it for good', async ({ page }) => {
+    await openPractice(page)
+    await answerCurrentQuestion(page)
+
+    await page.keyboard.press('Escape')
+    const dialog = page.locator('#quiz-exit-confirm')
+    await expect(dialog).toHaveClass(/active/)
+
+    // Той самий Escape не має закрити і одразу відкрити діалог знову.
+    await page.keyboard.press('Escape')
+    await expect(dialog).not.toHaveClass(/active/)
+    await expect(page.locator('body')).toHaveClass(/mission-active/)
+  })
+
+  test('the exit control sits above the practice overlay and holds a child-sized tap target', async ({ page }) => {
+    await openPractice(page)
+    await assertInViewport(page, '#quiz-exit-btn', 'кнопка виходу')
+    const box = (await page.locator('#quiz-exit-btn').boundingBox())!
+    expect(box.width, 'тап-зона виходу вужча за дитячий мінімум').toBeGreaterThanOrEqual(44)
+    expect(box.height, 'тап-зона виходу нижча за дитячий мінімум').toBeGreaterThanOrEqual(44)
+
+    await answerCurrentQuestion(page)
+    await page.locator('#quiz-exit-btn').click()
+    const layered = await page.evaluate(() => {
+      const dialog = document.querySelector('#quiz-exit-confirm') as HTMLElement
+      const quiz = document.querySelector('#mission-quiz') as HTMLElement
+      const card = dialog.querySelector('.quit-card')!.getBoundingClientRect()
+      return {
+        dialogZ: Number(getComputedStyle(dialog).zIndex),
+        quizZ: Number(getComputedStyle(quiz).zIndex),
+        topmost: document.elementFromPoint(card.x + card.width / 2, card.y + card.height / 2)?.closest('.quit-card') !== null,
+      }
+    })
+    expect(layered.dialogZ, 'діалог виходу нижче за оверлей місії').toBeGreaterThan(layered.quizZ)
+    expect(layered.topmost, 'картка діалогу перекрита місією').toBe(true)
+  })
+})
+
 // Демо-олімпіада: інший стан фідбек-зони (кнопка «Пропустити» + навігатор чипів)
 test.describe('school answer layout stability', () => {
   test.use({ viewport: { width: 1920, height: 870 } })
