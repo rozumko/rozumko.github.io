@@ -220,45 +220,60 @@ the system trust store. Verifying against system CAs alone therefore fails with
 `self-signed certificate in certificate chain`.
 
 `src/db/pool-ssl.ts` states the intent explicitly rather than inheriting `pg`'s
-`sslmode` mapping: always `rejectUnauthorized: true`, plus the CA when
-`SUPABASE_DB_CA_CERT` is set. This matters because pg 8.x treats `require` as
-`verify-full`, while pg v9 will switch it to weaker libpq semantics — the
+`sslmode` mapping: always `rejectUnauthorized: true`, plus the bundled Supabase
+CA (overridable by `SUPABASE_DB_CA_CERT`). This matters because pg 8.x treats
+`require` as `verify-full`, while pg v9 will switch it to weaker libpq semantics — the
 warning `SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases
 for 'verify-full'` in the Render log is that deprecation notice.
 
-**Current production state: `sslmode=no-verify` — encrypted, not verified. This
-is a deliberate deferral, not an oversight.** Two attempts to enable
-`verify-full` failed with `self-signed certificate in certificate chain`, and on
-free-tier infrastructure before launch the remaining risk does not justify more
-cycles: the connection is already encrypted, so an attacker would need active
-MITM between Render and Supabase, and the database holds no real user data yet.
-The plaintext connection — the part that actually mattered — is gone.
+**Root cause of the two failed `verify-full` attempts, measured 2026-07-25:**
+not the certificate. The Supavisor pooler IS signed by `prod-ca-2021` — the
+chain observed on the live connection is `*.pooler.supabase.com` <-
+`Supabase Intermediate 2021 CA` <- `Supabase Root 2021 CA`. The real cause is
+that **`pg` rebuilds `ssl` from the connection string whenever the string
+carries any TLS parameter, and that rebuild overrides the explicit `ssl`
+option** — so the pinned CA was silently discarded and verification fell back
+to the system trust store, which does not contain the Supabase root. Measured
+against production:
 
-Revisit when either becomes true: real user data lands in the database, or the
-infrastructure moves to a paid tier / dedicated server. The move changes the host
-and its certificate anyway, so doing this twice is wasted work. `resolvePoolSsl`
-already pins the CA as soon as one is supplied; no code change will be needed.
+| `DATABASE_URL` | what `pg` actually used | result |
+|---|---|---|
+| no TLS params | our explicit `{ca, rejectUnauthorized}` | connected, verified |
+| `?sslmode=require` | `{}` — CA dropped | refused: self-signed certificate in chain |
+| `?ssl=true` | `true` — CA dropped | refused: same |
 
-If a future attempt fails again, the likely causes in order: the connection
-string points at the Supavisor pooler (`aws-0-*.pooler.supabase.com`), which
-`prod-ca-2021.crt` does not sign; or the PEM reached the environment with literal
-`\n` instead of newlines, which makes Node ignore it silently. Prefer a Render
-Secret File plus `NODE_EXTRA_CA_CERTS` over an inline env var — that ADDS to the
-system store instead of replacing it, and is the combination already proven in
-`deploy.yml`.
+Consequently intent must never travel inside the connection string.
+`resolvePoolConfig()` reads the intent, strips `sslmode`/`ssl`/`sslrootcert`
+from the string, and hands `pg` a clean string plus an explicit `ssl` object.
+Every `new Pool(...)` in the backend uses it; passing `process.env.DATABASE_URL`
+straight through is the bug this replaced.
 
-The order below is required; skipping a step fails the deploy at
-`db:migrate:check:prod`, before the server starts:
+Two further changes close the loop:
 
-1. `SUPABASE_DB_CA_CERT` in the Render environment (Supabase dashboard →
-   Project Settings → Database → SSL Configuration → Download certificate;
-   paste the PEM including the `BEGIN CERTIFICATE` line).
-2. Only then `sslmode=verify-full` in `DATABASE_URL`.
+- **The Supabase root CA ships with the code** (`backend/certs/
+  supabase-prod-ca-2021.crt`, exempted in `.gitignore`). It is public — the
+  server presents it in every handshake — so it is not a secret, and bundling
+  it means a verified connection needs no environment configuration at all.
+  Verified TLS being opt-in through an env var nobody had set is precisely how
+  this stayed unfixed. `SUPABASE_DB_CA_CERT` still wins when present, so a CA
+  rotation needs no release.
+- **TLS is fail-closed by default.** A URL that simply omits `sslmode` used to
+  mean plaintext; it now means verified. A local plaintext server must say
+  `?sslmode=disable` (see `docker-compose.example.yml`).
 
-`sslmode=no-verify` remains a deliberate opt-out: encrypted, unverified. It is
-the fallback that restores service if the CA is wrong or missing. Omitting
-`sslmode` entirely is NOT a fallback — `pg` then configures no TLS at all and
-the database connection is plaintext.
+`sslmode=no-verify` remains a deliberate opt-out — encrypted, unverified — and
+is the fallback that restores service if a CA is ever wrong. Because a silent
+opt-out outlives its reason, the server now logs `db-tls: …` at startup on
+every weakened mode, and `verify` logs that it is pinned.
+
+To finish enabling verification in production, **remove `sslmode=no-verify`
+from the Render `DATABASE_URL`.** Nothing else is required: no env var, no
+`sslmode=verify-full`, no ordering constraint.
+
+Guarded by `src/db/pool-ssl.test.ts`, which asserts what `pg` ends up using
+(computed in the `Client` constructor, no network) rather than only what our
+own function returns. The previous suite passed while the connection was
+unverified precisely because it tested intent alone.
 
 The CI content exporter pins the same CA through `NODE_EXTRA_CA_CERTS`
 (`deploy.yml`), which is why that path worked while the runtime did not.

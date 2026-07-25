@@ -5,6 +5,7 @@ import 'dotenv/config'
 import { FASTIFY_SECURITY_OPTIONS, CORS_OPTIONS } from './lib/security-config.js'
 import { getFastifyRateLimitOptions } from './lib/rate-limit-config.js'
 import { healthRoutes } from './routes/health.js'
+import { poolTlsNotice } from './db/pool-ssl.js'
 
 // ── Перевірка обов'язкових env-змінних при старті ────────────
 const REQUIRED_ENV = ['DATABASE_URL', 'SUPABASE_URL', 'ATTEMPT_SECRET'] as const
@@ -27,6 +28,11 @@ await app.register(cors, CORS_OPTIONS)
 // Див. docs/security-model.md та numInstances: 1 у backend/render.yaml.
 await app.register(rateLimit, getFastifyRateLimitOptions())
 app.log.info('rate-limit: in-memory store active — requires a single backend instance')
+
+// TLS до БД: мовчазне послаблення живе довше за свою причину, тож говоримо вголос.
+const dbTlsNotice = poolTlsNotice()
+if (dbTlsNotice) app.log.warn(dbTlsNotice)
+else app.log.info('db-tls: verified against the pinned Supabase CA')
 
 // Production error handler — не витікаємо stack traces
 app.setErrorHandler((err: Error & { statusCode?: number; code?: string }, _req, reply) => {

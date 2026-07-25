@@ -22,6 +22,9 @@ RUN npm ci --omit=dev && npm cache clean --force
 
 COPY --from=build /app/dist ./dist
 COPY drizzle ./drizzle
+# Публічний кореневий CA Supabase: без нього перевірене зʼєднання з БД
+# розсипалося б саме в контейнері (див. src/db/pool-ssl.ts).
+COPY certs ./certs
 
 USER node
 EXPOSE 3000
