@@ -4,10 +4,12 @@ import { resolvePoolSsl } from './pool-ssl.js'
 
 const CA = '-----BEGIN CERTIFICATE-----\nfake\n-----END CERTIFICATE-----'
 
-test('sslmode=require without a CA is refused instead of silently unverified', () => {
-  assert.throws(
-    () => resolvePoolSsl({ DATABASE_URL: 'postgresql://u:p@db.supabase.co:5432/postgres?sslmode=require' }),
-    /SUPABASE_DB_CA_CERT is required/,
+// The point is that verification is stated explicitly rather than inherited
+// from pg's sslmode mapping, which pg v9 will weaken for `require`.
+test('sslmode=require verifies even without a CA', () => {
+  assert.deepEqual(
+    resolvePoolSsl({ DATABASE_URL: 'postgresql://u:p@db.supabase.co:5432/postgres?sslmode=require' }),
+    { rejectUnauthorized: true },
   )
 })
 
@@ -19,13 +21,13 @@ test('sslmode=require with a CA pins the certificate', () => {
   assert.deepEqual(ssl, { ca: CA, rejectUnauthorized: true })
 })
 
-test('a blank CA counts as missing', () => {
-  assert.throws(
-    () => resolvePoolSsl({
+test('a blank CA counts as missing but never disables verification', () => {
+  assert.deepEqual(
+    resolvePoolSsl({
       DATABASE_URL: 'postgresql://u:p@db.supabase.co:5432/postgres?sslmode=verify-full',
       SUPABASE_DB_CA_CERT: '   ',
     }),
-    /SUPABASE_DB_CA_CERT is required/,
+    { rejectUnauthorized: true },
   )
 })
 
@@ -44,8 +46,8 @@ test('sslmode=no-verify remains an explicit, deliberate opt-out', () => {
 })
 
 test('ssl=true is treated like sslmode=require', () => {
-  assert.throws(
-    () => resolvePoolSsl({ DATABASE_URL: 'postgresql://u:p@db.supabase.co:5432/postgres?ssl=true' }),
-    /SUPABASE_DB_CA_CERT is required/,
+  assert.deepEqual(
+    resolvePoolSsl({ DATABASE_URL: 'postgresql://u:p@db.supabase.co:5432/postgres?ssl=true' }),
+    { rejectUnauthorized: true },
   )
 })

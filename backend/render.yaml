@@ -19,9 +19,9 @@ services:
         sync: false
       - key: ATTEMPT_SECRET
         sync: false
-      # Supabase CA certificate. Required whenever DATABASE_URL requests SSL:
-      # node-postgres would otherwise accept ANY certificate for sslmode=require.
-      # Same value as the SUPABASE_DB_CA_CERT secret used by deploy.yml.
+      # Optional: the connection is verified with or without it. Supplying the
+      # Supabase CA narrows trust from the whole system store to one CA. Same
+      # value as the SUPABASE_DB_CA_CERT secret already used by deploy.yml.
       - key: SUPABASE_DB_CA_CERT
         sync: false
       # Optional until a payment provider is selected: without this value the
