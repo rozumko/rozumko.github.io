@@ -48,6 +48,34 @@ test('grade 1 has its own nine-point path with one visual starting activity', as
   await expect(page.locator('.path-node--locked .path-node__badge').first()).not.toHaveText('🔒')
 })
 
+// Locked state used to be carried by the pulse animation alone, so reduced
+// motion made open and locked badges pixel-identical, and `disabled` swallowed
+// the tap: eight identical circles that answered nothing.
+test('a locked point is visually distinct under reduced motion and answers a tap', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/path.html?grade=1')
+
+  const badgeStyle = (selector: string) => page.locator(selector).first().evaluate(el => {
+    const style = getComputedStyle(el)
+    return { filter: style.filter, opacity: style.opacity, borderColor: style.borderColor }
+  })
+
+  const open = await badgeStyle('.path-node--open .path-node__badge')
+  const locked = await badgeStyle('.path-node--locked .path-node__badge')
+  expect(locked).not.toEqual(open)
+  expect(locked.filter).toContain('grayscale')
+  expect(Number(locked.opacity)).toBeLessThan(1)
+
+  // Genuinely enabled, so Playwright's actionability check passes: a locked
+  // point is a control that explains itself, not a dead one.
+  const lockedNode = page.locator('.path-node--locked').nth(1)
+  await expect(lockedNode).toBeEnabled()
+  await expect(lockedNode).toHaveAccessibleName(/попереду/)
+  await lockedNode.click()
+  await expect(page.locator('#path-greeting')).toContainText('Спершу пройди')
+  await expect(page.locator('#path-map-screen')).toBeVisible()
+})
+
 test('grade-1 anonymous progress unlocks the next points and asks an adult to save', async ({ page }) => {
   await page.addInitScript(([key, value]) => localStorage.setItem(key, value),
     [STORAGE_KEY, progressWith(['g1-sort-start'])] as const)
@@ -56,7 +84,7 @@ test('grade-1 anonymous progress unlocks the next points and asks an adult to sa
   await expect(page.locator('.path-node--open')).toHaveCount(3)
   await expect(page.locator('#path-parent-gate')).toBeVisible()
   await expect(page.locator('#path-parent-gate-link')).toHaveAttribute('href', 'parent.html?continuePath=grade-1')
-  await expect(page.getByRole('button', { name: /Свято трьох суперсил/ })).toBeDisabled()
+  await expect(page.getByRole('button', { name: /Свято трьох суперсил/ })).toHaveClass(/path-node--locked/)
 })
 
 test('grade 1 sorting activity keeps its child-friendly presentation', async ({ page }) => {
@@ -125,7 +153,7 @@ for (const path of [
     await expect(page.locator('.path-node--done')).toHaveCount(1)
     await expect(page.locator('.path-node--open')).toHaveCount(3)
     await expect(page.locator('#path-parent-gate')).toBeVisible()
-    await expect(page.getByRole('button', { name: new RegExp(path.final) })).toBeDisabled()
+    await expect(page.getByRole('button', { name: new RegExp(path.final) })).toHaveClass(/path-node--locked/)
   })
 
   test(`grade ${path.grade} mission uses the shared quiz presentation`, async ({ page }) => {
@@ -209,7 +237,7 @@ test('розпочата точка має неповну обводку і не
   await expect(page.locator('.path-node--started')).toHaveCount(1)
   await expect(page.locator('.path-node--started')).toHaveAccessibleName(/розпочато/)
   await expect(page.locator('.path-node--open')).toHaveCount(0)
-  await expect(page.getByRole('button', { name: /Подай інформацію по-різному/ })).toBeDisabled()
+  await expect(page.getByRole('button', { name: /Подай інформацію по-різному/ })).toHaveClass(/path-node--locked/)
 })
 
 test('анонімна стартова точка відкриває наступну і показує non-blocking save CTA', async ({ page }) => {
@@ -248,7 +276,7 @@ test('anonymous local history unlocks later grade-2 points while prompting save'
     ])] as const)
   await page.goto('/path.html?grade=2')
   const final = page.getByRole('button', { name: /Згадай факти й повідомлення/ })
-  await expect(final).toBeDisabled()
+  await expect(final).toHaveClass(/path-node--locked/)
   // Local browser history can keep the child moving; the parent CTA remains
   // non-blocking so the progress can be attached to a profile later.
   await page.addInitScript(([key, value]) => localStorage.setItem(key, value),
@@ -486,6 +514,6 @@ test('selected parent profile loads its server snapshot without mixing local pro
   await expect(page.locator('.path-node--done')).toHaveCount(1)
   await expect(page.locator('.path-node--open')).toHaveCount(1)
   await expect(page.locator('.path-node--open')).toHaveAccessibleName(/Подай інформацію по-різному/)
-  await expect(page.getByRole('button', { name: /Згадай факти й повідомлення/ })).toBeDisabled()
+  await expect(page.getByRole('button', { name: /Згадай факти й повідомлення/ })).toHaveClass(/path-node--locked/)
   expect(await page.evaluate(() => (window as any).__parentRequests)).toContain('Bearer parent-access')
 })

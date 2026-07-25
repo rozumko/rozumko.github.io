@@ -41,7 +41,7 @@ export function mountSortingGame(root: HTMLElement, levels: SortingLevel[], opts
           <span class="sg__streak hidden" aria-live="polite"></span>
         </div>
       </div>
-      <div class="sg__item-wrap"><div class="sg__item" aria-live="polite"><span class="sg__item-emoji" aria-hidden="true"></span><span class="sg__item-label sr-only"></span></div></div>
+      <div class="sg__item-wrap"><div class="sg__item" aria-live="polite"><span class="sg__item-emoji" aria-hidden="true"></span><span class="sg__item-label"></span></div></div>
       <p class="sg__hint" aria-live="polite">Куди належить цей предмет? Натисни кошик!</p>
       <div class="sg__bins" role="group" aria-label="Кошики для сортування"></div>
       <div class="sg__done hidden">

@@ -866,7 +866,10 @@ body:has(.result-overlay.active) .student-screen {
   border-radius: var(--r-xl); border: 2px solid var(--clr-border); background: #fff;
   color: var(--clr-text); font-family: var(--font-family); font-weight: 700; font-size: var(--font-size-lg);
 }
-.quiz-input:focus { outline: none; border-color: #a78bfa; box-shadow: 0 0 0 3px rgba(124,58,237,.25); }
+/* See style-app.css: the ring is suppressed for pointer focus only, so keyboard
+   users keep the global 3px :focus-visible outline. */
+.quiz-input:focus { border-color: #a78bfa; box-shadow: 0 0 0 3px rgba(124,58,237,.25); }
+.quiz-input:focus:not(:focus-visible) { outline: none; }
 .quiz-input--placeholder { color: var(--clr-text-muted); font-weight: 600; }
 .quiz-input--correct   { border-color: var(--fb-ok-border) !important; background: var(--fb-ok-bg) !important; }
 .quiz-input--incorrect { border-color: var(--fb-err-border) !important; background: var(--fb-err-bg) !important; }
@@ -925,7 +928,8 @@ body:has(.result-overlay.active) .student-screen {
   flex: 1; padding: var(--sp-3) var(--sp-4); border-radius: var(--r-xl); border: 2px solid var(--clr-border);
   background: #fff; color: var(--clr-text); font-family: var(--font-family); font-weight: 600; font-size: var(--font-size-base);
 }
-.quiz-select:focus { outline: none; border-color: #a78bfa; }
+.quiz-select:focus { border-color: #a78bfa; }
+.quiz-select:focus:not(:focus-visible) { outline: none; }
 .quiz-select--correct   { border-color: var(--fb-ok-border); }
 .quiz-select--incorrect { border-color: var(--fb-err-border); }
 
@@ -937,8 +941,11 @@ body:has(.result-overlay.active) .student-screen {
   --game-blue-text: #1d4ed8;
   --game-yellow: #fef3c7;
   --game-yellow-text: #b45309;
-  --game-green: #dcfce7;
-  --game-green-text: #15803d;
+  /* Teal, not green: --game-green was byte-identical to .quiz-option--correct
+     (#dcfce7), so the third answer looked pre-approved. Green and red are
+     reserved for feedback states only. */
+  --game-teal: #ccfbf1;
+  --game-teal-text: #0f766e;
   --game-pink: #fce7f3;
   --game-pink-text: #be185d;
 
@@ -1288,8 +1295,8 @@ body.mission-active.mission-answered #mission-quiz .quiz-explanation {
 
 .quiz-overlay .quiz-option:nth-child(4n+3),
 #mission-quiz .quiz-option:nth-child(4n+3) {
-  background: var(--game-green);
-  color: var(--game-green-text);
+  background: var(--game-teal);
+  color: var(--game-teal-text);
 }
 
 .quiz-overlay .quiz-option:nth-child(4n+4),
@@ -1342,6 +1349,16 @@ body.mission-active.mission-answered #mission-quiz .quiz-explanation {
   background: #e0e7ff !important;
   color: #3730a3 !important;
 }
+
+/* Reordering is the finest motor-control task in the product, yet the arrows
+   were 40px — under the 44px floor and far under --kid-tap (56px). */
+.quiz-overlay .quiz-move,
+#mission-quiz .quiz-move {
+  width: var(--kid-tap);
+  height: var(--kid-tap);
+}
+.quiz-overlay .quiz-move-group,
+#mission-quiz .quiz-move-group { gap: var(--sp-2); }
 
 .quiz-overlay .quiz-options input,
 .quiz-overlay .quiz-options select,

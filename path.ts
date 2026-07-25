@@ -100,6 +100,7 @@ const doneSkills   = $('path-done-skills')
 const greetingEl   = $('path-greeting')
 const parentGate   = $('path-parent-gate')
 const parentGateLink = $<HTMLAnchorElement>('path-parent-gate-link')
+const doneRetry    = $('path-done-retry-btn')
 const doneSave     = $('path-done-save')
 const doneSaveLink = $<HTMLAnchorElement>('path-done-save-link')
 
@@ -493,6 +494,26 @@ function edgePath(from: PathPoint, to: PathPoint): string {
   return `M ${start.x.toFixed(2)} ${start.y.toFixed(2)} C ${start.x.toFixed(2)} ${midY.toFixed(2)}, ${end.x.toFixed(2)} ${midY.toFixed(2)}, ${end.x.toFixed(2)} ${end.y.toFixed(2)}`
 }
 
+/**
+ * Answers a tap on a locked point by naming the point that opens it.
+ * Reuses the greeting mascot instead of adding a new surface — a 6-year-old
+ * needs a face and one short sentence, not a toast.
+ */
+function explainLocked(point: PathPoint, completed: ReadonlySet<string>): void {
+  const blocker = point.unlockAfter
+    .filter(id => !completed.has(id))
+    .map(id => map.points.find(x => x.id === id))
+    .find(x => x !== undefined)
+
+  greetingEl.classList.remove('hidden')
+  renderMascot(greetingEl, {
+    message: blocker
+      ? `Ця точка ще спить 😴 Спершу пройди «${blocker.title}» ${blocker.icon} — і вона відкриється!`
+      : 'Ця точка ще спить 😴 Пройди попередні кружечки — і вона відкриється!',
+    side: 'left',
+  })
+}
+
 function renderMap() {
   const completed = new Set(store.completedIds())
   const mapPointIds = new Set(map.points.map(p => p.id))
@@ -537,7 +558,11 @@ function renderMap() {
     btn.className = `path-node ${trackClass(p)} ${stateClass}`
     btn.style.left = `${p.x}%`
     btn.style.top = `${p.y}%`
-    btn.disabled = !open && !done
+    // Deliberately NOT disabled (and not aria-disabled): a locked point is a
+    // real control that answers "come back after X" — see the click handler.
+    // `disabled` swallowed the tap, so a child pressing one of the locked
+    // circles got no sound, no text, nothing, which reads as "it's broken".
+    // The state is carried by the accessible name below and by colour in CSS.
     const state = done
       ? `виконано${stars ? `, ${stars} з 3 зірок` : ''}`
       : started ? 'розпочато'
@@ -547,7 +572,9 @@ function renderMap() {
       <span class="path-node__badge" aria-hidden="true">${done ? '✓' : p.icon}</span>
       <span class="path-node__label" aria-hidden="true">${p.title}</span>
       ${done && stars ? `<span class="path-node__stars" aria-hidden="true">${'⭐'.repeat(stars)}</span>` : ''}`
-    if (open || done) btn.addEventListener('click', () => { void startPoint(p) })
+    btn.addEventListener('click', () => {
+      if (open || done) { void startPoint(p) } else { explainLocked(p, completed) }
+    })
     nodesBox.appendChild(btn)
   }
 }
@@ -880,9 +907,11 @@ function finishPoint(p: PathPoint, results: ActivityResult[], run: number) {
   $('path-done-title').textContent = p.title
   // Місії home-карти показують локальний фідбек (practice), тож зірки чесні
   // для всіх типів активностей; 0 зірок все одно означає «пройдено».
-  $('path-done-stars').textContent = progress.bestStars
-    ? '⭐'.repeat(progress.bestStars) + '☆'.repeat(3 - progress.bestStars)
-    : ''
+  // Always render three slots, empty ones included. Printing '' at zero stars
+  // left the emptiest screen in the product for the child who most needs
+  // encouragement — the outlines show the goal instead of a blank gap.
+  $('path-done-stars').textContent =
+    '⭐'.repeat(progress.bestStars) + '☆'.repeat(3 - progress.bestStars)
 
   // Praise line varies by stars; celebratory bounce on the completion screen.
   const praise = progress.bestStars >= 3 ? 'Супер! Аж три зірки! 🌟'
@@ -941,6 +970,12 @@ function finishPoint(p: PathPoint, results: ActivityResult[], run: number) {
   // Anonymous run: the save-path CTA lives right on this screen, so the child
   // doesn't have to go back to the map to discover it.
   doneSave.classList.toggle('hidden', Boolean(activeChildProfileId))
+
+  // Retrying was always possible (the node stays clickable) but nothing said so.
+  // Offer it explicitly below three stars, where the child is most likely to want it.
+  doneRetry.classList.toggle('hidden', progress.bestStars >= 3)
+  doneRetry.onclick = () => { void startPoint(p) }
+
   show(doneEl)
   $('path-done-map-btn').focus()
 }

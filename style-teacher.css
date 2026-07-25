@@ -832,7 +832,10 @@ body.teacher-projector-active { overflow: hidden !important; }
   transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
 }
 .school-projector .quiz-option:nth-child(4n + 2) { border-color: #a16207; background: #fef3c7; color: #422006; }
-.school-projector .quiz-option:nth-child(4n + 3) { border-color: #166534; background: #dcfce7; color: #052e16; }
+/* Teal, not green: this rule was byte-identical to .quiz-option--correct below
+   (border, background AND text), so on a projector the third answer read as
+   already-marked-right for the whole class. */
+.school-projector .quiz-option:nth-child(4n + 3) { border-color: #0f766e; background: #ccfbf1; color: #042f2e; }
 .school-projector .quiz-option:nth-child(4n + 4) { border-color: #86198f; background: #fae8ff; color: #4a044e; }
 .school-projector .quiz-option:hover:not(:disabled) { transform: translateY(-2px); filter: saturate(1.25); box-shadow: 0 5px 0 currentColor; }
 .school-projector .quiz-option:focus-visible,

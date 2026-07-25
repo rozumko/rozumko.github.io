@@ -521,9 +521,14 @@
   text-align: center;
   color: var(--clr-text);
 }
+/* `outline: none` on :focus also killed the global :focus-visible ring, and the
+   replacement border alone is ~1.7:1 against the resting border — far under the
+   3:1 that WCAG 2.4.11 needs. Suppress the ring only for pointer focus. */
 .code-input-lg:focus {
-  outline: none;
   border-color: var(--clr-brand);
+}
+.code-input-lg:focus:not(:focus-visible) {
+  outline: none;
 }
 .code-input-lg::placeholder {
   font-size: 1.05rem;
@@ -544,8 +549,10 @@
   color: var(--clr-text);
 }
 .field-input:focus {
-  outline: none;
   border-color: var(--clr-brand);
+}
+.field-input:focus:not(:focus-visible) {
+  outline: none;
 }
 .avatar-row {
   display: grid;
@@ -1183,8 +1190,11 @@
   margin-bottom: var(--sp-5);
 }
 .sg__item-emoji { font-size: 4.5rem; line-height: 1; }
+/* Visible, not sr-only: emoji alone are ambiguous across platforms, so a child
+   who misreads the object gets scored for misclassifying it. Every level in
+   sorting-data.ts already ships a label. */
 .sg__item-label {
-  font-size: var(--font-size-base);
+  font-size: var(--kid-text);
   font-weight: 700;
   color: var(--clr-text);
 }
