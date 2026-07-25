@@ -319,3 +319,116 @@ test('student code endpoints throttle repeated unknown valid-format codes', asyn
     await app.close()
   }
 })
+
+// Resume exists so a crashed tab or F5 does not burn a child's only code. It is
+// gated on maxUses === 1 (one code per child). Dropping that guard would hand
+// the second child of a shared classroom code the first child's attempt id and
+// a valid attempt token — the comment in student.ts says so, these assert it.
+test('a personal code (maxUses=1) resumes the same attempt without spending the code again', async () => {
+  resetCodeThrottleForTests()
+  const state = createState()
+  const restoreDb = installFakeDb(state)
+  const app = Fastify()
+
+  try {
+    await app.register(studentRoutes, { prefix: '/api/student' })
+    await app.ready()
+
+    const first = await app.inject({
+      method: 'POST', url: '/api/student/exchange-code', payload: { code: state.accessCode.code },
+    })
+    assert.equal(first.statusCode, 201, first.body)
+    assert.equal(state.accessCode.usedCount, 1)
+
+    const resumed = await app.inject({
+      method: 'POST', url: '/api/student/exchange-code', payload: { code: state.accessCode.code },
+    })
+    assert.equal(resumed.statusCode, 200, resumed.body)
+    assert.equal(resumed.json().attemptId, first.json().attemptId)
+    assert.equal(state.accessCode.usedCount, 1, 'резюм не має споживати код удруге')
+    assert.equal('correct' in resumed.json().questions[0], false)
+  } finally {
+    resetCodeThrottleForTests()
+    restoreDb()
+    await app.close()
+  }
+})
+
+test('a shared code (maxUses>1) never resumes another child\'s attempt', async () => {
+  resetCodeThrottleForTests()
+  const state = createState()
+  state.accessCode.maxUses = 25
+  const restoreDb = installFakeDb(state)
+  const app = Fastify()
+
+  try {
+    await app.register(studentRoutes, { prefix: '/api/student' })
+    await app.ready()
+
+    const childA = await app.inject({
+      method: 'POST', url: '/api/student/exchange-code', payload: { code: state.accessCode.code },
+    })
+    assert.equal(childA.statusCode, 201, childA.body)
+    assert.equal(state.accessCode.usedCount, 1)
+
+    // The fake db returns child A's in-progress attempt here, exactly as the real
+    // query would. 201 (not 200) proves the maxUses guard refused to hand it over.
+    const childB = await app.inject({
+      method: 'POST', url: '/api/student/exchange-code', payload: { code: state.accessCode.code },
+    })
+    assert.equal(childB.statusCode, 201, 'дитина Б отримала спробу дитини А')
+    assert.equal(state.accessCode.usedCount, 2, 'кожна дитина має списати одне використання')
+  } finally {
+    resetCodeThrottleForTests()
+    restoreDb()
+    await app.close()
+  }
+})
+
+test('an exhausted code is refused and its counter does not move', async () => {
+  resetCodeThrottleForTests()
+  const state = createState()
+  state.accessCode.maxUses = 2
+  state.accessCode.usedCount = 2
+  const restoreDb = installFakeDb(state)
+  const app = Fastify()
+
+  try {
+    await app.register(studentRoutes, { prefix: '/api/student' })
+    await app.ready()
+
+    const refused = await app.inject({
+      method: 'POST', url: '/api/student/exchange-code', payload: { code: state.accessCode.code },
+    })
+    assert.equal(refused.statusCode, 409, refused.body)
+    assert.equal(state.accessCode.usedCount, 2)
+  } finally {
+    resetCodeThrottleForTests()
+    restoreDb()
+    await app.close()
+  }
+})
+
+test('concurrent exchanges on a single-use code spend it exactly once', async () => {
+  resetCodeThrottleForTests()
+  const state = createState()
+  const restoreDb = installFakeDb(state)
+  const app = Fastify()
+
+  try {
+    await app.register(studentRoutes, { prefix: '/api/student' })
+    await app.ready()
+
+    const results = await Promise.all([1, 2, 3].map(() => app.inject({
+      method: 'POST', url: '/api/student/exchange-code', payload: { code: state.accessCode.code },
+    })))
+
+    assert.equal(results.filter(r => r.statusCode === 201).length, 1, 'рівно одна спроба має бути створена')
+    assert.equal(state.accessCode.usedCount, 1)
+    for (const result of results) assert.ok([201, 200, 409].includes(result.statusCode), String(result.statusCode))
+  } finally {
+    resetCodeThrottleForTests()
+    restoreDb()
+    await app.close()
+  }
+})

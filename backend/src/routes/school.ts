@@ -9,6 +9,7 @@ import { generateAttemptToken, verifyAttemptToken } from './student-validation.j
 import { isValidAvatar, normalizeNickname, validateJoinCodeFormat, generateJoinCode, normalizeDifficulty } from './school-validation.js'
 import {
   SCHOOL_JOIN_CODE_THROTTLE_SCOPE,
+  SCHOOL_JOIN_CODE_IP_THROTTLE_SCOPE,
   clearCodeThrottle,
   getCodeThrottleStatus,
   recordCodeFailure,
@@ -470,7 +471,9 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
     },
   }, async (req, reply) => {
     try { validateJoinCodeFormat(req.body.code) } catch (e) { return reply.code(400).send({ error: (e as Error).message }) }
-    const throttle = getCodeThrottleStatus(SCHOOL_JOIN_CODE_THROTTLE_SCOPE, req.body.code)
+    const byCode = getCodeThrottleStatus(SCHOOL_JOIN_CODE_THROTTLE_SCOPE, req.body.code)
+    const byIp = getCodeThrottleStatus(SCHOOL_JOIN_CODE_IP_THROTTLE_SCOPE, req.ip)
+    const throttle = byCode.allowed ? byIp : byCode
     if (!throttle.allowed) {
       return reply
         .code(429)
@@ -488,8 +491,10 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
       .limit(1)
     if (!session) {
       recordCodeFailure(SCHOOL_JOIN_CODE_THROTTLE_SCOPE, req.body.code)
+      recordCodeFailure(SCHOOL_JOIN_CODE_IP_THROTTLE_SCOPE, req.ip)
       return reply.code(404).send({ error: 'Сесію не знайдено' })
     }
+    // Per-IP bucket intentionally not cleared — see code-throttle.ts.
     clearCodeThrottle(SCHOOL_JOIN_CODE_THROTTLE_SCOPE, req.body.code)
     if (session.status === 'finished') return reply.code(409).send({ error: 'Сесію вже завершено' })
     if (isSessionExpired(session.createdAt)) {

@@ -1,8 +1,12 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync, readdirSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 
 import { normalizeMapBundle } from './path-loader.ts'
 import { PATHS_BY_GRADE } from './path-data.ts'
+
+const PUBLIC_PATH_DIR = fileURLToPath(new URL('../../public/path/', import.meta.url))
 
 function bundleFor(grade) {
   const map = PATHS_BY_GRADE[grade]
@@ -110,6 +114,30 @@ test('річний bundle приймає до 40 точок і відхиляє 
   const fortyOne = bundleFor(2)
   fortyOne.points = linearPoints(41)
   assert.equal(normalizeMapBundle(fortyOne, 2), null)
+})
+
+// Export-side validation (backend/scripts/export-path.ts) and browser-side
+// validation are separate implementations. When they drift, path-loader returns
+// null and the app silently falls back to the built-in map — deploy stays green,
+// the publication callback reports `succeeded`, and nobody notices. These files
+// are what production actually serves, so they must survive the browser check.
+test('експортовані public/path/*.json проходять браузерну валідацію без фолбеку', () => {
+  const files = readdirSync(PUBLIC_PATH_DIR).filter(name => /^grade-[1-4]\.json$/.test(name))
+  assert.ok(files.length, 'у public/path/ немає жодної експортованої карти')
+
+  for (const file of files) {
+    const grade = Number(file.match(/^grade-(\d)\.json$/)[1])
+    const raw = JSON.parse(readFileSync(PUBLIC_PATH_DIR + file, 'utf8'))
+
+    const map = normalizeMapBundle(raw, grade)
+    assert.ok(map, `${file}: браузер відхилив бандл — діти побачать вбудовану карту`)
+    assert.equal(map.version, raw.version, `${file}: версія не збіглася`)
+    assert.deepEqual(
+      map.points.map(point => point.id),
+      raw.points.map(point => point.id),
+      `${file}: набір точок не збігся`,
+    )
+  }
 })
 
 test('повна bundle-валідація відхиляє цикл, битий activity shape і координати', () => {

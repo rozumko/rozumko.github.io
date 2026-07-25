@@ -3,12 +3,13 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator'
 import { Pool } from 'pg'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
+import { resolvePoolSsl } from './pool-ssl.js'
 import 'dotenv/config'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 async function runMigrations() {
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: resolvePoolSsl() })
   const db = drizzle(pool)
   await migrate(db, { migrationsFolder: join(__dirname, '../../drizzle') })
   await pool.end()

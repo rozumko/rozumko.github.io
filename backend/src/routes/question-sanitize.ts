@@ -23,7 +23,20 @@ export function stripOptionKeys(options: unknown): unknown {
   return clone
 }
 
-/** Санітизує одне питання для олімпіадного режиму: стрипає options-ключі. */
+/** Top-level answer columns. Never serialise these to a student. */
+const SECRET_COLUMNS = ['correct', 'explanation'] as const
+
+/**
+ * Санітизує одне питання для олімпіадного режиму: стрипає options-ключі
+ * і колонки з відповіддю.
+ *
+ * `correct`/`explanation` теж знімаються тут, а не лише через проєкцію SELECT
+ * на боці виклику. Раніше безпека трималася на домовленості: жоден call-site
+ * не селектить ці колонки. Додавання одного поля до SELECT мовчки віддало б
+ * ключі в браузер — санітайзер їх пропускав.
+ */
 export function sanitizeOlympiadQuestion<T extends { options: unknown }>(q: T): T {
-  return { ...q, options: stripOptionKeys(q.options) }
+  const clone: Record<string, unknown> = { ...q, options: stripOptionKeys(q.options) }
+  for (const key of SECRET_COLUMNS) delete clone[key]
+  return clone as T
 }

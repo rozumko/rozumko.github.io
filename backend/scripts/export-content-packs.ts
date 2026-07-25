@@ -63,6 +63,10 @@ function writeSimulatorPack(row: typeof rows[number], pack: ReturnType<typeof de
   console.log(`${file}: v${row.publishedVersion}`)
 }
 
+// Collected instead of thrown one-by-one so a single run reports every bad pack.
+// Must abort BEFORE the cleanup loop below, which deletes any file not in `files`.
+const invalidPacks: string[] = []
+
 for (const row of rows) {
   try {
     const snapshot = normalizeEditableMission(row.publishedSnapshot)
@@ -82,13 +86,21 @@ for (const row of rows) {
     }
     const fallback = legacyFallbacks[row.id]
     if (!fallback) {
-      console.warn(`${row.id}: skipped invalid pack (${(error as Error).message})`)
+      invalidPacks.push(`${row.id}: ${(error as Error).message}`)
       continue
     }
     writePack(row, fallback.prefix, fallback.gameKey, fallback.field, fallback.content)
     console.warn(`${row.id}: exported bundled legacy content; open and publish it in Admin to move source-of-truth to the database`)
   }
 }
+if (invalidPacks.length) {
+  throw new Error(
+    `Export aborted — ${invalidPacks.length} published pack(s) failed validation. `
+    + 'No stale files were removed; fix the packs in Admin and re-publish:\n'
+    + invalidPacks.map(m => `  - ${m}`).join('\n'),
+  )
+}
+
 for (const file of readdirSync(outDir)) {
   if (/^(?:sorting|sequence|scenario|fact-opinion|click-trainer|simulator)-[a-z0-9-]+\.json$/.test(file) && !files.has(file)) unlinkSync(join(outDir, file))
 }
