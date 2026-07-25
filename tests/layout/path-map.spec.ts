@@ -1,4 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
+import { existsSync, readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { INFO_SORT_LEVELS } from '../../features/games/sorting-data'
 import { GRADE2_PATH } from '../../features/path/path-data'
 
@@ -411,6 +413,32 @@ test('a downloaded map revision waits until the active point is closed', async (
   await expect(page.locator('.path-node').first()).toHaveAccessibleName(/Fresh first point/)
 })
 
+/**
+ * Answer key for the sorting activity, taken from the PUBLISHED pack.
+ *
+ * The browser plays public/content-packs/sorting-infosort.json (exported from
+ * the database), while this spec used to build its key from the code-side
+ * INFO_SORT_LEVELS fallback. Any pack edited in Admin therefore failed the
+ * publication deploy with `missing bin for …`, so the content pipeline could not
+ * be used without breaking CI. Read the same file the app fetches; the constant
+ * stays as the fallback for a checkout without an exported pack.
+ */
+function sortingAnswerKey(): { binByItem: Map<string, string>; totalItems: number } {
+  const packPath = fileURLToPath(new URL('../../public/content-packs/sorting-infosort.json', import.meta.url))
+  const levels: typeof INFO_SORT_LEVELS = existsSync(packPath)
+    ? JSON.parse(readFileSync(packPath, 'utf8')).levels
+    : INFO_SORT_LEVELS
+
+  const binByItem = new Map<string, string>()
+  let totalItems = 0
+  for (const level of levels) {
+    const labels = new Map(level.bins.map(bin => [bin.id, bin.label]))
+    for (const item of level.items) binByItem.set(item.label, labels.get(item.bin)!)
+    totalItems += level.items.length
+  }
+  return { binByItem, totalItems }
+}
+
 /** Проходить мікро-урок точки: картки — «Далі», перевірочні питання — перша відповідь + «Далі». */
 async function completeLessonTheory(page: Page) {
   await expect(page.locator('.lsn')).toBeVisible()
@@ -428,37 +456,35 @@ async function completeLessonTheory(page: Page) {
 }
 
 test('a real anonymous activity persists the first point and keeps the next point playable', async ({ page }) => {
-  const binByItem = new Map<string, string>()
-  for (const level of INFO_SORT_LEVELS) {
-    const labels = new Map(level.bins.map(bin => [bin.id, bin.label]))
-    for (const item of level.items) binByItem.set(item.label, labels.get(item.bin)!)
-  }
+  const { binByItem, totalItems } = sortingAnswerKey()
 
   await page.setViewportSize({ width: 375, height: 812 })
   await page.goto('/path.html?grade=2')
+  const firstPointName = await page.locator('.path-node--open').getAttribute('aria-label')
   await page.locator('.path-node--open').click()
   await expect(page.locator('#site-header')).toBeHidden()
   await expect(page.locator('#site-footer')).toBeHidden()
   await expect(page.locator('#path-activity')).toHaveCSS('position', 'fixed')
 
-  // Крок 1/2: теорія перед практикою.
-  await expect(page.locator('#path-activity-title')).toContainText('1/2: Теорія')
+  // Теорія перед практикою. Крок нумерується у заголовку, але ні номер, ні
+  // назва активності тут не фіксуються: точку редагують в адмінці.
+  await expect(page.locator('#path-activity-title')).toContainText('Теорія')
   await completeLessonTheory(page)
-  await expect(page.locator('#path-activity-title')).toContainText('2/2: ІнфоСорт')
+  await expect(page.locator('.sg__item-label').first()).toBeVisible()
 
-  const totalItems = INFO_SORT_LEVELS.reduce((total, level) => total + level.items.length, 0)
   for (let i = 0; i < totalItems; i += 1) {
     const item = await page.locator('.sg__item-label').textContent()
     const bin = item ? binByItem.get(item) : undefined
-    expect(bin, `missing bin for ${item}`).toBeTruthy()
+    expect(bin, `у пакеті sorting-infosort.json немає кошика для «${item}»`).toBeTruthy()
     await page.locator('.sg__bin', { hasText: bin! }).click()
   }
 
   await expect(page.locator('#path-done')).toBeVisible()
   await page.locator('#path-done-map-btn').click()
   await expect(page.locator('.path-node--done')).toHaveCount(1)
+  // Наступна точка відкрилась — саме це і є інваріант. Її назву не фіксуємо.
   await expect(page.locator('.path-node--open')).toHaveCount(1)
-  await expect(page.locator('.path-node--open')).toHaveAccessibleName(/Подай інформацію по-різному/)
+  await expect(page.locator('.path-node--open')).not.toHaveAccessibleName(firstPointName!)
   await expect(page.locator('#path-parent-gate')).toBeVisible()
   await expectElementInViewport(page, '#path-parent-gate')
   const stored = await page.evaluate(key => localStorage.getItem(key), STORAGE_KEY)
