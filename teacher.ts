@@ -1546,6 +1546,37 @@ function hideSchoolPreview() {
   $maybe('school-preview')?.classList.add('hidden')
 }
 
+// What the class will see, per mechanic: a teacher cannot judge a question from
+// the answer alone ("🔴" means nothing without the options it belongs to).
+// When the key is one of the options it is marked here, and the answer line
+// above is dropped as a duplicate; sort/match/input keep the text answer.
+function renderPreviewOptions(question: SchoolPreviewQuestion): string {
+  const options = question.options
+  const list = (items: unknown[], correct: number | null) => `
+    <ol class="school-preview__options">
+      ${items.map((item, index) => `
+        <li class="school-preview__option${index === correct ? ' school-preview__option--correct' : ''}">
+          ${index === correct ? '<span aria-hidden="true">✓</span> ' : ''}${esc(String(item))}
+        </li>`).join('')}
+    </ol>`
+
+  if (Array.isArray(options)) return list(options, question.correctOption)
+
+  const struct = (options ?? {}) as Record<string, unknown>
+  const given = Array.isArray(struct.given) ? struct.given : null
+  const parts: string[] = []
+  // sequence shows the pattern the child continues, then the choices
+  if (given) parts.push(`<p class="school-preview__given">${esc(given.map(String).join(' · '))}</p>`)
+  if (Array.isArray(struct.choices)) parts.push(list(struct.choices, question.correctOption))
+  // sort/match keep their key in the answer line above; here we show the cards
+  if (Array.isArray(struct.items)) parts.push(list(struct.items, null))
+  if (Array.isArray(struct.left) && Array.isArray(struct.right)) {
+    parts.push(`<p class="school-preview__given">${esc(struct.left.map(String).join(' · '))}</p>`)
+    parts.push(list(struct.right, null))
+  }
+  return parts.join('')
+}
+
 function renderSchoolPreview(session: SchoolSessionInfo, questions: SchoolPreviewQuestion[]) {
   const topicSelect = $maybe<HTMLSelectElement>('school-topic')
   const meta = $maybe('school-preview-meta')
@@ -1562,7 +1593,12 @@ function renderSchoolPreview(session: SchoolSessionInfo, questions: SchoolPrevie
       return `
         <li class="school-preview__item">
           <p class="school-preview__q">${index + 1}. ${esc(question.q)}</p>
-          ${question.answerText ? `<p class="school-preview__answer"><strong>Відповідь:</strong> ${esc(question.answerText)}</p>` : ''}
+          ${question.img ? `<img class="school-preview__img" src="${esc(question.img)}" alt="${esc(question.imageAlt ?? '')}" loading="lazy"/>` : ''}
+          ${question.code ? `<pre class="school-preview__code">${esc(question.code)}</pre>` : ''}
+          ${renderPreviewOptions(question)}
+          ${question.answerText && question.correctOption == null
+            ? `<p class="school-preview__answer"><strong>Відповідь:</strong> ${esc(question.answerText)}</p>`
+            : ''}
           ${question.explanation ? `<p class="school-preview__note">${esc(question.explanation)}</p>` : ''}
           ${topic ? `<p class="school-preview__tags">${esc(topic)}</p>` : ''}
         </li>`

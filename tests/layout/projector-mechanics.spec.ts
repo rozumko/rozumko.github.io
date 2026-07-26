@@ -66,9 +66,9 @@ async function openProjector(page: Page) {
         : path === '/api/school/sessions' && method === 'POST' ? { session: schoolSession }
         : path === '/api/school/sessions/s1/preview'
           ? { questions: questions.map((item, position) => ({
-              id: item.id, position, q: item.q, type: item.type,
-              topic: null, difficulty: null,
-              answerText: 'Правильна відповідь', explanation: null,
+              id: item.id, position, q: item.q, code: null, type: item.type,
+              topic: null, difficulty: null, options: item.options, correctOption: null,
+              answerText: 'Правильна відповідь', explanation: null, img: null, imageAlt: null,
             })) }
         : path === '/api/school/sessions/s1/questions' ? { questions }
         : path === '/api/school/sessions/s1/finish' && method === 'POST' ? { status: 'finished' }

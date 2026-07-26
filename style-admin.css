@@ -144,9 +144,11 @@
 }
 .btn-adm-sky:hover:not(:disabled) { filter: brightness(.9); }
 
+/* Bright emerald carries dark text: white on this green misses WCAG AA, and
+   darkening the fill would cost the button its role as the primary action. */
 .btn-adm-emerald {
   background: var(--adm-emerald);
-  color: var(--clr-text-inverse);
+  color: var(--adm-bg);
   font-weight: 700;
 }
 .btn-adm-emerald:not(.btn--sm) { padding-inline: var(--sp-5); }
@@ -600,7 +602,7 @@
 .qi-badge--medium    { background: #451a03; color: #fcd34d; }
 .qi-badge--hard      { background: #4c0519; color: #fda4af; }
 .qi-badge--olympiad  { background: #0c4a6e; color: #7dd3fc; }
-.qi-badge--practice  { background: #334155; color: #94a3b8; }
+.qi-badge--practice  { background: #334155; color: #cbd5e1; }  /* was #94a3b8 — under AA on slate */
 
 .btn-icon { width: 2rem; height: 2rem; padding: 0; display: inline-flex; align-items: center; justify-content: center; font-size: var(--font-size-sm); }
 

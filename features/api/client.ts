@@ -1178,11 +1178,18 @@ export interface SchoolPreviewQuestion {
   id: string
   position: number
   q: string
+  code: string | null
   type: string | null
   topic: string | null
   difficulty: string | null
+  /** Render data without the nested answer keys (same shape as `Question.options`). */
+  options: string[] | Record<string, unknown>
+  /** Index of the key option for choice/truefalse/sequence; null for the rest. */
+  correctOption: number | null
   answerText: string | null
   explanation: string | null
+  img: string | null
+  imageAlt: string | null
 }
 
 export function getSchoolSessionPreview(id: string): Promise<{ questions: SchoolPreviewQuestion[] }> {

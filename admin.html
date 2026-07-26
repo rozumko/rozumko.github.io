@@ -424,20 +424,20 @@
         <div class="admin-filter-bar">
           <input id="q-filter-search" class="adm-input adm-input--sm" type="search"
                  placeholder="Пошук за текстом або ID" aria-label="Пошук питань" maxlength="120"/>
-          <select id="q-filter-status" class="adm-input adm-input--sm adm-input--auto">
+          <select id="q-filter-status" class="adm-input adm-input--sm adm-input--auto" aria-label="Статус публікації">
             <option value="">Всі статуси</option>
             <option value="draft">Чернетки</option>
             <option value="published">Опубліковані</option>
             <option value="archived">Зняті з публікації</option>
           </select>
-          <select id="q-filter-grade" class="adm-input adm-input--sm adm-input--auto">
+          <select id="q-filter-grade" class="adm-input adm-input--sm adm-input--auto" aria-label="Клас">
             <option value="">Всі класи</option>
             <option value="1">1 клас</option>
             <option value="2">2 клас</option>
             <option value="3">3 клас</option>
             <option value="4">4 клас</option>
           </select>
-          <select id="q-filter-mechanic" class="adm-input adm-input--sm adm-input--auto">
+          <select id="q-filter-mechanic" class="adm-input adm-input--sm adm-input--auto" aria-label="Механіка питання">
             <option value="">Всі механіки</option>
             <option value="choice">Вибір</option>
             <option value="truefalse">Так/Ні</option>
@@ -446,19 +446,19 @@
             <option value="sequence">Послідовність</option>
             <option value="match">Пари</option>
           </select>
-          <select id="q-filter-difficulty" class="adm-input adm-input--sm adm-input--auto">
+          <select id="q-filter-difficulty" class="adm-input adm-input--sm adm-input--auto" aria-label="Складність">
             <option value="">Всі рівні</option>
             <option value="easy">Легкі</option>
             <option value="medium">Середні</option>
             <option value="hard">Складні</option>
           </select>
-          <select id="q-filter-track" class="adm-input adm-input--sm adm-input--auto">
+          <select id="q-filter-track" class="adm-input adm-input--sm adm-input--auto" aria-label="Напрям">
             <option value="">Всі напрями</option>
             <option value="informatics">Інформатика</option>
             <option value="computational-thinking">Обчислювальне мислення</option>
             <option value="ai-basics">Основи ШІ</option>
           </select>
-          <select id="q-filter-topic" class="adm-input adm-input--sm adm-input--auto" disabled>
+          <select id="q-filter-topic" class="adm-input adm-input--sm adm-input--auto" aria-label="Тема" disabled>
             <option value="">Всі теми</option>
           </select>
           <button id="q-filter-apply" class="btn-adm-sky btn--sm">Фільтрувати</button>

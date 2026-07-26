@@ -89,7 +89,10 @@ function installFakeDb(state: ReturnType<typeof createState>) {
         // Only the teacher preview selects the key columns; classroom render
         // payloads never ask for them.
         if (this.fields && 'correct' in this.fields) {
-          return [{ id, position: 0, q, type, topic: 'information', difficulty: 'easy', options, correct, explanation }]
+          return [{
+            id, position: 0, q, code, type, topic: 'information', difficulty: 'easy',
+            options, correct, explanation, img, imageAlt,
+          }]
         }
         return [{ id, q, code, type, options, img, imageAlt }]
       }
@@ -413,9 +416,13 @@ test('school: teacher preview gives the owner the key as text, and only before t
       assert.equal(body.questions[0].q, '2+2?')
       assert.equal(body.questions[0].answerText, '4') // key index 0 → option text
       assert.equal(body.questions[0].explanation, 'Addition')
-      // The teacher gets rendered text only — no raw key column, no raw options.
+      // Judging a question needs what the class sees: the options come along,
+      // with the key marked, and the image/code render data.
+      assert.deepEqual(body.questions[0].options, ['4', '5'])
+      assert.equal(body.questions[0].correctOption, 0)
+      assert.equal(body.questions[0].img, '/questions/addition.webp')
+      // Still no raw key column under its own name
       assert.ok(!res.body.includes('"correct"'), 'raw answer key leaked in preview response')
-      assert.ok(!res.body.includes('"options"'), 'raw options leaked in preview response')
 
       state.session.status = 'finished'
       const finished = await app.inject({ method: 'GET', url })
@@ -444,7 +451,11 @@ test('school: preview resolves nested keys to text without shipping the key stru
     await withApp(async (app) => {
       const res = await app.inject({ method: 'GET', url: `/api/school/sessions/${ids.session}/preview` })
       assert.equal(res.statusCode, 200, res.body)
-      assert.equal(res.json().questions[0].answerText, 'Взяти хліб → Намастити масло')
+      const preview = res.json().questions[0]
+      assert.equal(preview.answerText, 'Взяти хліб → Намастити масло')
+      // The items are needed to render the question; the order key is not
+      assert.deepEqual(preview.options, { items: ['Намастити масло', 'Взяти хліб'] })
+      assert.equal(preview.correctOption, null)
       assert.ok(!res.body.includes('correctOrder'), 'nested answer key leaked in preview response')
     })
   } finally { restore() }
