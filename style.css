@@ -289,6 +289,51 @@ button {
 .cert-modal__input--invalid { border-color: var(--clr-danger); }
 .cert-modal__actions { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
 
+/* Збільшене зображення до питання. Спільне для всіх поверхонь, де дитина
+   бачить питання з картинкою (utils/lightbox.ts будує розмітку). */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.85);
+  padding: var(--sp-4);
+  cursor: zoom-out;
+  animation: fadeIn 0.2s ease;
+}
+.lightbox:not(.hidden) { display: flex; }
+.lightbox__img {
+  max-width: min(90vw, 900px);
+  max-height: 90vh;
+  border-radius: var(--r-xl);
+  box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+  object-fit: contain;
+  user-select: none;
+  animation: slideUp 0.25s ease;
+}
+.lightbox__close {
+  position: absolute;
+  top: var(--sp-4);
+  right: var(--sp-4);
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--r-full);
+  background: rgba(255,255,255,0.2);
+  color: var(--clr-text-inverse);
+  font-size: var(--font-size-xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color var(--transition-fast);
+}
+.lightbox__close:hover { background: rgba(255,255,255,0.35); }
+
+/* Кнопка-обгортка мініатюри: зображення відкривається на весь екран */
+.quiz-image-btn { cursor: zoom-in; }
+.quiz-image-btn:focus-visible { outline: 3px solid var(--clr-focus-ring); outline-offset: 3px; }
+
 /* Анімації */
 @keyframes fadeIn {
   from { opacity: 0; }

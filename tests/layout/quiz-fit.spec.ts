@@ -48,6 +48,15 @@ function makeFixture(difficulty: string) {
       correct: 2,
       explanation: 'Замало прикладів — і програма погано впізнає нове. Якість залежить від кількості й різноманіття даних.',
     },
+    // Реальне довге питання з банку: саме на таких стеблах вьюпортна шкала
+    // роздувала картку і ховала варіанти під краєм екрана.
+    {
+      ...base, id: 'fx-long', type: 'choice',
+      q: 'Алгоритм пошуку: «перевір першу полицю → знайшов? → так: бери книгу, ні: перевір другу полицю». Книга на другій полиці. Скільки перевірок зробив алгоритм?',
+      options: ['1', '4', '3', '2'],
+      correct: 3,
+      explanation: 'Перша полиця — перевірка, друга полиця — друга перевірка.',
+    },
     {
       ...base, id: 'fx-truefalse', type: 'truefalse',
       q: 'Алгоритм — це послідовність кроків для розв’язання задачі. Так чи ні?',
@@ -183,7 +192,7 @@ for (const vp of VIEWPORTS) {
       await page.locator('#practice-difficulty-buttons [data-difficulty="medium"]').click()
       await page.locator('#start-practice-btn').click()
       await expect(page.locator('#quiz-overlay')).toHaveClass(/active/)
-      await runQuiz(page, 8)
+      await runQuiz(page, 9)
     })
   })
 }

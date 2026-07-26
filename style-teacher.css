@@ -751,16 +751,27 @@ body.teacher-qr-dialog-active { overflow: hidden !important; }
 .school-qr-dialog.hidden { display: none !important; }
 
 body.teacher-projector-active { overflow: hidden !important; }
+/* The projector never scrolls the page: the answer options are pinned and the
+   question card is the only part allowed to give way (see __question-card). */
 .school-projector {
   position: fixed;
   inset: 0;
   z-index: 1200;
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   padding: clamp(0.75rem, 1.6vw, 1.5rem);
   background: #f8fbff;
   color: #0b1220;
 }
-.school-projector__shell { width: min(92rem, 100%); min-height: 100%; margin: 0 auto; }
+.school-projector__shell {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  width: min(92rem, 100%);
+  margin: 0 auto;
+}
 .school-projector__header {
   display: flex;
   align-items: center;
@@ -789,7 +800,19 @@ body.teacher-projector-active { overflow: hidden !important; }
 .school-projector__header-actions .btn:hover { background: #dbeafe; }
 .school-projector__header-actions #school-projector-close-btn { border-color: #9f1239; color: #881337; }
 .school-projector__header-actions #school-projector-close-btn:hover { background: #ffe4e6; }
-.school-projector__stage { width: min(86rem, 100%); margin: 0 auto; }
+.school-projector__stage {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  width: min(86rem, 100%);
+  margin: 0 auto;
+}
+/* Everything below the question card keeps its natural height — a child must
+   never have to scroll to discover an option. */
+.school-projector .quiz-progress-bar-wrap,
+.school-projector .quiz-options,
+.school-projector .quiz-feedback-wrap { flex: 0 0 auto; }
 .school-projector .quiz-progress-bar-wrap {
   width: 100%;
   height: 0.7rem;
@@ -808,6 +831,10 @@ body.teacher-projector-active { overflow: hidden !important; }
 }
 .school-projector__question-card {
   min-height: clamp(10rem, 28vh, 19rem);
+  /* The only flexible row: it shrinks first and, in the extreme, scrolls inside
+     itself, so the options below always stay on screen. */
+  flex: 0 1 auto;
+  overflow: auto;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   place-items: center;
@@ -832,6 +859,16 @@ body.teacher-projector-active { overflow: hidden !important; }
   text-align: center;
   text-wrap: balance;
   overflow-wrap: anywhere;
+}
+/* A viewport-only scale fits a short stem and buries the options under a long
+   one, so the scale steps down with the amount of text (utils/question-fit.ts). */
+.school-projector__question-card .quiz-question-text[data-qlength="medium"] { font-size: clamp(1.8rem, 3.4vw, 3.3rem); }
+.school-projector__question-card .quiz-question-text[data-qlength="long"]   { font-size: clamp(1.5rem, 2.6vw, 2.5rem); line-height: 1.2; }
+.school-projector__question-card .quiz-question-text[data-qlength="xlong"]  { font-size: clamp(1.25rem, 2vw, 2rem); line-height: 1.25; }
+.school-projector__question-card:has(.quiz-question-text[data-qlength="long"]),
+.school-projector__question-card:has(.quiz-question-text[data-qlength="xlong"]) {
+  min-height: clamp(6rem, 16vh, 11rem);
+  padding: clamp(0.9rem, 1.6vw, 1.75rem);
 }
 /* Frameless: the assets have real transparency, so the image sits directly on
    the white card and spans the question block height. A definite viewport
@@ -1052,6 +1089,10 @@ body.teacher-projector-active { overflow: hidden !important; }
 .school-projector .quiz-explanation { margin: 0.3rem auto 0.8rem; color: #24324a; font-size: clamp(1rem, 1.5vw, 1.25rem); font-weight: 650; }
 .school-projector .btn-next.hidden { display: none !important; }
 .school-projector__complete {
+  /* The shell no longer scrolls, so a long breakdown scrolls in place */
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
   width: min(38rem, 100%);
   margin: clamp(1rem, 5vh, 3.5rem) auto 0;
   padding: var(--sp-10) var(--sp-6);

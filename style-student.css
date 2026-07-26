@@ -632,6 +632,14 @@ body:has(.result-overlay.active) .student-screen {
 @media (min-width: 640px) {
   .quiz-question-text { font-size: var(--font-size-2xl); }
 }
+/* A long stem must not push the options below the fold — the scale steps down
+   with the amount of text (utils/question-fit.ts). */
+.quiz-question-text[data-qlength="long"] { font-size: var(--font-size-lg); }
+.quiz-question-text[data-qlength="xlong"] { font-size: var(--font-size-base); line-height: 1.35; }
+@media (min-width: 640px) {
+  .quiz-question-text[data-qlength="long"] { font-size: var(--font-size-xl); }
+  .quiz-question-text[data-qlength="xlong"] { font-size: var(--font-size-lg); }
+}
 
 /* Зображення до питання (праворуч) */
 .quiz-image-btn {
@@ -1191,6 +1199,19 @@ body.mission-active.mission-answered #mission-quiz .quiz-explanation {
   line-height: 1.22;
   letter-spacing: 0;
 }
+/* The quiz-fit scale is viewport-based and cannot know how much text a stem
+   holds. Long stems step down so the card stays inside its 34vh budget instead
+   of scrolling away from the options (utils/question-fit.ts). */
+.quiz-overlay .quiz-question-text[data-qlength="long"],
+#mission-quiz .quiz-question-text[data-qlength="long"] {
+  font-size: calc(var(--qf-font-question) * 0.78);
+  line-height: 1.28;
+}
+.quiz-overlay .quiz-question-text[data-qlength="xlong"],
+#mission-quiz .quiz-question-text[data-qlength="xlong"] {
+  font-size: calc(var(--qf-font-question) * 0.62);
+  line-height: 1.32;
+}
 
 .quiz-overlay .quiz-image {
   width: clamp(8rem, 20vw, 16rem);
@@ -1710,44 +1731,8 @@ body.mission-active.mission-answered #mission-quiz .quiz-feedback-wrap {
 
 /* ── Lightbox ───────────────────────────────────────────────── */
 
-.lightbox {
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0,0,0,0.85);
-  padding: var(--sp-4);
-  cursor: zoom-out;
-  animation: fadeIn 0.2s ease;
-}
-.lightbox:not(.hidden) { display: flex; }
-.lightbox__img {
-  max-width: min(90vw, 900px);
-  max-height: 90vh;
-  border-radius: var(--r-xl);
-  box-shadow: 0 30px 80px rgba(0,0,0,0.5);
-  object-fit: contain;
-  user-select: none;
-  animation: slideUp 0.25s ease;
-}
-.lightbox__close {
-  position: absolute;
-  top: var(--sp-4);
-  right: var(--sp-4);
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: var(--r-full);
-  background: rgba(255,255,255,0.2);
-  color: #fff;
-  font-size: var(--font-size-xl);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color var(--transition-fast);
-}
-.lightbox__close:hover { background: rgba(255,255,255,0.35); }
+/* Lightbox styles moved to style.css — the overlay is shared by every surface
+   that shows a question image (utils/lightbox.ts). */
 
 /* ── Quiz loading overlay ───────────────────────────────────── */
 

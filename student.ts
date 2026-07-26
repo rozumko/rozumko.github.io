@@ -6,6 +6,8 @@ import { saveAnswer, finishAttempt, sendHeartbeat } from './features/api/client.
 import { createAnswerQueue, type AnswerQueue } from './features/olympiad/answer-queue.js'
 import { renderQuestion, type RenderableQuestion } from './utils/question-renderer.js'
 import { resolveQuestionImage } from './utils/question-image.js'
+import { applyQuestionLength } from './utils/question-fit.js'
+import { openLightbox } from './utils/lightbox.js'
 import { showModal, showConfirm } from './utils/ui.js'
 import { $, $maybe } from './utils/dom.js'
 import { createFocusTrap } from './utils/focus-trap.js'
@@ -85,32 +87,9 @@ const quizQuitBtn     = $<HTMLButtonElement>('quiz-quit-btn')
 const quizNav         = $('quiz-nav')
 const toastNotification = $('toast-notification')
 
-// --- Lightbox ---
+// --- Lightbox (shared component: utils/lightbox.ts) ---
 const quizImage     = $maybe<HTMLImageElement>('quiz-image')
 const quizImageBtn  = $maybe<HTMLButtonElement>('quiz-image-btn')
-const imgLightbox   = $maybe('img-lightbox')
-const imgLightboxImg = $maybe<HTMLImageElement>('img-lightbox-img')
-let lightboxTrapRemove: (() => void) | null = null
-
-function openLightbox(src: string, alt: string) {
-  if (!imgLightboxImg || !imgLightbox) return
-  imgLightboxImg.src = src
-  imgLightboxImg.alt = alt || ''
-  imgLightbox.classList.remove('hidden')
-  lightboxTrapRemove?.()
-  lightboxTrapRemove = createFocusTrap(imgLightbox, closeLightbox)
-}
-function closeLightbox() {
-  if (!imgLightbox || !imgLightboxImg) return
-  lightboxTrapRemove?.()
-  lightboxTrapRemove = null
-  imgLightbox.classList.add('hidden')
-  imgLightboxImg.src = ''
-}
-imgLightbox?.addEventListener('click', (e) => {
-  const target = e.target as HTMLElement
-  if (target === imgLightbox || target.closest('#img-lightbox-close')) closeLightbox()
-})
 // --- DOM: result overlay ---
 const resultOverlay   = $('result-overlay')
 const resultTitle     = $('result-title')
@@ -419,6 +398,7 @@ function showQuestion() {
   quizProgressTxt.textContent        = `${currentIdx + 1} / ${questions.length}`
   ;(quizProgressBar as HTMLElement).style.width = `${(currentIdx / questions.length) * 100}%`
   quizQuestionEl.textContent         = q.q as string
+  applyQuestionLength(quizQuestionEl, q.q as string)
 
   // Explicit q.img or a default from public/assets/basics/ (by type/topic/concept);
   // null for code questions — the code block is the visual there.

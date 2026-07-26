@@ -365,6 +365,34 @@ test.describe('accessibility smoke: home and school missions', () => {
     await expect(page.locator('#quiz-next-btn')).toBeVisible()
   })
 
+  // A picture can BE the question (a Scratch program, a diagram): the child has
+  // to be able to open it, look at it and get back to the options.
+  test('a question image opens full screen and returns focus when closed', async ({ page }) => {
+    await startHomeMission(page, [{
+      ...choiceQuestion,
+      img: '/images/half/rozumko_hulf_thinks.png',
+      imageAlt: 'Розумко думає над задачею',
+    }])
+
+    const trigger = page.locator('#quiz-image-btn')
+    await expect(trigger).toBeVisible()
+    await trigger.click()
+
+    const lightbox = page.locator('.lightbox')
+    await expect(lightbox).toBeVisible()
+    await expect(lightbox.locator('.lightbox__img')).toHaveAttribute('src', /rozumko_hulf_thinks\.png$/)
+
+    const results = await new AxeBuilder({ page })
+      .include('.lightbox')
+      .withTags(WCAG_AA_TAGS)
+      .analyze()
+    expect(results.violations).toEqual([])
+
+    await page.keyboard.press('Escape')
+    await expect(lightbox).toBeHidden()
+    await expect(trigger).toBeFocused()
+  })
+
   test('home choice radio group uses one tab stop and arrow-key roving focus', async ({ page }) => {
     await startHomeMission(page, [choiceQuestion])
 
