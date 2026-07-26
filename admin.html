@@ -391,6 +391,35 @@
           </div>
         </div>
 
+        <!-- Розділи доставки: банк питань завжди відкритий на одному режимі -->
+        <div id="q-filter-section" class="admin-scope" role="group" aria-label="Розділ доставки питань">
+          <button type="button" class="admin-scope__btn" data-section="" aria-pressed="true">
+            Усі <span class="admin-scope__count" data-section-count="all"></span>
+          </button>
+          <button type="button" class="admin-scope__btn" data-section="class_game" aria-pressed="false">
+            Класна гра <span class="admin-scope__count" data-section-count="class_game"></span>
+          </button>
+          <button type="button" class="admin-scope__btn" data-section="path" aria-pressed="false">
+            Шлях учня <span class="admin-scope__count" data-section-count="path"></span>
+          </button>
+          <button type="button" class="admin-scope__btn" data-section="olympiad_training" aria-pressed="false">
+            Олімпіада — тренування <span class="admin-scope__count" data-section-count="olympiad_training"></span>
+          </button>
+          <button type="button" class="admin-scope__btn" data-section="main_round" aria-pressed="false">
+            Олімпіада — основний тур <span class="admin-scope__count" data-section-count="main_round"></span>
+          </button>
+          <button type="button" class="admin-scope__btn admin-scope__btn--gap" data-section="unassigned" aria-pressed="false">
+            Без розділу <span class="admin-scope__count" data-section-count="unassigned"></span>
+          </button>
+        </div>
+
+        <!-- Покриття вибраного розділу: де порожньо -->
+        <details id="q-matrix-panel" class="admin-matrix">
+          <summary class="admin-matrix__summary">Покриття за класами і темами</summary>
+          <p class="admin-matrix__hint">Скільки питань у вибраному розділі. Нуль — прогалина. Натисніть число, щоб відкрити ці питання.</p>
+          <div id="q-matrix" class="admin-matrix__scroll"></div>
+        </details>
+
         <!-- Фільтри -->
         <div class="admin-filter-bar">
           <input id="q-filter-search" class="adm-input adm-input--sm" type="search"
@@ -417,13 +446,6 @@
             <option value="sequence">Послідовність</option>
             <option value="match">Пари</option>
           </select>
-          <select id="q-filter-section" class="adm-input adm-input--sm adm-input--auto">
-            <option value="">Всі розділи</option>
-            <option value="class_game">Класна гра</option>
-            <option value="path">Шлях учня</option>
-            <option value="olympiad_training">Олімпіада — тренування</option>
-            <option value="main_round">Олімпіада — основний тур</option>
-          </select>
           <select id="q-filter-difficulty" class="adm-input adm-input--sm adm-input--auto">
             <option value="">Всі рівні</option>
             <option value="easy">Легкі</option>
@@ -441,6 +463,21 @@
           </select>
           <button id="q-filter-apply" class="btn-adm-sky btn--sm">Фільтрувати</button>
           <span id="q-count" class="admin-filter-count"></span>
+        </div>
+
+        <!-- Масова зміна розділів для вибраних питань -->
+        <div id="q-bulk" class="admin-bulk hidden" role="group" aria-label="Дії з вибраними питаннями">
+          <p id="q-bulk-count" class="admin-bulk__count" aria-live="polite"></p>
+          <label class="admin-bulk__field" for="q-bulk-channel">Розділ
+            <select id="q-bulk-channel" class="adm-input adm-input--sm adm-input--auto">
+              <option value="class_game">Класна гра</option>
+              <option value="path">Шлях учня</option>
+              <option value="olympiad_training">Олімпіада — тренування</option>
+            </select>
+          </label>
+          <button id="q-bulk-add" class="btn-adm-sky btn--sm" type="button">Додати</button>
+          <button id="q-bulk-remove" class="btn-adm-ghost btn--sm" type="button">Прибрати</button>
+          <button id="q-bulk-clear" class="btn-adm-ghost btn--sm" type="button">Зняти вибір</button>
         </div>
 
         <!-- Список питань -->

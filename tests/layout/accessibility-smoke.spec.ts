@@ -220,6 +220,31 @@ async function openAdminDashboard(page: Page) {
                               activeMatchesCurrent: false,
                             },
                           }
+                        : path === '/api/admin/questions/counts'
+                          ? { counts: { all: 12, class_game: 7, path: 5, olympiad_training: 3, main_round: 2, unassigned: 1 } }
+                        : path === '/api/admin/questions/matrix'
+                          ? { cells: [{ grade: 1, topic: 'information', total: 4 }, { grade: 2, topic: 'information', total: 0 }] }
+                        : path === '/api/admin/questions/channels'
+                          ? { updated: 2, unchanged: 0, skipped: [] }
+                        : path === '/api/admin/questions'
+                          ? {
+                              questions: [1, 2].map(n => ({
+                                id: `00000000-0000-4000-8000-00000000000${n}`,
+                                q: `Тестове питання ${n}`,
+                                type: 'choice',
+                                options: ['А', 'Б'],
+                                correct: 0,
+                                grade: 2,
+                                difficulty: 'easy',
+                                track: 'informatics',
+                                topic: 'information',
+                                isOlympiad: false,
+                                channels: ['class_game'],
+                                editorialStatus: 'published',
+                                version: 1,
+                                editVersion: 1,
+                              })),
+                            }
                   : { questions: [] }
 
       return new Response(JSON.stringify(body), {
@@ -548,6 +573,99 @@ test('axe: /admin.html dashboard', async ({ page }) => {
     .withTags(WCAG_AA_TAGS)
     .analyze()
 
+  expect(results.violations).toEqual([])
+})
+
+test('admin question bank opens on one delivery section and remembers it', async ({ page }) => {
+  await openAdminDashboard(page)
+  await page.locator('[data-tab="questions"]').click()
+
+  const scope = page.locator('#q-filter-section')
+  await expect(scope.locator('[data-section=""]')).toHaveAttribute('aria-pressed', 'true')
+  await expect(scope.locator('[data-section-count="class_game"]')).toHaveText('7')
+  await expect(scope.locator('[data-section-count="unassigned"]')).toHaveText('1')
+
+  await scope.locator('[data-section="class_game"]').click()
+  await expect(scope.locator('[data-section="class_game"]')).toHaveAttribute('aria-pressed', 'true')
+  await expect(scope.locator('[data-section=""]')).toHaveAttribute('aria-pressed', 'false')
+
+  // Requests are served by the mocked fetch, so record them inside the page
+  await page.addInitScript(() => {
+    const recorder = window as unknown as { __bankUrls: string[] }
+    recorder.__bankUrls = []
+    const mocked = window.fetch.bind(window)
+    window.fetch = async (input, init) => {
+      const url = input instanceof Request ? input.url : String(input)
+      if (url.includes('/api/admin/questions')) recorder.__bankUrls.push(url)
+      return mocked(input, init)
+    }
+  })
+
+  // The chosen section survives a reload — the bank is never one pile again
+  await page.reload()
+  await page.locator('[data-tab="questions"]').click()
+  await expect(scope.locator('[data-section="class_game"]')).toHaveAttribute('aria-pressed', 'true')
+
+  const urls = await page.evaluate(() => (window as unknown as { __bankUrls: string[] }).__bankUrls)
+  expect(urls.some(url => !url.includes('/counts') && url.includes('channel=class_game'))).toBe(true)
+  // The counters must keep describing every section, so they never carry it
+  expect(urls.filter(url => url.includes('/counts')).every(url => !url.includes('channel='))).toBe(true)
+
+  const results = await new AxeBuilder({ page })
+    .include('#q-filter-section')
+    .withTags(WCAG_AA_TAGS)
+    .analyze()
+  expect(results.violations).toEqual([])
+})
+
+test('admin bank shows section gaps and moves a selection between sections', async ({ page }) => {
+  await openAdminDashboard(page)
+  // Requests are served by the mocked fetch, so record the bulk body in-page
+  await page.addInitScript(() => {
+    const recorder = window as unknown as { __bulkBody: string | null }
+    recorder.__bulkBody = null
+    const mocked = window.fetch.bind(window)
+    window.fetch = async (input, init) => {
+      const url = input instanceof Request ? input.url : String(input)
+      if (url.includes('/api/admin/questions/channels')) recorder.__bulkBody = String(init?.body ?? '')
+      return mocked(input, init)
+    }
+  })
+  await page.reload()
+  await expect(page.locator('#admin-panel')).toBeVisible()
+  await page.locator('[data-tab="questions"]').click()
+
+  // Coverage: a zero cell is marked as a gap, and a cell opens those questions
+  await page.locator('#q-matrix-panel summary').click()
+  const gapCell = page.locator('.admin-matrix__cell--gap').first()
+  await expect(gapCell).toBeVisible()
+  await expect(page.locator('.admin-matrix__link', { hasText: '4' }).first()).toBeVisible()
+  await page.locator('.admin-matrix__link').first().click()
+  await expect(page.locator('#q-filter-grade')).toHaveValue('1')
+
+  // Bulk delivery: the toolbar appears only for a non-empty selection
+  await expect(page.locator('#q-bulk')).toBeHidden()
+  const boxes = page.locator('.qi-select')
+  await boxes.nth(0).check()
+  await boxes.nth(1).check()
+  await expect(page.locator('#q-bulk-count')).toHaveText('Вибрано 2')
+
+  await page.locator('#q-bulk-channel').selectOption('path')
+  await page.locator('#q-bulk-add').click()
+  await page.locator('#modal-ok-btn').click()
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __bulkBody: string | null }).__bulkBody)).not.toBeNull()
+  const payload = JSON.parse(await page.evaluate(() => (window as unknown as { __bulkBody: string }).__bulkBody))
+  expect(payload.channel).toBe('path')
+  expect(payload.action).toBe('add')
+  expect(payload.ids).toHaveLength(2)
+  // Delivery only: no content field rides along with the bulk action
+  expect(Object.keys(payload).sort()).toEqual(['action', 'channel', 'ids'])
+
+  const results = await new AxeBuilder({ page })
+    .include('#q-matrix-panel')
+    .include('#q-bulk')
+    .withTags(WCAG_AA_TAGS)
+    .analyze()
   expect(results.violations).toEqual([])
 })
 

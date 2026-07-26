@@ -1,13 +1,15 @@
 import {
-  getAdminQuestions, createQuestion, updateQuestion, deleteQuestion,
+  getAdminQuestions, getAdminQuestionCounts, getAdminQuestionMatrix, updateQuestionChannels,
+  createQuestion, updateQuestion, deleteQuestion,
   setQuestionEditorialStatus, getQuestionRevisions, restoreQuestionRevision,
+  type AdminQuestionFilters, type AdminQuestionMatrixCell,
   type Question, type QuestionChannel, type QuestionType,
 } from '../../features/api/client.js'
 import { createFocusTrap } from '../../utils/focus-trap.js'
 import { renderQuestion }  from '../../utils/question-renderer.js'
 import { esc, showModal, showConfirm }  from './ui.js'
 import { $, $maybe } from '../../utils/dom.js'
-import { TOPIC_LABELS, fillTopicSelect } from './taxonomy.js'
+import { TOPIC_LABELS, TOPICS_BY_TRACK, fillTopicSelect } from './taxonomy.js'
 import { refreshContentDeliveryBanner } from './publication-tab.js'
 
 let currentQuestions: Question[] = []
@@ -61,6 +63,165 @@ const STATUS_BADGES: Record<NonNullable<Question['editorialStatus']>, string> = 
   draft: 'qi-badge--medium', review: 'qi-badge--type', published: 'qi-badge--easy', archived: 'qi-badge--type',
 }
 
+// ─── Delivery section (bank scope) ────────────────────────────────────────────
+// The bank always opens on one section instead of one pile. '' means every
+// section; 'main_round' and 'unassigned' are not channels — see loadQuestionsTab.
+const SECTION_STORAGE_KEY = 'admin_q_section'
+let currentSection = ''
+
+function sectionButtons(): HTMLButtonElement[] {
+  return [...$('q-filter-section').querySelectorAll<HTMLButtonElement>('[data-section]')]
+}
+
+function applySectionUI(): void {
+  for (const button of sectionButtons()) {
+    button.setAttribute('aria-pressed', String((button.dataset.section ?? '') === currentSection))
+  }
+}
+
+function restoreSection(): void {
+  let stored = ''
+  try { stored = localStorage.getItem(SECTION_STORAGE_KEY) ?? '' } catch { /* storage can be blocked */ }
+  currentSection = sectionButtons().some(button => (button.dataset.section ?? '') === stored) ? stored : ''
+  applySectionUI()
+}
+
+function selectSection(section: string): void {
+  currentSection = section
+  try { localStorage.setItem(SECTION_STORAGE_KEY, section) } catch { /* storage can be blocked */ }
+  applySectionUI()
+  void loadQuestionsTab()
+}
+
+// Counters are informational: a failure must never hide the list itself.
+async function refreshSectionCounts(filters: AdminQuestionFilters): Promise<void> {
+  try {
+    const { counts } = await getAdminQuestionCounts(filters)
+    for (const slot of document.querySelectorAll<HTMLElement>('[data-section-count]')) {
+      const key = slot.dataset.sectionCount as keyof typeof counts
+      slot.textContent = String(counts[key] ?? 0)
+    }
+  } catch {
+    for (const slot of document.querySelectorAll<HTMLElement>('[data-section-count]')) slot.textContent = ''
+  }
+}
+
+// The delivery section as the API expresses it: a channel, the main round, or
+// "delivered nowhere". Shared by the list and the coverage matrix.
+interface SectionQuery {
+  isOlympiad?: boolean
+  channel?: QuestionChannel
+  unassigned?: boolean
+}
+
+// ─── Coverage matrix ──────────────────────────────────────────────────────────
+// Grade × topic inside the selected section, so an empty cell is a visible gap
+// instead of something you have to go looking for.
+const MATRIX_GRADES = [1, 2, 3, 4] as const
+
+async function refreshMatrix(filters: AdminQuestionFilters, section: SectionQuery): Promise<void> {
+  const panel = $maybe<HTMLDetailsElement>('q-matrix-panel')
+  const box = $maybe('q-matrix')
+  if (!panel || !box || !panel.open) return
+  try {
+    const { grade: _grade, topic: _topic, ...shared } = filters
+    const { cells } = await getAdminQuestionMatrix({ ...shared, ...section })
+    box.innerHTML = renderMatrix(cells, $<HTMLSelectElement>('q-filter-track').value)
+    for (const button of box.querySelectorAll<HTMLButtonElement>('[data-matrix-grade]')) {
+      button.addEventListener('click', () => {
+        $<HTMLSelectElement>('q-filter-grade').value = button.dataset.matrixGrade ?? ''
+        const topic = button.dataset.matrixTopic ?? ''
+        const topicSelect = $<HTMLSelectElement>('q-filter-topic')
+        if (!topicSelect.disabled) topicSelect.value = topic
+        void loadQuestionsTab()
+      })
+    }
+  } catch (err) {
+    box.textContent = (err as Error).message
+  }
+}
+
+function renderMatrix(cells: AdminQuestionMatrixCell[], track: string): string {
+  const totals = new Map<string, number>()
+  for (const cell of cells) totals.set(`${cell.grade ?? 0}:${cell.topic ?? ''}`, cell.total)
+
+  // With a track filter the axis is that track's full topic list (so a topic
+  // with no questions at all still shows up as a row of zeros); without one it
+  // is the topics that actually have rows. "Без теми" appears only if such
+  // questions exist — an always-empty row would be noise.
+  const known = (TOPICS_BY_TRACK as Record<string, readonly string[]>)[track]
+  const seen = [...new Set(cells.map(cell => cell.topic ?? ''))].sort()
+  const topics: string[] = known ? [...known] : seen.filter(topic => topic !== '')
+  if (seen.includes('')) topics.push('')
+
+  const head = MATRIX_GRADES.map(grade => `<th scope="col">${grade} клас</th>`).join('')
+  const rows = topics.map(topic => {
+    const label = topic ? (TOPIC_LABELS[topic] ?? topic) : 'Без теми'
+    const cellsHtml = MATRIX_GRADES.map(grade => {
+      const total = totals.get(`${grade}:${topic}`) ?? 0
+      return `<td class="admin-matrix__cell${total ? '' : ' admin-matrix__cell--gap'}">
+        <button type="button" class="admin-matrix__link" data-matrix-grade="${grade}" data-matrix-topic="${esc(topic)}"
+                aria-label="${esc(label)}, ${grade} клас: ${total}">${total}</button>
+      </td>`
+    }).join('')
+    return `<tr><th scope="row">${esc(label)}</th>${cellsHtml}</tr>`
+  }).join('')
+
+  return `<table class="admin-matrix__table">
+    <thead><tr><th scope="col">Тема</th>${head}</tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`
+}
+
+// ─── Bulk delivery change ─────────────────────────────────────────────────────
+// Channels are delivery, not authored content, so a selection can be moved
+// between sections in one action (backend: POST /api/admin/questions/channels).
+const selectedIds = new Set<string>()
+
+function renderBulkBar(): void {
+  const bar = $maybe('q-bulk')
+  const label = $maybe('q-bulk-count')
+  if (!bar || !label) return
+  bar.classList.toggle('hidden', selectedIds.size === 0)
+  label.textContent = `Вибрано ${selectedIds.size}`
+}
+
+function toggleSelection(id: string, selected: boolean): void {
+  if (selected) selectedIds.add(id)
+  else selectedIds.delete(id)
+  renderBulkBar()
+}
+
+function clearSelection(): void {
+  selectedIds.clear()
+  for (const box of document.querySelectorAll<HTMLInputElement>('.qi-select')) box.checked = false
+  renderBulkBar()
+}
+
+async function applyBulkChannel(action: 'add' | 'remove'): Promise<void> {
+  const ids = [...selectedIds]
+  if (!ids.length) return
+  const channel = $<HTMLSelectElement>('q-bulk-channel').value as QuestionChannel
+  const channelLabel = $<HTMLSelectElement>('q-bulk-channel').selectedOptions[0]?.textContent?.trim() ?? channel
+  const verb = action === 'add' ? 'Додати до розділу' : 'Прибрати з розділу'
+  showConfirm(`${verb} «${channelLabel}» для ${ids.length} питань?`, async () => {
+    try {
+      const result = await updateQuestionChannels(ids, channel, action)
+      clearSelection()
+      await loadQuestionsTab()
+      void refreshContentDeliveryBanner()
+      const lines = [`Змінено: ${result.updated}`]
+      if (result.unchanged) lines.push(`Без змін: ${result.unchanged}`)
+      for (const reason of new Set(result.skipped.map(item => item.reason))) {
+        lines.push(`${result.skipped.filter(item => item.reason === reason).length} — ${reason}`)
+      }
+      showModal(lines.join('\n'))
+    } catch (err) {
+      showModal((err as Error).message)
+    }
+  })
+}
+
 function selectedChannels(): QuestionChannel[] {
   return (Object.entries(CHANNEL_INPUTS) as [QuestionChannel, string][])
     .filter(([, inputId]) => $<HTMLInputElement>(inputId).checked)
@@ -86,6 +247,16 @@ export function initQuestionsTab() {
   $<HTMLSelectElement>('qf-type').addEventListener('change', (e) => {
     applyTypeUI((e.target as HTMLSelectElement).value)
   })
+  restoreSection()
+  for (const button of sectionButtons()) {
+    button.addEventListener('click', () => selectSection(button.dataset.section ?? ''))
+  }
+  // The coverage view is loaded only while it is open — it is a planning tool,
+  // not something every list refresh should pay for.
+  $maybe<HTMLDetailsElement>('q-matrix-panel')?.addEventListener('toggle', () => { void loadQuestionsTab() })
+  $<HTMLButtonElement>('q-bulk-add').addEventListener('click', () => { void applyBulkChannel('add') })
+  $<HTMLButtonElement>('q-bulk-remove').addEventListener('click', () => { void applyBulkChannel('remove') })
+  $<HTMLButtonElement>('q-bulk-clear').addEventListener('click', clearSelection)
   $<HTMLButtonElement>('q-filter-apply').addEventListener('click', () => loadQuestionsTab())
   $<HTMLInputElement>('q-filter-search').addEventListener('keydown', event => {
     if (event.key === 'Enter') void loadQuestionsTab()
@@ -120,20 +291,30 @@ export async function loadQuestionsTab() {
   const list = $('questions-list')
   list.innerHTML = '<p class="admin-loading-text">Завантаження…</p>'
   try {
-    const grade      = $<HTMLSelectElement>('q-filter-grade').value || undefined
-    const section    = $<HTMLSelectElement>('q-filter-section').value
-    const isMainRound = section === 'main_round'
-    const isOlympiad = section ? isMainRound : undefined
-    const type       = $<HTMLSelectElement>('q-filter-mechanic').value || undefined
-    const channel    = section && !isMainRound ? section as QuestionChannel : undefined
-    const difficulty = $<HTMLSelectElement>('q-filter-difficulty').value || undefined
-    const track      = $<HTMLSelectElement>('q-filter-track').value || undefined
-    const topic      = $<HTMLSelectElement>('q-filter-topic').value || undefined
-    const status     = $<HTMLSelectElement>('q-filter-status').value || undefined
-    const search     = $<HTMLInputElement>('q-filter-search').value.trim() || undefined
+    const filters: AdminQuestionFilters = {
+      grade:      $<HTMLSelectElement>('q-filter-grade').value || undefined,
+      type:       $<HTMLSelectElement>('q-filter-mechanic').value || undefined,
+      difficulty: $<HTMLSelectElement>('q-filter-difficulty').value || undefined,
+      track:      $<HTMLSelectElement>('q-filter-track').value || undefined,
+      topic:      $<HTMLSelectElement>('q-filter-topic').value || undefined,
+      status:     $<HTMLSelectElement>('q-filter-status').value || undefined,
+      search:     $<HTMLInputElement>('q-filter-search').value.trim() || undefined,
+    }
+    // The counters describe every section under the same filters, so they are
+    // built from `filters` alone — the section below narrows the list only.
+    void refreshSectionCounts(filters)
 
-    const { questions } = await getAdminQuestions({ grade, isOlympiad, type, channel, difficulty, track, topic, status, search })
+    const section    = currentSection
+    const isMainRound = section === 'main_round'
+    const unassigned = section === 'unassigned'
+    const isOlympiad = section && !unassigned ? isMainRound : undefined
+    const channel    = section && !isMainRound && !unassigned ? section as QuestionChannel : undefined
+    const sectionQuery: SectionQuery = { isOlympiad, channel, unassigned }
+    void refreshMatrix(filters, sectionQuery)
+
+    const { questions } = await getAdminQuestions({ ...filters, ...sectionQuery })
     currentQuestions = questions
+    clearSelection()
 
     $('q-count').textContent = `${questions.length} питань`
 
@@ -171,6 +352,10 @@ function buildQuestionCard(q: Question): HTMLElement {
   const el = document.createElement('div')
   el.className = 'question-item'
   el.innerHTML = `
+    <label class="question-item__select">
+      <input type="checkbox" class="qi-select" value="${esc(q.id)}"
+             aria-label="Вибрати питання для масової зміни розділів"/>
+    </label>
     <div class="question-item__left">
       <div class="question-item__badges">
         <span class="qi-badge ${STATUS_BADGES[status]}">${STATUS_LABELS[status]}</span>
@@ -197,6 +382,9 @@ function buildQuestionCard(q: Question): HTMLElement {
       ${status === 'draft' ? '<button class="btn-q-del btn-adm-danger btn-icon" aria-label="Видалити чернетку"><i class="fas fa-trash" aria-hidden="true"></i></button>' : ''}
     </div>`
 
+  el.querySelector<HTMLInputElement>('.qi-select')!.addEventListener('change', event => {
+    toggleSelection(q.id, (event.target as HTMLInputElement).checked)
+  })
   el.querySelector<HTMLButtonElement>('.btn-q-edit')!.setAttribute(
     'aria-label', immutable ? 'Створити нову версію як чернетку' : 'Редагувати питання',
   )

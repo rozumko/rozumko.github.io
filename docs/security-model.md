@@ -101,6 +101,18 @@ limited to unused drafts. Revision rows contain answer keys and are available
 only through the authenticated admin API. RLS is enabled on the revision table
 with no browser-facing policy.
 
+Delivery is separated from authored content. `channels` decides which modes may
+serve a question; it never changes the text, the answer key or the taxonomy, so
+a published row can be moved between sections without breaking the immutability
+of what was published. That change has one narrow route
+(`POST /api/admin/questions/channels`, admin-only, one channel, add or remove),
+and it stays fail closed: main-round questions accept no channel, a published
+question can never be left without one, `edit_version` optimistic locking still
+applies per row, and every change writes a `channels` revision snapshot. Static
+surfaces do not shift silently — the practice manifest is built from the
+`olympiad_training` set, so a channel change marks the site as having pending
+changes and still requires an explicit, audited publication run.
+
 ## Lesson Editorial Workflow — **[IMPLEMENTED]**
 
 Migration `0037` gives micro-lessons the same `draft → review → published →

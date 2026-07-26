@@ -20,18 +20,46 @@ test('question editor exposes mutually exclusive main-round and training-channel
   assert.match(questionsTab, /channels:\s+selectedChannels\(\)/)
 })
 
-test('question bank presents one section filter while preserving secure query mapping', () => {
+test('question bank presents one section scope while preserving secure query mapping', () => {
   assert.doesNotMatch(adminHtml, /id="q-filter-pool"/)
   assert.match(adminHtml, /id="q-filter-mechanic"/)
   assert.match(adminHtml, /id="q-filter-section"/)
-  for (const value of ['class_game', 'path', 'olympiad_training', 'main_round']) {
-    assert.match(adminHtml, new RegExp(`option value="${value}"`))
+  // One scope strip: every section is a button with its own counter slot
+  for (const value of ['', 'class_game', 'path', 'olympiad_training', 'main_round', 'unassigned']) {
+    assert.match(adminHtml, new RegExp(`data-section="${value}"`))
   }
+  for (const value of ['all', 'class_game', 'path', 'olympiad_training', 'main_round', 'unassigned']) {
+    assert.match(adminHtml, new RegExp(`data-section-count="${value}"`))
+  }
+  // main_round and unassigned are sections, never channels
   assert.match(questionsTab, /const isMainRound = section === 'main_round'/)
-  assert.match(questionsTab, /const isOlympiad = section \? isMainRound : undefined/)
-  assert.match(questionsTab, /section && !isMainRound \? section as QuestionChannel : undefined/)
+  assert.match(questionsTab, /const unassigned = section === 'unassigned'/)
+  assert.match(questionsTab, /const isOlympiad = section && !unassigned \? isMainRound : undefined/)
+  assert.match(questionsTab, /section && !isMainRound && !unassigned \? section as QuestionChannel : undefined/)
+  // Counters take the shared filters only — never the section
+  assert.match(questionsTab, /refreshSectionCounts\(filters\)/)
   assert.match(apiClient, /p\.set\('channel',\s+String\(params\.channel\)\)/)
   assert.match(apiClient, /p\.set\('type',\s+String\(params\.type\)\)/)
+  assert.match(apiClient, /p\.set\('unassigned', 'true'\)/)
+})
+
+test('delivery is editable in bulk without touching authored content', () => {
+  // Selection + one narrow action, wired to the delivery-only route
+  assert.match(adminHtml, /id="q-bulk"/)
+  assert.match(adminHtml, /id="q-bulk-channel"/)
+  assert.match(questionsTab, /class="qi-select"/)
+  assert.match(questionsTab, /updateQuestionChannels\(ids, channel, action\)/)
+  assert.match(apiClient, /'\/api\/admin\/questions\/channels'/)
+  assert.match(apiClient, /body: JSON\.stringify\(\{ ids, channel, action \}\)/)
+})
+
+test('coverage matrix reports gaps inside the selected section', () => {
+  assert.match(adminHtml, /id="q-matrix"/)
+  // Grade and topic are the axes — they must not be sent as filters, or an
+  // empty cell could never appear
+  assert.match(questionsTab, /const \{ grade: _grade, topic: _topic, \.\.\.shared \} = filters/)
+  assert.match(questionsTab, /getAdminQuestionMatrix\(\{ \.\.\.shared, \.\.\.section \}\)/)
+  assert.match(apiClient, /`\/api\/admin\/questions\/matrix\?\$\{p\}`/)
 })
 
 test('admin help explains the complete content and path workflow in plain language', () => {

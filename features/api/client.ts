@@ -1635,16 +1635,69 @@ export function updateAdminPathMap(
   })
 }
 
-export function getAdminQuestions(params: { grade?: number | string; isOlympiad?: boolean | string; type?: QuestionType | string; channel?: QuestionChannel | string; difficulty?: string; track?: QuestionTrack | string; topic?: string; status?: string; search?: string } = {}): Promise<{ questions: Question[] }> {
+// Filters shared by the bank list and its section counters. The section itself
+// (isOlympiad / channel / unassigned) narrows the list only.
+export interface AdminQuestionFilters {
+  grade?: number | string
+  type?: QuestionType | string
+  difficulty?: string
+  track?: QuestionTrack | string
+  topic?: string
+  status?: string
+  search?: string
+}
+
+function adminQuestionQuery(params: AdminQuestionFilters): URLSearchParams {
   const p = new URLSearchParams()
-  if (params.grade      != null) p.set('grade',      String(params.grade))
+  if (params.grade != null) p.set('grade',      String(params.grade))
+  if (params.type)          p.set('type',       String(params.type))
+  if (params.difficulty)    p.set('difficulty', params.difficulty)
+  if (params.track)         p.set('track',      String(params.track))
+  if (params.topic)         p.set('topic',      params.topic)
+  if (params.status)        p.set('status',     params.status)
+  if (params.search)        p.set('search',     params.search)
+  return p
+}
+
+export type AdminQuestionSection = 'class_game' | 'path' | 'olympiad_training' | 'main_round' | 'unassigned'
+export type AdminQuestionCounts = Record<AdminQuestionSection | 'all', number>
+
+export function getAdminQuestions(params: AdminQuestionFilters & { isOlympiad?: boolean | string; channel?: QuestionChannel | string; unassigned?: boolean } = {}): Promise<{ questions: Question[] }> {
+  const p = adminQuestionQuery(params)
   if (params.isOlympiad != null) p.set('isOlympiad', String(params.isOlympiad))
-  if (params.type)               p.set('type',       String(params.type))
   if (params.channel)            p.set('channel',    String(params.channel))
-  if (params.difficulty)         p.set('difficulty', params.difficulty)
-  if (params.track)              p.set('track',      String(params.track))
-  if (params.topic)              p.set('topic',      params.topic)
-  if (params.status)             p.set('status',     params.status)
-  if (params.search)             p.set('search',     params.search)
+  if (params.unassigned)         p.set('unassigned', 'true')
   return authRequest(`/api/admin/questions?${p}`)
+}
+
+export function getAdminQuestionCounts(params: AdminQuestionFilters = {}): Promise<{ counts: AdminQuestionCounts }> {
+  return authRequest(`/api/admin/questions/counts?${adminQuestionQuery(params)}`)
+}
+
+// Coverage of one section by grade and topic. Grade and topic are the axes, so
+// the server refuses them as filters — they would hide the empty cells.
+export interface AdminQuestionMatrixCell {
+  grade: number | null
+  topic: string | null
+  total: number
+}
+
+export function getAdminQuestionMatrix(params: Omit<AdminQuestionFilters, 'grade' | 'topic'> & { isOlympiad?: boolean | string; channel?: QuestionChannel | string; unassigned?: boolean } = {}): Promise<{ cells: AdminQuestionMatrixCell[] }> {
+  const p = adminQuestionQuery(params)
+  if (params.isOlympiad != null) p.set('isOlympiad', String(params.isOlympiad))
+  if (params.channel)            p.set('channel',    String(params.channel))
+  if (params.unassigned)         p.set('unassigned', 'true')
+  return authRequest(`/api/admin/questions/matrix?${p}`)
+}
+
+// Delivery-only bulk edit: adds or removes one channel across a selection.
+export function updateQuestionChannels(ids: string[], channel: QuestionChannel, action: 'add' | 'remove'): Promise<{
+  updated: number
+  unchanged: number
+  skipped: { id: string; reason: string }[]
+}> {
+  return authRequest('/api/admin/questions/channels', {
+    method: 'POST',
+    body: JSON.stringify({ ids, channel, action }),
+  })
 }
