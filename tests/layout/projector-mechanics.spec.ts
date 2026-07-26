@@ -42,7 +42,17 @@ const CHOICE_Q = {
   options: ['Покликати дорослого і нічого не натискати', 'Натискати всі кнопки підряд', 'Сховати планшет під подушку', 'Натиснути «Завантажити»'],
   topic: 'digital-safety',
 }
-const QUESTIONS = [MATCH_Q, SORT_Q, SEQ_Q, CHOICE_Q]
+// A real long stem from the bank. The projector scale is viewport-based, so
+// this is the case that used to inflate the card and push the options off the
+// screen — the class then had to scroll to see an option.
+const LONG_Q = {
+  id: 'q-long',
+  q: 'Алгоритм: «якщо дощ — взяти парасолю, інакше — взяти сонцезахисні окуляри». Надворі сонячно. Що треба взяти?',
+  type: 'choice',
+  options: ['Сонцезахисні окуляри', 'Парасолю', 'І парасолю, і окуляри', 'Нічого'],
+  topic: 'algorithms',
+}
+const QUESTIONS = [MATCH_Q, SORT_Q, SEQ_Q, CHOICE_Q, LONG_Q]
 
 async function openProjector(page: Page) {
   await page.addInitScript((questions) => {
@@ -91,6 +101,16 @@ async function expectNoProjectorScroll(page: Page) {
   expect(overflow).toBeLessThanOrEqual(0)
 }
 
+// No-scroll alone is not enough once the shell clips: the options must also be
+// fully on screen, or a child simply never sees the one they need.
+async function expectOptionsOnScreen(page: Page, ctx: string) {
+  const box = await page.locator('#school-projector-options').boundingBox()
+  const viewport = page.viewportSize()!
+  expect(box, `${ctx}: варіанти відсутні`).not.toBeNull()
+  expect(box!.y, `${ctx}: варіанти вилазять угору`).toBeGreaterThanOrEqual(0)
+  expect(box!.y + box!.height, `${ctx}: варіанти нижче краю екрана`).toBeLessThanOrEqual(viewport.height + 1)
+}
+
 test('projector mechanics fit the screen and map answers to original indexes', async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 })
   await openProjector(page)
@@ -105,6 +125,7 @@ test('projector mechanics fit the screen and map answers to original indexes', a
     const fixture = QUESTIONS.find(f => f.q === qText)
     expect(fixture, `невідоме питання: ${qText}`).toBeTruthy()
     await expectNoProjectorScroll(page)
+    await expectOptionsOnScreen(page, `питання ${i + 1}`)
 
     if (fixture === MATCH_Q) {
       await expect(image).toHaveAttribute('src', /\/assets\/basics\/pairs\.webp$/)
@@ -137,6 +158,11 @@ test('projector mechanics fit the screen and map answers to original indexes', a
       await expect(image).toHaveAttribute('src', /\/assets\/basics\/patterns\.webp$/)
       await expect(options.locator('.quiz-option')).toHaveCount(3)
       await options.locator('.quiz-option').first().click()
+    } else if (fixture === LONG_Q) {
+      // The long stem must be scaled down, not scrolled away from the options
+      await expect(page.locator('#school-projector-question-text')).toHaveAttribute('data-qlength', 'long')
+      await expect(options.locator('.quiz-option')).toHaveCount(4)
+      await options.locator('.quiz-option', { hasText: 'Сонцезахисні окуляри' }).click()
     } else {
       await expect(options.locator('.quiz-option')).toHaveCount(4)
       // Click a specific option by TEXT — its displayed position is shuffled
@@ -145,6 +171,7 @@ test('projector mechanics fit the screen and map answers to original indexes', a
 
     await expect(nextBtn).toBeVisible()
     await expectNoProjectorScroll(page)
+    await expectOptionsOnScreen(page, `питання ${i + 1} (після відповіді)`)
     await nextBtn.click()
   }
 

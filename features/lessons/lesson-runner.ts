@@ -1,4 +1,5 @@
 import type { LessonSummary, MicroLesson } from './lesson-data.js'
+import { openLightbox } from '../../utils/lightbox.js'
 
 // Рушій мікро-уроку: (відео →) картки теорії → мікро-квіз закріплення.
 // Клієнтський і безключовий, як sorting/puzzles: фідбек формувальний,
@@ -94,7 +95,10 @@ export function mountLesson(root: HTMLElement, lesson: MicroLesson, opts: Lesson
       el.stage.innerHTML = `
         <article class="lsn-card">
           <h3 class="lsn-card__title hidden"></h3>
-          <img class="lsn-card__image hidden" alt="" />
+          <button type="button" class="lsn-card__image-btn quiz-image-btn hidden"
+                  aria-label="Збільшити зображення">
+            <img class="lsn-card__image hidden" alt="" />
+          </button>
           <p class="lsn-card__text"></p>
         </article>`
       const titleEl = el.stage.querySelector<HTMLElement>('.lsn-card__title')!
@@ -103,10 +107,14 @@ export function mountLesson(root: HTMLElement, lesson: MicroLesson, opts: Lesson
         titleEl.classList.remove('hidden')
       }
       const img = el.stage.querySelector<HTMLImageElement>('.lsn-card__image')!
+      const imgBtn = el.stage.querySelector<HTMLButtonElement>('.lsn-card__image-btn')!
       if (card.image) {
         img.src = card.image
         img.alt = card.imageAlt ?? ''
         img.classList.remove('hidden')
+        // A lesson picture can be a diagram worth a closer look
+        imgBtn.classList.remove('hidden')
+        imgBtn.onclick = () => openLightbox(img.src, img.alt)
       }
       el.stage.querySelector<HTMLElement>('.lsn-card__text')!.textContent = card.text
       showNext(nextLabelAfter(stepIdx))

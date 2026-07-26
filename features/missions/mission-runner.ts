@@ -1,5 +1,7 @@
 import { renderQuestion, type RenderableQuestion } from '../../utils/question-renderer.js'
 import { resolveQuestionImage } from '../../utils/question-image.js'
+import { applyQuestionLength } from '../../utils/question-fit.js'
+import { openLightbox } from '../../utils/lightbox.js'
 import { missionSummary, type MissionSummary } from './mission-result.js'
 
 // Клієнтський, surface-agnostic runner місії для School Mode.
@@ -12,6 +14,8 @@ export interface MissionElements {
   progressBar:  HTMLElement
   questionText: HTMLElement
   image?:       HTMLImageElement | null
+  /** Optional wrapper button: makes the image openable full screen. */
+  imageBtn?:    HTMLButtonElement | null
   codeBlock:    HTMLElement | null
   options:      HTMLElement
   feedback:     HTMLElement
@@ -97,6 +101,7 @@ export function runMission(
     els.progressText.textContent = `${progress} / ${totalQuestions}`
     els.progressBar.style.width = `${(progress / totalQuestions) * 100}%`
     els.questionText.textContent = String(q.q ?? '')
+    applyQuestionLength(els.questionText, String(q.q ?? ''))
 
     // Question image: explicit q.img or a default from public/assets/basics/
     // (resolved by type/topic/concept). Keep behavior consistent across surfaces.
@@ -106,10 +111,20 @@ export function runMission(
         els.image.src = image.src
         els.image.alt = image.alt
         els.image.classList.remove('hidden')
+        // A picture can BE the question (a Scratch program, a diagram), so the
+        // thumbnail opens full screen where the surface provides the trigger.
+        if (els.imageBtn) {
+          els.imageBtn.classList.remove('hidden')
+          els.imageBtn.onclick = () => openLightbox(image.src, image.alt)
+        }
       } else {
         els.image.src = ''
         els.image.alt = ''
         els.image.classList.add('hidden')
+        if (els.imageBtn) {
+          els.imageBtn.classList.add('hidden')
+          els.imageBtn.onclick = null
+        }
       }
     }
 
