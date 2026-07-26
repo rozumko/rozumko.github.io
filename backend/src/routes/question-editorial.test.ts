@@ -78,6 +78,98 @@ test('admin question body schema accepts nulls in nullable fields', async () => 
   await app.close()
 })
 
+// The section counters exist to show what the OTHER sections hold, so they must
+// accept the shared filters and refuse a section filter of their own.
+test('question bank counters share the list filters but never take a section', async () => {
+  process.env.SUPABASE_URL ??= 'https://test.supabase.co'
+  const [{ default: Fastify }, { adminRoutes }] = await Promise.all([
+    import('fastify'),
+    import('./admin.js'),
+  ])
+  const app = Fastify()
+  await app.register(adminRoutes, { prefix: '/api/admin' })
+
+  // Schema validation runs before auth: 401 means the query was accepted.
+  const shared = await app.inject({ method: 'GET', url: '/api/admin/questions/counts?grade=2&status=published&search=алгоритм' })
+  assert.equal(shared.statusCode, 401, shared.body)
+  const invalid = await app.inject({ method: 'GET', url: '/api/admin/questions/counts?grade=9' })
+  assert.equal(invalid.statusCode, 400, invalid.body)
+  for (const section of ['channel=class_game', 'isOlympiad=true', 'unassigned=true']) {
+    const accepted = await app.inject({ method: 'GET', url: `/api/admin/questions?${section}` })
+    assert.equal(accepted.statusCode, 401, section)
+  }
+  // "Delivered nowhere" is a section, not a toggle: only the true form exists
+  const ambiguous = await app.inject({ method: 'GET', url: '/api/admin/questions?unassigned=false' })
+  assert.equal(ambiguous.statusCode, 400, ambiguous.body)
+
+  // The coverage matrix keeps the section but drops the axes it draws
+  const scoped = await app.inject({ method: 'GET', url: '/api/admin/questions/matrix?channel=class_game&status=published' })
+  assert.equal(scoped.statusCode, 401, scoped.body)
+
+  // Undeclared query properties are stripped, not honoured, so the contract is
+  // the declared schema: the counters take the shared filters unchanged, and the
+  // matrix declares neither grade nor topic — otherwise it could never show an
+  // empty cell.
+  const admin = readFileSync(new URL('./admin.ts', import.meta.url), 'utf8')
+  assert.match(admin, /'\/questions\/counts', \{\s*preHandler: requireAdmin,\s*schema: \{ querystring: \{ \.\.\.questionBankQuerystring \} \},/)
+  const matrix = admin.slice(admin.indexOf("'/questions/matrix'"), admin.indexOf('// GET /api/admin/questions?grade='))
+  const matrixQuery = matrix.slice(0, matrix.indexOf('async (req, reply)'))
+  assert.doesNotMatch(matrixQuery, /\bgrade:/)
+  assert.doesNotMatch(matrixQuery, /\btopic:/)
+  assert.match(matrix, /groupBy\(questions\.grade, questions\.topic\)/)
+
+  await app.close()
+})
+
+// Delivery is not authored content: this route may move published rows between
+// sections, so its guards are the whole safety story (docs/security-model.md).
+test('bulk channel changes stay narrow, audited and fail closed', async () => {
+  process.env.SUPABASE_URL ??= 'https://test.supabase.co'
+  const [{ default: Fastify }, { adminRoutes }] = await Promise.all([
+    import('fastify'),
+    import('./admin.js'),
+  ])
+  const app = Fastify()
+  await app.register(adminRoutes, { prefix: '/api/admin' })
+
+  const id = '00000000-0000-4000-8000-0000000000d1'
+  const valid = { ids: [id], channel: 'class_game', action: 'add' }
+  const accepted = await app.inject({ method: 'POST', url: '/api/admin/questions/channels', payload: valid })
+  assert.equal(accepted.statusCode, 401, accepted.body)
+
+  // One channel, add or remove, nothing else
+  for (const bad of [
+    { ...valid, channel: 'main_round' },
+    { ...valid, channel: 'public' },
+    { ...valid, action: 'replace' },
+    { ...valid, ids: [] },
+    { ...valid, ids: ['not-a-uuid'] },
+    { ...valid, ids: Array.from({ length: 201 }, (_, i) => `00000000-0000-4000-8000-${String(i).padStart(12, '0')}`) },
+  ]) {
+    const rejected = await app.inject({ method: 'POST', url: '/api/admin/questions/channels', payload: bad })
+    assert.equal(rejected.statusCode, 400, JSON.stringify(bad).slice(0, 120))
+  }
+  await app.close()
+
+  const admin = readFileSync(new URL('./admin.ts', import.meta.url), 'utf8')
+  const route = admin.slice(admin.indexOf("'/questions/channels'"), admin.indexOf("'/questions/:id/status'"))
+  // Main-round rows keep no channels, published rows keep at least one, every
+  // change is optimistically locked and snapshotted.
+  assert.match(route, /if \(row\.isOlympiad\)/)
+  assert.match(route, /if \(!next\.length && row\.editorialStatus === 'published'\)/)
+  assert.match(route, /eq\(questions\.editVersion, row\.editVersion\)/)
+  assert.match(route, /action: 'channels'/)
+  assert.match(route, /snapshot: questionSnapshot\(saved\)/)
+  // Content fields cannot ride along: the body allows nothing else
+  // (additionalProperties: false) and the update writes delivery columns only.
+  assert.match(route, /additionalProperties: false/)
+  const update = route.slice(route.indexOf('.set({'), route.indexOf('.where(and(eq(questions.id, row.id)'))
+  assert.deepEqual(
+    [...update.matchAll(/^\s{12}(\w+):/gm)].map(match => match[1]),
+    ['channels', 'version', 'editVersion', 'updatedAt', 'updatedBy'],
+  )
+})
+
 test('published question rows are immutable and child issuance is publication-gated', () => {
   const admin = readFileSync(new URL('./admin.ts', import.meta.url), 'utf8')
   const publicQuestions = readFileSync(new URL('./questions.ts', import.meta.url), 'utf8')

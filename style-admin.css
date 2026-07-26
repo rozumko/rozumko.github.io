@@ -354,6 +354,108 @@
 .adm-checkbox-row label { font-size: var(--font-size-sm); color: var(--adm-text-muted); cursor: pointer; }
 .adm-form-actions { display: flex; gap: var(--sp-3); flex-wrap: wrap; }
 
+/* ── Delivery sections (question bank scope) ─────────────────── */
+.admin-scope {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+.admin-scope__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--r-full);
+  background: var(--adm-surface);
+  color: var(--adm-text-muted);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
+}
+.admin-scope__btn:hover { color: var(--adm-text); }
+.admin-scope__btn:focus-visible { outline: 3px solid var(--adm-sky); outline-offset: 2px; }
+/* "Без розділу" is a gap report, not a peer of the delivery modes */
+.admin-scope__btn--gap { margin-left: auto; }
+/* Admin runs a dark theme: the active pill is a light fill with dark text */
+.admin-scope__btn[aria-pressed="true"] {
+  border-color: var(--adm-sky);
+  background: var(--adm-sky);
+  color: var(--adm-bg);
+}
+.admin-scope__count {
+  min-width: 1.5rem;
+  padding: 0 var(--sp-2);
+  border-radius: var(--r-full);
+  background: var(--adm-surface-2);
+  color: var(--adm-text);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.admin-scope__count:empty { display: none; }
+
+/* ── Coverage matrix (where the selected section is empty) ───── */
+.admin-matrix {
+  margin-bottom: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--r-xl);
+  background: var(--adm-surface);
+}
+.admin-matrix__summary { color: var(--adm-text); font-size: var(--font-size-sm); font-weight: 700; cursor: pointer; }
+.admin-matrix__hint { margin-top: var(--sp-2); color: var(--adm-text-muted); font-size: var(--font-size-xs); }
+/* A wide grade axis must scroll inside the panel, never widen the page */
+.admin-matrix__scroll { overflow-x: auto; margin-top: var(--sp-3); }
+.admin-matrix__table { width: 100%; border-collapse: collapse; font-size: var(--font-size-sm); }
+.admin-matrix__table th,
+.admin-matrix__table td {
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: 1px solid var(--adm-border);
+  text-align: center;
+}
+.admin-matrix__table thead th { color: var(--adm-text-muted); font-size: var(--font-size-xs); }
+.admin-matrix__table tbody th { color: var(--adm-text); font-weight: 600; text-align: left; white-space: nowrap; }
+.admin-matrix__link {
+  min-width: 2.5rem;
+  padding: var(--sp-1) var(--sp-2);
+  border: none;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--adm-text);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.admin-matrix__link:hover { background: var(--adm-border); }
+.admin-matrix__link:focus-visible { outline: 3px solid var(--adm-sky); outline-offset: 2px; }
+.admin-matrix__cell--gap .admin-matrix__link { color: var(--adm-rose); font-weight: 700; }
+
+/* ── Bulk delivery actions ───────────────────────────────────── */
+.admin-bulk {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  align-items: center;
+  margin-bottom: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--adm-sky);
+  border-radius: var(--r-xl);
+  background: var(--adm-surface);
+}
+.admin-bulk__count { color: var(--adm-text); font-size: var(--font-size-sm); font-weight: 700; }
+.admin-bulk__field {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+  color: var(--adm-text-muted);
+  font-size: var(--font-size-sm);
+}
+
 /* ── Filter bar ──────────────────────────────────────────────── */
 .admin-filter-bar {
   background: var(--adm-surface);
@@ -482,6 +584,8 @@
   justify-content: space-between;
   gap: var(--sp-4);
 }
+.question-item__select { display: flex; align-items: center; flex: 0 0 auto; padding: var(--sp-1); cursor: pointer; }
+.question-item__select input { width: 1.1rem; height: 1.1rem; cursor: pointer; }
 .question-item__left  { flex: 1; min-width: 0; }
 .question-item__text  { color: var(--adm-text); font-size: var(--font-size-sm); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .question-item__code  { color: #6ee7b7; font-size: var(--font-size-xs); font-family: 'Courier New', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }

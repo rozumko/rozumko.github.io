@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify'
-import { eq, desc, count, and, asc, inArray, ilike, or, sql, arrayContains, isNotNull } from 'drizzle-orm'
+import { eq, desc, count, and, asc, inArray, ilike, or, sql, arrayContains, isNotNull, type SQL } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { questions, questionRevisions, accessCodes, attempts, attemptQuestions, appUsers, olympiadEvents, eventQuestions, schoolSessions, schoolSessionQuestions, homeLeads, homeEntitlements, homeEntitlementEvents, homeParentAccounts, homePathProgress, missions, missionRevisions, microLessons, microLessonRevisions, pathMapRevisions, pathMaps, contentPublications, homeFunnelCounters, type QuestionChannel, type QuestionTrack } from '../db/schema.js'
 import { normalizeLessonSlug, normalizeLessonStatus, normalizeLessonContent, lessonContentChanged } from './lesson-validation.js'
@@ -98,6 +98,55 @@ function normalizeQuestionTrack(raw: unknown): QuestionTrack | null {
   if (raw == null || raw === '') return null
   if (typeof raw === 'string' && (QUESTION_TRACKS as readonly string[]).includes(raw)) return raw as QuestionTrack
   throw new Error('Невідомий напрям питання')
+}
+
+// Filters shared by the question bank list and its per-section counters. The
+// section itself (isOlympiad / channel / unassigned) is applied by the list
+// route only, so the counters can describe every section under the same rest.
+const questionBankQuerystring = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    grade:      { type: 'string', enum: ['1', '2', '3', '4'] },
+    type:       { type: 'string', enum: ['choice', 'truefalse', 'input', 'sort', 'sequence', 'match'] },
+    difficulty: { type: 'string', enum: ['easy', 'medium', 'hard'] },
+    track:      { type: 'string', enum: ['informatics', 'computational-thinking', 'ai-basics'] },
+    topic:      { type: 'string', enum: ALL_TOPICS as string[] },
+    status:     { type: 'string', enum: [...QUESTION_EDITORIAL_STATUSES] },
+    search:     { type: 'string', minLength: 1, maxLength: 120 },
+  },
+} as const
+
+function questionBankFilters(
+  query: { grade?: string; type?: string; difficulty?: string; topic?: string; status?: string; search?: string },
+  track: QuestionTrack | null,
+): SQL[] {
+  const { grade, type, difficulty, topic, status, search } = query
+  const filters: SQL[] = []
+  if (grade)      filters.push(eq(questions.grade,      Number(grade)))
+  if (type)       filters.push(eq(questions.type,       type as QuestionType))
+  if (difficulty) filters.push(eq(questions.difficulty, difficulty))
+  if (track)      filters.push(eq(questions.track,      track))
+  if (topic)      filters.push(eq(questions.topic,      topic))
+  if (status)     filters.push(eq(questions.editorialStatus, normalizeQuestionEditorialStatus(status)))
+  if (search) {
+    const pattern = `%${search.trim().replaceAll('%', '\\%').replaceAll('_', '\\_')}%`
+    filters.push(or(ilike(questions.q, pattern), sql`${questions.id}::text ILIKE ${pattern}`)!)
+  }
+  return filters
+}
+
+// The delivery section: a channel, the main round, or "delivered nowhere".
+// Shared by the bank list and the coverage matrix so both narrow identically.
+function applyQuestionSectionFilters(
+  filters: SQL[],
+  section: { isOlympiad?: string; channel?: string; unassigned?: string },
+): void {
+  if (section.isOlympiad) filters.push(eq(questions.isOlympiad, section.isOlympiad === 'true'))
+  if (section.channel)    filters.push(arrayContains(questions.channels, [section.channel as QuestionChannel]))
+  if (section.unassigned === 'true') {
+    filters.push(and(eq(questions.isOlympiad, false), sql`cardinality(${questions.channels}) = 0`)!)
+  }
 }
 
 function normalizePositiveInt(value: unknown, field: string, fallback?: number): number | undefined {
@@ -597,49 +646,117 @@ export async function adminRoutes(app: FastifyInstance) {
     return reply.send({ results: allAttempts })
   })
 
-  // GET /api/admin/questions?grade=&isOlympiad=&type=&channel=&difficulty=&track=&topic=&status=&search=
+  // GET /api/admin/questions/counts?grade=&type=&difficulty=&track=&topic=&status=&search=
+  // How many questions each delivery section holds under the current filters.
+  // Section is NOT accepted here: the counters exist to show what the other
+  // sections contain, so they must be built from the same rows minus that one
+  // filter. Registered before the parametric question routes.
   app.get<{
-    Querystring: { grade?: string; isOlympiad?: string; type?: string; channel?: string; difficulty?: string; track?: string; topic?: string; status?: string; search?: string }
-  }>('/questions', {
+    Querystring: { grade?: string; type?: string; difficulty?: string; track?: string; topic?: string; status?: string; search?: string }
+  }>('/questions/counts', {
     preHandler: requireAdmin,
-    schema: {
-      querystring: {
-        type: 'object',
-        additionalProperties: false,
-        properties: {
-          grade:      { type: 'string', enum: ['1', '2', '3', '4'] },
-          isOlympiad: { type: 'string', enum: ['true', 'false'] },
-          type:       { type: 'string', enum: ['choice', 'truefalse', 'input', 'sort', 'sequence', 'match'] },
-          channel:    { type: 'string', enum: [...QUESTION_CHANNELS] },
-          difficulty: { type: 'string', enum: ['easy', 'medium', 'hard'] },
-          track:      { type: 'string', enum: ['informatics', 'computational-thinking', 'ai-basics'] },
-          topic:      { type: 'string', enum: ALL_TOPICS as string[] },
-          status:     { type: 'string', enum: [...QUESTION_EDITORIAL_STATUSES] },
-          search:     { type: 'string', minLength: 1, maxLength: 120 },
-        },
-      },
-    },
+    schema: { querystring: { ...questionBankQuerystring } },
   }, async (req, reply) => {
-    const { grade, isOlympiad, type, channel, difficulty, topic, status, search } = req.query
     let track: QuestionTrack | null
     try {
       track = normalizeQuestionTrack(req.query.track)
     } catch (err) {
       return reply.code(400).send({ error: (err as Error).message })
     }
-    const filters = []
-    if (grade)      filters.push(eq(questions.grade,      Number(grade)))
-    if (isOlympiad) filters.push(eq(questions.isOlympiad, isOlympiad === 'true'))
-    if (type)       filters.push(eq(questions.type,       type as QuestionType))
-    if (channel)    filters.push(arrayContains(questions.channels, [channel as QuestionChannel]))
-    if (difficulty) filters.push(eq(questions.difficulty, difficulty))
-    if (track)      filters.push(eq(questions.track,      track))
-    if (topic)      filters.push(eq(questions.topic,      topic))
-    if (status)     filters.push(eq(questions.editorialStatus, normalizeQuestionEditorialStatus(status)))
-    if (search) {
-      const pattern = `%${search.trim().replaceAll('%', '\\%').replaceAll('_', '\\_')}%`
-      filters.push(or(ilike(questions.q, pattern), sql`${questions.id}::text ILIKE ${pattern}`)!)
+    const filters = questionBankFilters(req.query, track)
+
+    const [row] = await db
+      .select({
+        all:                sql<number>`cast(count(*) as int)`,
+        class_game:         sql<number>`cast(count(*) filter (where ${arrayContains(questions.channels, ['class_game'])}) as int)`,
+        path:               sql<number>`cast(count(*) filter (where ${arrayContains(questions.channels, ['path'])}) as int)`,
+        olympiad_training:  sql<number>`cast(count(*) filter (where ${arrayContains(questions.channels, ['olympiad_training'])}) as int)`,
+        main_round:         sql<number>`cast(count(*) filter (where ${questions.isOlympiad}) as int)`,
+        // Neither a main-round question nor delivered anywhere: invisible to
+        // every mode, which is exactly what the editor needs to see.
+        unassigned:         sql<number>`cast(count(*) filter (where ${questions.isOlympiad} is not true and cardinality(${questions.channels}) = 0) as int)`,
+      })
+      .from(questions)
+      .where(filters.length ? and(...filters) : undefined)
+
+    return reply.send({
+      counts: row ?? { all: 0, class_game: 0, path: 0, olympiad_training: 0, main_round: 0, unassigned: 0 },
+    })
+  })
+
+  // GET /api/admin/questions/matrix?<shared minus grade/topic>&<section>
+  // Coverage of the selected section: how many questions exist per grade and
+  // topic. Grade and topic are the axes here, so they are not accepted as
+  // filters — the point is to see where the section is empty.
+  app.get<{
+    Querystring: { type?: string; difficulty?: string; track?: string; status?: string; search?: string; isOlympiad?: string; channel?: string; unassigned?: string }
+  }>('/questions/matrix', {
+    preHandler: requireAdmin,
+    schema: {
+      querystring: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          type:       questionBankQuerystring.properties.type,
+          difficulty: questionBankQuerystring.properties.difficulty,
+          track:      questionBankQuerystring.properties.track,
+          status:     questionBankQuerystring.properties.status,
+          search:     questionBankQuerystring.properties.search,
+          isOlympiad: { type: 'string', enum: ['true', 'false'] },
+          channel:    { type: 'string', enum: [...QUESTION_CHANNELS] },
+          unassigned: { type: 'string', enum: ['true'] },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    let track: QuestionTrack | null
+    try {
+      track = normalizeQuestionTrack(req.query.track)
+    } catch (err) {
+      return reply.code(400).send({ error: (err as Error).message })
     }
+    const filters = questionBankFilters(req.query, track)
+    applyQuestionSectionFilters(filters, req.query)
+
+    const cells = await db
+      .select({
+        grade: questions.grade,
+        topic: questions.topic,
+        total: sql<number>`cast(count(*) as int)`,
+      })
+      .from(questions)
+      .where(filters.length ? and(...filters) : undefined)
+      .groupBy(questions.grade, questions.topic)
+
+    return reply.send({ cells })
+  })
+
+  // GET /api/admin/questions?grade=&isOlympiad=&type=&channel=&unassigned=&difficulty=&track=&topic=&status=&search=
+  app.get<{
+    Querystring: { grade?: string; isOlympiad?: string; type?: string; channel?: string; unassigned?: string; difficulty?: string; track?: string; topic?: string; status?: string; search?: string }
+  }>('/questions', {
+    preHandler: requireAdmin,
+    schema: {
+      querystring: {
+        ...questionBankQuerystring,
+        properties: {
+          ...questionBankQuerystring.properties,
+          isOlympiad: { type: 'string', enum: ['true', 'false'] },
+          channel:    { type: 'string', enum: [...QUESTION_CHANNELS] },
+          unassigned: { type: 'string', enum: ['true'] },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    const { isOlympiad, channel, unassigned } = req.query
+    let track: QuestionTrack | null
+    try {
+      track = normalizeQuestionTrack(req.query.track)
+    } catch (err) {
+      return reply.code(400).send({ error: (err as Error).message })
+    }
+    const filters = questionBankFilters(req.query, track)
+    applyQuestionSectionFilters(filters, { isOlympiad, channel, unassigned })
 
     const list = await db
       .select()
@@ -910,6 +1027,94 @@ export async function adminRoutes(app: FastifyInstance) {
       }
       throw err
     }
+  })
+
+  // POST /api/admin/questions/channels — bulk delivery change for a selection.
+  // A channel is DELIVERY, not authored content: the question text, the answer
+  // key and the taxonomy stay exactly as published, only the set of modes that
+  // may serve it changes. That is why this route may touch published rows where
+  // the content edit route fails closed — and why it is deliberately narrow:
+  // one channel, add or remove, nothing else (docs/security-model.md).
+  app.post<{ Body: { ids: string[]; channel: QuestionChannel; action: 'add' | 'remove' } }>('/questions/channels', {
+    preHandler: requireAdmin,
+    schema: {
+      body: {
+        type: 'object',
+        required: ['ids', 'channel', 'action'],
+        additionalProperties: false,
+        properties: {
+          ids:     { type: 'array', minItems: 1, maxItems: 200, uniqueItems: true, items: { type: 'string', format: 'uuid' } },
+          channel: { type: 'string', enum: [...QUESTION_CHANNELS] },
+          action:  { type: 'string', enum: ['add', 'remove'] },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    const { ids, channel, action } = req.body
+    const rows = await db.select().from(questions).where(inArray(questions.id, ids))
+
+    const skipped: { id: string; reason: string }[] = []
+    const planned: { row: typeof rows[number]; next: QuestionChannel[] }[] = []
+    let unchanged = 0
+
+    for (const id of ids) {
+      if (!rows.some(row => row.id === id)) skipped.push({ id, reason: 'питання не знайдено' })
+    }
+    for (const row of rows) {
+      // Main-round questions carry no training channels at all — the same rule
+      // the editor enforces (assertQuestionDistribution).
+      if (row.isOlympiad) {
+        skipped.push({ id: row.id, reason: 'питання основного туру не має розділів' })
+        continue
+      }
+      const current = row.channels ?? []
+      const next = action === 'add'
+        ? normalizeQuestionChannels([...current, channel])
+        : current.filter(item => item !== channel)
+      if (next.length === current.length && next.every((item, index) => item === current[index])) {
+        unchanged++
+        continue
+      }
+      // Fail closed: a published question with no section is served nowhere and
+      // would silently disappear from the site on the next export.
+      if (!next.length && row.editorialStatus === 'published') {
+        skipped.push({ id: row.id, reason: 'опубліковане питання не може лишитися без розділу' })
+        continue
+      }
+      planned.push({ row, next })
+    }
+
+    const now = new Date()
+    const updated: string[] = []
+    await db.transaction(async tx => {
+      for (const { row, next } of planned) {
+        const [saved] = await tx
+          .update(questions)
+          .set({
+            channels: next,
+            version: row.version + 1,
+            editVersion: row.editVersion + 1,
+            updatedAt: now,
+            updatedBy: req.user!.id,
+          })
+          .where(and(eq(questions.id, row.id), eq(questions.editVersion, row.editVersion)))
+          .returning()
+        if (!saved) {
+          skipped.push({ id: row.id, reason: 'питання щойно змінив інший редактор' })
+          continue
+        }
+        await tx.insert(questionRevisions).values({
+          questionId: saved.id,
+          editVersion: saved.editVersion,
+          action: 'channels',
+          snapshot: questionSnapshot(saved),
+          changedBy: req.user!.id,
+        })
+        updated.push(saved.id)
+      }
+    })
+
+    return reply.send({ updated: updated.length, unchanged, skipped })
   })
 
   // PUT /api/admin/questions/:id/status — explicit editorial transition.
