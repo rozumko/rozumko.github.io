@@ -3,7 +3,7 @@ import { and, asc, desc, eq, inArray, notInArray, sql, arrayContains } from 'dri
 import { db } from '../db/index.js'
 import { questions, schoolSessions, schoolSessionQuestions, schoolParticipants, schoolAnswers } from '../db/schema.js'
 import { requireAuth } from '../lib/auth.js'
-import { sanitizeOlympiadQuestion } from './question-sanitize.js'
+import { sanitizeOlympiadQuestion, stripOptionKeys } from './question-sanitize.js'
 import { scoreAttempt, type AnswerValue } from './attempt-validation.js'
 import { generateAttemptToken, verifyAttemptToken } from './student-validation.js'
 import { isValidAvatar, normalizeNickname, validateJoinCodeFormat, generateJoinCode, normalizeDifficulty } from './school-validation.js'
@@ -424,10 +424,13 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
 
   // ── Вчитель: попередній перегляд питань своєї сесії ───────────────────────
   // The teacher decides what the class plays, so the owner of a lobby/active
-  // session sees the questions WITH the key before the game starts. Deliberate
+  // session sees the questions WITH the key before the game starts. Judging a
+  // question needs what the class will see, so the payload carries the same
+  // render data as the game (options, image, code) plus the key: as text, and
+  // as the index of the correct option for single-choice mechanics. Deliberate
   // exception to "answer keys never reach the browser", scoped to the
-  // authenticated owner and to text: no raw `correct` value and no nested key
-  // structures leave the server (docs/security-model.md).
+  // authenticated owner; the nested key structures are still stripped
+  // (docs/security-model.md).
   app.get<{ Params: { id: string } }>('/sessions/:id/preview', {
     preHandler: authorizeTeacher,
     schema: { params: uuidParam },
@@ -445,28 +448,42 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
         id:          questions.id,
         position:    schoolSessionQuestions.position,
         q:           questions.q,
+        code:        questions.code,
         type:        questions.type,
         topic:       questions.topic,
         difficulty:  questions.difficulty,
         options:     questions.options,
         correct:     questions.correct,
         explanation: questions.explanation,
+        img:         questions.img,
+        imageAlt:    questions.imageAlt,
       })
       .from(schoolSessionQuestions)
       .innerJoin(questions, eq(schoolSessionQuestions.questionId, questions.id))
       .where(eq(schoolSessionQuestions.sessionId, session.id))
       .orderBy(asc(schoolSessionQuestions.position))
 
+    // Which option is the key, for the mechanics that keep it in `correct`.
+    // The rest (sort/match/input) are only readable as text — their key lives
+    // inside options and stays stripped.
+    const correctOption = (type: string | null, correct: number | null): number | null =>
+      correct != null && ['choice', 'truefalse', 'sequence'].includes(type ?? 'choice') ? correct : null
+
     return reply.send({
       questions: rows.map(r => ({
-        id:          r.id,
-        position:    r.position,
-        q:           r.q,
-        type:        r.type,
-        topic:       r.topic,
-        difficulty:  r.difficulty,
-        answerText:  describeCorrectAnswer(r.type, r.options, r.correct),
-        explanation: r.explanation,
+        id:            r.id,
+        position:      r.position,
+        q:             r.q,
+        code:          r.code,
+        type:          r.type,
+        topic:         r.topic,
+        difficulty:    r.difficulty,
+        options:       stripOptionKeys(r.options),
+        correctOption: correctOption(r.type, r.correct),
+        answerText:    describeCorrectAnswer(r.type, r.options, r.correct),
+        explanation:   r.explanation,
+        img:           r.img,
+        imageAlt:      r.imageAlt,
       })),
     })
   })

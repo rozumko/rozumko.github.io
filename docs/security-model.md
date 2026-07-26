@@ -312,12 +312,15 @@ School Mode is the low-risk classroom surface:
   olympiad questions) and scoring happens only on the server;
 - one scoped exception: the authenticated **owner** of a lobby or active
   session may preview that session's questions with the key, because the
-  teacher chooses what the class plays. The preview is text-only — the key is
-  resolved server-side into a readable answer string, so neither the raw
-  `correct` column nor the nested key structures (`correctOrder`, `pairs`,
-  `answer`) are serialised. It covers practice questions only (School sessions
-  never draw `isOlympiad` questions), it is never reachable from a participant
-  token, and a finished session returns 409;
+  teacher chooses what the class plays and cannot judge a question without
+  seeing what the class will see. The preview carries the same render data as
+  the game (options, image, code) plus the key — as a readable answer string,
+  and as the index of the correct option for the mechanics that keep it in the
+  `correct` column. The nested key structures (`correctOrder`, `pairs`,
+  `answer`) are still stripped, so sort/match/input keys leave only as text. It
+  covers practice questions only (School sessions never draw `isOlympiad`
+  questions), it is never reachable from a participant token, and a finished
+  session returns 409;
 - one answer per participant per question, only for active sessions, only for
   questions issued to that session;
 - projector questions are available only to the authenticated owner of an
@@ -609,9 +612,10 @@ invariants:
 - questions not issued to the session are rejected (400);
 - inactive sessions reject answers, and lobby sessions reject join without
   creating a participant (409);
-- the teacher preview returns the key only as rendered text (no `correct`
-  column, no `options` blob, no `correctOrder`), only to the session owner
-  (404 otherwise) and not after the session is finished (409);
+- the teacher preview returns render data plus the key as text and as a marked
+  option, never the raw `correct` column or a nested key (`correctOrder`), and
+  only to the session owner (404 otherwise), never after the session is
+  finished (409);
 - avatars outside the allowlist are rejected (400).
 
 `backend/src/routes/home-flow.test.ts` protects the Home demo/lead slice

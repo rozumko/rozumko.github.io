@@ -299,11 +299,16 @@ async function openTeacherDashboard(page: Page) {
                             id: 'question-1',
                             position: 0,
                             q: 'Що робить клавіатура?',
+                            code: null,
                             type: 'choice',
                             topic: 'information',
                             difficulty: 'easy',
+                            options: ['Вводить дані', 'Друкує на папері', 'Показує відео', 'Зберігає електроенергію'],
+                            correctOption: 0,
                             answerText: 'Вводить дані',
                             explanation: null,
+                            img: null,
+                            imageAlt: null,
                           }],
                         }
                     : path === '/api/school/sessions/school-session-1/questions'
@@ -662,8 +667,7 @@ test('admin bank shows section gaps and moves a selection between sections', asy
   expect(Object.keys(payload).sort()).toEqual(['action', 'channel', 'ids'])
 
   const results = await new AxeBuilder({ page })
-    .include('#q-matrix-panel')
-    .include('#q-bulk')
+    .include('#tab-questions')
     .withTags(WCAG_AA_TAGS)
     .analyze()
   expect(results.violations).toEqual([])
@@ -785,7 +789,11 @@ test('teacher school-game form stays accessible on a phone', async ({ page }) =>
   await page.locator('#school-create-btn').click()
   // The deck is checked before the class gets the code
   await expect(page.locator('#school-preview')).toBeVisible()
-  await expect(page.locator('.school-preview__answer')).toHaveText('Відповідь: Вводить дані')
+  // The whole question, as the class will see it, with the key marked — and no
+  // duplicate answer line when the key is already one of the options
+  await expect(page.locator('.school-preview__option')).toHaveCount(4)
+  await expect(page.locator('.school-preview__option--correct')).toHaveText('✓ Вводить дані')
+  await expect(page.locator('.school-preview__answer')).toHaveCount(0)
   const previewResults = await new AxeBuilder({ page })
     .include('#school-preview')
     .withTags(WCAG_AA_TAGS)

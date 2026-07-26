@@ -524,6 +524,24 @@ body.teacher-dashboard-active {
   background: var(--clr-surface-muted);
 }
 .school-preview__q { font-weight: 700; }
+.school-preview__img { max-width: 8rem; border-radius: var(--r-sm); }
+.school-preview__code {
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-sm);
+  background: var(--clr-surface);
+  font-family: 'Courier New', monospace;
+  font-size: var(--font-size-sm);
+  overflow-x: auto;
+}
+.school-preview__given { color: var(--clr-text-muted); font-size: var(--font-size-sm); }
+.school-preview__options { display: grid; gap: var(--sp-1); margin: 0; padding: 0; list-style: none; }
+.school-preview__option {
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-sm);
+  background: var(--clr-surface);
+  font-size: var(--font-size-sm);
+}
+.school-preview__option--correct { background: var(--clr-emerald-light); font-weight: 700; }
 .school-preview__answer {
   padding-left: var(--sp-3);
   border-left: 3px solid var(--clr-emerald);
