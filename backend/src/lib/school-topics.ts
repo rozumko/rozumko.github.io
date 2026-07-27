@@ -39,13 +39,19 @@ export const SCHOOL_TOPIC_SELECTIONS: Record<SchoolTopicId, SchoolTopicSelection
     track: 'informatics',
     topic: 'computer-systems',
   },
+  // Both map onto informatics/digital-tools, so — like algorithms vs Scratch —
+  // the concept key is what keeps the two teacher topics from returning the same
+  // pool. Kept disjoint on purpose: ordering/finding a file is classification and
+  // step-by-step work, authoring content is building a whole out of parts.
   'files-environment': {
     track: 'informatics',
     topic: 'digital-tools',
+    preferredConceptKeys: ['classification', 'algorithms'],
   },
   'digital-creation': {
     track: 'informatics',
     topic: 'digital-tools',
+    preferredConceptKeys: ['decomposition', 'patterns'],
   },
   'data-tables-charts': {
     track: 'informatics',
