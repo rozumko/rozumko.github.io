@@ -166,8 +166,15 @@ async function request(path: string, options: RequestInit = {}): Promise<any> {
   const { headers: extraHeaders, ...rest } = options as any
   let res: Response
   try {
+    // Content-Type only when something is actually sent. Fastify rejects an empty
+    // body that claims to be JSON (FST_ERR_CTP_EMPTY_JSON_BODY), and the server
+    // masks that as a bare "Невірний запит" — which is what every bodiless DELETE
+    // used to hit. It also spares those requests a CORS preflight.
     res = await fetch(`${API_URL}${path}`, {
-      headers: { 'Content-Type': 'application/json', ...extraHeaders },
+      headers: {
+        ...(rest.body != null ? { 'Content-Type': 'application/json' } : {}),
+        ...extraHeaders,
+      },
       ...rest,
     })
   } catch {
