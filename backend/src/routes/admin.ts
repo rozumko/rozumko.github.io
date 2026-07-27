@@ -1117,6 +1117,140 @@ export async function adminRoutes(app: FastifyInstance) {
     return reply.send({ updated: updated.length, unchanged, skipped })
   })
 
+  // POST /api/admin/questions/status — the same editorial transition as the
+  // single-question route, applied across a selection. Every guard from that
+  // route is repeated per row and a blocked row is skipped with its reason
+  // rather than failing the batch: reviewing a bank of drafts one modal at a
+  // time is the slow path this exists to remove.
+  app.post<{ Body: { ids: string[]; status: string } }>('/questions/status', {
+    preHandler: requireAdmin,
+    schema: {
+      body: {
+        type: 'object',
+        required: ['ids', 'status'],
+        additionalProperties: false,
+        properties: {
+          ids:    { type: 'array', minItems: 1, maxItems: 200, uniqueItems: true, items: { type: 'string', format: 'uuid' } },
+          status: { type: 'string', enum: [...QUESTION_EDITORIAL_STATUSES] },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    const { ids } = req.body
+    let status
+    try { status = normalizeQuestionEditorialStatus(req.body.status) } catch (err) {
+      return reply.code(400).send({ error: (err as Error).message })
+    }
+
+    const rows = await db.select().from(questions).where(inArray(questions.id, ids))
+    const skipped: { id: string; reason: string }[] = []
+    const planned: typeof rows = []
+    let unchanged = 0
+
+    for (const id of ids) {
+      if (!rows.some(row => row.id === id)) skipped.push({ id, reason: 'питання не знайдено' })
+    }
+    for (const row of rows) {
+      if (row.editorialStatus === status) { unchanged++; continue }
+      if (row.publishedAt && !['published', 'archived'].includes(status)) {
+        skipped.push({ id: row.id, reason: 'опубліковану редакцію можна лише архівувати або опублікувати знову' })
+        continue
+      }
+      if (status === 'review' || status === 'published') {
+        const issues = questionReadinessIssues(row)
+        if (issues.length) { skipped.push({ id: row.id, reason: `не готове: ${issues.join('; ')}` }); continue }
+      }
+      if (row.editorialStatus === 'published' && status !== 'published'
+        && (await questionIsLocked(row.id) || await questionHasEventReference(row.id))) {
+        skipped.push({ id: row.id, reason: 'опубліковане питання вже використовується' })
+        continue
+      }
+      planned.push(row)
+    }
+
+    const now = new Date()
+    const updated: string[] = []
+    await db.transaction(async tx => {
+      for (const row of planned) {
+        const values: Record<string, unknown> = {
+          editorialStatus: status,
+          editVersion: row.editVersion + 1,
+          updatedAt: now,
+          updatedBy: req.user!.id,
+        }
+        if (status === 'published') {
+          values.reviewedAt = now
+          values.reviewedBy = req.user!.id
+          values.publishedAt = now
+          values.publishedBy = req.user!.id
+        }
+        const [saved] = await tx.update(questions).set(values)
+          .where(and(eq(questions.id, row.id), eq(questions.editVersion, row.editVersion)))
+          .returning()
+        if (!saved) { skipped.push({ id: row.id, reason: 'питання щойно змінив інший редактор' }); continue }
+        await tx.insert(questionRevisions).values({
+          questionId: saved.id, editVersion: saved.editVersion, action: 'status',
+          snapshot: questionSnapshot(saved), changedBy: req.user!.id,
+        })
+        updated.push(saved.id)
+      }
+    })
+
+    return reply.send({ updated: updated.length, unchanged, skipped })
+  })
+
+  // POST /api/admin/questions/delete — bulk delete, drafts only, mirroring the
+  // single-question rules. Deliberately a POST: the body carries the selection,
+  // and a bodiless DELETE cannot.
+  app.post<{ Body: { ids: string[] } }>('/questions/delete', {
+    preHandler: requireAdmin,
+    schema: {
+      body: {
+        type: 'object',
+        required: ['ids'],
+        additionalProperties: false,
+        properties: {
+          ids: { type: 'array', minItems: 1, maxItems: 200, uniqueItems: true, items: { type: 'string', format: 'uuid' } },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    const { ids } = req.body
+    const rows = await db.select({
+      id: questions.id, status: questions.editorialStatus,
+    }).from(questions).where(inArray(questions.id, ids))
+
+    const skipped: { id: string; reason: string }[] = []
+    let deleted = 0
+
+    for (const id of ids) {
+      if (!rows.some(row => row.id === id)) skipped.push({ id, reason: 'питання не знайдено' })
+    }
+    for (const row of rows) {
+      if (row.status !== 'draft') {
+        skipped.push({ id: row.id, reason: 'видаляти можна лише чернетки — решту архівуй' })
+        continue
+      }
+      if (await questionIsLocked(row.id)) {
+        skipped.push({ id: row.id, reason: 'питання вже було видане учню' })
+        continue
+      }
+      try {
+        const [gone] = await db.delete(questions).where(eq(questions.id, row.id)).returning({ id: questions.id })
+        if (gone) deleted++
+      } catch (e) {
+        // 23503: still referenced by history (e.g. a finished class game).
+        if (typeof e === 'object' && e !== null && (e as { code?: string }).code === '23503') {
+          skipped.push({ id: row.id, reason: 'питання використовується в історії ігор' })
+          continue
+        }
+        throw e
+      }
+    }
+
+    return reply.send({ deleted, skipped })
+  })
+
   // PUT /api/admin/questions/:id/status — explicit editorial transition.
   app.put<{ Params: { id: string }; Body: { status: string; expectedEditVersion: number } }>(
     '/questions/:id/status',

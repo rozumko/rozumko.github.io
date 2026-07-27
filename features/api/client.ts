@@ -1704,6 +1704,35 @@ export function getAdminQuestionMatrix(params: Omit<AdminQuestionFilters, 'grade
   return authRequest(`/api/admin/questions/matrix?${p}`)
 }
 
+export interface BulkQuestionResult {
+  updated: number
+  unchanged: number
+  skipped: { id: string; reason: string }[]
+}
+
+/** One editorial transition across a selection. Blocked rows come back in
+ *  `skipped` with a reason instead of failing the whole batch. */
+export function setQuestionEditorialStatusBulk(
+  ids: string[],
+  status: NonNullable<Question['editorialStatus']>,
+): Promise<BulkQuestionResult> {
+  return authRequest('/api/admin/questions/status', {
+    method: 'POST',
+    body: JSON.stringify({ ids, status }),
+  })
+}
+
+/** Bulk delete, drafts only — same rules as the single-question route. */
+export function deleteQuestionsBulk(ids: string[]): Promise<{
+  deleted: number
+  skipped: { id: string; reason: string }[]
+}> {
+  return authRequest('/api/admin/questions/delete', {
+    method: 'POST',
+    body: JSON.stringify({ ids }),
+  })
+}
+
 // Delivery-only bulk edit: adds or removes one channel across a selection.
 export function updateQuestionChannels(ids: string[], channel: QuestionChannel, action: 'add' | 'remove'): Promise<{
   updated: number

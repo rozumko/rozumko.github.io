@@ -1,7 +1,8 @@
 import {
   getAdminQuestions, getAdminQuestionCounts, getAdminQuestionMatrix, updateQuestionChannels,
   createQuestion, updateQuestion, deleteQuestion,
-  setQuestionEditorialStatus, getQuestionRevisions, restoreQuestionRevision,
+  setQuestionEditorialStatus, setQuestionEditorialStatusBulk, deleteQuestionsBulk,
+  getQuestionRevisions, restoreQuestionRevision,
   type AdminQuestionFilters, type AdminQuestionMatrixCell,
   type Question, type QuestionChannel, type QuestionType,
 } from '../../features/api/client.js'
@@ -18,6 +19,7 @@ const questionModal = $<HTMLElement>('question-modal')
 const questionForm  = $<HTMLFormElement>('question-form')
 const qfError       = $('qf-error')
 const qfSubmitBtn   = $<HTMLButtonElement>('qf-submit')
+const qfPublishBtn  = $<HTMLButtonElement>('qf-submit-publish')
 const previewModal  = $<HTMLElement>('preview-modal')
 
 let _qModalTrapRemove: (() => void) | null = null
@@ -184,6 +186,24 @@ function renderBulkBar(): void {
   if (!bar || !label) return
   bar.classList.toggle('hidden', selectedIds.size === 0)
   label.textContent = `Вибрано ${selectedIds.size}`
+
+  const all = $maybe<HTMLInputElement>('q-select-all')
+  if (all) {
+    const total = currentQuestions.length
+    all.checked = total > 0 && selectedIds.size === total
+    all.indeterminate = selectedIds.size > 0 && selectedIds.size < total
+  }
+}
+
+/** Selects or clears every question currently listed — the filters decide the
+ *  scope, so this never reaches rows the editor cannot see. */
+function toggleSelectAll(checked: boolean): void {
+  selectedIds.clear()
+  for (const box of document.querySelectorAll<HTMLInputElement>('.qi-select')) {
+    box.checked = checked
+    if (checked) selectedIds.add(box.value)
+  }
+  renderBulkBar()
 }
 
 function toggleSelection(id: string, selected: boolean): void {
@@ -198,27 +218,64 @@ function clearSelection(): void {
   renderBulkBar()
 }
 
-async function applyBulkChannel(action: 'add' | 'remove'): Promise<void> {
+function applyBulkChannel(action: 'add' | 'remove'): Promise<void> {
+  const select = $<HTMLSelectElement>('q-bulk-channel')
+  const channel = select.value as QuestionChannel
+  const channelLabel = select.selectedOptions[0]?.textContent?.trim() ?? channel
+  const verb = action === 'add' ? 'Додати до розділу' : 'Прибрати з розділу'
+  return runBulk(`${verb} «${channelLabel}» для {n} питань?`, async ids => {
+    const result = await updateQuestionChannels(ids, channel, action)
+    const lines = [describeBulkResult('Змінено', result.updated, result.skipped)]
+    if (result.unchanged) lines.splice(1, 0, `Без змін: ${result.unchanged}`)
+    return lines.join('\n')
+  })
+}
+
+/** Renders the outcome of a bulk call: what changed, and why the rest did not.
+ *  Reasons are grouped — 40 rows blocked for one reason is one line, not forty. */
+function describeBulkResult(done: string, count: number, skipped: { reason: string }[]): string {
+  const lines = [`${done}: ${count}`]
+  for (const reason of new Set(skipped.map(item => item.reason))) {
+    lines.push(`${skipped.filter(item => item.reason === reason).length} — ${reason}`)
+  }
+  return lines.join('\n')
+}
+
+async function runBulk(
+  confirmText: string,
+  run: (ids: string[]) => Promise<string>,
+): Promise<void> {
   const ids = [...selectedIds]
   if (!ids.length) return
-  const channel = $<HTMLSelectElement>('q-bulk-channel').value as QuestionChannel
-  const channelLabel = $<HTMLSelectElement>('q-bulk-channel').selectedOptions[0]?.textContent?.trim() ?? channel
-  const verb = action === 'add' ? 'Додати до розділу' : 'Прибрати з розділу'
-  showConfirm(`${verb} «${channelLabel}» для ${ids.length} питань?`, async () => {
+  showConfirm(confirmText.replace('{n}', String(ids.length)), async () => {
     try {
-      const result = await updateQuestionChannels(ids, channel, action)
+      const summary = await run(ids)
       clearSelection()
       await loadQuestionsTab()
       void refreshContentDeliveryBanner()
-      const lines = [`Змінено: ${result.updated}`]
-      if (result.unchanged) lines.push(`Без змін: ${result.unchanged}`)
-      for (const reason of new Set(result.skipped.map(item => item.reason))) {
-        lines.push(`${result.skipped.filter(item => item.reason === reason).length} — ${reason}`)
-      }
-      showModal(lines.join('\n'))
+      showModal(summary)
     } catch (err) {
       showModal((err as Error).message)
     }
+  })
+}
+
+function applyBulkStatus(status: 'published' | 'archived'): Promise<void> {
+  const [confirmText, done] = status === 'published'
+    ? ['Опублікувати {n} питань?', 'Опубліковано']
+    : ['Зняти з публікації {n} питань?', 'Знято з публікації']
+  return runBulk(confirmText, async ids => {
+    const result = await setQuestionEditorialStatusBulk(ids, status)
+    const lines = [describeBulkResult(done, result.updated, result.skipped)]
+    if (result.unchanged) lines.splice(1, 0, `Уже в цьому стані: ${result.unchanged}`)
+    return lines.join('\n')
+  })
+}
+
+function applyBulkDelete(): Promise<void> {
+  return runBulk('Видалити {n} вибраних питань?\n\nВидаляються лише чернетки. Цю дію неможливо скасувати.', async ids => {
+    const result = await deleteQuestionsBulk(ids)
+    return describeBulkResult('Видалено', result.deleted, result.skipped)
   })
 }
 
@@ -256,7 +313,13 @@ export function initQuestionsTab() {
   $maybe<HTMLDetailsElement>('q-matrix-panel')?.addEventListener('toggle', () => { void loadQuestionsTab() })
   $<HTMLButtonElement>('q-bulk-add').addEventListener('click', () => { void applyBulkChannel('add') })
   $<HTMLButtonElement>('q-bulk-remove').addEventListener('click', () => { void applyBulkChannel('remove') })
+  $<HTMLButtonElement>('q-bulk-publish').addEventListener('click', () => { void applyBulkStatus('published') })
+  $<HTMLButtonElement>('q-bulk-archive').addEventListener('click', () => { void applyBulkStatus('archived') })
+  $<HTMLButtonElement>('q-bulk-delete').addEventListener('click', () => { void applyBulkDelete() })
   $<HTMLButtonElement>('q-bulk-clear').addEventListener('click', clearSelection)
+  $<HTMLInputElement>('q-select-all').addEventListener('change', event => {
+    toggleSelectAll((event.target as HTMLInputElement).checked)
+  })
   $<HTMLButtonElement>('q-filter-apply').addEventListener('click', () => loadQuestionsTab())
   $<HTMLInputElement>('q-filter-search').addEventListener('keydown', event => {
     if (event.key === 'Enter') void loadQuestionsTab()
@@ -282,6 +345,7 @@ export function initQuestionsTab() {
     else if (prev)   { prev.classList.add('hidden'); prev.src = '' }
   })
   questionForm.addEventListener('submit', handleSubmit)
+  qfPublishBtn.addEventListener('click', event => { void handleSubmit(event, true) })
   $<HTMLButtonElement>('qf-preview').addEventListener('click', handlePreviewClick)
 }
 
@@ -532,7 +596,7 @@ export function closeQuestionModal() {
 
 // ─── Submit ───────────────────────────────────────────────────────────────────
 
-async function handleSubmit(e: Event) {
+async function handleSubmit(e: Event, publish = false) {
   e.preventDefault()
   qfError.textContent = ''
 
@@ -565,23 +629,39 @@ async function handleSubmit(e: Event) {
     imageAlt:    $<HTMLInputElement>('qf-image-alt').value.trim() || null,
   }
 
-  qfSubmitBtn.disabled    = true
-  qfSubmitBtn.textContent = 'Збереження…'
+  const buttons = [qfSubmitBtn, qfPublishBtn]
+  for (const button of buttons) button.disabled = true
+  const activeBtn = publish ? qfPublishBtn : qfSubmitBtn
+  activeBtn.textContent = publish ? 'Публікація…' : 'Збереження…'
   try {
+    // Publishing needs the editVersion the save produced — the status route uses
+    // it as an optimistic lock, so reusing the pre-save one would always 409.
+    let savedId = id
+    let editVersion: number
     if (id) {
       const current = currentQuestions.find(question => question.id === id)
       if (!current) throw new Error('Питання змінилося або список застарів. Онови вкладку.')
-      await updateQuestion(id, { ...data, expectedEditVersion: current.editVersion ?? 1 })
+      const saved = await updateQuestion(id, { ...data, expectedEditVersion: current.editVersion ?? 1 })
+      editVersion = saved.editVersion
+    } else {
+      const created = await createQuestion(data)
+      savedId = created.id
+      editVersion = 1
     }
-    else    await createQuestion(data)
+    if (publish) await setQuestionEditorialStatus(savedId, 'published', editVersion)
     closeQuestionModal()
     await loadQuestionsTab()
     void refreshContentDeliveryBanner()
   } catch (err) {
-    qfError.textContent = (err as Error).message
+    // A failed publish still kept the save, so say so rather than let the editor
+    // think the edit was lost and redo it.
+    const message = (err as Error).message
+    qfError.textContent = publish ? `Збережено, але не опубліковано: ${message}` : message
+    if (publish) { await loadQuestionsTab(); void refreshContentDeliveryBanner() }
   } finally {
-    qfSubmitBtn.disabled    = false
-    qfSubmitBtn.textContent = 'Зберегти'
+    for (const button of buttons) button.disabled = false
+    qfSubmitBtn.textContent  = 'Зберегти'
+    qfPublishBtn.textContent = 'Зберегти й опублікувати'
   }
 }
 
