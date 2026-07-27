@@ -450,6 +450,22 @@
   background: var(--adm-surface);
 }
 .admin-bulk__count { color: var(--adm-text); font-size: var(--font-size-sm); font-weight: 700; }
+/* Keeps the destructive group visually apart from the channel controls. */
+.admin-bulk__sep {
+  flex: 0 0 auto;
+  align-self: stretch;
+  width: 1px;
+  background: var(--adm-border);
+}
+.admin-bulk__all {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+  margin-bottom: var(--sp-3);
+  color: var(--adm-text-muted);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
 .admin-bulk__field {
   display: flex;
   gap: var(--sp-2);

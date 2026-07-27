@@ -465,7 +465,12 @@
           <span id="q-count" class="admin-filter-count"></span>
         </div>
 
-        <!-- Масова зміна розділів для вибраних питань -->
+        <label id="q-select-all-row" class="admin-bulk__all">
+          <input type="checkbox" id="q-select-all"/>
+          Вибрати всі знайдені
+        </label>
+
+        <!-- Масові дії над вибраними питаннями -->
         <div id="q-bulk" class="admin-bulk hidden" role="group" aria-label="Дії з вибраними питаннями">
           <p id="q-bulk-count" class="admin-bulk__count" aria-live="polite"></p>
           <label class="admin-bulk__field" for="q-bulk-channel">Розділ
@@ -477,6 +482,10 @@
           </label>
           <button id="q-bulk-add" class="btn-adm-sky btn--sm" type="button">Додати</button>
           <button id="q-bulk-remove" class="btn-adm-ghost btn--sm" type="button">Прибрати</button>
+          <span class="admin-bulk__sep" aria-hidden="true"></span>
+          <button id="q-bulk-publish" class="btn-adm-emerald btn--sm" type="button">Опублікувати</button>
+          <button id="q-bulk-archive" class="btn-adm-ghost btn--sm" type="button">Зняти з публікації</button>
+          <button id="q-bulk-delete" class="btn-adm-danger btn--sm" type="button">Видалити чернетки</button>
           <button id="q-bulk-clear" class="btn-adm-ghost btn--sm" type="button">Зняти вибір</button>
         </div>
 
@@ -922,6 +931,7 @@
         <p id="qf-error" class="adm-form-error" role="alert"></p>
         <div class="adm-form-actions">
           <button type="submit" id="qf-submit" class="btn-adm-emerald">Зберегти</button>
+          <button type="button" id="qf-submit-publish" class="btn-adm-sky">Зберегти й опублікувати</button>
           <button type="button" id="qf-preview" class="btn-adm-violet">
             <i class="fas fa-eye" aria-hidden="true"></i> Переглянути
           </button>

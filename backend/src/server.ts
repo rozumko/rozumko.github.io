@@ -35,14 +35,17 @@ if (dbTlsNotice) app.log.warn(dbTlsNotice)
 else app.log.info('db-tls: verified against the pinned Supabase CA')
 
 // Production error handler — не витікаємо stack traces
-app.setErrorHandler((err: Error & { statusCode?: number; code?: string }, _req, reply) => {
+app.setErrorHandler((err: Error & { statusCode?: number; code?: string }, req, reply) => {
   const statusCode = err.statusCode ?? 500
   if (statusCode >= 500) {
     app.log.error(err)
     return reply.code(500).send({ error: 'Внутрішня помилка сервера' })
   }
-  // Fastify schema validation errors — не розкриваємо FST_ERR_VALIDATION, code тощо
+  // Fastify schema validation errors — не розкриваємо FST_ERR_VALIDATION, code тощо.
+  // Клієнту лишається загальне повідомлення, але в лог пишемо код, метод і маршрут:
+  // без цього такий 400 не лишає сліду ніде й діагностується лише навмання.
   if (statusCode === 400 && err.code?.startsWith('FST_ERR')) {
+    app.log.warn({ code: err.code, method: req.method, url: req.url, reason: err.message }, 'request rejected')
     return reply.code(400).send({ error: 'Невірний запит' })
   }
   // 404 — не розкриваємо структуру роутів
