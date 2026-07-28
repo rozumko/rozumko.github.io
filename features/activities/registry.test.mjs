@@ -33,6 +33,7 @@ test('activities carry the labels the teacher and child screens need', () => {
   for (const activity of ACTIVITIES) {
     assert.ok(activity.label.length > 0)
     assert.ok(activity.description.length > 0)
+    assert.ok(activity.hint.length > 0)
     assert.ok(activity.minWidth > 0)
     for (const level of activity.levels) {
       assert.ok(level.label.length > 0, `level ${level.id} of ${activity.key} has no label`)

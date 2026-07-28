@@ -251,6 +251,40 @@ function destroyActivity() {
   activeActivity = null
 }
 
+function clampStars(stars: number): number {
+  return Math.max(0, Math.min(3, Math.floor(stars)))
+}
+
+function fallbackActivityStars(activityKey: string | null, result: ActivityRunResult): number {
+  if (result.total <= 0) return 0
+  const percent = (result.correct / result.total) * 100
+  if (activityKey === 'key-puzzle') {
+    if (result.correct < result.total) return clampStars(percent >= 75 ? 2 : percent >= 40 ? 1 : 0)
+    return clampStars(result.mistakes === 0 ? 3 : result.mistakes < 5 ? 2 : 1)
+  }
+  if (activityKey === 'maze') {
+    if (result.correct < result.total) return clampStars(percent >= 75 ? 2 : percent >= 40 ? 1 : 0)
+    return clampStars(result.mistakes <= result.total ? 3 : result.mistakes <= result.total * 3 ? 2 : 1)
+  }
+  if (activityKey === 'magic-squares') {
+    return clampStars(result.correct >= result.total ? 3 : result.correct >= 2 ? 2 : result.correct >= 1 ? 1 : 0)
+  }
+  if (activityKey === 'symbol-logic') {
+    return clampStars(percent >= 90 ? 3 : percent >= 60 ? 2 : percent >= 40 ? 1 : 0)
+  }
+  // Retry-until-correct activities always finish at 100%, so only the mistake
+  // count separates runs. Must mirror `retryRubric` in
+  // backend/src/lib/school-activities.ts, or the child sees stars the teacher
+  // does not.
+  if (activityKey === 'message-coding' || activityKey === 'sorting-station') {
+    if (result.correct < result.total) return clampStars(percent >= 75 ? 2 : percent >= 40 ? 1 : 0)
+    if (result.mistakes === 0) return 3
+    if (result.mistakes <= Math.ceil(result.total / 4)) return 2
+    return result.mistakes <= result.total ? 1 : 0
+  }
+  return clampStars(percent >= 90 ? 3 : percent >= 70 ? 2 : percent >= 40 ? 1 : 0)
+}
+
 function showActivityDeviceNotice(activityLabel: string) {
   clearWaitingPoll()
   destroyActivity()
@@ -271,6 +305,7 @@ function showActivityDeviceNotice(activityLabel: string) {
 async function startSchoolActivity(
   participantId: string,
   participantToken: string,
+  grade: number,
   activityKey: string | null,
   activityLevel: string | null,
 ) {
@@ -306,8 +341,9 @@ async function startSchoolActivity(
 
   const progressEl = $maybe('activity-progress-text')
   const stage = $('activity-stage')
-  // The stage keeps its static hint pill; the game fills the rest.
   const hint = stage.querySelector('.activity-stage__hint')
+  if (hint) hint.textContent = activity.hint
+  // The stage keeps its hint pill; the game fills the rest.
   stage.innerHTML = ''
   if (hint) stage.appendChild(hint)
   const gameRoot = document.createElement('div')
@@ -318,10 +354,11 @@ async function startSchoolActivity(
     const module = await activity.load()
     activeActivity = module.mount(gameRoot, {
       level: activityLevel,
+      grade,
       onProgress: (done, total) => {
         if (progressEl) progressEl.textContent = `${done} / ${total}`
       },
-      onFinish: result => { void finishSchoolActivity(participantId, participantToken, result) },
+      onFinish: result => { void finishSchoolActivity(participantId, participantToken, activityKey, result) },
     })
   } catch {
     showIntro()
@@ -332,6 +369,7 @@ async function startSchoolActivity(
 async function finishSchoolActivity(
   participantId: string,
   participantToken: string,
+  activityKey: string | null,
   result: ActivityRunResult,
 ) {
   destroyActivity()
@@ -343,7 +381,7 @@ async function finishSchoolActivity(
     // the teacher's copy is missing. Stars come from the same rubric locally.
     const status = (err as { status?: number }).status
     showActivityResult(
-      result.correct >= result.total ? (result.mistakes === 0 ? 3 : result.mistakes < 5 ? 2 : 1) : 1,
+      fallbackActivityStars(activityKey, result),
       result.correct, result.total, result.durationSec,
       status === 409 ? '' : 'Результат не дійшов до вчителя — покажи йому цей екран.',
     )
@@ -402,7 +440,7 @@ function startWaitingPoll(participantId: string, participantToken: string) {
       const session = await getSchoolParticipantSession(participantId, participantToken)
       if (session.status === 'active' && session.kind === 'activity') {
         if (session.activityDone) { clearWaitingPoll(); showActivityDone(); return }
-        void startSchoolActivity(participantId, participantToken, session.activityKey, session.activityLevel)
+        void startSchoolActivity(participantId, participantToken, session.grade, session.activityKey, session.activityLevel)
       } else if (session.status === 'active' && session.questions.length > 0) {
         startSchoolMission(participantId, participantToken, session.questions, {
           answeredQuestionIds: session.answeredQuestionIds ?? [],
@@ -469,7 +507,7 @@ joinBtn?.addEventListener('click', async () => {
   if (!nickname)              { errorEl.textContent = 'Введи прізвисько'; return }
 
   currentNickname = nickname
-  const avatarForJoin = randomAvatar()
+  const avatarForJoin = selectedAvatar
   if (joinBtn) joinBtn.disabled = true
   showWaitingRoom(avatarForJoin, nickname, 'Приєднуємось до гри...')
 
@@ -484,7 +522,7 @@ joinBtn?.addEventListener('click', async () => {
       nickname,
     })
     if (joined.status === 'active' && joined.kind === 'activity') {
-      void startSchoolActivity(joined.participantId, joined.participantToken, joined.activityKey, joined.activityLevel)
+      void startSchoolActivity(joined.participantId, joined.participantToken, joined.grade, joined.activityKey, joined.activityLevel)
     } else if (joined.status === 'active' && joined.questions.length > 0) {
       startSchoolMission(joined.participantId, joined.participantToken, joined.questions)
     } else {
@@ -546,7 +584,7 @@ async function resumeStoredParticipant() {
     if (session.status === 'active' && session.kind === 'activity') {
       // A reload must not restart a run whose result the server already has.
       if (session.activityDone) showActivityDone()
-      else void startSchoolActivity(stored.participantId, stored.participantToken, session.activityKey, session.activityLevel)
+      else void startSchoolActivity(stored.participantId, stored.participantToken, session.grade, session.activityKey, session.activityLevel)
     } else if (session.status === 'active' && session.questions.length > 0) {
       startSchoolMission(stored.participantId, stored.participantToken, session.questions, {
         answeredQuestionIds: session.answeredQuestionIds ?? [],

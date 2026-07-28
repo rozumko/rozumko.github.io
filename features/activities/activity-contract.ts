@@ -20,6 +20,8 @@ export interface ActivityRunResult {
 export interface ActivityMountOptions {
   /** Level id from the registry; the teacher chose it when starting the game. */
   level: string
+  /** Grade chosen by the teacher for this classroom run. */
+  grade: number
   /** Called once the child finishes on their own. */
   onFinish: (result: ActivityRunResult) => void
   /** Progress text for the surrounding shell, e.g. "7 / 18". */

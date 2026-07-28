@@ -369,6 +369,18 @@ test('content publication queue is constrained, RLS-protected and journaled', ()
   assert.doesNotMatch(workflow, /CONTENT_PUBLISH_GITHUB_TOKEN/)
 })
 
+test('school activity results are client-unverified, constrained, RLS-protected and journaled', () => {
+  const migration = readFileSync(new URL('../drizzle/0047_add_school_activities.sql', import.meta.url), 'utf8')
+  const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')
+
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS public\.school_activity_results/)
+  assert.match(migration, /school_sessions_activity_pairing_check/)
+  assert.match(migration, /CHECK \(trust = 'client-unverified'\)/)
+  assert.match(migration, /school_activity_results_range_check/)
+  assert.match(migration, /ALTER TABLE public\.school_activity_results ENABLE ROW LEVEL SECURITY;/)
+  assert.match(journal, /"tag": "0047_add_school_activities"/)
+})
+
 test('supply-chain guardrails are configured for npm dependencies', () => {
   const dependabot = readFileSync(new URL('../../.github/dependabot.yml', import.meta.url), 'utf8')
   const workflow = readFileSync(new URL('../../.github/workflows/supply-chain.yml', import.meta.url), 'utf8')
