@@ -1,0 +1,262 @@
+/* ── Class activities ────────────────────────────────────────────────────────
+   Styles for procedural games delivered through School Mode. Everything is
+   scoped to the activity container: no fixed layers, no page-level overrides,
+   so the app shell (header, no-scroll contract) stays intact.
+   Ported from the standalone games at itnauka.org onto the project tokens. */
+
+/* The app shell caps content at ~832px, but a full keyboard needs more than
+   that plus room around it for the loose keys. The stage breaks out to the
+   full viewport width without touching the shell's own layout. */
+.activity-stage {
+  position: relative;
+  width: 100vw;
+  max-width: 100vw;
+  margin-left: calc(50% - 50vw);
+  /* Fills the space under the shell header without ever scrolling the page. */
+  height: clamp(420px, calc(100vh - 190px), 900px);
+  overflow: hidden;
+  background: var(--surface-2, #eff6ff);
+  border-top: 1px solid var(--border, #dbeafe);
+  border-bottom: 1px solid var(--border, #dbeafe);
+  touch-action: none;
+  user-select: none;
+}
+
+.activity-stage__game {
+  position: absolute;
+  inset: 0;
+}
+
+.activity-stage__hint {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #dbeafe);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted, #64748b);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Desktop-only notice for activities that need a real keyboard-sized screen. */
+.activity-desktop-only {
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.activity-desktop-only__icon {
+  font-size: 2.5rem;
+  line-height: 1;
+  margin-bottom: 0.75rem;
+}
+
+/* ── Клавіатурний пазл ───────────────────────────────────────────────────── */
+
+.kp-root {
+  --kp-key-bg: #ffffff;
+  --kp-accent: #0891b2;
+  --kp-accent-shadow: #0284c7;
+  --kp-board-bg: #cffafe;
+  --kp-board-border: #67e8f9;
+  --kp-legend: #94a3b8;
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(var(--kp-board-border) 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+}
+
+.kp-board {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  /* --kp-scale is set by the game so the board always fits, leaving room for
+     the loose keys on every side. */
+  transform: translate(-50%, -50%) scale(var(--kp-scale, 1));
+  z-index: 2;
+  padding: 12px 20px;
+  border-radius: 1.75rem;
+  background: var(--kp-board-bg);
+  border: 3px solid var(--kp-board-border);
+  box-shadow: 0 8px 30px rgb(15 23 42 / 0.12);
+}
+
+.kp-board__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 14px;
+  background: rgb(255 255 255 / 0.35);
+}
+
+.kp-row {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+}
+
+.kp-key {
+  position: relative;
+  flex-shrink: 0;
+  height: 52px;
+  border-radius: 8px;
+  background: var(--kp-key-bg);
+  border: 2px solid var(--kp-board-border);
+  box-shadow: 0 4px 0 var(--kp-accent-shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kp-key--func {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--kp-legend);
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 0 #94a3b8;
+}
+
+.kp-key__top {
+  position: absolute;
+  top: 3px;
+  left: 5px;
+  font-size: 0.62rem;
+  line-height: 1;
+  color: var(--kp-legend);
+}
+
+.kp-key__bottom {
+  position: absolute;
+  bottom: 3px;
+  right: 5px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--kp-accent);
+}
+
+/* Empty slot waiting for its key */
+.kp-slot {
+  background: transparent;
+  border: 2.5px dashed rgb(15 23 42 / 0.18);
+  box-shadow: none;
+}
+
+/* Level: the only thing difficulty changes is how much the slot gives away. */
+.kp-level-easy .kp-slot::before,
+.kp-level-medium .kp-slot::before {
+  content: attr(data-hint-bottom);
+  position: absolute;
+  bottom: 3px;
+  right: 5px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.kp-level-easy .kp-slot::after,
+.kp-level-medium .kp-slot::after {
+  content: attr(data-hint-top);
+  position: absolute;
+  top: 3px;
+  left: 5px;
+  font-size: 0.62rem;
+  line-height: 1;
+}
+
+.kp-level-easy .kp-slot::before { color: rgb(15 23 42 / 0.14); }
+.kp-level-easy .kp-slot::after  { color: rgb(15 23 42 / 0.1); }
+
+/* Medium: the hint only appears while a key hovers the slot. */
+.kp-level-medium .kp-slot::before,
+.kp-level-medium .kp-slot::after { color: transparent; transition: color 0.2s; }
+.kp-level-medium .kp-slot--over::before { color: rgb(15 23 42 / 0.28); }
+.kp-level-medium .kp-slot--over::after  { color: rgb(15 23 42 / 0.16); }
+
+.kp-slot--over {
+  background: rgb(8 145 178 / 0.1);
+  border-style: solid;
+  border-color: var(--kp-accent);
+  box-shadow: 0 0 0 3px rgb(8 145 178 / 0.2);
+}
+
+.kp-key--just-placed { animation: kp-pop 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.kp-slot--wrong      { animation: kp-shake 0.4s ease; }
+
+@keyframes kp-pop {
+  0%   { transform: scale(1.28); background: #bbf7d0; border-color: #4ade80; }
+  60%  { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes kp-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); background: #fee2e2; border-color: #fca5a5; }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(3px); }
+}
+
+/* ── Loose keys ──────────────────────────────────────────────────────────── */
+
+.kp-pieces {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.kp-piece {
+  position: absolute;
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  background: var(--kp-key-bg);
+  border: 2.5px solid var(--kp-accent);
+  box-shadow: 0 5px 0 var(--kp-accent-shadow), 0 8px 18px rgb(15 23 42 / 0.14);
+  cursor: grab;
+  pointer-events: all;
+  touch-action: none;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+
+.kp-piece:hover { box-shadow: 0 8px 0 var(--kp-accent-shadow), 0 12px 24px rgb(15 23 42 / 0.2); }
+
+.kp-piece--dragging {
+  cursor: grabbing;
+  /* So elementFromPoint reports the slot beneath the key, not the key itself. */
+  pointer-events: none;
+  transform: scale(1.12) rotate(3deg) !important;
+  box-shadow: 0 14px 32px rgb(15 23 42 / 0.3) !important;
+  transition: none;
+  z-index: 10;
+}
+
+.kp-piece--returning {
+  transition: left 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+              top 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.kp-piece--landing {
+  transition: left 0.22s ease, top 0.22s ease, opacity 0.22s, transform 0.22s;
+  opacity: 0;
+  transform: scale(1.35) !important;
+  pointer-events: none;
+}
+
+.kp-piece .kp-key__bottom { font-size: 1.1rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .kp-key--just-placed,
+  .kp-slot--wrong { animation: none; }
+  .kp-piece,
+  .kp-piece--returning,
+  .kp-piece--landing { transition: none; }
+}

@@ -24,7 +24,13 @@ const AVATAR = SCHOOL_AVATARS[0]
 
 function createState() {
   return {
-    session: { id: ids.session, joinCode: '123456', status: 'active', grade: 2, difficulty: 'easy', questionsCount: 1, createdAt: new Date() },
+    session: {
+      id: ids.session, joinCode: '123456', status: 'active', grade: 2, difficulty: 'easy',
+      questionsCount: 1, createdAt: new Date(),
+      kind: 'questions' as 'questions' | 'activity',
+      activityKey: null as string | null,
+      activityLevel: null as string | null,
+    },
     sessionExists: true,
     question: {
       id: ids.question,
@@ -40,6 +46,7 @@ function createState() {
     participant: null as null | { id: string; sessionId: string; avatar: string; nickname: string; score: number },
     issuedContains: true, // Whether the question belongs to the issued session set
     answers: new Map<string, boolean>(),
+    activityResults: [] as Record<string, unknown>[],
   }
 }
 
@@ -68,6 +75,9 @@ function installFakeDb(state: ReturnType<typeof createState>) {
         const { q, type, options } = state.question
         return [{ position: 0, q, type, topic: null, options, answer: 1, isCorrect: false }]
       }
+      if (isTable(this.table, schema.schoolActivityResults)) {
+        return state.activityResults
+      }
       if (isTable(this.table, schema.schoolParticipants)) {
         if (this.joins.includes(schema.schoolSessions) && state.participant) {
           return [{
@@ -76,6 +86,9 @@ function installFakeDb(state: ReturnType<typeof createState>) {
             score: state.participant.score,
             status: state.session.status,
             grade: state.session.grade,
+            kind: state.session.kind,
+            activityKey: state.session.activityKey,
+            activityLevel: state.session.activityLevel,
           }]
         }
         return state.participant ? [state.participant] : []
@@ -128,6 +141,12 @@ function installFakeDb(state: ReturnType<typeof createState>) {
         state.answers.set(key, Boolean(this.inserted.isCorrect))
         return [{ id: 'answer-1' }]
       }
+      if (isTable(this.table, schema.schoolActivityResults)) {
+        // UNIQUE(participant) → one result per run
+        if (state.activityResults.length) return []
+        state.activityResults.push({ ...this.inserted })
+        return [{ id: 'activity-result-1' }]
+      }
       throw new Error('Unhandled fake insert')
     }
     then(res: (v: unknown) => unknown, rej: (e: unknown) => unknown) {
@@ -155,7 +174,9 @@ function installFakeDb(state: ReturnType<typeof createState>) {
     }
     then(res: (v: unknown) => unknown, rej: (e: unknown) => unknown) {
       if (isTable(this.table, schema.schoolParticipants) && state.participant && !this.patch?.avatar) {
-        state.participant.score += 1
+        // Activities set the score to an absolute value; answers increment it.
+        if (typeof this.patch?.score === 'number') state.participant.score = this.patch.score
+        else state.participant.score += 1
       }
       return Promise.resolve([]).then(res, rej)
     }
@@ -581,6 +602,199 @@ test('school: join rejects an avatar outside the allowlist (400)', async () => {
     await withApp(async (app) => {
       const res = await app.inject({ method: 'POST', url: '/api/school/join', payload: { code: '123456', avatar: '<script>', nickname: 'Х' } })
       assert.equal(res.statusCode, 400, res.body)
+    })
+  } finally { restore() }
+})
+
+// ── Activity sessions ────────────────────────────────────────────────────────
+// Procedural games have no answer key: the browser reports the outcome and the
+// server clamps it. These tests pin the trust boundary in both directions.
+
+function activityState() {
+  const state = createState()
+  state.session.kind = 'activity'
+  state.session.activityKey = 'key-puzzle'
+  state.session.activityLevel = 'medium'
+  state.session.questionsCount = 0
+  return state
+}
+
+async function joinActivity(app: ReturnType<typeof Fastify>) {
+  const join = await app.inject({
+    method: 'POST', url: '/api/school/join',
+    payload: { code: '123456', avatar: AVATAR, nickname: 'Тест' },
+  })
+  assert.equal(join.statusCode, 201, join.body)
+  return join.json()
+}
+
+test('school: activity session issues no questions and reports its activity', async () => {
+  const state = activityState()
+  const restore = installFakeDb(state)
+  try {
+    await withApp(async (app) => {
+      const body = await joinActivity(app)
+      assert.equal(body.kind, 'activity')
+      assert.equal(body.activityKey, 'key-puzzle')
+      assert.equal(body.activityLevel, 'medium')
+      assert.deepEqual(body.questions, [])
+      assert.equal(body.questionsCount, 0)
+    })
+  } finally { restore() }
+})
+
+test('school: activity result is stored once, with server-derived stars', async () => {
+  const state = activityState()
+  const restore = installFakeDb(state)
+  try {
+    await withApp(async (app) => {
+      const body = await joinActivity(app)
+      const headers = { 'X-Participant-Token': body.participantToken }
+      const url = `/api/school/participants/${ids.participant}/activity-result`
+
+      const first = await app.inject({ method: 'POST', url, headers, payload: { correct: 18, total: 18, mistakes: 0, durationSec: 95 } })
+      assert.equal(first.statusCode, 200, first.body)
+      assert.deepEqual(first.json(), { stars: 3, correct: 18, total: 18 })
+      // Level comes from the session row, never from the request body.
+      assert.equal(state.activityResults[0]?.activityKey, 'key-puzzle')
+      assert.equal(state.activityResults[0]?.activityLevel, 'medium')
+      assert.equal(state.activityResults[0]?.trust, 'client-unverified')
+      assert.equal(state.participant?.score, 18)
+
+      // UNIQUE(participant): a second report cannot overwrite the first.
+      const second = await app.inject({ method: 'POST', url, headers, payload: { correct: 18, total: 18, mistakes: 0, durationSec: 400 } })
+      assert.equal(second.statusCode, 409, second.body)
+      assert.equal(state.activityResults.length, 1)
+    })
+  } finally { restore() }
+})
+
+test('school: activity result rejects implausible and forged claims', async () => {
+  const state = activityState()
+  const restore = installFakeDb(state)
+  try {
+    await withApp(async (app) => {
+      const body = await joinActivity(app)
+      const headers = { 'X-Participant-Token': body.participantToken }
+      const url = `/api/school/participants/${ids.participant}/activity-result`
+
+      // Wrong participant token
+      const forged = await app.inject({
+        method: 'POST', url,
+        headers: { 'X-Participant-Token': 'not-a-token' },
+        payload: { correct: 18, total: 18, mistakes: 0, durationSec: 95 },
+      })
+      assert.equal(forged.statusCode, 403, forged.body)
+
+      // correct > total, a total above the registry ceiling, an instant "win",
+      // and a payload missing the mistake count entirely
+      for (const payload of [
+        { correct: 19, total: 18, mistakes: 0, durationSec: 95 },
+        { correct: 500, total: 500, mistakes: 0, durationSec: 95 },
+        { correct: 18, total: 18, mistakes: 0, durationSec: 1 },
+        { correct: 18, total: 18, durationSec: 95 },
+      ]) {
+        const res = await app.inject({ method: 'POST', url, headers, payload })
+        assert.equal(res.statusCode, 400, `${JSON.stringify(payload)} → ${res.body}`)
+      }
+      assert.equal(state.activityResults.length, 0)
+    })
+  } finally { restore() }
+})
+
+test('school: activity-result body cannot smuggle its own activity or level', async () => {
+  const state = activityState()
+  const restore = installFakeDb(state)
+  try {
+    await withApp(async (app) => {
+      const body = await joinActivity(app)
+      const res = await app.inject({
+        method: 'POST', url: `/api/school/participants/${ids.participant}/activity-result`,
+        headers: { 'X-Participant-Token': body.participantToken },
+        payload: { correct: 18, total: 18, mistakes: 0, durationSec: 95, activityKey: 'other', activityLevel: 'easy' },
+      })
+      // Extra body properties are stripped by the schema, and the stored row
+      // takes the activity + level from the session the teacher started.
+      assert.equal(res.statusCode, 200, res.body)
+      assert.equal(state.activityResults[0]?.activityKey, 'key-puzzle')
+      assert.equal(state.activityResults[0]?.activityLevel, 'medium')
+    })
+  } finally { restore() }
+})
+
+test('school: question and activity surfaces stay mutually closed', async () => {
+  const state = activityState()
+  const restore = installFakeDb(state)
+  try {
+    await withApp(async (app) => {
+      const body = await joinActivity(app)
+      const headers = { 'X-Participant-Token': body.participantToken }
+
+      // Question endpoints must not serve an activity session
+      const answer = await app.inject({
+        method: 'POST', url: `/api/school/participants/${ids.participant}/answer`,
+        headers, payload: { questionId: ids.question, answer: 0 },
+      })
+      assert.equal(answer.statusCode, 409, answer.body)
+
+      for (const url of [
+        `/api/school/sessions/${ids.session}/questions`,
+        `/api/school/sessions/${ids.session}/preview`,
+        `/api/school/sessions/${ids.session}/participants/${ids.participant}/answers`,
+      ]) {
+        const res = await app.inject({ method: 'GET', url })
+        assert.equal(res.statusCode, 409, `${url} → ${res.body}`)
+      }
+
+      const projector = await app.inject({
+        method: 'POST', url: `/api/school/sessions/${ids.session}/projector-answer`,
+        payload: { questionId: ids.question, answer: 0 },
+      })
+      assert.equal(projector.statusCode, 409, projector.body)
+    })
+  } finally { restore() }
+})
+
+test('school: activity-result is closed for a question session', async () => {
+  const state = createState()
+  const restore = installFakeDb(state)
+  try {
+    await withApp(async (app) => {
+      const body = await joinActivity(app)
+      const res = await app.inject({
+        method: 'POST', url: `/api/school/participants/${ids.participant}/activity-result`,
+        headers: { 'X-Participant-Token': body.participantToken },
+        payload: { correct: 18, total: 18, mistakes: 0, durationSec: 95 },
+      })
+      assert.equal(res.statusCode, 409, res.body)
+      assert.equal(state.activityResults.length, 0)
+    })
+  } finally { restore() }
+})
+
+test('school: teacher sees activity results instead of topic stats', async () => {
+  const state = activityState()
+  const restore = installFakeDb(state)
+  try {
+    await withApp(async (app) => {
+      const body = await joinActivity(app)
+      await app.inject({
+        method: 'POST', url: `/api/school/participants/${ids.participant}/activity-result`,
+        headers: { 'X-Participant-Token': body.participantToken },
+        payload: { correct: 15, total: 18, mistakes: 2, durationSec: 120 },
+      })
+
+      const res = await app.inject({ method: 'GET', url: `/api/school/sessions/${ids.session}` })
+      assert.equal(res.statusCode, 200, res.body)
+      const json = res.json()
+      assert.equal(json.session.kind, 'activity')
+      assert.equal(json.session.activityKey, 'key-puzzle')
+      assert.deepEqual(json.topicStats, [])
+      assert.equal(json.activityResults.length, 1)
+      assert.equal(json.activityResults[0].correct, 15)
+      assert.equal(json.activityResults[0].mistakes, 2)
+      assert.equal(json.activityResults[0].durationSec, 120)
+      assert.equal(json.activityResults[0].stars, 2)
     })
   } finally { restore() }
 })

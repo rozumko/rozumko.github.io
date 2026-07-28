@@ -3,10 +3,13 @@ import { $, $maybe } from './utils/dom.js'
 import {
   getSchoolParticipantSession,
   joinSchoolSession,
+  submitSchoolActivityResult,
   submitSchoolAnswer,
   updateSchoolParticipantAvatar,
   type Question,
 } from './features/api/client.js'
+import { findActivity } from './features/activities/registry.js'
+import type { ActivityHandle, ActivityRunResult } from './features/activities/activity-contract.js'
 import { runMission, type MissionElements } from './features/missions/mission-runner.js'
 import { shuffleDeck } from './features/missions/question-shuffle.js'
 import { encouragement, missionSummary, starRating, type MissionSummary } from './features/missions/mission-result.js'
@@ -65,6 +68,9 @@ const waitEl   = $('mission-waiting')
 const quizEl   = $('mission-quiz')
 const resultEl = $('mission-result')
 const errorEl  = $('mission-error')
+const activityEl       = $('mission-activity')
+const activityDoneEl   = $('mission-activity-done')
+const activityDeviceEl = $('mission-activity-device')
 
 const els: MissionElements = {
   progressText: $('quiz-progress-text'),
@@ -95,6 +101,7 @@ function clearWaitingPoll() {
 
 function showIntro() {
   clearWaitingPoll()
+  destroyActivity()
   setMissionActive(false)
   clearStoredParticipant()
   currentParticipantId = ''
@@ -103,6 +110,9 @@ function showIntro() {
   hide(waitEl)
   hide(quizEl)
   hide(resultEl)
+  hide(activityEl)
+  hide(activityDoneEl)
+  hide(activityDeviceEl)
   errorEl.textContent = ''
   show(introEl)
 }
@@ -226,12 +236,174 @@ function startSchoolMission(participantId: string, participantToken: string, que
   })
 }
 
+// ── Активності ───────────────────────────────────────────────────────────────
+// An activity is a procedural game, not a question deck: there is nothing to
+// grade on the server, so the game reports its own outcome once the child is
+// done and the server clamps it (backend/src/lib/school-activities.ts).
+//
+// Slice 1 keeps this deliberately simple: only a finished run reports. A child
+// whom the teacher interrupts mid-run leaves no result row.
+
+let activeActivity: ActivityHandle | null = null
+
+function destroyActivity() {
+  activeActivity?.destroy()
+  activeActivity = null
+}
+
+function showActivityDeviceNotice(activityLabel: string) {
+  clearWaitingPoll()
+  destroyActivity()
+  setMissionActive(false)
+  hide(introEl)
+  hide(waitEl)
+  hide(quizEl)
+  hide(resultEl)
+  hide(activityEl)
+  const hint = $maybe('activity-device-hint')
+  if (hint) {
+    hint.textContent = `«${activityLabel}» потребує мишки і великого екрана. `
+      + 'Попроси вчителя дати тобі комп’ютер або ноутбук — код гри той самий.'
+  }
+  show(activityDeviceEl)
+}
+
+async function startSchoolActivity(
+  participantId: string,
+  participantToken: string,
+  activityKey: string | null,
+  activityLevel: string | null,
+) {
+  const activity = findActivity(activityKey)
+  if (!activity || !activityLevel) {
+    showIntro()
+    errorEl.textContent = 'Цю активність не вдалося відкрити. Онови сторінку або попроси вчителя створити гру ще раз.'
+    return
+  }
+  // School Mode targets computer labs; a phone gets an honest notice instead of
+  // a layout that cannot work.
+  if (window.innerWidth < activity.minWidth) {
+    showActivityDeviceNotice(activity.label)
+    return
+  }
+
+  clearWaitingPoll()
+  destroyActivity()
+  hide(introEl)
+  hide(waitEl)
+  hide(resultEl)
+  hide(activityDoneEl)
+  hide(activityDeviceEl)
+  show(activityEl)
+  setMissionActive(true)
+
+  const identity = $maybe('activity-identity')
+  const avatarImg = $maybe<HTMLImageElement>('activity-avatar-display')
+  const nameEl = $maybe('activity-nickname-display')
+  if (avatarImg) { avatarImg.src = avatarSrc(selectedAvatar); avatarImg.alt = avatarLabel(selectedAvatar) }
+  if (nameEl) nameEl.textContent = currentNickname
+  if (identity) show(identity)
+
+  const progressEl = $maybe('activity-progress-text')
+  const stage = $('activity-stage')
+  // The stage keeps its static hint pill; the game fills the rest.
+  const hint = stage.querySelector('.activity-stage__hint')
+  stage.innerHTML = ''
+  if (hint) stage.appendChild(hint)
+  const gameRoot = document.createElement('div')
+  gameRoot.className = 'activity-stage__game'
+  stage.appendChild(gameRoot)
+
+  try {
+    const module = await activity.load()
+    activeActivity = module.mount(gameRoot, {
+      level: activityLevel,
+      onProgress: (done, total) => {
+        if (progressEl) progressEl.textContent = `${done} / ${total}`
+      },
+      onFinish: result => { void finishSchoolActivity(participantId, participantToken, result) },
+    })
+  } catch {
+    showIntro()
+    errorEl.textContent = 'Не вдалося завантажити активність. Онови сторінку.'
+  }
+}
+
+async function finishSchoolActivity(
+  participantId: string,
+  participantToken: string,
+  result: ActivityRunResult,
+) {
+  destroyActivity()
+  try {
+    const saved = await submitSchoolActivityResult(participantId, participantToken, result)
+    showActivityResult(saved.stars, saved.correct, saved.total, result.durationSec)
+  } catch (err) {
+    // The run really happened, so the child still sees their own result; only
+    // the teacher's copy is missing. Stars come from the same rubric locally.
+    const status = (err as { status?: number }).status
+    showActivityResult(
+      result.correct >= result.total ? (result.mistakes === 0 ? 3 : result.mistakes < 5 ? 2 : 1) : 1,
+      result.correct, result.total, result.durationSec,
+      status === 409 ? '' : 'Результат не дійшов до вчителя — покажи йому цей екран.',
+    )
+  }
+}
+
+function formatActivityDuration(sec: number): string {
+  const m = Math.floor(sec / 60)
+  const s = sec % 60
+  return m > 0 ? `${m} хв ${String(s).padStart(2, '0')} с` : `${s} с`
+}
+
+function showActivityResult(stars: number, correct: number, total: number, durationSec: number, note = '') {
+  clearWaitingPoll()
+  setMissionActive(false)
+  hide(waitEl)
+  hide(quizEl)
+  hide(activityEl)
+  const resultAvatar = $maybe<HTMLImageElement>('result-avatar')
+  if (resultAvatar) {
+    resultAvatar.src = avatarSrc(selectedAvatar)
+    resultAvatar.alt = avatarLabel(selectedAvatar)
+    resultAvatar.classList.remove('hidden')
+  }
+  $('result-mission-label').textContent = `Активність • ${currentNickname}`
+  $('result-stars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars)
+  // An activity reports how much was assembled and how long it took, not a
+  // percentage of right answers.
+  const label = $maybe('result-score-label')
+  if (label) label.textContent = 'Зібрано:'
+  $('result-score').textContent = `${correct} з ${total}`
+  $('result-percent').textContent = formatActivityDuration(durationSec)
+  $('result-message').textContent = note || encouragement(total > 0 ? Math.round((correct / total) * 100) : 0)
+  show(resultEl)
+  playVictorySound()
+  if (stars >= 1) launchConfetti()
+}
+
+function showActivityDone() {
+  clearWaitingPoll()
+  destroyActivity()
+  setMissionActive(false)
+  hide(introEl)
+  hide(waitEl)
+  hide(quizEl)
+  hide(resultEl)
+  hide(activityEl)
+  hide(activityDeviceEl)
+  show(activityDoneEl)
+}
+
 function startWaitingPoll(participantId: string, participantToken: string) {
   clearWaitingPoll()
   waitingPollTimer = window.setInterval(async () => {
     try {
       const session = await getSchoolParticipantSession(participantId, participantToken)
-      if (session.status === 'active' && session.questions.length > 0) {
+      if (session.status === 'active' && session.kind === 'activity') {
+        if (session.activityDone) { clearWaitingPoll(); showActivityDone(); return }
+        void startSchoolActivity(participantId, participantToken, session.activityKey, session.activityLevel)
+      } else if (session.status === 'active' && session.questions.length > 0) {
         startSchoolMission(participantId, participantToken, session.questions, {
           answeredQuestionIds: session.answeredQuestionIds ?? [],
           score: session.score ?? 0,
@@ -311,7 +483,9 @@ joinBtn?.addEventListener('click', async () => {
       avatar: selectedAvatar,
       nickname,
     })
-    if (joined.status === 'active' && joined.questions.length > 0) {
+    if (joined.status === 'active' && joined.kind === 'activity') {
+      void startSchoolActivity(joined.participantId, joined.participantToken, joined.activityKey, joined.activityLevel)
+    } else if (joined.status === 'active' && joined.questions.length > 0) {
       startSchoolMission(joined.participantId, joined.participantToken, joined.questions)
     } else {
       // Якщо учень встиг змінити героя, поки йшов join — досилаємо вибір.
@@ -344,6 +518,8 @@ function showResult(summary: MissionSummary) {
     resultAvatar.classList.remove('hidden')
   }
   $('result-mission-label').textContent = `Класна гра • ${currentNickname}`
+  const scoreLabel = $maybe('result-score-label')
+  if (scoreLabel) scoreLabel.textContent = 'Правильних відповідей:'
   $('result-stars').textContent   = '⭐'.repeat(stars) + '☆'.repeat(3 - stars)
   $('result-score').textContent   = `${summary.correct} з ${summary.total}`
   $('result-percent').textContent = `${summary.percent}%`
@@ -367,7 +543,11 @@ async function resumeStoredParticipant() {
   showWaitingRoom(stored.avatar, stored.nickname, 'Відновлюємо гру…')
   try {
     const session = await getSchoolParticipantSession(stored.participantId, stored.participantToken)
-    if (session.status === 'active' && session.questions.length > 0) {
+    if (session.status === 'active' && session.kind === 'activity') {
+      // A reload must not restart a run whose result the server already has.
+      if (session.activityDone) showActivityDone()
+      else void startSchoolActivity(stored.participantId, stored.participantToken, session.activityKey, session.activityLevel)
+    } else if (session.status === 'active' && session.questions.length > 0) {
       startSchoolMission(stored.participantId, stored.participantToken, session.questions, {
         answeredQuestionIds: session.answeredQuestionIds ?? [],
         score: session.score ?? 0,

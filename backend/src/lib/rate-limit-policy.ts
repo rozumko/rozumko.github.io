@@ -10,6 +10,9 @@ export const RATE_LIMIT_MAX = {
   schoolParticipantSession: 60,
   schoolParticipantAvatar: 20,
   schoolParticipantAnswer: 60,
+  // One final result per run; the low ceiling keeps a scripted client from
+  // hammering the endpoint while a legitimate retry after a network blip works.
+  schoolParticipantActivityResult: 10,
 } as const
 
 type VerifiedResourceRateLimitOptions = {

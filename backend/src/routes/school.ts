@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyReply, preHandlerHookHandler } from 'fastify'
 import { and, asc, desc, eq, inArray, notInArray, sql, arrayContains } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { questions, schoolSessions, schoolSessionQuestions, schoolParticipants, schoolAnswers } from '../db/schema.js'
+import { questions, schoolSessions, schoolSessionQuestions, schoolParticipants, schoolAnswers, schoolActivityResults } from '../db/schema.js'
 import { requireAuth } from '../lib/auth.js'
 import { sanitizeOlympiadQuestion, stripOptionKeys } from './question-sanitize.js'
 import { scoreAttempt, type AnswerValue } from './attempt-validation.js'
@@ -16,6 +16,15 @@ import {
 } from './code-throttle.js'
 import { ALL_TOPICS, normalizeTopic } from '../lib/taxonomy.js'
 import { SCHOOL_TOPIC_IDS, resolveSchoolTopicSelection } from '../lib/school-topics.js'
+import {
+  SCHOOL_ACTIVITY_KEYS,
+  SCHOOL_ACTIVITY_LEVEL_IDS,
+  normalizeActivityResult,
+  normalizeSessionKind,
+  resolveActivityDefinition,
+  resolveActivityLevel,
+  type SchoolSessionKind,
+} from '../lib/school-activities.js'
 import { createVerifiedResourceRateLimit, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW } from '../lib/rate-limit-policy.js'
 import type { QuestionTrack } from '../db/schema.js'
 
@@ -176,6 +185,25 @@ const participantAnswerRateLimit = createVerifiedResourceRateLimit({
   verifyToken: verifyAttemptToken,
 })
 
+const participantActivityResultRateLimit = createVerifiedResourceRateLimit({
+  scope: 'school-participant-activity-result',
+  headerName: 'x-participant-token',
+  max: RATE_LIMIT_MAX.schoolParticipantActivityResult,
+  verifyToken: verifyAttemptToken,
+})
+
+const activityResultBody = {
+  type: 'object',
+  required: ['correct', 'total', 'mistakes', 'durationSec'],
+  additionalProperties: false,
+  properties: {
+    correct:     { type: 'integer', minimum: 0, maximum: 10_000 },
+    total:       { type: 'integer', minimum: 1, maximum: 10_000 },
+    mistakes:    { type: 'integer', minimum: 0, maximum: 10_000 },
+    durationSec: { type: 'integer', minimum: 0, maximum: 86_400 },
+  },
+} as const
+
 async function loadParticipantWithSession(participantId: string) {
   const [row] = await db
     .select({
@@ -183,6 +211,9 @@ async function loadParticipantWithSession(participantId: string) {
       sessionId: schoolParticipants.sessionId,
       status: schoolSessions.status,
       grade: schoolSessions.grade,
+      kind: schoolSessions.kind,
+      activityKey: schoolSessions.activityKey,
+      activityLevel: schoolSessions.activityLevel,
     })
     .from(schoolParticipants)
     .innerJoin(schoolSessions, eq(schoolParticipants.sessionId, schoolSessions.id))
@@ -191,11 +222,84 @@ async function loadParticipantWithSession(participantId: string) {
   return row
 }
 
+export interface SessionCreateBody {
+  grade: number
+  difficulty?: string
+  questionsCount?: number
+  track?: string
+  topic?: string
+  schoolTopicId?: string
+  kind?: string
+  activityKey?: string
+  activityLevel?: string
+}
+
+type SessionRow = typeof schoolSessions.$inferSelect
+
+// Shape the teacher and the student both read. `activityKey`/`activityLevel`
+// stay null for question sessions so the client can branch on `kind` alone.
+function serializeSession(session: SessionRow) {
+  return {
+    id:             session.id,
+    joinCode:       session.joinCode,
+    grade:          session.grade,
+    difficulty:     session.difficulty,
+    questionsCount: session.questionsCount,
+    status:         session.status,
+    kind:           session.kind,
+    activityKey:    session.activityKey,
+    activityLevel:  session.activityLevel,
+  }
+}
+
+// Unique join code: UNIQUE in the DB + retry on collision. Shared by both
+// session kinds so the code space and the retry budget stay identical.
+async function insertSessionWithJoinCode(
+  values: Omit<typeof schoolSessions.$inferInsert, 'joinCode'>,
+): Promise<SessionRow | undefined> {
+  for (let i = 0; i < 5; i++) {
+    try {
+      const [session] = await db.insert(schoolSessions)
+        .values({ ...values, joinCode: generateJoinCode() })
+        .returning()
+      return session
+    } catch (e) {
+      if (isUniqueViolation(e)) continue
+      throw e
+    }
+  }
+  return undefined
+}
+
 export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptions = {}) {
   const authorizeTeacher = opts.authorizeTeacher ?? requireAuth
 
+  async function createActivitySession(
+    req: { body: SessionCreateBody; user?: { id: string } },
+    reply: FastifyReply,
+  ) {
+    let activity, level
+    try {
+      activity = resolveActivityDefinition(req.body.activityKey)
+      level    = resolveActivityLevel(activity, req.body.activityLevel)
+    } catch (e) { return reply.code(400).send({ error: (e as Error).message }) }
+
+    const session = await insertSessionWithJoinCode({
+      teacherId:      req.user!.id,
+      grade:          req.body.grade,
+      difficulty:     null,
+      questionsCount: 0,
+      kind:           'activity',
+      activityKey:    activity.key,
+      activityLevel:  level.id,
+    })
+    if (!session) return reply.code(500).send({ error: 'Не вдалося створити сесію' })
+
+    return reply.code(201).send({ session: serializeSession(session) })
+  }
+
   // ── Вчитель: створити сесію ──────────────────────────────────────────────
-  app.post<{ Body: { grade: number; difficulty?: string; questionsCount?: number; track?: string; topic?: string; schoolTopicId?: string } }>('/sessions', {
+  app.post<{ Body: SessionCreateBody }>('/sessions', {
     preHandler: authorizeTeacher,
     schema: {
       body: {
@@ -209,10 +313,20 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
           track:          { type: 'string', enum: [...QUESTION_TRACKS] },
           topic:          { type: 'string', enum: ALL_TOPICS as string[] },
           schoolTopicId:  { type: 'string', enum: SCHOOL_TOPIC_IDS as unknown as string[] },
+          kind:           { type: 'string', enum: ['questions', 'activity'] },
+          activityKey:    { type: 'string', enum: SCHOOL_ACTIVITY_KEYS as unknown as string[] },
+          activityLevel:  { type: 'string', enum: SCHOOL_ACTIVITY_LEVEL_IDS as string[] },
         },
       },
     },
   }, async (req, reply) => {
+    let kind: SchoolSessionKind
+    try { kind = normalizeSessionKind(req.body.kind) } catch (e) { return reply.code(400).send({ error: (e as Error).message }) }
+
+    // An activity session carries no question set: the game is procedural, so
+    // there is nothing to pick and nothing to grade on the server.
+    if (kind === 'activity') return createActivitySession(req, reply)
+
     let difficulty: 'easy' | 'medium' | 'hard' | null
     try { difficulty = normalizeDifficulty(req.body.difficulty) } catch (e) { return reply.code(400).send({ error: (e as Error).message }) }
     let schoolTopic
@@ -258,35 +372,20 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
       return reply.code(422).send({ error: 'Немає тренувальних питань для цих параметрів' })
     }
 
-    // Унікальний join-code: UNIQUE у БД + повтор при колізії.
-    let session: typeof schoolSessions.$inferSelect | undefined
-    for (let i = 0; i < 5; i++) {
-      try {
-        [session] = await db.insert(schoolSessions).values({
-          teacherId:      req.user!.id,
-          grade:          req.body.grade,
-          difficulty,
-          questionsCount: picked.length,
-          joinCode:       generateJoinCode(),
-        }).returning()
-        break
-      } catch (e) {
-        if (isUniqueViolation(e)) continue
-        throw e
-      }
-    }
+    const session = await insertSessionWithJoinCode({
+      teacherId:      req.user!.id,
+      grade:          req.body.grade,
+      difficulty,
+      questionsCount: picked.length,
+      kind:           'questions',
+    })
     if (!session) return reply.code(500).send({ error: 'Не вдалося створити сесію' })
 
     await db.insert(schoolSessionQuestions).values(
-      picked.map((q, position) => ({ sessionId: session!.id, questionId: q.id, position })),
+      picked.map((q, position) => ({ sessionId: session.id, questionId: q.id, position })),
     )
 
-    return reply.code(201).send({
-      session: {
-        id: session.id, joinCode: session.joinCode, grade: session.grade,
-        difficulty: session.difficulty, questionsCount: session.questionsCount, status: session.status,
-      },
-    })
+    return reply.code(201).send({ session: serializeSession(session) })
   })
 
   // ── Вчитель: старт/фініш сесії (лише свою) ────────────────────────────────
@@ -321,6 +420,33 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
       .where(eq(schoolParticipants.sessionId, session.id))
       .orderBy(desc(schoolParticipants.score))
 
+    // Activity sessions have no per-question data at all: the teacher gets the
+    // final client-reported result per child (time + how much was assembled).
+    if (session.kind === 'activity') {
+      const results = await db
+        .select({
+          participantId: schoolActivityResults.participantId,
+          correct:       schoolActivityResults.correct,
+          total:         schoolActivityResults.total,
+          mistakes:      schoolActivityResults.mistakes,
+          durationSec:   schoolActivityResults.durationSec,
+          stars:         schoolActivityResults.stars,
+          trust:         schoolActivityResults.trust,
+          finishedAt:    schoolActivityResults.finishedAt,
+        })
+        .from(schoolActivityResults)
+        .innerJoin(schoolParticipants, eq(schoolActivityResults.participantId, schoolParticipants.id))
+        .where(eq(schoolParticipants.sessionId, session.id))
+        .orderBy(asc(schoolActivityResults.durationSec))
+
+      return reply.send({
+        session: serializeSession(session),
+        participants,
+        topicStats: [],
+        activityResults: results,
+      })
+    }
+
     // Агрегат правильності за темою (лише зведене — жодних ключів чи дитячих
     // даних понад лідерборд). Дає вчителю бачити, що варто повторити.
     const topicStats = await db
@@ -336,12 +462,10 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
       .groupBy(questions.topic)
 
     return reply.send({
-      session: {
-        id: session.id, joinCode: session.joinCode, grade: session.grade,
-        difficulty: session.difficulty, questionsCount: session.questionsCount, status: session.status,
-      },
+      session: serializeSession(session),
       participants,
       topicStats,
+      activityResults: [],
     })
   })
 
@@ -363,11 +487,12 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
     },
   }, async (req, reply) => {
     const [session] = await db
-      .select({ id: schoolSessions.id, status: schoolSessions.status })
+      .select({ id: schoolSessions.id, status: schoolSessions.status, kind: schoolSessions.kind })
       .from(schoolSessions)
       .where(and(eq(schoolSessions.id, req.params.id), eq(schoolSessions.teacherId, req.user!.id)))
       .limit(1)
     if (!session) return reply.code(404).send({ error: 'Сесію не знайдено' })
+    if (session.kind !== 'questions') return reply.code(409).send({ error: 'Ця сесія без питань' })
     // Question texts are issued to School surfaces only once the session is
     // active (docs/security-model.md); the breakdown includes them, so the
     // lobby state is blocked the same way as the projector question feed.
@@ -436,11 +561,12 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
     schema: { params: uuidParam },
   }, async (req, reply) => {
     const [session] = await db
-      .select({ id: schoolSessions.id, status: schoolSessions.status })
+      .select({ id: schoolSessions.id, status: schoolSessions.status, kind: schoolSessions.kind })
       .from(schoolSessions)
       .where(and(eq(schoolSessions.id, req.params.id), eq(schoolSessions.teacherId, req.user!.id)))
       .limit(1)
     if (!session) return reply.code(404).send({ error: 'Сесію не знайдено' })
+    if (session.kind !== 'questions') return reply.code(409).send({ error: 'Ця сесія без питань' })
     if (session.status === 'finished') return reply.code(409).send({ error: 'Сесію вже завершено' })
 
     const rows = await db
@@ -495,11 +621,12 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
     schema: { params: uuidParam },
   }, async (req, reply) => {
     const [session] = await db
-      .select({ id: schoolSessions.id, status: schoolSessions.status })
+      .select({ id: schoolSessions.id, status: schoolSessions.status, kind: schoolSessions.kind })
       .from(schoolSessions)
       .where(and(eq(schoolSessions.id, req.params.id), eq(schoolSessions.teacherId, req.user!.id)))
       .limit(1)
     if (!session) return reply.code(404).send({ error: 'Сесію не знайдено' })
+    if (session.kind !== 'questions') return reply.code(409).send({ error: 'Ця сесія без питань' })
     if (session.status !== 'active') return reply.code(409).send({ error: 'Сесію ще не розпочато або вже завершено' })
 
     return reply.send({ questions: await loadSessionQuestions(session.id) })
@@ -510,11 +637,12 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
     schema: { params: uuidParam, body: answerBody },
   }, async (req, reply) => {
     const [session] = await db
-      .select({ id: schoolSessions.id, status: schoolSessions.status })
+      .select({ id: schoolSessions.id, status: schoolSessions.status, kind: schoolSessions.kind })
       .from(schoolSessions)
       .where(and(eq(schoolSessions.id, req.params.id), eq(schoolSessions.teacherId, req.user!.id)))
       .limit(1)
     if (!session) return reply.code(404).send({ error: 'Сесію не знайдено' })
+    if (session.kind !== 'questions') return reply.code(409).send({ error: 'Ця сесія без питань' })
     if (session.status !== 'active') return reply.code(409).send({ error: 'Сесія неактивна' })
 
     const [issued] = await db
@@ -572,7 +700,15 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
     try { nickname = normalizeNickname(req.body.nickname) } catch (e) { return reply.code(400).send({ error: (e as Error).message }) }
 
     const [session] = await db
-      .select({ id: schoolSessions.id, status: schoolSessions.status, grade: schoolSessions.grade, createdAt: schoolSessions.createdAt })
+      .select({
+        id: schoolSessions.id,
+        status: schoolSessions.status,
+        grade: schoolSessions.grade,
+        createdAt: schoolSessions.createdAt,
+        kind: schoolSessions.kind,
+        activityKey: schoolSessions.activityKey,
+        activityLevel: schoolSessions.activityLevel,
+      })
       .from(schoolSessions)
       .where(eq(schoolSessions.joinCode, req.body.code))
       .limit(1)
@@ -595,7 +731,7 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
       .values({ sessionId: session.id, avatar: req.body.avatar, nickname })
       .returning({ id: schoolParticipants.id })
 
-    const questionsForPlayer = session.status === 'active'
+    const questionsForPlayer = session.status === 'active' && session.kind === 'questions'
       ? await loadSessionQuestions(session.id)
       : []
 
@@ -604,6 +740,9 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
       participantToken: generateAttemptToken(participant.id),
       status:           session.status,
       grade:            session.grade,
+      kind:             session.kind,
+      activityKey:      session.activityKey,
+      activityLevel:    session.activityLevel,
       questions:        questionsForPlayer,
       questionsCount:   questionsForPlayer.length,
     })
@@ -617,6 +756,29 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
 
     const participant = await loadParticipantWithSession(req.params.id)
     if (!participant) return reply.code(404).send({ error: 'Учасника не знайдено' })
+
+    // Activity sessions: nothing to resume question-wise. `activityDone` tells
+    // the page whether this child already reported a result, so a reload lands
+    // on the result screen instead of restarting the game.
+    if (participant.kind === 'activity') {
+      const [done] = await db
+        .select({ id: schoolActivityResults.id })
+        .from(schoolActivityResults)
+        .where(eq(schoolActivityResults.participantId, participant.id))
+        .limit(1)
+      return reply.send({
+        status: participant.status,
+        grade: participant.grade,
+        kind: participant.kind,
+        activityKey: participant.activityKey,
+        activityLevel: participant.activityLevel,
+        questions: [],
+        questionsCount: 0,
+        score: 0,
+        answeredQuestionIds: [],
+        activityDone: Boolean(done),
+      })
+    }
 
     const questionsForPlayer = participant.status === 'active'
       ? await loadSessionQuestions(participant.sessionId)
@@ -632,10 +794,14 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
     return reply.send({
       status: participant.status,
       grade: participant.grade,
+      kind: participant.kind,
+      activityKey: participant.activityKey,
+      activityLevel: participant.activityLevel,
       questions: questionsForPlayer,
       questionsCount: questionsForPlayer.length,
       score: answered.reduce((sum, answer) => sum + (answer.isCorrect ? 1 : 0), 0),
       answeredQuestionIds: answered.map(a => a.questionId),
+      activityDone: false,
     })
   })
 
@@ -677,6 +843,7 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
 
     const participant = await loadParticipantWithSession(req.params.id)
     if (!participant) return reply.code(404).send({ error: 'Учасника не знайдено' })
+    if (participant.kind !== 'questions') return reply.code(409).send({ error: 'Ця сесія без питань' })
     if (participant.status !== 'active') {
       return reply.code(409).send({ error: 'Сесія неактивна' })
     }
@@ -716,5 +883,57 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
     }
 
     return reply.send({ correct: isCorrect })
+  })
+
+  // ── Учень: фінальний результат активності ─────────────────────────────────
+  // Activities are procedural games without an answer key, so the outcome
+  // cannot be recomputed on the server: it arrives from the browser and is
+  // stored as `client-unverified` evidence for the teacher dashboard only.
+  // Never feed these numbers into entitlements, payments or certificates
+  // (docs/security-model.md). The server still refuses implausible claims and
+  // accepts exactly one result per participant.
+  app.post<{ Params: { id: string }; Body: { correct: number; total: number; mistakes: number; durationSec: number } }>('/participants/:id/activity-result', {
+    config: { rateLimit: participantActivityResultRateLimit },
+    schema: { params: uuidParam, body: activityResultBody },
+  }, async (req, reply) => {
+    if (!requireParticipant(req, reply)) return
+
+    const participant = await loadParticipantWithSession(req.params.id)
+    if (!participant) return reply.code(404).send({ error: 'Учасника не знайдено' })
+    if (participant.kind !== 'activity') return reply.code(409).send({ error: 'Ця сесія без активності' })
+    if (participant.status !== 'active') return reply.code(409).send({ error: 'Сесія неактивна' })
+
+    // The activity and level come from the session row, never from the body:
+    // the child cannot claim an easier level than the teacher started.
+    let activity, level, normalized
+    try {
+      activity   = resolveActivityDefinition(participant.activityKey)
+      level      = resolveActivityLevel(activity, participant.activityLevel)
+      normalized = normalizeActivityResult(activity, level, req.body)
+    } catch (e) { return reply.code(400).send({ error: (e as Error).message }) }
+
+    const [inserted] = await db.insert(schoolActivityResults)
+      .values({
+        participantId: participant.id,
+        activityKey:   activity.key,
+        activityLevel: level.id,
+        correct:       normalized.correct,
+        total:         normalized.total,
+        mistakes:      normalized.mistakes,
+        durationSec:   normalized.durationSec,
+        stars:         normalized.stars,
+        trust:         'client-unverified',
+      })
+      .onConflictDoNothing()
+      .returning({ id: schoolActivityResults.id })
+    if (!inserted) return reply.code(409).send({ error: 'Результат уже збережено' })
+
+    // The leaderboard column is shared with question sessions; for activities
+    // it holds how much of the activity the child completed.
+    await db.update(schoolParticipants)
+      .set({ score: normalized.correct })
+      .where(eq(schoolParticipants.id, participant.id))
+
+    return reply.send({ stars: normalized.stars, correct: normalized.correct, total: normalized.total })
   })
 }

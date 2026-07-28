@@ -211,6 +211,12 @@ export const schoolSessions = pgTable('school_sessions', {
   questionsCount: integer('questions_count').notNull().default(10),
   joinCode:       text('join_code').notNull().unique(),
   status:         text('status').notNull().default('lobby'), // lobby | active | finished
+  // Delivery kind of the session. 'questions' — server-graded quiz (default,
+  // the historical behaviour); 'activity' — procedural game whose result the
+  // browser reports (school-activities.ts).
+  kind:           text('kind').notNull().default('questions'), // questions | activity
+  activityKey:    text('activity_key'),               // set only when kind = 'activity'
+  activityLevel:  text('activity_level'),
   createdAt:      timestamp('created_at', { withTimezone: true }).defaultNow(),
   startedAt:      timestamp('started_at', { withTimezone: true }),
   finishedAt:     timestamp('finished_at', { withTimezone: true }),
@@ -254,6 +260,27 @@ export const schoolAnswers = pgTable('school_answers', {
 }))
 
 export type SchoolAnswer = typeof schoolAnswers.$inferSelect
+
+// Фінальний результат активності. Джерело — браузер учня (гра процедурна, у
+// неї немає ключа), тому trust завжди 'client-unverified'; сервер лише ріже
+// значення по стелях реєстру. UNIQUE(participant) — один результат на учня.
+export const schoolActivityResults = pgTable('school_activity_results', {
+  id:            uuid('id').primaryKey().defaultRandom(),
+  participantId: uuid('participant_id').notNull().references(() => schoolParticipants.id, { onDelete: 'cascade' }),
+  activityKey:   text('activity_key').notNull(),
+  activityLevel: text('activity_level').notNull(),
+  correct:       integer('correct').notNull(),
+  total:         integer('total').notNull(),
+  mistakes:      integer('mistakes').notNull().default(0),
+  durationSec:   integer('duration_sec').notNull(),
+  stars:         integer('stars').notNull(),
+  trust:         text('trust').notNull().default('client-unverified'),
+  finishedAt:    timestamp('finished_at', { withTimezone: true }).defaultNow(),
+}, (t) => ({
+  uniqParticipant: unique('school_activity_results_participant_uq').on(t.participantId),
+}))
+
+export type SchoolActivityResult = typeof schoolActivityResults.$inferSelect
 
 // ── Missions registry ─────────────────────────────────────────────────────────
 // Реєстр місій (question-set сьогодні, ігри/симуляції далі). Движок місії живе
