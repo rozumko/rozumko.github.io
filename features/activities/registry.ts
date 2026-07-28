@@ -45,6 +45,19 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     ],
     load: () => import('./key-puzzle/key-puzzle.js'),
   },
+  {
+    key: 'maze',
+    label: 'Чарівний лабіринт',
+    description: 'Дитина веде кульку лабіринтом до кубка, не торкаючись стін, і збирає зірки.',
+    device: 'any',
+    // The board letterboxes into whatever space it gets, so a tablet works.
+    minWidth: 360,
+    levels: [
+      { id: 'beginner', label: 'Початківець', description: '5 рівнів, широкі коридори, прощає один промах зірки' },
+      { id: 'master',   label: 'Майстер',     description: '10 рівнів, вузькі проходи, треба зібрати всі зірки' },
+    ],
+    load: () => import('./maze/maze.js'),
+  },
 ]
 
 export function findActivity(key: string | null | undefined): ActivityInfo | null {

@@ -260,3 +260,93 @@
   .kp-piece--returning,
   .kp-piece--landing { transition: none; }
 }
+
+/* ── Чарівний лабіринт ───────────────────────────────────────────────────── */
+
+.mz-root {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: #eef2ff;
+}
+
+.mz-hud {
+  display: flex;
+  justify-content: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  font-weight: 700;
+  color: #334155;
+}
+
+.mz-hud__item {
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid #c7d2fe;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+/* The canvas letterboxes itself inside this box, so the board keeps its
+   3:2 shape at any stage size. */
+.mz-board {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mz-canvas {
+  border-radius: 14px;
+  background: #f1f5f9;
+  box-shadow: 0 8px 26px rgb(15 23 42 / 0.14);
+  touch-action: none;
+  cursor: grab;
+}
+
+.mz-canvas:active { cursor: grabbing; }
+
+.mz-board--shake { animation: mz-shake 0.45s ease; }
+
+@keyframes mz-shake {
+  10%, 90% { transform: translateX(-3px); }
+  20%, 80% { transform: translateX(5px); }
+  30%, 50%, 70% { transform: translateX(-7px); }
+  40%, 60% { transform: translateX(7px); }
+}
+
+.mz-toast {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 6px 18px;
+  border-radius: 999px;
+  background: #1e293b;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.mz-toast--hidden { opacity: 0; }
+
+.mz-error {
+  padding: 2rem;
+  text-align: center;
+  font-weight: 600;
+  color: #b91c1c;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mz-board--shake { animation: none; }
+  .mz-toast { transition: none; }
+}

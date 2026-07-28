@@ -9,7 +9,7 @@
 // teacher dashboard only. It must never feed entitlements, payments or
 // certificates — see docs/security-model.md.
 
-export type SchoolActivityKey = 'key-puzzle'
+export type SchoolActivityKey = 'key-puzzle' | 'maze'
 
 /** Devices an activity is usable on. School Mode targets computer labs first. */
 export type SchoolActivityDevice = 'desktop' | 'any'
@@ -59,9 +59,29 @@ export const SCHOOL_ACTIVITIES: Record<SchoolActivityKey, SchoolActivityDefiniti
       return mistakes === 0 ? 3 : mistakes < 5 ? 2 : 1
     },
   },
+  // maze: the child drags a dot through a maze without touching a wall.
+  // `total` is the number of levels in the mode the teacher picked, so the
+  // ceiling differs per level — unlike key-puzzle.
+  maze: {
+    key: 'maze',
+    device: 'any',
+    levels: [
+      { id: 'beginner', maxTotal: 5,  minDurationSec: 10 },
+      { id: 'master',   maxTotal: 10, minDurationSec: 20 },
+    ],
+    // A wall hit costs no progress, only accuracy, so the budget scales with
+    // how many levels the child had to walk through.
+    stars: ({ correct, total, mistakes }) => {
+      if (correct < total) {
+        const percent = (correct / total) * 100
+        return percent >= 75 ? 2 : percent >= 40 ? 1 : 0
+      }
+      return mistakes <= total ? 3 : mistakes <= total * 3 ? 2 : 1
+    },
+  },
 }
 
-export const SCHOOL_ACTIVITY_KEYS = ['key-puzzle'] as const satisfies readonly SchoolActivityKey[]
+export const SCHOOL_ACTIVITY_KEYS = ['key-puzzle', 'maze'] as const satisfies readonly SchoolActivityKey[]
 
 /** Every level id any activity accepts — for the route's JSON schema enum. */
 export const SCHOOL_ACTIVITY_LEVEL_IDS: readonly string[] = [

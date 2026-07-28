@@ -22,7 +22,8 @@ test('normalizeSessionKind: default questions, unknown rejected', () => {
 
 test('resolveActivityDefinition: fail-closed on unknown key', () => {
   assert.equal(resolveActivityDefinition('key-puzzle').key, 'key-puzzle')
-  assert.throws(() => resolveActivityDefinition('maze'))
+  assert.equal(resolveActivityDefinition('maze').key, 'maze')
+  assert.throws(() => resolveActivityDefinition('mouse103'))
   assert.throws(() => resolveActivityDefinition(''))
   assert.throws(() => resolveActivityDefinition(undefined))
   // Prototype-chain keys must not resolve as activities
@@ -85,6 +86,27 @@ test('normalizeActivityResult: rejects implausible client claims', () => {
   assert.throws(() => normalizeActivityResult(activity, level, { ...ok, durationSec: level.minDurationSec - 1 }))
   assert.throws(() => normalizeActivityResult(activity, level, { ...ok, durationSec: ACTIVITY_MAX_DURATION_SEC + 1 }))
   assert.throws(() => normalizeActivityResult(activity, level, { ...ok, durationSec: Number.NaN }))
+})
+
+test('maze: levels carry their own ceiling and mistake budget', () => {
+  const activity = SCHOOL_ACTIVITIES['maze']
+  const beginner = resolveActivityLevel(activity, 'beginner')
+  const master = resolveActivityLevel(activity, 'master')
+  assert.equal(beginner.maxTotal, 5)
+  assert.equal(master.maxTotal, 10)
+  // A beginner run cannot claim the master level's count
+  assert.throws(() => normalizeActivityResult(activity, beginner, { correct: 10, total: 10, mistakes: 0, durationSec: 90 }))
+
+  const stars = (level: typeof master, input: { correct: number; total: number; mistakes: number }) =>
+    normalizeActivityResult(activity, level, { ...input, durationSec: 90 }).stars
+  // Full campaign: the mistake budget scales with the number of levels
+  assert.equal(stars(master, { correct: 10, total: 10, mistakes: 8 }), 3)
+  assert.equal(stars(master, { correct: 10, total: 10, mistakes: 25 }), 2)
+  assert.equal(stars(master, { correct: 10, total: 10, mistakes: 60 }), 1)
+  assert.equal(stars(beginner, { correct: 5, total: 5, mistakes: 8 }), 2)
+  // Cut short: how far the child got decides
+  assert.equal(stars(master, { correct: 8, total: 10, mistakes: 0 }), 2)
+  assert.equal(stars(master, { correct: 1, total: 10, mistakes: 0 }), 0)
 })
 
 test('normalizeActivityResult: stars stay clamped even if a rubric misbehaves', () => {
