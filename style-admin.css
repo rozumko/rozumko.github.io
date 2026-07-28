@@ -492,6 +492,28 @@
 .admin-list { display: flex; flex-direction: column; gap: var(--sp-3); }
 .admin-list--sm { gap: var(--sp-2); }
 
+/* ── Pager ───────────────────────────────────────────────────── */
+.admin-pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+}
+.admin-pager__status {
+  font-size: var(--font-size-sm);
+  color: var(--adm-text-muted);
+}
+.admin-pager__size {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-left: auto;
+  font-size: var(--font-size-sm);
+  color: var(--adm-text-faint);
+}
+.admin-pager button[disabled] { opacity: .45; cursor: not-allowed; }
+
 /* ── Event card ──────────────────────────────────────────────── */
 /* Базова картка (dark) — спільні властивості */
 .event-card,

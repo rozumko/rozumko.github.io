@@ -12,8 +12,24 @@ import { esc, showModal, showConfirm }  from './ui.js'
 import { $, $maybe } from '../../utils/dom.js'
 import { TOPIC_LABELS, TOPICS_BY_TRACK, fillTopicSelect } from './taxonomy.js'
 import { refreshContentDeliveryBanner } from './publication-tab.js'
+import { createPager } from './pagination.js'
 
 let currentQuestions: Question[] = []
+
+const pager = createPager({
+  hostId: 'questions-pager',
+  storageKey: 'admin:questions:page-size',
+  noun: 'питань',
+  onChange: () => { void loadQuestionsTab() },
+})
+
+/** Filters and sections change what the pages contain, so paging starts over
+ *  and the selection — which was made against the old list — is dropped. */
+function restartList(): void {
+  pager.reset()
+  clearSelection()
+  void loadQuestionsTab()
+}
 
 const questionModal = $<HTMLElement>('question-modal')
 const questionForm  = $<HTMLFormElement>('question-form')
@@ -92,7 +108,7 @@ function selectSection(section: string): void {
   currentSection = section
   try { localStorage.setItem(SECTION_STORAGE_KEY, section) } catch { /* storage can be blocked */ }
   applySectionUI()
-  void loadQuestionsTab()
+  restartList()
 }
 
 // Counters are informational: a failure must never hide the list itself.
@@ -180,6 +196,9 @@ function renderMatrix(cells: AdminQuestionMatrixCell[], track: string): string {
 // between sections in one action (backend: POST /api/admin/questions/channels).
 const selectedIds = new Set<string>()
 
+/** Mirrors the server's maxItems on the bulk routes. */
+const BULK_LIMIT = 200
+
 function renderBulkBar(): void {
   const bar = $maybe('q-bulk')
   const label = $maybe('q-bulk-count')
@@ -189,19 +208,21 @@ function renderBulkBar(): void {
 
   const all = $maybe<HTMLInputElement>('q-select-all')
   if (all) {
-    const total = currentQuestions.length
-    all.checked = total > 0 && selectedIds.size === total
-    all.indeterminate = selectedIds.size > 0 && selectedIds.size < total
+    // Scoped to the page: the checkbox reflects the rows on screen, not the
+    // whole filtered set, which may span pages.
+    const onPage = currentQuestions.filter(q => selectedIds.has(q.id)).length
+    all.checked = currentQuestions.length > 0 && onPage === currentQuestions.length
+    all.indeterminate = onPage > 0 && onPage < currentQuestions.length
   }
 }
 
-/** Selects or clears every question currently listed — the filters decide the
- *  scope, so this never reaches rows the editor cannot see. */
+/** Selects or clears the questions on the current page. Rows picked on other
+ *  pages stay selected — the bulk bar counts them all. */
 function toggleSelectAll(checked: boolean): void {
-  selectedIds.clear()
   for (const box of document.querySelectorAll<HTMLInputElement>('.qi-select')) {
     box.checked = checked
     if (checked) selectedIds.add(box.value)
+    else selectedIds.delete(box.value)
   }
   renderBulkBar()
 }
@@ -247,6 +268,12 @@ async function runBulk(
 ): Promise<void> {
   const ids = [...selectedIds]
   if (!ids.length) return
+  // The server caps a bulk call at 200 ids; say so here instead of letting it
+  // come back as a schema error after the confirmation.
+  if (ids.length > BULK_LIMIT) {
+    showModal(`За один раз можна змінити не більше ${BULK_LIMIT} питань. Зараз вибрано ${ids.length} — зніми зайві або зменш розмір сторінки.`)
+    return
+  }
   showConfirm(confirmText.replace('{n}', String(ids.length)), async () => {
     try {
       const summary = await run(ids)
@@ -320,9 +347,9 @@ export function initQuestionsTab() {
   $<HTMLInputElement>('q-select-all').addEventListener('change', event => {
     toggleSelectAll((event.target as HTMLInputElement).checked)
   })
-  $<HTMLButtonElement>('q-filter-apply').addEventListener('click', () => loadQuestionsTab())
+  $<HTMLButtonElement>('q-filter-apply').addEventListener('click', restartList)
   $<HTMLInputElement>('q-filter-search').addEventListener('keydown', event => {
-    if (event.key === 'Enter') void loadQuestionsTab()
+    if (event.key === 'Enter') restartList()
   })
   // Тема залежить від напряму — і у фільтрі, і у формі
   $<HTMLSelectElement>('q-filter-track').addEventListener('change', (e) => {
@@ -376,13 +403,13 @@ export async function loadQuestionsTab() {
     const sectionQuery: SectionQuery = { isOlympiad, channel, unassigned }
     void refreshMatrix(filters, sectionQuery)
 
-    const { questions } = await getAdminQuestions({ ...filters, ...sectionQuery })
+    const { questions, page } = await getAdminQuestions({ ...filters, ...sectionQuery, ...pager.range() })
     currentQuestions = questions
-    clearSelection()
 
-    $('q-count').textContent = `${questions.length} питань`
+    $('q-count').textContent = `${page.total} питань`
 
     if (!questions.length) {
+      pager.apply(page)
       list.innerHTML = `
         <div class="admin-empty-state"><div>
           <i class="fas fa-question-circle admin-empty-state__icon"></i>
@@ -393,7 +420,10 @@ export async function loadQuestionsTab() {
 
     list.innerHTML = ''
     questions.forEach(q => list.appendChild(buildQuestionCard(q)))
+    pager.apply(page)
+    renderBulkBar()
   } catch (err) {
+    pager.clear()
     list.innerHTML = ''
     const error = document.createElement('p')
     error.className = 'admin-list-error'
@@ -417,7 +447,7 @@ function buildQuestionCard(q: Question): HTMLElement {
   el.className = 'question-item'
   el.innerHTML = `
     <label class="question-item__select">
-      <input type="checkbox" class="qi-select" value="${esc(q.id)}"
+      <input type="checkbox" class="qi-select" value="${esc(q.id)}" ${selectedIds.has(q.id) ? 'checked' : ''}
              aria-label="Вибрати питання для масової зміни розділів"/>
     </label>
     <div class="question-item__left">

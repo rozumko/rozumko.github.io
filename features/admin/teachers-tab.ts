@@ -1,14 +1,16 @@
-import { getAdminTeachers, setTeacherStatus } from '../../features/api/client.js'
+import { getAdminTeachers, setTeacherStatus, type AdminTeacher } from '../../features/api/client.js'
 import { esc, showModal, showConfirm } from './ui.js'
 import { $, $maybe } from '../../utils/dom.js'
+import { createPager } from './pagination.js'
 
-interface Teacher {
-  id: string
-  email: string
-  name: string | null
-  status: string
-  createdAt: string
-}
+type Teacher = AdminTeacher
+
+const pager = createPager({
+  hostId: 'teachers-pager',
+  storageKey: 'admin:teachers:page-size',
+  noun: 'вчителів',
+  onChange: () => { void loadTeachers() },
+})
 
 export function initTeachersTab() {}
 
@@ -18,9 +20,10 @@ export async function loadTeachers() {
   list.innerHTML = '<p class="admin-loading-text">Завантаження…</p>'
 
   try {
-    const { teachers } = await getAdminTeachers()
+    const { teachers, page } = await getAdminTeachers(pager.range())
 
     if (!teachers.length) {
+      pager.apply(page)
       list.innerHTML = `
         <div class="admin-empty-state"><div>
           <i class="fas fa-users admin-empty-state__icon"></i>
@@ -31,7 +34,9 @@ export async function loadTeachers() {
 
     list.innerHTML = ''
     teachers.forEach(t => list.appendChild(buildTeacherRow(t)))
+    pager.apply(page)
   } catch (err) {
+    pager.clear()
     list.innerHTML = `<p class="admin-list-error">${esc((err as Error).message)}</p>`
   }
 }

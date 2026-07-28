@@ -1,7 +1,15 @@
-import { getAdminResults, type Attempt } from '../../features/api/client.js'
+import { fetchAllPages, getAdminResults, type Attempt } from '../../features/api/client.js'
 import { esc, showModal } from './ui.js'
 import { $, $maybe } from '../../utils/dom.js'
+import { createPager } from './pagination.js'
 import { openCertModal, awardLabel, getAward } from '../../utils/certificate.js'
+
+const pager = createPager({
+  hostId: 'results-pager',
+  storageKey: 'admin:results:page-size',
+  noun: 'результатів',
+  onChange: () => { void loadResults() },
+})
 
 export function initResultsTab() {}
 
@@ -11,9 +19,10 @@ export async function loadResults() {
   list.innerHTML = '<p class="admin-loading-text">Завантаження…</p>'
 
   try {
-    const { results } = await getAdminResults()
+    const { results, page } = await getAdminResults(pager.range())
 
     if (!results.length) {
+      pager.apply(page)
       list.innerHTML = `
         <div class="admin-empty-state"><div>
           <i class="fas fa-poll admin-empty-state__icon"></i>
@@ -24,12 +33,30 @@ export async function loadResults() {
     }
 
     const exportBtn = $maybe<HTMLButtonElement>('export-results-btn')
-    if (exportBtn) { exportBtn.disabled = false; exportBtn.onclick = () => exportCSV(results) }
+    // The export covers every result, not the page on screen — a CSV missing
+    // rows would be worse than a slow one.
+    if (exportBtn) { exportBtn.disabled = false; exportBtn.onclick = () => { void exportAllCSV(exportBtn) } }
 
     list.innerHTML = ''
     results.forEach(r => list.appendChild(buildResultRow(r)))
+    pager.apply(page)
   } catch (err) {
+    pager.clear()
     list.innerHTML = `<p class="admin-list-error">${esc((err as Error).message)}</p>`
+  }
+}
+
+async function exportAllCSV(button: HTMLButtonElement): Promise<void> {
+  button.disabled = true
+  try {
+    exportCSV(await fetchAllPages(async range => {
+      const { results, page } = await getAdminResults(range)
+      return { items: results, page }
+    }))
+  } catch (err) {
+    showModal((err as Error).message)
+  } finally {
+    button.disabled = false
   }
 }
 

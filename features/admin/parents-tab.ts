@@ -1,5 +1,13 @@
 import { getAdminParents, type AdminParentSummary } from '../../features/api/client.js'
 import { $maybe } from '../../utils/dom.js'
+import { createPager } from './pagination.js'
+
+const pager = createPager({
+  hostId: 'parents-pager',
+  storageKey: 'admin:parents:page-size',
+  noun: 'акаунтів',
+  onChange: () => { void loadParents() },
+})
 
 export function initParentsTab() {}
 
@@ -9,8 +17,9 @@ export async function loadParents() {
   list.replaceChildren(statusText('Завантаження…', 'admin-loading-text'))
 
   try {
-    const { parents } = await getAdminParents()
+    const { parents, page } = await getAdminParents(pager.range())
     if (!parents.length) {
+      pager.apply(page)
       list.innerHTML = `
         <div class="admin-empty-state"><div>
           <i class="fas fa-user-friends admin-empty-state__icon" aria-hidden="true"></i>
@@ -19,7 +28,9 @@ export async function loadParents() {
       return
     }
     list.replaceChildren(...parents.map(buildParentRow))
+    pager.apply(page)
   } catch (error) {
+    pager.clear()
     list.replaceChildren(statusText((error as Error).message, 'admin-list-error'))
   }
 }

@@ -1,5 +1,5 @@
 import {
-  createAdminMission, getAdminMissionRevisions, getAdminMissions, getAdminQuestions,
+  createAdminMission, getAdminMissionRevisions, getAdminMissions, getAllAdminQuestions,
   restoreAdminMissionRevision, setAdminMissionStatus, updateAdminMission,
   type AdminMissionQuestionSet, type AdminQuestionSetMissionInput, type AdminSortingLevel,
   type AdminClickTrainerMissionInput, type AdminClickTrainerRound,
@@ -24,6 +24,7 @@ import { $ } from '../../utils/dom.js'
 import { esc, showConfirm, showModal } from './ui.js'
 import { CT_CONCEPTS, TOPIC_LABELS, TOPICS_BY_TRACK } from './taxonomy.js'
 import { refreshContentDeliveryBanner } from './publication-tab.js'
+import { createPager } from './pagination.js'
 
 const TRACK_LABELS: Record<string, string> = {
   informatics: 'Інформатика', 'computational-thinking': 'Обчислювальне мислення', 'ai-basics': 'Основи ШІ',
@@ -39,6 +40,13 @@ const FO_CATEGORY_OPTIONS: Array<{ value: AdminFactOpinionStatement['category'];
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Чернетка', review: 'Готова до публікації', published: 'Опублікована', active: 'Опублікована', archived: 'Знята з публікації',
 }
+
+const pager = createPager({
+  hostId: 'missions-pager',
+  storageKey: 'admin:missions:page-size',
+  noun: 'місій',
+  onChange: renderMissions,
+})
 
 let allMissions: Mission[] = []
 let availableQuestions: Question[] = []
@@ -80,8 +88,8 @@ function fillConceptSelect(selector: string, selected = '') {
 }
 
 export function initMissionsTab() {
-  $<HTMLSelectElement>('m-filter-track').addEventListener('change', renderMissions)
-  $<HTMLSelectElement>('m-filter-grade').addEventListener('change', renderMissions)
+  $<HTMLSelectElement>('m-filter-track').addEventListener('change', restartMissionList)
+  $<HTMLSelectElement>('m-filter-grade').addEventListener('change', restartMissionList)
   $('add-mission-btn').addEventListener('click', () => { void openEditor(null) })
   $('add-sorting-mission-btn').addEventListener('click', () => { openSortingEditor(null) })
   $('add-sequence-mission-btn').addEventListener('click', () => { openNarrativeEditor(null, 'sequence-game') })
@@ -103,6 +111,10 @@ export async function loadMissionsTab() {
   }
 }
 
+// The mission set is small and curated, and its filters (plus the config-driven
+// badges) are computed here, so the whole list is fetched once and only the
+// visible page is drawn. That is where the cost is — hundreds of cards, each
+// carrying a game config.
 function renderMissions() {
   const list = $('missions-list')
   const track = $<HTMLSelectElement>('m-filter-track').value
@@ -110,11 +122,19 @@ function renderMissions() {
   const filtered = allMissions.filter(m => (!track || m.track === track) && (!grade || m.grade === Number(grade)))
   $('m-count').textContent = `${filtered.length} місій`
   if (!filtered.length) {
+    pager.clear()
     list.innerHTML = '<div class="admin-empty-state"><div><i class="fas fa-rocket admin-empty-state__icon" aria-hidden="true"></i><p class="admin-empty-state__title">Місій не знайдено</p></div></div>'
     return
   }
+  const { limit, offset } = pager.range()
   list.innerHTML = ''
-  for (const mission of filtered) list.appendChild(missionCard(mission))
+  for (const mission of filtered.slice(offset, offset + limit)) list.appendChild(missionCard(mission))
+  pager.apply({ total: filtered.length, limit, offset })
+}
+
+function restartMissionList() {
+  pager.reset()
+  renderMissions()
 }
 
 function missionCard(mission: Mission): HTMLElement {
@@ -257,8 +277,8 @@ async function loadEditorQuestions() {
   if (!editorOverlay) return
   const grade = Number(editorOverlay.querySelector<HTMLSelectElement>('.me-grade')!.value)
   const track = editorOverlay.querySelector<HTMLSelectElement>('.me-track')!.value
-  const { questions } = await getAdminQuestions({ grade, track, status: 'published' })
-  availableQuestions = questions
+  // Every eligible question, not one page: the set editor picks from this list.
+  availableQuestions = await getAllAdminQuestions({ grade, track, status: 'published' })
   renderSetRows()
 }
 

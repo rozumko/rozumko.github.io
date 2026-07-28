@@ -1,5 +1,5 @@
 import {
-  getAdminPathMaps, updateAdminPathMap, getAdminLessons, getAdminQuestions, getAdminMissions,
+  getAdminPathMaps, updateAdminPathMap, getAdminLessons, getAllAdminQuestions, getAdminMissions,
   type AdminPathMap, type AdminMicroLesson, type Mission, type Question,
 } from '../../features/api/client.js'
 import { esc, showModal, showConfirm } from './ui.js'
@@ -108,10 +108,11 @@ export async function loadPathTab() {
   const status = $('pm-status')
   status.textContent = 'Завантаження…'
   try {
-    const [{ maps: loadedMaps }, { lessons }, { questions }, { missions: loadedMissions }] = await Promise.all([
+    // Point editors pick from these lists, so each one must be complete.
+    const [{ maps: loadedMaps }, { lessons }, questions, { missions: loadedMissions }] = await Promise.all([
       getAdminPathMaps(),
       getAdminLessons(),
-      getAdminQuestions({ channel: 'path', status: 'published' }),
+      getAllAdminQuestions({ channel: 'path', status: 'published' }),
       getAdminMissions(),
     ])
     maps = loadedMaps
