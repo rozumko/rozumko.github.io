@@ -12,13 +12,18 @@ export interface WindowApp {
   color: string
 }
 
+// The app colour is used twice against near-white: white text on the title bar
+// and the task instruction below it. Every value must therefore clear WCAG AA
+// (4.5:1) on its own — the green, orange and teal here used to sit at 3.3–3.7,
+// which made the very sentence telling the child what to do the hardest thing
+// on screen to read. Pinned by windows-data.test.mjs.
 export const WINDOW_APPS: readonly WindowApp[] = [
-  { name: 'Текстовий редактор', icon: '📝', color: '#16a34a' },
+  { name: 'Текстовий редактор', icon: '📝', color: '#15803d' },
   { name: 'Калькулятор',        icon: '🧮', color: '#2563eb' },
-  { name: 'Перегляд фото',      icon: '🖼️', color: '#ea580c' },
+  { name: 'Перегляд фото',      icon: '🖼️', color: '#c2410c' },
   { name: 'Музичний плеєр',     icon: '🎵', color: '#db2777' },
   { name: 'Провідник файлів',   icon: '📁', color: '#475569' },
-  { name: 'Браузер',            icon: '🌐', color: '#0d9488' },
+  { name: 'Браузер',            icon: '🌐', color: '#0f766e' },
   { name: 'Пошта',              icon: '✉️', color: '#4338ca' },
   { name: 'Відеоплеєр',         icon: '🎬', color: '#dc2626' },
   { name: 'Малювалка',          icon: '🎨', color: '#9333ea' },
