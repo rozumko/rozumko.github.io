@@ -58,6 +58,20 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     ],
     load: () => import('./maze/maze.js'),
   },
+  {
+    key: 'windows',
+    label: 'Вікна програм',
+    description: 'Дитина вчиться закривати, згортати й розгортати вікна програм.',
+    device: 'desktop',
+    // A window is 420px wide and has to land somewhere on a desktop.
+    minWidth: 900,
+    levels: [
+      { id: 'easy',   label: 'Легко',    description: '10 вікон, 10 секунд на кожне' },
+      { id: 'medium', label: 'Середньо', description: '15 вікон, 8 секунд на кожне' },
+      { id: 'hard',   label: 'Складно',  description: '20 вікон, 6 секунд на кожне' },
+    ],
+    load: () => import('./windows/windows.js'),
+  },
 ]
 
 export function findActivity(key: string | null | undefined): ActivityInfo | null {

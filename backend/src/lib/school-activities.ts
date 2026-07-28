@@ -9,7 +9,7 @@
 // teacher dashboard only. It must never feed entitlements, payments or
 // certificates — see docs/security-model.md.
 
-export type SchoolActivityKey = 'key-puzzle' | 'maze'
+export type SchoolActivityKey = 'key-puzzle' | 'maze' | 'windows'
 
 /** Devices an activity is usable on. School Mode targets computer labs first. */
 export type SchoolActivityDevice = 'desktop' | 'any'
@@ -79,9 +79,25 @@ export const SCHOOL_ACTIVITIES: Record<SchoolActivityKey, SchoolActivityDefiniti
       return mistakes <= total ? 3 : mistakes <= total * 3 ? 2 : 1
     },
   },
+  // windows: a fixed number of windows to close, minimise or maximise. Unlike
+  // the other two the child always reaches the end, so `correct` is a genuine
+  // accuracy score and the rubric is the plain percentage one.
+  windows: {
+    key: 'windows',
+    device: 'desktop',
+    levels: [
+      { id: 'easy',   maxTotal: 10, minDurationSec: 15 },
+      { id: 'medium', maxTotal: 15, minDurationSec: 20 },
+      { id: 'hard',   maxTotal: 20, minDurationSec: 25 },
+    ],
+    stars: ({ correct, total }) => {
+      const percent = (correct / total) * 100
+      return percent >= 90 ? 3 : percent >= 70 ? 2 : percent >= 40 ? 1 : 0
+    },
+  },
 }
 
-export const SCHOOL_ACTIVITY_KEYS = ['key-puzzle', 'maze'] as const satisfies readonly SchoolActivityKey[]
+export const SCHOOL_ACTIVITY_KEYS = ['key-puzzle', 'maze', 'windows'] as const satisfies readonly SchoolActivityKey[]
 
 /** Every level id any activity accepts — for the route's JSON schema enum. */
 export const SCHOOL_ACTIVITY_LEVEL_IDS: readonly string[] = [

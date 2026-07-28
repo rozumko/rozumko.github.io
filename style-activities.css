@@ -350,3 +350,199 @@
   .mz-board--shake { animation: none; }
   .mz-toast { transition: none; }
 }
+
+/* ── Вікна програм ───────────────────────────────────────────────────────── */
+
+.wn-root {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(160deg, #1e3a8a, #0f172a);
+}
+
+.wn-hud {
+  display: flex;
+  justify-content: center;
+  gap: 1.25rem;
+  padding: 0.6rem;
+  color: #e2e8f0;
+  font-weight: 700;
+}
+
+.wn-hud__item {
+  padding: 3px 14px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.12);
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.wn-timebar {
+  height: 6px;
+  margin: 0 0.75rem;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.15);
+  overflow: hidden;
+}
+
+/* Width is set by the game's own ticker, never by a CSS transition — the
+   app-wide reduced-motion rule would cap a transition at 0.01ms. */
+.wn-timebar__fill {
+  height: 100%;
+  width: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #4ade80, #facc15, #f87171);
+}
+
+.wn-hud__time { font-variant-numeric: tabular-nums; }
+
+/* The desktop the windows land on */
+.wn-desktop {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0.75rem;
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 20% 25%, rgb(255 255 255 / 0.07), transparent 45%),
+    radial-gradient(circle at 80% 70%, rgb(255 255 255 / 0.06), transparent 40%);
+  overflow: hidden;
+}
+
+.wn-window {
+  position: absolute;
+  width: 420px;
+  height: 320px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 18px 45px rgb(2 6 23 / 0.5);
+  transition: transform 0.4s ease, opacity 0.4s ease;
+}
+
+.wn-window__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 8px 10px;
+  background: var(--wn-app, #334155);
+  color: #fff;
+  cursor: grab;
+  touch-action: none;
+}
+
+.wn-window__header:active { cursor: grabbing; }
+
+.wn-window__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.wn-window__controls { display: flex; gap: 6px; flex-shrink: 0; }
+
+.wn-control {
+  width: 30px;
+  height: 26px;
+  border: 0;
+  border-radius: 6px;
+  background: rgb(255 255 255 / 0.22);
+  color: #fff;
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+}
+
+.wn-control:hover { background: rgb(255 255 255 / 0.4); transform: translateY(-1px); }
+.wn-control--close:hover { background: #ef4444; }
+
+.wn-window__body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: color-mix(in srgb, var(--wn-app, #334155) 8%, #fff);
+}
+
+.wn-window__hello { margin: 0; color: #475569; font-size: 0.9rem; }
+
+.wn-window__task {
+  margin-top: auto;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 2px 10px rgb(15 23 42 / 0.12);
+}
+
+.wn-window__task-label {
+  margin: 0 0 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.wn-window__task-text {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--wn-app, #1e293b);
+}
+
+.wn-window--closing    { transform: scale(0) rotate(12deg); opacity: 0; }
+.wn-window--minimizing { transform: translateY(120%) scale(0.4); opacity: 0; }
+.wn-window--maximizing { inset: 0; width: auto; height: auto; }
+.wn-window--wrong      { animation: wn-shake 0.4s ease; }
+
+@keyframes wn-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  50% { transform: translateX(10px); }
+  75% { transform: translateX(-6px); }
+}
+
+.wn-toast {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 7px 20px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.wn-toast--ok   { background: #dcfce7; color: #166534; }
+.wn-toast--miss { background: #fee2e2; color: #b91c1c; }
+.wn-toast--hidden { opacity: 0; }
+
+.wn-error {
+  padding: 2rem;
+  text-align: center;
+  font-weight: 600;
+  color: #fecaca;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wn-window,
+  .wn-toast { transition: none; }
+  .wn-window--wrong { animation: none; }
+}

@@ -109,6 +109,24 @@ test('maze: levels carry their own ceiling and mistake budget', () => {
   assert.equal(stars(master, { correct: 1, total: 10, mistakes: 0 }), 0)
 })
 
+test('windows: accuracy rubric, since the child always reaches the last window', () => {
+  const activity = SCHOOL_ACTIVITIES['windows']
+  const easy = resolveActivityLevel(activity, 'easy')
+  const hard = resolveActivityLevel(activity, 'hard')
+  assert.equal(easy.maxTotal, 10)
+  assert.equal(hard.maxTotal, 20)
+  // An easy run cannot claim the twenty windows of the hard level
+  assert.throws(() => normalizeActivityResult(activity, easy, { correct: 20, total: 20, mistakes: 0, durationSec: 90 }))
+
+  const stars = (correct: number) =>
+    normalizeActivityResult(activity, easy, { correct, total: 10, mistakes: 10 - correct, durationSec: 90 }).stars
+  assert.equal(stars(10), 3)
+  assert.equal(stars(9), 3)
+  assert.equal(stars(7), 2)
+  assert.equal(stars(4), 1)
+  assert.equal(stars(2), 0)
+})
+
 test('normalizeActivityResult: stars stay clamped even if a rubric misbehaves', () => {
   const level = resolveActivityLevel(SCHOOL_ACTIVITIES['key-puzzle'], 'easy')
   const rogue = { ...SCHOOL_ACTIVITIES['key-puzzle'], stars: () => 99 }
