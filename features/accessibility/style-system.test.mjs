@@ -117,6 +117,21 @@ test('child app pages keep static presentation out of inline styles', async () =
   }
 })
 
+test('school activity screen stays visible in mission-active mode', async () => {
+  const css = await readRepoFile('style-student.css')
+
+  assert.match(
+    css,
+    /body\.mission-active \.app-main > :not\(#mission-quiz\):not\(#mission-activity\)\s*\{/,
+    'mission-active shell hiding must not hide procedural class activities',
+  )
+  assert.match(
+    css,
+    /body\.mission-active #mission-quiz:not\(\.hidden\),\s*body\.mission-active #mission-activity:not\(\.hidden\)\s*\{/,
+    'procedural class activities should share the fixed mission viewport',
+  )
+})
+
 test('teacher and admin runtime templates use component classes', async () => {
   const sources = await Promise.all([
     readRepoFile('teacher.ts'),

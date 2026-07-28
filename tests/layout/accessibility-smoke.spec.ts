@@ -495,6 +495,43 @@ test.describe('accessibility smoke: home and school missions', () => {
     await expect(radios.first()).toHaveAttribute('aria-checked', 'true')
     await expect(page.locator('#quiz-next-btn')).toBeVisible()
   })
+
+  test('school procedural activity is visible after mocked active join', async ({ page }) => {
+    await page.addInitScript(() => {
+      const originalFetch = window.fetch.bind(window)
+      window.fetch = async (input, init) => {
+        const url = input instanceof Request ? input.url : String(input)
+        if (url.includes('/api/school/join')) {
+          return new Response(JSON.stringify({
+            participantId: 'participant-activity-1',
+            participantToken: 'token-activity-1',
+            status: 'active',
+            grade: 3,
+            kind: 'activity',
+            activityKey: 'maze',
+            activityLevel: 'beginner',
+            questions: [],
+            questionsCount: 0,
+          }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+        }
+        return originalFetch(input, init)
+      }
+    })
+
+    await page.goto('/school.html')
+    await page.locator('#join-code').fill('123456')
+    await page.locator('#join-nickname').fill('Tester')
+    await page.locator('#join-btn').click()
+
+    await expect(page.locator('body')).toHaveClass(/mission-active/)
+    await expect(page.locator('#mission-activity')).toBeVisible()
+    await expect(page.locator('#mission-quiz')).toBeHidden()
+    await expect(page.locator('.mz-root')).toBeVisible()
+
+    const stageBox = await page.locator('#activity-stage').boundingBox()
+    expect(stageBox?.width).toBeGreaterThan(300)
+    expect(stageBox?.height).toBeGreaterThan(300)
+  })
 })
 
 test.describe('axe accessibility scan', () => {

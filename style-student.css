@@ -984,11 +984,12 @@ body.mission-active #site-footer,
 body.mission-active .site-header,
 body.mission-active .site-footer,
 body.mission-active .skip-link,
-body.mission-active .app-main > :not(#mission-quiz) {
+body.mission-active .app-main > :not(#mission-quiz):not(#mission-activity) {
   display: none;
 }
 
-body.mission-active #mission-quiz:not(.hidden) {
+body.mission-active #mission-quiz:not(.hidden),
+body.mission-active #mission-activity:not(.hidden) {
   position: fixed;
   inset: 0;
   z-index: 90;
@@ -1012,6 +1013,10 @@ body.mission-active #mission-quiz:not(.hidden) {
     linear-gradient(135deg, #fff7ed 0%, #eff6ff 44%, #f5f3ff 100%);
 }
 
+body.mission-active #mission-activity:not(.hidden) {
+  background: var(--surface-2, #eff6ff);
+}
+
 body.mission-active #mission-quiz .quiz-progress-header,
 body.mission-active #mission-quiz .quiz-progress-bar-wrap,
 body.mission-active #mission-quiz .quiz-question-card,
@@ -1021,6 +1026,18 @@ body.mission-active #mission-quiz .quiz-feedback-wrap {
   width: min(100%, 86rem);
   margin-left: auto;
   margin-right: auto;
+}
+
+body.mission-active #mission-activity .quiz-progress-header {
+  width: min(100%, 86rem);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+body.mission-active #mission-activity .activity-stage {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
 }
 
 body.mission-active #mission-quiz .quiz-progress-header {

@@ -411,7 +411,10 @@ function showActivityResult(stars: number, correct: number, total: number, durat
   // An activity reports how much was assembled and how long it took, not a
   // percentage of right answers.
   const label = $maybe('result-score-label')
-  if (label) label.textContent = 'Зібрано:'
+  // Neutral wording: the number means keys placed, maze levels passed, windows
+  // handled or objects sorted depending on the activity, so it cannot say
+  // «Зібрано» the way it did when the keyboard puzzle was the only one.
+  if (label) label.textContent = 'Виконано:'
   $('result-score').textContent = `${correct} з ${total}`
   $('result-percent').textContent = formatActivityDuration(durationSec)
   $('result-message').textContent = note || encouragement(total > 0 ? Math.round((correct / total) * 100) : 0)
