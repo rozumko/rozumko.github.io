@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import rateLimit from '@fastify/rate-limit'
@@ -100,6 +100,39 @@ test('CORS preflight дозволяє кастомні токен-заголов
     },
   })
   assert.equal(customDomainPreflight.statusCode, 204)
+
+  const patchPreflight = await app.inject({
+    method: 'OPTIONS',
+    url: '/probe',
+    headers: {
+      origin: 'https://rozumko.com',
+      'access-control-request-method': 'PATCH',
+      'access-control-request-headers': 'x-participant-token',
+    },
+  })
+  assert.equal(patchPreflight.statusCode, 204)
+  const allowedMethods = String(patchPreflight.headers['access-control-allow-methods'] ?? '').toUpperCase()
+  assert.ok(allowedMethods.includes('PATCH'), 'PATCH відсутній у access-control-allow-methods')
+
+  // PATCH was missing from the allowlist while two PATCH routes were already
+  // live (the child's avatar and the parent's child profile), so the browser
+  // blocked both at preflight. Deriving the expected set from the routes
+  // themselves catches the next method somebody forgets, instead of waiting
+  // for a feature to break in production.
+  const routeFiles = readdirSync(new URL('./routes/', import.meta.url))
+    .filter(name => name.endsWith('.ts') && !name.endsWith('.test.ts'))
+  const usedMethods = new Set<string>()
+  for (const name of routeFiles) {
+    const source = readFileSync(new URL(`./routes/${name}`, import.meta.url), 'utf8')
+    for (const match of source.matchAll(/\bapp\.(get|post|put|patch|delete|head)\s*[<(]/g)) {
+      usedMethods.add(match[1]!.toUpperCase())
+    }
+  }
+  assert.ok(usedMethods.size > 0, 'route scan found no HTTP methods — the pattern must have drifted')
+  const allowlist = CORS_OPTIONS.methods.map(m => m.toUpperCase())
+  for (const method of usedMethods) {
+    assert.ok(allowlist.includes(method), `${method} is routed but missing from CORS allow-methods`)
+  }
 
   const forbidden = await app.inject({
     method: 'OPTIONS',
