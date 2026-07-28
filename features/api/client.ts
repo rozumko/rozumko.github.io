@@ -1391,7 +1391,7 @@ export interface QuestionRevision {
   id: string
   questionId: string
   editVersion: number
-  action: 'create' | 'update' | 'status' | 'restore' | 'backfill'
+  action: 'create' | 'update' | 'status' | 'restore' | 'backfill' | 'channels'
   snapshot: Record<string, unknown>
   changedBy: string | null
   createdAt: string
