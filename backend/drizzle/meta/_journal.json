@@ -323,6 +323,13 @@
       "when": 1784937600000,
       "tag": "0045_add_home_funnel_counters",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1785024000000,
+      "tag": "0046_allow_channels_revision_action",
+      "breakpoints": true
     }
   ]
 }
