@@ -9,7 +9,7 @@
 // teacher dashboard only. It must never feed entitlements, payments or
 // certificates — see docs/security-model.md.
 
-export type SchoolActivityKey = 'key-puzzle' | 'maze' | 'windows'
+export type SchoolActivityKey = 'key-puzzle' | 'maze' | 'windows' | 'mouse-buttons'
 
 /** Devices an activity is usable on. School Mode targets computer labs first. */
 export type SchoolActivityDevice = 'desktop' | 'any'
@@ -95,9 +95,29 @@ export const SCHOOL_ACTIVITIES: Record<SchoolActivityKey, SchoolActivityDefiniti
       return percent >= 90 ? 3 : percent >= 70 ? 2 : percent >= 40 ? 1 : 0
     },
   },
+  // mouse-buttons: left button steers left, right button steers right. Each
+  // obstacle that reaches the ambulance is one decision, so `total` is however
+  // many arrived during the fixed run time — it varies per run, and the
+  // ceiling is what the spawn rate can physically produce in that time.
+  'mouse-buttons': {
+    key: 'mouse-buttons',
+    device: 'desktop',
+    // Ceilings sit above what the spawn rate can produce in the run time
+    // (measured: ~331 obstacles across a full master run, ~362 in theory at
+    // the tightest spawn interval). Rejecting an honest result is worse than a
+    // loose ceiling, so there is headroom.
+    levels: [
+      { id: 'beginner', maxTotal: 150, minDurationSec: 60 },
+      { id: 'master',   maxTotal: 500, minDurationSec: 150 },
+    ],
+    stars: ({ correct, total }) => {
+      const percent = (correct / total) * 100
+      return percent >= 90 ? 3 : percent >= 70 ? 2 : percent >= 40 ? 1 : 0
+    },
+  },
 }
 
-export const SCHOOL_ACTIVITY_KEYS = ['key-puzzle', 'maze', 'windows'] as const satisfies readonly SchoolActivityKey[]
+export const SCHOOL_ACTIVITY_KEYS = ['key-puzzle', 'maze', 'windows', 'mouse-buttons'] as const satisfies readonly SchoolActivityKey[]
 
 /** Every level id any activity accepts — for the route's JSON schema enum. */
 export const SCHOOL_ACTIVITY_LEVEL_IDS: readonly string[] = [
