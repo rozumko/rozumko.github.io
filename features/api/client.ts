@@ -1222,6 +1222,58 @@ export function submitSchoolProjectorAnswer(
 
 // ─── Admin API ─────────────────────────────────────────────────────────────
 
+/** Admin lists answer with one page. `total` describes the whole filtered set,
+ *  so a pager can be drawn without a second request. */
+export interface PageInfo {
+  total: number
+  limit: number
+  offset: number
+}
+
+export interface PageParams {
+  limit?: number
+  offset?: number
+}
+
+/** Mirrors MAX_PAGE_SIZE on the server: a bigger page is rejected by schema. */
+export const MAX_PAGE_SIZE = 200
+
+const MAX_PAGES_PER_SWEEP = 40
+
+function pageQuery(params: PageParams): URLSearchParams {
+  const p = new URLSearchParams()
+  if (params.limit  != null) p.set('limit',  String(params.limit))
+  if (params.offset != null) p.set('offset', String(params.offset))
+  return p
+}
+
+/** The static site and the API deploy separately, so a browser can briefly talk
+ *  to a backend that still answers without `page`. Treat that as a single page
+ *  over whatever came back rather than breaking the list. */
+function pageOrFallback(page: PageInfo | undefined, items: unknown[], range: PageParams): PageInfo {
+  if (page && typeof page.total === 'number') return page
+  return {
+    total:  items.length,
+    limit:  range.limit ?? Math.max(items.length, 1),
+    offset: range.offset ?? 0,
+  }
+}
+
+/** Walks every page of a list endpoint. Only for the few callers that need the
+ *  whole set — question pickers and CSV export — where a truncated list would
+ *  be a silent bug rather than a shorter screen. */
+export async function fetchAllPages<T>(
+  load: (range: Required<PageParams>) => Promise<{ items: T[]; page: PageInfo }>,
+): Promise<T[]> {
+  const all: T[] = []
+  for (let sweep = 0; sweep < MAX_PAGES_PER_SWEEP; sweep++) {
+    const { items, page } = await load({ limit: MAX_PAGE_SIZE, offset: all.length })
+    all.push(...items)
+    if (!items.length || all.length >= page.total) break
+  }
+  return all
+}
+
 export function getAdminStats(): Promise<{ teachers: number; parents?: number; codes: number; results: number; events?: number }> {
   return authRequest('/api/admin/stats')
 }
@@ -1250,12 +1302,22 @@ export interface AdminParentSummary {
   createdAt: string | null
 }
 
-export function getAdminParents(): Promise<{ parents: AdminParentSummary[] }> {
-  return authRequest('/api/admin/parents')
+export async function getAdminParents(page: PageParams = {}): Promise<{ parents: AdminParentSummary[]; page: PageInfo }> {
+  const res = await authRequest(`/api/admin/parents?${pageQuery(page)}`)
+  return { parents: res.parents, page: pageOrFallback(res.page, res.parents, page) }
 }
 
-export function getAdminTeachers(): Promise<{ teachers: { id: string; email: string; name: string | null; status: string; createdAt: string }[] }> {
-  return authRequest('/api/admin/teachers')
+export interface AdminTeacher {
+  id: string
+  email: string
+  name: string | null
+  status: string
+  createdAt: string
+}
+
+export async function getAdminTeachers(page: PageParams = {}): Promise<{ teachers: AdminTeacher[]; page: PageInfo }> {
+  const res = await authRequest(`/api/admin/teachers?${pageQuery(page)}`)
+  return { teachers: res.teachers, page: pageOrFallback(res.page, res.teachers, page) }
 }
 
 export function setTeacherStatus(id: string, status: 'active' | 'blocked'): Promise<{ id: string; status: string }> {
@@ -1265,12 +1327,14 @@ export function setTeacherStatus(id: string, status: 'active' | 'blocked'): Prom
   })
 }
 
-export function getAdminResults(): Promise<{ results: Attempt[] }> {
-  return authRequest('/api/admin/results')
+export async function getAdminResults(page: PageParams = {}): Promise<{ results: Attempt[]; page: PageInfo }> {
+  const res = await authRequest(`/api/admin/results?${pageQuery(page)}`)
+  return { results: res.results, page: pageOrFallback(res.page, res.results, page) }
 }
 
-export function getAdminEvents(): Promise<{ events: OlympiadEvent[] }> {
-  return authRequest('/api/admin/events')
+export async function getAdminEvents(page: PageParams = {}): Promise<{ events: OlympiadEvent[]; page: PageInfo }> {
+  const res = await authRequest(`/api/admin/events?${pageQuery(page)}`)
+  return { events: res.events, page: pageOrFallback(res.page, res.events, page) }
 }
 
 export function createEvent(data: OlympiadEventInput): Promise<{ event: OlympiadEvent }> {
@@ -1676,12 +1740,30 @@ function adminQuestionQuery(params: AdminQuestionFilters): URLSearchParams {
 export type AdminQuestionSection = 'class_game' | 'path' | 'olympiad_training' | 'main_round' | 'unassigned'
 export type AdminQuestionCounts = Record<AdminQuestionSection | 'all', number>
 
-export function getAdminQuestions(params: AdminQuestionFilters & { isOlympiad?: boolean | string; channel?: QuestionChannel | string; unassigned?: boolean } = {}): Promise<{ questions: Question[] }> {
+export type AdminQuestionQuery = AdminQuestionFilters & PageParams & {
+  isOlympiad?: boolean | string
+  channel?: QuestionChannel | string
+  unassigned?: boolean
+}
+
+export async function getAdminQuestions(params: AdminQuestionQuery = {}): Promise<{ questions: Question[]; page: PageInfo }> {
   const p = adminQuestionQuery(params)
   if (params.isOlympiad != null) p.set('isOlympiad', String(params.isOlympiad))
   if (params.channel)            p.set('channel',    String(params.channel))
   if (params.unassigned)         p.set('unassigned', 'true')
-  return authRequest(`/api/admin/questions?${p}`)
+  if (params.limit  != null)     p.set('limit',      String(params.limit))
+  if (params.offset != null)     p.set('offset',     String(params.offset))
+  const res = await authRequest(`/api/admin/questions?${p}`)
+  return { questions: res.questions, page: pageOrFallback(res.page, res.questions, params) }
+}
+
+/** Every question matching the filters, walked page by page. Question pickers
+ *  need the full set — a page-sized picker would hide valid choices. */
+export function getAllAdminQuestions(params: Omit<AdminQuestionQuery, keyof PageParams> = {}): Promise<Question[]> {
+  return fetchAllPages(async range => {
+    const { questions, page } = await getAdminQuestions({ ...params, ...range })
+    return { items: questions, page }
+  })
 }
 
 export function getAdminQuestionCounts(params: AdminQuestionFilters = {}): Promise<{ counts: AdminQuestionCounts }> {

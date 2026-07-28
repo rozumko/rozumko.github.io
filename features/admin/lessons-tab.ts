@@ -11,6 +11,7 @@ import { mountLesson } from '../../features/lessons/lesson-runner.js'
 import type { PathPoint } from '../../features/path/path-data.js'
 import { TOPIC_LABELS } from './taxonomy.js'
 import { refreshContentDeliveryBanner } from './publication-tab.js'
+import { createPager } from './pagination.js'
 
 // Micro-lesson authoring. Publishing freezes an immutable revision; the site
 // update action deploys all child-facing static bundles as one audited set.
@@ -27,6 +28,13 @@ const TRACK_LABELS: Record<string, string> = {
   'ai-basics': 'Основи ШІ',
 }
 
+const pager = createPager({
+  hostId: 'lessons-pager',
+  storageKey: 'admin:lessons:page-size',
+  noun: 'уроків',
+  onChange: renderLessons,
+})
+
 let allLessons: AdminMicroLesson[] = []
 let lessonUsageById = new Map<string, LessonUsage[]>()
 let editingId: string | null = null
@@ -41,22 +49,22 @@ interface LessonUsage {
 }
 
 export function initLessonsTab() {
-  $<HTMLInputElement>('l-filter-search').addEventListener('input', renderLessons)
+  $<HTMLInputElement>('l-filter-search').addEventListener('input', restartLessonList)
   $<HTMLInputElement>('l-filter-search').addEventListener('keydown', event => {
     if (event.key === 'Escape') {
       const input = event.currentTarget as HTMLInputElement
       input.value = ''
-      renderLessons()
+      restartLessonList()
     }
   })
-  $<HTMLSelectElement>('l-filter-status').addEventListener('change', renderLessons)
-  $<HTMLSelectElement>('l-filter-grade').addEventListener('change', renderLessons)
+  $<HTMLSelectElement>('l-filter-status').addEventListener('change', restartLessonList)
+  $<HTMLSelectElement>('l-filter-grade').addEventListener('change', restartLessonList)
   $<HTMLSelectElement>('l-filter-track').addEventListener('change', event => {
     fillLessonTopicSelect((event.currentTarget as HTMLSelectElement).value)
-    renderLessons()
+    restartLessonList()
   })
-  $<HTMLSelectElement>('l-filter-topic').addEventListener('change', renderLessons)
-  $<HTMLSelectElement>('l-filter-usage').addEventListener('change', renderLessons)
+  $<HTMLSelectElement>('l-filter-topic').addEventListener('change', restartLessonList)
+  $<HTMLSelectElement>('l-filter-usage').addEventListener('change', restartLessonList)
   $<HTMLButtonElement>('l-filter-reset').addEventListener('click', () => {
     $<HTMLInputElement>('l-filter-search').value = ''
     $<HTMLSelectElement>('l-filter-status').value = ''
@@ -64,7 +72,7 @@ export function initLessonsTab() {
     $<HTMLSelectElement>('l-filter-track').value = ''
     fillLessonTopicSelect('')
     $<HTMLSelectElement>('l-filter-usage').value = ''
-    renderLessons()
+    restartLessonList()
   })
   $('add-lesson-btn').addEventListener('click', () => openEditor(null))
   $('lf-add-card').addEventListener('click', () => addCardRow())
@@ -180,6 +188,7 @@ function renderLessons() {
   $('l-count').textContent = `${filtered.length} із ${allLessons.length} уроків · на карті: ${usedCount}`
 
   if (!filtered.length) {
+    pager.clear()
     list.innerHTML = `
       <div class="admin-empty-state"><div>
         <i class="fas fa-book-open admin-empty-state__icon" aria-hidden="true"></i>
@@ -188,8 +197,11 @@ function renderLessons() {
     return
   }
 
+  // Lessons are a bounded, curated set and one filter ("на карті") is computed
+  // from the path maps here, so the page is cut client-side after filtering.
+  const { limit, offset } = pager.range()
   list.innerHTML = ''
-  for (const lesson of filtered) {
+  for (const lesson of filtered.slice(offset, offset + limit)) {
     const el = document.createElement('div')
     el.className = 'question-item'
     const statusBadge = lesson.status === 'published' ? 'qi-badge--easy'
@@ -231,6 +243,12 @@ function renderLessons() {
       .addEventListener('click', () => { void toggleStatus(lesson, nextStatus, nextLabel) })
     list.appendChild(el)
   }
+  pager.apply({ total: filtered.length, limit, offset })
+}
+
+function restartLessonList() {
+  pager.reset()
+  renderLessons()
 }
 
 async function toggleStatus(lesson: AdminMicroLesson, next: AdminMicroLesson['status'], label: string) {

@@ -498,7 +498,9 @@ test('admin parent directory is admin-only and excludes child identity fields', 
   const adminRoute = readFileSync(new URL('./routes/admin.ts', import.meta.url), 'utf8')
   const parentDirectory = readFileSync(new URL('./routes/admin-parents.ts', import.meta.url), 'utf8')
 
-  assert.match(adminRoute, /app\.get\('\/parents',\s*\{\s*preHandler:\s*requireAdmin\s*\}/)
+  // The route is paginated, so it now carries a querystring schema too — the
+  // guard being asserted is still that requireAdmin runs before the handler.
+  assert.match(adminRoute, /app\.get<[^>]*>\('\/parents',\s*\{\s*preHandler:\s*requireAdmin[,\s]/)
   assert.match(parentDirectory, /profileCount:\s*count\(homeChildProfiles\.id\)/)
   assert.doesNotMatch(parentDirectory, /displayName|authUserId|grade|progress|report/i)
 })

@@ -10,6 +10,7 @@ import { invalidatePathCatalogCache } from './path-catalog.js'
 import { ENTITLEMENT_STATUSES, normalizeEntitlementStatus, applyEntitlementChange } from './home-entitlement.js'
 import { summarizeFunnel } from './home-funnel.js'
 import { requireAdmin } from '../lib/auth.js'
+import { pageInfo, pageRange, paginationProperties, paginationQuerystring } from '../lib/pagination.js'
 import { assertQuestionsBelongToGrade, normalizeEventQuestionSelection } from './event-questions-validation.js'
 import { validateQuestionShape, type QuestionType } from './question-input-validation.js'
 import {
@@ -319,19 +320,32 @@ export async function adminRoutes(app: FastifyInstance) {
     })
   })
 
-  // GET /api/admin/parents
-  app.get('/parents', { preHandler: requireAdmin }, async (_req, reply) => {
-    return reply.send({ parents: await listAdminParents() })
+  // GET /api/admin/parents?limit=&offset=
+  app.get<{ Querystring: { limit?: number; offset?: number } }>('/parents', {
+    preHandler: requireAdmin,
+    schema: { querystring: paginationQuerystring },
+  }, async (req, reply) => {
+    const range = pageRange(req.query)
+    const { parents, total } = await listAdminParents(range)
+    return reply.send({ parents, page: pageInfo(range, total) })
   })
 
-  // GET /api/admin/teachers
-  app.get('/teachers', { preHandler: requireAdmin }, async (_req, reply) => {
+  // GET /api/admin/teachers?limit=&offset=
+  app.get<{ Querystring: { limit?: number; offset?: number } }>('/teachers', {
+    preHandler: requireAdmin,
+    schema: { querystring: paginationQuerystring },
+  }, async (req, reply) => {
+    const range = pageRange(req.query)
+    const isTeacher = eq(appUsers.role, 'teacher')
     const list = await db
       .select({ id: appUsers.id, email: appUsers.email, name: appUsers.name, status: appUsers.status, createdAt: appUsers.createdAt })
       .from(appUsers)
-      .where(eq(appUsers.role, 'teacher'))
-      .orderBy(desc(appUsers.createdAt))
-    return reply.send({ teachers: list })
+      .where(isTeacher)
+      .orderBy(desc(appUsers.createdAt), asc(appUsers.id))
+      .limit(range.limit)
+      .offset(range.offset)
+    const [totals] = await db.select({ total: count() }).from(appUsers).where(isTeacher)
+    return reply.send({ teachers: list, page: pageInfo(range, totals?.total ?? 0) })
   })
 
   // PUT /api/admin/teachers/:id/status
@@ -373,13 +387,20 @@ export async function adminRoutes(app: FastifyInstance) {
     return reply.send({ id: updated.id, status: updated.status })
   })
 
-  // GET /api/admin/events
-  app.get('/events', { preHandler: requireAdmin }, async (_req, reply) => {
+  // GET /api/admin/events?limit=&offset=
+  app.get<{ Querystring: { limit?: number; offset?: number } }>('/events', {
+    preHandler: requireAdmin,
+    schema: { querystring: paginationQuerystring },
+  }, async (req, reply) => {
+    const range = pageRange(req.query)
     const list = await db
       .select()
       .from(olympiadEvents)
-      .orderBy(desc(olympiadEvents.startsAt))
-    return reply.send({ events: list })
+      .orderBy(desc(olympiadEvents.startsAt), asc(olympiadEvents.id))
+      .limit(range.limit)
+      .offset(range.offset)
+    const [totals] = await db.select({ total: count() }).from(olympiadEvents)
+    return reply.send({ events: list, page: pageInfo(range, totals?.total ?? 0) })
   })
 
   // POST /api/admin/events
@@ -625,9 +646,14 @@ export async function adminRoutes(app: FastifyInstance) {
     return reply.send({ saved: true, count: selection.questionIds.length })
   })
 
-  // GET /api/admin/results
-  app.get('/results', { preHandler: requireAdmin }, async (_req, reply) => {
-    const allAttempts = await db
+  // GET /api/admin/results?limit=&offset=
+  app.get<{ Querystring: { limit?: number; offset?: number } }>('/results', {
+    preHandler: requireAdmin,
+    schema: { querystring: paginationQuerystring },
+  }, async (req, reply) => {
+    const range = pageRange(req.query)
+    const finished = inArray(attempts.status, ['finished', 'expired'])
+    const page = await db
       .select({
         id:         attempts.id,
         grade:      attempts.grade,
@@ -641,9 +667,12 @@ export async function adminRoutes(app: FastifyInstance) {
       })
       .from(attempts)
       .leftJoin(accessCodes, eq(attempts.codeId, accessCodes.id))
-      .where(inArray(attempts.status, ['finished', 'expired']))
-      .orderBy(desc(attempts.finishedAt))
-    return reply.send({ results: allAttempts })
+      .where(finished)
+      .orderBy(desc(attempts.finishedAt), asc(attempts.id))
+      .limit(range.limit)
+      .offset(range.offset)
+    const [totals] = await db.select({ total: count() }).from(attempts).where(finished)
+    return reply.send({ results: page, page: pageInfo(range, totals?.total ?? 0) })
   })
 
   // GET /api/admin/questions/counts?grade=&type=&difficulty=&track=&topic=&status=&search=
@@ -731,9 +760,11 @@ export async function adminRoutes(app: FastifyInstance) {
     return reply.send({ cells })
   })
 
-  // GET /api/admin/questions?grade=&isOlympiad=&type=&channel=&unassigned=&difficulty=&track=&topic=&status=&search=
+  // GET /api/admin/questions?grade=&isOlympiad=&type=&channel=&unassigned=&difficulty=&track=&topic=&status=&search=&limit=&offset=
+  // One page only: the bank grows without bound, so the full list must never
+  // cross the wire. `page.total` counts the whole filtered set.
   app.get<{
-    Querystring: { grade?: string; isOlympiad?: string; type?: string; channel?: string; unassigned?: string; difficulty?: string; track?: string; topic?: string; status?: string; search?: string }
+    Querystring: { grade?: string; isOlympiad?: string; type?: string; channel?: string; unassigned?: string; difficulty?: string; track?: string; topic?: string; status?: string; search?: string; limit?: number; offset?: number }
   }>('/questions', {
     preHandler: requireAdmin,
     schema: {
@@ -744,6 +775,7 @@ export async function adminRoutes(app: FastifyInstance) {
           isOlympiad: { type: 'string', enum: ['true', 'false'] },
           channel:    { type: 'string', enum: [...QUESTION_CHANNELS] },
           unassigned: { type: 'string', enum: ['true'] },
+          ...paginationProperties,
         },
       },
     },
@@ -757,13 +789,22 @@ export async function adminRoutes(app: FastifyInstance) {
     }
     const filters = questionBankFilters(req.query, track)
     applyQuestionSectionFilters(filters, { isOlympiad, channel, unassigned })
+    const where = filters.length ? and(...filters) : undefined
+    const range = pageRange(req.query)
 
-    const list = await db
-      .select()
-      .from(questions)
-      .where(filters.length ? and(...filters) : undefined)
-      .orderBy(desc(questions.updatedAt), desc(questions.createdAt))
-    return reply.send({ questions: list })
+    // `id` breaks ties: rows sharing a timestamp must not swap places between
+    // pages, or paging would show one row twice and skip another.
+    const [list, [totals]] = await Promise.all([
+      db
+        .select()
+        .from(questions)
+        .where(where)
+        .orderBy(desc(questions.updatedAt), desc(questions.createdAt), asc(questions.id))
+        .limit(range.limit)
+        .offset(range.offset),
+      db.select({ total: count() }).from(questions).where(where),
+    ])
+    return reply.send({ questions: list, page: pageInfo(range, totals?.total ?? 0) })
   })
 
   // POST /api/admin/questions

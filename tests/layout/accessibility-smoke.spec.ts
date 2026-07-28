@@ -227,24 +227,33 @@ async function openAdminDashboard(page: Page) {
                         : path === '/api/admin/questions/channels'
                           ? { updated: 2, unchanged: 0, skipped: [] }
                         : path === '/api/admin/questions'
-                          ? {
-                              questions: [1, 2].map(n => ({
-                                id: `00000000-0000-4000-8000-00000000000${n}`,
-                                q: `Тестове питання ${n}`,
-                                type: 'choice',
-                                options: ['А', 'Б'],
-                                correct: 0,
-                                grade: 2,
-                                difficulty: 'easy',
-                                track: 'informatics',
-                                topic: 'information',
-                                isOlympiad: false,
-                                channels: ['class_game'],
-                                editorialStatus: 'published',
-                                version: 1,
-                                editVersion: 1,
-                              })),
-                            }
+                          ? (() => {
+                              // The bank answers one page at a time, so the mock
+                              // has to as well — otherwise the pager is untested.
+                              const query = new URL(url).searchParams
+                              const limit = Number(query.get('limit') ?? 50)
+                              const offset = Number(query.get('offset') ?? 0)
+                              const total = 60
+                              const questions = Array.from({ length: total }, (_, i) => i + 1)
+                                .slice(offset, offset + limit)
+                                .map(n => ({
+                                  id: `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`,
+                                  q: `Тестове питання ${n}`,
+                                  type: 'choice',
+                                  options: ['А', 'Б'],
+                                  correct: 0,
+                                  grade: 2,
+                                  difficulty: 'easy',
+                                  track: 'informatics',
+                                  topic: 'information',
+                                  isOlympiad: false,
+                                  channels: ['class_game'],
+                                  editorialStatus: 'published',
+                                  version: 1,
+                                  editVersion: 1,
+                                }))
+                              return { questions, page: { total, limit, offset } }
+                            })()
                   : { questions: [] }
 
       return new Response(JSON.stringify(body), {
@@ -696,6 +705,39 @@ test('admin bank shows section gaps and moves a selection between sections', asy
 
   const results = await new AxeBuilder({ page })
     .include('#tab-questions')
+    .withTags(WCAG_AA_TAGS)
+    .analyze()
+  expect(results.violations).toEqual([])
+})
+
+// The bank used to render every row it had, which froze the tab once the bank
+// grew. One page reaches the browser; the pager reaches the rest.
+test('admin bank renders one page and walks to the next', async ({ page }) => {
+  await openAdminDashboard(page)
+  await page.locator('[data-tab="questions"]').click()
+
+  const rows = page.locator('#questions-list .question-item')
+  await expect(rows).toHaveCount(50)
+  await expect(page.locator('#q-count')).toHaveText('60 питань')
+
+  const pager = page.locator('#questions-pager .admin-pager')
+  await expect(pager.locator('.admin-pager__status')).toHaveText('1–50 з 60 питань · сторінка 1 з 2')
+  await expect(pager.getByRole('button', { name: '← Назад' })).toBeDisabled()
+
+  await pager.getByRole('button', { name: 'Далі →' }).click()
+  await expect(rows).toHaveCount(10)
+  await expect(pager.locator('.admin-pager__status')).toHaveText('51–60 з 60 питань · сторінка 2 з 2')
+  await expect(pager.getByRole('button', { name: 'Далі →' })).toBeDisabled()
+
+  // A selection survives paging — the bulk bar counts rows from both pages
+  await page.locator('.qi-select').first().check()
+  await pager.getByRole('button', { name: '← Назад' }).click()
+  await expect(rows).toHaveCount(50)
+  await page.locator('.qi-select').first().check()
+  await expect(page.locator('#q-bulk-count')).toHaveText('Вибрано 2')
+
+  const results = await new AxeBuilder({ page })
+    .include('#questions-pager')
     .withTags(WCAG_AA_TAGS)
     .analyze()
   expect(results.violations).toEqual([])

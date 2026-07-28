@@ -1,12 +1,20 @@
 import {
-  createEvent, getAdminEvents, getAdminQuestions, getEventQuestions, setEventQuestions, updateEvent,
+  createEvent, getAdminEvents, getAllAdminQuestions, getEventQuestions, setEventQuestions, updateEvent,
   type OlympiadEvent, type EventQuestion, type Question,
 } from '../api/client.js'
-import { EVENT_STATUS_LABELS, buildEventPayload, countActiveEvents, formatEventDate } from './event-utils.js'
+import { EVENT_STATUS_LABELS, buildEventPayload, formatEventDate } from './event-utils.js'
 import { esc, showModal, showConfirm } from './ui.js'
 import { $, $maybe } from '../../utils/dom.js'
+import { createPager } from './pagination.js'
 
 interface Deps { refreshStats?: () => void }
+
+const pager = createPager({
+  hostId: 'events-pager',
+  storageKey: 'admin:events:page-size',
+  noun: 'подій',
+  onChange: () => { void loadEvents() },
+})
 
 let deps: Deps = {}
 let events: OlympiadEvent[] = []
@@ -37,11 +45,15 @@ export async function loadEvents() {
   list.innerHTML = '<p class="admin-loading-text">Завантаження…</p>'
 
   try {
-    const data = await getAdminEvents()
+    const data = await getAdminEvents(pager.range())
     events = data.events
     renderEvents(list, events)
-    updateEventsStat(events)
+    pager.apply(data.page)
+    // The active-events tile counts the whole table, so it comes from
+    // /api/admin/stats — one page could not answer it.
+    deps.refreshStats?.()
   } catch (err) {
+    pager.clear()
     list.innerHTML = `<p class="admin-list-error">${esc((err as Error).message)}</p>`
   }
 }
@@ -208,11 +220,6 @@ function wireStatusButton(node: HTMLElement, event: OlympiadEvent, selector: str
   })
 }
 
-function updateEventsStat(items: OlympiadEvent[]) {
-  const el = $maybe('stat-events')
-  if (el) el.textContent = String(countActiveEvents(items))
-}
-
 function resetForm() {
   $maybe<HTMLFormElement>('event-form')?.reset()
   const eqEl = $maybe<HTMLInputElement>('event-questions')
@@ -297,8 +304,9 @@ async function loadQuestionPicker() {
   status.textContent = ''
 
   try {
-    const [{ questions: allQuestions }, { questions: selectedQuestions }] = await Promise.all([
-      getAdminQuestions({ grade: pickerGrade, isOlympiad: true, status: 'published' }),
+    // The picker must see every eligible question, so it walks all pages.
+    const [allQuestions, { questions: selectedQuestions }] = await Promise.all([
+      getAllAdminQuestions({ grade: pickerGrade, isOlympiad: true, status: 'published' }),
       getEventQuestions(selectedEvent!.id, pickerGrade),
     ])
 
