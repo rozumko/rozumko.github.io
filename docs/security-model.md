@@ -367,11 +367,13 @@ server", and it is fenced as follows:
   returns 409 for a question session. Fixed by `school-flow.test.ts`;
 - a DB CHECK keeps the pairing honest: an activity session must name its
   activity and level, a question session must carry neither;
-- known gap: only a **completed** run reports. A child interrupted by the
-  teacher leaves no result row — the dashboard shows fewer results than
-  participants. Closing this needs a way to flush partial progress while the
+- only a **completed** run reports a result. The teacher's list therefore shows
+  every participant and marks those without a result «не завершено», rather
+  than silently dropping them — otherwise the slowest children, the ones the
+  teacher most needs to see, disappear from the class picture. Showing *how
+  far* an interrupted child got would need partial progress flushed while the
   session is still active, and must not widen the window for fabricating a
-  result after the lesson ends.
+  result after the lesson ends; it is deliberately not built.
 
 Home Mode is the parent-led commercial surface:
 

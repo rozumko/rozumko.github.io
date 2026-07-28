@@ -500,6 +500,16 @@ body.teacher-dashboard-active {
 .school-activity-row__score { font-weight: 600; }
 .school-activity-row__mistakes { color: var(--clr-text-muted); }
 .school-activity-row__time { font-variant-numeric: tabular-nums; font-weight: 700; }
+/* A child the teacher interrupted stays in the list instead of disappearing */
+.school-activity-row--unfinished .school-activity-row__name { color: var(--clr-text-muted); }
+.school-activity-row__pending {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--clr-surface-muted);
+  color: var(--clr-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
 
 .school-create-card,
 /* minmax(0,1fr) + min-width:0: the track must shrink below content

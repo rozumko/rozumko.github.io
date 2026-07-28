@@ -1482,23 +1482,55 @@ function renderSchoolActivityResults(
   const wrap = $maybe('school-activity-results-wrap')
   const box = $maybe('school-activity-results')
   if (!wrap || !box) return
-  if (!results.length) { wrap.classList.add('hidden'); box.innerHTML = ''; return }
+  // The list belongs to activity sessions only; questions have their own panels.
+  if (schoolSession?.kind !== 'activity' || !participants.length) {
+    wrap.classList.add('hidden')
+    box.innerHTML = ''
+    return
+  }
 
-  const byId = new Map(participants.map(p => [p.id, p]))
-  box.innerHTML = results.map(r => {
-    const p = byId.get(r.participantId)
+  // Only a finished run reports a result, so a child the teacher interrupted
+  // has no row of their own. Listing every participant keeps them visible as
+  // «не завершено» instead of quietly dropping them — otherwise the slowest
+  // children, the ones the teacher most needs to see, disappear from the class
+  // picture.
+  const byParticipant = new Map(results.map(r => [r.participantId, r]))
+  const rows = participants.map(p => ({ p, r: byParticipant.get(p.id) ?? null }))
+  // Finished first, fastest at the top; the unfinished follow in join order.
+  rows.sort((a, b) => {
+    if (a.r && b.r) return a.r.durationSec - b.r.durationSec
+    return (a.r ? 0 : 1) - (b.r ? 0 : 1)
+  })
+
+  box.innerHTML = rows.map(({ p, r }) => {
+    const avatar = `<img class="school-leaderboard__avatar" src="${esc(avatarSrc(p.avatar))}"
+             alt="${esc(avatarLabel(p.avatar))}" width="32" height="32" />`
+    const name = `<span class="school-activity-row__name">${esc(p.nickname)}</span>`
+    if (!r) {
+      return `
+        <div class="school-activity-row school-activity-row--unfinished">
+          ${avatar}${name}
+          <span class="school-activity-row__pending">не завершено</span>
+        </div>`
+    }
     const done = r.correct >= r.total
     return `
       <div class="school-activity-row">
-        <img class="school-leaderboard__avatar" src="${esc(avatarSrc(p?.avatar ?? ''))}"
-             alt="${esc(avatarLabel(p?.avatar ?? ''))}" width="32" height="32" />
-        <span class="school-activity-row__name">${esc(p?.nickname ?? 'Учень')}</span>
+        ${avatar}${name}
         <span class="school-activity-row__stars" aria-label="${r.stars} з 3 зірок">${'★'.repeat(r.stars)}${'☆'.repeat(3 - r.stars)}</span>
-        <span class="school-activity-row__score">${done ? 'зібрав усе' : `${r.correct} з ${r.total}`}</span>
+        <span class="school-activity-row__score">${done ? 'усе виконано' : `${r.correct} з ${r.total}`}</span>
         <span class="school-activity-row__mistakes">${r.mistakes === 0 ? 'без помилок' : `помилок: ${r.mistakes}`}</span>
         <span class="school-activity-row__time">${esc(formatDuration(r.durationSec))}</span>
       </div>`
   }).join('')
+
+  const pending = rows.filter(row => !row.r).length
+  const hint = $maybe('school-activity-results-hint')
+  if (hint) {
+    hint.textContent = pending === 0
+      ? 'Час і результат кожного учня (від найшвидшого). Дані надсилає браузер учня.'
+      : `Час і результат кожного учня (від найшвидшого). Ще не завершили: ${pending}.`
+  }
   wrap.classList.remove('hidden')
 }
 
