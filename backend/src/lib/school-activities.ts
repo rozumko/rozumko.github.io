@@ -9,7 +9,15 @@
 // teacher dashboard only. It must never feed entitlements, payments or
 // certificates — see docs/security-model.md.
 
-export type SchoolActivityKey = 'key-puzzle' | 'maze' | 'windows' | 'mouse-buttons'
+export type SchoolActivityKey =
+  | 'key-puzzle'
+  | 'maze'
+  | 'windows'
+  | 'mouse-buttons'
+  | 'magic-squares'
+  | 'symbol-logic'
+  | 'message-coding'
+  | 'sorting-station'
 
 /** Devices an activity is usable on. School Mode targets computer labs first. */
 export type SchoolActivityDevice = 'desktop' | 'any'
@@ -38,6 +46,22 @@ export interface SchoolActivityDefinition {
 // three levels share the same key set (difficulty only changes hint
 // visibility), so one ceiling covers them: the 26 letters of the layout.
 const KEY_PUZZLE_MAX_TOTAL = 26
+
+/**
+ * Star rubric for activities the child cannot fail out of: every item is
+ * retried until it is right, so a finished run always reports 100% and the
+ * mistake count is the whole signal. Mirrors the shape of key-puzzle's rubric,
+ * including the percentage fallback for a run that never reached the end.
+ */
+const retryRubric = ({ correct, total, mistakes }: ActivityResultInput): number => {
+  if (correct < total) {
+    const percent = (correct / total) * 100
+    return percent >= 75 ? 2 : percent >= 40 ? 1 : 0
+  }
+  if (mistakes === 0) return 3
+  if (mistakes <= Math.ceil(total / 4)) return 2
+  return mistakes <= total ? 1 : 0
+}
 
 export const SCHOOL_ACTIVITIES: Record<SchoolActivityKey, SchoolActivityDefinition> = {
   'key-puzzle': {
@@ -115,9 +139,70 @@ export const SCHOOL_ACTIVITIES: Record<SchoolActivityKey, SchoolActivityDefiniti
       return percent >= 90 ? 3 : percent >= 70 ? 2 : percent >= 40 ? 1 : 0
     },
   },
+  // magic-squares: three generated logic squares. The browser evaluates the
+  // formative answers locally; the server only stores bounded classroom
+  // evidence for the teacher dashboard.
+  'magic-squares': {
+    key: 'magic-squares',
+    device: 'any',
+    levels: [
+      { id: 'easy',   maxTotal: 3, minDurationSec: 8 },
+      { id: 'medium', maxTotal: 3, minDurationSec: 8 },
+      { id: 'hard',   maxTotal: 3, minDurationSec: 8 },
+    ],
+    stars: ({ correct, total }) =>
+      correct >= total ? 3 : correct >= 2 ? 2 : correct >= 1 ? 1 : 0,
+  },
+  // symbol-logic: five generated symbol equations per run.
+  'symbol-logic': {
+    key: 'symbol-logic',
+    device: 'any',
+    levels: [
+      { id: 'easy',   maxTotal: 5, minDurationSec: 12 },
+      { id: 'medium', maxTotal: 5, minDurationSec: 12 },
+      { id: 'hard',   maxTotal: 5, minDurationSec: 12 },
+    ],
+    stars: ({ correct, total }) => {
+      const percent = (correct / total) * 100
+      return percent >= 90 ? 3 : percent >= 60 ? 2 : percent >= 40 ? 1 : 0
+    },
+  },
+  // message-coding: five short representation-of-information tasks. The
+  // browser owns local formative checking; the backend bounds the classroom
+  // evidence and derives stars for the teacher dashboard.
+  'message-coding': {
+    key: 'message-coding',
+    device: 'any',
+    levels: [
+      { id: 'easy',   maxTotal: 5, minDurationSec: 5 },
+      { id: 'medium', maxTotal: 5, minDurationSec: 5 },
+      { id: 'hard',   maxTotal: 5, minDurationSec: 5 },
+    ],
+    // Retry-until-correct, like sorting-station: the mistake count is the only
+    // thing that separates one finished run from another.
+    stars: retryRubric,
+  },
+  // sorting-station: two-axis classification with curated visuals. The server
+  // accepts only plausible classroom evidence; local feedback remains formative.
+  // Each level ships a different number of objects (8 / 10 / 12), so the
+  // ceilings differ too — an easy run cannot claim a hard one's workload.
+  'sorting-station': {
+    key: 'sorting-station',
+    device: 'any',
+    levels: [
+      { id: 'easy',   maxTotal: 8,  minDurationSec: 8 },
+      { id: 'medium', maxTotal: 10, minDurationSec: 10 },
+      { id: 'hard',   maxTotal: 12, minDurationSec: 12 },
+    ],
+    // The child retries an object until it lands in the right bin, so a
+    // finished run is always 100% correct and only the mistake count carries
+    // information — a percentage rubric here would hand out the same 2 stars
+    // for 3 mistakes and for 30.
+    stars: retryRubric,
+  },
 }
 
-export const SCHOOL_ACTIVITY_KEYS = ['key-puzzle', 'maze', 'windows', 'mouse-buttons'] as const satisfies readonly SchoolActivityKey[]
+export const SCHOOL_ACTIVITY_KEYS = ['key-puzzle', 'maze', 'windows', 'mouse-buttons', 'magic-squares', 'symbol-logic', 'message-coding', 'sorting-station'] as const satisfies readonly SchoolActivityKey[]
 
 /** Every level id any activity accepts — for the route's JSON schema enum. */
 export const SCHOOL_ACTIVITY_LEVEL_IDS: readonly string[] = [

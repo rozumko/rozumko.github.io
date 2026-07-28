@@ -335,8 +335,10 @@ School Mode is the low-risk classroom surface:
 
 A School session delivers either server-graded questions (`kind = 'questions'`,
 the default and the historical behaviour) or a **procedural activity**
-(`kind = 'activity'`) such as the keyboard puzzle. An activity has no content
-rows and no answer key, so its outcome **cannot be recomputed on the server**.
+(`kind = 'activity'`) such as the keyboard puzzle, magic squares, symbolic
+logic, message coding or sorting station. An activity has no content rows and
+no server-owned answer key, so its outcome **cannot be recomputed on the
+server**.
 This is a deliberate, contained exception to "scoring happens only on the
 server", and it is fenced as follows:
 

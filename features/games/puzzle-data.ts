@@ -7,6 +7,8 @@
 
 export type PuzzleConcept = 'patterns' | 'algorithms' | 'logic' | 'abstraction'
 export type PuzzleType = 'sequence' | 'machine' | 'balance' | 'symbols' | 'magic' | 'latin'
+export type PuzzleSetType = 'all' | 'magic' | 'symbols'
+export type PuzzleDifficulty = 'easy' | 'medium' | 'hard'
 
 // Токен рядка/клітинки: готове значення, числове поле, або вибір із варіантів (тап).
 export type Token =
@@ -36,6 +38,7 @@ interface Profile {
   balanceMax: number; choiceSpread: number
   symbolMax: number; symbolCount: number
   magicSize: number; magicHidden: number
+  magicShiftMax?: number
   machineMax: number; machineSteps: number
   operations: Array<'add' | 'subtract' | 'multiply-small'>
   emoji: boolean   // 1 клас — образна форма замість чисел
@@ -235,7 +238,7 @@ function solvableHidden(size: number, count: number): Array<[number, number]> {
 }
 function createMagic(i: number, p: Profile): Puzzle {
   const size = p.magicSize
-  const shift = randomInt(1, p.grade === 2 ? 4 : p.grade === 3 ? 8 : 12)
+  const shift = randomInt(1, p.magicShiftMax ?? (p.grade === 2 ? 4 : p.grade === 3 ? 8 : 12))
   let square = (size === 4 ? MAGIC_4 : MAGIC_3).map(row => row.map(v => v + shift))
   const target = (size === 4 ? 34 : 15) + shift * size
   for (let r = randomInt(0, 3); r > 0; r--) square = rotate(square)
@@ -258,13 +261,62 @@ function createMagic(i: number, p: Profile): Puzzle {
 }
 
 // ── latin square → logic (1 клас, емодзі+тап, без арифметики) ────────────────
+/**
+ * Hidden cells whose completion is the ONLY valid Latin square.
+ *
+ * Latin squares of even order contain intercalates — 2×2 blocks holding just
+ * two symbols, which can be swapped for a different but equally valid square.
+ * Blanking all four cells of one leaves a puzzle with two correct answers
+ * while the checker accepts only the generated one, so a child who reasons
+ * correctly is told they are wrong. Order 3 is always safe; order 4 is not
+ * (measured ~1% of random hidden sets), so the set is re-drawn until unique.
+ */
+function uniqueLatinHidden(grid: string[][], emoji: string[], count: number): number[] {
+  const size = grid.length
+  const all = Array.from({ length: size * size }, (_, k) => k)
+
+  function solutionCount(hidden: number[]): number {
+    const work = grid.map(row => [...row])
+    for (const idx of hidden) work[Math.floor(idx / size)][idx % size] = ''
+    const fits = (r: number, c: number, v: string) => {
+      for (let i = 0; i < size; i++) {
+        if (i !== c && work[r][i] === v) return false
+        if (i !== r && work[i][c] === v) return false
+      }
+      return true
+    }
+    let found = 0
+    const fill = (k: number): void => {
+      if (found > 1) return
+      if (k === hidden.length) { found++; return }
+      const r = Math.floor(hidden[k] / size), c = hidden[k] % size
+      for (const v of emoji) {
+        if (!fits(r, c, v)) continue
+        work[r][c] = v
+        fill(k + 1)
+        work[r][c] = ''
+      }
+    }
+    fill(0)
+    return found
+  }
+
+  for (let attempt = 0; attempt < 40; attempt++) {
+    const hidden = shuffle(all).slice(0, count)
+    if (solutionCount(hidden) === 1) return hidden
+  }
+  // Fewer blanks can only reduce ambiguity — better an easier puzzle than one
+  // with two right answers.
+  return count > 1 ? uniqueLatinHidden(grid, emoji, count - 1) : shuffle(all).slice(0, 1)
+}
+
 function createLatin(i: number, p: Profile): Puzzle {
-  const size = 3
+  const size = p.magicSize
   const emoji = shuffle(LATIN_EMOJI).slice(0, size)
   // Латинський квадрат: зсув рядків. base[r][c] = emoji[(c + r) % size]
   let grid = Array.from({ length: size }, (_, r) => Array.from({ length: size }, (_, c) => emoji[(c + r) % size]))
   if (Math.random() > 0.5) grid = grid.map(row => [...row].reverse())
-  const positions = shuffle(Array.from({ length: size * size }, (_, k) => k)).slice(0, p.magicHidden)
+  const positions = uniqueLatinHidden(grid, emoji, p.magicHidden)
   const answers: Record<string, string> = {}
   const cells: Token[] = []
   for (let idx = 0; idx < size * size; idx++) {
@@ -295,4 +347,75 @@ export function generatePuzzleSet(grade: number, count = 5): Puzzle[] {
   const order = shuffle(gens)
   for (let i = 0; i < count; i++) out.push(order[i % order.length](i, p))
   return out
+}
+
+function profileForMagic(grade: number, difficulty: PuzzleDifficulty): Profile {
+  const base = { ...(PROFILES[grade] ?? PROFILES[1]) }
+  const hard = difficulty === 'hard'
+  const medium = difficulty === 'medium'
+
+  if (grade <= 1) {
+    return { ...base, grade: 1, emoji: true, magicSize: 3, magicHidden: hard ? 4 : medium ? 3 : 2 }
+  }
+  if (grade === 2) {
+    return {
+      ...base,
+      emoji: medium || hard,
+      magicSize: medium || hard ? 4 : 3,
+      magicHidden: hard ? 5 : medium ? 4 : 3,
+      magicShiftMax: hard ? 6 : 4,
+    }
+  }
+  if (grade === 3) {
+    return {
+      ...base,
+      emoji: false,
+      magicSize: hard ? 4 : 3,
+      magicHidden: hard ? 4 : medium ? 4 : 3,
+      magicShiftMax: hard ? 8 : medium ? 10 : 6,
+    }
+  }
+  return {
+    ...base,
+    grade: 4,
+    emoji: false,
+    magicSize: medium || hard ? 4 : 3,
+    magicHidden: hard ? 5 : 4,
+    magicShiftMax: hard ? 18 : medium ? 14 : 10,
+  }
+}
+
+function profileForSymbols(grade: number, difficulty: PuzzleDifficulty): Profile {
+  const base = { ...(PROFILES[grade] ?? PROFILES[1]) }
+  const hard = difficulty === 'hard'
+  const medium = difficulty === 'medium'
+  return {
+    ...base,
+    symbolCount: grade <= 1 ? 2 : hard && grade >= 3 ? 4 : medium || hard ? 3 : 2,
+    symbolMax: Math.max(
+      base.symbolMax,
+      grade <= 1 ? (hard ? 7 : medium ? 6 : 5)
+        : grade === 2 ? (hard ? 14 : medium ? 12 : 10)
+          : grade === 3 ? (hard ? 18 : medium ? 16 : 14)
+            : (hard ? 24 : medium ? 21 : 18),
+    ),
+  }
+}
+
+export function generatePuzzleActivitySet(
+  type: PuzzleSetType,
+  grade: number,
+  difficulty: PuzzleDifficulty = 'easy',
+  count = type === 'magic' ? 3 : 5,
+): Puzzle[] {
+  if (type === 'magic') {
+    const p = profileForMagic(grade, difficulty)
+    const create = p.emoji ? createLatin : createMagic
+    return Array.from({ length: count }, (_, i) => create(i, p))
+  }
+  if (type === 'symbols') {
+    const p = profileForSymbols(grade, difficulty)
+    return Array.from({ length: count }, (_, i) => createSymbols(i, p))
+  }
+  return generatePuzzleSet(grade, count)
 }

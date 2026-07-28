@@ -1,4 +1,12 @@
-import { generatePuzzleSet, type Puzzle, type Token, type PuzzleLine } from './puzzle-data.js'
+import {
+  generatePuzzleActivitySet,
+  generatePuzzleSet,
+  type Puzzle,
+  type PuzzleDifficulty,
+  type PuzzleLine,
+  type PuzzleSetType,
+  type Token,
+} from './puzzle-data.js'
 
 // Рендер логічних головоломок — один екран, одна головоломка (як місії/сортування).
 // Клієнтський, безключовий (локальний навчальний фідбек). Ввід: числове поле
@@ -23,14 +31,23 @@ export interface PuzzleSessionSummary {
 
 export interface PuzzleOptions {
   onComplete?: (summary: PuzzleSessionSummary) => void
+  type?: PuzzleSetType
+  difficulty?: PuzzleDifficulty
+  allowRestart?: boolean
 }
 
-export function mountPuzzles(root: HTMLElement, grade: number, count = 5, opts: PuzzleOptions = {}) {
+export interface PuzzleMountHandle {
+  snapshot(): PuzzleSessionSummary
+  destroy(): void
+}
+
+export function mountPuzzles(root: HTMLElement, grade: number, count = 5, opts: PuzzleOptions = {}): PuzzleMountHandle {
   let puzzles: Puzzle[] = []
   let idx = 0
   let correctCount = 0
   let answered = false
   let picked: Record<string, string> = {}
+  let latestSummary: PuzzleSessionSummary = { correct: 0, total: count, stars: 0 }
 
   root.innerHTML = `
     <div class="pz">
@@ -189,26 +206,35 @@ export function mountPuzzles(root: HTMLElement, grade: number, count = 5, opts: 
 
   function renderResult() {
     const stars = starsFor(correctCount, puzzles.length)
-    opts.onComplete?.({ correct: correctCount, total: puzzles.length, stars })
+    latestSummary = { correct: correctCount, total: puzzles.length, stars }
+    opts.onComplete?.(latestSummary)
     el.progress.textContent = ''
     el.feedback.textContent = ''
     el.actions.classList.add('hidden')
+    const again = opts.allowRestart === false ? '' : '<button class="kid-action pz-done__again">Ще головоломки</button>'
     el.stage.innerHTML = `
       <div class="pz-done">
         <p class="pz-done__stars">${'⭐'.repeat(stars)}${'☆'.repeat(3 - stars)}</p>
         <p class="pz-done__title">Розвʼязано ${correctCount} з ${puzzles.length}!</p>
-        <button class="kid-action pz-done__again">Ще головоломки</button>
+        ${again}
       </div>`
-    el.stage.querySelector<HTMLButtonElement>('.pz-done__again')!.addEventListener('click', start)
+    el.stage.querySelector<HTMLButtonElement>('.pz-done__again')?.addEventListener('click', start)
   }
 
   function start() {
-    puzzles = generatePuzzleSet(grade, count)
+    puzzles = opts.type && opts.type !== 'all'
+      ? generatePuzzleActivitySet(opts.type, grade, opts.difficulty ?? 'easy', count)
+      : generatePuzzleSet(grade, count)
     idx = 0
     correctCount = 0
+    latestSummary = { correct: 0, total: puzzles.length, stars: 0 }
     el.actions.classList.remove('hidden')
     renderCurrent()
   }
 
   start()
+  return {
+    snapshot: () => latestSummary,
+    destroy: () => { root.innerHTML = '' },
+  }
 }

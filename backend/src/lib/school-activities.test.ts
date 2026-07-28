@@ -146,6 +146,85 @@ test('mouse-buttons: accuracy over the obstacles that actually arrived', () => {
   assert.equal(stars(5, 30), 0)
 })
 
+test('school puzzle activities: fixed totals and percentage rubrics', () => {
+  const magic = SCHOOL_ACTIVITIES['magic-squares']
+  const magicLevel = resolveActivityLevel(magic, 'easy')
+  assert.equal(magicLevel.maxTotal, 3)
+  assert.equal(normalizeActivityResult(magic, magicLevel, { correct: 3, total: 3, mistakes: 0, durationSec: 20 }).stars, 3)
+  assert.equal(normalizeActivityResult(magic, magicLevel, { correct: 2, total: 3, mistakes: 1, durationSec: 20 }).stars, 2)
+  assert.throws(() => normalizeActivityResult(magic, magicLevel, { correct: 4, total: 4, mistakes: 0, durationSec: 20 }))
+
+  const symbols = SCHOOL_ACTIVITIES['symbol-logic']
+  const symbolsLevel = resolveActivityLevel(symbols, 'hard')
+  assert.equal(symbolsLevel.maxTotal, 5)
+  assert.equal(normalizeActivityResult(symbols, symbolsLevel, { correct: 5, total: 5, mistakes: 0, durationSec: 20 }).stars, 3)
+  assert.equal(normalizeActivityResult(symbols, symbolsLevel, { correct: 3, total: 5, mistakes: 2, durationSec: 20 }).stars, 2)
+  assert.throws(() => normalizeActivityResult(symbols, symbolsLevel, { correct: 6, total: 6, mistakes: 0, durationSec: 20 }))
+})
+
+// message-coding and sorting-station retry each item until it is right, so a
+// finished run always reports 100% and only the mistake count can separate one
+// child from another. A percentage rubric would award the same stars for three
+// mistakes and for thirty.
+test('message-coding: fixed classroom total and mistake-aware rubric', () => {
+  const activity = SCHOOL_ACTIVITIES['message-coding']
+  const level = resolveActivityLevel(activity, 'medium')
+  assert.equal(level.maxTotal, 5)
+  assert.equal(level.minDurationSec, 5)
+  const stars = (mistakes: number) =>
+    normalizeActivityResult(activity, level, { correct: 5, total: 5, mistakes, durationSec: 20 }).stars
+  assert.equal(stars(0), 3)
+  assert.equal(stars(2), 2)
+  assert.equal(stars(4), 1)
+  assert.equal(stars(9), 0)
+  assert.throws(() => normalizeActivityResult(activity, level, { correct: 6, total: 6, mistakes: 0, durationSec: 20 }))
+  assert.throws(() => normalizeActivityResult(activity, level, { correct: 5, total: 5, mistakes: 0, durationSec: 4 }))
+})
+
+test('sorting-station: per-level totals and mistake-aware rubric', () => {
+  const activity = SCHOOL_ACTIVITIES['sorting-station']
+  // Each level ships a different number of objects; the ceilings must follow,
+  // or an easy run could claim a hard one's workload.
+  assert.equal(resolveActivityLevel(activity, 'easy').maxTotal, 8)
+  assert.equal(resolveActivityLevel(activity, 'medium').maxTotal, 10)
+  const level = resolveActivityLevel(activity, 'hard')
+  assert.equal(level.maxTotal, 12)
+  assert.equal(level.minDurationSec, 12)
+  assert.throws(() => normalizeActivityResult(activity, resolveActivityLevel(activity, 'easy'),
+    { correct: 12, total: 12, mistakes: 0, durationSec: 20 }))
+
+  const stars = (mistakes: number) =>
+    normalizeActivityResult(activity, level, { correct: 12, total: 12, mistakes, durationSec: 20 }).stars
+  assert.equal(stars(0), 3)
+  assert.equal(stars(3), 2)
+  assert.equal(stars(7), 1)
+  assert.equal(stars(30), 0)
+  assert.throws(() => normalizeActivityResult(activity, level, { correct: 13, total: 13, mistakes: 0, durationSec: 20 }))
+  assert.throws(() => normalizeActivityResult(activity, level, { correct: 12, total: 12, mistakes: 0, durationSec: 10 }))
+})
+
+test('retry activities: more mistakes never score better than fewer', () => {
+  for (const key of ['message-coding', 'sorting-station'] as const) {
+    const activity = SCHOOL_ACTIVITIES[key]
+    for (const levelId of activity.levels.map(l => l.id)) {
+      const level = resolveActivityLevel(activity, levelId)
+      const total = level.maxTotal
+      const seen = new Set<number>()
+      let previous = 4
+      for (let mistakes = 0; mistakes <= total * 3; mistakes++) {
+        const { stars } = normalizeActivityResult(activity, level,
+          { correct: total, total, mistakes, durationSec: level.minDurationSec + 10 })
+        assert.ok(stars <= previous, `${key}/${levelId}: stars rose at ${mistakes} mistakes`)
+        previous = stars
+        seen.add(stars)
+      }
+      // A rubric that cannot reach the low end tells the teacher nothing about
+      // a child who guessed their way through.
+      assert.ok(seen.size >= 3, `${key}/${levelId}: only ${seen.size} distinct star values reachable`)
+    }
+  }
+})
+
 test('normalizeActivityResult: stars stay clamped even if a rubric misbehaves', () => {
   const level = resolveActivityLevel(SCHOOL_ACTIVITIES['key-puzzle'], 'easy')
   const rogue = { ...SCHOOL_ACTIVITIES['key-puzzle'], stars: () => 99 }
