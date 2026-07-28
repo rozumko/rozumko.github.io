@@ -330,6 +330,13 @@
       "when": 1785024000000,
       "tag": "0046_allow_channels_revision_action",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1785110400000,
+      "tag": "0047_add_school_activities",
+      "breakpoints": true
     }
   ]
 }

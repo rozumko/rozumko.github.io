@@ -274,11 +274,17 @@ export async function sendHeartbeat(attemptId: string, attemptToken: string): Pr
 
 // ─── School Mode (просунутий, анонімний учень) ─────────────────────────────
 
+/** What the session delivers: a graded quiz or a procedural activity. */
+export type SchoolSessionKind = 'questions' | 'activity'
+
 export async function joinSchoolSession(code: string, avatar: string, nickname: string): Promise<{
   participantId: string
   participantToken: string
   status: 'lobby' | 'active' | 'finished'
   grade: number
+  kind: SchoolSessionKind
+  activityKey: string | null
+  activityLevel: string | null
   questions: Question[]
   questionsCount: number
 }> {
@@ -293,11 +299,16 @@ export async function joinSchoolSession(code: string, avatar: string, nickname: 
 export async function getSchoolParticipantSession(participantId: string, participantToken: string): Promise<{
   status: 'lobby' | 'active' | 'finished'
   grade: number
+  kind: SchoolSessionKind
+  activityKey: string | null
+  activityLevel: string | null
   questions: Question[]
   questionsCount: number
   // Resume after reload: the participant's own answered ids + server score
   score?: number
   answeredQuestionIds?: string[]
+  /** Activity sessions: this child already reported a result. */
+  activityDone?: boolean
 }> {
   const data = await request(`/api/school/participants/${encodeURIComponent(participantId)}/session`, {
     headers: { 'X-Participant-Token': participantToken },
@@ -328,6 +339,23 @@ export async function submitSchoolAnswer(
     method: 'POST',
     headers: { 'X-Participant-Token': participantToken },
     body: JSON.stringify({ questionId, answer }),
+  })
+}
+
+/**
+ * Final result of a class activity. Procedural games have no answer key, so the
+ * browser reports the outcome and the server clamps it against its registry.
+ * Stored as client-unverified evidence for the teacher only.
+ */
+export function submitSchoolActivityResult(
+  participantId: string,
+  participantToken: string,
+  result: { correct: number; total: number; mistakes: number; durationSec: number },
+): Promise<{ stars: number; correct: number; total: number }> {
+  return request(`/api/school/participants/${encodeURIComponent(participantId)}/activity-result`, {
+    method: 'POST',
+    headers: { 'X-Participant-Token': participantToken },
+    body: JSON.stringify(result),
   })
 }
 
@@ -1127,6 +1155,9 @@ export interface SchoolSessionInfo {
   difficulty: string | null
   questionsCount: number
   status: 'lobby' | 'active' | 'finished'
+  kind: SchoolSessionKind
+  activityKey: string | null
+  activityLevel: string | null
 }
 
 export interface SchoolParticipantRow {
@@ -1142,7 +1173,29 @@ export interface SchoolTopicStat {
   correct: number
 }
 
-export function createSchoolSession(data: { grade: number; difficulty?: string; questionsCount?: number; track?: string; topic?: string; schoolTopicId?: string }): Promise<{ session: SchoolSessionInfo }> {
+/** Client-reported activity outcome, as the teacher dashboard receives it. */
+export interface SchoolActivityResultRow {
+  participantId: string
+  correct: number
+  total: number
+  mistakes: number
+  durationSec: number
+  stars: number
+  trust: string
+  finishedAt: string | null
+}
+
+export function createSchoolSession(data: {
+  grade: number
+  difficulty?: string
+  questionsCount?: number
+  track?: string
+  topic?: string
+  schoolTopicId?: string
+  kind?: SchoolSessionKind
+  activityKey?: string
+  activityLevel?: string
+}): Promise<{ session: SchoolSessionInfo }> {
   return authRequest('/api/school/sessions', {
     method: 'POST',
     body: JSON.stringify(data),
@@ -1157,7 +1210,12 @@ export function finishSchoolSession(id: string): Promise<{ status: string }> {
   return authRequest(`/api/school/sessions/${encodeURIComponent(id)}/finish`, { method: 'POST', body: JSON.stringify({}) })
 }
 
-export function getSchoolSession(id: string): Promise<{ session: SchoolSessionInfo; participants: SchoolParticipantRow[]; topicStats: SchoolTopicStat[] }> {
+export function getSchoolSession(id: string): Promise<{
+  session: SchoolSessionInfo
+  participants: SchoolParticipantRow[]
+  topicStats: SchoolTopicStat[]
+  activityResults: SchoolActivityResultRow[]
+}> {
   return authRequest(`/api/school/sessions/${encodeURIComponent(id)}`)
 }
 

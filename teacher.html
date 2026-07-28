@@ -393,8 +393,20 @@
           <p>Оберіть клас, тему та складність. Учні можуть грати зі своїх пристроїв або весь клас — разом на великому екрані.</p>
         </div>
 
+        <!-- Що саме проводимо: питання чи активність -->
+        <div id="school-mode-tabs" class="school-mode-tabs" role="tablist" aria-label="Тип класної гри">
+          <button id="school-mode-questions" class="school-mode-tab school-mode-tab--active" type="button"
+                  role="tab" aria-selected="true" aria-controls="school-create-panel" data-school-mode="questions">
+            <i class="fas fa-list-check" aria-hidden="true"></i> Питання
+          </button>
+          <button id="school-mode-activity" class="school-mode-tab" type="button"
+                  role="tab" aria-selected="false" aria-controls="school-activity-panel" data-school-mode="activity">
+            <i class="fas fa-gamepad" aria-hidden="true"></i> Активності
+          </button>
+        </div>
+
         <!-- Створення гри -->
-        <div id="school-create-panel" class="school-create-card">
+        <div id="school-create-panel" class="school-create-card" role="tabpanel" aria-labelledby="school-mode-questions">
           <div id="school-create" class="school-create">
             <label class="school-create__field">Клас
               <select id="school-grade" class="form-input school-create__select">
@@ -437,6 +449,35 @@
             </button>
           </div>
         </div>
+        <!-- Створення активності: гра замість питань -->
+        <div id="school-activity-panel" class="school-create-card hidden" role="tabpanel" aria-labelledby="school-mode-activity">
+          <div class="school-create school-create--activity">
+            <label class="school-create__field">Клас
+              <select id="school-activity-grade" class="form-input school-create__select">
+                <option value="1">1 клас</option>
+                <option value="2">2 клас</option>
+                <option value="3">3 клас</option>
+                <option value="4">4 клас</option>
+              </select>
+            </label>
+            <label class="school-create__field school-create__field--topic">Активність
+              <select id="school-activity-key" class="form-input school-create__select"></select>
+            </label>
+            <label class="school-create__field">Складність
+              <select id="school-activity-level" class="form-input school-create__select"></select>
+            </label>
+          </div>
+
+          <p id="school-activity-about" class="school-activity__about"></p>
+
+          <div class="school-create__actions">
+            <button id="school-activity-create-btn" class="btn btn--success school-create__action" type="button">
+              <i class="fas fa-mobile-alt" aria-hidden="true"></i>
+              <span><strong>Гра з кодом</strong><small>Учні виконують активність зі своїх пристроїв</small></span>
+            </button>
+          </div>
+        </div>
+
         <!-- Question check before the class sees anything -->
         <section id="school-preview" class="school-preview hidden" aria-labelledby="school-preview-title">
           <div class="school-preview__head">
@@ -521,6 +562,12 @@
             <h4 class="school-live__heading">Що варто повторити</h4>
             <p class="school-live__stats-hint">Відсоток правильних відповідей за темою (від найслабшої).</p>
             <div id="school-topic-stats"></div>
+          </div>
+
+          <div id="school-activity-results-wrap" class="school-live__stats hidden">
+            <h4 class="school-live__heading">Хто як виконав</h4>
+            <p class="school-live__stats-hint">Час і результат кожного учня (від найшвидшого). Дані надсилає браузер учня.</p>
+            <div id="school-activity-results"></div>
           </div>
           </section>
         </div>

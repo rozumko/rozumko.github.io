@@ -14,8 +14,9 @@ import {
   type SchoolParticipantAnswer, type SchoolPreviewQuestion,
   TURNSTILE_SITE_KEY,
   type TeacherClass, type ClassStudent, type EventRegistration, type TeacherEvent, type Attempt,
-  type SchoolSessionInfo, type Question,
+  type SchoolSessionInfo, type Question, type SchoolActivityResultRow,
 } from './features/api/client.js'
+import { ACTIVITIES, findActivity, findActivityLevel } from './features/activities/registry.js'
 import { esc, friendlyError, recoveryErrorMessage, showConfirm, showModal } from './utils/ui.js'
 import { openCertModal, awardLabel, percent, getAward } from './utils/certificate.js'
 import { TOPIC_LABELS } from './features/missions/topics.js'
@@ -1331,14 +1332,17 @@ function schoolSetError(msg: string) {
 function renderSchoolStatus() {
   if (!schoolSession) return
   const statusEl = $maybe('school-status')
+  const isActivity = schoolSession.kind === 'activity'
   const labels: Record<string, string> = {
     lobby: 'Учні вже можуть приєднуватися. Коли всі з’являться у списку — починайте гру.',
-    active: 'Гра триває. Учні, які запізнилися, також можуть приєднатися за цим кодом.',
+    active: isActivity
+      ? 'Активність триває. Результат кожного учня з’явиться, коли він завершить.'
+      : 'Гра триває. Учні, які запізнилися, також можуть приєднатися за цим кодом.',
     finished: '🏁 Завершено',
   }
   if (statusEl) statusEl.textContent = labels[schoolSession.status] ?? schoolSession.status
   // The click-a-student hint applies only once the breakdown is available
-  $maybe('school-detail-hint')?.classList.toggle('hidden', schoolSession.status === 'lobby')
+  $maybe('school-detail-hint')?.classList.toggle('hidden', schoolSession.status === 'lobby' || isActivity)
   $maybe('school-start-btn')?.classList.toggle('hidden', schoolSession.status !== 'lobby')
   $maybe('school-cancel-btn')?.classList.toggle('hidden', schoolSession.status !== 'lobby')
   $maybe('school-finish-btn')?.classList.toggle('hidden', schoolSession.status !== 'active')
@@ -1355,8 +1359,9 @@ function renderSchoolLeaderboard(participants: { id: string; avatar: string; nic
     return
   }
   // In lobby the breakdown endpoint is blocked (409) — no question texts
-  // before start, so the rows are not clickable yet.
-  const detailAvailable = schoolSession?.status !== 'lobby'
+  // before start, so the rows are not clickable yet. Activity sessions have no
+  // per-question breakdown at all.
+  const detailAvailable = schoolSession?.status !== 'lobby' && schoolSession?.kind !== 'activity'
   board.innerHTML = participants.map((p, i) => `
     <button type="button" class="school-leaderboard__row${p.id === schoolDetailParticipantId ? ' school-leaderboard__row--active' : ''}"
             data-participant-id="${esc(p.id)}" aria-expanded="${p.id === schoolDetailParticipantId}"${detailAvailable ? '' : ' disabled'}>
@@ -1461,18 +1466,55 @@ function renderSchoolTopicStats(topicStats: SchoolTopicStat[]) {
   wrap.classList.remove('hidden')
 }
 
+// Хто як виконав активність: час і скільки зібрано, від найшвидшого.
+// Результат надсилає браузер учня (сервер його лише обмежує стелями реєстру),
+// тому це навчальне свідчення для вчителя, а не сертифікований бал.
+function formatDuration(sec: number): string {
+  const m = Math.floor(sec / 60)
+  const s = sec % 60
+  return m > 0 ? `${m} хв ${String(s).padStart(2, '0')} с` : `${s} с`
+}
+
+function renderSchoolActivityResults(
+  participants: { id: string; avatar: string; nickname: string }[],
+  results: SchoolActivityResultRow[],
+) {
+  const wrap = $maybe('school-activity-results-wrap')
+  const box = $maybe('school-activity-results')
+  if (!wrap || !box) return
+  if (!results.length) { wrap.classList.add('hidden'); box.innerHTML = ''; return }
+
+  const byId = new Map(participants.map(p => [p.id, p]))
+  box.innerHTML = results.map(r => {
+    const p = byId.get(r.participantId)
+    const done = r.correct >= r.total
+    return `
+      <div class="school-activity-row">
+        <img class="school-leaderboard__avatar" src="${esc(avatarSrc(p?.avatar ?? ''))}"
+             alt="${esc(avatarLabel(p?.avatar ?? ''))}" width="32" height="32" />
+        <span class="school-activity-row__name">${esc(p?.nickname ?? 'Учень')}</span>
+        <span class="school-activity-row__stars" aria-label="${r.stars} з 3 зірок">${'★'.repeat(r.stars)}${'☆'.repeat(3 - r.stars)}</span>
+        <span class="school-activity-row__score">${done ? 'зібрав усе' : `${r.correct} з ${r.total}`}</span>
+        <span class="school-activity-row__mistakes">${r.mistakes === 0 ? 'без помилок' : `помилок: ${r.mistakes}`}</span>
+        <span class="school-activity-row__time">${esc(formatDuration(r.durationSec))}</span>
+      </div>`
+  }).join('')
+  wrap.classList.remove('hidden')
+}
+
 async function refreshSchoolSession() {
   if (!schoolSession) return
   const sessionId = schoolSession.id
   try {
-    const { session, participants, topicStats } = await getSchoolSession(sessionId)
+    const { session, participants, topicStats, activityResults } = await getSchoolSession(sessionId)
     if (!schoolSession || schoolSession.id !== sessionId) return
     schoolSession = session
     renderSchoolStatus()
     renderSchoolLeaderboard(participants)
     renderSchoolTopicStats(topicStats)
+    renderSchoolActivityResults(participants, activityResults ?? [])
     // Refresh an open breakdown together with the leaderboard while live
-    if (schoolDetailParticipantId && session.status !== 'finished') {
+    if (schoolDetailParticipantId && session.status !== 'finished' && session.kind === 'questions') {
       void openParticipantDetail(schoolDetailParticipantId)
     }
     if (session.status === 'finished' && schoolPollTimer) {
@@ -1500,6 +1542,76 @@ function populateSchoolTopics() {
 }
 
 populateSchoolTopics()
+
+// ── Активності: питання vs гра ───────────────────────────────────────────────
+// The two sub-tabs are two ways to fill one session. Questions keep the whole
+// existing flow (server-picked deck → preview → code/projector); an activity
+// has no deck to preview, so it goes straight from the form to the join code.
+
+type SchoolMode = 'questions' | 'activity'
+let schoolMode: SchoolMode = 'questions'
+
+function populateSchoolActivities() {
+  const keySel = $maybe<HTMLSelectElement>('school-activity-key')
+  if (!keySel) return
+  keySel.innerHTML = ACTIVITIES.map(a => (
+    `<option value="${esc(a.key)}">${esc(a.label)}${a.device === 'desktop' ? ' · для ПК' : ''}</option>`
+  )).join('')
+  renderActivityLevels()
+}
+
+function renderActivityLevels() {
+  const activity = findActivity($maybe<HTMLSelectElement>('school-activity-key')?.value)
+  const levelSel = $maybe<HTMLSelectElement>('school-activity-level')
+  const about = $maybe('school-activity-about')
+  if (!activity || !levelSel) return
+  levelSel.innerHTML = activity.levels.map(l => (
+    `<option value="${esc(l.id)}" title="${esc(l.description)}">${esc(l.label)}</option>`
+  )).join('')
+  renderActivityAbout()
+  if (about) about.classList.remove('hidden')
+}
+
+function renderActivityAbout() {
+  const about = $maybe('school-activity-about')
+  const activity = findActivity($maybe<HTMLSelectElement>('school-activity-key')?.value)
+  if (!about || !activity) return
+  const level = findActivityLevel(activity, $maybe<HTMLSelectElement>('school-activity-level')?.value)
+  const deviceNote = activity.device === 'desktop'
+    ? ' Активність розрахована на комп’ютер — на телефоні учень побачить прохання відкрити її на ПК.'
+    : ''
+  about.textContent = `${activity.description}${level ? ` ${level.description}.` : ''}${deviceNote}`
+}
+
+function setSchoolMode(mode: SchoolMode) {
+  schoolMode = mode
+  document.querySelectorAll<HTMLElement>('.school-mode-tab').forEach(tab => {
+    const active = tab.dataset['schoolMode'] === mode
+    tab.classList.toggle('school-mode-tab--active', active)
+    tab.setAttribute('aria-selected', String(active))
+  })
+  $maybe('school-create-panel')?.classList.toggle('hidden', mode !== 'questions')
+  $maybe('school-activity-panel')?.classList.toggle('hidden', mode !== 'activity')
+  schoolSetError('')
+}
+
+/** Back to the first meaningful control of whichever sub-tab is open. */
+function focusSchoolForm() {
+  const id = schoolMode === 'activity' ? 'school-activity-key' : 'school-topic'
+  $maybe<HTMLSelectElement>(id)?.focus()
+}
+
+document.querySelectorAll<HTMLElement>('.school-mode-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const mode = tab.dataset['schoolMode']
+    if (mode === 'questions' || mode === 'activity') setSchoolMode(mode)
+  })
+})
+
+$maybe<HTMLSelectElement>('school-activity-key')?.addEventListener('change', renderActivityLevels)
+$maybe<HTMLSelectElement>('school-activity-level')?.addEventListener('change', renderActivityAbout)
+
+populateSchoolActivities()
 
 // This is the content-source boundary for a classroom session. A future
 // "My questions" source can extend this payload without rebuilding the form.
@@ -1658,7 +1770,9 @@ function resetSchoolView() {
   hideSchoolPreview()
   if (schoolPollTimer) { clearInterval(schoolPollTimer); schoolPollTimer = null }
   $maybe('school-live')?.classList.add('hidden')
-  $maybe('school-create-panel')?.classList.remove('hidden')
+  $maybe('school-activity-results-wrap')?.classList.add('hidden')
+  // Come back to whichever sub-tab the teacher was on
+  setSchoolMode(schoolMode)
   schoolSetError('')
 }
 
@@ -1749,6 +1863,7 @@ function showSchoolLobby(session: SchoolSessionInfo) {
   if (link) link.value = joinUrl
   void renderSchoolJoinQr(joinUrl, session.joinCode)
   $maybe('school-create-panel')?.classList.add('hidden')
+  $maybe('school-activity-panel')?.classList.add('hidden')
   $maybe('school-live')?.classList.remove('hidden')
   renderSchoolStatus()
   renderSchoolLeaderboard([])
@@ -1757,6 +1872,30 @@ function showSchoolLobby(session: SchoolSessionInfo) {
 
 $maybe<HTMLButtonElement>('school-create-btn')?.addEventListener('click', () => {
   void openSchoolPreview('code')
+})
+
+// An activity has no deck to check, so the lobby opens right away.
+$maybe<HTMLButtonElement>('school-activity-create-btn')?.addEventListener('click', async () => {
+  const btn = $maybe<HTMLButtonElement>('school-activity-create-btn')
+  const activityKey = $maybe<HTMLSelectElement>('school-activity-key')?.value
+  const activityLevel = $maybe<HTMLSelectElement>('school-activity-level')?.value
+  if (!activityKey || !activityLevel) return
+  schoolSetError('')
+  if (btn) btn.disabled = true
+  try {
+    const { session } = await createSchoolSession({
+      kind: 'activity',
+      grade: Number($<HTMLSelectElement>('school-activity-grade').value),
+      activityKey,
+      activityLevel,
+    })
+    $maybe('school-activity-panel')?.classList.add('hidden')
+    showSchoolLobby(session)
+  } catch (err) {
+    schoolSetError(friendlyError((err as Error).message))
+  } finally {
+    if (btn) btn.disabled = false
+  }
 })
 
 $maybe<HTMLButtonElement>('school-preview-reroll-btn')?.addEventListener('click', async () => {
@@ -1833,7 +1972,7 @@ async function cancelSchoolLobby(sessionId: string) {
     await finishSchoolSession(sessionId)
     if (schoolSession?.id !== sessionId) return
     resetSchoolView()
-    $maybe<HTMLSelectElement>('school-topic')?.focus()
+    focusSchoolForm()
   } catch (err) {
     schoolSetError(friendlyError((err as Error).message))
   } finally {

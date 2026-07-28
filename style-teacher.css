@@ -450,6 +450,57 @@ body.teacher-dashboard-active {
 .empty-state__sub--centered { padding: var(--sp-4); text-align: center; }
 
 /* School game management */
+/* Sub-tabs: what the session delivers — questions or an activity */
+.school-mode-tabs {
+  display: flex;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+  flex-wrap: wrap;
+}
+.school-mode-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 2.75rem;
+  padding: var(--sp-2) var(--sp-5);
+  border: 1px solid var(--clr-border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--clr-text-muted);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.school-mode-tab:hover { color: var(--clr-text); border-color: var(--clr-primary); }
+.school-mode-tab--active {
+  background: var(--clr-primary);
+  border-color: var(--clr-primary);
+  color: #fff;
+}
+.school-activity__about {
+  margin: var(--sp-4) 0 0;
+  color: var(--clr-text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+/* One row per child: stars, how much was assembled, mistakes, time */
+.school-activity-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) 0;
+  border-bottom: 1px solid var(--clr-border);
+  font-size: var(--font-size-sm);
+}
+.school-activity-row:last-child { border-bottom: 0; }
+.school-activity-row__name { flex: 1 1 8rem; min-width: 0; font-weight: 600; }
+.school-activity-row__stars { color: #f59e0b; letter-spacing: 1px; }
+.school-activity-row__score { font-weight: 600; }
+.school-activity-row__mistakes { color: var(--clr-text-muted); }
+.school-activity-row__time { font-variant-numeric: tabular-nums; font-weight: 700; }
+
 .school-create-card,
 /* minmax(0,1fr) + min-width:0: the track must shrink below content
    min-content on phones, otherwise the page gets horizontal overflow */
@@ -472,6 +523,13 @@ body.teacher-dashboard-active {
   display: grid;
   grid-template-columns: minmax(7rem, .7fr) minmax(14rem, 1.5fr) minmax(9rem, .9fr) minmax(7rem, .7fr);
   gap: var(--sp-4);
+}
+/* Activities have three controls (class, activity, level), not four */
+.school-create--activity {
+  grid-template-columns: minmax(7rem, .7fr) minmax(14rem, 1.5fr) minmax(9rem, .9fr);
+}
+.school-create--activity + .school-activity__about + .school-create__actions {
+  grid-template-columns: minmax(0, 24rem);
 }
 .school-create__field { display: flex; flex-direction: column; gap: var(--sp-1); font-weight: 600; }
 .school-create__select { width: 100%; min-height: 3rem; }

@@ -29,6 +29,7 @@
   <link rel="stylesheet" href="style.css"/>
   <link rel="stylesheet" href="style-student.css"/>
   <link rel="stylesheet" href="style-app.css"/>
+  <link rel="stylesheet" href="style-activities.css"/>
 </head>
 <body class="app-page">
   <a href="#main-content" class="skip-link">Перейти до основного контенту</a>
@@ -109,6 +110,38 @@
       </div>
     </section>
 
+    <!-- ACTIVITY: процедурна гра замість питань (клавіатурний пазл тощо) -->
+    <section id="mission-activity" class="hidden">
+      <div class="quiz-progress-header">
+        <div id="activity-identity" class="student-identity hidden" aria-label="Твій аватар і нікнейм">
+          <img id="activity-avatar-display" src="" alt="" class="student-identity__avatar" />
+          <span id="activity-nickname-display" class="student-identity__name"></span>
+        </div>
+        <span id="activity-progress-text" class="quiz-progress-text"></span>
+      </div>
+      <div id="activity-stage" class="activity-stage">
+        <p class="activity-stage__hint">Перетягуй клавіші на їхні місця!</p>
+      </div>
+    </section>
+
+    <!-- ACTIVITY: результат уже надіслано (перезавантаження сторінки) -->
+    <section id="mission-activity-done" class="hidden app-stack">
+      <div class="info-card info-card--center activity-desktop-only">
+        <p class="activity-desktop-only__icon" aria-hidden="true">✅</p>
+        <p><strong>Ти вже завершив цю активність!</strong></p>
+        <p>Твій результат уже у вчителя. Почекай, що він скаже далі.</p>
+      </div>
+    </section>
+
+    <!-- ACTIVITY: пристрій не підходить (School Mode — комп’ютерні класи) -->
+    <section id="mission-activity-device" class="hidden app-stack">
+      <div class="info-card info-card--center activity-desktop-only">
+        <p class="activity-desktop-only__icon" aria-hidden="true">🖥️</p>
+        <p><strong>Цю активність треба відкрити на комп’ютері.</strong></p>
+        <p id="activity-device-hint">Тут потрібні мишка і великий екран. Попроси вчителя дати тобі комп’ютер або ноутбук — код гри той самий.</p>
+      </div>
+    </section>
+
     <!-- RESULT: дитячий фінал -->
     <section id="mission-result" class="hidden app-stack">
       <div class="finish-card">
@@ -117,7 +150,7 @@
           <span id="result-mission-label">Місію завершено!</span>
         </p>
         <p id="result-stars" class="finish-card__stars" aria-hidden="true"></p>
-        <p class="finish-card__score">Правильних відповідей: <strong id="result-score"></strong> (<span id="result-percent"></span>)</p>
+        <p class="finish-card__score"><span id="result-score-label">Правильних відповідей:</span> <strong id="result-score"></strong> (<span id="result-percent"></span>)</p>
         <p id="result-message" class="finish-card__message"></p>
       </div>
       <!-- Нейтральний міст School → Home: статичне посилання без результатів,

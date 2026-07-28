@@ -331,6 +331,46 @@ School Mode is the low-risk classroom surface:
   class is not locked out before the teacher starts the game;
 - a teacher sees only their own sessions and an anonymous leaderboard.
 
+### Class Activities — Client-Reported Results **[IMPLEMENTED]**
+
+A School session delivers either server-graded questions (`kind = 'questions'`,
+the default and the historical behaviour) or a **procedural activity**
+(`kind = 'activity'`) such as the keyboard puzzle. An activity has no content
+rows and no answer key, so its outcome **cannot be recomputed on the server**.
+This is a deliberate, contained exception to "scoring happens only on the
+server", and it is fenced as follows:
+
+- the outcome arrives from the browser and is stored with
+  `trust = 'client-unverified'` (a DB CHECK pins the column to that value), so
+  the provenance travels with the row rather than living only in code comments;
+- these numbers feed **the teacher's dashboard only**. They must never feed
+  entitlements, payments, diplomas or any claim of certification. Home Mode
+  keeps its own evidence path (`home_mission_attempts`) and does not read
+  School activity results;
+- `backend/src/lib/school-activities.ts` is the single fail-closed registry of
+  which activities and levels exist. Unknown activity or level → 400;
+- the activity **and its level come from the session row**, never from the
+  request body, so a child cannot claim an easier level than the teacher
+  started. Extra body properties are stripped by the route schema;
+- the server rejects implausible claims outright rather than clamping them
+  silently: `correct <= total`, `total` within the activity's registry ceiling,
+  a mistake budget, a minimum run duration (no instant "win") and a maximum
+  bounded by the session join TTL. Stars are derived server-side from the
+  activity's own rubric and clamped to 0–3;
+- one result per participant (`UNIQUE(participant_id)`), only for an `active`
+  session, only with a valid participant token, behind its own rate limit;
+- the two surfaces are **mutually closed**: question routes (`/questions`,
+  `/preview`, participant `/answer`, `/projector-answer`, per-participant
+  breakdown) return 409 for an activity session, and `/activity-result`
+  returns 409 for a question session. Fixed by `school-flow.test.ts`;
+- a DB CHECK keeps the pairing honest: an activity session must name its
+  activity and level, a question session must carry neither;
+- known gap: only a **completed** run reports. A child interrupted by the
+  teacher leaves no result row — the dashboard shows fewer results than
+  participants. Closing this needs a way to flush partial progress while the
+  session is still active, and must not widen the window for fabricating a
+  result after the lesson ends.
+
 Home Mode is the parent-led commercial surface:
 
 - parent consent is required before storing child progress;
