@@ -546,3 +546,251 @@
   .wn-toast { transition: none; }
   .wn-window--wrong { animation: none; }
 }
+
+/* ── Ліва і права кнопки миші ────────────────────────────────────────────── */
+
+.mb-root {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.6rem;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+.mb-hud {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-weight: 700;
+}
+
+.mb-hud__item {
+  padding: 3px 14px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.12);
+  font-size: 0.95rem;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.mb-stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 1.25rem;
+}
+
+/* Three-lane road the ambulance drives down */
+.mb-road {
+  position: relative;
+  flex: 0 1 520px;
+  min-width: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #334155;
+  box-shadow: inset 0 0 60px rgb(0 0 0 / 0.45);
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.mb-road__stripes {
+  position: absolute;
+  inset: 0;
+  opacity: 0.2;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    #fff 0 34px,
+    transparent 34px 74px
+  );
+  background-size: 6px 74px;
+  background-position: 33.333% 0, 66.666% 0;
+  background-repeat: repeat-y;
+  animation: mb-scroll 0.9s linear infinite;
+}
+
+@keyframes mb-scroll {
+  from { background-position-y: 0; }
+  to   { background-position-y: 74px; }
+}
+
+.mb-objects { position: absolute; inset: 0; pointer-events: none; }
+
+.mb-object {
+  position: absolute;
+  top: 0;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.4rem;
+  line-height: 1;
+  transform: translate(-50%, -64px);
+  filter: drop-shadow(0 4px 6px rgb(0 0 0 / 0.5));
+}
+
+.mb-car {
+  position: absolute;
+  bottom: 18px;
+  width: 64px;
+  height: 64px;
+  margin-left: -32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.6rem;
+  line-height: 1;
+  transition: left 0.12s ease;
+  filter: drop-shadow(0 6px 8px rgb(0 0 0 / 0.55));
+}
+
+.mb-car--invulnerable { animation: mb-blink 0.24s steps(2) infinite; }
+
+@keyframes mb-blink {
+  from { opacity: 1; }
+  to   { opacity: 0.35; }
+}
+
+.mb-flash {
+  position: absolute;
+  inset: 0;
+  background: #ef4444;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.mb-flash--active { opacity: 0.35; }
+
+.mb-road--shake { animation: mb-shake 0.42s ease; }
+
+@keyframes mb-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  50% { transform: translateX(8px); }
+  75% { transform: translateX(-5px); }
+}
+
+.mb-pop {
+  position: absolute;
+  transform: translate(-50%, 0);
+  font-size: 1.5rem;
+  font-weight: 800;
+  pointer-events: none;
+  animation: mb-pop 0.5s ease-out forwards;
+}
+
+@keyframes mb-pop {
+  from { opacity: 1; }
+  to   { opacity: 0; transform: translate(-50%, -40px); }
+}
+
+.mb-slowmo,
+.mb-toast {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 5px 16px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.mb-slowmo { top: 12px; background: #a855f7; color: #fff; }
+.mb-toast  { bottom: 12px; background: #f8fafc; color: #0f172a; }
+.mb-slowmo--hidden,
+.mb-toast--hidden { opacity: 0; }
+
+/* The point of the activity: which button was just pressed */
+.mb-mouse {
+  flex: 0 0 auto;
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.9rem;
+  border-radius: 14px;
+  background: rgb(255 255 255 / 0.08);
+}
+
+.mb-mouse__hint {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.mb-mouse__body {
+  position: relative;
+  width: 68px;
+  height: 96px;
+  display: flex;
+  overflow: hidden;
+  border: 4px solid #475569;
+  border-radius: 34px 34px 22px 22px;
+  background: #cbd5e1;
+}
+
+.mb-mouse__btn {
+  width: 50%;
+  height: 42px;
+  background: #f8fafc;
+  transition: background 0.1s;
+}
+
+.mb-mouse__btn--left { border-right: 2px solid #94a3b8; }
+.mb-mouse__btn--active { background: #22d3ee; }
+
+.mb-mouse__wheel {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  width: 6px;
+  height: 16px;
+  margin-left: -3px;
+  border-radius: 999px;
+  background: #475569;
+}
+
+.mb-mouse__labels {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.mb-help {
+  margin: 0;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.mb-error {
+  padding: 2rem;
+  text-align: center;
+  font-weight: 600;
+  color: #fecaca;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mb-road__stripes { animation: none; }
+  .mb-car--invulnerable { animation: none; opacity: 0.6; }
+  .mb-road--shake { animation: none; }
+  .mb-pop { animation: none; opacity: 0; }
+}

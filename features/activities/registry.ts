@@ -72,6 +72,19 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     ],
     load: () => import('./windows/windows.js'),
   },
+  {
+    key: 'mouse-buttons',
+    label: 'Ліва і права кнопки миші',
+    description: 'Дитина керує швидкою: ліва кнопка миші — ліворуч, права — праворуч.',
+    device: 'desktop',
+    // Needs a real mouse with two buttons, and room for three lanes.
+    minWidth: 900,
+    levels: [
+      { id: 'beginner', label: 'Початківець', description: '75 секунд, спершу лише бонуси, щоб навчитись керувати' },
+      { id: 'master',   label: 'Майстер',     description: '3 хвилини, швидше й густіше' },
+    ],
+    load: () => import('./mouse-buttons/mouse-buttons.js'),
+  },
 ]
 
 export function findActivity(key: string | null | undefined): ActivityInfo | null {

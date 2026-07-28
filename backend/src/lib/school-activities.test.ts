@@ -127,6 +127,25 @@ test('windows: accuracy rubric, since the child always reaches the last window',
   assert.equal(stars(2), 0)
 })
 
+test('mouse-buttons: accuracy over the obstacles that actually arrived', () => {
+  const activity = SCHOOL_ACTIVITIES['mouse-buttons']
+  const beginner = resolveActivityLevel(activity, 'beginner')
+  const master = resolveActivityLevel(activity, 'master')
+
+  // A measured full master run produced ~331 obstacles; the ceiling has room
+  assert.ok(master.maxTotal > 362, 'master ceiling must clear the theoretical maximum')
+  // A short run cannot be claimed: the level is timed, so the duration is known
+  assert.throws(() => normalizeActivityResult(activity, master, { correct: 10, total: 10, mistakes: 0, durationSec: 30 }))
+  assert.throws(() => normalizeActivityResult(activity, beginner, { correct: 200, total: 200, mistakes: 0, durationSec: 70 }))
+
+  const stars = (correct: number, total: number) =>
+    normalizeActivityResult(activity, beginner, { correct, total, mistakes: total - correct, durationSec: 70 }).stars
+  assert.equal(stars(30, 30), 3)
+  assert.equal(stars(24, 30), 2)
+  assert.equal(stars(15, 30), 1)
+  assert.equal(stars(5, 30), 0)
+})
+
 test('normalizeActivityResult: stars stay clamped even if a rubric misbehaves', () => {
   const level = resolveActivityLevel(SCHOOL_ACTIVITIES['key-puzzle'], 'easy')
   const rogue = { ...SCHOOL_ACTIVITIES['key-puzzle'], stars: () => 99 }
