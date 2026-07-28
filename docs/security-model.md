@@ -348,7 +348,9 @@ server", and it is fenced as follows:
   keeps its own evidence path (`home_mission_attempts`) and does not read
   School activity results;
 - `backend/src/lib/school-activities.ts` is the single fail-closed registry of
-  which activities and levels exist. Unknown activity or level → 400;
+  which activities and levels exist. Unknown activity or level → 400. Ceilings
+  are **per level**, not per activity — a maze «Початківець» run cannot claim
+  the ten levels of «Майстер»;
 - the activity **and its level come from the session row**, never from the
   request body, so a child cannot claim an easier level than the teacher
   started. Extra body properties are stripped by the route schema;
