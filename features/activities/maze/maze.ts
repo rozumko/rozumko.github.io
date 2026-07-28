@@ -247,12 +247,12 @@ export const mount: ActivityMount = (container, options): ActivityHandle => {
         const x = c * MAZE_CELL, y = r * MAZE_CELL
         if (isWall(r, c)) {
           const inset = mode!.wallInset
-          ctx!.fillStyle = '#84cc16'
+          ctx!.fillStyle = '#22c55e'
           ctx!.beginPath()
           ctx!.roundRect(x + inset, y + inset, MAZE_CELL - inset * 2, MAZE_CELL - inset * 2, 7)
           ctx!.fill()
         } else {
-          ctx!.fillStyle = '#f1f5f9'
+          ctx!.fillStyle = '#f8fbff'
           ctx!.fillRect(x, y, MAZE_CELL, MAZE_CELL)
           if (flash > 0) {
             ctx!.fillStyle = `rgba(251,191,36,${flash * 0.12})`
@@ -278,18 +278,18 @@ export const mount: ActivityMount = (container, options): ActivityHandle => {
 
     ctx!.globalCompositeOperation = 'lighter'
     const glow = ctx!.createRadialGradient(player.x, player.y, 5, player.x, player.y, 38)
-    glow.addColorStop(0, 'rgba(99,102,241,0.38)')
-    glow.addColorStop(1, 'rgba(99,102,241,0)')
+    glow.addColorStop(0, 'rgba(37,99,235,0.34)')
+    glow.addColorStop(1, 'rgba(37,99,235,0)')
     ctx!.fillStyle = glow
     ctx!.beginPath()
     ctx!.arc(player.x, player.y, 38, 0, Math.PI * 2)
     ctx!.fill()
     ctx!.globalCompositeOperation = 'source-over'
 
-    ctx!.fillStyle = dragging ? '#4f46e5' : '#6366f1'
+    ctx!.fillStyle = dragging ? '#1d4ed8' : '#2563eb'
     ctx!.save()
     ctx!.shadowBlur = 8
-    ctx!.shadowColor = 'rgba(99,102,241,0.5)'
+    ctx!.shadowColor = 'rgba(37,99,235,0.45)'
     ctx!.beginPath()
     ctx!.arc(player.x, player.y, PLAYER_R, 0, Math.PI * 2)
     ctx!.fill()
