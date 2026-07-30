@@ -1928,6 +1928,7 @@ export function getAdminQuestionMatrix(params: Omit<AdminQuestionFilters, 'grade
 }
 
 export interface AdminDemoCoverageCell {
+  slotId?: string
   track: QuestionTrack
   difficulty: 'easy' | 'medium' | 'hard'
   requiredSlots: number

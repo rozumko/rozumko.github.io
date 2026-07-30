@@ -571,8 +571,10 @@ Backend:
   `trustProxy: true`, so clients cannot spoof `X-Forwarded-For` and bypass
   rate limits.
 - The public olympiad demo is issued by `POST /api/questions/demo/start` from
-  published `olympiad_training` questions. The server composes 12 predefined
-  track/difficulty slots from intrinsically valid candidates, using a bounded
+  published `olympiad_training` questions. A versioned pool uses 12 exact
+  grade-specific slots and the server selects one tagged variant per slot.
+  Untagged legacy pools keep the former track/difficulty composition only until
+  a tagged blueprint is published. Selection uses a bounded
   fail-closed search that cannot enumerate an unbounded composition tree.
   Candidate order is stabilized before random selection. The server strips
   top-level and nested answer keys and signs the issued question IDs in a

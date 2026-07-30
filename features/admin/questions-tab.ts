@@ -328,7 +328,7 @@ function renderDemoCoverageGrade(coverage: AdminDemoCoverageGrade): string {
     const gap = cell.missingCandidates > 0
     const mechanicLabels = cell.mechanics.map(type => TYPE_LABELS[type] ?? type).join(', ') || 'немає'
     return `<tr class="${gap ? 'admin-demo-grade__cell-gap' : ''}">
-      <td>${esc(TRACK_LABELS[cell.track] ?? cell.track)}</td>
+      <td>${cell.slotId ? `<strong>${esc(cell.slotId)}</strong><br>` : ''}${esc(TRACK_LABELS[cell.track] ?? cell.track)}</td>
       <td>${esc(DIFF_LABELS[cell.difficulty] ?? cell.difficulty)}</td>
       <td>${cell.requiredSlots}</td>
       <td><strong>${cell.candidates}/${cell.targetCandidates}</strong></td>

@@ -136,7 +136,7 @@ const POLICY_BY_GRADE = {
     official: { count: 24, effort: [42, 50], images: [7, 10], mechanics: 6, compound: 5 },
   },
   4: {
-    demo: { count: 12, effort: [23, 28], images: [4, 5], mechanics: 6, compound: 2 },
+    demo: { count: 12, effort: [20, 24], images: [4, 5], mechanics: 6, compound: 2 },
     official: { count: 24, effort: [44, 52], images: [8, 10], mechanics: 6, compound: 5 },
   },
 } as const

@@ -6,6 +6,13 @@ import {
   olympiadQuestionVariantGroupKey,
   type OlympiadQuestionForPolicy,
 } from '../lib/olympiad-content-policy.js'
+import {
+  getOlympiadDemoBlueprint,
+  olympiadDemoBlueprintVersion,
+  OLYMPIAD_DEMO_VARIANTS_PER_SLOT,
+  readOlympiadDemoMeta,
+  type OlympiadDemoSlot,
+} from '../lib/olympiad-demo-blueprints.js'
 
 export const OLYMPIAD_DEMO_QUESTION_COUNT = 12
 export const OLYMPIAD_DEMO_TIME_MINUTES = 20
@@ -16,6 +23,7 @@ export const OLYMPIAD_DEMO_MAX_SEARCH_MS = 100
 type DemoDifficulty = 'easy' | 'medium' | 'hard'
 
 type DemoSlot = {
+  id?: string
   track: QuestionTrack
   difficulty: DemoDifficulty
 }
@@ -36,6 +44,7 @@ export type DemoQuestionCandidate = {
 }
 
 export type DemoCoverageCell = {
+  slotId?: string
   track: QuestionTrack
   difficulty: DemoDifficulty
   requiredSlots: number
@@ -74,7 +83,7 @@ export type DemoTokenPayload = {
   expiresAt: number
 }
 
-const SLOT_BLUEPRINTS: Record<number, DemoSlot[]> = {
+const LEGACY_CELL_BLUEPRINTS: Record<number, DemoSlot[]> = {
   1: [
     { track: 'ai-basics', difficulty: 'easy' },
     { track: 'computational-thinking', difficulty: 'easy' },
@@ -131,6 +140,39 @@ const SLOT_BLUEPRINTS: Record<number, DemoSlot[]> = {
     { track: 'computational-thinking', difficulty: 'medium' },
     { track: 'informatics', difficulty: 'hard' },
   ],
+}
+
+function isTaggedDemoQuestion(question: DemoQuestionCandidate): boolean {
+  return question.meta?.purpose === 'olympiad-demo'
+}
+
+function matchesBlueprintSlot(
+  grade: number,
+  question: DemoQuestionCandidate,
+  slot: OlympiadDemoSlot,
+): boolean {
+  const meta = readOlympiadDemoMeta(question.meta)
+  return Boolean(
+    meta
+    && meta.slotId === slot.id
+    && meta.blueprintVersion === olympiadDemoBlueprintVersion(grade)
+    && question.type === slot.type
+    && question.track === slot.track
+    && question.topic === slot.topic
+    && question.difficulty === slot.difficulty
+    && question.progressionBand === slot.progressionBand,
+  )
+}
+
+function compositionSlots(
+  grade: number,
+  candidates: DemoQuestionCandidate[],
+): { slots: DemoSlot[]; taggedMode: boolean } {
+  const taggedMode = candidates.some(isTaggedDemoQuestion)
+  return {
+    slots: taggedMode ? getOlympiadDemoBlueprint(grade) : LEGACY_CELL_BLUEPRINTS[grade] ?? [],
+    taggedMode,
+  }
 }
 
 function getSecret(): string {
@@ -250,10 +292,11 @@ export function pickDemoQuestionSet(
   acceptSet: (questions: DemoQuestionCandidate[]) => boolean = () => true,
   limits: DemoSearchLimits = {},
 ): string[] {
-  const slots = SLOT_BLUEPRINTS[grade]
-  if (!slots) throw new Error('Unsupported demo grade')
+  const { slots, taggedMode } = compositionSlots(grade, candidates)
+  if (!slots.length) throw new Error('Unsupported demo grade')
   const usableCandidates = candidates.filter(question =>
-    isDemoQuestionCandidateUsable(grade, question),
+    isDemoQuestionCandidateUsable(grade, question)
+    && (!taggedMode || isTaggedDemoQuestion(question)),
   )
   const maxVisitedNodes = Math.max(
     1,
@@ -266,13 +309,20 @@ export function pickDemoQuestionSet(
 
   const requiredByCell = new Map<string, number>()
   for (const slot of slots) {
-    const key = `${slot.track}:${slot.difficulty}`
+    const key = slot.id ?? `${slot.track}:${slot.difficulty}`
     requiredByCell.set(key, (requiredByCell.get(key) ?? 0) + 1)
   }
   for (const [key, required] of requiredByCell) {
-    const [track, difficulty] = key.split(':')
+    const exactSlot = taggedMode
+      ? getOlympiadDemoBlueprint(grade).find(slot => slot.id === key)
+      : undefined
+    const [track, difficulty] = exactSlot
+      ? [exactSlot.track, exactSlot.difficulty]
+      : key.split(':')
     const available = usableCandidates.filter(question =>
-      question.track === track && question.difficulty === difficulty,
+      exactSlot
+        ? matchesBlueprintSlot(grade, question, exactSlot)
+        : question.track === track && question.difficulty === difficulty,
     ).length
     if (available < required) {
       throw new Error(`Demo pool is incomplete for grade ${grade}: ${track}/${difficulty}`)
@@ -296,8 +346,9 @@ export function pickDemoQuestionSet(
     if (slotIndex === slots.length) return acceptSet(result)
     const slot = slots[slotIndex]!
     const eligible = usableCandidates.filter(question =>
-      question.track === slot.track
-      && question.difficulty === slot.difficulty
+      (slot.id
+        ? matchesBlueprintSlot(grade, question, slot as OlympiadDemoSlot)
+        : question.track === slot.track && question.difficulty === slot.difficulty)
       && !selectedIds.has(question.id)
       && !selectedFingerprints.has(olympiadQuestionFingerprint(question))
       && !selectedVariantGroups.has(olympiadQuestionVariantGroupKey(question)),
@@ -369,30 +420,33 @@ export function analyzeDemoCoverage(
   grade: number,
   candidates: DemoQuestionCandidate[],
 ): DemoCoverageGrade {
-  const slots = SLOT_BLUEPRINTS[grade]
-  if (!slots) throw new Error('Unsupported demo grade')
+  const { slots, taggedMode } = compositionSlots(grade, candidates)
+  if (!slots.length) throw new Error('Unsupported demo grade')
   const invalidCandidates = candidates.filter(question =>
-    !isDemoQuestionCandidateUsable(grade, question),
+    !isDemoQuestionCandidateUsable(grade, question)
+    || (taggedMode && !isTaggedDemoQuestion(question)),
   )
   const usableCandidates = candidates.filter(question =>
-    isDemoQuestionCandidateUsable(grade, question),
+    isDemoQuestionCandidateUsable(grade, question)
+    && (!taggedMode || isTaggedDemoQuestion(question)),
   )
 
   const grouped = new Map<string, DemoCoverageCell>()
   for (const slot of slots) {
-    const key = `${slot.track}:${slot.difficulty}`
+    const key = slot.id ?? `${slot.track}:${slot.difficulty}`
     const existing = grouped.get(key)
     if (existing) {
       existing.requiredSlots++
-      existing.targetCandidates += 3
+      existing.targetCandidates += taggedMode ? OLYMPIAD_DEMO_VARIANTS_PER_SLOT : 3
       continue
     }
     grouped.set(key, {
+      ...(slot.id ? { slotId: slot.id } : {}),
       track: slot.track,
       difficulty: slot.difficulty,
       requiredSlots: 1,
       candidates: 0,
-      targetCandidates: 3,
+      targetCandidates: taggedMode ? OLYMPIAD_DEMO_VARIANTS_PER_SLOT : 3,
       missingCandidates: 0,
       mechanics: [],
       topics: 0,
@@ -401,8 +455,13 @@ export function analyzeDemoCoverage(
   }
 
   for (const cell of grouped.values()) {
+    const exactSlot = cell.slotId
+      ? getOlympiadDemoBlueprint(grade).find(slot => slot.id === cell.slotId)
+      : undefined
     const eligible = usableCandidates.filter(question =>
-      question.track === cell.track && question.difficulty === cell.difficulty,
+      exactSlot
+        ? matchesBlueprintSlot(grade, question, exactSlot)
+        : question.track === cell.track && question.difficulty === cell.difficulty,
     )
     cell.candidates = eligible.length
     cell.missingCandidates = Math.max(0, cell.targetCandidates - eligible.length)
