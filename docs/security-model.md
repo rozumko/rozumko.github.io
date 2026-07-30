@@ -28,7 +28,9 @@ _Updated: 2026-07-24_
 
 1. The browser is untrusted.
 2. Official scoring happens only on the backend.
-3. Official and demo answer keys never reach the browser.
+3. Official answer keys never reach the browser. Demo endpoints never return
+   answer keys, but the current public demo reuses the static practice pool,
+   whose keys are intentionally available for local practice feedback.
 4. Students have no accounts; official access is code-based.
 5. JWT proves teacher identity, while the database decides role and status.
 6. All database access goes through the backend API.
@@ -74,7 +76,7 @@ the physical code to obtain a fresh token before the queue can flush.
 |---|---|
 | Static practice bundle | May include keys intentionally for local feedback |
 | Public question API | Strips top-level and nested keys |
-| Demo | Strips top-level and nested keys |
+| Demo API response | Strips top-level and nested keys; current source items may also exist in the public static practice bundle |
 | Official attempt | Strips top-level and nested keys |
 | Official result | Returns only the aggregate score |
 | Teacher/admin results | Excludes raw `answers` |
@@ -568,8 +570,24 @@ Backend:
 - Render adds one reverse-proxy hop. Fastify must use `trustProxy: 1`, never
   `trustProxy: true`, so clients cannot spoof `X-Forwarded-For` and bypass
   rate limits.
-- No-code olympiad-training UIs load only `olympiad_training` questions from
-  the static practice bundle on GitHub Pages. Home Demo and Club use only the
+- The public olympiad demo is issued by `POST /api/questions/demo/start` from
+  published `olympiad_training` questions. The server composes 12 predefined
+  track/difficulty slots, strips top-level and nested answer keys, and signs
+  the issued question IDs in a short-lived HMAC token. Final answers go to
+  `POST /api/questions/demo/finish`; the server verifies that token, scores
+  only the issued IDs and returns only aggregate `{ score, total }`. It does
+  not return per-item correctness, explanations or answer keys. A running
+  demo may keep its sanitized questions, signed demo token, local answers and
+  deadline in tab-scoped `sessionStorage` for reload recovery. This state
+  uses the server-provided relative token TTL to derive a recovery deadline in
+  the device clock domain; the absolute server expiry remains part of the API
+  contract and the backend remains authoritative. The state contains no answer
+  key and never becomes scoring authority. This protects
+  result integrity and prevents per-item answer leakage from the demo API; it
+  does **not** make the current demo questions secret because the same
+  `olympiad_training` rows are exported with local-feedback keys in the public
+  static practice bundle. A future secrecy requirement needs a separate
+  non-exported demo pool. Home Demo and Club use only the
   `path` channel, while School Mode uses only `class_game`. Empty channels are
   fail-closed, and main-round (`is_olympiad=true`) questions cannot have any
   training channel. Home Demo uses `GET /api/questions?channel=path`; the
@@ -637,8 +655,8 @@ through a pull request.
 - public questions are filtered to `isOlympiad=false`;
 - question channels are fail-closed: School, Home and static olympiad training
   each query only their allowlisted channel, while main-round questions have none;
-- public questions strip answer keys by default; demo responses strip answer
-  keys explicitly;
+- public questions strip answer keys by default; olympiad demo start strips
+  answer keys explicitly, and demo finish returns only an aggregate score;
 - critical UUID parameters fail with `400` before database access;
 - attempt finalization rejects late answers and locks the attempt row while
   scoring saved answers;

@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import { eq, desc, count, and, asc, inArray, ilike, or, sql, arrayContains, isNotNull, type SQL } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { questions, questionRevisions, accessCodes, attempts, attemptQuestions, appUsers, olympiadEvents, eventQuestions, schoolSessions, schoolSessionQuestions, homeLeads, homeEntitlements, homeEntitlementEvents, homeParentAccounts, homePathProgress, missions, missionRevisions, microLessons, microLessonRevisions, pathMapRevisions, pathMaps, contentPublications, homeFunnelCounters, type QuestionChannel, type QuestionTrack } from '../db/schema.js'
+import { analyzeDemoCoverage } from './olympiad-demo-validation.js'
 import { normalizeLessonSlug, normalizeLessonStatus, normalizeLessonContent, lessonContentChanged } from './lesson-validation.js'
 import { contentFromLessonRevision, lessonPublishedSnapshot, lessonRevisionSnapshot } from './lesson-editorial.js'
 import { EDITABLE_MISSION_KINDS, missionPublishedSnapshot, missionSnapshot, normalizeEditableMission, normalizeMissionSlug, normalizeMissionStatus, type NormalizedMissionInput } from './mission-editorial.js'
@@ -758,6 +759,37 @@ export async function adminRoutes(app: FastifyInstance) {
       .groupBy(questions.grade, questions.topic)
 
     return reply.send({ cells })
+  })
+
+  // GET /api/admin/questions/demo-coverage
+  // Editorial preflight for the public 12-slot olympiad demo. It intentionally
+  // reads only published training content because drafts cannot satisfy a live
+  // delivery requirement.
+  app.get('/questions/demo-coverage', {
+    preHandler: requireAdmin,
+  }, async (_req, reply) => {
+    const rows = await db
+      .select({
+        id: questions.id,
+        type: questions.type,
+        track: questions.track,
+        difficulty: questions.difficulty,
+        topic: questions.topic,
+        progressionBand: questions.progressionBand,
+        img: questions.img,
+        grade: questions.grade,
+      })
+      .from(questions)
+      .where(and(
+        eq(questions.isOlympiad, false),
+        eq(questions.editorialStatus, 'published'),
+        arrayContains(questions.channels, ['olympiad_training']),
+      ))
+
+    return reply.send({
+      grades: [1, 2, 3, 4].map(grade =>
+        analyzeDemoCoverage(grade, rows.filter(question => question.grade === grade))),
+    })
   })
 
   // GET /api/admin/questions?grade=&isOlympiad=&type=&channel=&unassigned=&difficulty=&track=&topic=&status=&search=&limit=&offset=
