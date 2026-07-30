@@ -54,7 +54,7 @@
 
     <!-- Головне меню — видно коли жодна панель не відкрита -->
     <div id="hub-menu">
-      <button id="show-practice-btn" class="hub-btn hub-btn--primary">
+      <button id="show-practice-btn" class="hub-btn hub-btn--primary hidden" aria-hidden="true" tabindex="-1">
         <img src="/images/half/rozumko_hulf_exercise.png" alt="" aria-hidden="true" width="64" height="64" />
         <span class="hub-btn__label">Тренування</span>
         <span class="hub-btn__sub">Обери клас і складність</span>
@@ -99,7 +99,7 @@
         <p class="practice-header__title">Демо-олімпіада — обери клас</p>
         <button id="hide-demo-btn" class="practice-header__close" aria-label="Закрити демо">×</button>
       </div>
-      <p class="practice-header__sub">Складні олімпіадні питання · без коду · результат не зберігається</p>
+      <p class="practice-header__sub">12 збалансованих завдань · 20 хвилин · без коду · результат не зберігається</p>
       <div id="demo-grade-buttons" class="selector-grid selector-grid--grade"
            role="group" aria-label="Клас для демо">
         <button data-demo-grade="1" class="selector-btn" aria-pressed="false">1</button>
@@ -215,7 +215,10 @@
       <p id="result-time" class="result-time"></p>
       <div id="result-saved-msg" class="result-saved hidden">✅ Результат збережено</div>
       <div id="result-error-msg" class="result-error hidden"></div>
-      <button id="result-close-btn" class="btn btn-violet">На головну сторінку</button>
+      <div class="result-actions">
+        <button id="result-retry-demo-btn" class="btn btn-start hidden">Спробувати інший набір</button>
+        <button id="result-close-btn" class="btn btn-violet">На головну сторінку</button>
+      </div>
     </div>
   </div>
 

@@ -2,7 +2,13 @@ import './frontend-security.js'
 import './register-sw.js'
 import { getModeConfig } from './features/olympiad/quiz-engine.js'
 import { loadStaticQuestions } from './features/missions/static-questions.js'
-import { saveAnswer, finishAttempt, sendHeartbeat } from './features/api/client.js'
+import {
+  finishAttempt,
+  finishOlympiadDemo,
+  saveAnswer,
+  sendHeartbeat,
+  startOlympiadDemo,
+} from './features/api/client.js'
 import { createAnswerQueue, type AnswerQueue } from './features/olympiad/answer-queue.js'
 import { renderQuestion, type RenderableQuestion } from './utils/question-renderer.js'
 import { resolveQuestionImage } from './utils/question-image.js'
@@ -58,9 +64,17 @@ startDemoFreeBtn.addEventListener('click', async () => {
   startDemoFreeBtn.disabled = true
   showLoading()
   try {
-    const cfg = getModeConfig('demo', null)
-    const qs  = await loadStaticQuestions(selectedDemoGrade, { count: cfg.count, difficulty: 'hard' })
-    startQuiz(qs.map(stripAnswerKeysForDemo), 'demo', cfg, { grade: selectedDemoGrade })
+    const demo = await startOlympiadDemo(selectedDemoGrade)
+    clearDemoBackup()
+    currentDemoToken = demo.demoToken
+    currentDemoRecoveryExpiresAt = Number.isFinite(demo.tokenTtlMs) && demo.tokenTtlMs > 0
+      ? Date.now() + demo.tokenTtlMs
+      : null
+    const cfg = getModeConfig('demo', {
+      questionsCount: demo.questionsCount,
+      timeMinutes: demo.timeMinutes,
+    })
+    startQuiz(demo.questions, 'demo', cfg, { grade: selectedDemoGrade })
   } catch (err) {
     hideLoading()
     showModal((err as Error).message)
@@ -86,6 +100,10 @@ const quizSkipBtn     = $<HTMLButtonElement>('quiz-skip-btn')
 const quizQuitBtn     = $<HTMLButtonElement>('quiz-quit-btn')
 const quizNav         = $('quiz-nav')
 const toastNotification = $('toast-notification')
+const quizLoadingOverlay = $('quiz-loading-overlay')
+
+function showLoading() { quizLoadingOverlay.classList.add('active') }
+function hideLoading()  { quizLoadingOverlay.classList.remove('active') }
 
 // --- Lightbox (shared component: utils/lightbox.ts) ---
 const quizImage     = $maybe<HTMLImageElement>('quiz-image')
@@ -100,6 +118,7 @@ const resultTime      = $('result-time')
 const resultSavedMsg  = $('result-saved-msg')
 const resultErrorMsg  = $('result-error-msg')
 const resultCloseBtn  = $<HTMLButtonElement>('result-close-btn')
+const resultRetryDemoBtn = $<HTMLButtonElement>('result-retry-demo-btn')
 
 // --- DOM: quit confirm ---
 const quitConfirm    = $('quit-confirm')
@@ -170,6 +189,8 @@ let currentMode:      string | null = null
 
 let currentAttemptId:    string | null = null
 let currentAttemptToken: string | null = null
+let currentDemoToken:    string | null = null
+let currentDemoRecoveryExpiresAt: number | null = null
 let answerQueue:         AnswerQueue | null = null  // offline-стійка черга відповідей (олімпіада)
 let answeredIds:         Set<string> = new Set()    // questionId-и, на які вже відповіли (для навігатора)
 let savedAnswers:        Map<string, unknown> = new Map() // сирі відповіді учня (для підсвічування при поверненні)
@@ -202,8 +223,28 @@ function exitFullscreen() {
 // ===================== LOCALSTORAGE BACKUP =====================
 
 const QUIZ_BACKUP_KEY = 'rozumko_quiz_backup'
+const DEMO_BACKUP_KEY = 'rozumko_demo_backup'
 
 function saveQuizBackup() {
+  if (currentMode === 'demo' && currentDemoToken && currentDemoRecoveryExpiresAt) {
+    try {
+      const meta = (startQuiz as any).meta as QuizMeta
+      sessionStorage.setItem(DEMO_BACKUP_KEY, JSON.stringify({
+        demoToken: currentDemoToken,
+        recoveryExpiresAt: currentDemoRecoveryExpiresAt,
+        grade: meta.grade,
+        questions,
+        questionsCount: questions.length,
+        currentIdx,
+        answeredIds: [...answeredIds],
+        savedAnswers: [...savedAnswers.entries()],
+        startedAt,
+        deadlineAt: Date.now() + secondsLeft * 1000,
+        savedAt: Date.now(),
+      }))
+    } catch { /* sessionStorage can be blocked */ }
+    return
+  }
   if (currentMode !== 'olympiad' || !currentAttemptId) return
   try {
     // attemptToken і персональний код навмисно НЕ зберігаються в localStorage.
@@ -221,6 +262,10 @@ function saveQuizBackup() {
 
 function clearQuizBackup() {
   try { localStorage.removeItem(QUIZ_BACKUP_KEY) } catch { /* ігноруємо */ }
+}
+
+function clearDemoBackup() {
+  try { sessionStorage.removeItem(DEMO_BACKUP_KEY) } catch { /* storage can be blocked */ }
 }
 
 function hasFreshQuizBackup(): boolean {
@@ -252,10 +297,14 @@ function hasFreshQuizBackup(): boolean {
     const pending = JSON.parse(raw) as {
       attemptId: string; attemptToken: string; code: string; grade: number; questions: RenderableQuestion[]
       answeredQuestionIds?: string[]; remainingSeconds?: number
+      timeMinutes?: number; questionsCount?: number
     }
     currentAttemptId    = pending.attemptId
     currentAttemptToken = pending.attemptToken
-    const cfg = getModeConfig('olympiad', null)
+    const cfg = getModeConfig('olympiad', {
+      timeMinutes: pending.timeMinutes,
+      questionsCount: pending.questionsCount,
+    })
     showLoading()
     const answeredIds = new Set(pending.answeredQuestionIds ?? [])
     const firstUnanswered = pending.questions.findIndex(q => !answeredIds.has(q.id as string))
@@ -270,6 +319,67 @@ function hasFreshQuizBackup(): boolean {
 })()
 
 // ===================== ТРЕНУВАННЯ =====================
+
+;(function checkPendingDemo() {
+  if (currentMode) return
+  let raw: string | null
+  try { raw = sessionStorage.getItem(DEMO_BACKUP_KEY) } catch { return }
+  if (!raw) return
+
+  try {
+    const backup = JSON.parse(raw) as {
+      demoToken: string
+      recoveryExpiresAt: number
+      grade: number
+      questions: RenderableQuestion[]
+      questionsCount: number
+      currentIdx: number
+      answeredIds: string[]
+      savedAnswers: Array<[string, unknown]>
+      startedAt: number
+      deadlineAt: number
+      savedAt: number
+    }
+    const now = Date.now()
+    const fresh = typeof backup.savedAt === 'number'
+      && now - backup.savedAt < 2 * 60 * 60 * 1000
+    const valid = fresh
+      && typeof backup.demoToken === 'string'
+      && Number.isFinite(backup.recoveryExpiresAt)
+      && backup.recoveryExpiresAt > now
+      && Number.isInteger(backup.grade)
+      && backup.grade >= 1
+      && backup.grade <= 4
+      && Array.isArray(backup.questions)
+      && Number.isInteger(backup.questionsCount)
+      && backup.questionsCount >= 1
+      && backup.questionsCount <= 50
+      && backup.questions.length === backup.questionsCount
+      && Number.isFinite(backup.deadlineAt)
+    if (!valid) {
+      clearDemoBackup()
+      return
+    }
+
+    selectedDemoGrade = backup.grade
+    currentDemoToken = backup.demoToken
+    currentDemoRecoveryExpiresAt = backup.recoveryExpiresAt
+    const gradeButton = [...demoGradeButtons].find(button => Number(button.dataset['demoGrade']) === backup.grade)
+    gradeButton?.setAttribute('aria-pressed', 'true')
+    startDemoFreeBtn.disabled = false
+    startQuiz(backup.questions, 'demo', getModeConfig('demo', {
+      questionsCount: backup.questionsCount,
+    }), { grade: backup.grade }, {
+      currentIdx: Math.max(0, Math.min(backup.currentIdx ?? 0, backup.questions.length - 1)),
+      secondsLeft: Math.max(0, Math.ceil((backup.deadlineAt - Date.now()) / 1000)),
+      answeredIds: Array.isArray(backup.answeredIds) ? backup.answeredIds : [],
+      savedAnswers: Array.isArray(backup.savedAnswers) ? backup.savedAnswers : [],
+      startedAt: Number.isFinite(backup.startedAt) ? backup.startedAt : Date.now(),
+    })
+  } catch {
+    clearDemoBackup()
+  }
+})()
 
 gradeButtons.forEach(btn => {
   btn.addEventListener('click', () => {
@@ -312,25 +422,12 @@ startPracticeBtn.addEventListener('click', async () => {
 // ===================== QUIZ ENGINE =====================
 
 interface QuizMeta { code?: string; grade?: number | null; [k: string]: unknown }
-interface QuizStartState { currentIdx?: number; secondsLeft?: number; answeredIds?: string[] }
-
-function stripAnswerKeysForDemo(q: RenderableQuestion): RenderableQuestion {
-  const safe = { ...q } as RenderableQuestion & Record<string, unknown>
-  delete safe.correct
-  delete safe.answer
-  delete safe.correctOrder
-  delete safe.pairs
-
-  if (safe.options && typeof safe.options === 'object' && !Array.isArray(safe.options)) {
-    const options = { ...(safe.options as Record<string, unknown>) }
-    delete options.correct
-    delete options.answer
-    delete options.correctOrder
-    delete options.pairs
-    safe.options = options
-  }
-
-  return safe
+interface QuizStartState {
+  currentIdx?: number
+  secondsLeft?: number
+  answeredIds?: string[]
+  savedAnswers?: Array<[string, unknown]>
+  startedAt?: number
 }
 
 function startQuiz(qs: RenderableQuestion[], mode: string, cfg: any, meta: QuizMeta, restore: QuizStartState = {}) {
@@ -339,9 +436,9 @@ function startQuiz(qs: RenderableQuestion[], mode: string, cfg: any, meta: QuizM
   score         = 0
   answered      = false
   currentMode   = mode
-  startedAt     = Date.now()
+  startedAt     = restore.startedAt ?? Date.now()
   answeredIds   = new Set(restore.answeredIds ?? [])
-  savedAnswers  = new Map()
+  savedAnswers  = new Map(restore.savedAnswers ?? [])
   finishing     = false
   navEnabled    = mode === 'olympiad' || mode === 'demo'
   quizNav.classList.toggle('hidden', !navEnabled)
@@ -515,14 +612,21 @@ function showFeedback(isCorrect: boolean, q: RenderableQuestion) {
 
 quizNextBtn.addEventListener('click', () => {
   currentIdx++
-  if (currentIdx < questions.length) showQuestion()
+  if (currentIdx < questions.length) {
+    saveQuizBackup()
+    showQuestion()
+  }
   else attemptFinish()
 })
 
 // Пропустити: на непослідньому — вперед на 1 без відповіді; на останньому — завершити.
 // Повернутись до пропущеного можна через чипи навігатора.
 quizSkipBtn.addEventListener('click', () => {
-  if (currentIdx + 1 < questions.length) { currentIdx++; showQuestion() }
+  if (currentIdx + 1 < questions.length) {
+    currentIdx++
+    saveQuizBackup()
+    showQuestion()
+  }
   else attemptFinish()
 })
 
@@ -552,6 +656,7 @@ function attemptFinish() {
 function goToQuestion(i: number) {
   if (i < 0 || i >= questions.length || i === currentIdx) return
   currentIdx = i
+  saveQuizBackup()
   showQuestion()
 }
 
@@ -613,6 +718,7 @@ async function finishQuiz(timeUp: boolean) {
   resultTime.textContent      = `Час: ${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`
   resultSavedMsg.classList.add('hidden')
   resultErrorMsg.classList.add('hidden')
+  resultRetryDemoBtn.classList.add('hidden')
 
   // Для practice — показуємо score (локальне оцінювання з correct).
   // Для demo — не рахуємо score (correct невідомий), показуємо нейтральне завершення.
@@ -629,10 +735,46 @@ async function finishQuiz(timeUp: boolean) {
     return
   }
   if (currentMode === 'demo') {
-    resultScore.textContent = '—'
+    resultScore.textContent = '…'
     resultTotal.textContent = String(questions.length)
-    resultTitle.textContent = timeUp ? 'Час вийшов!' : 'Демо завершено!'
+    resultTitle.textContent = timeUp ? 'Час вийшов! Обчислюємо результат…' : 'Обчислюємо результат…'
     showOverlay(resultOverlay)
+    if (!currentDemoToken) {
+      resultScore.textContent = '—'
+      resultTitle.textContent = 'Не вдалося обчислити результат'
+      resultErrorMsg.textContent = 'Демо-сесію втрачено. Запусти демо ще раз.'
+      resultErrorMsg.classList.remove('hidden')
+      return
+    }
+
+    const answers = [...savedAnswers.entries()]
+      .filter((entry): entry is [string, number | string | number[]] => (
+        typeof entry[1] === 'number'
+        || typeof entry[1] === 'string'
+        || (Array.isArray(entry[1]) && entry[1].every(value => Number.isInteger(value)))
+      ))
+      .map(([questionId, answer]) => ({ questionId, answer }))
+
+    try {
+      const serverResult = await finishOlympiadDemo(currentDemoToken, answers)
+      const finalScore = serverResult.score
+      const total = serverResult.total
+      resultScore.textContent = String(finalScore)
+      resultTotal.textContent = String(total)
+      resultTitle.textContent = timeUp ? 'Час вийшов!'
+        : finalScore >= total * 0.8 ? 'Відмінно!'
+        : finalScore >= total * 0.5 ? 'Добре!'
+        : 'Спробуй ще!'
+      clearDemoBackup()
+      currentDemoToken = null
+      currentDemoRecoveryExpiresAt = null
+      resultRetryDemoBtn.classList.remove('hidden')
+    } catch {
+      resultScore.textContent = '—'
+      resultTitle.textContent = 'Не вдалося обчислити результат'
+      resultErrorMsg.textContent = 'Перевір інтернет-з’єднання та запусти демо ще раз.'
+      resultErrorMsg.classList.remove('hidden')
+    }
     return
   }
 
@@ -704,9 +846,26 @@ quitConfirmYes.addEventListener('click', () => {
   answerQueue         = null
   currentAttemptId    = null
   currentAttemptToken = null
+  if (currentMode === 'demo') {
+    clearDemoBackup()
+    currentDemoToken = null
+    currentDemoRecoveryExpiresAt = null
+  }
 })
 
-resultCloseBtn.addEventListener('click', () => hideOverlay(resultOverlay))
+resultRetryDemoBtn.addEventListener('click', () => {
+  hideOverlay(resultOverlay)
+  resultRetryDemoBtn.classList.add('hidden')
+  clearDemoBackup()
+  currentDemoToken = null
+  currentDemoRecoveryExpiresAt = null
+  startDemoFreeBtn.click()
+})
+
+resultCloseBtn.addEventListener('click', () => {
+  resultRetryDemoBtn.classList.add('hidden')
+  hideOverlay(resultOverlay)
+})
 
 // ===================== УТИЛІТИ =====================
 
@@ -735,7 +894,3 @@ function updateTimerDisplay(announce = true) {
 
 function showOverlay(el: HTMLElement) { el.classList.add('active') }
 function hideOverlay(el: HTMLElement) { el.classList.remove('active') }
-
-const quizLoadingOverlay = $('quiz-loading-overlay')
-function showLoading() { quizLoadingOverlay.classList.add('active') }
-function hideLoading()  { quizLoadingOverlay.classList.remove('active') }

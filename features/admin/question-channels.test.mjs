@@ -62,6 +62,17 @@ test('coverage matrix reports gaps inside the selected section', () => {
   assert.match(apiClient, /`\/api\/admin\/questions\/matrix\?\$\{p\}`/)
 })
 
+test('olympiad demo preflight exposes actionable content gaps', () => {
+  assert.match(adminHtml, /id="q-demo-coverage"/)
+  assert.match(adminHtml, /id="q-demo-coverage-refresh"/)
+  assert.match(questionsTab, /getAdminDemoCoverage\(\)/)
+  assert.match(questionsTab, /'q-demo-coverage-refresh'\)\.addEventListener\('click'/)
+  assert.match(questionsTab, /data-demo-gap-grade=/)
+  assert.match(questionsTab, /\$\s*<HTMLSelectElement>\('q-filter-status'\)\.value = 'published'/)
+  assert.match(questionsTab, /selectSection\('olympiad_training'\)/)
+  assert.match(apiClient, /'\/api\/admin\/questions\/demo-coverage'/)
+})
+
 test('admin help explains the complete content and path workflow in plain language', () => {
   assert.match(adminHtml, /data-tab="help"/)
   assert.match(adminHtml, /id="tab-help"/)

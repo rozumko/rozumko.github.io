@@ -87,6 +87,8 @@ startBtn.addEventListener('click', async () => {
       resumed:      result.resumed ?? false,
       answeredQuestionIds: result.answeredQuestionIds ?? [],
       remainingSeconds: result.remainingSeconds,
+      timeMinutes: result.timeMinutes,
+      questionsCount: result.questionsCount,
     }))
     // Якщо це відновлення раніше початої спроби (закрив вкладку / F5) —
     // коротко повідомляємо учня, щоб він не лякався.
