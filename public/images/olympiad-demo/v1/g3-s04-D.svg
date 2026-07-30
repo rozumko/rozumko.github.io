@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="360" viewBox="0 0 720 360" role="img">
+  <rect width="720" height="360" rx="28" fill="#f5f3ff"/>
+  <rect x="28" y="28" width="664" height="304" rx="22" fill="#fff" stroke="#7c3aed" stroke-width="4"/>
+  <text x="52" y="69" class="label">Дані завдання</text>
+  <text x="360" y="144" text-anchor="middle" class="data">2 1 3</text>
+  <text x="360" y="180" text-anchor="middle" class="data">3 2 1</text>
+  <text x="360" y="216" text-anchor="middle" class="data">1 3 ?</text>
+  <style>
+    .label { font: 600 22px system-ui, sans-serif; fill: #6d28d9; }
+    .data { font: 600 27px system-ui, sans-serif; fill: #1f2937; }
+  </style>
+</svg>

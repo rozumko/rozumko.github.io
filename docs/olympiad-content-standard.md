@@ -426,7 +426,8 @@ decision explicitly changes it.
 
 1. Build the 12-slot blueprint for each grade. **Implemented.**
 2. Tag or catalogue three candidate variants for every slot outside the live
-   selection path. **Preflight implemented; content gaps remain.**
+   selection path. **Implemented for the authored A-D package: four variants
+   per slot, 192 tasks total. Publication remains an editorial action.**
 3. Author missing non-choice variants, prioritising apply and reason tasks.
 4. Change demo defaults from 5 hard tasks / 10 minutes to 12 balanced tasks /
    20 minutes. **Implemented.**
@@ -447,7 +448,9 @@ decision explicitly changes it.
 
 ### Requires Platform or Data-Model Work
 
-1. Store versioned demo blueprints and slot variants in the admin workflow.
+1. Move versioned demo blueprints and slot variants from validated question
+   metadata into first-class editable admin entities if editors later need to
+   change blueprint structure without a code release.
 2. Store per-grade expected task counts directly on the event model; exact
    validation is already implemented against the approved policy.
 3. Add `multi_select` and media-capable options.

@@ -10,6 +10,10 @@ import {
   verifyDemoToken,
   type DemoQuestionCandidate,
 } from './olympiad-demo-validation.js'
+import {
+  getOlympiadDemoBlueprint,
+  olympiadDemoBlueprintVersion,
+} from '../lib/olympiad-demo-blueprints.js'
 
 const ORIGINAL_SECRET = process.env.ATTEMPT_SECRET
 process.env.ATTEMPT_SECRET = 'test-only-demo-token-secret'
@@ -131,6 +135,66 @@ test('demo picker is deterministic per seed and still returns distinct policy va
     pickDemoQuestionSet(2, candidates, createSeededDemoRandom(42)),
     pickDemoQuestionSet(2, candidates, createSeededDemoRandom(42)),
   )
+})
+
+test('tagged demo pool selects exactly one variant from every versioned slot', () => {
+  const blueprint = getOlympiadDemoBlueprint(1)
+  let index = 500
+  const candidates: DemoQuestionCandidate[] = blueprint.flatMap(slot =>
+    ['A', 'B', 'C', 'D'].map((variant, variantIndex) => ({
+      id: uuid(index++),
+      q: `${slot.id} variant ${variant}`,
+      type: slot.type,
+      options: slot.type === 'choice' ? ['a', 'b', 'c', 'd'] : [],
+      track: slot.track,
+      difficulty: slot.difficulty,
+      topic: slot.topic,
+      progressionBand: slot.progressionBand,
+      meta: {
+        purpose: 'olympiad-demo',
+        slotId: slot.id,
+        blueprintVersion: olympiadDemoBlueprintVersion(1),
+        templateId: slot.id,
+        variantLabel: variant,
+        estimatedSeconds: 60 + variantIndex,
+      },
+    })),
+  )
+
+  const selectedIds = pickDemoQuestionSet(1, candidates, createSeededDemoRandom(9))
+  const selected = selectedIds.map(id => candidates.find(question => question.id === id)!)
+  assert.equal(selected.length, 12)
+  assert.deepEqual(
+    new Set(selected.map(question => question.meta?.slotId)),
+    new Set(blueprint.map(slot => slot.id)),
+  )
+  assert.equal(analyzeDemoCoverage(1, candidates).cells.length, 12)
+  assert.ok(analyzeDemoCoverage(1, candidates).cells.every(cell => cell.candidates === 4))
+})
+
+test('tagged demo pool fails closed instead of falling back when one slot is missing', () => {
+  const blueprint = getOlympiadDemoBlueprint(1)
+  let index = 700
+  const candidates: DemoQuestionCandidate[] = blueprint.slice(0, -1).map(slot => ({
+    id: uuid(index++),
+    q: `${slot.id} only variant`,
+    type: slot.type,
+    options: [],
+    track: slot.track,
+    difficulty: slot.difficulty,
+    topic: slot.topic,
+    progressionBand: slot.progressionBand,
+    meta: {
+      purpose: 'olympiad-demo',
+      slotId: slot.id,
+      blueprintVersion: olympiadDemoBlueprintVersion(1),
+      templateId: slot.id,
+      variantLabel: 'A',
+      estimatedSeconds: 60,
+    },
+  }))
+
+  assert.throws(() => pickDemoQuestionSet(1, candidates), /Demo pool is incomplete/)
 })
 
 test('demo token is signed, expires, and rejects tampering', () => {
