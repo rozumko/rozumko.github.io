@@ -63,6 +63,14 @@ test('empty content families are reported so exports fail closed on invisible ta
   assert.deepEqual(emptyContentFamilies(empty), ['gamePacks', 'paths'])
 })
 
+test('a family proven readable may be empty, the rest still fail closed', () => {
+  const empty = structuredClone(manifest)
+  empty.practiceQuestions = []
+  empty.paths = []
+  assert.deepEqual(emptyContentFamilies(empty, ['practiceQuestions']), ['paths'])
+  assert.deepEqual(emptyContentFamilies(empty), ['practiceQuestions', 'paths'])
+})
+
 test('publication callback verifies HMAC and rejects stale or altered payloads', () => {
   const secret = 'a-secure-test-secret-with-at-least-32-characters'
   const timestamp = String(Math.floor(Date.now() / 1000))

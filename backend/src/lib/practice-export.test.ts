@@ -1,6 +1,11 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { sanitizeForStaticBundle, groupByGrade, type ExportableQuestionRow } from './practice-export.js'
+import {
+  assertQuestionsTableReadable,
+  sanitizeForStaticBundle,
+  groupByGrade,
+  type ExportableQuestionRow,
+} from './practice-export.js'
 
 function row(overrides: Partial<ExportableQuestionRow> = {}): ExportableQuestionRow {
   return {
@@ -35,6 +40,16 @@ test('sanitizeForStaticBundle: legacy null isOlympiad fails closed', () => {
 
 test('sanitizeForStaticBundle: question outside olympiad_training fails closed', () => {
   assert.throws(() => sanitizeForStaticBundle([row({ channels: ['path'] })]), /olympiad_training/)
+})
+
+test('assertQuestionsTableReadable: an invisible questions table still fails the export', () => {
+  assert.throws(() => assertQuestionsTableReadable(0), /cannot read public\.questions/)
+})
+
+test('assertQuestionsTableReadable: a readable table with an empty channel exports nothing quietly', () => {
+  assert.doesNotThrow(() => assertQuestionsTableReadable(2440))
+  assert.deepEqual([...groupByGrade([]).entries()].map(([grade, list]) => [grade, list.length]),
+    [[1, 0], [2, 0], [3, 0], [4, 0]])
 })
 
 test('sanitizeForStaticBundle: a server-scored demo question fails the export closed', () => {

@@ -77,10 +77,18 @@ export async function buildContentPublicationManifest(): Promise<ContentPublicat
  * Fail-closed guard for export jobs: an empty content family almost always
  * means the export role cannot see the table (missing RLS policy or GRANT),
  * not that the platform legitimately has zero published content.
+ *
+ * `readableEmptyFamilies` is the exception. A family belongs there only when
+ * the caller has separately proven the underlying table is readable — then an
+ * empty family is an editorial state (a delivery channel is being refilled),
+ * not a broken grant, and the export must not block the deploy.
  */
-export function emptyContentFamilies(manifest: ContentPublicationManifest): string[] {
+export function emptyContentFamilies(
+  manifest: ContentPublicationManifest,
+  readableEmptyFamilies: readonly string[] = [],
+): string[] {
   return (['practiceQuestions', 'lessons', 'gamePacks', 'paths'] as const)
-    .filter(key => manifest[key].length === 0)
+    .filter(key => manifest[key].length === 0 && !readableEmptyFamilies.includes(key))
 }
 
 export function contentManifestSha256(manifest: ContentPublicationManifest): string {
