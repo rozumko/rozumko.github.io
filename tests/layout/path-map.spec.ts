@@ -12,6 +12,43 @@ import { GRADE2_PATH } from '../../features/path/path-data'
 
 const STORAGE_KEY = 'rozumko:path-progress:v1:local'
 
+/**
+ * Serves the practice pool the point's mission asks for. The published bundle is
+ * content, not layout: a channel between refills is legitimately empty, and a
+ * presentation test must not depend on what happens to be published today.
+ */
+async function stubMissionQuestions(page: Page, grade: number, pointId: string) {
+  const map = await (await page.request.get(`/path/grade-${grade}.json`)).json()
+  const point = map.points.find((candidate: { id: string }) => candidate.id === pointId)
+  const mission = point?.activities
+    ?.map((activity: { activity?: Record<string, unknown> }) => activity.activity)
+    ?.find((activity: { kind?: string }) => activity?.kind === 'mission') ?? {}
+
+  const questions = Array.from({ length: Math.max(5, Number(mission.count) || 5) }, (_, index) => ({
+    id: `path-fx-${grade}-${index}`,
+    q: `Що робить цей алгоритм на кроці ${index + 1}?`,
+    code: null,
+    type: 'choice',
+    options: ['Перший варіант', 'Другий варіант', 'Третій варіант', 'Четвертий варіант'],
+    correct: 0,
+    explanation: 'Пояснення для перевірки оформлення.',
+    img: null,
+    imageAlt: null,
+    difficulty: mission.difficulty ?? 'easy',
+    track: mission.track ?? null,
+    topic: mission.topic ?? null,
+    conceptKey: null,
+    progressionBand: mission.band ?? 'recognize',
+    version: 1,
+    grade,
+  }))
+
+  await page.route(`**/questions/grade-${grade}.json`, route => route.fulfill({
+    contentType: 'application/json',
+    body: JSON.stringify(questions),
+  }))
+}
+
 function progressWith(pointIds: string[]) {
   const points: Record<string, unknown> = {}
   for (const id of pointIds) {
@@ -161,6 +198,9 @@ for (const path of [
   })
 
   test(`grade ${path.grade} mission uses the shared quiz presentation`, async ({ page }) => {
+    // This test is about presentation, not content: it serves its own pool so a
+    // delivery channel that is empty (being refilled) cannot fail the layout gate.
+    await stubMissionQuestions(page, path.grade, path.start)
     await page.goto(`/path.html?grade=${path.grade}`)
     await page.locator('.path-node--open').click()
 
