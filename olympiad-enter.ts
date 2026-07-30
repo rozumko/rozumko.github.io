@@ -1,5 +1,6 @@
 import './frontend-security.js'
 import { validateCode, exchangeCode } from './features/api/client.js'
+import { normalizeOlympiadCode } from './features/olympiad/code.js'
 
 // --- DOM ---
 const stepCode     = document.getElementById('step-code')!
@@ -15,27 +16,16 @@ const startBtn     = document.getElementById('start-btn') as HTMLButtonElement
 const startError   = document.getElementById('start-error')!
 const changeCodeBtn = document.getElementById('change-code-btn') as HTMLButtonElement
 
-// Нормалізація: прибрати пробіли, латиниця → кирилиця, верхній регістр
-const LATIN_TO_CYR: Record<string, string> = {
-  A:'А', B:'В', C:'С', E:'Е', H:'Н', I:'І', K:'К', M:'М', O:'О', P:'Р', T:'Т', X:'Х',
-  a:'а', b:'в', c:'с', e:'е', h:'н', i:'і', k:'к', m:'м', o:'о', p:'р', t:'т', x:'х',
-}
-function normalizeCode(raw: string): string {
-  return raw.trim().toUpperCase()
-    .split('').map(ch => LATIN_TO_CYR[ch] ?? ch).join('')
-    .replace(/\s+/g, '')
-}
-
 // Оновлення поля при введенні
 codeInput.addEventListener('input', () => {
-  codeInput.value = normalizeCode(codeInput.value)
+  codeInput.value = normalizeOlympiadCode(codeInput.value)
   codeError.textContent = ''
 })
 
 // КРОК 1: перевірка коду
 codeForm.addEventListener('submit', async (e) => {
   e.preventDefault()
-  const code = normalizeCode(codeInput.value)
+  const code = normalizeOlympiadCode(codeInput.value)
   if (!code) { codeError.textContent = 'Введи код.'; return }
 
   codeError.textContent    = ''

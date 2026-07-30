@@ -33,7 +33,7 @@
   <link rel="stylesheet" href="style-student.css" />
 </head>
 
-<body class="student-page">
+<body class="student-page olympiad-home-page">
   <a href="#screen-entry" class="skip-link">Перейти до основного контенту</a>
 
   <!-- ═══════════════════════════════════════════════════════════
@@ -45,72 +45,78 @@
       ← На головну
     </a>
 
-    <!-- Логотип -->
-    <div class="entry-logo">
-      <span class="entry-logo__icon" aria-hidden="true"><img src="/images/half/rozumko_hulf_thinks.png" alt="" width="80" height="80" /></span>
-      <h1 class="entry-logo__title">Розумко</h1>
-      <p class="entry-logo__sub">Обчислювальне мислення, логіка та основи ШІ</p>
-    </div>
+    <section class="olympiad-entry" aria-labelledby="olympiad-entry-title">
+      <header class="olympiad-entry__brand">
+        <span class="olympiad-entry__mascot" aria-hidden="true">
+          <img src="/images/half/rozumko_hulf_thinks.png" alt="" width="104" height="104" />
+        </span>
+        <div>
+          <p class="olympiad-entry__eyebrow">Олімпіада для 1–4 класів</p>
+          <h1 id="olympiad-entry-title">Олімпіада Розумко</h1>
+          <p>Завдання на логіку, інформатику, обчислювальне мислення та основи ШІ.</p>
+        </div>
+      </header>
 
-    <!-- Головне меню — видно коли жодна панель не відкрита -->
-    <div id="hub-menu">
-      <button id="show-practice-btn" class="hub-btn hub-btn--primary hidden" aria-hidden="true" tabindex="-1">
-        <img src="/images/half/rozumko_hulf_exercise.png" alt="" aria-hidden="true" width="64" height="64" />
-        <span class="hub-btn__label">Тренування</span>
-        <span class="hub-btn__sub">Обери клас і складність</span>
-      </button>
-      <button id="show-demo-btn" class="hub-btn hub-btn--demo">
-        <img src="/images/half/rozumko_hulf_laptop.png" alt="" aria-hidden="true" width="64" height="64" />
-        <span class="hub-btn__label">Демо-олімпіада</span>
-        <span class="hub-btn__sub">Спробуй без реєстрації</span>
-      </button>
-      <a href="olympiad-enter.html" class="hub-olympiad-link">
-        У мене є код від учителя →
-      </a>
-    </div>
+      <div class="olympiad-entry__grid">
+        <section class="olympiad-actions" aria-labelledby="olympiad-actions-title">
+          <h2 id="olympiad-actions-title">Як хочеш почати?</h2>
 
-    <!-- Панель тренування -->
-    <div id="practice-section" class="student-card student-card--flush hidden">
-      <div class="practice-header">
-        <p class="practice-header__title">Обери клас і складність</p>
-        <button id="hide-practice-btn" class="practice-header__close" aria-label="Закрити тренування">×</button>
-      </div>
-      <div id="practice-grade-buttons" class="selector-grid selector-grid--grade"
-           role="group" aria-label="Клас">
-        <button data-grade="1" class="selector-btn" aria-pressed="false">1</button>
-        <button data-grade="2" class="selector-btn" aria-pressed="false">2</button>
-        <button data-grade="3" class="selector-btn" aria-pressed="false">3</button>
-        <button data-grade="4" class="selector-btn" aria-pressed="false">4</button>
-      </div>
-      <div id="practice-difficulty-buttons" class="selector-grid selector-grid--diff"
-           role="group" aria-label="Складність">
-        <button data-difficulty="easy"   class="selector-btn selector-btn--diff" aria-pressed="false">Легкий</button>
-        <button data-difficulty="medium" class="selector-btn selector-btn--diff" aria-pressed="false">Середній</button>
-        <button data-difficulty="hard"   class="selector-btn selector-btn--diff" aria-pressed="false">Важкий</button>
-      </div>
-      <button id="start-practice-btn" class="btn btn-start" disabled>
-        Почати тренування
-      </button>
-    </div>
+          <form id="olympiad-code-form" class="olympiad-code-form" novalidate>
+            <label for="olympiad-code-input">Введи код від учителя</label>
+            <div class="olympiad-code-form__row">
+              <input id="olympiad-code-input" class="code-input olympiad-code-input"
+                type="text" inputmode="text" autocomplete="one-time-code"
+                autocapitalize="characters" maxlength="10" placeholder="Наприклад: КІТ247"
+                aria-describedby="olympiad-code-help olympiad-code-status" />
+              <button id="olympiad-code-submit" type="submit" class="btn btn-violet">Почати</button>
+            </div>
+            <p id="olympiad-code-help" class="olympiad-code-form__help">Код видає вчитель перед основною олімпіадою.</p>
+            <p id="olympiad-code-status" class="code-status" role="alert" aria-live="assertive"></p>
+          </form>
 
-    <!-- Панель демо-олімпіади -->
-    <div id="demo-section" class="student-card student-card--flush hidden">
-      <div class="practice-header">
-        <p class="practice-header__title">Демо-олімпіада — обери клас</p>
-        <button id="hide-demo-btn" class="practice-header__close" aria-label="Закрити демо">×</button>
+          <div class="olympiad-divider" aria-hidden="true"><span>або</span></div>
+
+          <button id="show-demo-btn" class="hub-btn hub-btn--demo">
+            <img src="/images/half/rozumko_hulf_laptop.png" alt="" aria-hidden="true" width="58" height="58" />
+            <span>
+              <span class="hub-btn__label">Спробувати демо</span>
+              <span class="hub-btn__sub">12 завдань · 20 хвилин · без коду</span>
+            </span>
+          </button>
+
+          <div id="demo-section" class="olympiad-demo-panel hidden">
+            <div class="practice-header">
+              <p class="practice-header__title">Обери свій клас</p>
+              <button id="hide-demo-btn" class="practice-header__close" aria-label="Закрити вибір класу">×</button>
+            </div>
+            <div id="demo-grade-buttons" class="selector-grid selector-grid--grade"
+                 role="group" aria-label="Клас для демо">
+              <button data-demo-grade="1" class="selector-btn" aria-pressed="false">1</button>
+              <button data-demo-grade="2" class="selector-btn" aria-pressed="false">2</button>
+              <button data-demo-grade="3" class="selector-btn" aria-pressed="false">3</button>
+              <button data-demo-grade="4" class="selector-btn" aria-pressed="false">4</button>
+            </div>
+            <button id="start-demo-free-btn" class="btn btn-start" disabled>Почати демо</button>
+          </div>
+        </section>
+
+        <aside class="olympiad-guide" aria-labelledby="olympiad-guide-title">
+          <p class="olympiad-guide__eyebrow">Перед стартом</p>
+          <h2 id="olympiad-guide-title">Що тебе чекає</h2>
+          <ul class="olympiad-guide__list">
+            <li><span aria-hidden="true">⏱</span><div><strong>45 хвилин</strong><p>Час основної олімпіади не зупиняється.</p></div></li>
+            <li><span aria-hidden="true">🧩</span><div><strong>Завдання різних типів</strong><p>Можна пропускати їх і повертатися пізніше.</p></div></li>
+            <li><span aria-hidden="true">💾</span><div><strong>Відповіді зберігаються</strong><p>Якщо зв’язок зникне, продовжуй працювати.</p></div></li>
+            <li><span aria-hidden="true">🌟</span><div><strong>Працюй самостійно</strong><p>Чернетка дозволена, а підказки — ні.</p></div></li>
+          </ul>
+          <div class="olympiad-guide__counts" aria-label="Кількість завдань за класами">
+            <span><strong>1 клас</strong>16 завдань</span>
+            <span><strong>2 клас</strong>20 завдань</span>
+            <span><strong>3–4 клас</strong>24 завдання</span>
+          </div>
+        </aside>
       </div>
-      <p class="practice-header__sub">12 збалансованих завдань · 20 хвилин · без коду · результат не зберігається</p>
-      <div id="demo-grade-buttons" class="selector-grid selector-grid--grade"
-           role="group" aria-label="Клас для демо">
-        <button data-demo-grade="1" class="selector-btn" aria-pressed="false">1</button>
-        <button data-demo-grade="2" class="selector-btn" aria-pressed="false">2</button>
-        <button data-demo-grade="3" class="selector-btn" aria-pressed="false">3</button>
-        <button data-demo-grade="4" class="selector-btn" aria-pressed="false">4</button>
-      </div>
-      <button id="start-demo-free-btn" class="btn btn-start" disabled>
-        Почати демо
-      </button>
-    </div>
+    </section>
 
     <!-- Футер -->
     <footer class="student-footer">

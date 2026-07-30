@@ -85,6 +85,20 @@ test('scoreAttempt зберігає explanation у результаті (hideKey
 
 // ── Нові типи: sort / match / input / sequence ───────────────
 
+test('scoreAttempt grades multi-select all-or-nothing and ignores selection order', () => {
+  const questions = [{
+    id: 'q1',
+    type: 'multi_select',
+    correct: null,
+    explanation: null,
+    options: { choices: ['A', 'B', 'C', 'D'], correctAnswers: [0, 2] },
+  }]
+  assert.equal(scoreAttempt(questions, { q1: [2, 0] }).score, 1)
+  assert.equal(scoreAttempt(questions, { q1: [0] }).score, 0)
+  assert.equal(scoreAttempt(questions, { q1: [0, 2, 3] }).score, 0)
+  assert.equal(scoreAttempt(questions, { q1: [0, 0] }).score, 0)
+})
+
 test('scoreAttempt: sort — масив у правильному порядку', () => {
   const qs = [{ id: 'q1', type: 'sort', correct: null, explanation: null, options: { items: ['a','b','c'], correctOrder: [2,0,1] } }]
   assert.equal(scoreAttempt(qs, { q1: [2,0,1] }).score, 1)

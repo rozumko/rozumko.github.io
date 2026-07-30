@@ -18,7 +18,7 @@ export const TURNSTILE_SITE_KEY = ENV.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAADdbJz
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
-export type QuestionType = 'choice' | 'truefalse' | 'input' | 'sort' | 'sequence' | 'match'
+export type QuestionType = 'choice' | 'multi_select' | 'truefalse' | 'input' | 'sort' | 'sequence' | 'match'
 export type QuestionTrack = 'informatics' | 'computational-thinking' | 'ai-basics'
 /** Progression stage of an item. Mirrors PROGRESSION_BANDS in backend/src/lib/taxonomy.ts. */
 export type ProgressionBand = 'recognize' | 'apply' | 'reason'
@@ -250,8 +250,8 @@ export function validateCode(code: string): Promise<{ eventTitle: string; grade:
 
 // Нормалізує питання з API у форму, яку очікує question-renderer.
 // Для choice/truefalse: options — масив рядків → дублюємо в q.a.
-// Для sort/sequence/match/input: options — обʼєкт → розгортаємо його поля
-// (items, correctOrder, left, right, pairs, given, choices, answer, inputType)
+// Для multi_select/sort/sequence/match/input: options — обʼєкт → розгортаємо його поля
+// (choices, correctAnswers, items, correctOrder, left, right, pairs, given, answer, inputType)
 // у top-level q, бо рендерер читає саме звідти. Ключі відповідей для олімпіади
 // сервер уже видалив з options, тож після розгортання їх просто не буде.
 export function normalizeQuestion(q: Question): Question {

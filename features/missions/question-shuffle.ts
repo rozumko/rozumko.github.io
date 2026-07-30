@@ -54,7 +54,7 @@ function shuffleInPlace<T>(arr: T[], rnd: () => number): void {
 
 /**
  * Deterministic shuffle of question order + answer options for one participant.
- * Only radio-style option lists are shuffled (choice options, sequence choices):
+ * Only discrete option lists are shuffled (choice, multi-select, sequence):
  * truefalse keeps Так/Ні semantics, sort/match already randomize presentation.
  */
 export function shuffleDeck<Q extends ShuffleableQuestion>(questions: Q[], seedKey: string): ShuffledDeck<Q> {
@@ -80,6 +80,35 @@ export function shuffleDeck<Q extends ShuffleableQuestion>(questions: Q[], seedK
       return next
     }
 
+    if (type === 'multi_select') {
+      const rawOptions = q.options && typeof q.options === 'object' && !Array.isArray(q.options)
+        ? q.options as Record<string, unknown>
+        : null
+      const choices = Array.isArray(q.choices)
+        ? q.choices
+        : Array.isArray(rawOptions?.choices)
+          ? rawOptions.choices as string[]
+          : null
+      if (!choices || choices.length < 3) return q
+      const perm = [...choices.keys()]
+      shuffleInPlace(perm, rnd)
+      const shuffledChoices = perm.map(index => choices[index])
+      optionMaps.set(q.id, perm)
+      const correctAnswers = Array.isArray(rawOptions?.correctAnswers)
+        ? (rawOptions.correctAnswers as number[]).map(index => perm.indexOf(index)).sort((a, b) => a - b)
+        : undefined
+      return {
+        ...q,
+        choices: shuffledChoices,
+        ...(correctAnswers ? { correctAnswers } : {}),
+        options: {
+          ...rawOptions,
+          choices: shuffledChoices,
+          ...(correctAnswers ? { correctAnswers } : {}),
+        },
+      }
+    }
+
     if (type === 'sequence') {
       const choices = q.choices
       if (!Array.isArray(choices) || choices.length < 2) return q
@@ -99,6 +128,9 @@ export function shuffleDeck<Q extends ShuffleableQuestion>(questions: Q[], seedK
     toOriginalAnswer(questionId, answer) {
       const perm = optionMaps.get(questionId)
       if (perm && typeof answer === 'number' && perm[answer] !== undefined) return perm[answer]
+      if (perm && Array.isArray(answer)) {
+        return answer.map(index => perm[index]).filter(index => index !== undefined).sort((a, b) => a - b)
+      }
       return answer
     },
   }

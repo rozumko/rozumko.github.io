@@ -9,9 +9,9 @@
 //   match     options: { left: string[], right: string[], pairs: number[] }           correct: null
 //   input     options: { answer: string|number, inputType?: 'text'|'number' }         correct: null
 
-export type QuestionType = 'choice' | 'truefalse' | 'input' | 'sort' | 'sequence' | 'match'
+export type QuestionType = 'choice' | 'multi_select' | 'truefalse' | 'input' | 'sort' | 'sequence' | 'match'
 
-export const QUESTION_TYPES: QuestionType[] = ['choice', 'truefalse', 'input', 'sort', 'sequence', 'match']
+export const QUESTION_TYPES: QuestionType[] = ['choice', 'multi_select', 'truefalse', 'input', 'sort', 'sequence', 'match']
 
 export interface NormalizedQuestionShape {
   type: QuestionType
@@ -54,6 +54,26 @@ export function validateQuestionShape(type: QuestionType, options: unknown, corr
       if (correct == null || !Number.isInteger(correct) || correct < 0 || correct >= len)
         throw new Error(`choice: correct має бути індексом 0..${len - 1}`)
       return { type, options, correct }
+    }
+    case 'multi_select': {
+      const o = asObject(options)
+      if (!o || !isStringList(o['choices'], 3, 100)) {
+        throw new Error('multi_select: потрібно від 3 до 100 непорожніх варіантів (choices)')
+      }
+      const choices = o['choices'] as string[]
+      const rawAnswers = asArray(o['correctAnswers'])
+      if (!rawAnswers || rawAnswers.length < 2 || rawAnswers.length >= choices.length) {
+        throw new Error('multi_select: потрібно щонайменше 2 правильні та 1 неправильний варіант')
+      }
+      if (!rawAnswers.every(value => Number.isInteger(value) && (value as number) >= 0 && (value as number) < choices.length)) {
+        throw new Error(`multi_select: correctAnswers мають бути індексами 0..${choices.length - 1}`)
+      }
+      const correctAnswers = [...new Set(rawAnswers as number[])].sort((a, b) => a - b)
+      if (correctAnswers.length !== rawAnswers.length) {
+        throw new Error('multi_select: correctAnswers не можуть містити повтори')
+      }
+      if (correct != null) throw new Error('multi_select: correct має бути null')
+      return { type, options: { choices, correctAnswers }, correct: null }
     }
     case 'truefalse': {
       // options фіксовані; correct 0 (Так) або 1 (Ні)

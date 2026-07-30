@@ -453,6 +453,7 @@
           <select id="q-filter-mechanic" class="adm-input adm-input--sm adm-input--auto" aria-label="Механіка питання">
             <option value="">Всі механіки</option>
             <option value="choice">Вибір</option>
+            <option value="multi_select">Кілька відповідей</option>
             <option value="truefalse">Так/Ні</option>
             <option value="input">Введення</option>
             <option value="sort">Порядок</option>
@@ -711,6 +712,7 @@
             <label for="qf-type" class="adm-label">Тип</label>
             <select id="qf-type" class="adm-input adm-input--sm">
               <option value="choice">Вибір</option>
+              <option value="multi_select">Кілька правильних відповідей</option>
               <option value="truefalse">Так/Ні</option>
               <option value="input">Введення</option>
               <option value="sort">Порядок</option>
@@ -864,6 +866,30 @@
               <input type="text" data-idx="3" class="qf-opt adm-input adm-input--sm adm-input--grow" placeholder="Варіант 4"/>
             </div>
           </div>
+        </div>
+
+        <!-- Секція: multi-select -->
+        <div id="qf-section-multi-select" class="qf-section hidden">
+          <label class="adm-label">Варіанти (познач щонайменше 2 правильні)</label>
+          <div class="qf-section">
+            <div class="qf-option-row">
+              <input type="checkbox" class="qf-multi-correct qf-radio" aria-label="Позначити варіант 1 правильним"/>
+              <input type="text" class="qf-multi-opt adm-input adm-input--sm adm-input--grow" placeholder="Варіант 1"/>
+            </div>
+            <div class="qf-option-row">
+              <input type="checkbox" class="qf-multi-correct qf-radio" aria-label="Позначити варіант 2 правильним"/>
+              <input type="text" class="qf-multi-opt adm-input adm-input--sm adm-input--grow" placeholder="Варіант 2"/>
+            </div>
+            <div class="qf-option-row">
+              <input type="checkbox" class="qf-multi-correct qf-radio" aria-label="Позначити варіант 3 правильним"/>
+              <input type="text" class="qf-multi-opt adm-input adm-input--sm adm-input--grow" placeholder="Варіант 3"/>
+            </div>
+            <div class="qf-option-row">
+              <input type="checkbox" class="qf-multi-correct qf-radio" aria-label="Позначити варіант 4 правильним"/>
+              <input type="text" class="qf-multi-opt adm-input adm-input--sm adm-input--grow" placeholder="Варіант 4"/>
+            </div>
+          </div>
+          <p class="qf-help">Питання зараховується, лише якщо дитина вибрала всі правильні й жодного зайвого варіанта.</p>
         </div>
 
         <!-- Секція: sort -->

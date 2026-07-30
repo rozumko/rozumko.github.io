@@ -147,7 +147,7 @@ export function runMission(
     document.body.classList.remove('mission-answered')
 
     const type = (q.type as string) ?? 'choice'
-    els.options.className = type === 'choice'
+    els.options.className = type === 'choice' || type === 'multi_select'
       ? 'quiz-options quiz-options--grid'
       : type === 'truefalse'
       ? 'quiz-options quiz-options--two'

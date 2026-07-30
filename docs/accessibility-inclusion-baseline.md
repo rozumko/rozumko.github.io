@@ -165,13 +165,13 @@ The current automated accessibility guard has two layers:
 - `tests/layout/accessibility-smoke.spec.ts` runs in `npm run test:layout` and checks rendered pages/mechanics in Chromium with axe using WCAG 2.0 A/AA, 2.1 AA and 2.2 AA tags.
 - `features/accessibility/html-guardrails.test.mjs` compares the axe page list with Vite production entries. New production pages fail the unit gate unless they receive axe coverage or are added to the explicit `offline.html` / `framing-blocked.html` exception list.
 
-Latest local automated run: 2026-07-16 (`159` unit/guardrail tests and `90` Playwright tests passed).
+Latest local automated run: 2026-07-30 (`239` unit/guardrail tests and `141` Playwright tests passed).
 
 Verified:
 
 - Static public-page guardrails pass for core public, child, parent, teacher, and legal pages.
 - Axe has no WCAG A/AA violations on `/`, `/home.html`, `/path.html`, `/parent.html`, `/school.html`, `/student.html`, `/teacher.html`, `/admin.html`, `/games.html`, `/for-parents.html`, `/for-teachers.html`, `/for-students.html`, `/privacy.html`, `/terms.html`, `/transparency.html`, `/standards.html`, and `/olympiad-enter.html`.
-- Axe has no WCAG A/AA violations for rendered Home question mechanics: `choice`, `truefalse`, `input`, `sort`, `sequence`, and `match`.
+- Axe has no WCAG A/AA violations for rendered Home question mechanics: `choice`, `multi_select`, `truefalse`, `input`, `sort`, `sequence`, and `match`.
 - Home choice questions expose `role="radiogroup"` with child options as `role="radio"`.
 - Home choice answers update `aria-checked`.
 - Home choice questions use one tab stop with arrow-key roving focus.

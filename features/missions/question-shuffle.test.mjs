@@ -57,3 +57,19 @@ test('shuffleDeck: локальний correct переїжджає разом і
   const q = deck.questions[0]
   assert.equal(q.options[q.correct], 'C')
 })
+
+test('shuffleDeck maps multi-select answers back to original option indexes', () => {
+  const original = [{
+    id: 'multi',
+    type: 'multi_select',
+    options: { choices: ['A', 'B', 'C', 'D'], correctAnswers: [0, 2] },
+    choices: ['A', 'B', 'C', 'D'],
+    correctAnswers: [0, 2],
+  }]
+  const deck = shuffleDeck(original, 'multi-seed')
+  const question = deck.questions[0]
+  const selected = question.correctAnswers
+  const mapped = deck.toOriginalAnswer(question.id, selected)
+  assert.deepEqual(mapped, [0, 2])
+  assert.deepEqual(selected.map(index => question.choices[index]).sort(), ['A', 'C'])
+})

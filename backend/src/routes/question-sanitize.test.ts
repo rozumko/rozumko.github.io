@@ -12,6 +12,9 @@ test('stripOptionKeys прибирає correctOrder/pairs/answer, лишає р�
 
   const input = stripOptionKeys({ answer: 42, inputType: 'number' }) as Record<string, unknown>
   assert.deepEqual(input, { inputType: 'number' })
+
+  const multi = stripOptionKeys({ choices: ['A', 'B', 'C'], correctAnswers: [0, 2] }) as Record<string, unknown>
+  assert.deepEqual(multi, { choices: ['A', 'B', 'C'] })
 })
 
 test('stripOptionKeys не чіпає масив (choice options) і null', () => {

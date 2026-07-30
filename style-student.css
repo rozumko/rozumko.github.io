@@ -245,6 +245,231 @@
 }
 .hub-olympiad-link:hover { color: #fff; border-color: #fff; }
 
+/* ── Olympiad landing ───────────────────────────────────────── */
+.olympiad-home-page {
+  background:
+    radial-gradient(circle at 12% 15%, rgba(251,191,36,.24), transparent 28rem),
+    radial-gradient(circle at 90% 88%, rgba(52,211,153,.2), transparent 30rem),
+    linear-gradient(145deg, #fffaf0 0%, #fff7ed 46%, #eefbf5 100%);
+  color: var(--clr-text);
+}
+.olympiad-home-page .student-screen {
+  justify-content: flex-start;
+  padding: clamp(1rem, 2.5vw, 2rem);
+}
+.olympiad-home-page .student-back {
+  color: #475569;
+  z-index: 2;
+}
+.olympiad-home-page .student-back:hover { color: #0f172a; }
+.olympiad-home-page .student-back:focus-visible { outline-color: rgba(79,70,229,.45); }
+
+.olympiad-entry {
+  width: min(70rem, 100%);
+  margin: clamp(2.75rem, 7vh, 4.5rem) auto 0;
+}
+.olympiad-entry__brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1rem, 3vw, 2rem);
+  margin-bottom: clamp(1rem, 2.5vh, 1.75rem);
+  text-align: left;
+}
+.olympiad-entry__mascot {
+  width: clamp(5.25rem, 9vw, 7rem);
+  height: clamp(5.25rem, 9vw, 7rem);
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 2rem;
+  background: rgba(255,255,255,.8);
+  box-shadow: 0 18px 45px rgba(124,58,237,.14);
+  transform: rotate(-3deg);
+}
+.olympiad-entry__mascot img { width: 88%; height: 88%; object-fit: contain; }
+.olympiad-entry__eyebrow,
+.olympiad-guide__eyebrow {
+  margin: 0 0 .35rem;
+  color: #6d28d9;
+  font-size: .78rem;
+  font-weight: 850;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+.olympiad-entry__brand h1 {
+  margin: 0;
+  color: #312e81;
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  line-height: 1.05;
+  letter-spacing: -.035em;
+}
+.olympiad-entry__brand > div > p:last-child {
+  margin: .55rem 0 0;
+  color: #64748b;
+  font-size: clamp(.95rem, 1.5vw, 1.1rem);
+}
+.olympiad-entry__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(20rem, .95fr);
+  gap: clamp(1rem, 2vw, 1.5rem);
+  align-items: stretch;
+}
+.olympiad-actions,
+.olympiad-guide {
+  min-width: 0;
+  border: 1px solid rgba(148,163,184,.24);
+  border-radius: 2rem;
+  box-shadow: 0 24px 60px rgba(71,85,105,.12);
+}
+.olympiad-actions {
+  padding: clamp(1.35rem, 3vw, 2.25rem);
+  background: rgba(255,255,255,.92);
+}
+.olympiad-actions > h2,
+.olympiad-guide h2 {
+  margin: 0 0 1.15rem;
+  color: #1e293b;
+  font-size: clamp(1.35rem, 2vw, 1.75rem);
+}
+.olympiad-code-form label {
+  display: block;
+  margin-bottom: .55rem;
+  color: #334155;
+  font-weight: 750;
+}
+.olympiad-code-form__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: .65rem;
+}
+.olympiad-code-input {
+  min-width: 0;
+  margin: 0;
+  padding: .85rem 1rem;
+  font-size: clamp(1.2rem, 2.2vw, 1.6rem);
+}
+.olympiad-code-form .btn-violet {
+  width: auto;
+  min-width: 8rem;
+  padding: .85rem 1.4rem;
+  border-radius: 1rem;
+  font-size: 1rem;
+}
+.olympiad-code-form__help {
+  margin: .55rem 0 0;
+  color: #64748b;
+  font-size: .8rem;
+}
+.olympiad-code-form .code-status {
+  min-height: 1.2rem;
+  margin: .35rem 0 0;
+  text-align: left;
+}
+.olympiad-divider {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  margin: .8rem 0;
+  color: #94a3b8;
+  font-size: .8rem;
+}
+.olympiad-divider::before,
+.olympiad-divider::after {
+  content: '';
+  height: 1px;
+  flex: 1;
+  background: #e2e8f0;
+}
+.olympiad-actions .hub-btn {
+  max-width: none;
+  padding: .8rem 1rem;
+  border-radius: 1.2rem;
+  background: linear-gradient(135deg, #f59e0b, #ea580c);
+  box-shadow: 0 12px 26px rgba(234,88,12,.2);
+}
+.olympiad-actions .hub-btn__sub { font-size: .78rem; }
+.olympiad-demo-panel {
+  margin-top: .75rem;
+  padding: 1rem;
+  border: 1px solid #fed7aa;
+  border-radius: 1.2rem;
+  background: #fff7ed;
+}
+.olympiad-demo-panel .practice-header { margin-bottom: .75rem; }
+.olympiad-demo-panel .selector-grid { margin-bottom: .75rem; }
+.olympiad-demo-panel .selector-btn { padding: .7rem .4rem; }
+.olympiad-demo-panel .btn-start { padding: .75rem; }
+
+.olympiad-guide {
+  padding: clamp(1.35rem, 3vw, 2.25rem);
+  background: linear-gradient(155deg, #f5f3ff 0%, #eef2ff 56%, #ecfdf5 100%);
+}
+.olympiad-guide__list {
+  display: grid;
+  gap: .85rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.olympiad-guide__list li {
+  display: grid;
+  grid-template-columns: 2.3rem minmax(0, 1fr);
+  gap: .65rem;
+  align-items: start;
+}
+.olympiad-guide__list li > span {
+  width: 2.3rem;
+  height: 2.3rem;
+  display: grid;
+  place-items: center;
+  border-radius: .8rem;
+  background: rgba(255,255,255,.85);
+  box-shadow: 0 5px 14px rgba(79,70,229,.08);
+}
+.olympiad-guide__list strong { color: #312e81; font-size: .95rem; }
+.olympiad-guide__list p { margin: .15rem 0 0; color: #64748b; font-size: .82rem; line-height: 1.4; }
+.olympiad-guide__counts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .55rem;
+  margin-top: 1.15rem;
+}
+.olympiad-guide__counts span {
+  padding: .7rem .45rem;
+  border-radius: .85rem;
+  background: rgba(255,255,255,.72);
+  color: #475569;
+  font-size: .72rem;
+  text-align: center;
+}
+.olympiad-guide__counts strong { display: block; color: #4f46e5; font-size: .78rem; }
+.olympiad-home-page .student-footer {
+  color: #94a3b8;
+  padding-bottom: 0;
+}
+.olympiad-home-page .student-footer__links a { color: #64748b; }
+.olympiad-home-page .student-footer__links a:hover { color: #312e81; }
+
+@media (max-width: 780px) {
+  .olympiad-entry { margin-top: 3.25rem; }
+  .olympiad-entry__brand { justify-content: flex-start; }
+  .olympiad-entry__grid { grid-template-columns: 1fr; }
+  .olympiad-guide { order: 2; }
+}
+@media (max-width: 480px) {
+  .olympiad-home-page .student-screen { padding: .85rem; }
+  .olympiad-entry__brand { align-items: flex-start; gap: .8rem; }
+  .olympiad-entry__mascot { width: 4.25rem; height: 4.25rem; border-radius: 1.3rem; }
+  .olympiad-entry__brand h1 { font-size: 1.8rem; }
+  .olympiad-entry__brand > div > p:last-child { font-size: .85rem; }
+  .olympiad-code-form__row { grid-template-columns: 1fr; }
+  .olympiad-code-form .btn-violet { width: 100%; }
+  .olympiad-guide__counts { grid-template-columns: 1fr; }
+  .olympiad-guide__counts span { display: flex; justify-content: space-between; padding-inline: .8rem; }
+  .olympiad-guide__counts strong { display: inline; }
+}
+
 /* ── olympiad-enter.html ───────────────────────────────────── */
 .oe-event-confirm {
   display: flex;
@@ -844,6 +1069,36 @@ body:has(.result-overlay.active) .student-screen {
   background: #f5f3ff !important;
   color: #4c1d95 !important;
 }
+.quiz-multi-hint {
+  grid-column: 1 / -1;
+  margin: 0 0 var(--sp-1);
+  color: var(--clr-text-muted);
+  font-size: var(--font-size-sm);
+}
+.quiz-option--multi {
+  justify-content: flex-start;
+  gap: var(--sp-3);
+}
+.quiz-option__check {
+  width: 1.55rem;
+  height: 1.55rem;
+  flex: 0 0 1.55rem;
+  border: 2px solid #94a3b8;
+  border-radius: .45rem;
+  background: #fff;
+  display: grid;
+  place-items: center;
+}
+.quiz-option--multi[aria-checked="true"] .quiz-option__check::after {
+  content: '✓';
+  color: #fff;
+  font-weight: 900;
+}
+.quiz-option--multi[aria-checked="true"] .quiz-option__check {
+  border-color: #6366f1;
+  background: #6366f1;
+}
+.quiz-hint--error { color: var(--fb-err-label); }
 /* Кнопка «Перевірити» (input, sort, match) */
 .quiz-check {
   width: 100%;

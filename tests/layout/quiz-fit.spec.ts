@@ -49,6 +49,16 @@ function makeFixture(difficulty: string) {
       correct: 2,
       explanation: 'Замало прикладів — і програма погано впізнає нове. Якість залежить від кількості й різноманіття даних.',
     },
+    {
+      ...base, id: 'fx-multi', type: 'multi_select',
+      q: 'Обери всі пристрої, якими можна ввести інформацію в комп’ютер.',
+      options: {
+        choices: ['Клавіатура', 'Принтер', 'Миша', 'Колонки'],
+        correctAnswers: [0, 2],
+      },
+      correct: null,
+      explanation: 'Клавіатура та миша допомагають вводити інформацію.',
+    },
     // Реальне довге питання з банку: саме на таких стеблах вьюпортна шкала
     // роздувала картку і ховала варіанти під краєм екрана.
     {
@@ -112,6 +122,7 @@ function makeSanitizedFixture(difficulty: string) {
       delete options.answer
       delete options.correctOrder
       delete options.pairs
+      delete options.correctAnswers
       sanitized.options = options
     }
     return sanitized
@@ -122,7 +133,8 @@ function makeTwelveQuestionDemoFixture(difficulty: string, suffix: string) {
   const base = makeSanitizedFixture(difficulty)
   return [
     ...base,
-    ...base.slice(0, 3).map((question, index) => ({ ...question, id: `fx-${suffix}-${index}` })),
+    ...base.slice(0, Math.max(0, 12 - base.length))
+      .map((question, index) => ({ ...question, id: `fx-${suffix}-${index}` })),
   ]
 }
 
@@ -225,7 +237,11 @@ async function assertInViewport(page: Page, selector: string, ctx: string) {
 /** Відповідає на поточне питання відповідно до його механіки. */
 async function answerCurrentQuestion(page: Page) {
   const opts = page.locator('#quiz-options')
-  if (await opts.locator('input.quiz-input').count()) {
+  if (await opts.locator('[role="checkbox"]').count()) {
+    await opts.locator('[role="checkbox"]').nth(0).click()
+    await opts.locator('[role="checkbox"]').nth(1).click()
+    await opts.locator('.quiz-check').click()
+  } else if (await opts.locator('input.quiz-input').count()) {
     await opts.locator('input.quiz-input').fill('12')
     await opts.locator('.quiz-check').click()
   } else if (await opts.locator('select.quiz-select').count()) {
@@ -277,7 +293,7 @@ for (const vp of VIEWPORTS) {
       await page.locator('#demo-grade-buttons [data-demo-grade="3"]').click()
       await page.locator('#start-demo-free-btn').click()
       await expect(page.locator('#quiz-overlay')).toHaveClass(/active/)
-      await runQuiz(page, 9)
+      await runQuiz(page, 10)
     })
   })
 }
@@ -426,6 +442,59 @@ test.describe('quiz recovery runtime', () => {
     await expect(page.locator('#quiz-progress-text')).toHaveText(`1 / ${questions.length}`)
     await expect(page.locator('#quiz-loading-overlay')).not.toHaveClass(/active/)
   })
+
+  test('starts an official attempt directly from the olympiad landing code form', async ({ page }) => {
+    const questions = makeSanitizedFixture('hard')
+    let submittedCode = ''
+    await page.route('**/api/student/exchange-code', async route => {
+      submittedCode = (await route.request().postDataJSON()).code
+      await route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          attemptId: '20000000-0000-4000-8000-000000000002',
+          attemptToken: 'layout-test-direct-code-token',
+          grade: 3,
+          questions,
+          answeredQuestionIds: [],
+          remainingSeconds: 45 * 60,
+          timeMinutes: 45,
+          questionsCount: questions.length,
+        }),
+      })
+    })
+
+    await page.goto('/student.html')
+    await page.locator('#olympiad-code-input').fill('abc 247')
+    await page.locator('#olympiad-code-submit').click()
+
+    await expect(page.locator('#quiz-overlay')).toHaveClass(/active/)
+    await expect(page.locator('#quiz-mode-badge')).toHaveText('Олімпіада')
+    await expect(page.locator('#quiz-progress-text')).toHaveText(`1 / ${questions.length}`)
+    await expect(page.locator('#quiz-loading-overlay')).not.toHaveClass(/active/)
+    expect(submittedCode).toBe('АВС247')
+    await expect.poll(() => page.evaluate(() => sessionStorage.getItem('pendingOlympiad'))).toBeNull()
+  })
+})
+
+test.describe('olympiad landing layout', () => {
+  for (const viewport of [
+    { name: 'desktop', width: 1366, height: 625 },
+    { name: 'mobile', width: 375, height: 667 },
+  ]) {
+    test(`${viewport.name}: direct code and demo entry stay usable without horizontal overflow`, async ({ page }) => {
+      await page.setViewportSize({ width: viewport.width, height: viewport.height })
+      await page.goto('/student.html')
+
+      await expect(page.locator('#olympiad-code-input')).toBeVisible()
+      await expect(page.locator('#olympiad-code-submit')).toBeVisible()
+      await expect(page.locator('#show-demo-btn')).toBeVisible()
+      const overflow = await page.evaluate(() => {
+        const root = document.scrollingElement!
+        return root.scrollWidth - root.clientWidth
+      })
+      expect(overflow).toBeLessThanOrEqual(1)
+    })
+  }
 })
 
 // Домашня місія (home.html, #mission-quiz + body.mission-active) — той самий

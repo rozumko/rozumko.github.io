@@ -1,14 +1,15 @@
 import './frontend-security.js'
 import './register-sw.js'
 import { getModeConfig } from './features/olympiad/quiz-engine.js'
-import { loadStaticQuestions } from './features/missions/static-questions.js'
 import {
+  exchangeCode,
   finishAttempt,
   finishOlympiadDemo,
   saveAnswer,
   sendHeartbeat,
   startOlympiadDemo,
 } from './features/api/client.js'
+import { normalizeOlympiadCode } from './features/olympiad/code.js'
 import { createAnswerQueue, type AnswerQueue } from './features/olympiad/answer-queue.js'
 import { renderQuestion, type RenderableQuestion } from './utils/question-renderer.js'
 import { resolveQuestionImage } from './utils/question-image.js'
@@ -18,36 +19,23 @@ import { showModal, showConfirm } from './utils/ui.js'
 import { $, $maybe } from './utils/dom.js'
 import { createFocusTrap } from './utils/focus-trap.js'
 
-// --- DOM: тренування ---
-const gradeButtons     = document.querySelectorAll<HTMLButtonElement>('[data-grade]')
-const diffButtons      = document.querySelectorAll<HTMLButtonElement>('[data-difficulty]')
-const startPracticeBtn = $<HTMLButtonElement>('start-practice-btn')
-
 // --- DOM: демо без коду ---
 const demoGradeButtons  = document.querySelectorAll<HTMLButtonElement>('[data-demo-grade]')
 const startDemoFreeBtn  = $<HTMLButtonElement>('start-demo-free-btn')
 let selectedDemoGrade: number | null = null
-
-// --- Тренування: показати/сховати ---
-$('show-practice-btn').addEventListener('click', () => {
-  $('hub-menu').classList.add('hidden')
-  $('demo-section').classList.add('hidden')
-  $('practice-section').classList.remove('hidden')
-})
-$('hide-practice-btn').addEventListener('click', () => {
-  $('practice-section').classList.add('hidden')
-  $('hub-menu').classList.remove('hidden')
-})
+const olympiadCodeForm = $<HTMLFormElement>('olympiad-code-form')
+const olympiadCodeInput = $<HTMLInputElement>('olympiad-code-input')
+const olympiadCodeSubmit = $<HTMLButtonElement>('olympiad-code-submit')
+const olympiadCodeStatus = $('olympiad-code-status')
 
 // --- Демо: показати/сховати ---
 $('show-demo-btn').addEventListener('click', () => {
-  $('hub-menu').classList.add('hidden')
-  $('practice-section').classList.add('hidden')
+  $('show-demo-btn').classList.add('hidden')
   $('demo-section').classList.remove('hidden')
 })
 $('hide-demo-btn').addEventListener('click', () => {
   $('demo-section').classList.add('hidden')
-  $('hub-menu').classList.remove('hidden')
+  $('show-demo-btn').classList.remove('hidden')
 })
 
 demoGradeButtons.forEach(btn => {
@@ -57,6 +45,55 @@ demoGradeButtons.forEach(btn => {
     selectedDemoGrade = Number(btn.dataset['demoGrade'])
     startDemoFreeBtn.disabled = false
   })
+})
+
+olympiadCodeInput.addEventListener('input', () => {
+  olympiadCodeInput.value = normalizeOlympiadCode(olympiadCodeInput.value)
+  olympiadCodeStatus.textContent = ''
+  olympiadCodeStatus.classList.remove('code-success')
+})
+
+function resetOlympiadCodeForm(clearCode = false): void {
+  olympiadCodeSubmit.disabled = false
+  olympiadCodeSubmit.textContent = 'Почати'
+  if (clearCode) olympiadCodeInput.value = ''
+}
+
+olympiadCodeForm.addEventListener('submit', async event => {
+  event.preventDefault()
+  const code = normalizeOlympiadCode(olympiadCodeInput.value)
+  if (!code) {
+    olympiadCodeStatus.textContent = 'Введи код від учителя.'
+    olympiadCodeInput.focus()
+    return
+  }
+
+  olympiadCodeStatus.textContent = ''
+  olympiadCodeStatus.classList.remove('code-success')
+  olympiadCodeSubmit.disabled = true
+  olympiadCodeSubmit.textContent = 'Завантаження…'
+  try {
+    const result = await exchangeCode(code)
+    const pending: PendingOlympiad = {
+      attemptId: result.attemptId,
+      attemptToken: result.attemptToken,
+      code,
+      grade: result.grade,
+      questions: result.questions,
+      answeredQuestionIds: result.answeredQuestionIds ?? [],
+      remainingSeconds: result.remainingSeconds,
+      timeMinutes: result.timeMinutes,
+      questionsCount: result.questionsCount,
+    }
+    sessionStorage.setItem('pendingOlympiad', JSON.stringify(pending))
+    showLoading()
+    beginOfficialOlympiad(pending)
+    sessionStorage.removeItem('pendingOlympiad')
+  } catch (err) {
+    hideLoading()
+    olympiadCodeStatus.textContent = (err as Error).message
+    resetOlympiadCodeForm()
+  }
 })
 
 startDemoFreeBtn.addEventListener('click', async () => {
@@ -170,9 +207,6 @@ $<HTMLButtonElement>('error-boundary-reload').addEventListener('click', () => wi
 $<HTMLButtonElement>('error-boundary-dismiss').addEventListener('click', () => $maybe('error-boundary')?.classList.add('hidden'))
 
 // --- Стан ---
-let selectedGrade:    number | null = null
-let selectedDiff:     string | null = null
-
 let questions:        RenderableQuestion[] = []
 let currentIdx        = 0
 let score             = 0
@@ -282,43 +316,55 @@ function hasFreshQuizBackup(): boolean {
   }
 }
 
+if (hasFreshQuizBackup()) {
+  olympiadCodeStatus.textContent = 'Введи той самий код, щоб продовжити збережену спробу.'
+  olympiadCodeStatus.classList.add('code-success')
+}
+
 // ===================== ОЛІМПІАДА З SESSIONSTORAGE =====================
 // olympiad-enter.html викликає exchange-code, зберігає результат у sessionStorage
 // і перенаправляє сюди. Ми читаємо і стартуємо квіз.
 
+interface PendingOlympiad {
+  attemptId: string
+  attemptToken: string
+  code: string
+  grade: number
+  questions: RenderableQuestion[]
+  answeredQuestionIds?: string[]
+  remainingSeconds?: number
+  timeMinutes?: number
+  questionsCount?: number
+}
+
+function beginOfficialOlympiad(pending: PendingOlympiad): void {
+  currentAttemptId = pending.attemptId
+  currentAttemptToken = pending.attemptToken
+  const cfg = getModeConfig('olympiad', {
+    timeMinutes: pending.timeMinutes,
+    questionsCount: pending.questionsCount,
+  })
+  const completed = new Set(pending.answeredQuestionIds ?? [])
+  const firstUnanswered = pending.questions.findIndex(question => !completed.has(question.id as string))
+  startQuiz(pending.questions, 'olympiad', cfg, { grade: pending.grade, code: pending.code }, {
+    currentIdx: firstUnanswered === -1 ? Math.max(0, pending.questions.length - 1) : firstUnanswered,
+    secondsLeft: pending.remainingSeconds,
+    answeredIds: [...completed],
+  })
+}
+
 ;(function checkPendingOlympiad() {
   const raw = sessionStorage.getItem('pendingOlympiad')
-  if (!raw) {
-    if (hasFreshQuizBackup()) window.location.replace('olympiad-enter.html')
-    return
-  }
+  if (!raw) return
   sessionStorage.removeItem('pendingOlympiad')
   try {
-    const pending = JSON.parse(raw) as {
-      attemptId: string; attemptToken: string; code: string; grade: number; questions: RenderableQuestion[]
-      answeredQuestionIds?: string[]; remainingSeconds?: number
-      timeMinutes?: number; questionsCount?: number
-    }
-    currentAttemptId    = pending.attemptId
-    currentAttemptToken = pending.attemptToken
-    const cfg = getModeConfig('olympiad', {
-      timeMinutes: pending.timeMinutes,
-      questionsCount: pending.questionsCount,
-    })
+    const pending = JSON.parse(raw) as PendingOlympiad
     showLoading()
-    const answeredIds = new Set(pending.answeredQuestionIds ?? [])
-    const firstUnanswered = pending.questions.findIndex(q => !answeredIds.has(q.id as string))
-    startQuiz(pending.questions, 'olympiad', cfg, { grade: pending.grade, code: pending.code }, {
-      currentIdx: firstUnanswered === -1 ? Math.max(0, pending.questions.length - 1) : firstUnanswered,
-      secondsLeft: pending.remainingSeconds,
-      answeredIds: [...answeredIds],
-    })
+    beginOfficialOlympiad(pending)
   } catch {
-    if (hasFreshQuizBackup()) window.location.replace('olympiad-enter.html')
+    olympiadCodeStatus.textContent = 'Не вдалося відновити спробу. Введи код ще раз.'
   }
 })()
-
-// ===================== ТРЕНУВАННЯ =====================
 
 ;(function checkPendingDemo() {
   if (currentMode) return
@@ -380,44 +426,6 @@ function hasFreshQuizBackup(): boolean {
     clearDemoBackup()
   }
 })()
-
-gradeButtons.forEach(btn => {
-  btn.addEventListener('click', () => {
-    gradeButtons.forEach(b => b.setAttribute('aria-pressed', 'false'))
-    btn.setAttribute('aria-pressed', 'true')
-    selectedGrade = Number(btn.dataset['grade'])
-    updateStartBtn()
-  })
-})
-
-diffButtons.forEach(btn => {
-  btn.addEventListener('click', () => {
-    diffButtons.forEach(b => b.setAttribute('aria-pressed', 'false'))
-    btn.setAttribute('aria-pressed', 'true')
-    selectedDiff = btn.dataset['difficulty'] ?? null
-    updateStartBtn()
-  })
-})
-
-function updateStartBtn() {
-  startPracticeBtn.disabled = !(selectedGrade && selectedDiff)
-}
-
-startPracticeBtn.addEventListener('click', async () => {
-  startPracticeBtn.disabled = true
-  showLoading()
-  try {
-    const cfg = getModeConfig('practice')
-    const qs  = await loadStaticQuestions(selectedGrade!, { count: cfg.count, difficulty: selectedDiff! })
-    if (qs.length === 0) throw new Error('Питань для цих налаштувань немає.')
-    startQuiz(qs, 'practice', cfg, { grade: selectedGrade })
-  } catch (err) {
-    hideLoading()
-    showModal((err as Error).message)
-  } finally {
-    startPracticeBtn.disabled = false
-  }
-})
 
 // ===================== QUIZ ENGINE =====================
 
@@ -550,7 +558,7 @@ function showQuestion() {
   }
 
   const type = q.type ?? 'choice'
-  quizOptionsEl.className = type === 'choice'
+  quizOptionsEl.className = type === 'choice' || type === 'multi_select'
     ? 'quiz-options quiz-options--grid'
     : type === 'truefalse'
     ? 'quiz-options quiz-options--two'
@@ -564,7 +572,7 @@ function showQuestion() {
       // boolean → practice (correct відомий клієнту, локальне оцінювання).
       // number | number[] | string → olympiad/demo (correct стрипнуто; оцінює сервер).
       //   number    — choice/truefalse/sequence (індекс)
-      //   number[]  — sort/match (порядок / пари)
+      //   number[]  — multi-select/sort/match (вибір / порядок / пари)
       //   string    — input (текст)
       if (typeof result === 'boolean') {
         if (result === true) score++
@@ -853,6 +861,7 @@ quitConfirmYes.addEventListener('click', () => {
   answerQueue         = null
   currentAttemptId    = null
   currentAttemptToken = null
+  resetOlympiadCodeForm()
   if (currentMode === 'demo') {
     clearDemoBackup()
     currentDemoToken = null
@@ -872,6 +881,7 @@ resultRetryDemoBtn.addEventListener('click', () => {
 resultCloseBtn.addEventListener('click', () => {
   resultRetryDemoBtn.classList.add('hidden')
   hideOverlay(resultOverlay)
+  resetOlympiadCodeForm(currentMode === 'olympiad')
 })
 
 // ===================== УТИЛІТИ =====================

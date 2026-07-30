@@ -44,6 +44,7 @@ let _pvTrapRemove:     (() => void) | null = null
 
 const QF_SECTIONS: Record<string, string> = {
   choice:    'qf-section-choice',
+  multi_select: 'qf-section-multi-select',
   sort:      'qf-section-sort',
   sequence:  'qf-section-sequence',
   match:     'qf-section-match',
@@ -59,6 +60,7 @@ const TRACK_LABELS: Record<string, string> = {
 }
 const TYPE_LABELS: Record<QuestionType, string> = {
   choice:    'Вибір',
+  multi_select: 'Кілька відповідей',
   truefalse: 'Так/Ні',
   input:     'Введення',
   sort:      'Порядок',
@@ -973,7 +975,8 @@ export function applyTypeUI(type: string) {
 
 function resetTypeFields() {
   document.querySelectorAll<HTMLInputElement>('input[type="radio"][name^="qf-"]').forEach(inp => { inp.checked = false })
-  document.querySelectorAll<HTMLInputElement>('.qf-opt, .qf-seq-opt').forEach(inp => { inp.value = '' })
+  document.querySelectorAll<HTMLInputElement>('.qf-multi-correct').forEach(inp => { inp.checked = false })
+  document.querySelectorAll<HTMLInputElement>('.qf-opt, .qf-multi-opt, .qf-seq-opt').forEach(inp => { inp.value = '' })
   $<HTMLTextAreaElement>('qf-items').value = ''
   $<HTMLInputElement>('qf-correct-order').value = ''
   $<HTMLInputElement>('qf-given').value = ''
@@ -991,6 +994,12 @@ function populateTypeFields(type: QuestionType, q: Question | null) {
   if (type === 'choice') {
     populateInputs('.qf-opt', Array.isArray(q.options) ? q.options : [])
     checkRadio('qf-correct', String(q.correct ?? 0))
+  } else if (type === 'multi_select') {
+    populateInputs('.qf-multi-opt', asStringList(options['choices']))
+    const correctAnswers = new Set(asNumberList(options['correctAnswers']))
+    document.querySelectorAll<HTMLInputElement>('.qf-multi-correct').forEach((input, index) => {
+      input.checked = correctAnswers.has(index)
+    })
   } else if (type === 'truefalse') {
     checkRadio('qf-tf-correct', q.correct === 1 ? 'false' : 'true')
   } else if (type === 'sort') {
@@ -1019,6 +1028,17 @@ function collectQuestionShape(): { type: QuestionType; options: string[] | Recor
     if (options.some(o => !o)) throw new Error('Заповни всі 4 варіанти.')
     if (correct === null) throw new Error('Вибери правильну відповідь.')
     return { type, options, correct }
+  }
+
+  if (type === 'multi_select') {
+    const choices = inputValues('.qf-multi-opt')
+    const correctAnswers = [...document.querySelectorAll<HTMLInputElement>('.qf-multi-correct')]
+      .map((input, index) => input.checked ? index : -1)
+      .filter(index => index >= 0)
+    if (choices.some(choice => !choice)) throw new Error('Заповни всі 4 варіанти.')
+    if (correctAnswers.length < 2) throw new Error('Познач щонайменше 2 правильні відповіді.')
+    if (correctAnswers.length === choices.length) throw new Error('Залиш щонайменше 1 неправильний варіант.')
+    return { type, options: { choices, correctAnswers }, correct: null }
   }
 
   if (type === 'truefalse') {
@@ -1071,6 +1091,10 @@ function describeCorrectAnswer(q: Question): string {
   const type = q.type ?? 'choice'
   const options = asOptionsObject(q.options)
   if (type === 'choice') return String(Array.isArray(q.options) ? q.options[q.correct ?? -1] ?? '—' : '—')
+  if (type === 'multi_select') {
+    const choices = asStringList(options['choices'])
+    return asNumberList(options['correctAnswers']).map(index => choices[index] ?? '?').join('; ') || '—'
+  }
   if (type === 'truefalse') return q.correct === 0 ? 'Так' : q.correct === 1 ? 'Ні' : '—'
   if (type === 'sequence') return String(asStringList(options['choices'])[q.correct ?? -1] ?? '—')
   if (type === 'sort') return describeIndexedList(options['items'], options['correctOrder'])

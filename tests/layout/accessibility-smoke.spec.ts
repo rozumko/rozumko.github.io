@@ -52,6 +52,19 @@ const sortQuestion = {
 const questionTypeFixtures = [
   choiceQuestion,
   {
+    id: 'multi-select-1',
+    q: 'Select every input device.',
+    type: 'multi_select',
+    options: {
+      choices: ['Keyboard', 'Printer', 'Mouse', 'Speakers'],
+      correctAnswers: [0, 2],
+    },
+    difficulty: 'medium',
+    track: 'computational-thinking',
+    topic: 'algorithms',
+    grade: 3,
+  },
+  {
     id: 'truefalse-1',
     q: 'Is a sequence an ordered list?',
     type: 'truefalse',

@@ -94,6 +94,10 @@ function describeAnswer(type: string | null, options: unknown, answer: unknown):
   const struct = options && typeof options === 'object' && !Array.isArray(options)
     ? options as Record<string, unknown>
     : {}
+  if (t === 'multi_select' && Array.isArray(answer) && Array.isArray(struct.choices)) {
+    const choices = struct.choices as unknown[]
+    return answer.map(index => String(choices[Number(index)] ?? '?')).join('; ')
+  }
   if (t === 'sequence' && typeof answer === 'number' && Array.isArray(struct.choices)) {
     return String((struct.choices as unknown[])[answer] ?? `Варіант ${answer + 1}`)
   }
@@ -127,6 +131,11 @@ function describeCorrectAnswer(type: string | null, options: unknown, correct: n
   }
   if (t === 'input') {
     return struct.answer == null ? null : String(struct.answer)
+  }
+  if (t === 'multi_select') {
+    return Array.isArray(struct.correctAnswers)
+      ? describeAnswer(t, options, struct.correctAnswers)
+      : null
   }
   return correct == null ? null : describeAnswer(t, options, correct)
 }
