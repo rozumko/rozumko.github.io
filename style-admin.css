@@ -646,6 +646,8 @@
   cursor: pointer;
 }
 .event-question-row:hover { border-color: rgba(125, 211, 252, 0.45); }
+.event-question-row--readonly { cursor: default; }
+.event-question-row--readonly:hover { border-color: var(--adm-border); }
 .event-question-row input { width: 1rem; height: 1rem; margin-top: 0.2rem; flex: 0 0 auto; }
 .event-question-row__main { display: grid; gap: 0.25rem; min-width: 0; }
 .event-question-row__title { color: var(--adm-text); font-size: var(--font-size-sm); line-height: 1.35; }
@@ -797,7 +799,7 @@
   margin: auto;
   background: #f8fafc; border-radius: var(--r-2xl);
   box-shadow: 0 25px 60px rgba(0,0,0,0.5);
-  width: 100%; max-width: 32rem; padding: var(--sp-6); position: relative;
+  width: min(96vw, 86rem); padding: var(--sp-6); position: relative;
 }
 .preview-modal-close {
   position: absolute; top: var(--sp-4); right: var(--sp-4);
@@ -809,6 +811,41 @@
 }
 .preview-modal-close:hover { background: #cbd5e1; }
 .preview-modal-label { font-size: var(--font-size-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--clr-violet); margin-bottom: var(--sp-3); }
+.preview-preset-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin: 0 3rem var(--sp-2) 0;
+}
+.preview-preset-toolbar [aria-pressed="true"] {
+  background: var(--clr-violet);
+  border-color: var(--clr-violet);
+  color: #fff;
+}
+.preview-fit-status {
+  min-height: 1.25rem;
+  margin-bottom: var(--sp-2);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: #166534;
+}
+.preview-fit-status--blocked { color: #b91c1c; }
+.admin-issue-links { display: inline-block; margin-left: var(--sp-2); }
+.admin-issue-links summary { cursor: pointer; font-weight: 700; }
+.admin-issue-links div { display: flex; flex-wrap: wrap; gap: var(--sp-1); margin-top: var(--sp-1); }
+.preview-student-viewport {
+  width: 100%;
+  aspect-ratio: 1366 / 625;
+  max-height: 72vh;
+  overflow: auto;
+  padding: clamp(.75rem, 2vw, 2rem);
+  border: 2px solid #cbd5e1;
+  border-radius: var(--r-xl);
+  background: #f8fafc;
+}
+.preview-student-viewport[data-preview-preset="1280x800"] {
+  aspect-ratio: 1280 / 800;
+}
 .pv-question-card {
   background: #fff; border-radius: var(--r-2xl); box-shadow: var(--shadow-sm);
   border: 1px solid #f1f5f9; padding: var(--sp-5); margin-bottom: var(--sp-4);
@@ -1009,3 +1046,79 @@
 .pf-row { display: flex; gap: var(--sp-2); align-items: center; }
 .pf-unlock { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4); }
 .pf-unlock__item { display: inline-flex; align-items: center; gap: 4px; font-size: var(--font-size-sm); }
+.event-question-picker__readiness {
+  margin: .8rem 0 1rem;
+}
+
+.event-readiness-summary,
+.event-readiness-grade {
+  border: 1px solid var(--adm-border, #d7dee8);
+  border-radius: .75rem;
+  padding: .75rem;
+}
+
+.event-readiness-summary,
+.event-readiness-grade__head {
+  display: flex;
+  justify-content: space-between;
+  gap: .75rem;
+  align-items: baseline;
+}
+
+.event-readiness-summary--ready,
+.event-readiness-grade--ready {
+  border-color: #86c99b;
+  background: rgba(22, 101, 52, .22);
+}
+
+.event-readiness-summary--blocked,
+.event-readiness-grade--blocked {
+  border-color: #e5a0a0;
+  background: rgba(159, 29, 29, .22);
+}
+
+.event-readiness-grades {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .75rem;
+  margin-top: .75rem;
+}
+
+.event-readiness-grade p {
+  margin: .35rem 0;
+}
+
+.event-readiness-grade ul {
+  margin: .4rem 0 0 1.2rem;
+}
+
+.event-readiness__error {
+  color: #fecdd3;
+}
+
+.admin-demo-grade__standard {
+  margin: var(--sp-3) 0;
+  padding: var(--sp-3);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--r-lg);
+  background: rgba(15, 23, 42, .35);
+}
+
+.admin-demo-grade__standard p {
+  margin: 0;
+}
+
+.admin-demo-grade__standard details {
+  margin-top: var(--sp-2);
+}
+
+.admin-demo-grade__standard ul {
+  margin: var(--sp-2) 0 0;
+  padding-left: var(--sp-5);
+}
+
+@media (max-width: 760px) {
+  .event-readiness-grades {
+    grid-template-columns: 1fr;
+  }
+}

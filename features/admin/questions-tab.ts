@@ -3,7 +3,8 @@ import {
   createQuestion, updateQuestion, deleteQuestion,
   setQuestionEditorialStatus, setQuestionEditorialStatusBulk, deleteQuestionsBulk,
   getQuestionRevisions, restoreQuestionRevision,
-  type AdminDemoCoverageGrade, type AdminQuestionFilters, type AdminQuestionMatrixCell,
+  type AdminDemoCoverageGrade, type AdminOlympiadReadinessIssue,
+  type AdminQuestionFilters, type AdminQuestionMatrixCell,
   type Question, type QuestionChannel, type QuestionType,
 } from '../../features/api/client.js'
 import { createFocusTrap } from '../../utils/focus-trap.js'
@@ -104,11 +105,32 @@ function restoreSection(): void {
   applySectionUI()
 }
 
-function selectSection(section: string): void {
+function setSection(section: string): void {
   currentSection = section
   try { localStorage.setItem(SECTION_STORAGE_KEY, section) } catch { /* storage can be blocked */ }
   applySectionUI()
+}
+
+function selectSection(section: string): void {
+  setSection(section)
   restartList()
+}
+
+export function focusQuestionInBank(questionId: string, section: 'olympiad_training' | 'main_round'): void {
+  $<HTMLInputElement>('q-filter-search').value = questionId
+  $<HTMLSelectElement>('q-filter-grade').value = ''
+  $<HTMLSelectElement>('q-filter-mechanic').value = ''
+  $<HTMLSelectElement>('q-filter-difficulty').value = ''
+  $<HTMLSelectElement>('q-filter-track').value = ''
+  fillTopicSelect($<HTMLSelectElement>('q-filter-topic'), '', 'Всі теми')
+  $<HTMLSelectElement>('q-filter-status').value = ''
+  setSection(section)
+  pager.reset()
+  clearSelection()
+
+  const tab = document.querySelector<HTMLButtonElement>('.admin-tab[data-tab="questions"]')
+  if (tab?.classList.contains('tab-active')) void loadQuestionsTab()
+  else tab?.click()
 }
 
 // Counters are informational: a failure must never hide the list itself.
@@ -216,21 +238,91 @@ async function refreshDemoCoverage(): Promise<void> {
         selectSection('olympiad_training')
       })
     }
+    for (const button of box.querySelectorAll<HTMLButtonElement>('[data-question-id]')) {
+      button.addEventListener('click', () => {
+        const questionId = button.dataset.questionId
+        if (questionId) focusQuestionInBank(questionId, 'olympiad_training')
+      })
+    }
   } catch (err) {
     box.textContent = (err as Error).message
   }
 }
 
+const METADATA_ISSUE_LABELS: Record<string, string> = {
+  'missing-estimated-seconds': 'Не вказано орієнтовний час',
+  'missing-template-id': 'Не вказано шаблон варіанта',
+  'missing-image-role': 'Не визначено роль зображення',
+}
+
+function groupReadinessIssues(issues: AdminOlympiadReadinessIssue[]): AdminOlympiadReadinessIssue[] {
+  const grouped = new Map<string, AdminOlympiadReadinessIssue>()
+  const result: AdminOlympiadReadinessIssue[] = []
+  for (const issue of issues) {
+    const label = METADATA_ISSUE_LABELS[issue.code]
+    if (!label) {
+      result.push(issue)
+      continue
+    }
+    const existing = grouped.get(issue.code)
+    if (existing) {
+      existing.questionIds = [...new Set([...(existing.questionIds ?? []), ...(issue.questionIds ?? [])])]
+      continue
+    }
+    const aggregated = { ...issue, questionIds: [...(issue.questionIds ?? [])] }
+    grouped.set(issue.code, aggregated)
+    result.push(aggregated)
+  }
+  for (const issue of grouped.values()) {
+    const count = issue.questionIds?.length ?? 0
+    issue.message = `${METADATA_ISSUE_LABELS[issue.code]}: ${count} пит.`
+  }
+  return result
+}
+
+function renderQuestionIssueLinks(questionIds: string[] | undefined): string {
+  if (!questionIds?.length) return ''
+  const buttons = questionIds.map((questionId, index) =>
+    `<button type="button" class="btn-adm-ghost btn--sm" data-question-id="${esc(questionId)}">№${index + 1}</button>`,
+  ).join('')
+  if (questionIds.length === 1) return ` <span class="admin-issue-links">Відкрити: ${buttons}</span>`
+  return `<details class="admin-issue-links">
+    <summary>Відкрити питання (${questionIds.length})</summary>
+    <div>${buttons}</div>
+  </details>`
+}
+
+function renderReadinessIssue(issue: AdminOlympiadReadinessIssue): string {
+  return `<li class="${issue.severity === 'error' ? 'event-readiness__error' : ''}">${esc(issue.message)}${renderQuestionIssueLinks(issue.questionIds)}</li>`
+}
+
 function renderDemoCoverageGrade(coverage: AdminDemoCoverageGrade): string {
   const sample = coverage.sample
+  const standard = coverage.standard
   const statusClass = coverage.ready ? 'admin-demo-grade--ready' : 'admin-demo-grade--gap'
   const status = coverage.ready ? 'Готово' : coverage.canCompose ? 'Потрібне наповнення' : 'Демо не складається'
   const metrics = sample
     ? `${sample.mechanics.length}/5 механік · ${sample.images}/2 візуальних · прогресія ${sample.progression.recognize}/${sample.progression.apply}/${sample.progression.reason}`
     : 'Неможливо побудувати тестовий набір'
   const issues = coverage.issues.length
-    ? `<ul class="admin-demo-grade__issues">${coverage.issues.map(issue => `<li>${esc(issue.message)}</li>`).join('')}</ul>`
+    ? `<ul class="admin-demo-grade__issues">${coverage.issues.map(issue =>
+        `<li>${esc(issue.message)}${renderQuestionIssueLinks(issue.questionIds)}</li>`,
+      ).join('')}</ul>`
     : '<p class="admin-demo-grade__ok">Усі обов’язкові перевірки пройдено.</p>'
+  const groupedStandardIssues = standard ? groupReadinessIssues(standard.issues) : []
+  const standardIssues = standard
+    ? `<div class="admin-demo-grade__standard">
+        <p><strong>Стандарт набору:</strong> ${standard.metrics.questionCount}/${standard.policy.questionCount} пит. ·
+          ${standard.metrics.effortUnits} од. навантаження · ${standard.metrics.mechanics.length} механік ·
+          ${standard.metrics.essentialImages} сюжетних зображень</p>
+        <p><strong>Аудит комбінацій:</strong> ${coverage.audit.passed}/${coverage.audit.samples} пройдено ·
+          ${coverage.audit.uniqueSets} унікальних наборів</p>
+        ${groupedStandardIssues.length
+          ? `<details ${standard.ready ? '' : 'open'}><summary>Зауваження стандарту: ${groupedStandardIssues.length}</summary>
+              <ul>${groupedStandardIssues.map(renderReadinessIssue).join('')}</ul></details>`
+          : '<p class="admin-demo-grade__ok">Згенерований набір відповідає стандарту.</p>'}
+      </div>`
+    : '<p class="event-readiness__error">Контрольний набір не вдалося згенерувати.</p>'
 
   const cells = coverage.cells.map(cell => {
     const gap = cell.missingCandidates > 0
@@ -257,6 +349,7 @@ function renderDemoCoverageGrade(coverage: AdminDemoCoverageGrade): string {
     </div>
     <p class="admin-demo-grade__metrics">${esc(metrics)}</p>
     ${issues}
+    ${standardIssues}
     <div class="admin-matrix__scroll">
       <table class="admin-matrix__table">
         <thead><tr><th>Напрям</th><th>Складність</th><th>Слотів</th><th>Є / ціль</th><th>Механіки</th><th></th></tr></thead>
@@ -400,6 +493,9 @@ export function initQuestionsTab() {
   $<HTMLButtonElement>('qf-cancel').addEventListener('click', closeQuestionModal)
   $<HTMLButtonElement>('preview-close').addEventListener('click', closePreview)
   previewModal.addEventListener('click', (e) => { if (e.target === previewModal) closePreview() })
+  for (const button of previewModal.querySelectorAll<HTMLButtonElement>('[data-preview-preset]')) {
+    button.addEventListener('click', () => setPreviewPreset(button.dataset.previewPreset ?? '1366x625'))
+  }
   $<HTMLSelectElement>('qf-type').addEventListener('change', (e) => {
     applyTypeUI((e.target as HTMLSelectElement).value)
   })
@@ -677,6 +773,10 @@ export function openQuestionModal(q: Question | null, duplicate = false) {
   const imgUrl = (q as any)?.img ?? ''
   $<HTMLInputElement>('qf-img').value = imgUrl
   $<HTMLInputElement>('qf-image-alt').value = q?.imageAlt ?? ''
+  $<HTMLSelectElement>('qf-image-role').value = q?.meta?.imageRole ?? ''
+  $<HTMLInputElement>('qf-estimated-seconds').value = q?.meta?.estimatedSeconds
+    ? String(q.meta.estimatedSeconds) : ''
+  $<HTMLInputElement>('qf-template-id').value = q?.meta?.templateId ?? ''
   const prev = $maybe<HTMLImageElement>('qf-img-preview')
   if (prev) {
     if (imgUrl) { prev.src = imgUrl; prev.classList.remove('hidden') }
@@ -731,6 +831,10 @@ async function handleSubmit(e: Event, publish = false) {
     code:        $<HTMLTextAreaElement>('qf-code').value.trim() || undefined,
     img:         $<HTMLInputElement>('qf-img').value.trim() || null,
     imageAlt:    $<HTMLInputElement>('qf-image-alt').value.trim() || null,
+    imageRole:   $<HTMLSelectElement>('qf-image-role').value || null,
+    estimatedSeconds: $<HTMLInputElement>('qf-estimated-seconds').value
+      ? Number($<HTMLInputElement>('qf-estimated-seconds').value) : null,
+    templateId:  $<HTMLInputElement>('qf-template-id').value.trim() || null,
   }
 
   const buttons = [qfSubmitBtn, qfPublishBtn]
@@ -771,6 +875,26 @@ async function handleSubmit(e: Event, publish = false) {
 
 // ─── Preview ──────────────────────────────────────────────────────────────────
 
+function setPreviewPreset(preset: string): void {
+  const viewport = $('pv-viewport')
+  viewport.dataset.previewPreset = preset === '1280x800' ? preset : '1366x625'
+  for (const button of previewModal.querySelectorAll<HTMLButtonElement>('[data-preview-preset]')) {
+    button.setAttribute('aria-pressed', String(button.dataset.previewPreset === viewport.dataset.previewPreset))
+  }
+  requestAnimationFrame(updatePreviewFitStatus)
+}
+
+function updatePreviewFitStatus(): void {
+  const viewport = $('pv-viewport')
+  const status = $('pv-fit-status')
+  const fits = viewport.scrollHeight <= viewport.clientHeight + 1
+    && viewport.scrollWidth <= viewport.clientWidth + 1
+  status.classList.toggle('preview-fit-status--blocked', !fits)
+  status.textContent = fits
+    ? `Орієнтовно вміщується у пропорції ${viewport.dataset.previewPreset}.`
+    : `Орієнтовно не вміщується у пропорції ${viewport.dataset.previewPreset}: скоротіть умову або кількість елементів.`
+}
+
 function handlePreviewClick() {
   let shape
   try {
@@ -796,7 +920,12 @@ function handlePreviewClick() {
   $('pv-question-text').textContent = q.q
   const pvImg = $maybe<HTMLImageElement>('pv-image')
   if (pvImg) {
-    if (q.img) { pvImg.src = q.img; pvImg.alt = q.imageAlt || 'Зображення до питання'; pvImg.classList.remove('hidden') }
+    if (q.img) {
+      pvImg.src = q.img
+      pvImg.alt = q.imageAlt || 'Зображення до питання'
+      pvImg.classList.remove('hidden')
+      pvImg.addEventListener('load', updatePreviewFitStatus, { once: true })
+    }
     else       { pvImg.classList.add('hidden'); pvImg.src = '' }
   }
 
@@ -821,6 +950,8 @@ function handlePreviewClick() {
   }
 
   previewModal.classList.remove('hidden')
+  setPreviewPreset('1366x625')
+  requestAnimationFrame(() => requestAnimationFrame(updatePreviewFitStatus))
   _pvTrapRemove?.()
   _pvTrapRemove = createFocusTrap(previewModal, closePreview)
 }

@@ -59,3 +59,25 @@ test('sanitizeOlympiadQuestion strips answer keys nested in options at the same 
   assert.equal('correct' in leaked, false)
   assert.deepEqual(leaked.options, { items: ['a', 'b'] })
 })
+
+test('sanitizeOlympiadQuestion exposes only the safe image role from editorial metadata', () => {
+  const sanitized = sanitizeOlympiadQuestion({
+    id: 'q3',
+    q: 'Follow the route shown in the grid.',
+    type: 'choice',
+    options: ['A', 'B'],
+    img: '/questions/route-grid.webp',
+    imageAlt: 'A labelled route grid',
+    meta: {
+      imageRole: 'essential',
+      estimatedSeconds: 75,
+      templateId: 'private-template-id',
+      internalNote: 'editor only',
+    },
+  })
+
+  assert.equal(sanitized.img, '/questions/route-grid.webp')
+  assert.equal(sanitized.imageAlt, 'A labelled route grid')
+  assert.equal((sanitized as Record<string, unknown>).imageRole, 'essential')
+  assert.equal('meta' in sanitized, false)
+})

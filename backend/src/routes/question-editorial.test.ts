@@ -2,12 +2,32 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import {
+  normalizeOlympiadQuestionMeta,
   normalizeQuestionEditorialStatus,
   normalizeQuestionMedia,
   questionReadinessIssues,
   questionSnapshot,
   restoredQuestionValues,
 } from './question-editorial.js'
+
+test('olympiad metadata is validated and preserves unrelated metadata', () => {
+  assert.deepEqual(
+    normalizeOlympiadQuestionMeta(
+      { legacy: true, imageRole: 'decorative' },
+      { imageRole: 'essential', estimatedSeconds: 75, templateId: 'route-grid-01' },
+    ),
+    { legacy: true, imageRole: 'essential', estimatedSeconds: 75, templateId: 'route-grid-01' },
+  )
+  assert.deepEqual(
+    normalizeOlympiadQuestionMeta(
+      { legacy: true, imageRole: 'essential', estimatedSeconds: 75, templateId: 'route-grid-01' },
+      { imageRole: null, estimatedSeconds: null, templateId: null },
+    ),
+    { legacy: true },
+  )
+  assert.throws(() => normalizeOlympiadQuestionMeta(null, { estimatedSeconds: 9 }), /10/)
+  assert.throws(() => normalizeOlympiadQuestionMeta(null, { templateId: 'bad id' }), /шаблону/)
+})
 
 test('question editorial status and media fail closed', () => {
   assert.equal(normalizeQuestionEditorialStatus('review'), 'review')
@@ -29,6 +49,26 @@ test('published question readiness requires taxonomy and a valid answer shape', 
   assert.match(questionReadinessIssues({ ...base, topic: null }).join(' '), /тему/)
   assert.match(questionReadinessIssues({ ...base, correct: 9 }).join(' '), /correct/)
   assert.match(questionReadinessIssues({ ...base, channels: [] }).join(' '), /розділу/)
+})
+
+test('olympiad question readiness blocks content that cannot fit the desktop contract', () => {
+  const issues = questionReadinessIssues({
+    q: Array.from({ length: 41 }, (_, index) => `слово${index + 1}`).join(' '),
+    type: 'choice',
+    options: ['Так', 'Ні'],
+    correct: 0,
+    grade: 2,
+    difficulty: 'hard',
+    track: 'computational-thinking',
+    topic: 'algorithms',
+    img: null,
+    imageAlt: null,
+    meta: { estimatedSeconds: 60, templateId: 'long-stem-template' },
+    isOlympiad: false,
+    channels: ['olympiad_training'],
+  })
+
+  assert.match(issues.join(' '), /максимум — 40/)
 })
 
 test('snapshots serialize dates and restore only authored content', () => {

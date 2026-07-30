@@ -500,7 +500,14 @@ function showQuestion() {
   // Explicit q.img or a default from public/assets/basics/ (by type/topic/concept);
   // null for code questions — the code block is the visual there.
   const image = quizImage && quizImageBtn ? resolveQuestionImage(q) : null
-  if (image && quizImage && quizImageBtn) {
+  // Olympiad illustrations must carry information. Generic decoration consumes
+  // scarce vertical space and can hide a response block below an inner scroll.
+  const isOlympiadMode = currentMode === 'demo' || currentMode === 'olympiad'
+  const showImage = image && !(
+    isOlympiadMode
+    && (image.isDefault || q.imageRole === 'decorative')
+  )
+  if (showImage && quizImage && quizImageBtn) {
     quizImage.src    = image.src
     quizImage.alt    = image.alt
     quizImageBtn.classList.remove('hidden')

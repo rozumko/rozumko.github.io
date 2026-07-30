@@ -4,8 +4,10 @@ import {
   assertEventDateOrder,
   assertEventQuestionSelectionAllowed,
   assertEventRuleChangesAllowed,
+  assertEventStatusTransitionAllowed,
   normalizeEventInput,
   normalizeEventPatch,
+  shouldValidateEventReadiness,
 } from './event-validation.js'
 
 test('normalizeEventInput accepts a valid draft event', () => {
@@ -83,7 +85,25 @@ test('assertEventRuleChangesAllowed locks timing fields while attempts are activ
   assert.doesNotThrow(() => assertEventRuleChangesAllowed(false, { timeMinutes: 20 }))
 })
 
-test('assertEventQuestionSelectionAllowed locks active question sets', () => {
-  assert.throws(() => assertEventQuestionSelectionAllowed(true), /Не можна змінювати набір питань/)
-  assert.doesNotThrow(() => assertEventQuestionSelectionAllowed(false))
+test('assertEventQuestionSelectionAllowed allows edits only while the event is a safe draft', () => {
+  assert.throws(() => assertEventQuestionSelectionAllowed('active', false), /лише в чернетці/)
+  assert.throws(() => assertEventQuestionSelectionAllowed('published', false), /лише в чернетці/)
+  assert.throws(() => assertEventQuestionSelectionAllowed('draft', true), /лише в чернетці/)
+  assert.doesNotThrow(() => assertEventQuestionSelectionAllowed('draft', false))
+})
+
+test('published olympiad events cannot return to an editable draft', () => {
+  assert.doesNotThrow(() => assertEventStatusTransitionAllowed('draft', 'published'))
+  assert.doesNotThrow(() => assertEventStatusTransitionAllowed('published', 'active'))
+  assert.throws(() => assertEventStatusTransitionAllowed('published', 'draft'), /не можна повертати в чернетку/)
+  assert.throws(() => assertEventStatusTransitionAllowed('archived', 'draft'), /не можна повертати в чернетку/)
+})
+
+test('readiness gate runs only when entering a live delivery status', () => {
+  assert.equal(shouldValidateEventReadiness('draft', 'published'), true)
+  assert.equal(shouldValidateEventReadiness('draft', 'active'), true)
+  assert.equal(shouldValidateEventReadiness('published', 'active'), true)
+  assert.equal(shouldValidateEventReadiness('published', undefined), false)
+  assert.equal(shouldValidateEventReadiness('active', 'active'), false)
+  assert.equal(shouldValidateEventReadiness('active', 'finished'), false)
 })

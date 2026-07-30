@@ -63,6 +63,9 @@ function createState() {
       options: ['4', '5'],
       correct: 0,
       explanation: 'Basic addition',
+      img: '/questions/four-blocks.webp',
+      imageAlt: 'Four blocks arranged in a square',
+      meta: { imageRole: 'essential', estimatedSeconds: 45, templateId: 'four-blocks' },
       difficulty: 'easy',
       grade: 1,
     }],
@@ -116,7 +119,9 @@ function installFakeDb(state: ReturnType<typeof createState>) {
         return state.attempt ? [state.attempt] : []
       }
       if (isTable(this.table, schema.eventQuestions) && this.joins.includes(schema.questions)) {
-        return state.questions.map(({ id, q, code, type, options }) => ({ id, q, code, type, options }))
+        return state.questions.map(({ id, q, code, type, options, img, imageAlt, meta }) => ({
+          id, q, code, type, options, img, imageAlt, meta,
+        }))
       }
       if (isTable(this.table, schema.attemptQuestions) && this.joins.includes(schema.questions)) {
         return state.attemptQuestions
@@ -130,6 +135,9 @@ function installFakeDb(state: ReturnType<typeof createState>) {
               code: question.code,
               type: question.type,
               options: question.options,
+              img: question.img,
+              imageAlt: question.imageAlt,
+              meta: question.meta,
               correct: question.correct,
               explanation: question.explanation,
             }
@@ -258,6 +266,10 @@ test('student can exchange a personal code, save an answer, and finish an attemp
     assert.equal(exchangeBody.questions.length, 1)
     assert.equal('correct' in exchangeBody.questions[0], false)
     assert.equal('explanation' in exchangeBody.questions[0], false)
+    assert.equal('meta' in exchangeBody.questions[0], false)
+    assert.equal(exchangeBody.questions[0].img, '/questions/four-blocks.webp')
+    assert.equal(exchangeBody.questions[0].imageAlt, 'Four blocks arranged in a square')
+    assert.equal(exchangeBody.questions[0].imageRole, 'essential')
 
     const answer = await app.inject({
       method: 'POST',
@@ -347,6 +359,8 @@ test('a personal code (maxUses=1) resumes the same attempt without spending the 
     assert.equal(resumed.json().attemptId, first.json().attemptId)
     assert.equal(state.accessCode.usedCount, 1, 'резюм не має споживати код удруге')
     assert.equal('correct' in resumed.json().questions[0], false)
+    assert.equal(resumed.json().questions[0].img, '/questions/four-blocks.webp')
+    assert.equal(resumed.json().questions[0].imageRole, 'essential')
   } finally {
     resetCodeThrottleForTests()
     restoreDb()

@@ -3,6 +3,8 @@ import assert from 'node:assert/strict'
 import {
   analyzeDemoCoverage,
   createDemoToken,
+  createSeededDemoRandom,
+  DemoCompositionBudgetExceededError,
   OLYMPIAD_DEMO_QUESTION_COUNT,
   pickDemoQuestionSet,
   verifyDemoToken,
@@ -19,6 +21,29 @@ test.after(() => {
 
 function uuid(index: number): string {
   return `00000000-0000-4000-8000-${String(index).padStart(12, '0')}`
+}
+
+function gradeOneCandidates(variantsPerCell = 8): DemoQuestionCandidate[] {
+  const cells: Array<[DemoQuestionCandidate['track'], string]> = [
+    ['ai-basics', 'easy'],
+    ['computational-thinking', 'easy'],
+    ['informatics', 'medium'],
+    ['computational-thinking', 'medium'],
+    ['informatics', 'hard'],
+  ]
+  let index = 100
+  return cells.flatMap(([track, difficulty]) =>
+    Array.from({ length: variantsPerCell }, (_, variant) => ({
+      id: uuid(index++),
+      q: `Question ${track}-${difficulty}-${variant}`,
+      type: variant % 2 ? 'choice' : 'sort',
+      options: [],
+      track,
+      difficulty,
+      topic: `${track}-${difficulty}-${variant}`,
+      progressionBand: (['recognize', 'apply', 'reason'] as const)[variant % 3],
+    })),
+  )
 }
 
 test('demo picker produces the required grade 2 composition', () => {
@@ -38,10 +63,15 @@ test('demo picker produces the required grade 2 composition', () => {
     for (let variant = 0; variant < 6; variant++) {
       candidates.push({
         id: uuid(index++),
+        q: track === 'informatics' && difficulty === 'hard' && variant < 2
+          ? 'Скільки кроків пройде Равлик?'
+          : `Питання ${track}-${difficulty}-${variant}`,
+        code: variant < 2 ? `repeat(${variant + 1})` : null,
         type: variant === 0 ? 'sort' : 'choice',
         track,
         difficulty,
         topic: `${track}-${difficulty}-${variant % 3}`,
+        progressionBand: 'apply',
       })
     }
   }
@@ -64,6 +94,42 @@ test('demo picker produces the required grade 2 composition', () => {
       return counts
     }, {}),
     { easy: 3, medium: 6, hard: 3 },
+  )
+  assert.ok(
+    selected.filter(question => question.q === 'Скільки кроків пройде Равлик?').length <= 1,
+    'one demo set must not contain two variants of the same stem',
+  )
+})
+
+test('demo picker is deterministic per seed and still returns distinct policy variants', () => {
+  const candidates: DemoQuestionCandidate[] = []
+  let index = 1
+  const cells: Array<[DemoQuestionCandidate['track'], string]> = [
+    ['informatics', 'easy'],
+    ['computational-thinking', 'easy'],
+    ['ai-basics', 'easy'],
+    ['computational-thinking', 'medium'],
+    ['informatics', 'medium'],
+    ['ai-basics', 'medium'],
+    ['informatics', 'hard'],
+  ]
+  for (const [track, difficulty] of cells) {
+    for (let variant = 0; variant < 8; variant++) {
+      candidates.push({
+        id: uuid(index++),
+        q: `Питання ${track}-${difficulty}-${variant}`,
+        type: variant % 2 ? 'choice' : 'sort',
+        track,
+        difficulty,
+        topic: `${track}-${difficulty}-${variant % 4}`,
+        progressionBand: 'apply',
+      })
+    }
+  }
+
+  assert.deepEqual(
+    pickDemoQuestionSet(2, candidates, createSeededDemoRandom(42)),
+    pickDemoQuestionSet(2, candidates, createSeededDemoRandom(42)),
   )
 })
 
@@ -89,6 +155,46 @@ test('demo picker fails closed when a required content cell is missing', () => {
   )
 })
 
+test('demo picker rejects an intrinsically invalid sole required candidate before search', () => {
+  const candidates = gradeOneCandidates().filter(question =>
+    question.track !== 'computational-thinking'
+    || question.difficulty !== 'easy'
+    || question.id === uuid(108),
+  )
+  const invalid = candidates.find(question =>
+    question.track === 'computational-thinking' && question.difficulty === 'easy')!
+  invalid.progressionBand = null
+  let acceptCalls = 0
+
+  assert.throws(
+    () => pickDemoQuestionSet(1, candidates, () => 0.5, () => {
+      acceptCalls++
+      return false
+    }),
+    /Demo pool is incomplete/,
+  )
+  assert.equal(acceptCalls, 0)
+})
+
+test('demo picker stops impossible policy search at the configured budget', () => {
+  let now = 0
+  assert.throws(
+    () => pickDemoQuestionSet(
+      1,
+      gradeOneCandidates(),
+      () => 0.5,
+      () => false,
+      {
+        maxVisitedNodes: 20,
+        maxDurationMs: 1_000,
+        now: () => now++,
+      },
+    ),
+    DemoCompositionBudgetExceededError,
+  )
+  assert.ok(now <= 22, `search visited too many nodes: ${now}`)
+})
+
 test('demo coverage reports actionable variant and mechanic gaps', () => {
   const requiredCells: Array<[DemoQuestionCandidate['track'], string, number]> = [
     ['ai-basics', 'easy', 2],
@@ -103,6 +209,7 @@ test('demo coverage reports actionable variant and mechanic gaps', () => {
     for (let variant = 0; variant < count; variant++) {
       candidates.push({
         id: uuid(index++),
+        q: `Coverage question ${track}-${difficulty}-${variant}`,
         type: 'choice',
         track,
         difficulty,

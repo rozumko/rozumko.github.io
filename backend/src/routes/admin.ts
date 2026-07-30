@@ -2,7 +2,11 @@ import type { FastifyInstance } from 'fastify'
 import { eq, desc, count, and, asc, inArray, ilike, or, sql, arrayContains, isNotNull, type SQL } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { questions, questionRevisions, accessCodes, attempts, attemptQuestions, appUsers, olympiadEvents, eventQuestions, schoolSessions, schoolSessionQuestions, homeLeads, homeEntitlements, homeEntitlementEvents, homeParentAccounts, homePathProgress, missions, missionRevisions, microLessons, microLessonRevisions, pathMapRevisions, pathMaps, contentPublications, homeFunnelCounters, type QuestionChannel, type QuestionTrack } from '../db/schema.js'
-import { analyzeDemoCoverage } from './olympiad-demo-validation.js'
+import {
+  analyzeDemoCoverage,
+  createSeededDemoRandom,
+  pickDemoQuestionSet,
+} from './olympiad-demo-validation.js'
 import { normalizeLessonSlug, normalizeLessonStatus, normalizeLessonContent, lessonContentChanged } from './lesson-validation.js'
 import { contentFromLessonRevision, lessonPublishedSnapshot, lessonRevisionSnapshot } from './lesson-editorial.js'
 import { EDITABLE_MISSION_KINDS, missionPublishedSnapshot, missionSnapshot, normalizeEditableMission, normalizeMissionSlug, normalizeMissionStatus, type NormalizedMissionInput } from './mission-editorial.js'
@@ -18,6 +22,7 @@ import {
   QUESTION_EDITORIAL_STATUSES,
   normalizeQuestionEditorialStatus,
   normalizeQuestionMedia,
+  normalizeOlympiadQuestionMeta,
   questionReadinessIssues,
   questionSnapshot,
   restoredQuestionValues,
@@ -29,8 +34,10 @@ import {
   assertEventDateOrder,
   assertEventQuestionSelectionAllowed,
   assertEventRuleChangesAllowed,
+  assertEventStatusTransitionAllowed,
   normalizeEventInput,
   normalizeEventPatch,
+  shouldValidateEventReadiness,
 } from './event-validation.js'
 import {
   buildContentPublicationManifest,
@@ -39,11 +46,54 @@ import {
   summarizeContentDeliveryState,
 } from '../lib/content-publication.js'
 import { listAdminParents } from './admin-parents.js'
+import {
+  analyzeOfficialEvent,
+  analyzeOlympiadSet,
+  type OlympiadEventReadiness,
+  type OlympiadQuestionForPolicy,
+} from '../lib/olympiad-content-policy.js'
 
 class PathMapConflictError extends Error {}
 class QuestionEditConflictError extends Error {}
 class LessonEditConflictError extends Error {}
 class MissionEditConflictError extends Error {}
+
+function yieldToEventLoop(): Promise<void> {
+  return new Promise(resolve => setImmediate(resolve))
+}
+
+async function officialEventReadiness(
+  event: { id: string; timeMinutes: number; questionsCount: number },
+): Promise<OlympiadEventReadiness> {
+  const rows = await db
+    .select({
+      id: questions.id,
+      q: questions.q,
+      code: questions.code,
+      type: questions.type,
+      options: questions.options,
+      grade: questions.grade,
+      difficulty: questions.difficulty,
+      track: questions.track,
+      topic: questions.topic,
+      conceptKey: questions.conceptKey,
+      progressionBand: questions.progressionBand,
+      img: questions.img,
+      imageAlt: questions.imageAlt,
+      meta: questions.meta,
+      isOlympiad: questions.isOlympiad,
+      channels: questions.channels,
+      editorialStatus: questions.editorialStatus,
+    })
+    .from(eventQuestions)
+    .innerJoin(questions, eq(eventQuestions.questionId, questions.id))
+    .where(eq(eventQuestions.eventId, event.id))
+
+  return analyzeOfficialEvent(
+    { timeMinutes: event.timeMinutes, questionsCount: event.questionsCount },
+    rows as OlympiadQuestionForPolicy[],
+  )
+}
 
 function snapshotLessonVersions(points: PathPointInput[], versions: ReadonlyMap<string, number>): PathPointInput[] {
   return points.map(point => ({
@@ -418,7 +468,9 @@ export async function adminRoutes(app: FastifyInstance) {
           description: { type: 'string' },
           startsAt:    { type: 'string' },
           endsAt:      { type: 'string' },
-          status:      { type: 'string', enum: EVENT_STATUSES },
+          // A new event has no reviewed question sets yet, so it can only be
+          // created as a draft. Publication goes through the readiness gate.
+          status:      { type: 'string', enum: ['draft'] },
           timeMinutes: { type: 'integer', minimum: 1, maximum: 100 },
           questionsCount: { type: 'integer', minimum: 1, maximum: 100 },
         },
@@ -429,8 +481,8 @@ export async function adminRoutes(app: FastifyInstance) {
     try {
       eventData = {
         ...normalizeEventInput(req.body),
-        timeMinutes: normalizePositiveInt(req.body.timeMinutes, 'timeMinutes', 15),
-        questionsCount: normalizePositiveInt(req.body.questionsCount, 'questionsCount', 10),
+        timeMinutes: normalizePositiveInt(req.body.timeMinutes, 'timeMinutes', 45),
+        questionsCount: normalizePositiveInt(req.body.questionsCount, 'questionsCount', 24),
       }
     } catch (err) {
       return reply.code(400).send({ error: (err as Error).message })
@@ -482,7 +534,14 @@ export async function adminRoutes(app: FastifyInstance) {
     }
 
     const [current] = await db
-      .select({ startsAt: olympiadEvents.startsAt, endsAt: olympiadEvents.endsAt, status: olympiadEvents.status })
+      .select({
+        id: olympiadEvents.id,
+        startsAt: olympiadEvents.startsAt,
+        endsAt: olympiadEvents.endsAt,
+        status: olympiadEvents.status,
+        timeMinutes: olympiadEvents.timeMinutes,
+        questionsCount: olympiadEvents.questionsCount,
+      })
       .from(olympiadEvents)
       .where(eq(olympiadEvents.id, req.params.id))
       .limit(1)
@@ -491,9 +550,24 @@ export async function adminRoutes(app: FastifyInstance) {
 
     try {
       assertEventRuleChangesAllowed(await eventRulesAreLocked(req.params.id, current.status), req.body)
+      if (updates.status) assertEventStatusTransitionAllowed(current.status, updates.status)
       assertEventDateOrder(updates.startsAt ?? current.startsAt, updates.endsAt ?? current.endsAt)
     } catch (err) {
       return reply.code(400).send({ error: (err as Error).message })
+    }
+
+    if (shouldValidateEventReadiness(current.status, updates.status)) {
+      const readiness = await officialEventReadiness({
+        id: current.id,
+        timeMinutes: updates.timeMinutes ?? current.timeMinutes,
+        questionsCount: updates.questionsCount ?? current.questionsCount,
+      })
+      if (!readiness.ready) {
+        return reply.code(409).send({
+          error: 'Подію не можна опублікувати або активувати: виправте блокувальні помилки в перевірці набору.',
+          readiness,
+        })
+      }
     }
 
     const [updated] = await db
@@ -503,6 +577,31 @@ export async function adminRoutes(app: FastifyInstance) {
       .returning()
 
     return reply.send({ event: updated })
+  })
+
+  // GET /api/admin/events/:id/readiness
+  // Uses the same policy as the publication/activation gate.
+  app.get<{ Params: { id: string } }>('/events/:id/readiness', {
+    preHandler: requireAdmin,
+    schema: {
+      params: {
+        type: 'object',
+        required: ['id'],
+        properties: { id: { type: 'string', format: 'uuid' } },
+      },
+    },
+  }, async (req, reply) => {
+    const [event] = await db
+      .select({
+        id: olympiadEvents.id,
+        timeMinutes: olympiadEvents.timeMinutes,
+        questionsCount: olympiadEvents.questionsCount,
+      })
+      .from(olympiadEvents)
+      .where(eq(olympiadEvents.id, req.params.id))
+      .limit(1)
+    if (!event) return reply.code(404).send({ error: 'Подію не знайдено' })
+    return reply.send({ readiness: await officialEventReadiness(event) })
   })
 
   // GET /api/admin/events/:id/questions?grade=1
@@ -537,12 +636,6 @@ export async function adminRoutes(app: FastifyInstance) {
       .limit(1)
 
     if (!event) return reply.code(404).send({ error: 'Подію не знайдено' })
-
-    try {
-      assertEventQuestionSelectionAllowed(await eventRulesAreLocked(event.id, event.status))
-    } catch (err) {
-      return reply.code(409).send({ error: (err as Error).message })
-    }
 
     const selected = await db
       .select({
@@ -590,12 +683,21 @@ export async function adminRoutes(app: FastifyInstance) {
     }
 
     const [event] = await db
-      .select({ id: olympiadEvents.id })
+      .select({ id: olympiadEvents.id, status: olympiadEvents.status })
       .from(olympiadEvents)
       .where(eq(olympiadEvents.id, req.params.id))
       .limit(1)
 
     if (!event) return reply.code(404).send({ error: 'Подію не знайдено' })
+
+    try {
+      assertEventQuestionSelectionAllowed(
+        event.status,
+        await eventRulesAreLocked(event.id, event.status),
+      )
+    } catch (err) {
+      return reply.code(409).send({ error: (err as Error).message })
+    }
 
     const found = selection.questionIds.length
       ? await db
@@ -644,7 +746,21 @@ export async function adminRoutes(app: FastifyInstance) {
       }
     })
 
-    return reply.send({ saved: true, count: selection.questionIds.length })
+    const [savedEvent] = await db
+      .select({
+        id: olympiadEvents.id,
+        timeMinutes: olympiadEvents.timeMinutes,
+        questionsCount: olympiadEvents.questionsCount,
+      })
+      .from(olympiadEvents)
+      .where(eq(olympiadEvents.id, req.params.id))
+      .limit(1)
+
+    return reply.send({
+      saved: true,
+      count: selection.questionIds.length,
+      readiness: savedEvent ? await officialEventReadiness(savedEvent) : null,
+    })
   })
 
   // GET /api/admin/results?limit=&offset=
@@ -768,28 +884,81 @@ export async function adminRoutes(app: FastifyInstance) {
   app.get('/questions/demo-coverage', {
     preHandler: requireAdmin,
   }, async (_req, reply) => {
-    const rows = await db
+    const rows = (await db
       .select({
         id: questions.id,
+        q: questions.q,
+        code: questions.code,
         type: questions.type,
+        options: questions.options,
         track: questions.track,
         difficulty: questions.difficulty,
         topic: questions.topic,
+        conceptKey: questions.conceptKey,
         progressionBand: questions.progressionBand,
         img: questions.img,
+        imageAlt: questions.imageAlt,
+        meta: questions.meta,
         grade: questions.grade,
+        isOlympiad: questions.isOlympiad,
+        channels: questions.channels,
+        editorialStatus: questions.editorialStatus,
       })
       .from(questions)
       .where(and(
         eq(questions.isOlympiad, false),
         eq(questions.editorialStatus, 'published'),
         arrayContains(questions.channels, ['olympiad_training']),
-      ))
+      )))
+      .sort((left, right) => left.id.localeCompare(right.id))
 
-    return reply.send({
-      grades: [1, 2, 3, 4].map(grade =>
-        analyzeDemoCoverage(grade, rows.filter(question => question.grade === grade))),
-    })
+    const grades = []
+    for (const grade of [1, 2, 3, 4]) {
+      const candidates = rows.filter(question => question.grade === grade)
+      const coverage = analyzeDemoCoverage(grade, candidates)
+      let standard = null
+      const signatures = new Set<string>()
+      let passedSamples = 0
+      const samples = 64
+      const byId = new Map(candidates.map(question => [question.id, question]))
+      for (let seed = 1; seed <= samples; seed++) {
+        try {
+          const selectedIds = pickDemoQuestionSet(
+            grade,
+            candidates,
+            createSeededDemoRandom(seed),
+            selected => analyzeOlympiadSet(
+              grade,
+              'demo',
+              selected as OlympiadQuestionForPolicy[],
+            ).ready,
+          )
+          const result = analyzeOlympiadSet(
+            grade,
+            'demo',
+            selectedIds.map(id => byId.get(id)!) as OlympiadQuestionForPolicy[],
+          )
+          if (!standard) standard = result
+          if (result.ready) passedSamples++
+          signatures.add([...selectedIds].sort().join(':'))
+        } catch {
+          // The audit counters expose composition failures to the editor.
+        }
+        await yieldToEventLoop()
+      }
+      grades.push({
+        ...coverage,
+        ready: coverage.ready && passedSamples === samples && Boolean(standard?.ready),
+        standard,
+        audit: {
+          samples,
+          passed: passedSamples,
+          uniqueSets: signatures.size,
+        },
+      })
+    }
+
+    return reply.send({ grades })
   })
 
   // GET /api/admin/questions?grade=&isOlympiad=&type=&channel=&unassigned=&difficulty=&track=&topic=&status=&search=&limit=&offset=
@@ -844,6 +1013,7 @@ export async function adminRoutes(app: FastifyInstance) {
     Body: {
       q: string; grade: number; difficulty: string; track?: QuestionTrack | null; isOlympiad: boolean; channels?: QuestionChannel[]
       topic?: string | null; conceptKey?: string | null; progressionBand?: string | null
+      imageRole?: string | null; estimatedSeconds?: number | null; templateId?: string | null
       type?: string; options: string[] | Record<string, unknown>
       correct?: number; explanation?: string; code?: string; img?: string | null; imageAlt?: string | null
     }
@@ -863,6 +1033,9 @@ export async function adminRoutes(app: FastifyInstance) {
           topic:           { type: ['string', 'null'], enum: [...(ALL_TOPICS as string[]), null] },
           conceptKey:      { type: ['string', 'null'] },
           progressionBand: { type: ['string', 'null'], enum: ['recognize', 'apply', 'reason', null] },
+          imageRole:       { type: ['string', 'null'], enum: ['essential', 'supportive', 'decorative', null] },
+          estimatedSeconds:{ type: ['integer', 'null'], minimum: 10, maximum: 600 },
+          templateId:      { type: ['string', 'null'], maxLength: 80 },
           type:        { type: 'string', enum: ['choice', 'truefalse', 'input', 'sort', 'sequence', 'match'] },
           options:     {},   // jsonb — будь-яка структура залежно від type
           correct:     { type: ['integer', 'null'], minimum: 0 },
@@ -882,6 +1055,7 @@ export async function adminRoutes(app: FastifyInstance) {
     let conceptKey: ConceptKey | null
     let progressionBand: ProgressionBand | null
     let media: { img: string | null; imageAlt: string | null }
+    let meta: Record<string, unknown>
     let channels: QuestionChannel[]
     try {
       track           = normalizeQuestionTrack(req.body.track)
@@ -889,6 +1063,7 @@ export async function adminRoutes(app: FastifyInstance) {
       conceptKey      = normalizeConceptKey(req.body.conceptKey)
       progressionBand = normalizeProgressionBand(req.body.progressionBand)
       media             = normalizeQuestionMedia(req.body.img, req.body.imageAlt)
+      meta              = normalizeOlympiadQuestionMeta(null, req.body)
       channels          = normalizeQuestionChannels(req.body.channels ?? [])
       assertQuestionDistribution(isOlympiad, channels)
     } catch (err) {
@@ -908,6 +1083,7 @@ export async function adminRoutes(app: FastifyInstance) {
         .insert(questions)
         .values({
           q: q.trim(), grade, difficulty, track, topic, conceptKey, progressionBand, isOlympiad, channels,
+          meta,
           type, options: shape.options as any, correct: shape.correct,
           explanation: explanation?.trim() || null, code: code?.trim() || null,
           ...media, editorialStatus: 'draft', createdBy: req.user!.id, updatedBy: req.user!.id,
@@ -932,6 +1108,7 @@ export async function adminRoutes(app: FastifyInstance) {
       expectedEditVersion: number
       q?: string; grade?: number; difficulty?: string; track?: QuestionTrack | null; isOlympiad?: boolean; channels?: QuestionChannel[]
       topic?: string | null; conceptKey?: string | null; progressionBand?: string | null
+      imageRole?: string | null; estimatedSeconds?: number | null; templateId?: string | null
       type?: string; options?: string[] | Record<string, unknown>
       correct?: number | null; explanation?: string; code?: string; img?: string | null; imageAlt?: string | null
     }
@@ -957,6 +1134,9 @@ export async function adminRoutes(app: FastifyInstance) {
           topic:           { type: ['string', 'null'], enum: [...(ALL_TOPICS as string[]), null] },
           conceptKey:      { type: ['string', 'null'] },
           progressionBand: { type: ['string', 'null'], enum: ['recognize', 'apply', 'reason', null] },
+          imageRole:       { type: ['string', 'null'], enum: ['essential', 'supportive', 'decorative', null] },
+          estimatedSeconds:{ type: ['integer', 'null'], minimum: 10, maximum: 600 },
+          templateId:      { type: ['string', 'null'], maxLength: 80 },
           type:        { type: 'string', enum: ['choice', 'truefalse', 'input', 'sort', 'sequence', 'match'] },
           options:     {},
           correct:     { type: ['integer', 'null'], minimum: 0 },
@@ -990,6 +1170,7 @@ export async function adminRoutes(app: FastifyInstance) {
     }
 
     let media: { img: string | null; imageAlt: string | null } | undefined
+    let meta: Record<string, unknown> | undefined
     try {
       track           = b.track           !== undefined ? normalizeQuestionTrack(b.track) : undefined
       conceptKey      = b.conceptKey      !== undefined ? normalizeConceptKey(b.conceptKey) : undefined
@@ -1000,6 +1181,9 @@ export async function adminRoutes(app: FastifyInstance) {
           b.img !== undefined ? b.img : current.img,
           b.imageAlt !== undefined ? b.imageAlt : current.imageAlt,
         )
+      }
+      if (b.imageRole !== undefined || b.estimatedSeconds !== undefined || b.templateId !== undefined) {
+        meta = normalizeOlympiadQuestionMeta(current.meta, b)
       }
     } catch (err) {
       return reply.code(400).send({ error: (err as Error).message })
@@ -1054,6 +1238,7 @@ export async function adminRoutes(app: FastifyInstance) {
     if (topic         !== undefined) updates.topic       = topic
     if (conceptKey      !== undefined) updates.conceptKey      = conceptKey
     if (progressionBand !== undefined) updates.progressionBand = progressionBand
+    if (meta !== undefined) updates.meta = meta
     if (b.isOlympiad  !== undefined) updates.isOlympiad  = b.isOlympiad
     if (channels      !== undefined) updates.channels    = channels
     if (b.type        !== undefined) updates.type        = b.type
@@ -1070,6 +1255,7 @@ export async function adminRoutes(app: FastifyInstance) {
     const contentFields = [
       'q', 'options', 'correct', 'type', 'explanation', 'code', 'img', 'imageAlt',
       'grade', 'difficulty', 'track', 'topic', 'conceptKey', 'progressionBand', 'isOlympiad', 'channels',
+      'imageRole', 'estimatedSeconds', 'templateId',
     ] as const
     if (contentFields.some(field => Object.prototype.hasOwnProperty.call(b, field))) {
       updates.version = current.version + 1

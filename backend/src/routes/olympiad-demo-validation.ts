@@ -1,9 +1,17 @@
 import { createHmac, timingSafeEqual } from 'crypto'
 import type { QuestionTrack, QuestionType } from '../db/schema.js'
+import {
+  inspectOlympiadQuestionContent,
+  olympiadQuestionFingerprint,
+  olympiadQuestionVariantGroupKey,
+  type OlympiadQuestionForPolicy,
+} from '../lib/olympiad-content-policy.js'
 
 export const OLYMPIAD_DEMO_QUESTION_COUNT = 12
 export const OLYMPIAD_DEMO_TIME_MINUTES = 20
 export const OLYMPIAD_DEMO_TOKEN_TTL_MS = 2 * 60 * 60 * 1000
+export const OLYMPIAD_DEMO_MAX_SEARCH_NODES = 2_000
+export const OLYMPIAD_DEMO_MAX_SEARCH_MS = 100
 
 type DemoDifficulty = 'easy' | 'medium' | 'hard'
 
@@ -14,12 +22,17 @@ type DemoSlot = {
 
 export type DemoQuestionCandidate = {
   id: string
+  q?: string | null
+  code?: string | null
   type: QuestionType
+  options?: unknown
   track: QuestionTrack | null
   difficulty: string | null
   topic: string | null
   progressionBand?: 'recognize' | 'apply' | 'reason' | null
   img?: string | null
+  imageAlt?: string | null
+  meta?: Record<string, unknown> | null
 }
 
 export type DemoCoverageCell = {
@@ -35,8 +48,9 @@ export type DemoCoverageCell = {
 }
 
 export type DemoCoverageIssue = {
-  code: 'cannot-compose' | 'variant-gap' | 'mechanic-gap' | 'image-gap' | 'topic-duplication'
+  code: 'cannot-compose' | 'invalid-candidate' | 'variant-gap' | 'mechanic-gap' | 'image-gap' | 'topic-duplication'
   message: string
+  questionIds?: string[]
 }
 
 export type DemoCoverageGrade = {
@@ -174,30 +188,120 @@ export function verifyDemoToken(token: string, now = Date.now()): DemoTokenPaylo
   }
 }
 
+export type DemoSearchLimits = {
+  maxVisitedNodes?: number
+  maxDurationMs?: number
+  now?: () => number
+}
+
+export class DemoCompositionBudgetExceededError extends Error {
+  constructor(grade: number) {
+    super(`Demo composition budget exceeded for grade ${grade}`)
+    this.name = 'DemoCompositionBudgetExceededError'
+  }
+}
+
+export function createSeededDemoRandom(seed: number): () => number {
+  let state = seed >>> 0
+  return () => {
+    state = (Math.imul(state, 1_664_525) + 1_013_904_223) >>> 0
+    return state / 0x1_0000_0000
+  }
+}
+
+function asPolicyQuestion(
+  grade: number,
+  question: DemoQuestionCandidate,
+): OlympiadQuestionForPolicy {
+  return {
+    id: question.id,
+    q: question.q ?? '',
+    code: question.code,
+    type: question.type,
+    options: question.options ?? [],
+    grade,
+    difficulty: question.difficulty,
+    track: question.track,
+    topic: question.topic,
+    conceptKey: null,
+    progressionBand: question.progressionBand ?? null,
+    img: question.img ?? null,
+    imageAlt: question.imageAlt ?? null,
+    meta: question.meta ?? null,
+    isOlympiad: false,
+    channels: ['olympiad_training'],
+    editorialStatus: 'published',
+  }
+}
+
+export function isDemoQuestionCandidateUsable(
+  grade: number,
+  question: DemoQuestionCandidate,
+): boolean {
+  if (!question.q?.trim() || !question.progressionBand) return false
+  return !inspectOlympiadQuestionContent(asPolicyQuestion(grade, question))
+    .some(issue => issue.severity === 'error')
+}
+
 export function pickDemoQuestionSet(
   grade: number,
   candidates: DemoQuestionCandidate[],
   random: () => number = Math.random,
+  acceptSet: (questions: DemoQuestionCandidate[]) => boolean = () => true,
+  limits: DemoSearchLimits = {},
 ): string[] {
   const slots = SLOT_BLUEPRINTS[grade]
   if (!slots) throw new Error('Unsupported demo grade')
+  const usableCandidates = candidates.filter(question =>
+    isDemoQuestionCandidateUsable(grade, question),
+  )
+  const maxVisitedNodes = Math.max(
+    1,
+    Math.floor(limits.maxVisitedNodes ?? OLYMPIAD_DEMO_MAX_SEARCH_NODES),
+  )
+  const maxDurationMs = Math.max(1, limits.maxDurationMs ?? OLYMPIAD_DEMO_MAX_SEARCH_MS)
+  const now = limits.now ?? Date.now
+  const startedAt = now()
+  let visitedNodes = 0
+
+  const requiredByCell = new Map<string, number>()
+  for (const slot of slots) {
+    const key = `${slot.track}:${slot.difficulty}`
+    requiredByCell.set(key, (requiredByCell.get(key) ?? 0) + 1)
+  }
+  for (const [key, required] of requiredByCell) {
+    const [track, difficulty] = key.split(':')
+    const available = usableCandidates.filter(question =>
+      question.track === track && question.difficulty === difficulty,
+    ).length
+    if (available < required) {
+      throw new Error(`Demo pool is incomplete for grade ${grade}: ${track}/${difficulty}`)
+    }
+  }
 
   const selectedIds = new Set<string>()
+  const selectedFingerprints = new Set<string>()
+  const selectedVariantGroups = new Set<string>()
   const selectedTypes = new Set<QuestionType>()
   const topicCounts = new Map<string, number>()
   const progressionCounts = new Map<string, number>()
   let selectedImages = 0
-  const result: string[] = []
+  const result: DemoQuestionCandidate[] = []
 
-  for (const slot of slots) {
-    const eligible = candidates.filter(question =>
+  const chooseSlot = (slotIndex: number): boolean => {
+    visitedNodes++
+    if (visitedNodes > maxVisitedNodes || now() - startedAt >= maxDurationMs) {
+      throw new DemoCompositionBudgetExceededError(grade)
+    }
+    if (slotIndex === slots.length) return acceptSet(result)
+    const slot = slots[slotIndex]!
+    const eligible = usableCandidates.filter(question =>
       question.track === slot.track
       && question.difficulty === slot.difficulty
-      && !selectedIds.has(question.id),
+      && !selectedIds.has(question.id)
+      && !selectedFingerprints.has(olympiadQuestionFingerprint(question))
+      && !selectedVariantGroups.has(olympiadQuestionVariantGroupKey(question)),
     )
-    if (!eligible.length) {
-      throw new Error(`Demo pool is incomplete for grade ${grade}: ${slot.track}/${slot.difficulty}`)
-    }
 
     const ranked = eligible
       .map(question => {
@@ -216,18 +320,49 @@ export function pickDemoQuestionSet(
       })
       .sort((a, b) => b.score - a.score)
 
-    const chosen = ranked[0]!.question
-    result.push(chosen.id)
-    selectedIds.add(chosen.id)
-    selectedTypes.add(chosen.type)
-    if (chosen.topic) topicCounts.set(chosen.topic, (topicCounts.get(chosen.topic) ?? 0) + 1)
-    if (chosen.progressionBand) {
-      progressionCounts.set(chosen.progressionBand, (progressionCounts.get(chosen.progressionBand) ?? 0) + 1)
+    for (const { question: chosen } of ranked) {
+      const fingerprint = olympiadQuestionFingerprint(chosen)
+      const variantGroup = olympiadQuestionVariantGroupKey(chosen)
+      const previousTopicCount = chosen.topic ? (topicCounts.get(chosen.topic) ?? 0) : 0
+      const previousBandCount = chosen.progressionBand
+        ? (progressionCounts.get(chosen.progressionBand) ?? 0)
+        : 0
+      const typeWasSelected = selectedTypes.has(chosen.type)
+
+      result.push(chosen)
+      selectedIds.add(chosen.id)
+      selectedFingerprints.add(fingerprint)
+      selectedVariantGroups.add(variantGroup)
+      selectedTypes.add(chosen.type)
+      if (chosen.topic) topicCounts.set(chosen.topic, previousTopicCount + 1)
+      if (chosen.progressionBand) progressionCounts.set(chosen.progressionBand, previousBandCount + 1)
+      if (chosen.img) selectedImages++
+
+      if (chooseSlot(slotIndex + 1)) return true
+
+      result.pop()
+      selectedIds.delete(chosen.id)
+      selectedFingerprints.delete(fingerprint)
+      selectedVariantGroups.delete(variantGroup)
+      if (!typeWasSelected) selectedTypes.delete(chosen.type)
+      if (chosen.topic) {
+        if (previousTopicCount) topicCounts.set(chosen.topic, previousTopicCount)
+        else topicCounts.delete(chosen.topic)
+      }
+      if (chosen.progressionBand) {
+        if (previousBandCount) progressionCounts.set(chosen.progressionBand, previousBandCount)
+        else progressionCounts.delete(chosen.progressionBand)
+      }
+      if (chosen.img) selectedImages--
     }
-    if (chosen.img) selectedImages++
+
+    return false
   }
 
-  return result
+  if (!chooseSlot(0)) {
+    throw new Error(`Demo pool cannot compose a unique policy-compliant set for grade ${grade}`)
+  }
+  return result.map(question => question.id)
 }
 
 export function analyzeDemoCoverage(
@@ -236,6 +371,12 @@ export function analyzeDemoCoverage(
 ): DemoCoverageGrade {
   const slots = SLOT_BLUEPRINTS[grade]
   if (!slots) throw new Error('Unsupported demo grade')
+  const invalidCandidates = candidates.filter(question =>
+    !isDemoQuestionCandidateUsable(grade, question),
+  )
+  const usableCandidates = candidates.filter(question =>
+    isDemoQuestionCandidateUsable(grade, question),
+  )
 
   const grouped = new Map<string, DemoCoverageCell>()
   for (const slot of slots) {
@@ -260,7 +401,7 @@ export function analyzeDemoCoverage(
   }
 
   for (const cell of grouped.values()) {
-    const eligible = candidates.filter(question =>
+    const eligible = usableCandidates.filter(question =>
       question.track === cell.track && question.difficulty === cell.difficulty,
     )
     cell.candidates = eligible.length
@@ -272,6 +413,13 @@ export function analyzeDemoCoverage(
 
   const cells = [...grouped.values()]
   const issues: DemoCoverageIssue[] = []
+  if (invalidCandidates.length > 0) {
+    issues.push({
+      code: 'invalid-candidate',
+      message: `${invalidCandidates.length} опублікованих питань не можна включити до демо через блокувальні помилки контенту або незаповнений рівень мислення.`,
+      questionIds: invalidCandidates.map(question => question.id),
+    })
+  }
   for (const cell of cells) {
     if (cell.candidates < cell.requiredSlots) {
       issues.push({
@@ -288,8 +436,8 @@ export function analyzeDemoCoverage(
 
   let sample: DemoCoverageGrade['sample'] = null
   try {
-    const selectedIds = pickDemoQuestionSet(grade, candidates, () => 0.5)
-    const byId = new Map(candidates.map(question => [question.id, question]))
+    const selectedIds = pickDemoQuestionSet(grade, usableCandidates, () => 0.5)
+    const byId = new Map(usableCandidates.map(question => [question.id, question]))
     const selected = selectedIds.map(id => byId.get(id)!)
     const mechanics = [...new Set(selected.map(question => question.type))].sort()
     const topicCounts = new Map<string, number>()
@@ -324,7 +472,12 @@ export function analyzeDemoCoverage(
       })
     }
   } catch {
-    // The cell-level issue above contains the actionable composition gap.
+    if (!issues.some(issue => issue.code === 'cannot-compose')) {
+      issues.push({
+        code: 'cannot-compose',
+        message: 'Кандидатів достатньо за кількістю, але з них не складається набір без повтору завдань або шаблонів.',
+      })
+    }
   }
 
   return {

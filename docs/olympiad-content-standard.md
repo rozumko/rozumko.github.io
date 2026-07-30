@@ -2,7 +2,7 @@
 
 _Status: Approved product direction_
 
-_Updated: 2026-07-29_
+_Updated: 2026-07-30_
 
 This document defines the Olympiad-only content model for Rozumko. It covers
 the public demo olympiad and the official main round. It does not define Home
@@ -240,6 +240,86 @@ Each task must:
 - remain readable and operable on a phone-sized viewport;
 - have a reviewed `imageAlt` that does not expose the answer.
 
+### Vertical Progression by Grade
+
+The same screen template may reappear across grades, but the reasoning must
+progress. Changing names, colours or characters is not progression.
+
+| Grade | Expected task character | Concrete examples |
+|---|---|---|
+| 1 | Concrete recognition, one rule, short sequences | identify an input device; order 3–4 visible actions; follow a route with arrows |
+| 2 | Apply one learned rule to several objects | classify files as text/image/audio; match keys to actions; order a familiar process |
+| 3 | Combine a representation with a rule | read grid coordinates; complete a visual pattern; find and correct one algorithmic error |
+| 4 | Reason across constraints and justify a choice | trace a colour-coded grid algorithm; compare two strategies; identify a safe and efficient AI-assisted decision |
+
+Every official set must cover age-appropriate versions of algorithms or
+debugging, logic or patterns, classification or data, digital safety, and AI
+judgment. The admin preflight reports a warning when one of these concept
+groups is absent.
+
+### Lessons Taken from Competitor Demo Sets
+
+Patterns worth adopting:
+
+- visual routing and colour-grid tasks where the image is the data;
+- coordinate tasks that connect rows and columns to a meaningful object;
+- ordering real or computational procedures;
+- matching representations, device roles or file types;
+- classification and pattern tasks that require applying a rule rather than
+  recalling a definition.
+
+Patterns to reject:
+
+- three or four subquestions in one tall card when the final part is below an
+  inner scrollbar;
+- decorative character images that consume half the screen but contribute no
+  information;
+- the same keyboard, printer or file-extension fact repeated in several
+  grades;
+- branded characters or copied artwork used as attention decoration;
+- a long story that does not change the reasoning;
+- several independently scored ideas combined into one binary-point task.
+
+Concrete Rozumko-style examples:
+
+- **Grade 2, classification:** show six file cards and ask the child to match
+  `.txt`, `.jpg` and `.mp3` to text, image and sound. Use a new data set for
+  each variant.
+- **Grade 3, coordinates:** show a pixel animal on a labelled grid and match
+  coordinates to body parts. The grid is `essential`, not decorative.
+- **Grade 4, algorithm tracing:** start on a marked cell and follow colour
+  rules until the exit; ask for the number of visited cells. The wording,
+  legend and full grid must fit on one desktop screen.
+- **Grade 4, AI judgment:** present a short school scenario and choose which
+  decision can be delegated to AI and which still requires a person. The
+  distractors should reflect realistic misconceptions, not absurd answers.
+
+### One-Screen Layout Contract
+
+On the supported desktop baselines `1366×625` and `1280×800`:
+
+- the complete stem, every response control and any essential legend must be
+  visible without page scrolling;
+- the question card, code block and options area must not have their own
+  scrollbar;
+- the question font must be at least 15 px;
+- choice and true/false tasks may have at most six visible options;
+- sort and match tasks may have at most six response elements;
+- one option may not exceed 90 characters;
+- the stem may not exceed 40 words; 26–40 words require editorial review.
+
+The automated Playwright layout gate enforces the no-scroll and font rules on
+desktop. Content preflight enforces the authored word, option and element
+budgets before a demo is issued or an official set is published. The question
+editor also provides scaled `1366×625` and `1280×800` previews with an explicit
+fit indicator; these previews support editorial work but do not replace the
+Playwright gate.
+
+Phone and tablet layouts may reflow vertically, but no response control may be
+hidden behind an undisclosed nested scrollbar. When a task cannot satisfy the
+desktop contract at a readable font size, shorten or split the task; do not
+shrink the text to make it pass.
+
 For every slot, variants must have the same:
 
 - primary skill;
@@ -249,6 +329,13 @@ For every slot, variants must have the same:
 - approximate reading load;
 - expected completion time;
 - scoring rule.
+
+Sibling variants share one `templateId`; the question ID identifies the
+individual variant. A `templateId` must not be reused in another grade unless
+the reasoning operation is deliberately and demonstrably more advanced.
+When legacy questions have no `templateId`, the normalized stem is the fallback
+variant-group key. The demo generator never places two members of one variant
+group in the same attempt.
 
 ## Set Validation
 
@@ -273,10 +360,40 @@ Activation must fail when:
 - the set contains an exact duplicate;
 - estimated time exceeds the grade limit.
 
-Composition deviations may remain warnings with an explicit administrator
-confirmation until the validator has enough pilot data to be enforced safely.
+An exact duplicate is calculated from the normalized stem, visible code,
+question type, public response data and image reference. Answer keys and
+explanations are excluded from that fingerprint. Therefore two Snail tasks
+with the same stem but different programs are variants, not exact duplicates;
+they may coexist in the bank but not in one generated demo.
 
-## Platform Gap: Per-Grade Event Rules
+Demo readiness is not inferred from one lucky draw. The admin preflight runs
+64 reproducible seeded compositions through the same generator and hard policy
+used by the public endpoint, and reports passed samples plus the number of
+unique sets. The generator itself uses backtracking, rejects repeated exact
+fingerprints and variant groups, and returns only a hard-policy-compliant set.
+Candidate rows are sorted by ID before seeded selection, so the same seed is
+stable even when PostgreSQL returns rows in another order. Questions with a
+blocking per-item content error or no progression band are removed before
+composition. The search has a strict node and time budget and fails closed with
+`422` when no compliant set is found; it must never exhaust the Node.js event
+loop. The 64-sample admin audit yields between samples so student and health
+requests continue to be served while the preflight runs.
+
+The current enforcement model is:
+
+- **Errors** block demo issuance and official publication/activation: wrong
+  count, delivery-boundary leak, unpublished task, exact duplicate, missing
+  taxonomy, missing image alt, excessive authored length/elements, event time
+  or cap mismatch, and estimated time over the limit.
+- **Warnings** remain visible for editorial action: distribution drift,
+  missing concept groups, weak mechanic/topic variety, excessive factual
+  repetition, missing timing/image-role metadata and vertical template reuse.
+
+Warnings do not silently disappear after publication. They stay visible in
+the event readiness report so the team can calibrate thresholds from pilot
+data rather than weakening them informally.
+
+## Event Rule Model
 
 The current event model stores one `questionsCount` and one `timeMinutes` value
 for the whole event. The common 45-minute rule now fits that model, but the
@@ -289,10 +406,11 @@ Safe transitional option for one shared event:
 - treat `questionsCount = 24` as the event-wide upper limit, while the attempt
   total is the number of tasks actually assigned to that student's grade.
 
-This works in the current attempt flow, but the admin event summary still shows
-the event-wide value and does not validate the exact per-grade totals.
+This is implemented in the current attempt flow. The readiness endpoint
+validates the exact per-grade totals even though the event table retains one
+event-wide cap.
 
-Target platform change:
+Future data-model improvement:
 
 - add versioned per-grade expected task counts;
 - make code exchange and attempt timing resolve the rule for the student's
@@ -320,17 +438,20 @@ decision explicitly changes it.
 7. Remove the difficulty-based training entry from primary student navigation
    while keeping `olympiad_training` infrastructure. **Implemented.**
 8. Configure one official event for 45 minutes with a 24-task cap, then assign
-   exactly 16, 20, 24 and 24 tasks to grades 1-4.
+   exactly 16, 20, 24 and 24 tasks to grades 1-4. **Admin defaults and
+   publication gate implemented.**
 9. Add an editorial preflight checklist to the event question picker.
+   **Implemented as a live readiness report with errors and warnings.**
+10. Freeze event question selection after leaving draft status.
+    **Implemented.**
 
 ### Requires Platform or Data-Model Work
 
 1. Store versioned demo blueprints and slot variants in the admin workflow.
-2. Add per-grade expected task counts and validation.
-3. Add automatic set-composition validation.
-4. Add `multi_select` and media-capable options.
-5. Add `estimatedSeconds` and a template/variant identifier.
-6. Add partial and weighted server scoring before compound tasks.
+2. Store per-grade expected task counts directly on the event model; exact
+   validation is already implemented against the approved policy.
+3. Add `multi_select` and media-capable options.
+4. Add partial and weighted server scoring before compound tasks.
 
 ## Pilot and Review
 

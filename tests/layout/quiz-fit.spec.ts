@@ -32,6 +32,7 @@ function makeFixture(difficulty: string) {
       ...base, id: 'fx-img', type: 'choice',
       q: 'Подивись на картинку. Що робить Розумко?',
       img: '/images/half/rozumko_hulf_thinks.png',
+      imageRole: 'essential',
       options: ['Думає', 'Спить', 'Біжить', 'Малює'],
       correct: 0,
       explanation: 'Розумко думає над задачею.',
@@ -180,6 +181,36 @@ async function assertNoScroll(page: Page, ctx: string) {
   expect(m.bodyOverflow, `${ctx}: .quiz-body скролиться на ${m.bodyOverflow}px`).toBeLessThanOrEqual(1)
 }
 
+// Desktop olympiad content must be discoverable without scrolling inside the
+// stem, code or answer area. This catches the competitor failure where the last
+// subquestion existed below a subtle inner scrollbar.
+async function assertDesktopQuestionFitsWithoutInnerScroll(page: Page, ctx: string) {
+  const viewport = page.viewportSize()!
+  if (viewport.width < 1024 || viewport.height < 600) return
+
+  const metrics = await page.evaluate(() => {
+    const selectors = ['.quiz-question-card', '#quiz-code:not(.hidden)', '#quiz-options']
+    const regions = selectors.flatMap(selector => {
+      const element = document.querySelector<HTMLElement>(selector)
+      if (!element) return []
+      return [{
+        selector,
+        overflow: element.scrollHeight - element.clientHeight,
+      }]
+    })
+    const question = document.querySelector<HTMLElement>('#quiz-question-text')
+    return {
+      regions,
+      questionFontPx: question ? Number.parseFloat(getComputedStyle(question).fontSize) : 0,
+    }
+  })
+
+  for (const region of metrics.regions) {
+    expect(region.overflow, `${ctx}: ${region.selector} hides ${region.overflow}px behind inner scroll`).toBeLessThanOrEqual(1)
+  }
+  expect(metrics.questionFontPx, `${ctx}: question font is below the 15px readability floor`).toBeGreaterThanOrEqual(15)
+}
+
 /** Елемент повністю видимий у вьюпорті. */
 async function assertInViewport(page: Page, selector: string, ctx: string) {
   const box = await page.locator(selector).boundingBox()
@@ -215,6 +246,7 @@ async function runQuiz(page: Page, questionCount: number) {
     const ctx = `питання ${i + 1}`
     await expect(page.locator('#quiz-question-text')).not.toHaveText('')
     await assertNoScroll(page, ctx)
+    await assertDesktopQuestionFitsWithoutInnerScroll(page, ctx)
 
     await answerCurrentQuestion(page)
 
