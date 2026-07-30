@@ -82,20 +82,20 @@ function answerKey(row: Pick<NewQuestion, 'type' | 'options' | 'correct'>): stri
 
 function stimulusKey(row: {
   id?: string
-  grade: number
-  q: string
+  grade?: number | null
+  q?: string | null
   code?: string | null
-  type: NewQuestion['type']
+  type?: NewQuestion['type']
   options?: unknown
   img?: string | null
   meta?: Record<string, unknown> | null
 }): string {
   const purpose = row.meta?.purpose === 'olympiad-demo' ? 'olympiad-demo' : 'general'
-  return `${purpose}::${row.grade}::${olympiadQuestionFingerprint({
+  return `${purpose}::${row.grade ?? 'no-grade'}::${olympiadQuestionFingerprint({
     id: row.id ?? 'authored',
-    q: row.q,
+    q: row.q ?? '',
     code: row.code,
-    type: row.type,
+    type: (row.type ?? 'choice') as NonNullable<NewQuestion['type']>,
     options: row.options,
     img: row.img,
   })}`
@@ -106,7 +106,7 @@ const pending: NewQuestion[] = []
 let skipped = 0
 const conflicts: string[] = []
 for (const row of rows) {
-  const key = stimulusKey(row as NewQuestion & { q: string; grade: number })
+  const key = stimulusKey(row)
   const existingKey = seen.get(key)
   const nextKey = answerKey(row)
   if (existingKey === undefined) {
