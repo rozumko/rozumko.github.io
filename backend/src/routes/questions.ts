@@ -1,14 +1,165 @@
 import type { FastifyInstance } from 'fastify'
-import { eq, and, sql, arrayContains } from 'drizzle-orm'
+import { eq, and, sql, arrayContains, inArray } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { questions, type QuestionTrack } from '../db/schema.js'
-import { stripOptionKeys } from './question-sanitize.js'
+import { sanitizeOlympiadQuestion, stripOptionKeys } from './question-sanitize.js'
 import { ALL_TOPICS } from '../lib/taxonomy.js'
 import type { QuestionChannel } from '../db/schema.js'
+import { scoreAttempt, type AnswerValue } from './attempt-validation.js'
+import {
+  createDemoToken,
+  OLYMPIAD_DEMO_QUESTION_COUNT,
+  OLYMPIAD_DEMO_TIME_MINUTES,
+  OLYMPIAD_DEMO_TOKEN_TTL_MS,
+  pickDemoQuestionSet,
+  verifyDemoToken,
+} from './olympiad-demo-validation.js'
 
 type PublicQuestionChannel = Exclude<QuestionChannel, 'class_game'>
 
 export async function questionsRoutes(app: FastifyInstance) {
+  app.post<{
+    Body: { grade: number }
+  }>('/demo/start', {
+    config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
+    schema: {
+      body: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['grade'],
+        properties: {
+          grade: { type: 'integer', minimum: 1, maximum: 4 },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    const rows = await db
+      .select({
+        id: questions.id,
+        q: questions.q,
+        code: questions.code,
+        type: questions.type,
+        options: questions.options,
+        correct: questions.correct,
+        explanation: questions.explanation,
+        img: questions.img,
+        imageAlt: questions.imageAlt,
+        difficulty: questions.difficulty,
+        track: questions.track,
+        topic: questions.topic,
+        conceptKey: questions.conceptKey,
+        progressionBand: questions.progressionBand,
+        grade: questions.grade,
+      })
+      .from(questions)
+      .where(and(
+        eq(questions.grade, req.body.grade),
+        eq(questions.isOlympiad, false),
+        eq(questions.editorialStatus, 'published'),
+        arrayContains(questions.channels, ['olympiad_training']),
+      ))
+
+    let selectedIds: string[]
+    try {
+      selectedIds = pickDemoQuestionSet(req.body.grade, rows)
+    } catch (error) {
+      req.log.error({ err: error, grade: req.body.grade }, 'Unable to compose olympiad demo')
+      return reply.code(422).send({ error: 'Для цього класу ще бракує збалансованого набору демо-завдань.' })
+    }
+
+    const byId = new Map(rows.map(question => [question.id, question]))
+    const selected = selectedIds.map(id => byId.get(id)!)
+
+    const issuedAt = Date.now()
+    return reply.send({
+      demoToken: createDemoToken(req.body.grade, selectedIds, issuedAt),
+      tokenExpiresAt: issuedAt + OLYMPIAD_DEMO_TOKEN_TTL_MS,
+      tokenTtlMs: OLYMPIAD_DEMO_TOKEN_TTL_MS,
+      questions: selected.map(sanitizeOlympiadQuestion),
+      questionsCount: OLYMPIAD_DEMO_QUESTION_COUNT,
+      timeMinutes: OLYMPIAD_DEMO_TIME_MINUTES,
+    })
+  })
+
+  app.post<{
+    Body: {
+      demoToken: string
+      answers: Array<{ questionId: string; answer: AnswerValue }>
+    }
+  }>('/demo/finish', {
+    config: { rateLimit: { max: 30, timeWindow: '1 minute' } },
+    schema: {
+      body: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['demoToken', 'answers'],
+        properties: {
+          demoToken: { type: 'string', minLength: 40, maxLength: 4096 },
+          answers: {
+            type: 'array',
+            maxItems: OLYMPIAD_DEMO_QUESTION_COUNT,
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['questionId', 'answer'],
+              properties: {
+                questionId: { type: 'string', format: 'uuid' },
+                answer: {
+                  anyOf: [
+                    { type: 'integer' },
+                    { type: 'string', maxLength: 500 },
+                    {
+                      type: 'array',
+                      maxItems: 50,
+                      items: { type: 'integer' },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    const payload = verifyDemoToken(req.body.demoToken)
+    if (!payload) return reply.code(403).send({ error: 'Демо-сесію завершено або пошкоджено. Запусти демо ще раз.' })
+
+    const issuedIds = new Set(payload.questionIds)
+    const answerIds = req.body.answers.map(item => item.questionId)
+    if (new Set(answerIds).size !== answerIds.length || answerIds.some(id => !issuedIds.has(id))) {
+      return reply.code(400).send({ error: 'Відповіді не належать до цієї демо-сесії.' })
+    }
+
+    const rows = await db
+      .select({
+        id: questions.id,
+        type: questions.type,
+        correct: questions.correct,
+        explanation: questions.explanation,
+        options: questions.options,
+      })
+      .from(questions)
+      .where(and(
+        inArray(questions.id, payload.questionIds),
+        eq(questions.grade, payload.grade),
+        eq(questions.isOlympiad, false),
+        inArray(questions.editorialStatus, ['published', 'archived']),
+        arrayContains(questions.channels, ['olympiad_training']),
+      ))
+
+    if (rows.length !== OLYMPIAD_DEMO_QUESTION_COUNT) {
+      return reply.code(409).send({ error: 'Склад демо змінився. Запусти демо ще раз.' })
+    }
+
+    const answers = Object.fromEntries(req.body.answers.map(item => [item.questionId, item.answer]))
+    const byId = new Map(rows.map(question => [question.id, question]))
+    const orderedQuestions = payload.questionIds.map(id => byId.get(id)!)
+    const { score } = scoreAttempt(orderedQuestions, answers)
+
+    return reply.send({ score, total: orderedQuestions.length })
+  })
+
   // GET /api/questions?grade=4&isOlympiad=false&count=10&difficulty=hard&track=ai-basics
   app.get<{
     Querystring: { grade?: string; isOlympiad?: string; channel?: PublicQuestionChannel; count?: string; difficulty?: string; track?: string; topic?: string; hideAnswers?: string }

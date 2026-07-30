@@ -18,6 +18,7 @@ For a small pilot, one person may cover event owner and technical operator.
 ## 24 Hours Before
 
 - [ ] Run the full `docs/smoke-test.md` checklist against the intended deployment.
+- [ ] Confirm every grade set satisfies `docs/olympiad-content-standard.md`.
 - [ ] Confirm the GitHub Pages and Backend CI workflows passed for the deployed commit.
 - [ ] Confirm `GET /ping` returns `db: ok`.
 - [ ] Confirm monitoring is watching `/ping`.
