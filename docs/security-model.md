@@ -76,7 +76,7 @@ the physical code to obtain a fresh token before the queue can flush.
 |---|---|
 | Static practice bundle | May include keys intentionally for local feedback |
 | Public question API | Strips top-level and nested keys |
-| Demo API response | Strips top-level and nested keys; current source items may also exist in the public static practice bundle |
+| Demo API response | Strips top-level and nested keys. Legacy source items may also exist in the public static bundle; the authored demo package (`meta.purpose = 'olympiad-demo'`) is excluded from the export query and fails the export closed if it ever reaches the bundle sanitizer |
 | Official attempt | Strips top-level and nested keys |
 | Official result | Returns only the aggregate score |
 | Teacher/admin results | Excludes raw `answers` |

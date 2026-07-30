@@ -8,11 +8,13 @@
 // practice-пул і так навмисно віддає їх у браузер для локального фідбеку.
 // Олімпіадні питання сюди потрапити не можуть: WHERE isOlympiad=false у запиті
 // + fail-closed guard у sanitizeForStaticBundle (див. lib/practice-export.ts).
+// Так само не потрапляє серверно-оцінюваний демо-пакет (meta.purpose):
+// він ділить канал olympiad_training, але його ключі мають лишатися приватними.
 
 import { mkdirSync, writeFileSync } from 'fs'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
-import { and, eq, arrayContains } from 'drizzle-orm'
+import { and, eq, arrayContains, sql } from 'drizzle-orm'
 import { db } from '../src/db/index.js'
 import { questions } from '../src/db/schema.js'
 import { sanitizeForStaticBundle, groupByGrade } from '../src/lib/practice-export.js'
@@ -40,12 +42,16 @@ const rows = await db
     grade:       questions.grade,
     isOlympiad:  questions.isOlympiad,
     channels:    questions.channels,
+    meta:        questions.meta,
   })
   .from(questions)
   .where(and(
     eq(questions.isOlympiad, false),
     eq(questions.editorialStatus, 'published'),
     arrayContains(questions.channels, ['olympiad_training']),
+    // The server-scored demo package shares this channel but must never reach
+    // a static file: its answer keys are the whole point of scoring on the server.
+    sql`${questions.meta}->>'purpose' IS DISTINCT FROM 'olympiad-demo'`,
   ))
 
 if (rows.length === 0) {
