@@ -7,7 +7,7 @@ function row(overrides: Partial<ExportableQuestionRow> = {}): ExportableQuestion
     id: 'q-1', q: '2+2?', code: null, type: 'choice', options: ['4', '5'],
     correct: 0, explanation: null, difficulty: 'easy', track: null, topic: null,
     img: null, imageAlt: null, conceptKey: null, progressionBand: null, version: 1,
-    grade: 1, isOlympiad: false, channels: ['olympiad_training'],
+    grade: 1, isOlympiad: false, channels: ['olympiad_training'], meta: null,
     ...overrides,
   }
 }
@@ -35,6 +35,22 @@ test('sanitizeForStaticBundle: legacy null isOlympiad fails closed', () => {
 
 test('sanitizeForStaticBundle: question outside olympiad_training fails closed', () => {
   assert.throws(() => sanitizeForStaticBundle([row({ channels: ['path'] })]), /olympiad_training/)
+})
+
+test('sanitizeForStaticBundle: a server-scored demo question fails the export closed', () => {
+  assert.throws(
+    () => sanitizeForStaticBundle([
+      row(),
+      row({ id: 'q-2', meta: { purpose: 'olympiad-demo', slotId: 'g1-demo-01' } }),
+    ]),
+    /server-scored olympiad demo/,
+  )
+})
+
+test('sanitizeForStaticBundle: editorial metadata never reaches the static bundle', () => {
+  const out = sanitizeForStaticBundle([row({ meta: { source: 'authored', templateId: 'g1-t01' } })])
+  assert.equal(out.length, 1)
+  assert.equal('meta' in out[0]!, false)
 })
 
 test('sanitizeForStaticBundle: рядки без валідного grade пропускаються', () => {

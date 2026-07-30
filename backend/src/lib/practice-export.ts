@@ -24,14 +24,18 @@ export interface ExportableQuestionRow {
   grade: number | null
   isOlympiad: boolean
   channels: string[]
+  meta: Record<string, unknown> | null
 }
 
-export type BundleQuestion = Omit<ExportableQuestionRow, 'isOlympiad' | 'channels' | 'grade'> & { grade: number }
+export type BundleQuestion =
+  Omit<ExportableQuestionRow, 'isOlympiad' | 'channels' | 'grade' | 'meta'> & { grade: number }
 
 /**
  * Пропускає в бандл лише не-олімпіадні питання з валідним класом.
  * isOlympiad=true → THROW (fail closed, а не тихий фільтр: якщо запит-джерело
  * зламався і приніс олімпіадне питання — експорт має впасти, не «підчистити»).
+ * meta.purpose='olympiad-demo' → THROW з тієї ж причини: демо оцінюється на
+ * сервері, тож його ключі не можуть лежати у статичному файлі.
  * grade=null → рядок пропускається (немає файла, куди його класти).
  * Сортує за id для стабільних git-диффів бандла.
  */
@@ -44,8 +48,11 @@ export function sanitizeForStaticBundle(rows: ExportableQuestionRow[]): BundleQu
     if (!row.channels.includes('olympiad_training')) {
       throw new Error(`Question ${row.id} is not assigned to the olympiad_training channel`)
     }
+    if (row.meta?.purpose === 'olympiad-demo') {
+      throw new Error(`Question ${row.id} belongs to the server-scored olympiad demo package`)
+    }
     if (row.grade == null || row.grade < 1 || row.grade > 4) continue
-    const { isOlympiad: _oly, channels: _channels, ...rest } = row
+    const { isOlympiad: _oly, channels: _channels, meta: _meta, ...rest } = row
     out.push({ ...rest, grade: row.grade })
   }
   return out.sort((a, b) => a.id.localeCompare(b.id))
