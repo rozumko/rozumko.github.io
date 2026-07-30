@@ -254,6 +254,32 @@ export async function loadQuestions({
   return data.questions.map(normalizeQuestion)
 }
 
+export async function startOlympiadDemo(grade: number): Promise<{
+  demoToken: string
+  tokenExpiresAt: number
+  tokenTtlMs: number
+  questions: Question[]
+  timeMinutes: number
+  questionsCount: number
+}> {
+  const data = await request('/api/questions/demo/start', {
+    method: 'POST',
+    body: JSON.stringify({ grade }),
+  })
+  data.questions = data.questions.map(normalizeQuestion)
+  return data
+}
+
+export async function finishOlympiadDemo(
+  demoToken: string,
+  answers: Array<{ questionId: string; answer: number | string | number[] }>,
+): Promise<{ score: number; total: number }> {
+  return request('/api/questions/demo/finish', {
+    method: 'POST',
+    body: JSON.stringify({ demoToken, answers }),
+  })
+}
+
 export async function finishAttempt(attemptId: string, attemptToken: string): Promise<{ score: number; total: number }> {
   return request(`/api/attempt/${attemptId}/finish`, {
     method: 'POST',
@@ -1842,6 +1868,39 @@ export function getAdminQuestionMatrix(params: Omit<AdminQuestionFilters, 'grade
   if (params.channel)            p.set('channel',    String(params.channel))
   if (params.unassigned)         p.set('unassigned', 'true')
   return authRequest(`/api/admin/questions/matrix?${p}`)
+}
+
+export interface AdminDemoCoverageCell {
+  track: QuestionTrack
+  difficulty: 'easy' | 'medium' | 'hard'
+  requiredSlots: number
+  candidates: number
+  targetCandidates: number
+  missingCandidates: number
+  mechanics: QuestionType[]
+  topics: number
+  images: number
+}
+
+export interface AdminDemoCoverageGrade {
+  grade: number
+  ready: boolean
+  canCompose: boolean
+  cells: AdminDemoCoverageCell[]
+  sample: {
+    mechanics: QuestionType[]
+    images: number
+    maxTopicRepeats: number
+    progression: Record<'recognize' | 'apply' | 'reason' | 'unassigned', number>
+  } | null
+  issues: Array<{
+    code: 'cannot-compose' | 'variant-gap' | 'mechanic-gap' | 'image-gap' | 'topic-duplication'
+    message: string
+  }>
+}
+
+export function getAdminDemoCoverage(): Promise<{ grades: AdminDemoCoverageGrade[] }> {
+  return authRequest('/api/admin/questions/demo-coverage')
 }
 
 export interface BulkQuestionResult {

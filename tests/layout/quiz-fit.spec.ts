@@ -101,10 +101,64 @@ function makeFixture(difficulty: string) {
   ]
 }
 
+function makeSanitizedFixture(difficulty: string) {
+  return makeFixture(difficulty).map(question => {
+    const sanitized = structuredClone(question) as Record<string, unknown>
+    delete sanitized.correct
+    delete sanitized.explanation
+    if (sanitized.options && typeof sanitized.options === 'object' && !Array.isArray(sanitized.options)) {
+      const options = { ...(sanitized.options as Record<string, unknown>) }
+      delete options.answer
+      delete options.correctOrder
+      delete options.pairs
+      sanitized.options = options
+    }
+    return sanitized
+  })
+}
+
+function makeTwelveQuestionDemoFixture(difficulty: string, suffix: string) {
+  const base = makeSanitizedFixture(difficulty)
+  return [
+    ...base,
+    ...base.slice(0, 3).map((question, index) => ({ ...question, id: `fx-${suffix}-${index}` })),
+  ]
+}
+
+async function routeDemoApi(
+  page: Page,
+  demoQuestions: ReturnType<typeof makeSanitizedFixture>,
+  options: { tokenExpiresAt?: number; tokenTtlMs?: number } = {},
+) {
+  const tokenTtlMs = options.tokenTtlMs ?? 60 * 60 * 1000
+  await page.route('**/api/questions/demo/start', route =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        demoToken: 'layout-test-demo-token',
+        tokenExpiresAt: options.tokenExpiresAt ?? Date.now() + tokenTtlMs,
+        tokenTtlMs,
+        questions: demoQuestions,
+        questionsCount: demoQuestions.length,
+        timeMinutes: 20,
+      }),
+    }),
+  )
+  await page.route('**/api/questions/demo/finish', route =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({ score: 0, total: demoQuestions.length }),
+    }),
+  )
+}
+
 async function routeQuestions(page: Page, difficulty: string) {
+  const demoQuestions = makeSanitizedFixture(difficulty)
+
   await page.route('**/questions/grade-*.json', route =>
     route.fulfill({ contentType: 'application/json', body: JSON.stringify(makeFixture(difficulty)) }),
   )
+  await routeDemoApi(page, demoQuestions)
 }
 
 /** Інваріанти quiz-fit у поточному стані екрана. */
@@ -184,18 +238,163 @@ for (const vp of VIEWPORTS) {
   test.describe(`quiz-fit @ ${vp.name}`, () => {
     test.use({ viewport: { width: vp.width, height: vp.height } })
 
-    test('тренування: всі механіки без прокрутки', async ({ page }) => {
+    test('демо: всі механіки без прокрутки', async ({ page }) => {
       await routeQuestions(page, 'medium')
       await page.goto('/student.html')
-      await page.locator('#show-practice-btn').click()
-      await page.locator('#practice-grade-buttons [data-grade="3"]').click()
-      await page.locator('#practice-difficulty-buttons [data-difficulty="medium"]').click()
-      await page.locator('#start-practice-btn').click()
+      await page.locator('#show-demo-btn').click()
+      await page.locator('#demo-grade-buttons [data-demo-grade="3"]').click()
+      await page.locator('#start-demo-free-btn').click()
       await expect(page.locator('#quiz-overlay')).toHaveClass(/active/)
       await runQuiz(page, 9)
     })
   })
 }
+
+test.describe('quiz recovery runtime', () => {
+  test.use({ viewport: { width: 1280, height: 800 } })
+
+  test('restores a valid demo backup into the quiz overlay', async ({ page }) => {
+    const questions = makeTwelveQuestionDemoFixture('medium', 'recovery')
+    const now = Date.now()
+    await page.addInitScript(({ questions, now }) => {
+      sessionStorage.setItem('rozumko_demo_backup', JSON.stringify({
+        demoToken: 'layout-test-recovery-token',
+        recoveryExpiresAt: now + 60 * 60 * 1000,
+        grade: 3,
+        questions,
+        questionsCount: questions.length,
+        currentIdx: 2,
+        answeredIds: [questions[0].id, questions[1].id],
+        savedAnswers: [[questions[0].id, 0], [questions[1].id, 0]],
+        startedAt: now - 60 * 1000,
+        deadlineAt: now + 10 * 60 * 1000,
+        savedAt: now,
+      }))
+    }, { questions, now })
+
+    await page.goto('/student.html')
+
+    await expect(page.locator('#quiz-overlay')).toHaveClass(/active/)
+    await expect(page.locator('#quiz-mode-badge')).toHaveText('Демо')
+    await expect(page.locator('#quiz-progress-text')).toHaveText('3 / 12')
+    await expect(page.locator('#quiz-loading-overlay')).not.toHaveClass(/active/)
+    await expect.poll(() => page.evaluate(() => sessionStorage.getItem('rozumko_demo_backup') !== null)).toBe(true)
+  })
+
+  test('rejects an expired demo recovery window before starting a timer', async ({ page }) => {
+    const questions = makeTwelveQuestionDemoFixture('medium', 'expired')
+    const now = Date.now()
+    await page.addInitScript(({ questions, now }) => {
+      sessionStorage.setItem('rozumko_demo_backup', JSON.stringify({
+        demoToken: 'layout-test-expired-token',
+        recoveryExpiresAt: now - 1,
+        grade: 3,
+        questions,
+        questionsCount: questions.length,
+        currentIdx: 2,
+        answeredIds: [],
+        savedAnswers: [],
+        startedAt: now - 60 * 1000,
+        deadlineAt: now + 10 * 60 * 1000,
+        savedAt: now,
+      }))
+    }, { questions, now })
+
+    await page.goto('/student.html')
+
+    await expect(page.locator('#quiz-overlay')).not.toHaveClass(/active/)
+    await expect(page.locator('#quiz-progress-text')).toHaveText('')
+    await expect.poll(() => page.evaluate(() => sessionStorage.getItem('rozumko_demo_backup'))).toBeNull()
+  })
+
+  test('restores a demo with a stable device clock skew using relative TTL', async ({ page }) => {
+    const questions = makeTwelveQuestionDemoFixture('medium', 'clock-skew')
+    const realNow = Date.now()
+    const tokenTtlMs = 2 * 60 * 60 * 1000
+    const skewMs = 3 * 60 * 60 * 1000
+    await page.addInitScript(offset => {
+      const nativeNow = Date.now.bind(Date)
+      Date.now = () => nativeNow() + offset
+    }, skewMs)
+    await routeDemoApi(page, questions, {
+      tokenExpiresAt: realNow + tokenTtlMs,
+      tokenTtlMs,
+    })
+
+    await page.goto('/student.html')
+    await page.locator('#show-demo-btn').click()
+    await page.locator('#demo-grade-buttons [data-demo-grade="3"]').click()
+    await page.locator('#start-demo-free-btn').click()
+    await expect(page.locator('#quiz-overlay')).toHaveClass(/active/)
+    await expect.poll(() => page.evaluate(() => {
+      const raw = sessionStorage.getItem('rozumko_demo_backup')
+      if (!raw) return false
+      const backup = JSON.parse(raw)
+      return backup.recoveryExpiresAt > Date.now()
+        && backup.questionsCount === 12
+    })).toBe(true)
+
+    await page.reload()
+
+    await expect(page.locator('#quiz-overlay')).toHaveClass(/active/)
+    await expect(page.locator('#quiz-progress-text')).toHaveText('1 / 12')
+    await expect.poll(() => page.evaluate(() => sessionStorage.getItem('rozumko_demo_backup') !== null)).toBe(true)
+  })
+
+  test('keeps a selected demo answer when reloaded before Next', async ({ page }) => {
+    const questions = makeTwelveQuestionDemoFixture('medium', 'answer-recovery')
+    await routeDemoApi(page, questions)
+
+    await page.goto('/student.html')
+    await page.locator('#show-demo-btn').click()
+    await page.locator('#demo-grade-buttons [data-demo-grade="3"]').click()
+    await page.locator('#start-demo-free-btn').click()
+    await expect(page.locator('#quiz-overlay')).toHaveClass(/active/)
+    await page.locator('#quiz-options .quiz-option').first().click()
+    await expect(page.locator('#quiz-overlay')).toHaveClass(/quiz-answered/)
+    await expect.poll(() => page.evaluate(() => {
+      const raw = sessionStorage.getItem('rozumko_demo_backup')
+      return raw ? JSON.parse(raw).savedAnswers.length : 0
+    })).toBe(1)
+
+    await page.reload()
+
+    await expect(page.locator('#quiz-overlay')).toHaveClass(/active/)
+    await expect(page.locator('#quiz-progress-text')).toHaveText('1 / 12')
+    await expect(page.locator('.quiz-nav-chip').first()).toHaveClass(/quiz-nav-chip--answered/)
+    await expect(page.locator('#quiz-options .quiz-option[aria-checked="true"]')).toHaveCount(1)
+  })
+
+  test('opens a pending official attempt instead of swallowing it', async ({ page }) => {
+    const questions = makeSanitizedFixture('hard')
+    await page.route('**/api/attempt/*/heartbeat', route =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ pausedSeconds: 0, remainingSeconds: 40 * 60 }),
+      }),
+    )
+    await page.addInitScript(questions => {
+      sessionStorage.setItem('pendingOlympiad', JSON.stringify({
+        attemptId: '20000000-0000-4000-8000-000000000001',
+        attemptToken: 'layout-test-attempt-token',
+        code: 'ABCD-1234',
+        grade: 3,
+        questions,
+        answeredQuestionIds: [],
+        remainingSeconds: 40 * 60,
+        timeMinutes: 45,
+        questionsCount: questions.length,
+      }))
+    }, questions)
+
+    await page.goto('/student.html')
+
+    await expect(page.locator('#quiz-overlay')).toHaveClass(/active/)
+    await expect(page.locator('#quiz-mode-badge')).toHaveText('Олімпіада')
+    await expect(page.locator('#quiz-progress-text')).toHaveText(`1 / ${questions.length}`)
+    await expect(page.locator('#quiz-loading-overlay')).not.toHaveClass(/active/)
+  })
+})
 
 // Домашня місія (home.html, #mission-quiz + body.mission-active) — той самий
 // контракт, але інша розмітка (fixed-секція замість оверлея) і mission-runner.

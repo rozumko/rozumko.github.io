@@ -437,6 +437,41 @@
 .admin-matrix__link:focus-visible { outline: 3px solid var(--adm-sky); outline-offset: 2px; }
 .admin-matrix__cell--gap .admin-matrix__link { color: var(--adm-rose); font-weight: 700; }
 
+.admin-demo-coverage {
+  display: grid;
+  gap: var(--sp-3);
+  margin-top: var(--sp-3);
+}
+.admin-demo-grade {
+  padding: var(--sp-3);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--r-lg);
+  background: var(--adm-surface);
+}
+.admin-demo-grade--ready { border-color: rgba(16, 185, 129, 0.55); }
+.admin-demo-grade--gap { border-color: rgba(245, 158, 11, 0.55); }
+.admin-demo-grade__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+.admin-demo-grade__header h4 { margin: 0; color: var(--adm-text); }
+.admin-demo-grade__metrics,
+.admin-demo-grade__ok {
+  margin: var(--sp-2) 0;
+  color: var(--adm-text-muted);
+  font-size: var(--font-size-xs);
+}
+.admin-demo-grade__issues {
+  margin: var(--sp-2) 0;
+  padding-left: var(--sp-5);
+  color: var(--adm-rose);
+  font-size: var(--font-size-xs);
+}
+.admin-demo-grade__cell-gap strong { color: var(--adm-rose); }
+
 /* ── Bulk delivery actions ───────────────────────────────────── */
 .admin-bulk {
   display: flex;

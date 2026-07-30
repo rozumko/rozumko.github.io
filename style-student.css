@@ -1221,12 +1221,12 @@ body.mission-active.mission-answered #mission-quiz .quiz-explanation {
    of scrolling away from the options (utils/question-fit.ts). */
 .quiz-overlay .quiz-question-text[data-qlength="long"],
 #mission-quiz .quiz-question-text[data-qlength="long"] {
-  font-size: calc(var(--qf-font-question) * 0.78);
+  font-size: max(.9375rem, calc(var(--qf-font-question) * 0.78));
   line-height: 1.28;
 }
 .quiz-overlay .quiz-question-text[data-qlength="xlong"],
 #mission-quiz .quiz-question-text[data-qlength="xlong"] {
-  font-size: calc(var(--qf-font-question) * 0.62);
+  font-size: max(.9375rem, calc(var(--qf-font-question) * 0.62));
   line-height: 1.32;
 }
 
@@ -1527,6 +1527,98 @@ body.mission-active.mission-answered #mission-quiz .quiz-feedback-wrap {
   }
 }
 
+/* Short landscape phones have enough width for two answer columns but very
+   little vertical space. Keep every control at the 44px touch floor, compact
+   decorative spacing, and float the pre-answer skip action over the options'
+   reserved bottom inset instead of giving it a separate flex row. */
+@media (max-height: 480px) and (orientation: landscape) {
+  .quiz-overlay {
+    --qf-gap: .25rem;
+    --qf-font-question: clamp(1rem, 4.2vh, 1.2rem);
+    --qf-font-option: 1rem;
+    --qf-option-min-h: 2.75rem;
+    --qf-card-pad: .5rem;
+  }
+
+  .quiz-overlay .quiz-header {
+    padding: .25rem .75rem;
+  }
+
+  .quiz-overlay .quiz-timer,
+  .quiz-overlay .btn-quiz-quit {
+    min-height: 2.25rem;
+    padding: .25rem .75rem;
+  }
+
+  .quiz-overlay .quiz-progress-bar-wrap {
+    height: .45rem;
+  }
+
+  .quiz-overlay .quiz-nav {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: .25rem;
+    padding: .25rem .75rem 0;
+    overflow-x: auto;
+  }
+
+  .quiz-overlay .quiz-nav-chip {
+    flex: 0 0 2rem;
+    width: 2rem;
+    height: 2rem;
+    font-size: .875rem;
+  }
+
+  .quiz-overlay .quiz-body {
+    padding: .375rem .75rem;
+  }
+
+  .quiz-overlay .quiz-question-card {
+    min-height: 0;
+    max-height: 18vh;
+    padding: .5rem;
+    border-width: 2px;
+  }
+
+  .quiz-overlay .quiz-code {
+    max-height: 17vh;
+    padding: .375rem .625rem;
+    font-size: .8rem;
+    line-height: 1.25;
+  }
+
+  .quiz-overlay .quiz-options--grid,
+  .quiz-overlay .quiz-options--two,
+  .quiz-overlay .quiz-options--stack {
+    gap: .375rem;
+  }
+
+  .quiz-overlay .quiz-option,
+  .quiz-overlay .quiz-options--two > button {
+    min-height: 2.75rem;
+    padding: .375rem .75rem;
+    border-width: 2px;
+  }
+
+  .quiz-overlay:not(.quiz-answered) .quiz-options {
+    padding-bottom: 3rem;
+  }
+
+  .quiz-overlay:not(.quiz-answered) .quiz-feedback-wrap {
+    position: absolute;
+    right: .75rem;
+    bottom: .5rem;
+    z-index: 4;
+  }
+
+  .quiz-overlay .btn-skip {
+    min-height: 2.75rem;
+    margin-top: 0;
+    padding: .375rem 1rem;
+    font-size: .95rem;
+  }
+}
+
 /* ── Результат overlay ──────────────────────────────────────── */
 
 .result-overlay {
@@ -1609,6 +1701,12 @@ body.mission-active.mission-answered #mission-quiz .quiz-feedback-wrap {
   margin-bottom: var(--sp-5);
 }
 .result-error__hint { font-size: .8em; opacity: .7; }
+.result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-3);
+}
 
 /* ── Quit confirm overlay ───────────────────────────────────── */
 

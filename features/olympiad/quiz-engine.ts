@@ -21,8 +21,8 @@ export async function loadQuestions(grade: number, mode: string, count: number, 
 export function getModeConfig(mode: string, event: { questionsCount?: number; timeMinutes?: number } | null = null): ModeConfig {
   const defaults: Record<string, ModeConfig> = {
     practice: { count: 10, timeMinutes: null, showExplanation: true,  saveResult: false },
-    demo:     { count: 5,  timeMinutes: 10,   showExplanation: false, saveResult: false },
-    olympiad: { count: 10, timeMinutes: 15,   showExplanation: false, saveResult: true  },
+    demo:     { count: 12, timeMinutes: 20,   showExplanation: false, saveResult: false },
+    olympiad: { count: 24, timeMinutes: 45,   showExplanation: false, saveResult: true  },
   }
   const cfg = { ...defaults[mode] }
   if (!cfg) return defaults['practice']

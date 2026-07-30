@@ -1,9 +1,9 @@
 import {
-  getAdminQuestions, getAdminQuestionCounts, getAdminQuestionMatrix, updateQuestionChannels,
+  getAdminQuestions, getAdminQuestionCounts, getAdminQuestionMatrix, getAdminDemoCoverage, updateQuestionChannels,
   createQuestion, updateQuestion, deleteQuestion,
   setQuestionEditorialStatus, setQuestionEditorialStatusBulk, deleteQuestionsBulk,
   getQuestionRevisions, restoreQuestionRevision,
-  type AdminQuestionFilters, type AdminQuestionMatrixCell,
+  type AdminDemoCoverageGrade, type AdminQuestionFilters, type AdminQuestionMatrixCell,
   type Question, type QuestionChannel, type QuestionType,
 } from '../../features/api/client.js'
 import { createFocusTrap } from '../../utils/focus-trap.js'
@@ -194,6 +194,78 @@ function renderMatrix(cells: AdminQuestionMatrixCell[], track: string): string {
 // ─── Bulk delivery change ─────────────────────────────────────────────────────
 // Channels are delivery, not authored content, so a selection can be moved
 // between sections in one action (backend: POST /api/admin/questions/channels).
+async function refreshDemoCoverage(): Promise<void> {
+  const panel = $maybe<HTMLDetailsElement>('q-demo-coverage-panel')
+  const box = $maybe('q-demo-coverage')
+  if (!panel || !box || !panel.open) return
+  box.textContent = 'Перевіряємо покриття…'
+  try {
+    const { grades } = await getAdminDemoCoverage()
+    box.innerHTML = grades.map(renderDemoCoverageGrade).join('')
+    for (const button of box.querySelectorAll<HTMLButtonElement>('[data-demo-gap-grade]')) {
+      button.addEventListener('click', () => {
+        $<HTMLSelectElement>('q-filter-grade').value = button.dataset.demoGapGrade ?? ''
+        $<HTMLSelectElement>('q-filter-track').value = button.dataset.demoGapTrack ?? ''
+        fillTopicSelect(
+          $<HTMLSelectElement>('q-filter-topic'),
+          button.dataset.demoGapTrack ?? '',
+          'Всі теми',
+        )
+        $<HTMLSelectElement>('q-filter-difficulty').value = button.dataset.demoGapDifficulty ?? ''
+        $<HTMLSelectElement>('q-filter-status').value = 'published'
+        selectSection('olympiad_training')
+      })
+    }
+  } catch (err) {
+    box.textContent = (err as Error).message
+  }
+}
+
+function renderDemoCoverageGrade(coverage: AdminDemoCoverageGrade): string {
+  const sample = coverage.sample
+  const statusClass = coverage.ready ? 'admin-demo-grade--ready' : 'admin-demo-grade--gap'
+  const status = coverage.ready ? 'Готово' : coverage.canCompose ? 'Потрібне наповнення' : 'Демо не складається'
+  const metrics = sample
+    ? `${sample.mechanics.length}/5 механік · ${sample.images}/2 візуальних · прогресія ${sample.progression.recognize}/${sample.progression.apply}/${sample.progression.reason}`
+    : 'Неможливо побудувати тестовий набір'
+  const issues = coverage.issues.length
+    ? `<ul class="admin-demo-grade__issues">${coverage.issues.map(issue => `<li>${esc(issue.message)}</li>`).join('')}</ul>`
+    : '<p class="admin-demo-grade__ok">Усі обов’язкові перевірки пройдено.</p>'
+
+  const cells = coverage.cells.map(cell => {
+    const gap = cell.missingCandidates > 0
+    const mechanicLabels = cell.mechanics.map(type => TYPE_LABELS[type] ?? type).join(', ') || 'немає'
+    return `<tr class="${gap ? 'admin-demo-grade__cell-gap' : ''}">
+      <td>${esc(TRACK_LABELS[cell.track] ?? cell.track)}</td>
+      <td>${esc(DIFF_LABELS[cell.difficulty] ?? cell.difficulty)}</td>
+      <td>${cell.requiredSlots}</td>
+      <td><strong>${cell.candidates}/${cell.targetCandidates}</strong></td>
+      <td>${esc(mechanicLabels)}</td>
+      <td>
+        <button type="button" class="btn-adm-ghost btn--sm"
+                data-demo-gap-grade="${coverage.grade}"
+                data-demo-gap-track="${esc(cell.track)}"
+                data-demo-gap-difficulty="${esc(cell.difficulty)}">Відкрити</button>
+      </td>
+    </tr>`
+  }).join('')
+
+  return `<section class="admin-demo-grade ${statusClass}">
+    <div class="admin-demo-grade__header">
+      <h4>${coverage.grade} клас</h4>
+      <span class="qi-badge ${coverage.ready ? 'qi-badge--easy' : 'qi-badge--medium'}">${status}</span>
+    </div>
+    <p class="admin-demo-grade__metrics">${esc(metrics)}</p>
+    ${issues}
+    <div class="admin-matrix__scroll">
+      <table class="admin-matrix__table">
+        <thead><tr><th>Напрям</th><th>Складність</th><th>Слотів</th><th>Є / ціль</th><th>Механіки</th><th></th></tr></thead>
+        <tbody>${cells}</tbody>
+      </table>
+    </div>
+  </section>`
+}
+
 const selectedIds = new Set<string>()
 
 /** Mirrors the server's maxItems on the bulk routes. */
@@ -338,6 +410,8 @@ export function initQuestionsTab() {
   // The coverage view is loaded only while it is open — it is a planning tool,
   // not something every list refresh should pay for.
   $maybe<HTMLDetailsElement>('q-matrix-panel')?.addEventListener('toggle', () => { void loadQuestionsTab() })
+  $maybe<HTMLDetailsElement>('q-demo-coverage-panel')?.addEventListener('toggle', () => { void refreshDemoCoverage() })
+  $<HTMLButtonElement>('q-demo-coverage-refresh').addEventListener('click', () => { void refreshDemoCoverage() })
   $<HTMLButtonElement>('q-bulk-add').addEventListener('click', () => { void applyBulkChannel('add') })
   $<HTMLButtonElement>('q-bulk-remove').addEventListener('click', () => { void applyBulkChannel('remove') })
   $<HTMLButtonElement>('q-bulk-publish').addEventListener('click', () => { void applyBulkStatus('published') })
