@@ -6,6 +6,7 @@ import { sanitizeOlympiadQuestion, stripOptionKeys } from './question-sanitize.j
 import { ALL_TOPICS } from '../lib/taxonomy.js'
 import type { QuestionChannel } from '../db/schema.js'
 import { scoreAttempt, type AnswerValue } from './attempt-validation.js'
+import { analyzeOlympiadSet, type OlympiadQuestionForPolicy } from '../lib/olympiad-content-policy.js'
 import {
   createDemoToken,
   OLYMPIAD_DEMO_QUESTION_COUNT,
@@ -33,7 +34,7 @@ export async function questionsRoutes(app: FastifyInstance) {
       },
     },
   }, async (req, reply) => {
-    const rows = await db
+    const rows = (await db
       .select({
         id: questions.id,
         q: questions.q,
@@ -50,6 +51,10 @@ export async function questionsRoutes(app: FastifyInstance) {
         conceptKey: questions.conceptKey,
         progressionBand: questions.progressionBand,
         grade: questions.grade,
+        meta: questions.meta,
+        isOlympiad: questions.isOlympiad,
+        channels: questions.channels,
+        editorialStatus: questions.editorialStatus,
       })
       .from(questions)
       .where(and(
@@ -57,11 +62,21 @@ export async function questionsRoutes(app: FastifyInstance) {
         eq(questions.isOlympiad, false),
         eq(questions.editorialStatus, 'published'),
         arrayContains(questions.channels, ['olympiad_training']),
-      ))
+      )))
+      .sort((left, right) => left.id.localeCompare(right.id))
 
     let selectedIds: string[]
     try {
-      selectedIds = pickDemoQuestionSet(req.body.grade, rows)
+      selectedIds = pickDemoQuestionSet(
+        req.body.grade,
+        rows,
+        Math.random,
+        selected => analyzeOlympiadSet(
+          req.body.grade,
+          'demo',
+          selected as OlympiadQuestionForPolicy[],
+        ).ready,
+      )
     } catch (error) {
       req.log.error({ err: error, grade: req.body.grade }, 'Unable to compose olympiad demo')
       return reply.code(422).send({ error: 'Для цього класу ще бракує збалансованого набору демо-завдань.' })
@@ -69,13 +84,23 @@ export async function questionsRoutes(app: FastifyInstance) {
 
     const byId = new Map(rows.map(question => [question.id, question]))
     const selected = selectedIds.map(id => byId.get(id)!)
+    const readiness = analyzeOlympiadSet(
+      req.body.grade,
+      'demo',
+      selected as OlympiadQuestionForPolicy[],
+    )
+    if (!readiness.ready) {
+      req.log.error({ grade: req.body.grade, issues: readiness.issues }, 'Generated olympiad demo violates hard content policy')
+      return reply.code(422).send({ error: 'Демо-набір не пройшов перевірку якості. Спробуйте пізніше.' })
+    }
 
     const issuedAt = Date.now()
     return reply.send({
       demoToken: createDemoToken(req.body.grade, selectedIds, issuedAt),
       tokenExpiresAt: issuedAt + OLYMPIAD_DEMO_TOKEN_TTL_MS,
       tokenTtlMs: OLYMPIAD_DEMO_TOKEN_TTL_MS,
-      questions: selected.map(sanitizeOlympiadQuestion),
+      questions: selected.map(({ isOlympiad: _isOlympiad, channels: _channels, editorialStatus: _status, ...question }) =>
+        sanitizeOlympiadQuestion(question)),
       questionsCount: OLYMPIAD_DEMO_QUESTION_COUNT,
       timeMinutes: OLYMPIAD_DEMO_TIME_MINUTES,
     })

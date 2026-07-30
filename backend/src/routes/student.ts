@@ -229,6 +229,9 @@ export async function studentRoutes(app: FastifyInstance) {
           code:    questions.code,
           type:    questions.type,
           options: questions.options,
+          img:      questions.img,
+          imageAlt: questions.imageAlt,
+          meta:     questions.meta,
         })
         .from(attemptQuestions)
         .innerJoin(questions, eq(attemptQuestions.questionId, questions.id))
@@ -261,6 +264,9 @@ export async function studentRoutes(app: FastifyInstance) {
         code:    questions.code,
         type:    questions.type,
         options: questions.options,
+        img:      questions.img,
+        imageAlt: questions.imageAlt,
+        meta:     questions.meta,
       })
       .from(eventQuestions)
       .innerJoin(questions, eq(eventQuestions.questionId, questions.id))

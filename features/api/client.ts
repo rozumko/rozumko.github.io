@@ -47,6 +47,13 @@ export interface Question {
   a?: string[]                    // normalized alias для question-renderer (choice/truefalse)
   img?: string | null
   imageAlt?: string | null
+  imageRole?: 'essential' | 'supportive' | 'decorative'
+  meta?: {
+    imageRole?: 'essential' | 'supportive' | 'decorative'
+    estimatedSeconds?: number
+    templateId?: string
+    [key: string]: unknown
+  } | null
   updatedAt?: string | null
   publishedAt?: string | null
   [key: string]: unknown          // дозволяє передавати Question туди де очікується RenderableQuestion
@@ -120,6 +127,48 @@ export type OlympiadEventInput = {
 
 export type EventQuestion = Pick<Question, 'id' | 'q' | 'difficulty' | 'grade'> & {
   position: number
+}
+
+export interface AdminOlympiadReadinessIssue {
+  code: string
+  severity: 'error' | 'warning'
+  message: string
+  questionIds?: string[]
+  grade?: number
+}
+
+export interface AdminOlympiadSetReadiness {
+  grade: number
+  mode: 'demo' | 'official'
+  ready: boolean
+  policy: {
+    questionCount: number
+    timeMinutes: number
+    effortRange: [number, number]
+    essentialImageRange: [number, number]
+    minimumMechanics: number
+  }
+  metrics: {
+    questionCount: number
+    effortUnits: number
+    estimatedSeconds: number | null
+    essentialImages: number
+    mechanics: QuestionType[]
+    topics: number
+    maxTopicRepeats: number
+    compoundQuestions: number
+    track: Record<string, number>
+    difficulty: Record<string, number>
+    progression: Record<string, number>
+  }
+  issues: AdminOlympiadReadinessIssue[]
+}
+
+export interface AdminOlympiadEventReadiness {
+  ready: boolean
+  event: { timeMinutes: number; questionsCount: number }
+  grades: AdminOlympiadSetReadiness[]
+  issues: AdminOlympiadReadinessIssue[]
 }
 
 export type TeacherEvent = Pick<OlympiadEvent, 'id' | 'title' | 'startsAt' | 'endsAt' | 'status'>
@@ -1439,7 +1488,15 @@ export function getEventQuestions(eventId: string, grade: number): Promise<{ que
   return authRequest(`/api/admin/events/${eventId}/questions?grade=${grade}`)
 }
 
-export function setEventQuestions(eventId: string, data: { grade: number; questionIds: string[] }): Promise<{ saved: boolean; count: number }> {
+export function getEventReadiness(eventId: string): Promise<{ readiness: AdminOlympiadEventReadiness }> {
+  return authRequest(`/api/admin/events/${eventId}/readiness`)
+}
+
+export function setEventQuestions(eventId: string, data: { grade: number; questionIds: string[] }): Promise<{
+  saved: boolean
+  count: number
+  readiness: AdminOlympiadEventReadiness | null
+}> {
   return authRequest(`/api/admin/events/${eventId}/questions`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -1894,9 +1951,16 @@ export interface AdminDemoCoverageGrade {
     progression: Record<'recognize' | 'apply' | 'reason' | 'unassigned', number>
   } | null
   issues: Array<{
-    code: 'cannot-compose' | 'variant-gap' | 'mechanic-gap' | 'image-gap' | 'topic-duplication'
+    code: 'cannot-compose' | 'invalid-candidate' | 'variant-gap' | 'mechanic-gap' | 'image-gap' | 'topic-duplication'
     message: string
+    questionIds?: string[]
   }>
+  standard: AdminOlympiadSetReadiness | null
+  audit: {
+    samples: number
+    passed: number
+    uniqueSets: number
+  }
 }
 
 export function getAdminDemoCoverage(): Promise<{ grades: AdminDemoCoverageGrade[] }> {

@@ -23,8 +23,18 @@ export function stripOptionKeys(options: unknown): unknown {
   return clone
 }
 
-/** Top-level answer columns. Never serialise these to a student. */
-const SECRET_COLUMNS = ['correct', 'explanation'] as const
+/** Top-level answer and editorial columns. Never serialise these to a student. */
+const PRIVATE_COLUMNS = ['correct', 'explanation', 'meta'] as const
+
+type PublicImageRole = 'essential' | 'supportive' | 'decorative'
+
+function readPublicImageRole(meta: unknown): PublicImageRole | undefined {
+  if (!meta || typeof meta !== 'object' || Array.isArray(meta)) return undefined
+  const role = (meta as Record<string, unknown>).imageRole
+  return role === 'essential' || role === 'supportive' || role === 'decorative'
+    ? role
+    : undefined
+}
 
 /**
  * Санітизує одне питання для олімпіадного режиму: стрипає options-ключі
@@ -37,6 +47,8 @@ const SECRET_COLUMNS = ['correct', 'explanation'] as const
  */
 export function sanitizeOlympiadQuestion<T extends { options: unknown }>(q: T): T {
   const clone: Record<string, unknown> = { ...q, options: stripOptionKeys(q.options) }
-  for (const key of SECRET_COLUMNS) delete clone[key]
+  const imageRole = readPublicImageRole(clone.meta)
+  for (const key of PRIVATE_COLUMNS) delete clone[key]
+  if (imageRole) clone.imageRole = imageRole
   return clone as T
 }

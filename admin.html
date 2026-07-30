@@ -155,11 +155,11 @@
             </div>
             <div>
               <label class="adm-label">Кількість питань</label>
-              <input id="event-questions" type="number" value="10" min="1" max="100" class="adm-input"/>
+              <input id="event-questions" type="number" value="24" min="1" max="100" class="adm-input"/>
             </div>
             <div>
               <label class="adm-label">Час (хвилин)</label>
-              <input id="event-time" type="number" value="15" min="1" max="100" class="adm-input"/>
+              <input id="event-time" type="number" value="45" min="1" max="100" class="adm-input"/>
             </div>
             <div class="adm-col-span-2 adm-checkbox-row">
               <input id="event-allow-retry" type="checkbox"/>
@@ -610,12 +610,14 @@
           <article class="admin-form-card admin-help-card admin-help-card--wide">
             <h3 class="admin-help-card__title">Перевір перед публікацією</h3>
             <ul class="admin-help-checklist">
-              <li>Формулювання коротке й зрозуміле для вибраного класу.</li>
+              <li>Повна умова та всі елементи відповіді вміщуються на одному екрані ноутбука без прокрутки.</li>
+              <li>Формулювання коротке й зрозуміле: до 25 слів, а складне — не більше 40.</li>
               <li>Правильна відповідь позначена без двозначності.</li>
               <li>Пояснення допомагає зрозуміти спосіб розв’язання, а не лише повторює відповідь.</li>
               <li>Розділ, напрям, тема, навичка та складність відповідають змісту.</li>
-              <li>Зображення має змістовний опис для доступності.</li>
-              <li>Попередній перегляд виглядає коректно на вузькому екрані.</li>
+              <li>Для олімпіадного питання вказано очікуваний час і спільний ID шаблону для його варіантів.</li>
+              <li>Зображення має визначену роль та змістовний опис для доступності.</li>
+              <li>Декоративне зображення не відбирає місце в умови або відповідей.</li>
             </ul>
           </article>
         </div>
@@ -647,14 +649,22 @@
       <button id="preview-close" class="preview-modal-close" aria-label="Закрити прев'ю">
         <i class="fas fa-times" aria-hidden="true"></i>
       </button>
-      <p class="preview-modal-label">Прев'ю — як бачить учень</p>
-
-      <div id="pv-question-card" class="pv-question-card">
-        <p id="pv-question-text" class="pv-question-text"></p>
-        <img id="pv-image" src="" alt="" class="pv-image hidden"/>
+      <p class="preview-modal-label">Орієнтовне прев'ю у пропорціях екрана учня</p>
+      <p class="admin-section-note">Точне вміщення у студентському інтерфейсі автоматично перевіряє layout-тест перед публікацією сайту.</p>
+      <div class="preview-preset-toolbar" aria-label="Розмір екрана для перевірки">
+        <button type="button" class="btn-adm-ghost btn--sm" data-preview-preset="1366x625" aria-pressed="true">1366 × 625</button>
+        <button type="button" class="btn-adm-ghost btn--sm" data-preview-preset="1280x800" aria-pressed="false">1280 × 800</button>
       </div>
-      <pre id="pv-code" class="pv-code hidden"></pre>
-      <div id="pv-options" class="pv-options"></div>
+      <p id="pv-fit-status" class="preview-fit-status" aria-live="polite"></p>
+
+      <div id="pv-viewport" class="preview-student-viewport" data-preview-preset="1366x625">
+        <div id="pv-question-card" class="pv-question-card">
+          <p id="pv-question-text" class="pv-question-text"></p>
+          <img id="pv-image" src="" alt="" class="pv-image hidden"/>
+        </div>
+        <pre id="pv-code" class="pv-code hidden"></pre>
+        <div id="pv-options" class="pv-options"></div>
+      </div>
       <div id="pv-explanation-wrap" class="pv-explanation-wrap hidden">
         <span class="pv-explanation-label">Пояснення: </span>
         <span id="pv-explanation"></span>
@@ -802,6 +812,28 @@
                  placeholder="Що важливого зображено"/>
           <img id="qf-img-preview" src="" alt="Попередній перегляд зображення до питання"
             class="qf-image-preview hidden"/>
+        </div>
+
+        <div class="adm-form-grid adm-form-grid--3">
+          <div>
+            <label for="qf-image-role" class="adm-label">Роль зображення</label>
+            <select id="qf-image-role" class="adm-input adm-input--sm">
+              <option value="">Без зображення / не визначено</option>
+              <option value="essential">Потрібне для розв’язання</option>
+              <option value="supportive">Допомагає зрозуміти</option>
+              <option value="decorative">Декоративне</option>
+            </select>
+          </div>
+          <div>
+            <label for="qf-estimated-seconds" class="adm-label">Очікуваний час, с</label>
+            <input id="qf-estimated-seconds" class="adm-input adm-input--sm" type="number"
+                   min="10" max="600" step="5" placeholder="Наприклад, 60"/>
+          </div>
+          <div>
+            <label for="qf-template-id" class="adm-label">ID шаблону / концепції</label>
+            <input id="qf-template-id" class="adm-input adm-input--sm" type="text" maxlength="80"
+                   placeholder="g3-grid-route-01"/>
+          </div>
         </div>
 
         <!-- Код Равлика -->

@@ -4,6 +4,7 @@ import test from 'node:test'
 
 const adminHtml = readFileSync(new URL('../../admin.html', import.meta.url), 'utf8')
 const questionsTab = readFileSync(new URL('./questions-tab.ts', import.meta.url), 'utf8')
+const eventsTab = readFileSync(new URL('./events-tab.ts', import.meta.url), 'utf8')
 const lessonsTab = readFileSync(new URL('./lessons-tab.ts', import.meta.url), 'utf8')
 const missionsTab = readFileSync(new URL('./missions-tab.ts', import.meta.url), 'utf8')
 const publicationTab = readFileSync(new URL('./publication-tab.ts', import.meta.url), 'utf8')
@@ -71,6 +72,35 @@ test('olympiad demo preflight exposes actionable content gaps', () => {
   assert.match(questionsTab, /\$\s*<HTMLSelectElement>\('q-filter-status'\)\.value = 'published'/)
   assert.match(questionsTab, /selectSection\('olympiad_training'\)/)
   assert.match(apiClient, /'\/api\/admin\/questions\/demo-coverage'/)
+})
+
+test('olympiad standards are visible and actionable in both authoring workflows', () => {
+  for (const id of ['qf-image-role', 'qf-estimated-seconds', 'qf-template-id']) {
+    assert.match(adminHtml, new RegExp(`id="${id}"`))
+  }
+  assert.match(questionsTab, /Стандарт набору:/)
+  assert.match(questionsTab, /Аудит комбінацій:/)
+  assert.match(questionsTab, /data-question-id/)
+  assert.match(questionsTab, /standard\.issues/)
+  assert.match(eventsTab, /Публікацію й активацію заблоковано/)
+  assert.match(eventsTab, /readiness\.grades\.map\(renderGradeReadiness\)/)
+  assert.match(eventsTab, /Лише перегляд: зафіксовано/)
+  assert.match(eventsTab, /Набір зафіксовано/)
+  assert.match(eventsTab, /без повернення в чернетку/)
+  assert.doesNotMatch(eventsTab, /wireStatusButton\(node, event, '\.btn-draft'/)
+  assert.match(apiClient, /\/events\/\$\{eventId\}\/readiness/)
+  assert.match(adminHtml, /одному екрані ноутбука без прокрутки/)
+  assert.match(adminHtml, /data-preview-preset="1366x625"/)
+  assert.match(adminHtml, /data-preview-preset="1280x800"/)
+  assert.match(adminHtml, /Точне вміщення у студентському інтерфейсі автоматично перевіряє layout-тест/)
+  assert.match(questionsTab, /Орієнтовно вміщується у пропорції/)
+})
+
+test('new official events default to the approved cap and duration', () => {
+  assert.match(adminHtml, /id="event-questions"[^>]*value="24"/)
+  assert.match(adminHtml, /id="event-time"[^>]*value="45"/)
+  assert.match(eventsTab, /eqEl\.value = '24'/)
+  assert.match(eventsTab, /etEl\.value = '45'/)
 })
 
 test('admin help explains the complete content and path workflow in plain language', () => {

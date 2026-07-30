@@ -572,8 +572,11 @@ Backend:
   rate limits.
 - The public olympiad demo is issued by `POST /api/questions/demo/start` from
   published `olympiad_training` questions. The server composes 12 predefined
-  track/difficulty slots, strips top-level and nested answer keys, and signs
-  the issued question IDs in a short-lived HMAC token. Final answers go to
+  track/difficulty slots from intrinsically valid candidates, using a bounded
+  fail-closed search that cannot enumerate an unbounded composition tree.
+  Candidate order is stabilized before random selection. The server strips
+  top-level and nested answer keys and signs the issued question IDs in a
+  short-lived HMAC token. Final answers go to
   `POST /api/questions/demo/finish`; the server verifies that token, scores
   only the issued IDs and returns only aggregate `{ score, total }`. It does
   not return per-item correctness, explanations or answer keys. A running

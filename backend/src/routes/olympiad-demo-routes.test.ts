@@ -41,14 +41,20 @@ test('olympiad demo issues sanitized questions and scores only on the server', a
     options: ['Wrong', 'Correct'],
     correct: 1,
     explanation: 'Secret explanation',
-    img: null,
-    imageAlt: null,
+    img: index === 0 ? '/questions/demo-grid.webp' : null,
+    imageAlt: index === 0 ? 'A labelled route grid' : null,
     difficulty,
     track,
     topic: `${track}-${difficulty}-${index}`,
     conceptKey: null,
     progressionBand: 'apply' as const,
     grade: 2,
+    meta: index === 0
+      ? { imageRole: 'essential', estimatedSeconds: 60, templateId: 'demo-grid' }
+      : null,
+    isOlympiad: false,
+    channels: ['olympiad_training'] as const,
+    editorialStatus: 'published' as const,
   }))
 
   const originalSelect = db.select
@@ -80,7 +86,11 @@ test('olympiad demo issues sanitized questions and scores only on the server', a
     for (const question of startBody.questions) {
       assert.equal('correct' in question, false)
       assert.equal('explanation' in question, false)
+      assert.equal('meta' in question, false)
     }
+    const visualQuestion = startBody.questions.find((question: { img?: string }) => question.img)
+    assert.equal(visualQuestion?.imageAlt, 'A labelled route grid')
+    assert.equal(visualQuestion?.imageRole, 'essential')
 
     const finished = await app.inject({
       method: 'POST',

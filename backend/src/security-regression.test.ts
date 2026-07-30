@@ -266,6 +266,17 @@ test('критичні UUID-параметри відхиляються до з�
     { method: 'DELETE', url: '/api/teacher/students/not-a-uuid' },
     { method: 'GET', url: '/api/admin/questions?grade=not-a-grade' },
     { method: 'GET', url: '/api/admin/events/00000000-0000-4000-8000-000000000001/questions?grade=9' },
+    { method: 'GET', url: '/api/admin/events/not-a-uuid/readiness' },
+    {
+      method: 'POST',
+      url: '/api/admin/events',
+      payload: {
+        title: 'Unsafe event',
+        startsAt: '2026-08-01T09:00:00.000Z',
+        endsAt: '2026-08-01T10:00:00.000Z',
+        status: 'active',
+      },
+    },
   ]
 
   for (const request of cases) {

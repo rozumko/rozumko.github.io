@@ -97,8 +97,36 @@ export function assertEventRuleChangesAllowed(isLocked: boolean, patch: Record<s
   }
 }
 
-export function assertEventQuestionSelectionAllowed(isLocked: boolean): void {
-  if (isLocked) {
-    throw new Error('Не можна змінювати набір питань активної олімпіади чи події з незавершеними спробами')
+const EVENT_STATUS_TRANSITIONS: Record<EventStatus, readonly EventStatus[]> = {
+  draft: ['published', 'active', 'archived'],
+  published: ['active', 'archived'],
+  active: ['finished', 'archived'],
+  finished: ['archived'],
+  archived: [],
+}
+
+export function assertEventStatusTransitionAllowed(current: string, next: string): void {
+  if (current === next) return
+  if (
+    !EVENT_STATUSES.includes(current as EventStatus)
+    || !EVENT_STATUSES.includes(next as EventStatus)
+    || !EVENT_STATUS_TRANSITIONS[current as EventStatus].includes(next as EventStatus)
+  ) {
+    throw new Error('Після публікації олімпіаду не можна повертати в чернетку або розморожувати її набір питань')
+  }
+}
+
+export function shouldValidateEventReadiness(
+  currentStatus: string,
+  requestedStatus: string | undefined,
+): boolean {
+  return requestedStatus !== undefined
+    && requestedStatus !== currentStatus
+    && (requestedStatus === 'published' || requestedStatus === 'active')
+}
+
+export function assertEventQuestionSelectionAllowed(status: string, hasInProgressAttempt: boolean): void {
+  if (status !== 'draft' || hasInProgressAttempt) {
+    throw new Error('Набір питань можна змінювати лише в чернетці без незавершених спроб')
   }
 }

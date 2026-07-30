@@ -1,6 +1,10 @@
 import { validateQuestionShape, type QuestionType } from './question-input-validation.js'
 import { questionDistributionIssues } from '../lib/question-channels.js'
 import type { QuestionChannel, QuestionEditorialStatus } from '../db/schema.js'
+import {
+  inspectOlympiadQuestionContent,
+  type OlympiadQuestionForPolicy,
+} from '../lib/olympiad-content-policy.js'
 
 export const QUESTION_EDITORIAL_STATUSES = ['draft', 'review', 'published', 'archived'] as const
 
@@ -27,6 +31,32 @@ export function normalizeQuestionMedia(rawImg: unknown, rawAlt: unknown): { img:
   return { img: img || null, imageAlt: img ? imageAlt : null }
 }
 
+export function normalizeOlympiadQuestionMeta(
+  current: Record<string, unknown> | null | undefined,
+  patch: { imageRole?: unknown; estimatedSeconds?: unknown; templateId?: unknown },
+): Record<string, unknown> {
+  const next = { ...(current ?? {}) }
+  if (patch.imageRole !== undefined) {
+    if (patch.imageRole === null || patch.imageRole === '') delete next.imageRole
+    else if (patch.imageRole === 'essential' || patch.imageRole === 'supportive' || patch.imageRole === 'decorative') {
+      next.imageRole = patch.imageRole
+    } else throw new Error('Невідома роль зображення')
+  }
+  if (patch.estimatedSeconds !== undefined) {
+    if (patch.estimatedSeconds === null || patch.estimatedSeconds === '') delete next.estimatedSeconds
+    else if (Number.isInteger(patch.estimatedSeconds) && Number(patch.estimatedSeconds) >= 10 && Number(patch.estimatedSeconds) <= 600) {
+      next.estimatedSeconds = Number(patch.estimatedSeconds)
+    } else throw new Error('Очікуваний час має бути цілим числом від 10 до 600 секунд')
+  }
+  if (patch.templateId !== undefined) {
+    if (patch.templateId === null || patch.templateId === '') delete next.templateId
+    else if (typeof patch.templateId === 'string' && /^[a-z0-9][a-z0-9_-]{1,79}$/i.test(patch.templateId.trim())) {
+      next.templateId = patch.templateId.trim()
+    } else throw new Error('ID шаблону: 2–80 латинських літер, цифр, дефісів або підкреслень')
+  }
+  return next
+}
+
 export interface PublishableQuestion {
   q: string
   type: string
@@ -38,6 +68,7 @@ export interface PublishableQuestion {
   topic: string | null
   img: string | null
   imageAlt: string | null
+  meta?: Record<string, unknown> | null
   isOlympiad: boolean | null
   channels: readonly QuestionChannel[]
 }
@@ -60,7 +91,25 @@ export function questionReadinessIssues(question: PublishableQuestion): string[]
     issues.push((error as Error).message)
   }
   issues.push(...questionDistributionIssues(question.isOlympiad, question.channels))
-  return issues
+  if (question.isOlympiad === true || question.channels.includes('olympiad_training')) {
+    const hardContentIssues = inspectOlympiadQuestionContent({
+      ...question,
+      id: 'draft-question',
+      type: question.type as QuestionType,
+      grade: question.grade,
+      difficulty: question.difficulty,
+      track: question.track as OlympiadQuestionForPolicy['track'],
+      topic: question.topic,
+      conceptKey: null,
+      progressionBand: null,
+      meta: question.meta ?? null,
+      isOlympiad: question.isOlympiad === true,
+      channels: [...question.channels],
+      editorialStatus: 'draft',
+    }).filter(issue => issue.severity === 'error')
+    issues.push(...hardContentIssues.map(issue => issue.message))
+  }
+  return [...new Set(issues)]
 }
 
 /** JSON-safe immutable snapshot stored after every successful mutation. */
