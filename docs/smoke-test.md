@@ -43,7 +43,7 @@ Run this checklist before a real pilot.
 
 ## 3. Admin Setup
 
-- [ ] Create one question of every type: `choice`, `truefalse`, `sort`, `sequence`, `match`, `input`
+- [ ] Create one question of every type: `choice`, `multi_select`, `truefalse`, `sort`, `sequence`, `match`, `input`
 - [ ] Preview each type
 - [ ] Create a draft event with dates, duration and question count
 - [ ] Assign olympiad questions for one grade

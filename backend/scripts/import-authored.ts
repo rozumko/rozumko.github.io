@@ -75,6 +75,7 @@ function answerKey(row: Pick<NewQuestion, 'type' | 'options' | 'correct'>): stri
     type: row.type,
     correct: row.correct,
     answer: options.answer,
+    correctAnswers: options.correctAnswers,
     correctOrder: options.correctOrder,
     pairs: options.pairs,
   })

@@ -155,7 +155,7 @@ attempt state is separate from anonymous School sessions.
 
 | Area | School Mode | Home Mode | Olympiad / Seasonal Events |
 |---|---|---|---|
-| Entry | `/school` or classroom entry | `/home` or seasonal mission landing | `olympiad-enter.html` today; future seasonal routes planned |
+| Entry | `/school` or classroom entry | `/home` or seasonal mission landing | Direct code entry or demo on `student.html`; `olympiad-enter.html` remains compatible |
 | Identity | Anonymous or temporary classroom session | Parent-led account/profile | Access code today; subscription or one-off access planned |
 | Child data | No child personal data | Stored only after parent consent | Event participation data only as required for scoring/support |
 | Results | Aggregate/class-level only | Individual progress and reports | Official score and certificate/diploma |
@@ -165,7 +165,7 @@ attempt state is separate from anonymous School sessions.
 Frontend structure:
 
 - `utils/question-renderer.ts` — shared question renderer for all mechanics
-  (choice, truefalse, input, sort, sequence, match) + optional per-question
+  (choice, multi-select, truefalse, input, sort, sequence, match) + optional per-question
   image; used by trainings, School (`mission-runner`) and Olympiad. Uses
   semantic `.quiz-*` classes (no Tailwind). The one-screen mission layout
   (`body.mission-active #mission-quiz`) fits question + image + options in a

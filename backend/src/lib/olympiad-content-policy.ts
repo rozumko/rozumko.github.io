@@ -242,7 +242,7 @@ function canonicalizePublicStimulus(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(canonicalizePublicStimulus)
   if (!value || typeof value !== 'object') return value
 
-  const secretKeys = new Set(['answer', 'correct', 'correctOrder', 'pairs', 'explanation'])
+  const secretKeys = new Set(['answer', 'correct', 'correctAnswers', 'correctOrder', 'pairs', 'explanation'])
   return Object.fromEntries(
     Object.entries(value as Record<string, unknown>)
       .filter(([key]) => !secretKeys.has(key))
@@ -352,7 +352,14 @@ export function inspectOlympiadQuestionContent(
   if (options.length > 0 && Math.max(...options.map(value => value.length)) > 90) {
     issues.push({ code: 'option-too-long', severity: 'error', message: 'Один із варіантів довший за 90 символів і створює ризик прокрутки.', questionIds })
   }
-  if ((question.type === 'choice' || question.type === 'truefalse') && Array.isArray(question.options) && question.options.length > 6) {
+  const selectableOptions = question.type === 'multi_select' && question.options && typeof question.options === 'object'
+    ? (question.options as Record<string, unknown>).choices
+    : question.options
+  if (
+    (question.type === 'choice' || question.type === 'truefalse' || question.type === 'multi_select')
+    && Array.isArray(selectableOptions)
+    && selectableOptions.length > 6
+  ) {
     issues.push({ code: 'too-many-options', severity: 'error', message: 'На одному екрані дозволено не більше 6 варіантів.', questionIds })
   }
   if ((question.type === 'sort' || question.type === 'match') && responseElements > 6) {

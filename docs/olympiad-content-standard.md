@@ -204,6 +204,7 @@ scoring rules.
 The official renderer and server scoring support:
 
 - `choice`: one correct text option;
+- `multi_select`: two or more correct text options, scored all-or-nothing;
 - `truefalse`: one yes/no statement;
 - `input`: one exact text or numeric answer;
 - `sort`: one full ordering;
@@ -212,15 +213,14 @@ The official renderer and server scoring support:
 
 The recommended extension order is:
 
-1. `multi_select`;
-2. image-capable options for `choice` and `multi_select`;
-3. `classify`;
-4. accepted-answer normalisation for `input`;
-5. optional authored question audio;
-6. partial scoring and task weights;
-7. `cloze`;
-8. multi-part visual scenes;
-9. accessible grid/path tasks.
+1. image-capable options for `choice` and `multi_select`;
+2. `classify`;
+3. accepted-answer normalisation for `input`;
+4. optional authored question audio;
+5. partial scoring and task weights;
+6. `cloze`;
+7. multi-part visual scenes;
+8. accessible grid/path tasks.
 
 ## Editorial Rules
 
@@ -453,7 +453,7 @@ decision explicitly changes it.
    change blueprint structure without a code release.
 2. Store per-grade expected task counts directly on the event model; exact
    validation is already implemented against the approved policy.
-3. Add `multi_select` and media-capable options.
+3. Add media-capable options for `choice` and `multi_select`.
 4. Add partial and weighted server scoring before compound tasks.
 
 ## Pilot and Review

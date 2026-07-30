@@ -15,6 +15,8 @@ export interface RenderableQuestion {
   left?: string[]
   right?: string[]
   pairs?: number[]
+  // multi-select
+  correctAnswers?: number[]
   // input
   inputType?: string
   // Optional question image
@@ -56,11 +58,116 @@ export function renderQuestion(
   }
 
   if      (type === 'choice')                  renderChoice(q, container, onAnswer, preview, preselect);
+  else if (type === 'multi_select')            renderMultiSelect(q, container, onAnswer, preview, preselect);
   else if (type === 'truefalse')               renderTrueFalse(q, container, onAnswer, preview, preselect);
   else if (type === 'input')                   renderInput(q, container, onAnswer, preview, preselect);
   else if (type === 'sort' || type === 'algorithm') renderSort(q, container, onAnswer, preview, preselect);
   else if (type === 'sequence')                renderSequence(q, container, onAnswer, preview, preselect);
   else if (type === 'match')                   renderMatch(q, container, onAnswer, preview, preselect);
+}
+
+// ── multi-select ──────────────────────────────────────────────────────────
+
+function renderMultiSelect(q, container, onAnswer, preview, preselect = null) {
+  const choices = Array.isArray(q.choices)
+    ? q.choices
+    : (
+        q.options
+        && typeof q.options === 'object'
+        && !Array.isArray(q.options)
+        && Array.isArray(q.options.choices)
+      )
+      ? q.options.choices
+      : [];
+  const nestedCorrectAnswers = (
+    q.options
+    && typeof q.options === 'object'
+    && !Array.isArray(q.options)
+    && Array.isArray(q.options.correctAnswers)
+  )
+    ? q.options.correctAnswers
+    : null;
+  const answerKey = Array.isArray(q.correctAnswers)
+    ? q.correctAnswers.map(Number)
+    : nestedCorrectAnswers?.map(Number) ?? null;
+  const selected = new Set(Array.isArray(preselect) ? preselect.map(Number) : []);
+  const btns = [];
+  let answered = false;
+
+  container.setAttribute('role', 'group');
+  container.setAttribute('aria-label', 'Обери всі правильні відповіді');
+
+  const hint = document.createElement('p');
+  hint.className = 'quiz-multi-hint';
+  hint.textContent = 'Обери всі правильні варіанти, а потім натисни «Підтвердити».';
+  container.appendChild(hint);
+
+  choices.forEach((choice, index) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'quiz-option quiz-option--multi';
+    btn.setAttribute('role', 'checkbox');
+    btn.setAttribute('aria-checked', String(selected.has(index)));
+    btn.innerHTML = `<span class="quiz-option__check" aria-hidden="true"></span><span>${_esc(choice)}</span>`;
+    if (selected.has(index)) btn.classList.add('quiz-option--selected');
+
+    if (preview) {
+      btn.disabled = true;
+      const isCorrect = answerKey?.includes(index) ?? false;
+      btn.setAttribute('aria-checked', String(isCorrect));
+      if (isCorrect) markCorrect(btn);
+    } else {
+      btn.addEventListener('click', () => {
+        if (answered) return;
+        if (selected.has(index)) selected.delete(index);
+        else selected.add(index);
+        const isSelected = selected.has(index);
+        btn.setAttribute('aria-checked', String(isSelected));
+        btn.classList.toggle('quiz-option--selected', isSelected);
+      });
+    }
+
+    btns.push(btn);
+    container.appendChild(btn);
+  });
+
+  if (preview) return;
+
+  const validation = document.createElement('p');
+  validation.className = 'quiz-hint quiz-hint--error hidden';
+  validation.setAttribute('role', 'alert');
+  container.appendChild(validation);
+
+  const checkBtn = document.createElement('button');
+  checkBtn.type = 'button';
+  checkBtn.className = CLS.checkBtn;
+  checkBtn.textContent = 'Підтвердити';
+  checkBtn.addEventListener('click', () => {
+    if (answered) return;
+    if (selected.size < 2) {
+      validation.textContent = 'Обери щонайменше два варіанти.';
+      validation.classList.remove('hidden');
+      return;
+    }
+
+    answered = true;
+    btns.forEach(btn => { btn.disabled = true; });
+    checkBtn.disabled = true;
+    const answer = [...selected].sort((a, b) => a - b);
+
+    if (answerKey) {
+      const expected = [...answerKey].sort((a, b) => a - b);
+      const isCorrect = answer.length === expected.length && answer.every((value, index) => value === expected[index]);
+      btns.forEach((btn, index) => {
+        if (expected.includes(index)) markCorrect(btn);
+        else if (selected.has(index)) markIncorrect(btn);
+      });
+      onAnswer?.(isCorrect);
+    } else {
+      onAnswer?.(answer);
+    }
+  });
+  container.appendChild(checkBtn);
 }
 
 // ── CSS-константи ──────────────────────────────────────────────────────────

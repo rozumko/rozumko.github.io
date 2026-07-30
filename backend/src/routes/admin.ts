@@ -160,7 +160,7 @@ const questionBankQuerystring = {
   additionalProperties: false,
   properties: {
     grade:      { type: 'string', enum: ['1', '2', '3', '4'] },
-    type:       { type: 'string', enum: ['choice', 'truefalse', 'input', 'sort', 'sequence', 'match'] },
+    type:       { type: 'string', enum: ['choice', 'multi_select', 'truefalse', 'input', 'sort', 'sequence', 'match'] },
     difficulty: { type: 'string', enum: ['easy', 'medium', 'hard'] },
     track:      { type: 'string', enum: ['informatics', 'computational-thinking', 'ai-basics'] },
     topic:      { type: 'string', enum: ALL_TOPICS as string[] },
@@ -725,7 +725,7 @@ export async function adminRoutes(app: FastifyInstance) {
     }
 
     // Усі типи мають серверне оцінювання і санітизацію ключів.
-    const OLYMPIAD_ALLOWED_TYPES: string[] = ['choice', 'truefalse', 'sort', 'sequence', 'match', 'input']
+    const OLYMPIAD_ALLOWED_TYPES: string[] = ['choice', 'multi_select', 'truefalse', 'sort', 'sequence', 'match', 'input']
     const unsupported = found.filter(q => !OLYMPIAD_ALLOWED_TYPES.includes(q.type ?? 'choice'))
     if (unsupported.length) {
       return reply.code(400).send({ error: `Питання ${unsupported.map(q => q.id).join(', ')} мають тип "${unsupported[0].type}", який не підтримується в олімпіадному режимі. Дозволено: ${OLYMPIAD_ALLOWED_TYPES.join(', ')}.` })
@@ -1036,7 +1036,7 @@ export async function adminRoutes(app: FastifyInstance) {
           imageRole:       { type: ['string', 'null'], enum: ['essential', 'supportive', 'decorative', null] },
           estimatedSeconds:{ type: ['integer', 'null'], minimum: 10, maximum: 600 },
           templateId:      { type: ['string', 'null'], maxLength: 80 },
-          type:        { type: 'string', enum: ['choice', 'truefalse', 'input', 'sort', 'sequence', 'match'] },
+          type:        { type: 'string', enum: ['choice', 'multi_select', 'truefalse', 'input', 'sort', 'sequence', 'match'] },
           options:     {},   // jsonb — будь-яка структура залежно від type
           correct:     { type: ['integer', 'null'], minimum: 0 },
           explanation: { type: 'string' },
@@ -1137,7 +1137,7 @@ export async function adminRoutes(app: FastifyInstance) {
           imageRole:       { type: ['string', 'null'], enum: ['essential', 'supportive', 'decorative', null] },
           estimatedSeconds:{ type: ['integer', 'null'], minimum: 10, maximum: 600 },
           templateId:      { type: ['string', 'null'], maxLength: 80 },
-          type:        { type: 'string', enum: ['choice', 'truefalse', 'input', 'sort', 'sequence', 'match'] },
+          type:        { type: 'string', enum: ['choice', 'multi_select', 'truefalse', 'input', 'sort', 'sequence', 'match'] },
           options:     {},
           correct:     { type: ['integer', 'null'], minimum: 0 },
           explanation: { type: 'string' },

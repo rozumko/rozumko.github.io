@@ -13,6 +13,37 @@ test('choice: <2 варіантів', () => {
   assert.throws(() => validateQuestionShape('choice', ['А'], 0), /2/)
 })
 
+test('multi-select normalizes a valid answer key', () => {
+  const result = validateQuestionShape(
+    'multi_select',
+    { choices: ['A', 'B', 'C', 'D'], correctAnswers: [2, 0] },
+    null,
+  )
+  assert.deepEqual((result.options as any).correctAnswers, [0, 2])
+})
+
+test('multi-select requires at least two correct and one incorrect option', () => {
+  assert.throws(
+    () => validateQuestionShape('multi_select', { choices: ['A', 'B', 'C'], correctAnswers: [0] }, null),
+    /2 правильні/,
+  )
+  assert.throws(
+    () => validateQuestionShape('multi_select', { choices: ['A', 'B', 'C'], correctAnswers: [0, 1, 2] }, null),
+    /1 неправильний/,
+  )
+})
+
+test('multi-select rejects duplicate or out-of-range answer indexes', () => {
+  assert.throws(
+    () => validateQuestionShape('multi_select', { choices: ['A', 'B', 'C'], correctAnswers: [0, 0] }, null),
+    /повтори/,
+  )
+  assert.throws(
+    () => validateQuestionShape('multi_select', { choices: ['A', 'B', 'C'], correctAnswers: [0, 4] }, null),
+    /індексами/,
+  )
+})
+
 test('truefalse: correct 0/1', () => {
   assert.equal(validateQuestionShape('truefalse', null, 0).correct, 0)
   assert.equal(validateQuestionShape('truefalse', null, 1).correct, 1)

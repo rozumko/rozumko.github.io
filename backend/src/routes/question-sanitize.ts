@@ -12,7 +12,7 @@
  * лишаються. choice/truefalse/sequence тримають ключ у колонці `correct`
  * (вона стрипається окремо), тож їхні options не містять відповіді.
  */
-const SECRET_OPTION_KEYS = ['correctOrder', 'pairs', 'answer'] as const
+const SECRET_OPTION_KEYS = ['correctOrder', 'pairs', 'answer', 'correctAnswers'] as const
 
 export function stripOptionKeys(options: unknown): unknown {
   if (!options || typeof options !== 'object' || Array.isArray(options)) {

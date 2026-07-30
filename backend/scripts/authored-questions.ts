@@ -28,7 +28,7 @@ export interface AuthoredQuestion {
   grade?: unknown; difficulty?: unknown; progressionBand?: unknown
   q?: unknown; explanation?: unknown; img?: unknown; imageAlt?: unknown; code?: unknown
   options?: unknown; correct?: unknown
-  given?: unknown; choices?: unknown
+  given?: unknown; choices?: unknown; correctAnswers?: unknown
   items?: unknown; correctOrder?: unknown
   left?: unknown; right?: unknown; pairs?: unknown
   answer?: unknown; inputType?: unknown
@@ -60,6 +60,10 @@ function shapeMatch(m: AuthoredQuestion): unknown {
 function shapeFor(m: AuthoredQuestion): { options: unknown; correct: number | null } {
   switch (m.type) {
     case 'choice':    return { options: m.options, correct: m.correct as number }
+    case 'multi_select': return {
+      options: { choices: m.choices ?? m.options, correctAnswers: m.correctAnswers },
+      correct: null,
+    }
     case 'truefalse': return { options: ['Так', 'Ні'], correct: m.correct as number }
     case 'sequence':  return { options: { given: m.given, choices: m.choices }, correct: m.correct as number }
     case 'sort':      return { options: { items: m.items, correctOrder: m.correctOrder }, correct: null }
@@ -80,6 +84,11 @@ export function validateAuthored(file: string, index: number, q: AuthoredQuestio
   if (!QUESTION_TYPES.includes(q.type as QuestionType)) { push(`невідомий type «${String(q.type)}»`); return errs }
   if (q.type === 'choice' && (!Array.isArray(q.options) || q.options.length !== 4))
     push('choice must have exactly 4 answer options')
+  if (q.type === 'multi_select') {
+    const choices = Array.isArray(q.choices) ? q.choices : q.options
+    if (!Array.isArray(choices) || choices.length !== 4)
+      push('multi_select must have exactly 4 answer options')
+  }
   if (typeof q.q !== 'string' || q.q.trim() === '') push('q обовʼязкове, непорожній рядок')
   if (typeof q.explanation !== 'string' || q.explanation.trim() === '') push('explanation обовʼязкове')
   if (!Number.isInteger(q.grade) || (q.grade as number) < 1 || (q.grade as number) > 4)

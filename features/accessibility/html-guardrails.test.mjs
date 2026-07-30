@@ -24,6 +24,7 @@ const PUBLIC_PAGES = [
 const FORM_CONTROL_PAGES = [
   'home.html',
   'school.html',
+  'student.html',
   'for-parents.html',
   'olympiad-enter.html',
   'teacher.html',

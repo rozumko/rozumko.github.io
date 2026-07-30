@@ -209,12 +209,12 @@ function loadTypedSource(folder: string, track: NewQuestion['track']): NewQuesti
 // ── mixed_mechanics → різні типи (sort/match/sequence/input/truefalse) ───────
 
 interface MixedQuestion {
-  type: 'choice' | 'truefalse' | 'input' | 'sort' | 'sequence' | 'match'
+  type: 'choice' | 'multi_select' | 'truefalse' | 'input' | 'sort' | 'sequence' | 'match'
   track: NewQuestion['track']; topic: string; grade: number
   difficulty: string; progressionBand: string; q: string; explanation: string
   // поля під тип
   options?: string[]; correct?: number
-  given?: string[]; choices?: string[]
+  given?: string[]; choices?: string[]; correctAnswers?: number[]
   items?: string[]; correctOrder?: number[]
   left?: string[]; right?: string[]; pairs?: number[]
   answer?: string | number; inputType?: 'text' | 'number'
@@ -224,6 +224,7 @@ interface MixedQuestion {
 function shapeMixed(m: MixedQuestion): { options: unknown; correct: number | null } {
   switch (m.type) {
     case 'choice':    return { options: m.options!, correct: m.correct! }
+    case 'multi_select': return { options: { choices: m.choices!, correctAnswers: m.correctAnswers! }, correct: null }
     case 'truefalse': return { options: ['Так', 'Ні'], correct: m.correct! }
     case 'sequence':  return { options: { given: m.given!, choices: m.choices! }, correct: m.correct! }
     case 'sort':      return { options: { items: m.items!, correctOrder: m.correctOrder! }, correct: null }

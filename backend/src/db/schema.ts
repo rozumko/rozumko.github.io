@@ -10,7 +10,7 @@ import { pgTable, text, integer, smallint, date, boolean, timestamp, jsonb, uuid
  *   sequence   — аналог sort, інший UX
  *   match      — зіставлення пар (options: {left,right,pairs}, correct: null)
  */
-export type QuestionType = 'choice' | 'truefalse' | 'input' | 'sort' | 'sequence' | 'match'
+export type QuestionType = 'choice' | 'multi_select' | 'truefalse' | 'input' | 'sort' | 'sequence' | 'match'
 export type QuestionTrack = 'informatics' | 'computational-thinking' | 'ai-basics'
 export type QuestionChannel = 'class_game' | 'path' | 'olympiad_training'
 export type QuestionEditorialStatus = 'draft' | 'review' | 'published' | 'archived'

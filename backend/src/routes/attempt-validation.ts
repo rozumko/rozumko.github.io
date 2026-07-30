@@ -2,7 +2,7 @@ export function isQuestionInAttempt(questionId: string, attemptQuestionIds: stri
   return attemptQuestionIds.includes(questionId)
 }
 
-/** Значення відповіді учня: індекс (choice/truefalse/sequence), рядок/число (input), масив індексів (sort/match). */
+/** Stored student answer: index, text/number, or an index array for multi-select/sort/match. */
 export type AnswerValue = number | string | number[]
 
 export type ScoredQuestion = {
@@ -16,6 +16,14 @@ export type ScoredQuestion = {
 function arraysEqual(a: unknown, b: unknown): boolean {
   if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false
   return a.every((v, i) => Number(v) === Number(b[i]))
+}
+
+function unorderedIntegerArraysEqual(a: unknown, b: unknown): boolean {
+  if (!Array.isArray(a) || !Array.isArray(b)) return false
+  const left = [...new Set(a)].filter(Number.isInteger).map(Number).sort((x, y) => x - y)
+  const right = [...new Set(b)].filter(Number.isInteger).map(Number).sort((x, y) => x - y)
+  if (left.length !== a.length || right.length !== b.length) return false
+  return arraysEqual(left, right)
 }
 
 /** Оцінює input: числове порівняння з допуском або нечутливе до регістру текстове. */
@@ -35,10 +43,11 @@ function isInputCorrect(given: unknown, options: Record<string, unknown> | undef
  * Підраховує результат спроби. Оцінювання — лише на сервері.
  *
  * Типи і де лежить ключ:
- *   choice / truefalse / sequence — ключ у колонці `correct` (integer-індекс)
- *   sort                          — ключ `options.correctOrder` (number[])
- *   match                         — ключ `options.pairs` (number[])
- *   input                         — ключ `options.answer` (string|number)
+ *   choice / truefalse / sequence — `correct` column (integer index)
+ *   multi_select                  — `options.correctAnswers` (number[])
+ *   sort                          — `options.correctOrder` (number[])
+ *   match                         — `options.pairs` (number[])
+ *   input                         — `options.answer` (string|number)
  *
  * hideKeys=true (дефолт) — не повертає correct/explanation у результатах (захист від oracle-атаки).
  */
@@ -68,6 +77,10 @@ export function scoreAttempt(
       case 'sequence':
         // integer-індекс у колонці correct
         isCorrect = question.correct !== null && given === question.correct
+        break
+      case 'multi_select':
+        // Multi-select uses all-or-nothing scoring; option order does not matter.
+        isCorrect = unorderedIntegerArraysEqual(given, options?.['correctAnswers'])
         break
       case 'sort':
         // студент надсилає масив індексів у своєму порядку; ключ — correctOrder
