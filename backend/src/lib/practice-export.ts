@@ -31,6 +31,19 @@ export type BundleQuestion =
   Omit<ExportableQuestionRow, 'isOlympiad' | 'channels' | 'grade' | 'meta'> & { grade: number }
 
 /**
+ * Нуль рядків означає дві різні речі: канал доставки свідомо порожній (контент
+ * перезбирають) або роль експорту не бачить таблицю (RLS/GRANT). Відрізняє їх
+ * лише кількість рядків БЕЗ фільтрів: якщо роль не бачить жодного питання
+ * взагалі — це поломка доступу і експорт має впасти.
+ */
+export function assertQuestionsTableReadable(visibleRows: number): void {
+  if (visibleRows > 0) return
+  throw new Error(
+    'The export role cannot read public.questions (RLS/GRANT): not a single row is visible.',
+  )
+}
+
+/**
  * Пропускає в бандл лише не-олімпіадні питання з валідним класом.
  * isOlympiad=true → THROW (fail closed, а не тихий фільтр: якщо запит-джерело
  * зламався і приніс олімпіадне питання — експорт має впасти, не «підчистити»).

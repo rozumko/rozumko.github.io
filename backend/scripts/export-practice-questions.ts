@@ -14,10 +14,10 @@
 import { mkdirSync, writeFileSync } from 'fs'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
-import { and, eq, arrayContains, sql } from 'drizzle-orm'
+import { and, count, eq, arrayContains, sql } from 'drizzle-orm'
 import { db } from '../src/db/index.js'
 import { questions } from '../src/db/schema.js'
-import { sanitizeForStaticBundle, groupByGrade } from '../src/lib/practice-export.js'
+import { assertQuestionsTableReadable, sanitizeForStaticBundle, groupByGrade } from '../src/lib/practice-export.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const OUT_DIR = join(__dirname, '../../public/questions')
@@ -55,7 +55,11 @@ const rows = await db
   ))
 
 if (rows.length === 0) {
-  throw new Error('No published practice questions: the export role cannot read public.questions (RLS/GRANT) or published content is gone.')
+  // Refilling a delivery channel is a legitimate editorial state, so an empty
+  // result only fails the export when the role cannot see the table at all.
+  const [visible] = await db.select({ total: count() }).from(questions)
+  assertQuestionsTableReadable(visible?.total ?? 0)
+  console.warn('No published practice questions in the olympiad_training channel — writing empty bundles.')
 }
 const bundle = sanitizeForStaticBundle(rows)
 const grouped = groupByGrade(bundle)
