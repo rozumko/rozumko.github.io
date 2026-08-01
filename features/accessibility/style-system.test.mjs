@@ -89,6 +89,21 @@ test('child actions keep one shared accessible component contract', async () => 
   assert.doesNotMatch(pathCss, /\.path-parent-gate \.kid-action\s*\{[^}]*\bdisplay\s*:/s, 'path styles should not replace the shared action layout')
 })
 
+test('student olympiad landing reuses shared design tokens and components', async () => {
+  const css = await readRepoFile('style-student.css')
+  const start = css.indexOf('/* ── Olympiad landing')
+  const end = css.indexOf('/* ── olympiad-enter.html', start)
+
+  assert.notEqual(start, -1, 'style-student.css: olympiad landing section should exist')
+  assert.notEqual(end, -1, 'style-student.css: olympiad landing section should have a boundary')
+
+  const landing = css.slice(start, end)
+  assert.doesNotMatch(landing, /#[0-9a-f]{3,8}\b|\brgba?\(/i, 'olympiad landing colors should come from tokens.css')
+  assert.doesNotMatch(landing, /font-weight:\s*(850|900)\b/, 'olympiad landing should stay within the bundled Nunito weight range')
+  assert.match(css, /\.btn-violet\s*\{[^}]*min-height:\s*var\(--kid-tap\)/s, 'student primary actions should use the child touch-target token')
+  assert.match(css, /\.hub-btn--demo\s*\{[^}]*background:\s*var\(--clr-amber\)/s, 'demo actions should reuse the semantic amber token')
+})
+
 test('mission cards use shared presentation and semantic palette roles', async () => {
   const [appCss, homeHtml] = await Promise.all([
     readRepoFile('style-app.css'),
