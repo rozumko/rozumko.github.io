@@ -22,8 +22,9 @@ const ids = {
 }
 
 const NOW = new Date('2026-07-02T12:00:00Z')
-const FUTURE = new Date('2026-08-01T00:00:00Z')
 const PAST = new Date('2026-06-01T00:00:00Z')
+// Route tests read the real clock, so this has to stay ahead of it, not of a fixed date.
+const FUTURE = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
 
 // ── Unit: рішення про доступ (єдина точка, fail closed) ──────
 
