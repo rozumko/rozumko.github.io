@@ -1,6 +1,6 @@
 // ── Class activity contract ──────────────────────────────────────────────────
-// An activity is a procedural game with no content rows and no answer key. The
-// runner mounts it into a container, the game reports its own outcome, and the
+// An activity is a low-stakes formative game. The runner mounts it into a
+// container, the game reports its bounded aggregate outcome, and the
 // School page sends that outcome to the server as client-unverified evidence
 // (backend/src/lib/school-activities.ts).
 //
@@ -22,6 +22,9 @@ export interface ActivityMountOptions {
   level: string
   /** Grade chosen by the teacher for this classroom run. */
   grade: number
+  /** Ephemeral School participant identity for server-evaluated activities. */
+  participantId?: string
+  participantToken?: string
   /** Called once the child finishes on their own. */
   onFinish: (result: ActivityRunResult) => void
   /** Progress text for the surrounding shell, e.g. "7 / 18". */

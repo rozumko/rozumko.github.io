@@ -26,6 +26,7 @@ import {
   type SchoolSessionKind,
 } from '../lib/school-activities.js'
 import { createVerifiedResourceRateLimit, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW } from '../lib/rate-limit-policy.js'
+import { publicSchoolFactOpinionPack, scoreSchoolFactOpinion, type SchoolFactOpinionChoice } from '../lib/school-fact-opinion.js'
 import type { QuestionTrack } from '../db/schema.js'
 
 const QUESTION_TRACKS = ['informatics', 'computational-thinking', 'ai-basics'] as const
@@ -210,6 +211,16 @@ const activityResultBody = {
     total:       { type: 'integer', minimum: 1, maximum: 10_000 },
     mistakes:    { type: 'integer', minimum: 0, maximum: 10_000 },
     durationSec: { type: 'integer', minimum: 0, maximum: 86_400 },
+  },
+} as const
+
+const factOpinionAnswerBody = {
+  type: 'object',
+  required: ['statementId', 'choice'],
+  additionalProperties: false,
+  properties: {
+    statementId: { type: 'string', pattern: '^g[1-4]-[0-9]{2}$' },
+    choice: { type: 'string', enum: ['fact', 'opinion'] },
   },
 } as const
 
@@ -894,10 +905,47 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
     return reply.send({ correct: isCorrect })
   })
 
+  // ── Учень: контентна активність «Факт чи думка» ───────────────────────────
+  // The only content-backed activity so far: the browser receives statement
+  // ids and text but no category or explanation, and every choice is evaluated
+  // here. Both endpoints stay closed (409) for a question session and for any
+  // other activity key, the same way the question surfaces stay closed for an
+  // activity session.
+  app.get<{ Params: { id: string } }>('/participants/:id/activity/fact-opinion', {
+    config: { rateLimit: participantSessionRateLimit },
+    schema: { params: uuidParam },
+  }, async (req, reply) => {
+    if (!requireParticipant(req, reply)) return
+    const participant = await loadParticipantWithSession(req.params.id)
+    if (!participant) return reply.code(404).send({ error: 'Учасника не знайдено' })
+    if (participant.kind !== 'activity' || participant.activityKey !== 'fact-or-opinion') {
+      return reply.code(409).send({ error: 'Ця сесія має іншу активність' })
+    }
+    if (participant.status !== 'active') return reply.code(409).send({ error: 'Сесія неактивна' })
+    return reply.send({ statements: publicSchoolFactOpinionPack(participant.grade) })
+  })
+
+  app.post<{ Params: { id: string }; Body: { statementId: string; choice: SchoolFactOpinionChoice } }>('/participants/:id/activity/fact-opinion/answer', {
+    config: { rateLimit: participantAnswerRateLimit },
+    schema: { params: uuidParam, body: factOpinionAnswerBody },
+  }, async (req, reply) => {
+    if (!requireParticipant(req, reply)) return
+    const participant = await loadParticipantWithSession(req.params.id)
+    if (!participant) return reply.code(404).send({ error: 'Учасника не знайдено' })
+    if (participant.kind !== 'activity' || participant.activityKey !== 'fact-or-opinion') {
+      return reply.code(409).send({ error: 'Ця сесія має іншу активність' })
+    }
+    if (participant.status !== 'active') return reply.code(409).send({ error: 'Сесія неактивна' })
+
+    const scored = scoreSchoolFactOpinion(participant.grade, req.body.statementId, req.body.choice)
+    if (!scored) return reply.code(400).send({ error: 'Твердження не належить цій активності' })
+    return reply.send(scored)
+  })
+
   // ── Учень: фінальний результат активності ─────────────────────────────────
-  // Activities are procedural games without an answer key, so the outcome
-  // cannot be recomputed on the server: it arrives from the browser and is
-  // stored as `client-unverified` evidence for the teacher dashboard only.
+  // Procedural outcomes cannot be recomputed here. Content-backed activities
+  // evaluate each answer on the server, but their aggregate still arrives
+  // from the browser and is stored as `client-unverified` classroom evidence.
   // Never feed these numbers into entitlements, payments or certificates
   // (docs/security-model.md). The server still refuses implausible claims and
   // accepts exactly one result per participant.

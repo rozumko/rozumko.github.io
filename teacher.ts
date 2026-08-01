@@ -1595,11 +1595,13 @@ function populateSchoolActivities() {
 function renderActivityLevels() {
   const activity = findActivity($maybe<HTMLSelectElement>('school-activity-key')?.value)
   const levelSel = $maybe<HTMLSelectElement>('school-activity-level')
+  const levelField = $maybe('school-activity-level-field')
   const about = $maybe('school-activity-about')
   if (!activity || !levelSel) return
   levelSel.innerHTML = activity.levels.map(l => (
     `<option value="${esc(l.id)}" title="${esc(l.description)}">${esc(l.label)}</option>`
   )).join('')
+  levelField?.classList.toggle('hidden', activity.levels.length === 1)
   renderActivityAbout()
   if (about) about.classList.remove('hidden')
 }

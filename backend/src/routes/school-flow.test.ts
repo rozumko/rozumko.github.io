@@ -607,8 +607,9 @@ test('school: join rejects an avatar outside the allowlist (400)', async () => {
 })
 
 // ── Activity sessions ────────────────────────────────────────────────────────
-// Procedural games have no answer key: the browser reports the outcome and the
-// server clamps it. These tests pin the trust boundary in both directions.
+// Procedural games report a bounded outcome. Content-backed activities score
+// their items on the server and still report a client-unverified aggregate.
+// These tests pin both boundaries.
 
 function activityState() {
   const state = createState()
@@ -639,6 +640,80 @@ test('school: activity session issues no questions and reports its activity', as
       assert.equal(body.activityLevel, 'medium')
       assert.deepEqual(body.questions, [])
       assert.equal(body.questionsCount, 0)
+    })
+  } finally { restore() }
+})
+
+test('school: fact-or-opinion hides categories and evaluates only its grade pack', async () => {
+  const state = activityState()
+  state.session.activityKey = 'fact-or-opinion'
+  state.session.activityLevel = 'session'
+  const restore = installFakeDb(state)
+  try {
+    await withApp(async (app) => {
+      const body = await joinActivity(app)
+      const headers = { 'X-Participant-Token': body.participantToken }
+      const base = `/api/school/participants/${ids.participant}/activity/fact-opinion`
+
+      const pack = await app.inject({ method: 'GET', url: base, headers })
+      assert.equal(pack.statusCode, 200, pack.body)
+      assert.equal(pack.json().statements.length, 10)
+      assert.ok(pack.json().statements.every((item: Record<string, unknown>) =>
+        typeof item.id === 'string' && typeof item.text === 'string'
+        && !('category' in item) && !('explanation' in item)))
+
+      const correct = await app.inject({
+        method: 'POST', url: `${base}/answer`, headers,
+        payload: { statementId: 'g2-01', choice: 'fact' },
+      })
+      assert.equal(correct.statusCode, 200, correct.body)
+      assert.equal(correct.json().correct, true)
+      assert.equal(typeof correct.json().explanation, 'string')
+
+      const foreignGrade = await app.inject({
+        method: 'POST', url: `${base}/answer`, headers,
+        payload: { statementId: 'g4-01', choice: 'fact' },
+      })
+      assert.equal(foreignGrade.statusCode, 400, foreignGrade.body)
+    })
+  } finally { restore() }
+})
+
+test('school: fact-or-opinion endpoints are closed for other sessions and need the token', async () => {
+  const paths = (suffix = '') => `/api/school/participants/${ids.participant}/activity/fact-opinion${suffix}`
+
+  // A different activity in the same session kind must not reach the pack.
+  const otherActivity = activityState()
+  let restore = installFakeDb(otherActivity)
+  try {
+    await withApp(async (app) => {
+      const body = await joinActivity(app)
+      const headers = { 'X-Participant-Token': body.participantToken }
+      const pack = await app.inject({ method: 'GET', url: paths(), headers })
+      assert.equal(pack.statusCode, 409, pack.body)
+      const answer = await app.inject({
+        method: 'POST', url: paths('/answer'), headers,
+        payload: { statementId: 'g2-01', choice: 'fact' },
+      })
+      assert.equal(answer.statusCode, 409, answer.body)
+
+      // No participant token at all → 403, never a statement pack.
+      const anonymous = await app.inject({ method: 'GET', url: paths() })
+      assert.equal(anonymous.statusCode, 403, anonymous.body)
+    })
+  } finally { restore() }
+
+  // A question session must not reach it either.
+  const questionSession = createState()
+  restore = installFakeDb(questionSession)
+  try {
+    await withApp(async (app) => {
+      const body = await joinActivity(app)
+      const res = await app.inject({
+        method: 'GET', url: paths(),
+        headers: { 'X-Participant-Token': body.participantToken },
+      })
+      assert.equal(res.statusCode, 409, res.body)
     })
   } finally { restore() }
 })

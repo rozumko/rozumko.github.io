@@ -203,8 +203,25 @@ test('sorting-station: per-level totals and mistake-aware rubric', () => {
   assert.throws(() => normalizeActivityResult(activity, level, { correct: 12, total: 12, mistakes: 0, durationSec: 10 }))
 })
 
+test('single-session activities have fixed ceilings and expected rubrics', () => {
+  const precise = SCHOOL_ACTIVITIES['precise-click']
+  const preciseLevel = resolveActivityLevel(precise, 'session')
+  assert.equal(preciseLevel.maxTotal, 43)
+  assert.equal(normalizeActivityResult(precise, preciseLevel,
+    { correct: 39, total: 43, mistakes: 4, durationSec: 60 }).stars, 3)
+
+  const factOpinion = SCHOOL_ACTIVITIES['fact-or-opinion']
+  const factLevel = resolveActivityLevel(factOpinion, 'session')
+  assert.equal(factLevel.maxTotal, 10)
+  assert.equal(normalizeActivityResult(factOpinion, factLevel,
+    { correct: 7, total: 10, mistakes: 3, durationSec: 60 }).stars, 2)
+
+  assert.equal(resolveActivityLevel(SCHOOL_ACTIVITIES.tangram, 'session').maxTotal, 21)
+  assert.equal(resolveActivityLevel(SCHOOL_ACTIVITIES.fireflies, 'session').maxTotal, 30)
+})
+
 test('retry activities: more mistakes never score better than fewer', () => {
-  for (const key of ['message-coding', 'sorting-station'] as const) {
+  for (const key of ['message-coding', 'sorting-station', 'tangram', 'fireflies'] as const) {
     const activity = SCHOOL_ACTIVITIES[key]
     for (const levelId of activity.levels.map(l => l.id)) {
       const level = resolveActivityLevel(activity, levelId)
