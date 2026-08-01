@@ -417,9 +417,34 @@ export async function submitSchoolAnswer(
   })
 }
 
+export type SchoolFactOpinionChoice = 'fact' | 'opinion'
+
+export function getSchoolFactOpinionStatements(
+  participantId: string,
+  participantToken: string,
+): Promise<{ statements: Array<{ id: string; text: string }> }> {
+  return request(`/api/school/participants/${encodeURIComponent(participantId)}/activity/fact-opinion`, {
+    headers: { 'X-Participant-Token': participantToken },
+  })
+}
+
+export function submitSchoolFactOpinionAnswer(
+  participantId: string,
+  participantToken: string,
+  statementId: string,
+  choice: SchoolFactOpinionChoice,
+): Promise<{ correct: boolean; explanation: string }> {
+  return request(`/api/school/participants/${encodeURIComponent(participantId)}/activity/fact-opinion/answer`, {
+    method: 'POST',
+    headers: { 'X-Participant-Token': participantToken },
+    body: JSON.stringify({ statementId, choice }),
+  })
+}
+
 /**
- * Final result of a class activity. Procedural games have no answer key, so the
- * browser reports the outcome and the server clamps it against its registry.
+ * Final aggregate result of a class activity. The browser reports the outcome
+ * and the server clamps it against its registry. Content-backed activities
+ * evaluate their individual answers through dedicated endpoints first.
  * Stored as client-unverified evidence for the teacher only.
  */
 export function submitSchoolActivityResult(

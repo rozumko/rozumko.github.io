@@ -1,7 +1,8 @@
 // ── School activity registry (fail-closed) ───────────────────────────────────
-// Class activities are procedural games: they carry no content rows and no
-// answer key, so the server cannot grade them the way it grades questions.
-// The browser reports the outcome; this registry is the only place that says
+// Class activities are low-stakes formative games. Procedural games report a
+// bounded outcome; content-backed games evaluate individual answers through a
+// dedicated server endpoint and still report a client-unverified aggregate.
+// This registry is the only place that says
 // which activities exist, which levels each accepts and what result values are
 // even plausible. Unknown key or level → 400 (same shape as taxonomy.ts).
 //
@@ -18,6 +19,10 @@ export type SchoolActivityKey =
   | 'symbol-logic'
   | 'message-coding'
   | 'sorting-station'
+  | 'precise-click'
+  | 'fact-or-opinion'
+  | 'tangram'
+  | 'fireflies'
 
 /** Devices an activity is usable on. School Mode targets computer labs first. */
 export type SchoolActivityDevice = 'desktop' | 'any'
@@ -200,9 +205,42 @@ export const SCHOOL_ACTIVITIES: Record<SchoolActivityKey, SchoolActivityDefiniti
     // for 3 mistakes and for 30.
     stars: retryRubric,
   },
+  'precise-click': {
+    key: 'precise-click',
+    device: 'desktop',
+    levels: [{ id: 'session', maxTotal: 43, minDurationSec: 1 }],
+    stars: ({ correct, total }) => {
+      const percent = (correct / total) * 100
+      return percent >= 90 ? 3 : percent >= 70 ? 2 : percent >= 40 ? 1 : 0
+    },
+  },
+  'fact-or-opinion': {
+    key: 'fact-or-opinion',
+    device: 'any',
+    levels: [{ id: 'session', maxTotal: 10, minDurationSec: 1 }],
+    stars: ({ correct, total }) => {
+      const percent = (correct / total) * 100
+      return percent >= 90 ? 3 : percent >= 70 ? 2 : percent >= 40 ? 1 : 0
+    },
+  },
+  tangram: {
+    key: 'tangram',
+    device: 'any',
+    levels: [{ id: 'session', maxTotal: 21, minDurationSec: 1 }],
+    stars: retryRubric,
+  },
+  fireflies: {
+    key: 'fireflies',
+    device: 'desktop',
+    levels: [{ id: 'session', maxTotal: 30, minDurationSec: 1 }],
+    stars: retryRubric,
+  },
 }
 
-export const SCHOOL_ACTIVITY_KEYS = ['key-puzzle', 'maze', 'windows', 'mouse-buttons', 'magic-squares', 'symbol-logic', 'message-coding', 'sorting-station'] as const satisfies readonly SchoolActivityKey[]
+export const SCHOOL_ACTIVITY_KEYS = [
+  'key-puzzle', 'maze', 'windows', 'mouse-buttons', 'magic-squares', 'symbol-logic',
+  'message-coding', 'sorting-station', 'precise-click', 'fact-or-opinion', 'tangram', 'fireflies',
+] as const satisfies readonly SchoolActivityKey[]
 
 /** Every level id any activity accepts — for the route's JSON schema enum. */
 export const SCHOOL_ACTIVITY_LEVEL_IDS: readonly string[] = [

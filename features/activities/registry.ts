@@ -147,6 +147,54 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     ],
     load: () => import('./sorting-station/sorting-station.js'),
   },
+  {
+    key: 'precise-click',
+    label: 'Точний клік',
+    description: 'Дитина тренує точність і швидкість: знаходить підсвічену клітинку та натискає її у трьох послідовних етапах.',
+    hint: 'Знайди підсвічену клітинку й натисни її. Пройди всі три етапи!',
+    device: 'desktop',
+    minWidth: 760,
+    levels: [
+      { id: 'session', label: 'Повна сесія', description: 'Три етапи від спокійного до швидкого в одній грі' },
+    ],
+    load: () => import('./precise-click/precise-click.js'),
+  },
+  {
+    key: 'fact-or-opinion',
+    label: 'Факт чи думка',
+    description: 'Дитина читає десять тверджень і визначає, де перевірюваний факт, а де особиста думка.',
+    hint: 'Прочитай твердження й обери: це факт чи думка?',
+    device: 'any',
+    minWidth: 360,
+    levels: [
+      { id: 'session', label: 'За класом', description: 'Твердження автоматично добираються відповідно до вибраного класу' },
+    ],
+    load: () => import('./fact-or-opinion/fact-or-opinion.js'),
+  },
+  {
+    key: 'tangram',
+    label: 'Танграм: заповни силует',
+    description: 'Дитина заповнює три силуети сімома геометричними деталями, пересуваючи, повертаючи й віддзеркалюючи їх.',
+    hint: 'Перетягуй деталі на силует. Вибрану деталь можна повертати кнопками.',
+    device: 'any',
+    minWidth: 360,
+    levels: [
+      { id: 'session', label: 'За класом', description: 'Підказки та початкові орієнтації деталей залежать від класу' },
+    ],
+    load: () => import('./tangram/tangram.js'),
+  },
+  {
+    key: 'fireflies',
+    label: 'Світлячки',
+    description: 'Дитина тренує перетягування мишкою: переносить 30 різнокольорових світлячків у банку.',
+    hint: 'Затисни світлячка кнопкою миші, перетягни до банки й відпусти.',
+    device: 'desktop',
+    minWidth: 760,
+    levels: [
+      { id: 'session', label: '30 світлячків', description: 'Одна сесія з 30 перетягувань у цільову зону' },
+    ],
+    load: () => import('./fireflies/fireflies.js'),
+  },
 ]
 
 export function findActivity(key: string | null | undefined): ActivityInfo | null {

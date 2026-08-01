@@ -333,16 +333,19 @@ School Mode is the low-risk classroom surface:
   class is not locked out before the teacher starts the game;
 - a teacher sees only their own sessions and an anonymous leaderboard.
 
-### Class Activities — Client-Reported Results **[IMPLEMENTED]**
+### Class Activities — Client-Unverified Aggregates **[IMPLEMENTED]**
 
 A School session delivers either server-graded questions (`kind = 'questions'`,
-the default and the historical behaviour) or a **procedural activity**
-(`kind = 'activity'`) such as the keyboard puzzle, magic squares, symbolic
-logic, message coding or sorting station. An activity has no content rows and
-no server-owned answer key, so its outcome **cannot be recomputed on the
-server**.
-This is a deliberate, contained exception to "scoring happens only on the
-server", and it is fenced as follows:
+the default and the historical behaviour) or an **activity** (`kind =
+'activity'`). Most activities are procedural, such as the keyboard puzzle,
+magic squares, symbolic logic, message coding or sorting station. A
+content-backed activity may use a dedicated participant endpoint: for
+`fact-or-opinion` the pre-answer response contains only neutral statement ids
+and text, while the category is evaluated on the backend. The final aggregate
+is still client-reported because per-item activity answers are not persisted,
+so it cannot be treated as server-trusted scoring.
+This is a deliberate, contained exception for classroom aggregates, fenced as
+follows:
 
 - the outcome arrives from the browser and is stored with
   `trust = 'client-unverified'` (a DB CHECK pins the column to that value), so
@@ -365,6 +368,9 @@ server", and it is fenced as follows:
   activity's own rubric and clamped to 0–3;
 - one result per participant (`UNIQUE(participant_id)`), only for an `active`
   session, only with a valid participant token, behind its own rate limit;
+- content-backed activity endpoints verify the participant token, active
+  session, exact activity key and grade pack before evaluating a choice; the
+  statement list never carries its category or explanation before answering;
 - the two surfaces are **mutually closed**: question routes (`/questions`,
   `/preview`, participant `/answer`, `/projector-answer`, per-participant
   breakdown) return 409 for an activity session, and `/activity-result`

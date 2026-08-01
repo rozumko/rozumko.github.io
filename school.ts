@@ -276,7 +276,8 @@ function fallbackActivityStars(activityKey: string | null, result: ActivityRunRe
   // count separates runs. Must mirror `retryRubric` in
   // backend/src/lib/school-activities.ts, or the child sees stars the teacher
   // does not.
-  if (activityKey === 'message-coding' || activityKey === 'sorting-station') {
+  if (activityKey === 'message-coding' || activityKey === 'sorting-station'
+    || activityKey === 'tangram' || activityKey === 'fireflies') {
     if (result.correct < result.total) return clampStars(percent >= 75 ? 2 : percent >= 40 ? 1 : 0)
     if (result.mistakes === 0) return 3
     if (result.mistakes <= Math.ceil(result.total / 4)) return 2
@@ -355,6 +356,8 @@ async function startSchoolActivity(
     activeActivity = module.mount(gameRoot, {
       level: activityLevel,
       grade,
+      participantId,
+      participantToken,
       onProgress: (done, total) => {
         if (progressEl) progressEl.textContent = `${done} / ${total}`
       },
