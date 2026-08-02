@@ -253,15 +253,42 @@
   padding-inline: var(--sp-4);
 }
 
-.olympiad-entry {
-  width: min(50rem, 100%);
-  margin: var(--sp-16) auto 0;
+/* Mascot beside the title instead of stacked above it. */
+.entry-logo--hero {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-6);
+  margin-bottom: var(--sp-7);
+  text-align: left;
 }
+.entry-logo--hero .entry-logo__icon {
+  flex-shrink: 0;
+  margin-bottom: 0;
+}
+.entry-logo--hero .entry-logo__icon img {
+  width: clamp(6.5rem, 13vw, 10rem);
+  height: auto;
+  margin-inline: 0;
+}
+.entry-logo--hero .entry-logo__sub { max-width: 34rem; }
+
+.olympiad-entry {
+  width: min(62rem, 100%);
+  margin: var(--sp-10) auto 0;
+}
+/* Both cards share one row so they end at the same baseline. */
 .olympiad-entry__grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 24rem));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--sp-6);
-  align-items: start;
+  align-items: stretch;
+}
+.olympiad-entry__grid > .student-card {
+  display: flex;
+  flex-direction: column;
+  max-width: none;
+  padding: var(--sp-6);
 }
 .olympiad-code-form__help {
   color: var(--clr-text-muted);
@@ -269,10 +296,12 @@
   margin-bottom: var(--sp-3);
   text-align: center;
 }
-.olympiad-code-form + .card-label { margin-top: var(--sp-5); }
+/* Anchors the demo block to the bottom of the stretched card. */
+.olympiad-code-form + .card-label { margin-top: auto; padding-top: var(--sp-5); }
 
 .olympiad-guide__list {
   display: grid;
+  align-content: start;
   gap: var(--sp-4);
   margin: 0;
   padding: 0;
@@ -300,7 +329,8 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--sp-2);
-  margin-top: var(--sp-5);
+  margin-top: auto;
+  padding-top: var(--sp-5);
 }
 .olympiad-guide__counts span {
   padding: var(--sp-3) var(--sp-2);
@@ -317,9 +347,16 @@
 }
 
 @media (max-width: 780px) {
-  .olympiad-entry { margin-top: var(--sp-14); }
+  .olympiad-entry { width: min(30rem, 100%); margin-top: var(--sp-12); }
   .olympiad-entry__grid { grid-template-columns: 1fr; }
   .olympiad-guide { order: 2; }
+  .entry-logo--hero {
+    flex-direction: column;
+    gap: var(--sp-3);
+    text-align: center;
+  }
+  .entry-logo--hero .entry-logo__icon img { margin-inline: auto; }
+  .olympiad-code-form + .card-label { margin-top: var(--sp-5); padding-top: 0; }
 }
 @media (max-width: 480px) {
   .olympiad-home-page .student-screen { padding-inline: var(--sp-3); }
