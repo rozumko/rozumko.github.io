@@ -496,30 +496,39 @@
         </div>
         <!-- Створення активності: гра замість питань -->
         <div id="school-activity-panel" class="school-create-card hidden" role="tabpanel" aria-labelledby="school-mode-activity">
-          <div class="school-create school-create--activity">
-            <label class="school-create__field">Клас
-              <select id="school-activity-grade" class="form-input school-create__select">
-                <option value="1">1 клас</option>
-                <option value="2">2 клас</option>
-                <option value="3">3 клас</option>
-                <option value="4">4 клас</option>
-              </select>
-            </label>
-            <label class="school-create__field school-create__field--topic">Активність
-              <select id="school-activity-key" class="form-input school-create__select"></select>
-            </label>
-            <label id="school-activity-level-field" class="school-create__field">Складність
-              <select id="school-activity-level" class="form-input school-create__select"></select>
-            </label>
-          </div>
+          <!-- Cards, not a dropdown: the list is long enough that a teacher
+               needs to see names and descriptions at once. Rendered from the
+               activity registry. -->
+          <div id="school-activity-picker" class="activity-picker"></div>
 
-          <p id="school-activity-about" class="school-activity__about"></p>
-
-          <div class="school-create__actions">
-            <button id="school-activity-create-btn" class="btn btn--success school-create__action" type="button">
-              <i class="fas fa-mobile-alt" aria-hidden="true"></i>
-              <span><strong>Гра з кодом</strong><small>Учні виконують активність зі своїх пристроїв</small></span>
+          <!-- Settings for the one activity the teacher picked -->
+          <div id="school-activity-detail" class="activity-detail hidden">
+            <button id="school-activity-back" class="activity-detail__back" type="button">
+              <i class="fas fa-arrow-left" aria-hidden="true"></i> Усі активності
             </button>
+            <h3 id="school-activity-title" class="activity-detail__title"></h3>
+            <p id="school-activity-about" class="school-activity__about"></p>
+
+            <div class="school-create school-create--activity">
+              <label class="school-create__field">Клас
+                <select id="school-activity-grade" class="form-input school-create__select">
+                  <option value="1">1 клас</option>
+                  <option value="2">2 клас</option>
+                  <option value="3">3 клас</option>
+                  <option value="4">4 клас</option>
+                </select>
+              </label>
+              <label id="school-activity-level-field" class="school-create__field">Складність
+                <select id="school-activity-level" class="form-input school-create__select"></select>
+              </label>
+            </div>
+
+            <div class="school-create__actions school-create__actions--single">
+              <button id="school-activity-create-btn" class="btn btn--success school-create__action" type="button">
+                <i class="fas fa-mobile-alt" aria-hidden="true"></i>
+                <span><strong>Гра з кодом</strong><small>Учні виконують активність зі своїх пристроїв</small></span>
+              </button>
+            </div>
           </div>
         </div>
 

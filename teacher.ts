@@ -16,7 +16,7 @@ import {
   type TeacherClass, type ClassStudent, type EventRegistration, type TeacherEvent, type Attempt,
   type SchoolSessionInfo, type Question, type SchoolActivityResultRow,
 } from './features/api/client.js'
-import { ACTIVITIES, findActivity, findActivityLevel } from './features/activities/registry.js'
+import { ACTIVITIES, ACTIVITY_GROUPS, findActivity, findActivityLevel } from './features/activities/registry.js'
 import { esc, friendlyError, recoveryErrorMessage, showConfirm, showModal } from './utils/ui.js'
 import { openCertModal, awardLabel, percent, getAward } from './utils/certificate.js'
 import { TOPIC_LABELS } from './features/missions/topics.js'
@@ -1583,32 +1583,77 @@ populateSchoolTopics()
 type SchoolMode = 'questions' | 'activity'
 let schoolMode: SchoolMode = 'questions'
 
+// The teacher picks an activity from a card grid, then tunes it on a second
+// screen. `selectedActivityKey` is what the create button submits — the card
+// list has no form control of its own.
+let selectedActivityKey: string | null = null
+
 function populateSchoolActivities() {
-  const keySel = $maybe<HTMLSelectElement>('school-activity-key')
-  if (!keySel) return
-  keySel.innerHTML = ACTIVITIES.map(a => (
-    `<option value="${esc(a.key)}">${esc(a.label)}${a.device === 'desktop' ? ' · для ПК' : ''}</option>`
-  )).join('')
+  const picker = $maybe('school-activity-picker')
+  if (!picker) return
+  picker.innerHTML = ACTIVITY_GROUPS.map(group => {
+    const cards = ACTIVITIES.filter(a => a.group === group.id)
+    if (!cards.length) return ''
+    return `
+      <section class="activity-picker__group">
+        <h3 class="activity-picker__group-title">${esc(group.label)}</h3>
+        <div class="activity-picker__grid">
+          ${cards.map(a => `
+            <button class="activity-card" type="button" data-activity-key="${esc(a.key)}">
+              <span class="activity-card__icon"><i class="fas ${esc(a.icon)}" aria-hidden="true"></i></span>
+              <span class="activity-card__title">${esc(a.label)}</span>
+              ${a.device === 'desktop' ? '<span class="activity-card__badge">для ПК</span>' : ''}
+              <span class="activity-card__desc">${esc(a.description)}</span>
+            </button>
+          `).join('')}
+        </div>
+      </section>`
+  }).join('')
+
+  picker.querySelectorAll<HTMLElement>('.activity-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const key = card.dataset['activityKey']
+      if (key) openActivityDetail(key)
+    })
+  })
+}
+
+/** Card grid → settings for one activity. */
+function openActivityDetail(key: string) {
+  const activity = findActivity(key)
+  if (!activity) return
+  selectedActivityKey = activity.key
+  const title = $maybe('school-activity-title')
+  if (title) title.textContent = activity.label
   renderActivityLevels()
+  $maybe('school-activity-picker')?.classList.add('hidden')
+  $maybe('school-activity-detail')?.classList.remove('hidden')
+  $maybe<HTMLSelectElement>('school-activity-grade')?.focus()
+  schoolSetError('')
+}
+
+function closeActivityDetail() {
+  selectedActivityKey = null
+  $maybe('school-activity-detail')?.classList.add('hidden')
+  $maybe('school-activity-picker')?.classList.remove('hidden')
+  schoolSetError('')
 }
 
 function renderActivityLevels() {
-  const activity = findActivity($maybe<HTMLSelectElement>('school-activity-key')?.value)
+  const activity = findActivity(selectedActivityKey)
   const levelSel = $maybe<HTMLSelectElement>('school-activity-level')
   const levelField = $maybe('school-activity-level-field')
-  const about = $maybe('school-activity-about')
   if (!activity || !levelSel) return
   levelSel.innerHTML = activity.levels.map(l => (
     `<option value="${esc(l.id)}" title="${esc(l.description)}">${esc(l.label)}</option>`
   )).join('')
   levelField?.classList.toggle('hidden', activity.levels.length === 1)
   renderActivityAbout()
-  if (about) about.classList.remove('hidden')
 }
 
 function renderActivityAbout() {
   const about = $maybe('school-activity-about')
-  const activity = findActivity($maybe<HTMLSelectElement>('school-activity-key')?.value)
+  const activity = findActivity(selectedActivityKey)
   if (!about || !activity) return
   const level = findActivityLevel(activity, $maybe<HTMLSelectElement>('school-activity-level')?.value)
   const deviceNote = activity.device === 'desktop'
@@ -1631,8 +1676,14 @@ function setSchoolMode(mode: SchoolMode) {
 
 /** Back to the first meaningful control of whichever sub-tab is open. */
 function focusSchoolForm() {
-  const id = schoolMode === 'activity' ? 'school-activity-key' : 'school-topic'
-  $maybe<HTMLSelectElement>(id)?.focus()
+  if (schoolMode !== 'activity') {
+    $maybe<HTMLSelectElement>('school-topic')?.focus()
+    return
+  }
+  // Whichever activity screen is open: the settings form or the card grid.
+  const detailOpen = !$maybe('school-activity-detail')?.classList.contains('hidden')
+  if (detailOpen) $maybe<HTMLSelectElement>('school-activity-grade')?.focus()
+  else $maybe<HTMLElement>('school-activity-picker')?.querySelector<HTMLElement>('.activity-card')?.focus()
 }
 
 document.querySelectorAll<HTMLElement>('.school-mode-tab').forEach(tab => {
@@ -1642,7 +1693,7 @@ document.querySelectorAll<HTMLElement>('.school-mode-tab').forEach(tab => {
   })
 })
 
-$maybe<HTMLSelectElement>('school-activity-key')?.addEventListener('change', renderActivityLevels)
+$maybe<HTMLButtonElement>('school-activity-back')?.addEventListener('click', closeActivityDetail)
 $maybe<HTMLSelectElement>('school-activity-level')?.addEventListener('change', renderActivityAbout)
 
 populateSchoolActivities()
@@ -1911,7 +1962,7 @@ $maybe<HTMLButtonElement>('school-create-btn')?.addEventListener('click', () => 
 // An activity has no deck to check, so the lobby opens right away.
 $maybe<HTMLButtonElement>('school-activity-create-btn')?.addEventListener('click', async () => {
   const btn = $maybe<HTMLButtonElement>('school-activity-create-btn')
-  const activityKey = $maybe<HTMLSelectElement>('school-activity-key')?.value
+  const activityKey = selectedActivityKey
   const activityLevel = $maybe<HTMLSelectElement>('school-activity-level')?.value
   if (!activityKey || !activityLevel) return
   schoolSetError('')
