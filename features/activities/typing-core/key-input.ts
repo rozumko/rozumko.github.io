@@ -57,6 +57,33 @@ export function displayCharacter(value: string): string {
   return value === ' ' ? '␣' : value
 }
 
+/** Spoken form of a character, for the stage's aria-label. */
+export function describeCharacter(value: string): string {
+  return value === ' ' ? 'пробіл' : value
+}
+
+/** Did the child try to type a character at all? */
+export function isTextAttempt(event: KeyboardEvent): boolean {
+  if (isSystemCombination(event)) return false
+  return typeof event.key === 'string' && event.key.length === 1
+}
+
+/** Does this keypress produce the character the text is waiting for? */
+export function matchesCharacter(expected: string, event: KeyboardEvent): boolean {
+  if (expected === ' ') return event.code === 'Space'
+  const wanted = normalizeCharacter(expected)
+  const actual = normalizeCharacter(event.key)
+
+  // In this school scheme «ґ» is specifically Ctrl+Alt+Г. Both the character
+  // and the physical key are checked, so another layout scheme cannot teach
+  // the child the wrong movement.
+  if (wanted.toLocaleLowerCase('uk-UA') === 'ґ') {
+    return actual === wanted && isAltGraph(event) && event.code === 'KeyU'
+  }
+
+  return wanted === actual
+}
+
 /** Why an attempt failed — the wrong layout deserves its own message. */
 export function issue(expected: string, event: KeyboardEvent): 'layout' | 'case' | 'wrong' {
   const wanted = normalizeCharacter(expected)

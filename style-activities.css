@@ -1735,3 +1735,197 @@
   .tk-target.is-error { animation: none; }
   .virtual-keyboard.has-hint .keyboard-key.is-target { transform: none; }
 }
+
+/* ── Друкуй слова (typing-words) ─────────────────────────────────────────────
+   Text on top, keyboard below: the child reads the next character and the
+   keyboard shows where it lives. */
+.tw-root { position: absolute; inset: 0; }
+
+.tw-stage {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.4rem, 1.2vh, 0.85rem);
+  padding: clamp(0.5rem, 2vh, 1.25rem) 1rem 3.25rem;
+  outline: none;
+}
+
+.tw-caption {
+  margin: 0;
+  color: var(--act-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tw-target {
+  margin: 0;
+  max-width: min(56rem, 92vw);
+  padding: clamp(0.6rem, 1.6vh, 1.1rem) 1.25rem;
+  border: 2px solid var(--act-border-strong);
+  border-radius: 1rem;
+  background: var(--act-surface);
+  box-shadow: var(--act-shadow);
+  font-size: clamp(1.4rem, 3.4vh, 2.4rem);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.35;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+/* A sentence is long: smaller type keeps it on two lines at most */
+.tw-target--sentence { font-size: clamp(1.05rem, 2.4vh, 1.6rem); font-weight: 700; }
+
+.tw-target__done { color: var(--act-success); }
+.tw-target__todo { color: var(--act-muted); }
+.tw-target__current {
+  padding: 0 0.15em;
+  border-radius: 0.35rem;
+  background: var(--act-brand-soft);
+  color: var(--act-brand-dark);
+  box-shadow: 0 2px 0 var(--act-brand);
+}
+
+.tw-next {
+  margin: 0;
+  color: var(--act-muted);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+.tw-feedback {
+  margin: 0;
+  min-height: 1.4em;
+  color: var(--act-muted);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+.tw-feedback.is-success { color: var(--act-success); }
+.tw-feedback.is-error { color: var(--act-danger); }
+
+.tw-layout-warning,
+.ts-layout-warning {
+  margin: 0;
+  max-width: 34rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--act-warning);
+  border-radius: 999px;
+  background: var(--act-warning-soft);
+  color: var(--act-text);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: center;
+}
+.tw-layout-warning[hidden],
+.ts-layout-warning[hidden] { display: none; }
+
+/* ── Спринт (typing-sprint) ──────────────────────────────────────────────────
+   A target crosses the field while the child types it. */
+.ts-root { position: absolute; inset: 0; }
+
+.ts-stage {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.4rem, 1.2vh, 0.85rem);
+  padding: clamp(0.5rem, 2vh, 1.25rem) 1rem 3.25rem;
+  outline: none;
+}
+
+.ts-hud {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.ts-hud__item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--act-border);
+  border-radius: 999px;
+  background: var(--act-surface);
+}
+.ts-hud__item small {
+  color: var(--act-muted);
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.ts-hud__item strong { font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+
+.ts-field {
+  position: relative;
+  width: min(60rem, 94vw);
+  height: clamp(110px, 22vh, 190px);
+  overflow: hidden;
+  border: 1px solid var(--act-border);
+  border-radius: 1rem;
+  background: linear-gradient(180deg, var(--act-surface-strong), var(--act-surface));
+}
+/* Finish line: the edge a target must not reach */
+.ts-field::after {
+  position: absolute;
+  top: 0;
+  right: 16px;
+  bottom: 0;
+  width: 3px;
+  border-radius: 3px;
+  background: repeating-linear-gradient(180deg, var(--act-danger) 0 8px, transparent 8px 16px);
+  content: "";
+  opacity: 0.45;
+}
+
+.ts-target {
+  position: absolute;
+  padding: 0.35rem 0.8rem;
+  border: 2px solid var(--act-brand);
+  border-radius: 0.7rem;
+  background: var(--act-surface);
+  box-shadow: 0 6px 16px rgb(37 99 235 / 0.18);
+  font-size: clamp(1.2rem, 3vh, 2rem);
+  font-weight: 900;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.ts-target[hidden] { display: none; }
+.ts-target--words { font-size: clamp(1rem, 2.4vh, 1.5rem); }
+.ts-target--combos { font-size: clamp(1.1rem, 2.7vh, 1.7rem); }
+.ts-target__done { color: var(--act-success); }
+.ts-target__todo { color: var(--act-muted); }
+.ts-target__current { color: var(--act-brand-dark); }
+.ts-target.is-hit {
+  border-color: var(--act-success);
+  background: var(--act-success-soft);
+  transition: transform 0.15s, opacity 0.15s;
+  transform: scale(1.1);
+  opacity: 0;
+}
+.ts-target.is-missed {
+  border-color: var(--act-danger);
+  background: var(--act-danger-soft);
+  transition: opacity 0.2s;
+  opacity: 0;
+}
+
+.ts-feedback {
+  margin: 0;
+  min-height: 1.4em;
+  color: var(--act-muted);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+.ts-feedback.is-good { color: var(--act-success); }
+.ts-feedback.is-error { color: var(--act-danger); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ts-target.is-hit { transform: none; }
+}
