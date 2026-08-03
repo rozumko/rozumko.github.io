@@ -11,6 +11,31 @@ export function shuffled<T>(items: readonly T[]): T[] {
   return out
 }
 
+/**
+ * Endless queue with no repeats: the set is handed out shuffled and reshuffled
+ * only once it runs dry, so a sprint shows the whole set before repeating.
+ */
+export function createBag<T>(items: readonly T[]): { next: () => T | null } {
+  const source = [...items]
+  let pool: T[] = []
+  let last: unknown = null
+
+  return {
+    next() {
+      if (source.length === 0) return null
+      if (pool.length === 0) {
+        pool = shuffled(source)
+        if (pool.length > 1 && identity(pool[0]) === last) {
+          ;[pool[0], pool[1]] = [pool[1]!, pool[0]!]
+        }
+      }
+      const item = pool.shift()!
+      last = identity(item)
+      return item
+    },
+  }
+}
+
 function identity(item: unknown): unknown {
   return item && typeof item === 'object' && 'id' in item ? (item as { id: unknown }).id : item
 }

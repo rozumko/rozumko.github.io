@@ -13,6 +13,8 @@
 export type SchoolActivityKey =
   | 'key-puzzle'
   | 'typing-keys'
+  | 'typing-words'
+  | 'typing-sprint'
   | 'maze'
   | 'windows'
   | 'mouse-buttons'
@@ -105,6 +107,58 @@ export const SCHOOL_ACTIVITIES: Record<SchoolActivityKey, SchoolActivityDefiniti
     // The target stays until it is pressed correctly, so a finished run is
     // always 12/12 and only the mistake count carries information.
     stars: retryRubric,
+  },
+  // typing-words: the child types words or sentences character by character. A
+  // wrong key does not advance the text, so a finished run is always complete
+  // and the mistake count is the accuracy signal — but unlike the click games,
+  // mistakes here are typos across dozens of characters, so the budget scales
+  // with how much typing the level asked for.
+  'typing-words': {
+    key: 'typing-words',
+    device: 'desktop',
+    levels: [
+      // 18 words per round; a sentence round is 5 items but far more typing.
+      { id: 'words-easy',       maxTotal: 18, minDurationSec: 10 },
+      { id: 'words-medium',     maxTotal: 18, minDurationSec: 12 },
+      { id: 'words-hard',       maxTotal: 18, minDurationSec: 15 },
+      { id: 'sentences-easy',   maxTotal: 5,  minDurationSec: 10 },
+      { id: 'sentences-medium', maxTotal: 5,  minDurationSec: 12 },
+      { id: 'sentences-hard',   maxTotal: 5,  minDurationSec: 15 },
+    ],
+    stars: ({ correct, total, mistakes }) => {
+      if (correct < total) {
+        const percent = (correct / total) * 100
+        return percent >= 75 ? 2 : percent >= 40 ? 1 : 0
+      }
+      return mistakes <= total ? 3 : mistakes <= total * 3 ? 2 : 1
+    },
+  },
+  // typing-sprint: one fixed minute of moving targets. `total` is however many
+  // targets appeared during the run, so it varies per run — the ceiling is what
+  // the shortest target and the fastest child could physically produce in a
+  // minute, with headroom, because rejecting an honest result is worse.
+  'typing-sprint': {
+    key: 'typing-sprint',
+    device: 'desktop',
+    levels: [
+      // Measured: a script hitting every single-key target lands ~240 in a
+      // minute, so the ceilings sit above what a child could ever produce.
+      { id: 'keys-easy',     maxTotal: 300, minDurationSec: 5 },
+      { id: 'keys-medium',   maxTotal: 300, minDurationSec: 5 },
+      { id: 'keys-hard',     maxTotal: 300, minDurationSec: 5 },
+      { id: 'combos-easy',   maxTotal: 200, minDurationSec: 5 },
+      { id: 'combos-medium', maxTotal: 200, minDurationSec: 5 },
+      { id: 'combos-hard',   maxTotal: 200, minDurationSec: 5 },
+      { id: 'words-easy',    maxTotal: 150, minDurationSec: 5 },
+      { id: 'words-medium',  maxTotal: 150, minDurationSec: 5 },
+      { id: 'words-hard',    maxTotal: 150, minDurationSec: 5 },
+    ],
+    // A target the child did not finish in time is a miss, so the hit ratio is
+    // a genuine score here — the same rubric the other timed games use.
+    stars: ({ correct, total }) => {
+      const percent = (correct / total) * 100
+      return percent >= 90 ? 3 : percent >= 70 ? 2 : percent >= 40 ? 1 : 0
+    },
   },
   // maze: the child drags a dot through a maze without touching a wall.
   // `total` is the number of levels in the mode the teacher picked, so the
@@ -256,7 +310,8 @@ export const SCHOOL_ACTIVITIES: Record<SchoolActivityKey, SchoolActivityDefiniti
 }
 
 export const SCHOOL_ACTIVITY_KEYS = [
-  'key-puzzle', 'typing-keys', 'maze', 'windows', 'mouse-buttons', 'magic-squares', 'symbol-logic',
+  'key-puzzle', 'typing-keys', 'typing-words', 'typing-sprint',
+  'maze', 'windows', 'mouse-buttons', 'magic-squares', 'symbol-logic',
   'message-coding', 'sorting-station', 'precise-click', 'fact-or-opinion', 'tangram', 'fireflies',
 ] as const satisfies readonly SchoolActivityKey[]
 
