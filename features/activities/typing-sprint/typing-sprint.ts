@@ -1,6 +1,6 @@
 import type { ActivityHandle, ActivityMount, ActivityRunResult } from '../activity-contract.js'
 import { createKeyboard } from '../typing-core/keyboard-view.js'
-import { createBag } from '../typing-core/round.js'
+import { MAX_REPORTED_MISTAKES, createBag } from '../typing-core/round.js'
 import { describeCharacter, displayCharacter, isTextAttempt, issue, matchesCharacter } from '../typing-core/key-input.js'
 import { closeAudio, playComplete, playHit, playMiss } from '../typing-core/typing-audio.js'
 import { SPRINT_SECONDS, resolveSprintLevel } from './typing-sprint-data.js'
@@ -170,7 +170,7 @@ export const mount: ActivityMount = (container, options): ActivityHandle => {
     return {
       correct: hits,
       total: Math.max(1, resolved),
-      mistakes,
+      mistakes: Math.min(mistakes, MAX_REPORTED_MISTAKES),
       durationSec: Math.max(0, Math.round((Date.now() - startedAt) / 1000)),
     }
   }
