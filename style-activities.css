@@ -1929,3 +1929,109 @@
 @media (prefers-reduced-motion: reduce) {
   .ts-target.is-hit { transform: none; }
 }
+
+/* ── Уроки друку (typing-lessons) ────────────────────────────────────────────
+   A window of the lesson text scrolls under a fixed caret, with the finger
+   hint above the keyboard. */
+.tl-root { position: absolute; inset: 0; }
+
+.tl-stage {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.35rem, 1.1vh, 0.75rem);
+  padding: clamp(0.5rem, 2vh, 1.25rem) 1rem 3.25rem;
+  outline: none;
+}
+
+.tl-caption {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 0;
+  color: var(--act-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.tl-series { text-transform: uppercase; letter-spacing: 0.04em; }
+.tl-lesson { color: var(--act-brand-dark); }
+
+/* One line only: the caret stays put and the text slides in from the right,
+   the way a real typing trainer reads. Anything past the edge is clipped. */
+.tl-text {
+  margin: 0;
+  width: min(62rem, 94vw);
+  padding: clamp(0.6rem, 1.6vh, 1.1rem) 1.25rem;
+  border: 2px solid var(--act-border-strong);
+  border-radius: 1rem;
+  background: var(--act-surface);
+  box-shadow: var(--act-shadow);
+  font-family: ui-monospace, "Cascadia Code", "Consolas", monospace;
+  font-size: clamp(0.95rem, 2.2vh, 1.5rem);
+  line-height: 1.6;
+  text-align: left;
+  white-space: pre;
+  overflow: hidden;
+  /* The line does not end at the edge, it fades — so the clip does not read
+     as the text being cut off. */
+  mask-image: linear-gradient(90deg, #000 88%, transparent);
+}
+
+.tl-text__done { color: var(--act-success); }
+.tl-text__todo { color: var(--act-muted); }
+.tl-text__current {
+  padding: 0 0.1em;
+  border-radius: 0.3rem;
+  background: var(--act-brand-soft);
+  color: var(--act-brand-dark);
+  box-shadow: 0 2px 0 var(--act-brand);
+}
+/* A space has to be visible as the thing to press */
+.tl-text__current.is-space { background: var(--act-warning-soft); box-shadow: 0 2px 0 var(--act-warning); }
+
+.tl-finger {
+  margin: 0;
+  padding: 0.3rem 0.9rem;
+  border: 1px solid var(--act-border);
+  border-radius: 999px;
+  background: var(--act-surface);
+  color: var(--act-text);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.tl-finger[hidden] { display: none; }
+
+.tl-combo {
+  margin: 0;
+  color: var(--act-brand-dark);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.tl-combo[hidden] { display: none; }
+
+.tl-feedback {
+  margin: 0;
+  min-height: 1.4em;
+  color: var(--act-muted);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+.tl-feedback.is-success { color: var(--act-success); }
+.tl-feedback.is-error { color: var(--act-danger); }
+
+.tl-layout-warning {
+  margin: 0;
+  max-width: 34rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--act-warning);
+  border-radius: 999px;
+  background: var(--act-warning-soft);
+  color: var(--act-text);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: center;
+}
+.tl-layout-warning[hidden] { display: none; }

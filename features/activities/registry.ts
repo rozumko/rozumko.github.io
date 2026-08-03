@@ -128,6 +128,33 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     load: () => import('./typing-sprint/typing-sprint.js'),
   },
   {
+    key: 'typing-lessons',
+    label: 'Уроки друку',
+    description: 'Дитина проходить серію уроків: друкує тексти правильними пальцями, від перших клавіш до знаків.',
+    hint: 'Друкуй текст уроку. Підказка показує, яким пальцем натискати.',
+    device: 'desktop',
+    group: 'input',
+    icon: 'fa-graduation-cap',
+    minWidth: 900,
+    // Series × how much help the screen gives. A class rarely finishes a whole
+    // series, so the run is scored on accuracy, not on how far it got.
+    levels: [
+      { id: 'foundation-guided',       label: 'Перші клавіші · з підказками',      description: 'Уроки 1–10, світиться клавіша і названо палець' },
+      { id: 'foundation-finger',       label: 'Перші клавіші · лише палець',       description: 'Уроки 1–10, названо лише палець' },
+      { id: 'foundation-independent',  label: 'Перші клавіші · самостійно',        description: 'Уроки 1–10 без підказок' },
+      { id: 'expansion-guided',        label: 'Розширюємо абетку · з підказками',  description: 'Уроки 11–20, світиться клавіша і названо палець' },
+      { id: 'expansion-finger',        label: 'Розширюємо абетку · лише палець',   description: 'Уроки 11–20, названо лише палець' },
+      { id: 'expansion-independent',   label: 'Розширюємо абетку · самостійно',    description: 'Уроки 11–20 без підказок' },
+      { id: 'alphabet-guided',         label: 'Завершуємо абетку · з підказками',  description: 'Уроки 21–29, світиться клавіша і названо палець' },
+      { id: 'alphabet-finger',         label: 'Завершуємо абетку · лише палець',   description: 'Уроки 21–29, названо лише палець' },
+      { id: 'alphabet-independent',    label: 'Завершуємо абетку · самостійно',    description: 'Уроки 21–29 без підказок' },
+      { id: 'texts-guided',            label: 'Знаки й тексти · з підказками',     description: 'Уроки 30–35, світиться клавіша і названо палець' },
+      { id: 'texts-finger',            label: 'Знаки й тексти · лише палець',      description: 'Уроки 30–35, названо лише палець' },
+      { id: 'texts-independent',       label: 'Знаки й тексти · самостійно',       description: 'Уроки 30–35 без підказок' },
+    ],
+    load: () => import('./typing-lessons/typing-lessons.js'),
+  },
+  {
     key: 'maze',
     label: 'Чарівний лабіринт',
     description: 'Дитина веде кульку лабіринтом до кубка, не торкаючись стін, і збирає зірки.',

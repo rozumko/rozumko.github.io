@@ -15,6 +15,7 @@ export type SchoolActivityKey =
   | 'typing-keys'
   | 'typing-words'
   | 'typing-sprint'
+  | 'typing-lessons'
   | 'maze'
   | 'windows'
   | 'mouse-buttons'
@@ -158,6 +159,41 @@ export const SCHOOL_ACTIVITIES: Record<SchoolActivityKey, SchoolActivityDefiniti
     stars: ({ correct, total }) => {
       const percent = (correct / total) * 100
       return percent >= 90 ? 3 : percent >= 70 ? 2 : percent >= 40 ? 1 : 0
+    },
+  },
+  // typing-lessons: a series of typing lessons, worked through in order. A
+  // class period rarely covers a whole series, so unlike every other activity
+  // the unit here is characters, not items: `total` is the character count of
+  // the series the teacher picked and `correct` is how many of them the child
+  // typed. Reaching the end is not the point; typing accurately is.
+  'typing-lessons': {
+    key: 'typing-lessons',
+    device: 'desktop',
+    // Exact character counts of the four series (features/activities/
+    // typing-lessons/typing-lessons-data.ts). typing-lessons-data.test.mjs
+    // fails if the texts and these ceilings ever drift apart.
+    levels: [
+      { id: 'foundation-guided',      maxTotal: 993, minDurationSec: 5 },
+      { id: 'foundation-finger',      maxTotal: 993, minDurationSec: 5 },
+      { id: 'foundation-independent', maxTotal: 993, minDurationSec: 5 },
+      { id: 'expansion-guided',       maxTotal: 936, minDurationSec: 5 },
+      { id: 'expansion-finger',       maxTotal: 936, minDurationSec: 5 },
+      { id: 'expansion-independent',  maxTotal: 936, minDurationSec: 5 },
+      { id: 'alphabet-guided',        maxTotal: 789, minDurationSec: 5 },
+      { id: 'alphabet-finger',        maxTotal: 789, minDurationSec: 5 },
+      { id: 'alphabet-independent',   maxTotal: 789, minDurationSec: 5 },
+      { id: 'texts-guided',           maxTotal: 588, minDurationSec: 5 },
+      { id: 'texts-finger',           maxTotal: 588, minDurationSec: 5 },
+      { id: 'texts-independent',      maxTotal: 588, minDurationSec: 5 },
+    ],
+    // Accuracy over the characters actually attempted, not progress through the
+    // series: a child who typed two lessons cleanly deserves the same three
+    // stars as one who raced through five with typos everywhere. The floor
+    // stops a child who typed a handful of characters from collecting stars.
+    stars: ({ correct, mistakes }) => {
+      if (correct < 20) return correct > 0 ? 1 : 0
+      const accuracy = (correct / (correct + mistakes)) * 100
+      return accuracy >= 95 ? 3 : accuracy >= 85 ? 2 : accuracy >= 70 ? 1 : 0
     },
   },
   // maze: the child drags a dot through a maze without touching a wall.
@@ -310,7 +346,7 @@ export const SCHOOL_ACTIVITIES: Record<SchoolActivityKey, SchoolActivityDefiniti
 }
 
 export const SCHOOL_ACTIVITY_KEYS = [
-  'key-puzzle', 'typing-keys', 'typing-words', 'typing-sprint',
+  'key-puzzle', 'typing-keys', 'typing-words', 'typing-sprint', 'typing-lessons',
   'maze', 'windows', 'mouse-buttons', 'magic-squares', 'symbol-logic',
   'message-coding', 'sorting-station', 'precise-click', 'fact-or-opinion', 'tangram', 'fireflies',
 ] as const satisfies readonly SchoolActivityKey[]

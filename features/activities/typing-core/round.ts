@@ -2,6 +2,15 @@
 // until the whole set has been shown, so a child sees the letters they are meant
 // to practise rather than two of them over and over.
 
+/**
+ * The server refuses a result with more mistakes than this
+ * (ACTIVITY_MAX_MISTAKES in backend/src/lib/school-activities.ts). Typing runs
+ * are the only ones long enough to approach it — a child stuck on a key they
+ * cannot find can press a lot of wrong ones — and losing the whole result over
+ * the count is worse than reporting it capped.
+ */
+export const MAX_REPORTED_MISTAKES = 999
+
 export function shuffled<T>(items: readonly T[]): T[] {
   const out = [...items]
   for (let i = out.length - 1; i > 0; i--) {
