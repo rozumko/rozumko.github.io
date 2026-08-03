@@ -479,11 +479,93 @@ body.teacher-dashboard-active {
   color: #fff;
 }
 .school-activity__about {
-  margin: var(--sp-4) 0 0;
+  margin: var(--sp-2) 0 var(--sp-5);
   color: var(--clr-text-muted);
   font-size: var(--font-size-sm);
   line-height: 1.5;
 }
+/* Activity picker: one card per activity, grouped by what it trains */
+.activity-picker { display: grid; gap: var(--sp-6); }
+.activity-picker__group-title {
+  margin: 0 0 var(--sp-3);
+  color: var(--clr-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.activity-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: var(--sp-3);
+}
+.activity-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--sp-1) var(--sp-3);
+  min-width: 0;
+  padding: var(--sp-4);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-lg);
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s, transform .15s;
+}
+.activity-card:hover,
+.activity-card:focus-visible {
+  border-color: var(--clr-primary);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+}
+.activity-card__icon {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--r-md);
+  background: var(--clr-surface-muted);
+  color: var(--clr-primary);
+  font-size: 1.1rem;
+}
+.activity-card__title { min-width: 0; font-weight: 700; }
+.activity-card__badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--clr-surface-muted);
+  color: var(--clr-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.activity-card__desc {
+  grid-column: 2 / -1;
+  color: var(--clr-text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+}
+/* Second screen: settings for the activity the teacher picked */
+.activity-detail__back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 2.5rem;
+  margin-bottom: var(--sp-2);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--clr-text-muted);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.activity-detail__back:hover { color: var(--clr-primary); }
+.activity-detail__title { margin: 0; font-size: var(--font-size-lg); }
+/* Two short selects: keep them together instead of stretched edge to edge */
+.activity-detail .school-create { max-width: 34rem; }
 /* One row per child: stars, how much was assembled, mistakes, time */
 .school-activity-row {
   display: flex;
@@ -534,13 +616,11 @@ body.teacher-dashboard-active {
   grid-template-columns: minmax(7rem, .7fr) minmax(14rem, 1.5fr) minmax(9rem, .9fr) minmax(7rem, .7fr);
   gap: var(--sp-4);
 }
-/* Activities have three controls (class, activity, level), not four */
+/* The activity itself comes from the card grid, so only class and level remain */
 .school-create--activity {
-  grid-template-columns: minmax(7rem, .7fr) minmax(14rem, 1.5fr) minmax(9rem, .9fr);
+  grid-template-columns: minmax(7rem, .7fr) minmax(9rem, .9fr);
 }
-.school-create--activity + .school-activity__about + .school-create__actions {
-  grid-template-columns: minmax(0, 24rem);
-}
+.school-create__actions--single { grid-template-columns: minmax(0, 24rem); }
 .school-create__field { display: flex; flex-direction: column; gap: var(--sp-1); font-weight: 600; }
 .school-create__select { width: 100%; min-height: 3rem; }
 .school-create__actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); margin-top: var(--sp-6); }

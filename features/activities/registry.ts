@@ -8,6 +8,19 @@ import type { ActivityMount } from './activity-contract.js'
 
 export type ActivityDevice = 'desktop' | 'any'
 
+/**
+ * Cards, not a dropdown: the teacher scans a grid of activities, so they need
+ * a heading to scan under. Purely a presentation grouping — the backend knows
+ * nothing about it.
+ */
+export type ActivityGroupId = 'input' | 'logic' | 'information'
+
+export const ACTIVITY_GROUPS: readonly { id: ActivityGroupId; label: string }[] = [
+  { id: 'input',       label: 'Клавіатура і миша' },
+  { id: 'logic',       label: 'Логіка й мислення' },
+  { id: 'information', label: 'Інформація та дані' },
+]
+
 export interface ActivityLevelInfo {
   id: string
   label: string
@@ -22,6 +35,9 @@ export interface ActivityInfo {
   /** Short instruction shown above the child's activity stage. */
   hint: string
   device: ActivityDevice
+  group: ActivityGroupId
+  /** Font Awesome 5 class for the picker card, e.g. `fa-keyboard`. */
+  icon: string
   /**
    * Below this viewport width the activity is not playable. School Mode targets
    * computer labs; a phone gets an honest "open this on a computer" screen
@@ -39,6 +55,8 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     description: 'Дитина збирає клавіатуру: перетягує літери на їхні місця.',
     hint: 'Перетягуй клавіші на їхні місця!',
     device: 'desktop',
+    group: 'input',
+    icon: 'fa-keyboard',
     // The full keyboard row is ~940px wide plus the scatter zones around it.
     minWidth: 1024,
     levels: [
@@ -54,6 +72,8 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     description: 'Дитина веде кульку лабіринтом до кубка, не торкаючись стін, і збирає зірки.',
     hint: 'Веди кульку до кубка і не торкайся стін.',
     device: 'any',
+    group: 'input',
+    icon: 'fa-route',
     // The board letterboxes into whatever space it gets, so a tablet works.
     minWidth: 360,
     levels: [
@@ -68,6 +88,8 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     description: 'Дитина вчиться закривати, згортати й розгортати вікна програм.',
     hint: 'Виконуй дію на кожному вікні.',
     device: 'desktop',
+    group: 'input',
+    icon: 'fa-window-restore',
     // A window is 420px wide and has to land somewhere on a desktop.
     minWidth: 900,
     levels: [
@@ -83,6 +105,8 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     description: 'Дитина керує швидкою: ліва кнопка миші — ліворуч, права — праворуч.',
     hint: 'Керуй швидкою лівою і правою кнопками миші.',
     device: 'desktop',
+    group: 'input',
+    icon: 'fa-mouse',
     // Needs a real mouse with two buttons, and room for three lanes.
     minWidth: 900,
     levels: [
@@ -97,6 +121,8 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     description: 'Дитина розвʼязує три квадрати: з картинками або числами залежно від класу й рівня.',
     hint: 'Заповнюй пропуски за правилом квадрата.',
     device: 'any',
+    group: 'logic',
+    icon: 'fa-th',
     minWidth: 360,
     levels: [
       { id: 'easy',   label: 'Легко',    description: '3 завдання з меншою кількістю пропусків' },
@@ -111,6 +137,8 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     description: 'Дитина знаходить значення символів і розвʼязує пʼять коротких логічних прикладів.',
     hint: 'Починай із рядка, де два однакові символи.',
     device: 'any',
+    group: 'logic',
+    icon: 'fa-calculator',
     minWidth: 360,
     levels: [
       { id: 'easy',   label: 'Легко',    description: '5 завдань із малими числами та простими звʼязками' },
@@ -122,14 +150,16 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
   {
     key: 'message-coding',
     label: 'Кодування повідомлень',
-    description: 'Дитина кодує й розкодовує повідомлення: символи, числа, лампочки, пікселі або координати за класом.',
-    hint: 'Звір повідомлення з кодом і обери правильний варіант.',
+    description: 'Дитина розкодовує повідомлення: символи, числа, лампочки, пікселі та прості шифри за класом.',
+    hint: 'Звір повідомлення з легендою шифру й обери правильний варіант.',
     device: 'any',
+    group: 'information',
+    icon: 'fa-barcode',
     minWidth: 360,
     levels: [
       { id: 'easy',   label: 'Легко',    description: '5 коротких завдань з одним простим способом кодування' },
       { id: 'medium', label: 'Середньо', description: '5 завдань із довшими повідомленнями або новим видом подання' },
-      { id: 'hard',   label: 'Складно',  description: '5 завдань, де порядок, двійкові коди чи координати треба читати уважніше' },
+      { id: 'hard',   label: 'Складно',  description: '5 завдань, де порядок, двійкові коди чи шифри треба читати уважніше' },
     ],
     load: () => import('./message-coding/message-coding.js'),
   },
@@ -139,6 +169,8 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     description: 'Дитина розкладає об’єкти за двома ознаками: форма+колір, живе+місце або роль пристрою+тип даних.',
     hint: 'Перевір дві ознаки одразу й натисни правильну комірку.',
     device: 'any',
+    group: 'information',
+    icon: 'fa-boxes',
     minWidth: 360,
     levels: [
       { id: 'easy',   label: 'Легко',    description: '8 об’єктів, очевидні ознаки без пасток' },
@@ -153,6 +185,8 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     description: 'Дитина тренує точність і швидкість: знаходить підсвічену клітинку та натискає її у трьох послідовних етапах.',
     hint: 'Знайди підсвічену клітинку й натисни її. Пройди всі три етапи!',
     device: 'desktop',
+    group: 'input',
+    icon: 'fa-crosshairs',
     minWidth: 760,
     levels: [
       { id: 'session', label: 'Повна сесія', description: 'Три етапи від спокійного до швидкого в одній грі' },
@@ -165,6 +199,8 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     description: 'Дитина читає десять тверджень і визначає, де перевірюваний факт, а де особиста думка.',
     hint: 'Прочитай твердження й обери: це факт чи думка?',
     device: 'any',
+    group: 'information',
+    icon: 'fa-balance-scale',
     minWidth: 360,
     levels: [
       { id: 'session', label: 'За класом', description: 'Твердження автоматично добираються відповідно до вибраного класу' },
@@ -177,6 +213,8 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     description: 'Дитина заповнює три силуети сімома геометричними деталями, пересуваючи, повертаючи й віддзеркалюючи їх.',
     hint: 'Перетягуй деталі на силует. Вибрану деталь можна повертати кнопками.',
     device: 'any',
+    group: 'logic',
+    icon: 'fa-shapes',
     minWidth: 360,
     levels: [
       { id: 'session', label: 'За класом', description: 'Підказки та початкові орієнтації деталей залежать від класу' },
@@ -189,6 +227,8 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     description: 'Дитина тренує перетягування мишкою: переносить 30 різнокольорових світлячків у банку.',
     hint: 'Затисни світлячка кнопкою миші, перетягни до банки й відпусти.',
     device: 'desktop',
+    group: 'input',
+    icon: 'fa-bug',
     minWidth: 760,
     levels: [
       { id: 'session', label: '30 світлячків', description: 'Одна сесія з 30 перетягувань у цільову зону' },
