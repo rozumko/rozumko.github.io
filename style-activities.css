@@ -1514,3 +1514,224 @@
   .mb-road--shake { animation: none; }
   .mb-pop { animation: none; opacity: 0; }
 }
+
+/* ── Знайди клавішу (typing-keys) ────────────────────────────────────────────
+   Target card on top, virtual keyboard below. The keyboard geometry, finger
+   colours and keycap legends come from the standalone Klavio trainers; only the
+   palette was moved onto the activity tokens. */
+.tk-root { position: absolute; inset: 0; }
+
+.tk-stage {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.5rem, 1.4vh, 1rem);
+  padding: clamp(0.5rem, 2vh, 1.25rem) 1rem 3.25rem;
+  outline: none;
+}
+
+.tk-task { text-align: center; }
+.tk-task__caption {
+  margin: 0 0 0.35rem;
+  color: var(--act-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tk-target {
+  display: grid;
+  min-width: clamp(4.5rem, 9vh, 7rem);
+  height: clamp(4.5rem, 9vh, 7rem);
+  padding: 0 1rem;
+  place-items: center;
+  border: 2px solid var(--act-border-strong);
+  border-radius: 1.25rem;
+  background: var(--act-surface);
+  box-shadow: var(--act-shadow);
+  color: var(--act-text);
+  font-size: clamp(2.2rem, 5vh, 3.4rem);
+  font-weight: 900;
+  line-height: 1;
+  transition: transform 0.15s, border-color 0.15s, background 0.15s;
+}
+/* Named keys (Пробіл, Backspace) need words, not a giant glyph */
+.tk-target--word { font-size: clamp(1rem, 2.4vh, 1.5rem); }
+.tk-target.is-correct {
+  border-color: var(--act-success);
+  background: var(--act-success-soft);
+  color: var(--act-success);
+  transform: scale(1.05);
+}
+.tk-target.is-error {
+  border-color: var(--act-danger);
+  background: var(--act-danger-soft);
+  animation: tk-shake 0.3s;
+}
+
+@keyframes tk-shake {
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+.tk-combo {
+  margin: 0.4rem 0 0;
+  min-height: 1.2em;
+  color: var(--act-brand-dark);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.tk-feedback {
+  margin: 0;
+  min-height: 1.4em;
+  color: var(--act-muted);
+  font-size: 1rem;
+  font-weight: 700;
+}
+.tk-feedback.is-success { color: var(--act-success); }
+.tk-feedback.is-error { color: var(--act-danger); }
+
+.tk-layout-warning {
+  margin: 0;
+  max-width: 34rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--act-warning);
+  border-radius: 999px;
+  background: var(--act-warning-soft);
+  color: var(--act-text);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: center;
+}
+.tk-layout-warning[hidden] { display: none; }
+
+.tk-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--act-muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ── Virtual keyboard ─────────────────────────────────────────────────────── */
+.virtual-keyboard {
+  --key-width: clamp(30px, 3.9vw, 52px);
+  --key-height: clamp(30px, 3.2vh, 46px);
+  --key-gap: 5px;
+  --finger-color: var(--act-border-strong);
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--key-gap);
+  padding: 11px 12px 15px;
+  border: 1px solid var(--act-border-strong);
+  border-radius: 16px;
+  background: linear-gradient(155deg, var(--act-surface-soft), var(--act-surface-strong));
+  box-shadow: var(--act-shadow);
+}
+
+.keyboard-row { display: flex; justify-content: center; gap: var(--key-gap); }
+
+.keyboard-key {
+  position: relative;
+  display: grid;
+  width: var(--key-width);
+  height: var(--key-height);
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--act-border);
+  border-bottom: 4px solid var(--finger-color);
+  border-radius: 8px;
+  background: var(--act-surface);
+  color: var(--act-text);
+  font-weight: 850;
+  transition: transform 0.12s, background 0.12s, border-color 0.12s, opacity 0.12s;
+}
+
+.keyboard-key--medium { width: calc(var(--key-width) * 1.35); }
+.keyboard-key--wide { width: calc(var(--key-width) * 1.7); }
+.keyboard-key--xwide { width: calc(var(--key-width) * 2.1); }
+.keyboard-key--space { width: calc(var(--key-width) * 6.6); }
+
+/* Home-row bumps under А (F) and О (J), like on a real keyboard */
+.keyboard-key[data-code="KeyF"]::after,
+.keyboard-key[data-code="KeyJ"]::after {
+  position: absolute;
+  right: 9px;
+  bottom: 3px;
+  width: 12px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  content: "";
+  opacity: 0.72;
+}
+
+/* Secondary keys differ by fill, not opacity: the legend stays readable */
+.keyboard-key--muted { background: var(--act-surface-soft); }
+.keyboard-key--muted .key-legend { color: var(--act-muted); }
+.keyboard-key.is-unavailable { opacity: 0.34; }
+
+.keyboard-key[data-finger="pinky"]  { --finger-color: #e11d63; }
+.keyboard-key[data-finger="ring"]   { --finger-color: #7c3aed; }
+.keyboard-key[data-finger="middle"] { --finger-color: #d97706; }
+.keyboard-key[data-finger="index"]  { --finger-color: #2563eb; }
+.keyboard-key[data-finger="thumb"]  { --finger-color: #0d9488; }
+
+.key-legend { position: absolute; line-height: 1; pointer-events: none; }
+.key-legend--secondary { top: 5px; left: 6px; color: var(--act-muted); font-size: 0.62rem; font-weight: 700; }
+.key-legend--primary { right: 6px; bottom: 5px; color: var(--act-text); font-size: 0.92rem; font-weight: 900; }
+.key-legend--single {
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  color: var(--act-muted);
+  font-size: 0.66rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.virtual-keyboard.has-hint .keyboard-key.is-target {
+  z-index: 2;
+  transform: translateY(-3px) scale(1.06);
+  border-color: var(--act-brand);
+  background: var(--act-brand-soft);
+  box-shadow: 0 0 0 3px rgb(37 99 235 / 0.32);
+  opacity: 1;
+}
+/* The extra key of a combination — Shift, or AltGr for «ґ» */
+.virtual-keyboard.has-hint .keyboard-key.is-modifier-target {
+  border-color: var(--act-cyan);
+  background: var(--act-cyan-soft);
+  box-shadow: 0 0 0 2px rgb(8 145 178 / 0.28);
+  opacity: 1;
+}
+
+.keyboard-key.is-pressed-correct {
+  border-color: var(--act-success);
+  background: var(--act-success-soft);
+  color: var(--act-success);
+  opacity: 1;
+}
+.keyboard-key.is-pressed-error {
+  border-color: var(--act-danger);
+  background: var(--act-danger-soft);
+  color: var(--act-danger);
+  opacity: 1;
+}
+
+@media (max-width: 1000px) {
+  .virtual-keyboard { --key-gap: 4px; --key-width: clamp(28px, 3.6vw, 44px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tk-target.is-error { animation: none; }
+  .virtual-keyboard.has-hint .keyboard-key.is-target { transform: none; }
+}
