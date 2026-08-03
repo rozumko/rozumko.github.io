@@ -1,17 +1,23 @@
 export type MessageCodingDifficulty = 'easy' | 'medium' | 'hard'
-export type MessageCodingTaskType = 'symbols' | 'alphabet' | 'binary' | 'pixels' | 'coordinates'
+export type MessageCodingTaskType = 'symbols' | 'alphabet' | 'binary' | 'pixels' | 'cipher' | 'key'
 
 export interface MessageCodingLegendItem {
   code: string
   label: string
 }
 
+export interface MessageCodingKeyExample {
+  tokens: string[]
+  plain: string
+}
+
 export type MessageCodingDisplay =
   | { kind: 'text'; value: string }
   | { kind: 'chips'; chips: string[] }
+  | { kind: 'cipher'; tokens: string[] }
+  | { kind: 'key'; examples: MessageCodingKeyExample[]; challenge: string[] }
   | { kind: 'binary'; bits: string; weights: number[] }
   | { kind: 'pixels'; rows: string[] }
-  | { kind: 'coordinates'; size: number; points: readonly [number, number][] }
 
 export interface MessageCodingTask {
   id: string
@@ -79,7 +85,9 @@ function alphabetTask(
     title: mode === 'decode' ? 'Числа замість літер' : 'Літери у числа',
     prompt: mode === 'decode' ? 'Яке слово сховане в коді?' : `Який код має слово "${word}"?`,
     display: { kind: 'text', value: mode === 'decode' ? code : word },
-    legend: UKRAINIAN_ALPHABET.slice(0, 24).map((letter, index) => ({ code: letter, label: String(index + 1) })),
+    // The whole alphabet, not a prefix of it: a shortened legend left tasks
+    // whose words reach past it (Ф is 25, Х is 26) impossible to check.
+    legend: UKRAINIAN_ALPHABET.map((letter, index) => ({ code: letter, label: String(index + 1) })),
     options,
     answerIndex,
   }
@@ -133,24 +141,107 @@ function pixelTask(
   }
 }
 
-function coordinateTask(
+const SHAPE_CIPHER: Record<string, string> = {
+  А: '△',
+  Б: '⌜',
+  В: '◇',
+  Г: '┬',
+  Д: '●',
+  Е: '⌟',
+  И: '✕',
+  І: '□',
+  К: '◆',
+  Л: '⊣',
+  М: '○',
+  Н: '⊢',
+  О: '▲',
+  П: '⌝',
+  Р: '▽',
+  С: '✚',
+  Т: '■',
+  У: '◁',
+  Ь: '⊔',
+  Я: '▷',
+}
+
+const DOT_DASH_CIPHER: Record<string, string> = {
+  А: '.-',
+  Б: '-...',
+  В: '.--',
+  Г: '--.',
+  Д: '-..',
+  Е: '.',
+  И: '..-.',
+  І: '..',
+  К: '-.-',
+  Л: '.-..',
+  М: '--',
+  Н: '-.',
+  О: '---',
+  П: '.--.',
+  Р: '.-.',
+  С: '...',
+  Т: '-',
+  У: '..-',
+  Ь: '-..-',
+  Я: '.-.-',
+}
+
+function cipherTask(
   id: string,
-  size: number,
-  points: readonly [number, number][],
+  cipher: Record<string, string>,
+  message: string,
   prompt: string,
   options: readonly string[],
   answerIndex: number,
+  title = 'Шифр знаків',
 ): MessageCodingTask {
+  const letters = [...message.replace(/\s+/g, '')]
+  // The legend must not hint at the answer. Built from the message alone it
+  // did both: its order spelled the hidden word, and its letters covered only
+  // that word, so the other options could be ruled out without decoding
+  // anything. It now follows the cipher's own (alphabetical) order and covers
+  // every option, which is also what a child needs to check their guess.
+  const needed = new Set([...letters, ...options.flatMap(option => [...option.replace(/\s+/g, '')])])
+  const legend = Object.keys(cipher)
+    .filter(letter => needed.has(letter))
+    .map(letter => ({ code: cipher[letter] ?? '?', label: letter }))
+
   return {
     id,
-    type: 'coordinates',
+    type: 'cipher',
     mode: 'decode',
-    title: 'Координати',
+    title,
     prompt,
-    display: { kind: 'coordinates', size, points },
-    legend: [
-      { code: '(x, y)', label: 'спочатку стовпчик, потім рядок' },
-    ],
+    display: { kind: 'cipher', tokens: letters.map(letter => cipher[letter] ?? '?') },
+    legend,
+    options,
+    answerIndex,
+  }
+}
+
+function keyTask(
+  id: string,
+  cipher: Record<string, string>,
+  examples: readonly string[],
+  message: string,
+  options: readonly string[],
+  answerIndex: number,
+): MessageCodingTask {
+  const encode = (value: string) => [...value].map(letter => cipher[letter] ?? '?')
+
+  return {
+    id,
+    type: 'key',
+    mode: 'decode',
+    title: 'Знайди ключ',
+    prompt: 'Розглянь приклади, віднови відповідність знаків і розшифруй останнє слово.',
+    display: {
+      kind: 'key',
+      examples: examples.map(plain => ({ tokens: encode(plain), plain })),
+      challenge: encode(message),
+    },
+    legend: [{ code: 'Підказка:', label: 'однакові знаки означають однакові літери' }],
     options,
     answerIndex,
   }
@@ -204,7 +295,7 @@ function gradeTwoTasks(difficulty: MessageCodingDifficulty): MessageCodingTask[]
     return [
       alphabetTask('g2-m-1', 'decode', 'РОБОТ', ['РОБОТ', 'КОМП', 'КОДЕР'], 0),
       alphabetTask('g2-m-2', 'encode', 'ЕКРАН', [alphabetCode('ЕКРАН'), alphabetCode('КРАН'), alphabetCode('КЛАС')], 0),
-      alphabetTask('g2-m-3', 'decode', 'КЛАС', ['КЛАС', 'КОД', 'ЛИСТ'], 0),
+      keyTask('g2-m-3', SHAPE_CIPHER, ['КІТ', 'СОН', 'ДІМ'], 'КОД', ['КОД', 'КІТ', 'ДІМ'], 0),
       alphabetTask('g2-m-4', 'encode', 'ЛИСТ', [alphabetCode('ЛІС'), alphabetCode('ЛИСТ'), alphabetCode('МІСТ')], 1),
       alphabetTask('g2-m-5', 'decode', 'ДАНІ', ['ДІМ', 'ДАНІ', 'ДЕНЬ'], 1),
     ]
@@ -212,7 +303,7 @@ function gradeTwoTasks(difficulty: MessageCodingDifficulty): MessageCodingTask[]
   return [
     alphabetTask('g2-h-1', 'decode', 'АЛГОРИТМ', ['АЛГОРИТМ', 'КОМАНДА', 'ПРИКЛАД'], 0),
     alphabetTask('g2-h-2', 'encode', 'КОМАНДА', [alphabetCode('КОМАНДА'), alphabetCode('КАРТА'), alphabetCode('КОМПАС')], 0),
-    alphabetTask('g2-h-3', 'decode', 'ПІКСЕЛЬ', ['ПІКСЕЛЬ', 'ПАЗЛ', 'ПАМ’ЯТЬ'], 0),
+    keyTask('g2-h-3', SHAPE_CIPHER, ['ЛІС', 'КІТ', 'МИР'], 'ЛИСТ', ['ЛИСТ', 'ЛІС', 'МІСТ'], 0),
     alphabetTask('g2-h-4', 'encode', 'СИГНАЛ', [alphabetCode('СИМВОЛ'), alphabetCode('СИГНАЛ'), alphabetCode('СХЕМА')], 1),
     alphabetTask('g2-h-5', 'decode', 'ІНФО', ['ІНФО', 'ІМ’Я', 'ІГРА'], 0),
   ]
@@ -231,17 +322,17 @@ function gradeThreeTasks(difficulty: MessageCodingDifficulty): MessageCodingTask
     return [
       binaryTask('g3-m-1', 'decode', '1010', 'Яке число показують лампочки?', ['10', '12', '6'], 0),
       pixelTask('g3-m-2', ['111', '101', '111'], 'Що закодовано пікселями?', ['рамка', 'сходинка', 'лінія'], 0),
-      coordinateTask('g3-m-3', 3, [[2, 1], [2, 2], [2, 3]], 'Яку форму задають координати?', ['горизонтальна лінія', 'вертикальна лінія', 'кут'], 1),
+      keyTask('g3-m-3', SHAPE_CIPHER, ['КІТ', 'СОН', 'ДІМ'], 'КОД', ['КОД', 'ДІМ', 'КІТ'], 0),
       binaryTask('g3-m-4', 'encode', '1100', 'Який код відповідає числу 12?', ['1100', '1010', '0110'], 0),
       pixelTask('g3-m-5', ['010', '010', '111'], 'Яка форма вийде?', ['стрілка вниз', 'літера Т', 'рамка'], 1),
     ]
   }
   return [
     binaryTask('g3-h-1', 'decode', '1110', 'Яке число показують лампочки?', ['11', '14', '15'], 1),
-    coordinateTask('g3-h-2', 4, [[1, 1], [2, 2], [3, 3], [4, 4]], 'Яку лінію задають координати?', ['діагональ', 'рядок', 'стовпчик'], 0),
+    cipherTask('g3-h-2', DOT_DASH_CIPHER, 'СИГНАЛ', 'Розшифруй повідомлення з крапок і рисок.', ['СИГНАЛ', 'СНІГ', 'ЛИСТ'], 0, 'Крапки й риски'),
     pixelTask('g3-h-3', ['0110', '1001', '1001', '0110'], 'Що схоже на цю піксельну картинку?', ['коло', 'стрілка', 'сходи'], 0),
     binaryTask('g3-h-4', 'encode', '1011', 'Який код відповідає числу 11?', ['1011', '1101', '0111'], 0),
-    coordinateTask('g3-h-5', 4, [[1, 4], [2, 3], [3, 2], [4, 1]], 'Яку лінію задають координати?', ['діагональ угору', 'стовпчик', 'рамка'], 0),
+    keyTask('g3-h-5', SHAPE_CIPHER, ['РОТА', 'БОБ'], 'РОБОТ', ['РОБОТ', 'РОТА', 'БОБЕР'], 0),
   ]
 }
 
@@ -250,7 +341,7 @@ function gradeFourTasks(difficulty: MessageCodingDifficulty): MessageCodingTask[
     return [
       binaryTask('g4-e-1', 'decode', '1011', 'Яке число показують лампочки?', ['9', '11', '13'], 1),
       pixelTask('g4-e-2', ['0100', '1110', '0100', '0100'], 'Який знак схований у пікселях?', ['стрілка', 'рамка', 'сходинка'], 0),
-      coordinateTask('g4-e-3', 4, [[1, 2], [2, 2], [3, 2], [4, 2]], 'Яку форму задають координати?', ['горизонтальна лінія', 'вертикальна лінія', 'діагональ'], 0),
+      cipherTask('g4-e-3', SHAPE_CIPHER, 'ДАНІ', 'Яке слово сховане в шифрі?', ['ДАНІ', 'ДІМ', 'ДЕНЬ'], 0),
       binaryTask('g4-e-4', 'encode', '1101', 'Який код відповідає числу 13?', ['1101', '1011', '1110'], 0),
       pixelTask('g4-e-5', ['1111', '0001', '0001', '1111'], 'Яка форма вийде?', ['кутова рамка', 'хрестик', 'крапка'], 0),
     ]
@@ -258,18 +349,18 @@ function gradeFourTasks(difficulty: MessageCodingDifficulty): MessageCodingTask[
   if (difficulty === 'medium') {
     return [
       binaryTask('g4-m-1', 'decode', '10011', 'Яке число показують п’ять лампочок?', ['17', '19', '21'], 1),
-      coordinateTask('g4-m-2', 5, [[1, 1], [2, 1], [3, 1], [1, 2], [1, 3]], 'Яку форму задають координати?', ['кут', 'діагональ', 'стовпчик'], 0),
+      cipherTask('g4-m-2', DOT_DASH_CIPHER, 'ПАРОЛЬ', 'Розшифруй слово з крапок і рисок.', ['ПАРОЛЬ', 'ПАПКА', 'ПОШТА'], 0, 'Крапки й риски'),
       pixelTask('g4-m-3', ['00100', '01110', '11111', '00100', '00100'], 'Який знак схований у пікселях?', ['стрілка вгору', 'рамка', 'діагональ'], 0),
       binaryTask('g4-m-4', 'encode', '10101', 'Який код відповідає числу 21?', ['10101', '10011', '11001'], 0),
-      coordinateTask('g4-m-5', 5, [[2, 2], [3, 2], [4, 2], [3, 3], [3, 4]], 'Яка форма вийде?', ['літера Т', 'рамка', 'діагональ'], 0),
+      keyTask('g4-m-5', DOT_DASH_CIPHER, ['ПАРА', 'СОЛЬ'], 'ПАРОЛЬ', ['ПАРОЛЬ', 'ПАПКА', 'ПОШТА'], 0),
     ]
   }
   return [
     binaryTask('g4-h-1', 'decode', '11001', 'Яке число показують п’ять лампочок?', ['21', '24', '25'], 2),
-    coordinateTask('g4-h-2', 5, [[1, 1], [5, 1], [2, 2], [4, 2], [3, 3], [2, 4], [4, 4], [1, 5], [5, 5]], 'Який знак задають координати?', ['ікс', 'рамка', 'стрілка'], 0),
+    keyTask('g4-h-2', SHAPE_CIPHER, ['ГРА', 'ЛІТО', 'МИР'], 'АЛГОРИТМ', ['АЛГОРИТМ', 'АЛФАВІТ', 'КОМПАС'], 0),
     pixelTask('g4-h-3', ['10001', '01010', '00100', '01010', '10001'], 'Що закодовано пікселями?', ['ікс', 'плюс', 'рамка'], 0),
     binaryTask('g4-h-4', 'encode', '11110', 'Який код відповідає числу 30?', ['11101', '11110', '11011'], 1),
-    coordinateTask('g4-h-5', 5, [[1, 1], [2, 1], [3, 1], [4, 1], [5, 1], [3, 2], [3, 3], [3, 4], [3, 5]], 'Яка форма вийде?', ['плюс', 'літера Т', 'діагональ'], 1),
+    cipherTask('g4-h-5', DOT_DASH_CIPHER, 'КОМАНДА', 'Розшифруй командне слово.', ['КОМАНДА', 'КОЛОНКА', 'КАРТА'], 0, 'Крапки й риски'),
   ]
 }
 

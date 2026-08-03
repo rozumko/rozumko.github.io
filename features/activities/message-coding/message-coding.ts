@@ -28,6 +28,32 @@ function renderDisplay(display: MessageCodingDisplay): HTMLElement {
     for (const chip of display.chips) wrap.appendChild(el('span', 'mc-chip', chip))
     return wrap
   }
+  if (display.kind === 'cipher') {
+    for (const token of display.tokens) wrap.appendChild(el('span', 'mc-code-token', token))
+    return wrap
+  }
+  if (display.kind === 'key') {
+    const examples = el('div', 'mc-key-examples')
+    for (const example of display.examples) {
+      const row = el('div', 'mc-key-row')
+      const coded = el('span', 'mc-key-code')
+      for (const token of example.tokens) coded.appendChild(el('span', 'mc-key-token', token))
+      row.appendChild(coded)
+      row.appendChild(el('span', 'mc-key-equals', '='))
+      row.appendChild(el('strong', 'mc-key-plain', example.plain))
+      examples.appendChild(row)
+    }
+    wrap.appendChild(examples)
+
+    const challenge = el('div', 'mc-key-challenge')
+    const coded = el('span', 'mc-key-code')
+    for (const token of display.challenge) coded.appendChild(el('span', 'mc-key-token', token))
+    challenge.appendChild(coded)
+    challenge.appendChild(el('span', 'mc-key-equals', '='))
+    challenge.appendChild(el('strong', 'mc-key-unknown', '?'))
+    wrap.appendChild(challenge)
+    return wrap
+  }
   if (display.kind === 'binary') {
     display.bits.split('').forEach((bit, index) => {
       const lamp = el('span', bit === '1' ? 'mc-lamp mc-lamp--on' : 'mc-lamp')
@@ -44,15 +70,6 @@ function renderDisplay(display: MessageCodingDisplay): HTMLElement {
       for (const cell of row) wrap.appendChild(el('span', cell === '1' ? 'mc-pixel mc-pixel--on' : 'mc-pixel'))
     }
     return wrap
-  }
-  wrap.style.setProperty('--mc-size', String(display.size))
-  const pointSet = new Set(display.points.map(([x, y]) => `${x}:${y}`))
-  for (let y = 1; y <= display.size; y += 1) {
-    for (let x = 1; x <= display.size; x += 1) {
-      const cell = el('span', pointSet.has(`${x}:${y}`) ? 'mc-point mc-point--on' : 'mc-point')
-      cell.textContent = `${x},${y}`
-      wrap.appendChild(cell)
-    }
   }
   return wrap
 }
