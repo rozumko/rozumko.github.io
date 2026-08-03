@@ -67,6 +67,26 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     load: () => import('./key-puzzle/key-puzzle.js'),
   },
   {
+    key: 'typing-keys',
+    label: 'Знайди клавішу',
+    description: 'Дитина шукає на клавіатурі показану клавішу — 12 завдань поспіль.',
+    hint: 'Знайди на клавіатурі клавішу, яку показано на екрані.',
+    device: 'desktop',
+    group: 'input',
+    icon: 'fa-i-cursor',
+    // The full keyboard is ~940px wide; below that the keycaps stop being
+    // readable for a child sitting at a school monitor.
+    minWidth: 900,
+    levels: [
+      { id: 'starter',    label: 'Перші літери',     description: '10 найчастіших українських літер' },
+      { id: 'alphabet',   label: 'Уся абетка',       description: 'Абетка без «ґ» — вона потребує комбінації клавіш' },
+      { id: 'digits',     label: 'Цифри',            description: 'Цифри верхнього ряду' },
+      { id: 'controls',   label: 'Важливі клавіші',  description: 'Пробіл, Enter, Backspace, Shift, Ctrl і Alt' },
+      { id: 'everything', label: 'Усе разом',        description: 'Літери, цифри та важливі клавіші в одному раунді' },
+    ],
+    load: () => import('./typing-keys/typing-keys.js'),
+  },
+  {
     key: 'maze',
     label: 'Чарівний лабіринт',
     description: 'Дитина веде кульку лабіринтом до кубка, не торкаючись стін, і збирає зірки.',
@@ -151,7 +171,7 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     key: 'message-coding',
     label: 'Кодування повідомлень',
     description: 'Дитина розкодовує повідомлення: символи, числа, лампочки, пікселі та прості шифри за класом.',
-    hint: 'Звір повідомлення з легендою шифру й обери правильний варіант.',
+    hint: 'Знайди правило в легенді чи прикладах і обери правильний варіант.',
     device: 'any',
     group: 'information',
     icon: 'fa-barcode',

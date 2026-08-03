@@ -12,6 +12,7 @@
 
 export type SchoolActivityKey =
   | 'key-puzzle'
+  | 'typing-keys'
   | 'maze'
   | 'windows'
   | 'mouse-buttons'
@@ -87,6 +88,23 @@ export const SCHOOL_ACTIVITIES: Record<SchoolActivityKey, SchoolActivityDefiniti
       }
       return mistakes === 0 ? 3 : mistakes < 5 ? 2 : 1
     },
+  },
+  // typing-keys: one key is shown at a time and the child finds it on the real
+  // keyboard. Every level runs the same 12-target round; the level only decides
+  // which set the targets are drawn from, so one ceiling covers them all.
+  'typing-keys': {
+    key: 'typing-keys',
+    device: 'desktop',
+    levels: [
+      { id: 'starter',    maxTotal: 12, minDurationSec: 5 },
+      { id: 'alphabet',   maxTotal: 12, minDurationSec: 5 },
+      { id: 'digits',     maxTotal: 12, minDurationSec: 5 },
+      { id: 'controls',   maxTotal: 12, minDurationSec: 5 },
+      { id: 'everything', maxTotal: 12, minDurationSec: 5 },
+    ],
+    // The target stays until it is pressed correctly, so a finished run is
+    // always 12/12 and only the mistake count carries information.
+    stars: retryRubric,
   },
   // maze: the child drags a dot through a maze without touching a wall.
   // `total` is the number of levels in the mode the teacher picked, so the
@@ -238,7 +256,7 @@ export const SCHOOL_ACTIVITIES: Record<SchoolActivityKey, SchoolActivityDefiniti
 }
 
 export const SCHOOL_ACTIVITY_KEYS = [
-  'key-puzzle', 'maze', 'windows', 'mouse-buttons', 'magic-squares', 'symbol-logic',
+  'key-puzzle', 'typing-keys', 'maze', 'windows', 'mouse-buttons', 'magic-squares', 'symbol-logic',
   'message-coding', 'sorting-station', 'precise-click', 'fact-or-opinion', 'tangram', 'fireflies',
 ] as const satisfies readonly SchoolActivityKey[]
 
