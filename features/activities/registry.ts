@@ -72,7 +72,7 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     description: 'Дитина веде кульку лабіринтом до кубка, не торкаючись стін, і збирає зірки.',
     hint: 'Веди кульку до кубка і не торкайся стін.',
     device: 'any',
-    group: 'logic',
+    group: 'input',
     icon: 'fa-route',
     // The board letterboxes into whatever space it gets, so a tablet works.
     minWidth: 360,
