@@ -2035,3 +2035,83 @@
   text-align: center;
 }
 .tl-layout-warning[hidden] { display: none; }
+
+/* Hands around the keyboard: the same drawing mirrored, with a marker over
+   every finger. Markers are positioned in percentages of the drawing, so the
+   calibration holds at any size. */
+.tl-guide {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.5rem, 1.5vw, 1.25rem);
+}
+
+.tl-hand {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tl-hand__label {
+  margin-bottom: 3px;
+  color: var(--act-muted);
+  font-size: 0.6rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tl-hand__visual {
+  position: relative;
+  width: clamp(74px, 9vh, 120px);
+  height: clamp(74px, 9vh, 120px);
+}
+.tl-hand__image {
+  width: 100%;
+  height: 100%;
+  fill: var(--act-muted);
+  opacity: 0.5;
+}
+.tl-hand--left .tl-hand__image { transform: scaleX(-1); }
+
+.tl-marker {
+  position: absolute;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  opacity: 0.22;
+  transition: opacity 0.14s, filter 0.14s, transform 0.14s;
+}
+
+.tl-hand--right .tl-marker--index  { left: 33.13%; top: 9.54%;  width: 14%; height: 35%; }
+.tl-hand--right .tl-marker--middle { left: 48.13%; top: 3.71%;  width: 14%; height: 41%; }
+.tl-hand--right .tl-marker--ring   { left: 63.13%; top: 10.13%; width: 14%; height: 35%; }
+.tl-hand--right .tl-marker--pinky  { left: 77%;    top: 22.29%; width: 14%; height: 31%; }
+.tl-hand--right .tl-marker--thumb  { left: 2.27%;  top: 32.98%; width: 26%; height: 26%; transform: rotate(-34deg); }
+.tl-hand--left  .tl-marker--index  { left: 53.13%; top: 10.13%; width: 14%; height: 35%; }
+.tl-hand--left  .tl-marker--middle { left: 38.13%; top: 4.13%;  width: 14%; height: 41%; }
+.tl-hand--left  .tl-marker--ring   { left: 22.54%; top: 8.86%;  width: 14%; height: 35%; }
+.tl-hand--left  .tl-marker--pinky  { left: 8%;     top: 23.86%; width: 14%; height: 31%; }
+.tl-hand--left  .tl-marker--thumb  { left: 71.43%; top: 33%;    width: 26%; height: 26%; transform: rotate(34deg); }
+
+/* The finger colours of the keycaps, so the hand and the key agree */
+.tl-marker--pinky  { background: rgb(225 29 99 / 0.38);  border-color: rgb(225 29 99 / 0.78);  color: #e11d63; }
+.tl-marker--ring   { background: rgb(124 58 237 / 0.36); border-color: rgb(124 58 237 / 0.78); color: #7c3aed; }
+.tl-marker--middle { background: rgb(217 119 6 / 0.38);  border-color: rgb(217 119 6 / 0.8);   color: #d97706; }
+.tl-marker--index  { background: rgb(37 99 235 / 0.36);  border-color: rgb(37 99 235 / 0.78);  color: #2563eb; }
+.tl-marker--thumb  { background: rgb(13 148 136 / 0.36); border-color: rgb(13 148 136 / 0.78); color: #0d9488; }
+
+.tl-marker.is-active { opacity: 0.98; filter: drop-shadow(0 0 7px currentColor); transform: scale(1.07); }
+.tl-hand--right .tl-marker--thumb.is-active { transform: rotate(-34deg) scale(1.07); }
+.tl-hand--left  .tl-marker--thumb.is-active { transform: rotate(34deg) scale(1.07); }
+
+/* Below this the keyboard needs every pixel of the stage width */
+@media (max-width: 1100px) {
+  .tl-hand { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tl-marker.is-active { transform: none; }
+  .tl-hand--right .tl-marker--thumb.is-active { transform: rotate(-34deg); }
+  .tl-hand--left .tl-marker--thumb.is-active { transform: rotate(34deg); }
+}

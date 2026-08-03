@@ -5,6 +5,7 @@ import { MAX_REPORTED_MISTAKES } from '../typing-core/round.js'
 import { textWindow } from '../typing-core/text-window.js'
 import { describeCharacter, displayCharacter, isTextAttempt, issue, matchesCharacter } from '../typing-core/key-input.js'
 import { closeAudio, playComplete, playHit, playMiss } from '../typing-core/typing-audio.js'
+import { HAND_FINGERS, HAND_PATH, HAND_VIEW_BOX } from './hand-outline.js'
 import { resolveLessonsLevel } from './typing-lessons-data.js'
 
 // ── Уроки друку ──────────────────────────────────────────────────────────────
@@ -17,13 +18,32 @@ import { resolveLessonsLevel } from './typing-lessons-data.js'
 // series — so the run is measured in characters, not lessons. A child who got
 // through two lessons accurately still has an honest result.
 //
-// The finger hint is a line of text plus the colour of the keycap; the
-// standalone trainer's calibrated hand drawings are not ported yet.
+// The finger hint is the pair of hand drawings around the keyboard, the same
+// ones the standalone trainer uses, plus a line naming the hand and finger.
 
 function handLabel(hand: string): string {
   if (hand === 'left') return 'Ліва рука'
   if (hand === 'right') return 'Права рука'
   return 'Обидві руки'
+}
+
+/**
+ * One hand: the shared outline (mirrored for the left one in CSS) with a marker
+ * over every finger. The markers are positioned in percentages of the drawing,
+ * so they stay on their fingers at any size.
+ */
+function handMarkup(hand: 'left' | 'right', label: string): string {
+  const markers = HAND_FINGERS.map(finger => (
+    `<i class="tl-marker tl-marker--${finger}" data-finger="${finger}"></i>`
+  )).join('')
+  return `
+    <div class="tl-hand tl-hand--${hand}">
+      <span class="tl-hand__label">${label}</span>
+      <div class="tl-hand__visual" data-hand="${hand}">
+        <svg class="tl-hand__image" viewBox="${HAND_VIEW_BOX}" aria-hidden="true"><path d="${HAND_PATH}"/></svg>
+        ${markers}
+      </div>
+    </div>`
 }
 
 export const mount: ActivityMount = (container, options): ActivityHandle => {
@@ -60,7 +80,11 @@ export const mount: ActivityMount = (container, options): ActivityHandle => {
       <p class="tl-combo"></p>
       <p class="tl-feedback"></p>
       <p class="tl-layout-warning" hidden>Схоже, увімкнена англійська розкладка. Перемкни її на українську — зліва внизу біля годинника.</p>
-      <div class="tl-keyboard virtual-keyboard${hints.keyboard ? ' has-hint' : ''}"></div>
+      <div class="tl-guide">
+        ${hints.finger ? handMarkup('left', 'Ліва рука') : ''}
+        <div class="tl-keyboard virtual-keyboard${hints.keyboard ? ' has-hint' : ''}"></div>
+        ${hints.finger ? handMarkup('right', 'Права рука') : ''}
+      </div>
     </div>`
 
   const stage = container.querySelector<HTMLElement>('.tl-stage')!
@@ -87,6 +111,16 @@ export const mount: ActivityMount = (container, options): ActivityHandle => {
   function renderFingerHint() {
     if (!hints.finger) return
     const found = hintsForCharacter(expected())
+
+    // Light the finger (or both thumbs, for the space bar) on the drawings.
+    stage.querySelectorAll('.tl-marker.is-active').forEach(el => el.classList.remove('is-active'))
+    for (const hint of found) {
+      const selector = hint.hand === 'both'
+        ? '.tl-marker[data-finger="thumb"]'
+        : `.tl-hand__visual[data-hand="${hint.hand}"] .tl-marker[data-finger="${hint.finger}"]`
+      stage.querySelectorAll(selector).forEach(el => el.classList.add('is-active'))
+    }
+
     if (found.length === 0) { fingerEl.textContent = '—'; return }
     const main = found[0]!
     fingerEl.textContent = found.length > 1
