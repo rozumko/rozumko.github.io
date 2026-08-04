@@ -559,6 +559,7 @@ test.describe('home practice exit', () => {
     await openPractice(page)
     await answerCurrentQuestion(page)
     await expect(page.locator('body')).toHaveClass(/mission-answered/)
+    await expect(page.locator('#quiz-next-btn')).not.toHaveClass(/hidden/)
 
     await page.locator('#quiz-exit-btn').click()
     const dialog = page.locator('#quiz-exit-confirm')
@@ -580,6 +581,8 @@ test.describe('home practice exit', () => {
   test('Escape opens the exit dialog and a second Escape closes it for good', async ({ page }) => {
     await openPractice(page)
     await answerCurrentQuestion(page)
+    await expect(page.locator('body')).toHaveClass(/mission-answered/)
+    await expect(page.locator('#quiz-next-btn')).not.toHaveClass(/hidden/)
 
     await page.keyboard.press('Escape')
     const dialog = page.locator('#quiz-exit-confirm')
