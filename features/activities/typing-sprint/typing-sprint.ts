@@ -100,7 +100,7 @@ export const mount: ActivityMount = (container, options): ActivityHandle => {
     currentEl.textContent = displayCharacter(expected())
     todoEl.textContent = targetText.slice(charIndex + 1)
     const combo = keyboard.setHint({ value: expected() }, true)
-    if (combo) setFeedback(combo)
+    setFeedback(combo)
     stage.setAttribute('aria-label', `Введіть: ${describeCharacter(expected())}`)
   }
 

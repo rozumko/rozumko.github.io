@@ -903,6 +903,35 @@ test('axe: /teacher.html dashboard', async ({ page }) => {
   expect(results.violations).toEqual([])
 })
 
+test('teacher activity cards open settings and return focus on a phone', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 667 })
+  await openTeacherDashboard(page)
+  await page.locator('#school-mode-activity').click()
+
+  const picker = page.locator('#school-activity-picker')
+  const tangramCard = picker.locator('[data-activity-key="tangram"]')
+  await expect(picker).toBeVisible()
+  await expect(picker.locator('.activity-picker__group')).toHaveCount(3)
+  await expect(picker.locator('.activity-card')).toHaveCount(16)
+
+  await tangramCard.click()
+  await expect(page.locator('#school-activity-detail')).toBeVisible()
+  await expect(page.locator('#school-activity-title')).toHaveText('Танграм: заповни силует')
+  await expect(page.locator('#school-activity-grade')).toBeFocused()
+
+  const results = await new AxeBuilder({ page })
+    .include('#school-activity-panel')
+    .withTags(WCAG_AA_TAGS)
+    .analyze()
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
+  expect(results.violations).toEqual([])
+  expect(overflow).toBeLessThanOrEqual(0)
+
+  await page.locator('#school-activity-back').click()
+  await expect(picker).toBeVisible()
+  await expect(tangramCard).toBeFocused()
+})
+
 test('teacher school-game form stays accessible on a phone', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 667 })
   await openTeacherDashboard(page)

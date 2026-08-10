@@ -65,7 +65,7 @@ export const mount: ActivityMount = (container, options): ActivityHandle => {
     feedbackEl.className = `tw-feedback${kind ? ` is-${kind}` : ''}`
   }
 
-  function renderTarget() {
+  function renderTarget(fallbackFeedback = '') {
     const task = currentTask()
     doneEl.textContent = task.slice(0, charIndex)
     currentEl.textContent = displayCharacter(expected())
@@ -76,7 +76,7 @@ export const mount: ActivityMount = (container, options): ActivityHandle => {
 
     const combo = keyboard.setHint({ value: expected() }, true)
     stage.setAttribute('aria-label', `Введіть символ: ${describeCharacter(expected())}`)
-    if (combo) setFeedback(combo)
+    setFeedback(combo || fallbackFeedback)
   }
 
   function result(): ActivityRunResult {
@@ -108,8 +108,7 @@ export const mount: ActivityMount = (container, options): ActivityHandle => {
     if (taskIndex >= total) { later(finish, 220); return }
     later(() => {
       locked = false
-      renderTarget()
-      setFeedback('Продовжуй у своєму темпі')
+      renderTarget('Продовжуй у своєму темпі')
       stage.focus({ preventScroll: true })
     }, 170)
   }
@@ -142,8 +141,7 @@ export const mount: ActivityMount = (container, options): ActivityHandle => {
   window.addEventListener('keydown', onKeyDown)
 
   onProgress?.(0, total)
-  renderTarget()
-  setFeedback('Починай, коли готовий')
+  renderTarget('Починай, коли готовий')
   stage.focus({ preventScroll: true })
 
   return {

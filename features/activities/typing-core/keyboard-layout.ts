@@ -31,19 +31,19 @@ export interface KeyTarget {
 
 export const UKRAINIAN_ROWS: readonly (readonly KeyDef[])[] = [
   [
-    { code: 'Backquote', label: 'ʼ', secondary: '~', value: "'" },
-    { code: 'Digit1', label: '1', secondary: '!', value: '1' },
-    { code: 'Digit2', label: '2', secondary: '"', value: '2' },
-    { code: 'Digit3', label: '3', secondary: '№', value: '3' },
-    { code: 'Digit4', label: '4', secondary: ';', value: '4' },
-    { code: 'Digit5', label: '5', secondary: '%', value: '5' },
-    { code: 'Digit6', label: '6', secondary: ':', value: '6' },
-    { code: 'Digit7', label: '7', secondary: '?', value: '7' },
-    { code: 'Digit8', label: '8', secondary: '*', value: '8' },
-    { code: 'Digit9', label: '9', secondary: '(', value: '9' },
-    { code: 'Digit0', label: '0', secondary: ')', value: '0' },
-    { code: 'Minus', label: '−', secondary: '_', muted: true },
-    { code: 'Equal', label: '=', secondary: '+', muted: true },
+    { code: 'Backquote', label: 'ʼ', secondary: '~', value: "'", shiftValue: '~' },
+    { code: 'Digit1', label: '1', secondary: '!', value: '1', shiftValue: '!' },
+    { code: 'Digit2', label: '2', secondary: '"', value: '2', shiftValue: '"' },
+    { code: 'Digit3', label: '3', secondary: '№', value: '3', shiftValue: '№' },
+    { code: 'Digit4', label: '4', secondary: ';', value: '4', shiftValue: ';' },
+    { code: 'Digit5', label: '5', secondary: '%', value: '5', shiftValue: '%' },
+    { code: 'Digit6', label: '6', secondary: ':', value: '6', shiftValue: ':' },
+    { code: 'Digit7', label: '7', secondary: '?', value: '7', shiftValue: '?' },
+    { code: 'Digit8', label: '8', secondary: '*', value: '8', shiftValue: '*' },
+    { code: 'Digit9', label: '9', secondary: '(', value: '9', shiftValue: '(' },
+    { code: 'Digit0', label: '0', secondary: ')', value: '0', shiftValue: ')' },
+    { code: 'Minus', label: '−', secondary: '_', value: '-', shiftValue: '_', muted: true },
+    { code: 'Equal', label: '=', secondary: '+', value: '=', shiftValue: '+', muted: true },
     { code: 'Backspace', label: '⌫', width: 'wide' },
   ],
   [
@@ -143,7 +143,9 @@ const FINGER_BY_CODE: Record<string, [Hand, Finger, string]> = {
 }
 
 function normalize(value: string | undefined): string {
-  return typeof value === 'string' ? value.toLocaleLowerCase('uk-UA') : ''
+  return typeof value === 'string'
+    ? value.replace(/[’ʼ`]/g, "'").toLocaleLowerCase('uk-UA')
+    : ''
 }
 
 /** Physical keys that produce this target. */

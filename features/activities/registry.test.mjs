@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { ACTIVITIES, activityLabel, activityLevelLabel, findActivity, findActivityLevel } from './registry.ts'
+import { ACTIVITIES, ACTIVITY_GROUPS, activityLabel, activityLevelLabel, findActivity, findActivityLevel } from './registry.ts'
 import {
   SCHOOL_ACTIVITIES,
   SCHOOL_ACTIVITY_KEYS,
@@ -39,6 +39,25 @@ test('activities carry the labels the teacher and child screens need', () => {
       assert.ok(level.label.length > 0, `level ${level.id} of ${activity.key} has no label`)
       assert.ok(level.description.length > 0, `level ${level.id} of ${activity.key} has no description`)
     }
+  }
+})
+
+test('typing activities name their actual option axis instead of generic difficulty', () => {
+  assert.equal(findActivity('typing-keys')?.levelLabel, 'Набір клавіш')
+  assert.equal(findActivity('typing-words')?.levelLabel, 'Що друкувати')
+  assert.equal(findActivity('typing-sprint')?.levelLabel, 'Цілі та темп')
+  assert.equal(findActivity('typing-lessons')?.levelLabel, 'Серія та підказки')
+})
+
+test('the card picker has unique keys and populated groups', () => {
+  assert.equal(new Set(ACTIVITIES.map(activity => activity.key)).size, ACTIVITIES.length)
+  assert.equal(new Set(ACTIVITY_GROUPS.map(group => group.id)).size, ACTIVITY_GROUPS.length)
+  for (const group of ACTIVITY_GROUPS) {
+    assert.ok(ACTIVITIES.some(activity => activity.group === group.id), `group ${group.id} is empty`)
+  }
+  for (const activity of ACTIVITIES) {
+    assert.match(activity.icon, /^fa-[a-z0-9-]+$/)
+    assert.equal(new Set(activity.levels.map(level => level.id)).size, activity.levels.length)
   }
 })
 

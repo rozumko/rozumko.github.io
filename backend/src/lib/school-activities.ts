@@ -144,15 +144,15 @@ export const SCHOOL_ACTIVITIES: Record<SchoolActivityKey, SchoolActivityDefiniti
     levels: [
       // Measured: a script hitting every single-key target lands ~240 in a
       // minute, so the ceilings sit above what a child could ever produce.
-      { id: 'keys-easy',     maxTotal: 300, minDurationSec: 5 },
-      { id: 'keys-medium',   maxTotal: 300, minDurationSec: 5 },
-      { id: 'keys-hard',     maxTotal: 300, minDurationSec: 5 },
-      { id: 'combos-easy',   maxTotal: 200, minDurationSec: 5 },
-      { id: 'combos-medium', maxTotal: 200, minDurationSec: 5 },
-      { id: 'combos-hard',   maxTotal: 200, minDurationSec: 5 },
-      { id: 'words-easy',    maxTotal: 150, minDurationSec: 5 },
-      { id: 'words-medium',  maxTotal: 150, minDurationSec: 5 },
-      { id: 'words-hard',    maxTotal: 150, minDurationSec: 5 },
+      { id: 'keys-easy',     maxTotal: 300, minDurationSec: 55 },
+      { id: 'keys-medium',   maxTotal: 300, minDurationSec: 55 },
+      { id: 'keys-hard',     maxTotal: 300, minDurationSec: 55 },
+      { id: 'combos-easy',   maxTotal: 200, minDurationSec: 55 },
+      { id: 'combos-medium', maxTotal: 200, minDurationSec: 55 },
+      { id: 'combos-hard',   maxTotal: 200, minDurationSec: 55 },
+      { id: 'words-easy',    maxTotal: 150, minDurationSec: 55 },
+      { id: 'words-medium',  maxTotal: 150, minDurationSec: 55 },
+      { id: 'words-hard',    maxTotal: 150, minDurationSec: 55 },
     ],
     // A target the child did not finish in time is a miss, so the hit ratio is
     // a genuine score here — the same rubric the other timed games use.
