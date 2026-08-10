@@ -146,6 +146,18 @@ test('mouse-buttons: accuracy over the obstacles that actually arrived', () => {
   assert.equal(stars(5, 30), 0)
 })
 
+test('typing-sprint: a fixed-minute run cannot report an early result', () => {
+  const activity = SCHOOL_ACTIVITIES['typing-sprint']
+  for (const levelId of activity.levels.map(level => level.id)) {
+    const level = resolveActivityLevel(activity, levelId)
+    assert.equal(level.minDurationSec, 55)
+    assert.throws(() => normalizeActivityResult(activity, level,
+      { correct: 1, total: 1, mistakes: 0, durationSec: 54 }))
+    assert.equal(normalizeActivityResult(activity, level,
+      { correct: 1, total: 1, mistakes: 0, durationSec: 60 }).correct, 1)
+  }
+})
+
 test('school puzzle activities: fixed totals and percentage rubrics', () => {
   const magic = SCHOOL_ACTIVITIES['magic-squares']
   const magicLevel = resolveActivityLevel(magic, 'easy')

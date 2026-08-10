@@ -1633,21 +1633,30 @@ function openActivityDetail(key: string) {
 }
 
 function closeActivityDetail() {
+  const previousKey = selectedActivityKey
   selectedActivityKey = null
   $maybe('school-activity-detail')?.classList.add('hidden')
-  $maybe('school-activity-picker')?.classList.remove('hidden')
+  const picker = $maybe('school-activity-picker')
+  picker?.classList.remove('hidden')
   schoolSetError('')
+  if (previousKey && picker) {
+    const previousCard = [...picker.querySelectorAll<HTMLElement>('.activity-card')]
+      .find(card => card.dataset['activityKey'] === previousKey)
+    previousCard?.focus()
+  }
 }
 
 function renderActivityLevels() {
   const activity = findActivity(selectedActivityKey)
   const levelSel = $maybe<HTMLSelectElement>('school-activity-level')
   const levelField = $maybe('school-activity-level-field')
+  const levelLabel = $maybe('school-activity-level-label')
   if (!activity || !levelSel) return
   levelSel.innerHTML = activity.levels.map(l => (
     `<option value="${esc(l.id)}" title="${esc(l.description)}">${esc(l.label)}</option>`
   )).join('')
   levelField?.classList.toggle('hidden', activity.levels.length === 1)
+  if (levelLabel) levelLabel.textContent = activity.levelLabel ?? 'Складність'
   renderActivityAbout()
 }
 

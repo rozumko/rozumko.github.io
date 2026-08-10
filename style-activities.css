@@ -2138,6 +2138,27 @@
 }
 .tl-layout-warning[hidden] { display: none; }
 
+.tl-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.tl-finish {
+  padding: 0.48rem 0.85rem;
+  border: 1px solid var(--act-border-strong);
+  border-radius: 0.7rem;
+  background: var(--act-surface);
+  color: var(--act-text);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.tl-finish:hover:not(:disabled), .tl-finish:focus-visible { border-color: var(--act-brand); }
+.tl-finish:disabled { cursor: not-allowed; opacity: 0.48; }
+.tl-finish-note { color: var(--act-muted); font-size: 0.76rem; }
+
 /* Hands around the keyboard: the same drawing mirrored, with a marker over
    every finger. Markers are positioned in percentages of the drawing, so the
    calibration holds at any size. */

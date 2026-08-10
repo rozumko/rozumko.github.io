@@ -54,5 +54,45 @@ export const KEY_SETS: Record<string, readonly KeyPracticeTarget[]> = {
   everything: [...letters(ALPHABET), ...digits(), ...CONTROL_TARGETS],
 }
 
+/**
+ * The mixed mode promises all three target kinds, so it cannot be a blind
+ * sample from the much larger letter pool.
+ */
+export function buildKeyPracticeRound(level: string): KeyPracticeTarget[] {
+  if (level !== 'everything') {
+    return drawRound(KEY_SETS[level] ?? KEY_SETS['starter']!, ROUND_LENGTH)
+  }
+
+  return shuffle([
+    ...drawRound(KEY_SETS['alphabet']!, 6),
+    ...drawRound(KEY_SETS['digits']!, 3),
+    ...drawRound(KEY_SETS['controls']!, 3),
+  ])
+}
+
+function shuffle<T>(items: readonly T[]): T[] {
+  const result = [...items]
+  for (let index = result.length - 1; index > 0; index--) {
+    const other = Math.floor(Math.random() * (index + 1))
+    ;[result[index], result[other]] = [result[other]!, result[index]!]
+  }
+  return result
+}
+
+function drawRound<T extends { id: string }>(items: readonly T[], length: number): T[] {
+  const result: T[] = []
+  let pool: T[] = []
+  while (result.length < length) {
+    if (pool.length === 0) {
+      pool = shuffle(items)
+      if (pool.length > 1 && pool[0]?.id === result[result.length - 1]?.id) {
+        ;[pool[0], pool[1]] = [pool[1]!, pool[0]!]
+      }
+    }
+    result.push(pool.shift()!)
+  }
+  return result
+}
+
 export const ENCOURAGEMENT = ['Чудово!', 'Саме так!', 'Правильно!', 'Молодець!', 'Влучно!']
 export const RETRY = ['Спробуй ще раз', 'Поглянь уважніше', 'Майже! Шукай далі']

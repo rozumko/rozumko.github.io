@@ -4,6 +4,7 @@ import { TANGRAM_PIECES, TANGRAM_PUZZLES, type TangramPieceDefinition, type Tang
 const SVG_NS = 'http://www.w3.org/2000/svg'
 const TOTAL = TANGRAM_PIECES.length * TANGRAM_PUZZLES.length
 const SNAP_DISTANCE = 68
+const DRAG_THRESHOLD = 6
 
 interface PieceState extends TangramPieceDefinition {
   x: number
@@ -30,10 +31,13 @@ export const mount: ActivityMount = (container, options): ActivityHandle => {
   let pieces: PieceState[] = []
   let selectedId: string | null = null
   let dragOffset = { x: 0, y: 0 }
+  let dragStart = { x: 0, y: 0 }
+  let dragMoved = false
   let draggingId: string | null = null
   let placed = 0
   let mistakes = 0
-  let hintsLeft = Math.max(1, 5 - options.grade)
+  const hintsPerPuzzle = Math.max(1, 5 - options.grade)
+  let hintsLeft = hintsPerPuzzle
   let hintTargetId: string | null = null
   let finished = false
   let nextTimer: number | undefined
@@ -148,7 +152,9 @@ export const mount: ActivityMount = (container, options): ActivityHandle => {
     const puzzle = TANGRAM_PUZZLES[puzzleIndex]!
     selectedId = null
     draggingId = null
+    dragMoved = false
     hintTargetId = null
+    hintsLeft = hintsPerPuzzle
     pieces = TANGRAM_PIECES.map((piece, index) => {
       const ownTarget = puzzle.targets.find(target => target.family === piece.family)
         ?? puzzle.targets[index]!
@@ -184,14 +190,15 @@ export const mount: ActivityMount = (container, options): ActivityHandle => {
     const candidates = compatibleTargets(piece)
       .map(target => ({ target, distance: Math.hypot(target.x - piece.x, target.y - piece.y) }))
       .sort((a, b) => a.distance - b.distance)
-    const best = candidates[0]
-    if (!best || best.distance > SNAP_DISTANCE) return 'miss'
+    const nearby = candidates.filter(candidate => candidate.distance <= SNAP_DISTANCE)
+    if (!nearby.length) return 'miss'
 
-    const orientationFits = angleDistance(piece.angle, best.target.angle) < 1
-      && (piece.family !== 'parallelogram' || piece.flipped === Boolean(best.target.flipped))
-    if (options.grade > 1 && !orientationFits) {
-      return 'orientation'
-    }
+    const orientationFits = ({ target }: (typeof nearby)[number]) => (
+      angleDistance(piece.angle, target.angle) < 1
+      && (piece.family !== 'parallelogram' || piece.flipped === Boolean(target.flipped))
+    )
+    const best = options.grade <= 1 ? nearby[0]! : nearby.find(orientationFits)
+    if (!best) return 'orientation'
 
     piece.x = best.target.x
     piece.y = best.target.y
@@ -249,6 +256,8 @@ export const mount: ActivityMount = (container, options): ActivityHandle => {
     draggingId = piece.id
     const point = svgPoint(event)
     dragOffset = { x: point.x - piece.x, y: point.y - piece.y }
+    dragStart = point
+    dragMoved = false
     svg.setPointerCapture(event.pointerId)
     drawPieces()
     updateHud()
@@ -259,16 +268,33 @@ export const mount: ActivityMount = (container, options): ActivityHandle => {
     if (!piece || finished) return
     event.preventDefault()
     const point = svgPoint(event)
+    if (Math.hypot(point.x - dragStart.x, point.y - dragStart.y) >= DRAG_THRESHOLD) dragMoved = true
     piece.x = point.x - dragOffset.x
     piece.y = point.y - dragOffset.y
     drawPieces()
   })
 
-  const release = (event: PointerEvent) => {
+  const release = (event: PointerEvent, commit: boolean) => {
     const piece = pieceById(draggingId)
     if (!piece) return
     draggingId = null
     try { svg.releasePointerCapture(event.pointerId) } catch { /* capture already ended */ }
+    if (!commit) {
+      piece.x = piece.homeX
+      piece.y = piece.homeY
+      drawPieces()
+      updateHud()
+      return
+    }
+    if (!dragMoved) {
+      piece.x = piece.homeX
+      piece.y = piece.homeY
+      messageEl.textContent = 'Деталь вибрано. Тепер поверни її або перетягни на силует.'
+      messageEl.className = 'tg-message'
+      drawPieces()
+      updateHud()
+      return
+    }
     const placement = tryPlace(piece)
     if (placement === 'miss') returnHome(piece)
     if (placement === 'orientation') {
@@ -277,8 +303,8 @@ export const mount: ActivityMount = (container, options): ActivityHandle => {
     drawPieces()
     updateHud()
   }
-  svg.addEventListener('pointerup', release)
-  svg.addEventListener('pointercancel', release)
+  svg.addEventListener('pointerup', event => release(event, true))
+  svg.addEventListener('pointercancel', event => release(event, false))
 
   ccw.addEventListener('click', () => rotateSelected(-45))
   cw.addEventListener('click', () => rotateSelected(45))

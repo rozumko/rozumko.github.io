@@ -80,6 +80,10 @@ export const mount: ActivityMount = (container, options): ActivityHandle => {
       <p class="tl-combo"></p>
       <p class="tl-feedback"></p>
       <p class="tl-layout-warning" hidden>Схоже, увімкнена англійська розкладка. Перемкни її на українську — зліва внизу біля годинника.</p>
+      <div class="tl-actions">
+        <button class="tl-finish" type="button" disabled>Завершити тренування</button>
+        <small class="tl-finish-note">Кнопка стане доступною після 20 символів</small>
+      </div>
       <div class="tl-guide">
         ${hints.finger ? handMarkup('left', 'Ліва рука') : ''}
         <div class="tl-keyboard virtual-keyboard${hints.keyboard ? ' has-hint' : ''}"></div>
@@ -96,6 +100,8 @@ export const mount: ActivityMount = (container, options): ActivityHandle => {
   const comboEl = container.querySelector<HTMLElement>('.tl-combo')!
   const feedbackEl = container.querySelector<HTMLElement>('.tl-feedback')!
   const warningEl = container.querySelector<HTMLElement>('.tl-layout-warning')!
+  const finishButton = container.querySelector<HTMLButtonElement>('.tl-finish')!
+  const finishNote = container.querySelector<HTMLElement>('.tl-finish-note')!
   const keyboardEl = container.querySelector<HTMLElement>('.tl-keyboard')!
 
   const keyboard = createKeyboard(keyboardEl)
@@ -164,9 +170,18 @@ export const mount: ActivityMount = (container, options): ActivityHandle => {
     if (finished) return
     finished = true
     locked = true
+    finishButton.disabled = true
     keyboard.clearHint()
     playComplete()
     later(() => onFinish(result()), 500)
+  }
+
+  function updateFinishControl() {
+    const ready = typed >= 20
+    finishButton.disabled = !ready
+    finishNote.textContent = ready
+      ? 'Результат збереже виконану частину серії'
+      : `Ще ${20 - typed} символів до завершення`
   }
 
   function completeLesson() {
@@ -186,6 +201,7 @@ export const mount: ActivityMount = (container, options): ActivityHandle => {
   }
 
   function onKeyDown(event: KeyboardEvent) {
+    if (event.target === finishButton) return
     if (finished || locked || !isTextAttempt(event)) return
     if (event.code === 'Space') event.preventDefault()
 
@@ -193,11 +209,13 @@ export const mount: ActivityMount = (container, options): ActivityHandle => {
     if (matchesCharacter(wanted, event)) {
       position += 1
       typed += 1
+      updateFinishControl()
       warningEl.hidden = true
       keyboard.flash(event.code, 'is-pressed-correct', 160)
       onProgress?.(typed, totalCharacters)
       if (position >= currentText().length) { playHit(); completeLesson(); return }
       renderText()
+      setFeedback('')
       return
     }
 
@@ -213,9 +231,11 @@ export const mount: ActivityMount = (container, options): ActivityHandle => {
   }
 
   window.addEventListener('keydown', onKeyDown)
+  finishButton.addEventListener('click', finish)
 
   onProgress?.(0, totalCharacters)
   renderText()
+  updateFinishControl()
   setFeedback('Починай, коли готовий')
   stage.focus({ preventScroll: true })
 
@@ -226,6 +246,7 @@ export const mount: ActivityMount = (container, options): ActivityHandle => {
       timers.forEach(timer => window.clearTimeout(timer))
       timers.clear()
       window.removeEventListener('keydown', onKeyDown)
+      finishButton.removeEventListener('click', finish)
       keyboard.destroy()
       container.classList.remove('tl-root')
       container.innerHTML = ''

@@ -44,6 +44,8 @@ export interface ActivityInfo {
    * instead of a broken layout.
    */
   minWidth: number
+  /** Label above the teacher's option picker; defaults to «Складність». */
+  levelLabel?: string
   levels: readonly ActivityLevelInfo[]
   load: () => Promise<{ mount: ActivityMount }>
 }
@@ -77,12 +79,13 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     // The full keyboard is ~940px wide; below that the keycaps stop being
     // readable for a child sitting at a school monitor.
     minWidth: 900,
+    levelLabel: 'Набір клавіш',
     levels: [
       { id: 'starter',    label: 'Перші літери',     description: '10 найчастіших українських літер' },
-      { id: 'alphabet',   label: 'Уся абетка',       description: 'Абетка без «ґ» — вона потребує комбінації клавіш' },
+      { id: 'alphabet',   label: 'Літери з усієї абетки', description: '12 різних літер з абетки без «ґ» — вона потребує комбінації клавіш' },
       { id: 'digits',     label: 'Цифри',            description: 'Цифри верхнього ряду' },
       { id: 'controls',   label: 'Важливі клавіші',  description: 'Пробіл, Enter, Backspace, Shift, Ctrl і Alt' },
-      { id: 'everything', label: 'Усе разом',        description: 'Літери, цифри та важливі клавіші в одному раунді' },
+      { id: 'everything', label: 'Усе разом',        description: '6 літер, 3 цифри та 3 важливі клавіші в одному раунді' },
     ],
     load: () => import('./typing-keys/typing-keys.js'),
   },
@@ -95,6 +98,7 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     group: 'input',
     icon: 'fa-font',
     minWidth: 900,
+    levelLabel: 'Що друкувати',
     levels: [
       { id: 'words-easy',       label: 'Короткі слова',   description: '18 слів до 5 літер' },
       { id: 'words-medium',     label: 'Середні слова',   description: '18 слів на 6–8 літер' },
@@ -114,16 +118,17 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     group: 'input',
     icon: 'fa-bolt',
     minWidth: 900,
+    levelLabel: 'Цілі та темп',
     levels: [
-      { id: 'keys-easy',     label: 'Клавіші · легко',      description: 'Одна літера з десяти найчастіших, повільний рух' },
-      { id: 'keys-medium',   label: 'Клавіші · звичайно',   description: 'Одна літера з усієї абетки, середній рух' },
-      { id: 'keys-hard',     label: 'Клавіші · складно',    description: 'Літери й цифри, швидкий рух' },
-      { id: 'combos-easy',   label: 'Сполучення · легко',   description: 'Двобуквені сполучення, повільний рух' },
-      { id: 'combos-medium', label: 'Сполучення · звичайно', description: 'Часті трибуквені сполучення, середній рух' },
-      { id: 'combos-hard',   label: 'Сполучення · складно', description: 'Довгі сполучення приголосних, швидкий рух' },
-      { id: 'words-easy',    label: 'Слова · легко',        description: 'Короткі слова, повільний рух' },
-      { id: 'words-medium',  label: 'Слова · звичайно',     description: 'Слова на 6–8 літер, середній рух' },
-      { id: 'words-hard',    label: 'Слова · складно',      description: 'Довгі слова, швидкий рух' },
+      { id: 'keys-easy',     label: 'Клавіші · 10 літер',       description: 'Одна літера з десяти найчастіших, повільний рух' },
+      { id: 'keys-medium',   label: 'Клавіші · уся абетка',     description: 'Одна літера з усієї абетки, середній рух' },
+      { id: 'keys-hard',     label: 'Клавіші · літери й цифри', description: 'Літери й цифри, швидкий рух' },
+      { id: 'combos-easy',   label: 'Сполучення · 2 літери',    description: 'Двобуквені сполучення, повільний рух' },
+      { id: 'combos-medium', label: 'Сполучення · 3 літери',    description: 'Часті трибуквені сполучення, середній рух' },
+      { id: 'combos-hard',   label: 'Сполучення · довгі',       description: 'Довгі сполучення приголосних, швидкий рух' },
+      { id: 'words-easy',    label: 'Слова · короткі',          description: 'Короткі слова, повільний рух' },
+      { id: 'words-medium',  label: 'Слова · середні',          description: 'Слова на 6–8 літер, середній рух' },
+      { id: 'words-hard',    label: 'Слова · довгі',            description: 'Довгі слова, швидкий рух' },
     ],
     load: () => import('./typing-sprint/typing-sprint.js'),
   },
@@ -136,21 +141,22 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     group: 'input',
     icon: 'fa-graduation-cap',
     minWidth: 900,
+    levelLabel: 'Серія та підказки',
     // Series × how much help the screen gives. A class rarely finishes a whole
     // series, so the run is scored on accuracy, not on how far it got.
     levels: [
       { id: 'foundation-guided',       label: 'Перші клавіші · з підказками',      description: 'Уроки 1–10, світиться клавіша і названо палець' },
       { id: 'foundation-finger',       label: 'Перші клавіші · лише палець',       description: 'Уроки 1–10, названо лише палець' },
-      { id: 'foundation-independent',  label: 'Перші клавіші · самостійно',        description: 'Уроки 1–10 без підказок' },
+      { id: 'foundation-independent',  label: 'Перші клавіші · самостійно',        description: 'Уроки 1–10 без клавіатури й підказок пальців; складні комбінації показуються' },
       { id: 'expansion-guided',        label: 'Розширюємо абетку · з підказками',  description: 'Уроки 11–20, світиться клавіша і названо палець' },
       { id: 'expansion-finger',        label: 'Розширюємо абетку · лише палець',   description: 'Уроки 11–20, названо лише палець' },
-      { id: 'expansion-independent',   label: 'Розширюємо абетку · самостійно',    description: 'Уроки 11–20 без підказок' },
+      { id: 'expansion-independent',   label: 'Розширюємо абетку · самостійно',    description: 'Уроки 11–20 без клавіатури й підказок пальців; складні комбінації показуються' },
       { id: 'alphabet-guided',         label: 'Завершуємо абетку · з підказками',  description: 'Уроки 21–29, світиться клавіша і названо палець' },
       { id: 'alphabet-finger',         label: 'Завершуємо абетку · лише палець',   description: 'Уроки 21–29, названо лише палець' },
-      { id: 'alphabet-independent',    label: 'Завершуємо абетку · самостійно',    description: 'Уроки 21–29 без підказок' },
+      { id: 'alphabet-independent',    label: 'Завершуємо абетку · самостійно',    description: 'Уроки 21–29 без клавіатури й підказок пальців; складні комбінації показуються' },
       { id: 'texts-guided',            label: 'Знаки й тексти · з підказками',     description: 'Уроки 30–35, світиться клавіша і названо палець' },
       { id: 'texts-finger',            label: 'Знаки й тексти · лише палець',      description: 'Уроки 30–35, названо лише палець' },
-      { id: 'texts-independent',       label: 'Знаки й тексти · самостійно',       description: 'Уроки 30–35 без підказок' },
+      { id: 'texts-independent',       label: 'Знаки й тексти · самостійно',       description: 'Уроки 30–35 без клавіатури й підказок пальців; складні комбінації показуються' },
     ],
     load: () => import('./typing-lessons/typing-lessons.js'),
   },
@@ -298,7 +304,7 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
   {
     key: 'tangram',
     label: 'Танграм: заповни силует',
-    description: 'Дитина заповнює три силуети сімома геометричними деталями, пересуваючи, повертаючи й віддзеркалюючи їх.',
+    description: 'Дитина складає три силуети котиків із семи класичних деталей, пересуваючи, повертаючи й віддзеркалюючи їх.',
     hint: 'Перетягуй деталі на силует. Вибрану деталь можна повертати кнопками.',
     device: 'any',
     group: 'logic',

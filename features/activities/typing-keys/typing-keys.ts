@@ -1,10 +1,10 @@
 import type { ActivityHandle, ActivityMount, ActivityRunResult } from '../activity-contract.js'
 import { codesForTarget } from '../typing-core/keyboard-layout.js'
 import { createKeyboard } from '../typing-core/keyboard-view.js'
-import { MAX_REPORTED_MISTAKES, buildRound } from '../typing-core/round.js'
+import { MAX_REPORTED_MISTAKES } from '../typing-core/round.js'
 import { isTargetAttempt, issue, matchesTarget } from '../typing-core/key-input.js'
 import { closeAudio, playComplete, playHit, playMiss } from '../typing-core/typing-audio.js'
-import { ENCOURAGEMENT, KEY_SETS, RETRY, ROUND_LENGTH, type KeyPracticeTarget } from './typing-keys-data.js'
+import { ENCOURAGEMENT, KEY_SETS, RETRY, buildKeyPracticeRound, type KeyPracticeTarget } from './typing-keys-data.js'
 
 // ── Знайди клавішу ───────────────────────────────────────────────────────────
 // The child is shown one key at a time and has to find it on the real keyboard.
@@ -28,7 +28,7 @@ export const mount: ActivityMount = (container, options): ActivityHandle => {
   const { level, onFinish, onProgress } = options
 
   const targets = KEY_SETS[level] ?? KEY_SETS['starter']!
-  const sequence = buildRound(targets, ROUND_LENGTH)
+  const sequence = buildKeyPracticeRound(level)
   const total = sequence.length
 
   const startedAt = Date.now()

@@ -969,27 +969,31 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
       normalized = normalizeActivityResult(activity, level, req.body)
     } catch (e) { return reply.code(400).send({ error: (e as Error).message }) }
 
-    const [inserted] = await db.insert(schoolActivityResults)
-      .values({
-        participantId: participant.id,
-        activityKey:   activity.key,
-        activityLevel: level.id,
-        correct:       normalized.correct,
-        total:         normalized.total,
-        mistakes:      normalized.mistakes,
-        durationSec:   normalized.durationSec,
-        stars:         normalized.stars,
-        trust:         'client-unverified',
-      })
-      .onConflictDoNothing()
-      .returning({ id: schoolActivityResults.id })
-    if (!inserted) return reply.code(409).send({ error: 'Результат уже збережено' })
+    const inserted = await db.transaction(async tx => {
+      const [resultRow] = await tx.insert(schoolActivityResults)
+        .values({
+          participantId: participant.id,
+          activityKey:   activity.key,
+          activityLevel: level.id,
+          correct:       normalized.correct,
+          total:         normalized.total,
+          mistakes:      normalized.mistakes,
+          durationSec:   normalized.durationSec,
+          stars:         normalized.stars,
+          trust:         'client-unverified',
+        })
+        .onConflictDoNothing()
+        .returning({ id: schoolActivityResults.id })
+      if (!resultRow) return undefined
 
-    // The leaderboard column is shared with question sessions; for activities
-    // it holds how much of the activity the child completed.
-    await db.update(schoolParticipants)
-      .set({ score: normalized.correct })
-      .where(eq(schoolParticipants.id, participant.id))
+      // Keep the shared leaderboard score consistent with the activity result.
+      // A failure here rolls the result row back so a retry can succeed cleanly.
+      await tx.update(schoolParticipants)
+        .set({ score: normalized.correct })
+        .where(eq(schoolParticipants.id, participant.id))
+      return resultRow
+    })
+    if (!inserted) return reply.code(409).send({ error: 'Результат уже збережено' })
 
     return reply.send({ stars: normalized.stars, correct: normalized.correct, total: normalized.total })
   })

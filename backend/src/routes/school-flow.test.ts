@@ -47,11 +47,12 @@ function createState() {
     issuedContains: true, // Whether the question belongs to the issued session set
     answers: new Map<string, boolean>(),
     activityResults: [] as Record<string, unknown>[],
+    failScoreUpdate: false,
   }
 }
 
 function installFakeDb(state: ReturnType<typeof createState>) {
-  const original = { select: db.select, update: db.update, insert: db.insert }
+  const original = { select: db.select, update: db.update, insert: db.insert, transaction: db.transaction }
   const isTable = (a: unknown, b: unknown) => a === b
 
   class SelectQuery {
@@ -174,6 +175,7 @@ function installFakeDb(state: ReturnType<typeof createState>) {
     }
     then(res: (v: unknown) => unknown, rej: (e: unknown) => unknown) {
       if (isTable(this.table, schema.schoolParticipants) && state.participant && !this.patch?.avatar) {
+        if (state.failScoreUpdate) throw new Error('simulated score update failure')
         // Activities set the score to an absolute value; answers increment it.
         if (typeof this.patch?.score === 'number') state.participant.score = this.patch.score
         else state.participant.score += 1
@@ -185,8 +187,24 @@ function installFakeDb(state: ReturnType<typeof createState>) {
   db.select = ((fields?: Record<string, unknown>) => new SelectQuery(fields)) as unknown as typeof db.select
   db.insert = ((t: unknown) => new InsertQuery(t)) as unknown as typeof db.insert
   db.update = ((t: unknown) => new UpdateQuery(t)) as unknown as typeof db.update
+  db.transaction = (async (fn: (tx: typeof db) => Promise<unknown>) => {
+    const resultSnapshot = state.activityResults.map(row => ({ ...row }))
+    const scoreSnapshot = state.participant?.score
+    try {
+      return await fn(db)
+    } catch (error) {
+      state.activityResults = resultSnapshot
+      if (state.participant && scoreSnapshot != null) state.participant.score = scoreSnapshot
+      throw error
+    }
+  }) as unknown as typeof db.transaction
 
-  return () => { db.select = original.select; db.insert = original.insert; db.update = original.update }
+  return () => {
+    db.select = original.select
+    db.insert = original.insert
+    db.update = original.update
+    db.transaction = original.transaction
+  }
 }
 
 async function withApp(fn: (app: ReturnType<typeof Fastify>) => Promise<void>) {
@@ -740,6 +758,34 @@ test('school: activity result is stored once, with server-derived stars', async 
       const second = await app.inject({ method: 'POST', url, headers, payload: { correct: 18, total: 18, mistakes: 0, durationSec: 400 } })
       assert.equal(second.statusCode, 409, second.body)
       assert.equal(state.activityResults.length, 1)
+    })
+  } finally { restore() }
+})
+
+test('school: activity result and leaderboard score roll back together', async () => {
+  const state = activityState()
+  const restore = installFakeDb(state)
+  try {
+    await withApp(async (app) => {
+      const body = await joinActivity(app)
+      const request = {
+        method: 'POST' as const,
+        url: `/api/school/participants/${ids.participant}/activity-result`,
+        headers: { 'X-Participant-Token': body.participantToken },
+        payload: { correct: 18, total: 18, mistakes: 0, durationSec: 95 },
+      }
+
+      state.failScoreUpdate = true
+      const failed = await app.inject(request)
+      assert.equal(failed.statusCode, 500, failed.body)
+      assert.equal(state.activityResults.length, 0)
+      assert.equal(state.participant?.score, 0)
+
+      state.failScoreUpdate = false
+      const retried = await app.inject(request)
+      assert.equal(retried.statusCode, 200, retried.body)
+      assert.equal(state.activityResults.length, 1)
+      assert.equal(state.participant?.score, 18)
     })
   } finally { restore() }
 })

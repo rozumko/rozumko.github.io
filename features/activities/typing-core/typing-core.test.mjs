@@ -3,7 +3,7 @@ import test from 'node:test'
 import { buildRound } from './round.ts'
 import { codesForTarget, comboHintForCharacter, requiresShift } from './keyboard-layout.ts'
 import { isTargetAttempt, issue, matchesTarget } from './key-input.ts'
-import { KEY_SETS, ROUND_LENGTH } from '../typing-keys/typing-keys-data.ts'
+import { KEY_SETS, ROUND_LENGTH, buildKeyPracticeRound } from '../typing-keys/typing-keys-data.ts'
 
 // The typing activities run on a physical keyboard the child may have set to
 // the wrong layout, so the matching rules carry more weight than usual: a
@@ -45,6 +45,21 @@ test('a target maps to the physical key of the Ukrainian layout', () => {
   assert.equal(comboHintForCharacter('ґ'), 'Утримуй Ctrl + Alt і натисни Г')
   assert.equal(requiresShift('А'), true)
   assert.equal(requiresShift('а'), false)
+  assert.deepEqual(codesForTarget({ value: '’' }), ['Backquote'])
+  assert.deepEqual(codesForTarget({ value: ':' }), ['Digit6'])
+  assert.equal(requiresShift(':'), true)
+  assert.equal(comboHintForCharacter(':'), 'Утримуй Shift')
+})
+
+test('the mixed round always contains letters, digits and control keys', () => {
+  for (let attempt = 0; attempt < 100; attempt++) {
+    const round = buildKeyPracticeRound('everything')
+    assert.equal(round.length, ROUND_LENGTH)
+    assert.deepEqual(
+      Object.fromEntries(['letter', 'digit', 'control'].map(kind => [kind, round.filter(t => t.kind === kind).length])),
+      { letter: 6, digit: 3, control: 3 },
+    )
+  }
 })
 
 test('a letter counts only when the typed character matches', () => {
