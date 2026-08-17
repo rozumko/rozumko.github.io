@@ -42,6 +42,11 @@ function createState() {
       explanation: 'Addition',
       img: '/questions/addition.webp',
       imageAlt: 'Four blocks arranged as two plus two',
+      grade: 2,
+      track: 'informatics',
+      topic: 'information',
+      conceptKey: null,
+      difficulty: 'easy',
     },
     participant: null as null | { id: string; sessionId: string; avatar: string; nickname: string; score: number },
     issuedContains: true, // Whether the question belongs to the issued session set
@@ -224,6 +229,29 @@ async function withApp(fn: (app: ReturnType<typeof Fastify>) => Promise<void>) {
   await app.ready()
   try { await fn(app) } finally { await app.close() }
 }
+
+test('school: teacher question availability exposes counts without question content or keys', async () => {
+  const state = createState()
+  const restore = installFakeDb(state)
+  try {
+    await withApp(async (app) => {
+      const res = await app.inject({ method: 'GET', url: '/api/school/question-availability?grade=2' })
+      assert.equal(res.statusCode, 200, res.body)
+      const body = res.json()
+      assert.deepEqual(body.mixed, { total: 1, byDifficulty: { easy: 1, medium: 0, hard: 0 } })
+      assert.deepEqual(body.topics.find((topic: { id: string }) => topic.id === 'information-messages'), {
+        id: 'information-messages',
+        total: 1,
+        byDifficulty: { easy: 1, medium: 0, hard: 0 },
+      })
+      assert.equal(JSON.stringify(body).includes('2+2?'), false)
+      assert.equal(JSON.stringify(body).includes('correct'), false)
+
+      const invalid = await app.inject({ method: 'GET', url: '/api/school/question-availability?grade=5' })
+      assert.equal(invalid.statusCode, 400, invalid.body)
+    })
+  } finally { restore() }
+})
 
 test('school: join → answer correct → score increments; keys are stripped', async () => {
   const state = createState()

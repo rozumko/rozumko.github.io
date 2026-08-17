@@ -1,33 +1,40 @@
-import type { ConceptKey } from './taxonomy.js'
 import type { QuestionTrack } from '../db/schema.js'
 
 export type SchoolTopicId =
   | 'information-messages'
   | 'computer-devices'
-  | 'files-environment'
-  | 'digital-creation'
+  | 'digital-tools'
   | 'data-tables-charts'
-  | 'algorithms-executors'
-  | 'programming-scratch'
+  | 'algorithms-programming'
   | 'internet-networks-search'
   | 'digital-safety'
+  // Kept for rolling-deploy compatibility with the previous teacher UI.
+  | 'files-environment'
+  | 'digital-creation'
+  | 'algorithms-executors'
+  | 'programming-scratch'
 
 export interface SchoolTopicSelection {
   track: QuestionTrack
   topic: string
-  preferredConceptKeys?: readonly ConceptKey[]
 }
 
-export const SCHOOL_TOPIC_IDS = [
+export const CANONICAL_SCHOOL_TOPIC_IDS = [
   'information-messages',
-  'computer-devices',
-  'files-environment',
-  'digital-creation',
   'data-tables-charts',
-  'algorithms-executors',
-  'programming-scratch',
+  'computer-devices',
+  'digital-tools',
+  'algorithms-programming',
   'internet-networks-search',
   'digital-safety',
+] as const
+
+export const SCHOOL_TOPIC_IDS = [
+  ...CANONICAL_SCHOOL_TOPIC_IDS,
+  'files-environment',
+  'digital-creation',
+  'algorithms-executors',
+  'programming-scratch',
 ] as const satisfies readonly SchoolTopicId[]
 
 export const SCHOOL_TOPIC_SELECTIONS: Record<SchoolTopicId, SchoolTopicSelection> = {
@@ -39,33 +46,17 @@ export const SCHOOL_TOPIC_SELECTIONS: Record<SchoolTopicId, SchoolTopicSelection
     track: 'informatics',
     topic: 'computer-systems',
   },
-  // Both map onto informatics/digital-tools, so — like algorithms vs Scratch —
-  // the concept key is what keeps the two teacher topics from returning the same
-  // pool. Kept disjoint on purpose: ordering/finding a file is classification and
-  // step-by-step work, authoring content is building a whole out of parts.
-  'files-environment': {
+  'digital-tools': {
     track: 'informatics',
     topic: 'digital-tools',
-    preferredConceptKeys: ['classification', 'algorithms'],
-  },
-  'digital-creation': {
-    track: 'informatics',
-    topic: 'digital-tools',
-    preferredConceptKeys: ['decomposition', 'patterns'],
   },
   'data-tables-charts': {
     track: 'informatics',
     topic: 'data',
   },
-  'algorithms-executors': {
+  'algorithms-programming': {
     track: 'informatics',
     topic: 'algorithms-programming',
-    preferredConceptKeys: ['algorithms', 'debugging'],
-  },
-  'programming-scratch': {
-    track: 'informatics',
-    topic: 'algorithms-programming',
-    preferredConceptKeys: ['repetition', 'decomposition', 'debugging'],
   },
   'internet-networks-search': {
     track: 'informatics',
@@ -75,6 +66,10 @@ export const SCHOOL_TOPIC_SELECTIONS: Record<SchoolTopicId, SchoolTopicSelection
     track: 'informatics',
     topic: 'digital-safety',
   },
+  'files-environment': { track: 'informatics', topic: 'digital-tools' },
+  'digital-creation': { track: 'informatics', topic: 'digital-tools' },
+  'algorithms-executors': { track: 'informatics', topic: 'algorithms-programming' },
+  'programming-scratch': { track: 'informatics', topic: 'algorithms-programming' },
 }
 
 export function resolveSchoolTopicSelection(raw: unknown): SchoolTopicSelection | null {

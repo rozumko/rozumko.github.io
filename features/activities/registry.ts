@@ -13,12 +13,13 @@ export type ActivityDevice = 'desktop' | 'any'
  * a heading to scan under. Purely a presentation grouping — the backend knows
  * nothing about it.
  */
-export type ActivityGroupId = 'input' | 'logic' | 'information'
+export type ActivityGroupId = 'keyboard' | 'control' | 'logic' | 'information'
 
 export const ACTIVITY_GROUPS: readonly { id: ActivityGroupId; label: string }[] = [
-  { id: 'input',       label: 'Клавіатура і миша' },
-  { id: 'logic',       label: 'Логіка й мислення' },
-  { id: 'information', label: 'Інформація та дані' },
+  { id: 'keyboard',    label: 'Клавіатура і друкування' },
+  { id: 'control',     label: 'Миша і керування комп’ютером' },
+  { id: 'logic',       label: 'Логіка і головоломки' },
+  { id: 'information', label: 'Інформація і дані' },
 ]
 
 export interface ActivityLevelInfo {
@@ -57,7 +58,7 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     description: 'Дитина збирає клавіатуру: перетягує літери на їхні місця.',
     hint: 'Перетягуй клавіші на їхні місця!',
     device: 'desktop',
-    group: 'input',
+    group: 'keyboard',
     icon: 'fa-keyboard',
     // The full keyboard row is ~940px wide plus the scatter zones around it.
     minWidth: 1024,
@@ -74,7 +75,7 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     description: 'Дитина шукає на клавіатурі показану клавішу — 12 завдань поспіль.',
     hint: 'Знайди на клавіатурі клавішу, яку показано на екрані.',
     device: 'desktop',
-    group: 'input',
+    group: 'keyboard',
     icon: 'fa-i-cursor',
     // The full keyboard is ~940px wide; below that the keycaps stop being
     // readable for a child sitting at a school monitor.
@@ -95,7 +96,7 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     description: 'Дитина друкує слова або речення по літері — клавіатура підсвічує наступну клавішу.',
     hint: 'Друкуй текст по літері. Наступна клавіша світиться на клавіатурі.',
     device: 'desktop',
-    group: 'input',
+    group: 'keyboard',
     icon: 'fa-font',
     minWidth: 900,
     levelLabel: 'Що друкувати',
@@ -115,7 +116,7 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     description: 'Хвилина на швидкість: дитина друкує ціль, доки та рухається полем.',
     hint: 'Надрукуй ціль, поки вона не втекла з поля.',
     device: 'desktop',
-    group: 'input',
+    group: 'keyboard',
     icon: 'fa-bolt',
     minWidth: 900,
     levelLabel: 'Цілі та темп',
@@ -138,7 +139,7 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     description: 'Дитина проходить серію уроків: друкує тексти правильними пальцями, від перших клавіш до знаків.',
     hint: 'Друкуй текст уроку. Підказка показує, яким пальцем натискати.',
     device: 'desktop',
-    group: 'input',
+    group: 'keyboard',
     icon: 'fa-graduation-cap',
     minWidth: 900,
     levelLabel: 'Серія та підказки',
@@ -166,7 +167,7 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     description: 'Дитина веде кульку лабіринтом до кубка, не торкаючись стін, і збирає зірки.',
     hint: 'Веди кульку до кубка і не торкайся стін.',
     device: 'any',
-    group: 'input',
+    group: 'control',
     icon: 'fa-route',
     // The board letterboxes into whatever space it gets, so a tablet works.
     minWidth: 360,
@@ -182,7 +183,7 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     description: 'Дитина вчиться закривати, згортати й розгортати вікна програм.',
     hint: 'Виконуй дію на кожному вікні.',
     device: 'desktop',
-    group: 'input',
+    group: 'control',
     icon: 'fa-window-restore',
     // A window is 420px wide and has to land somewhere on a desktop.
     minWidth: 900,
@@ -199,7 +200,7 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     description: 'Дитина керує швидкою: ліва кнопка миші — ліворуч, права — праворуч.',
     hint: 'Керуй швидкою лівою і правою кнопками миші.',
     device: 'desktop',
-    group: 'input',
+    group: 'control',
     icon: 'fa-mouse',
     // Needs a real mouse with two buttons, and room for three lanes.
     minWidth: 900,
@@ -279,7 +280,7 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     description: 'Дитина тренує точність і швидкість: знаходить підсвічену клітинку та натискає її у трьох послідовних етапах.',
     hint: 'Знайди підсвічену клітинку й натисни її. Пройди всі три етапи!',
     device: 'desktop',
-    group: 'input',
+    group: 'control',
     icon: 'fa-crosshairs',
     minWidth: 760,
     levels: [
@@ -321,7 +322,7 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     description: 'Дитина тренує перетягування мишкою: переносить 30 різнокольорових світлячків у банку.',
     hint: 'Затисни світлячка кнопкою миші, перетягни до банки й відпусти.',
     device: 'desktop',
-    group: 'input',
+    group: 'control',
     icon: 'fa-bug',
     minWidth: 760,
     levels: [
