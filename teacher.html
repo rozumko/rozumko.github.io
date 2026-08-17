@@ -452,23 +452,27 @@
 
         <!-- Створення гри -->
         <div id="school-create-panel" class="school-create-card" role="tabpanel" aria-labelledby="school-mode-questions">
-          <div id="school-create" class="school-create">
-            <label class="school-create__field">Клас
-              <select id="school-grade" class="form-input school-create__select">
-                <option value="1">1 клас</option>
-                <option value="2">2 клас</option>
-                <option value="3">3 клас</option>
-                <option value="4">4 клас</option>
-              </select>
-            </label>
-            <label class="school-create__field school-create__field--topic">Тема з інформатики
-              <select id="school-topic" class="form-input school-create__select">
-                <option value="">Будь-яка тема</option>
-              </select>
-            </label>
+          <fieldset class="school-question-grade">
+            <legend>Клас</legend>
+            <input id="school-grade" type="hidden" value="1" />
+            <div id="school-grade-picker" class="school-question-grade__options">
+              <button type="button" class="school-question-grade__btn" data-school-grade="1" aria-pressed="true">1 клас</button>
+              <button type="button" class="school-question-grade__btn" data-school-grade="2" aria-pressed="false">2 клас</button>
+              <button type="button" class="school-question-grade__btn" data-school-grade="3" aria-pressed="false">3 клас</button>
+              <button type="button" class="school-question-grade__btn" data-school-grade="4" aria-pressed="false">4 клас</button>
+            </div>
+          </fieldset>
+
+          <section class="school-question-topics" aria-labelledby="school-topic-heading">
+            <h2 id="school-topic-heading" class="school-question-topics__heading">Тема з інформатики</h2>
+            <input id="school-topic" type="hidden" value="" />
+            <div id="school-topic-picker" class="question-topic-picker"></div>
+          </section>
+
+          <div id="school-create" class="school-create school-create--question-options">
             <label class="school-create__field">Складність
               <select id="school-difficulty" class="form-input school-create__select">
-                <option value="">Будь-яка</option>
+                <option value="">Змішана</option>
                 <option value="easy">Легка</option>
                 <option value="medium">Середня</option>
                 <option value="hard">Складна</option>
@@ -482,6 +486,8 @@
               </select>
             </label>
           </div>
+
+          <p id="school-question-availability" class="school-question-availability" aria-live="polite">Перевіряємо доступні питання…</p>
 
           <div class="school-create__actions">
             <button id="school-create-btn" class="btn btn--success school-create__action">

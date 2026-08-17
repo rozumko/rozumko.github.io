@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyReply, preHandlerHookHandler } from 'fastify'
-import { and, asc, desc, eq, inArray, notInArray, sql, arrayContains } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, sql, arrayContains } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { questions, schoolSessions, schoolSessionQuestions, schoolParticipants, schoolAnswers, schoolActivityResults } from '../db/schema.js'
 import { requireAuth } from '../lib/auth.js'
@@ -15,7 +15,7 @@ import {
   recordCodeFailure,
 } from './code-throttle.js'
 import { ALL_TOPICS, normalizeTopic } from '../lib/taxonomy.js'
-import { SCHOOL_TOPIC_IDS, resolveSchoolTopicSelection } from '../lib/school-topics.js'
+import { CANONICAL_SCHOOL_TOPIC_IDS, SCHOOL_TOPIC_IDS, resolveSchoolTopicSelection } from '../lib/school-topics.js'
 import {
   SCHOOL_ACTIVITY_KEYS,
   SCHOOL_ACTIVITY_LEVEL_IDS,
@@ -294,6 +294,46 @@ async function insertSessionWithJoinCode(
 export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptions = {}) {
   const authorizeTeacher = opts.authorizeTeacher ?? requireAuth
 
+  app.get<{ Querystring: { grade: number } }>('/question-availability', {
+    preHandler: authorizeTeacher,
+    schema: {
+      querystring: {
+        type: 'object',
+        required: ['grade'],
+        additionalProperties: false,
+        properties: { grade: { type: 'integer', minimum: 1, maximum: 4 } },
+      },
+    },
+  }, async req => {
+    const rows = await db
+      .select({ topic: questions.topic, difficulty: questions.difficulty })
+      .from(questions)
+      .where(and(
+        eq(questions.isOlympiad, false),
+        eq(questions.editorialStatus, 'published'),
+        arrayContains(questions.channels, ['class_game']),
+        eq(questions.grade, req.query.grade),
+        eq(questions.track, 'informatics'),
+      ))
+
+    const summarize = (items: typeof rows) => ({
+      total: items.length,
+      byDifficulty: {
+        easy: items.filter(item => item.difficulty === 'easy').length,
+        medium: items.filter(item => item.difficulty === 'medium').length,
+        hard: items.filter(item => item.difficulty === 'hard').length,
+      },
+    })
+
+    return {
+      mixed: summarize(rows),
+      topics: CANONICAL_SCHOOL_TOPIC_IDS.map(id => {
+        const selection = resolveSchoolTopicSelection(id)!
+        return { id, ...summarize(rows.filter(row => row.topic === selection.topic)) }
+      }),
+    }
+  })
+
   async function createActivitySession(
     req: { body: SessionCreateBody; user?: { id: string } },
     reply: FastifyReply,
@@ -367,26 +407,12 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
     if (track)      filters.push(eq(questions.track, track))
     if (topic)      filters.push(eq(questions.topic, topic))
 
-    let picked = schoolTopic?.preferredConceptKeys?.length
-      ? await db
-        .select({ id: questions.id })
-        .from(questions)
-        .where(and(...filters, inArray(questions.conceptKey, [...schoolTopic.preferredConceptKeys])))
-        .orderBy(sql`random()`)
-        .limit(wanted)
-      : []
-
-    const fallbackFilters = [...filters]
-    if (picked.length > 0) fallbackFilters.push(notInArray(questions.id, picked.map(row => row.id)))
-    if (picked.length < wanted) {
-      const fallback = await db
-        .select({ id: questions.id })
-        .from(questions)
-        .where(and(...fallbackFilters))
-        .orderBy(sql`random()`)
-        .limit(wanted - picked.length)
-      picked = [...picked, ...fallback]
-    }
+    const picked = await db
+      .select({ id: questions.id })
+      .from(questions)
+      .where(and(...filters))
+      .orderBy(sql`random()`)
+      .limit(wanted)
 
     if (picked.length === 0) {
       return reply.code(422).send({ error: 'Немає тренувальних питань для цих параметрів' })

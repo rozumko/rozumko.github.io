@@ -313,6 +313,19 @@ async function openTeacherDashboard(page: Page) {
                 ? { codes: [] }
                 : path === '/api/teacher/results'
                   ? { results: [] }
+                  : path === '/api/school/question-availability'
+                    ? {
+                        mixed: { total: 76, byDifficulty: { easy: 30, medium: 26, hard: 20 } },
+                        topics: [
+                          'information-messages',
+                          'computer-devices',
+                          'digital-tools',
+                          'data-tables-charts',
+                          'algorithms-programming',
+                          'internet-networks-search',
+                          'digital-safety',
+                        ].map(id => ({ id, total: 12, byDifficulty: { easy: 5, medium: 4, hard: 3 } })),
+                      }
                   : path === '/api/school/sessions' && method === 'POST'
                     ? { session: schoolSession }
                     : path === '/api/school/sessions/school-session-1/preview'
@@ -911,7 +924,7 @@ test('teacher activity cards open settings and return focus on a phone', async (
   const picker = page.locator('#school-activity-picker')
   const tangramCard = picker.locator('[data-activity-key="tangram"]')
   await expect(picker).toBeVisible()
-  await expect(picker.locator('.activity-picker__group')).toHaveCount(3)
+  await expect(picker.locator('.activity-picker__group')).toHaveCount(4)
   await expect(picker.locator('.activity-card')).toHaveCount(16)
 
   await tangramCard.click()
@@ -930,6 +943,34 @@ test('teacher activity cards open settings and return focus on a phone', async (
   await page.locator('#school-activity-back').click()
   await expect(picker).toBeVisible()
   await expect(tangramCard).toBeFocused()
+})
+
+test('teacher question topics use grade-aware cards instead of a dropdown', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 667 })
+  await openTeacherDashboard(page)
+
+  await expect(page.locator('#school-topic')).toHaveAttribute('type', 'hidden')
+  await expect(page.locator('#school-topic-picker')).toBeVisible()
+  await expect(page.locator('.question-topic-picker__group')).toHaveCount(4)
+  await expect(page.locator('.question-topic-card')).toHaveCount(8)
+
+  const programming = page.locator('[data-school-topic="algorithms-programming"]')
+  await programming.click()
+  await expect(programming).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.locator('#school-topic')).toHaveValue('algorithms-programming')
+  await expect(page.locator('#school-question-availability')).toContainText('Доступно')
+
+  await page.locator('[data-school-grade="4"]').click()
+  await expect(page.locator('#school-grade')).toHaveValue('4')
+  await expect(page.locator('[data-school-grade="4"]')).toHaveAttribute('aria-pressed', 'true')
+
+  const results = await new AxeBuilder({ page })
+    .include('#school-create-panel')
+    .withTags(WCAG_AA_TAGS)
+    .analyze()
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
+  expect(results.violations).toEqual([])
+  expect(overflow).toBeLessThanOrEqual(0)
 })
 
 test('teacher school-game form stays accessible on a phone', async ({ page }) => {
@@ -1003,7 +1044,7 @@ test('teacher school-game form stays accessible on a phone', async ({ page }) =>
   await page.locator('#modal-ok-btn').click()
   await expect(page.locator('#school-create-panel')).toBeVisible()
   await expect(page.locator('#school-live')).toBeHidden()
-  await expect(page.locator('#school-topic')).toBeFocused()
+  await expect(page.locator('.question-topic-card[aria-pressed="true"]')).toBeFocused()
 })
 
 test('teacher lobby keeps the game code and QR card contained on desktop', async ({ page }) => {

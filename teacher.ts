@@ -10,17 +10,24 @@ import {
   getClassStudents, addClassStudent, updateClassStudent, deleteClassStudent,
   createSchoolSession, startSchoolSession, finishSchoolSession, getSchoolSession,
   getSchoolSessionQuestions, submitSchoolProjectorAnswer, getSchoolParticipantAnswers,
-  getSchoolSessionPreview,
+  getSchoolSessionPreview, getSchoolQuestionAvailability,
   type SchoolParticipantAnswer, type SchoolPreviewQuestion,
   TURNSTILE_SITE_KEY,
   type TeacherClass, type ClassStudent, type EventRegistration, type TeacherEvent, type Attempt,
-  type SchoolSessionInfo, type Question, type SchoolActivityResultRow,
+  type SchoolSessionInfo, type Question, type SchoolActivityResultRow, type SchoolQuestionAvailability,
 } from './features/api/client.js'
 import { ACTIVITIES, ACTIVITY_GROUPS, findActivity, findActivityLevel } from './features/activities/registry.js'
 import { esc, friendlyError, recoveryErrorMessage, showConfirm, showModal } from './utils/ui.js'
 import { openCertModal, awardLabel, percent, getAward } from './utils/certificate.js'
 import { TOPIC_LABELS } from './features/missions/topics.js'
-import { SCHOOL_TOPICS, schoolTopicToSessionFilter } from './features/school/school-topics.js'
+import {
+  SCHOOL_TOPICS,
+  SCHOOL_TOPIC_GROUPS,
+  getSchoolTopicConfig,
+  schoolTopicToSessionFilter,
+  schoolTopicToSessionId,
+  type SchoolTopicId,
+} from './features/school/school-topics.js'
 import type { SchoolTopicStat } from './features/api/client.js'
 import { runMission, type MissionElements } from './features/missions/mission-runner.js'
 import { shuffleDeck } from './features/missions/question-shuffle.js'
@@ -1281,6 +1288,7 @@ function showDashboard(nameOrEmail: string) {
   teacherEmailDisplay.classList.remove('hidden')
   document.body.classList.add('teacher-dashboard-active')
   $maybe('auth-back-link')?.classList.add('hidden')
+  void refreshSchoolQuestionAvailability()
 }
 
 function showAuth(message?: string) {
@@ -1564,16 +1572,205 @@ function startSchoolPolling() {
   schoolPollTimer = setInterval(refreshSchoolSession, 5000)
 }
 
-function populateSchoolTopics() {
-  const topicSel = $maybe<HTMLSelectElement>('school-topic')
-  if (!topicSel) return
-  topicSel.innerHTML = '<option value="">Будь-яка тема</option>' +
-    SCHOOL_TOPICS.map(topic => (
-      `<option value="${esc(topic.id)}" title="${esc(topic.description)}">${esc(topic.label)}</option>`
-    )).join('')
+type SchoolGrade = 1 | 2 | 3 | 4
+type SchoolTopicChoice = SchoolTopicId | ''
+
+let selectedSchoolTopicId: SchoolTopicChoice = ''
+let schoolQuestionAvailability: SchoolQuestionAvailability | null = null
+let schoolAvailabilityFailed = false
+let schoolAvailabilityRequest = 0
+let schoolAvailableQuestionCount: number | null = null
+let schoolCreateBusy = false
+
+function currentSchoolGrade(): SchoolGrade {
+  const grade = Number($<HTMLInputElement>('school-grade').value)
+  return grade >= 1 && grade <= 4 ? grade as SchoolGrade : 1
 }
 
-populateSchoolTopics()
+function questionWord(count: number): string {
+  const lastTwo = count % 100
+  if (lastTwo >= 11 && lastTwo <= 14) return 'питань'
+  const last = count % 10
+  if (last === 1) return 'питання'
+  if (last >= 2 && last <= 4) return 'питання'
+  return 'питань'
+}
+
+function topicAvailability(id: SchoolTopicChoice) {
+  if (!schoolQuestionAvailability) return null
+  return id === ''
+    ? schoolQuestionAvailability.mixed
+    : schoolQuestionAvailability.topics.find(topic => topic.id === id) ?? null
+}
+
+function renderQuestionTopicCard(id: SchoolTopicChoice): string {
+  const grade = currentSchoolGrade()
+  const topic = id ? getSchoolTopicConfig(id) : null
+  const status = topic?.grades[grade] ?? 'core'
+  const availability = topicAvailability(id)
+  const badge = topic
+    ? `<span class="question-topic-card__badge question-topic-card__badge--${status}">${status === 'core' ? 'Рекомендовано' : 'Додаткова тема'}</span>`
+    : '<span class="question-topic-card__badge question-topic-card__badge--mixed">Кілька тем</span>'
+  const label = topic?.label ?? 'Змішана гра'
+  const description = topic?.description ?? 'Питання з різних тем інформатики для повторення або швидкої гри.'
+  const icon = topic?.icon ?? 'fa-random'
+  const availabilityLabel = availability
+    ? `${availability.total} ${questionWord(availability.total)}`
+    : 'Перевіряємо…'
+  return `
+    <button class="activity-card question-topic-card" type="button" data-school-topic="${esc(id)}"
+            aria-pressed="${String(selectedSchoolTopicId === id)}">
+      <span class="activity-card__icon"><i class="fas ${esc(icon)}" aria-hidden="true"></i></span>
+      <span class="activity-card__title">${esc(label)}</span>
+      ${badge}
+      <span class="activity-card__desc">${esc(description)}</span>
+      <span class="question-topic-card__availability" data-topic-availability="${esc(id || 'mixed')}">${esc(availabilityLabel)}</span>
+    </button>`
+}
+
+function renderSchoolQuestionTopics() {
+  const picker = $maybe('school-topic-picker')
+  if (!picker) return
+  picker.innerHTML = `
+    <div class="question-topic-picker__mixed">${renderQuestionTopicCard('')}</div>
+    ${SCHOOL_TOPIC_GROUPS.map(group => {
+      const topics = SCHOOL_TOPICS
+        .filter(topic => topic.group === group.id)
+        .sort((a, b) => (a.grades[currentSchoolGrade()] === 'core' ? 0 : 1) - (b.grades[currentSchoolGrade()] === 'core' ? 0 : 1))
+      return `
+        <section class="question-topic-picker__group">
+          <h3 class="question-topic-picker__group-title">${esc(group.label)}</h3>
+          <div class="activity-picker__grid">${topics.map(topic => renderQuestionTopicCard(topic.id)).join('')}</div>
+        </section>`
+    }).join('')}`
+
+  picker.querySelectorAll<HTMLButtonElement>('.question-topic-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const id = card.dataset['schoolTopic'] ?? ''
+      if (id === '' || getSchoolTopicConfig(id)) selectSchoolTopic(id as SchoolTopicChoice)
+    })
+  })
+  updateSchoolQuestionAvailabilityPresentation()
+}
+
+function selectSchoolTopic(id: SchoolTopicChoice, focus = false) {
+  selectedSchoolTopicId = id
+  $<HTMLInputElement>('school-topic').value = id
+  document.querySelectorAll<HTMLButtonElement>('.question-topic-card').forEach(card => {
+    card.setAttribute('aria-pressed', String((card.dataset['schoolTopic'] ?? '') === id))
+  })
+  updateSchoolQuestionAvailabilityPresentation()
+  if (focus) {
+    const card = [...document.querySelectorAll<HTMLButtonElement>('.question-topic-card')]
+      .find(item => (item.dataset['schoolTopic'] ?? '') === id)
+    card?.focus()
+  }
+}
+
+function selectedAvailabilityCount(): number | null {
+  const availability = topicAvailability(selectedSchoolTopicId)
+  if (!availability) return null
+  const difficulty = $<HTMLSelectElement>('school-difficulty').value as 'easy' | 'medium' | 'hard' | ''
+  return difficulty ? availability.byDifficulty[difficulty] : availability.total
+}
+
+function updateQuestionCountOptions() {
+  const countSelect = $<HTMLSelectElement>('school-count')
+  const previous = Number(countSelect.value) || 10
+  const available = selectedAvailabilityCount()
+  schoolAvailableQuestionCount = available
+  if (available == null) return
+
+  if (available === 0) {
+    countSelect.innerHTML = '<option value="1">Немає доступних</option>'
+    countSelect.disabled = true
+    return
+  }
+
+  const values = [5, 10, 15].filter(value => value <= available)
+  if (available < 15 && !values.includes(available)) values.push(available)
+  values.sort((a, b) => a - b)
+  countSelect.innerHTML = values.map(value => (
+    `<option value="${value}">${value === available && ![5, 10, 15].includes(value) ? `Усі доступні — ${value}` : value}</option>`
+  )).join('')
+  const next = values.includes(previous)
+    ? previous
+    : [...values].reverse().find(value => value <= previous) ?? values[0]
+  countSelect.value = String(next)
+  countSelect.disabled = false
+}
+
+function syncSchoolCreateActions() {
+  const disabled = schoolCreateBusy || schoolAvailableQuestionCount === 0
+  const codeBtn = $maybe<HTMLButtonElement>('school-create-btn')
+  const projectorBtn = $maybe<HTMLButtonElement>('school-projector-btn')
+  if (codeBtn) codeBtn.disabled = disabled
+  if (projectorBtn) projectorBtn.disabled = disabled
+}
+
+function updateSchoolQuestionAvailabilityPresentation() {
+  for (const card of document.querySelectorAll<HTMLButtonElement>('.question-topic-card')) {
+    const id = (card.dataset['schoolTopic'] ?? '') as SchoolTopicChoice
+    const availability = topicAvailability(id)
+    const label = card.querySelector<HTMLElement>('.question-topic-card__availability')
+    if (label) label.textContent = availability
+      ? `${availability.total} ${questionWord(availability.total)}`
+      : schoolAvailabilityFailed ? 'Доступність невідома' : 'Перевіряємо…'
+    card.disabled = availability?.total === 0
+  }
+
+  updateQuestionCountOptions()
+  syncSchoolCreateActions()
+  const note = $maybe('school-question-availability')
+  if (!note) return
+  if (schoolAvailabilityFailed) {
+    note.textContent = 'Не вдалося перевірити кількість питань. Створення гри все одно доступне.'
+    return
+  }
+  if (schoolAvailableQuestionCount == null) {
+    note.textContent = 'Перевіряємо доступні питання…'
+    return
+  }
+  if (schoolAvailableQuestionCount === 0) {
+    note.textContent = 'Для цієї теми й складності поки немає питань. Оберіть інший варіант.'
+    return
+  }
+  note.textContent = `Доступно: ${schoolAvailableQuestionCount} ${questionWord(schoolAvailableQuestionCount)} для вибраних параметрів.`
+}
+
+async function refreshSchoolQuestionAvailability() {
+  const request = ++schoolAvailabilityRequest
+  const grade = currentSchoolGrade()
+  schoolQuestionAvailability = null
+  schoolAvailabilityFailed = false
+  schoolAvailableQuestionCount = null
+  updateSchoolQuestionAvailabilityPresentation()
+  try {
+    const availability = await getSchoolQuestionAvailability(grade)
+    if (request !== schoolAvailabilityRequest || grade !== currentSchoolGrade()) return
+    schoolQuestionAvailability = availability
+  } catch {
+    if (request !== schoolAvailabilityRequest) return
+    schoolAvailabilityFailed = true
+  }
+  updateSchoolQuestionAvailabilityPresentation()
+}
+
+document.querySelectorAll<HTMLButtonElement>('[data-school-grade]').forEach(button => {
+  button.addEventListener('click', () => {
+    const grade = Number(button.dataset['schoolGrade'])
+    if (grade < 1 || grade > 4) return
+    $<HTMLInputElement>('school-grade').value = String(grade)
+    document.querySelectorAll<HTMLButtonElement>('[data-school-grade]').forEach(item => {
+      item.setAttribute('aria-pressed', String(item === button))
+    })
+    renderSchoolQuestionTopics()
+    void refreshSchoolQuestionAvailability()
+  })
+})
+
+$maybe<HTMLSelectElement>('school-difficulty')?.addEventListener('change', updateSchoolQuestionAvailabilityPresentation)
+renderSchoolQuestionTopics()
 
 // ── Активності: питання vs гра ───────────────────────────────────────────────
 // The two sub-tabs are two ways to fill one session. Questions keep the whole
@@ -1686,7 +1883,9 @@ function setSchoolMode(mode: SchoolMode) {
 /** Back to the first meaningful control of whichever sub-tab is open. */
 function focusSchoolForm() {
   if (schoolMode !== 'activity') {
-    $maybe<HTMLSelectElement>('school-topic')?.focus()
+    const selected = [...document.querySelectorAll<HTMLButtonElement>('.question-topic-card')]
+      .find(card => card.getAttribute('aria-pressed') === 'true')
+    selected?.focus()
     return
   }
   // Whichever activity screen is open: the settings form or the card grid.
@@ -1711,23 +1910,22 @@ populateSchoolActivities()
 // "My questions" source can extend this payload without rebuilding the form.
 function classroomSessionPayload() {
   const difficulty = $<HTMLSelectElement>('school-difficulty').value
-  const schoolTopicId = $<HTMLSelectElement>('school-topic').value
+  const schoolTopicId = $<HTMLInputElement>('school-topic').value
   const topicFilter = schoolTopicId ? schoolTopicToSessionFilter(schoolTopicId) : null
+  const sessionTopicId = schoolTopicId ? schoolTopicToSessionId(schoolTopicId) : null
   return {
-    grade: Number($<HTMLSelectElement>('school-grade').value),
+    grade: Number($<HTMLInputElement>('school-grade').value),
     track: topicFilter?.track ?? 'informatics',
     ...(difficulty ? { difficulty } : {}),
-    ...(schoolTopicId ? { schoolTopicId } : {}),
+    ...(sessionTopicId ? { schoolTopicId: sessionTopicId } : {}),
     ...(topicFilter?.topic ? { topic: topicFilter.topic } : {}),
     questionsCount: Number($<HTMLSelectElement>('school-count').value),
   }
 }
 
 function setSchoolCreateBusy(busy: boolean) {
-  const codeBtn = $maybe<HTMLButtonElement>('school-create-btn')
-  const projectorBtn = $maybe<HTMLButtonElement>('school-projector-btn')
-  if (codeBtn) codeBtn.disabled = busy
-  if (projectorBtn) projectorBtn.disabled = busy
+  schoolCreateBusy = busy
+  syncSchoolCreateActions()
 }
 
 // ── Question check before the class sees anything ──────────────────────────
@@ -1784,10 +1982,11 @@ function renderPreviewOptions(question: SchoolPreviewQuestion): string {
 }
 
 function renderSchoolPreview(session: SchoolSessionInfo, questions: SchoolPreviewQuestion[]) {
-  const topicSelect = $maybe<HTMLSelectElement>('school-topic')
   const meta = $maybe('school-preview-meta')
   if (meta) {
-    const topicLabel = topicSelect?.selectedOptions[0]?.textContent?.trim() || 'Будь-яка тема'
+    const topicLabel = selectedSchoolTopicId
+      ? getSchoolTopicConfig(selectedSchoolTopicId)?.label ?? 'Змішана гра'
+      : 'Змішана гра'
     const difficulty = DIFFICULTY_LABELS[session.difficulty ?? ''] ?? 'будь-яка'
     meta.textContent = `${session.grade} клас · ${topicLabel} · складність: ${difficulty} · питань: ${questions.length}`
   }
@@ -2005,7 +2204,7 @@ $maybe<HTMLButtonElement>('school-preview-cancel-btn')?.addEventListener('click'
     await discardPreviewSession()
     $maybe('school-create-panel')?.classList.remove('hidden')
     schoolSetError('')
-    $maybe<HTMLSelectElement>('school-topic')?.focus()
+    selectSchoolTopic(selectedSchoolTopicId, true)
   } finally {
     setSchoolPreviewBusy(false)
   }

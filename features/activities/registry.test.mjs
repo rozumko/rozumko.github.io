@@ -61,6 +61,20 @@ test('the card picker has unique keys and populated groups', () => {
   }
 })
 
+test('teacher-facing activity groups stay balanced by interaction type', () => {
+  assert.deepEqual(
+    ACTIVITY_GROUPS.map(group => group.id),
+    ['keyboard', 'control', 'logic', 'information'],
+  )
+  assert.deepEqual(
+    Object.fromEntries(ACTIVITY_GROUPS.map(group => [
+      group.id,
+      ACTIVITIES.filter(activity => activity.group === group.id).length,
+    ])),
+    { keyboard: 5, control: 5, logic: 3, information: 3 },
+  )
+})
+
 test('lookups fail soft on unknown input', () => {
   assert.equal(findActivity(null), null)
   assert.equal(findActivity('nope'), null)

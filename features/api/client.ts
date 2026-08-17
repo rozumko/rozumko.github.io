@@ -1273,6 +1273,20 @@ export interface SchoolTopicStat {
   correct: number
 }
 
+export interface SchoolQuestionAvailabilityCount {
+  total: number
+  byDifficulty: { easy: number; medium: number; hard: number }
+}
+
+export interface SchoolQuestionAvailability {
+  mixed: SchoolQuestionAvailabilityCount
+  topics: Array<SchoolQuestionAvailabilityCount & { id: string }>
+}
+
+export function getSchoolQuestionAvailability(grade: number): Promise<SchoolQuestionAvailability> {
+  return authRequest(`/api/school/question-availability?grade=${encodeURIComponent(String(grade))}`)
+}
+
 /** Client-reported activity outcome, as the teacher dashboard receives it. */
 export interface SchoolActivityResultRow {
   participantId: string
