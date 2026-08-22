@@ -973,6 +973,23 @@ test('teacher question topics use grade-aware cards instead of a dropdown', asyn
   expect(overflow).toBeLessThanOrEqual(0)
 })
 
+test('teacher cards keep the badge off the title line', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await openTeacherDashboard(page)
+  await page.locator('#school-mode-activity').click()
+
+  // A badge sharing the title's row squeezed the title into one word per line.
+  const overlaps = await page.evaluate(() =>
+    [...document.querySelectorAll('.activity-card')].filter(card => {
+      const title = card.querySelector('.activity-card__title')
+      const badge = card.querySelector('.activity-card__badge, .question-topic-card__badge')
+      if (!title || !badge) return false
+      return badge.getBoundingClientRect().top < title.getBoundingClientRect().bottom
+    }).length,
+  )
+  expect(overlaps).toBe(0)
+})
+
 test('teacher launch panel keeps its selects inside the panel on desktop', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await openTeacherDashboard(page)
