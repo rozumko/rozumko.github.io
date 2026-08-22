@@ -450,57 +450,72 @@
           </button>
         </div>
 
-        <!-- Створення гри -->
+        <!-- Question-game setup -->
         <div id="school-create-panel" class="school-create-card" role="tabpanel" aria-labelledby="school-mode-questions">
-          <fieldset class="school-question-grade">
-            <legend>Клас</legend>
-            <input id="school-grade" type="hidden" value="1" />
-            <div id="school-grade-picker" class="school-question-grade__options">
-              <button type="button" class="school-question-grade__btn" data-school-grade="1" aria-pressed="true">1 клас</button>
-              <button type="button" class="school-question-grade__btn" data-school-grade="2" aria-pressed="false">2 клас</button>
-              <button type="button" class="school-question-grade__btn" data-school-grade="3" aria-pressed="false">3 клас</button>
-              <button type="button" class="school-question-grade__btn" data-school-grade="4" aria-pressed="false">4 клас</button>
+          <div class="school-question-workspace">
+            <div class="school-question-browser">
+              <fieldset class="school-question-grade">
+                <legend>Клас</legend>
+                <input id="school-grade" type="hidden" value="1" />
+                <div id="school-grade-picker" class="school-question-grade__options">
+                  <button type="button" class="school-question-grade__btn" data-school-grade="1" aria-pressed="true">1 клас</button>
+                  <button type="button" class="school-question-grade__btn" data-school-grade="2" aria-pressed="false">2 клас</button>
+                  <button type="button" class="school-question-grade__btn" data-school-grade="3" aria-pressed="false">3 клас</button>
+                  <button type="button" class="school-question-grade__btn" data-school-grade="4" aria-pressed="false">4 клас</button>
+                </div>
+              </fieldset>
+
+              <section class="school-question-topics" aria-labelledby="school-topic-heading">
+                <h2 id="school-topic-heading" class="school-question-topics__heading">Оберіть тему</h2>
+                <input id="school-topic" type="hidden" value="" />
+                <div id="school-topic-picker" class="question-topic-picker"></div>
+              </section>
             </div>
-          </fieldset>
 
-          <section class="school-question-topics" aria-labelledby="school-topic-heading">
-            <h2 id="school-topic-heading" class="school-question-topics__heading">Тема з інформатики</h2>
-            <input id="school-topic" type="hidden" value="" />
-            <div id="school-topic-picker" class="question-topic-picker"></div>
-          </section>
+            <aside class="school-launch-panel" aria-labelledby="school-launch-title">
+              <div class="school-launch-panel__head">
+                <p class="school-launch-panel__eyebrow">Ваш вибір</p>
+                <h2 id="school-launch-title">Налаштування гри</h2>
+              </div>
+              <dl class="school-launch-summary">
+                <div><dt>Клас</dt><dd id="school-summary-grade">1 клас</dd></div>
+                <div><dt>Тема</dt><dd id="school-summary-topic">Змішана гра</dd></div>
+              </dl>
 
-          <div id="school-create" class="school-create school-create--question-options">
-            <label class="school-create__field">Складність
-              <select id="school-difficulty" class="form-input school-create__select">
-                <option value="">Змішана</option>
-                <option value="easy">Легка</option>
-                <option value="medium">Середня</option>
-                <option value="hard">Складна</option>
-              </select>
-            </label>
-            <label class="school-create__field">Кількість запитань
-              <select id="school-count" class="form-input school-create__select">
-                <option value="5">5</option>
-                <option value="10" selected>10</option>
-                <option value="15">15</option>
-              </select>
-            </label>
-          </div>
+              <div id="school-create" class="school-create school-create--question-options">
+                <label class="school-create__field">Складність
+                  <select id="school-difficulty" class="form-input school-create__select">
+                    <option value="">Змішана</option>
+                    <option value="easy">Легка</option>
+                    <option value="medium">Середня</option>
+                    <option value="hard">Складна</option>
+                  </select>
+                </label>
+                <label class="school-create__field">Кількість запитань
+                  <select id="school-count" class="form-input school-create__select">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="15">15</option>
+                  </select>
+                </label>
+              </div>
 
-          <p id="school-question-availability" class="school-question-availability" aria-live="polite">Перевіряємо доступні питання…</p>
+              <p id="school-question-availability" class="school-question-availability" aria-live="polite">Перевіряємо доступні питання…</p>
 
-          <div class="school-create__actions">
-            <button id="school-create-btn" class="btn btn--success school-create__action">
-              <i class="fas fa-mobile-alt" aria-hidden="true"></i>
-              <span><strong>Гра з кодом</strong><small>Учні відповідають зі своїх пристроїв</small></span>
-            </button>
-            <button id="school-projector-btn" class="btn btn--teacher school-create__action">
-              <i class="fas fa-tv" aria-hidden="true"></i>
-              <span><strong>Запустити на екрані</strong><small>Працюйте над питаннями всім класом</small></span>
-            </button>
+              <div class="school-create__actions">
+                <button id="school-create-btn" class="btn btn--success school-create__action">
+                  <i class="fas fa-mobile-alt" aria-hidden="true"></i>
+                  <span><strong>Гра з кодом</strong><small>Учні відповідають зі своїх пристроїв</small></span>
+                </button>
+                <button id="school-projector-btn" class="btn btn--teacher school-create__action">
+                  <i class="fas fa-tv" aria-hidden="true"></i>
+                  <span><strong>Запустити на екрані</strong><small>Працюйте над питаннями всім класом</small></span>
+                </button>
+              </div>
+            </aside>
           </div>
         </div>
-        <!-- Створення активності: гра замість питань -->
+        <!-- Activity setup: a game instead of questions -->
         <div id="school-activity-panel" class="school-create-card hidden" role="tabpanel" aria-labelledby="school-mode-activity">
           <!-- Cards, not a dropdown: the list is long enough that a teacher
                needs to see names and descriptions at once. Rendered from the

@@ -951,7 +951,7 @@ test('teacher question topics use grade-aware cards instead of a dropdown', asyn
 
   await expect(page.locator('#school-topic')).toHaveAttribute('type', 'hidden')
   await expect(page.locator('#school-topic-picker')).toBeVisible()
-  await expect(page.locator('.question-topic-picker__group')).toHaveCount(4)
+  await expect(page.locator('.question-topic-picker__grid')).toHaveCount(1)
   await expect(page.locator('.question-topic-card')).toHaveCount(8)
 
   const programming = page.locator('[data-school-topic="algorithms-programming"]')

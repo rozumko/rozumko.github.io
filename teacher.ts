@@ -22,7 +22,6 @@ import { openCertModal, awardLabel, percent, getAward } from './utils/certificat
 import { TOPIC_LABELS } from './features/missions/topics.js'
 import {
   SCHOOL_TOPICS,
-  SCHOOL_TOPIC_GROUPS,
   getSchoolTopicConfig,
   schoolTopicToSessionFilter,
   schoolTopicToSessionId,
@@ -1308,9 +1307,9 @@ function showAuth(message?: string) {
   }
 }
 
-// ── Класна гра (просунутий School Mode) ──────────────────────────────────────
-// Вчитель створює сесію, показує код класу, бачить лідерборд (анонімні
-// нік+аватар, без ПІБ). Поки гра активна — лідерборд оновлюється поллінгом.
+// ── Classroom game (advanced School Mode) ────────────────────────────────────
+// The teacher creates a session, shows its class code, and sees the anonymous
+// nickname/avatar leaderboard. Polling keeps it current while the game runs.
 
 let schoolSession: SchoolSessionInfo | null = null
 let schoolPollTimer: ReturnType<typeof setInterval> | null = null
@@ -1587,6 +1586,15 @@ function currentSchoolGrade(): SchoolGrade {
   return grade >= 1 && grade <= 4 ? grade as SchoolGrade : 1
 }
 
+function updateSchoolLaunchSummary() {
+  const grade = $maybe('school-summary-grade')
+  const topic = $maybe('school-summary-topic')
+  if (grade) grade.textContent = `${currentSchoolGrade()} клас`
+  if (topic) topic.textContent = selectedSchoolTopicId
+    ? getSchoolTopicConfig(selectedSchoolTopicId)?.label ?? 'Змішана гра'
+    : 'Змішана гра'
+}
+
 function questionWord(count: number): string {
   const lastTwo = count % 100
   if (lastTwo >= 11 && lastTwo <= 14) return 'питань'
@@ -1631,18 +1639,14 @@ function renderQuestionTopicCard(id: SchoolTopicChoice): string {
 function renderSchoolQuestionTopics() {
   const picker = $maybe('school-topic-picker')
   if (!picker) return
+  const grade = currentSchoolGrade()
+  const topics = [...SCHOOL_TOPICS]
+    .sort((a, b) => (a.grades[grade] === 'core' ? 0 : 1) - (b.grades[grade] === 'core' ? 0 : 1))
   picker.innerHTML = `
-    <div class="question-topic-picker__mixed">${renderQuestionTopicCard('')}</div>
-    ${SCHOOL_TOPIC_GROUPS.map(group => {
-      const topics = SCHOOL_TOPICS
-        .filter(topic => topic.group === group.id)
-        .sort((a, b) => (a.grades[currentSchoolGrade()] === 'core' ? 0 : 1) - (b.grades[currentSchoolGrade()] === 'core' ? 0 : 1))
-      return `
-        <section class="question-topic-picker__group">
-          <h3 class="question-topic-picker__group-title">${esc(group.label)}</h3>
-          <div class="activity-picker__grid">${topics.map(topic => renderQuestionTopicCard(topic.id)).join('')}</div>
-        </section>`
-    }).join('')}`
+    <div class="activity-picker__grid question-topic-picker__grid">
+      ${renderQuestionTopicCard('')}
+      ${topics.map(topic => renderQuestionTopicCard(topic.id)).join('')}
+    </div>`
 
   picker.querySelectorAll<HTMLButtonElement>('.question-topic-card').forEach(card => {
     card.addEventListener('click', () => {
@@ -1651,6 +1655,7 @@ function renderSchoolQuestionTopics() {
     })
   })
   updateSchoolQuestionAvailabilityPresentation()
+  updateSchoolLaunchSummary()
 }
 
 function selectSchoolTopic(id: SchoolTopicChoice, focus = false) {
@@ -1660,6 +1665,7 @@ function selectSchoolTopic(id: SchoolTopicChoice, focus = false) {
     card.setAttribute('aria-pressed', String((card.dataset['schoolTopic'] ?? '') === id))
   })
   updateSchoolQuestionAvailabilityPresentation()
+  updateSchoolLaunchSummary()
   if (focus) {
     const card = [...document.querySelectorAll<HTMLButtonElement>('.question-topic-card')]
       .find(item => (item.dataset['schoolTopic'] ?? '') === id)
@@ -1764,6 +1770,7 @@ document.querySelectorAll<HTMLButtonElement>('[data-school-grade]').forEach(butt
     document.querySelectorAll<HTMLButtonElement>('[data-school-grade]').forEach(item => {
       item.setAttribute('aria-pressed', String(item === button))
     })
+    updateSchoolLaunchSummary()
     renderSchoolQuestionTopics()
     void refreshSchoolQuestionAvailability()
   })
@@ -1772,7 +1779,7 @@ document.querySelectorAll<HTMLButtonElement>('[data-school-grade]').forEach(butt
 $maybe<HTMLSelectElement>('school-difficulty')?.addEventListener('change', updateSchoolQuestionAvailabilityPresentation)
 renderSchoolQuestionTopics()
 
-// ── Активності: питання vs гра ───────────────────────────────────────────────
+// ── Activities: questions versus a game ─────────────────────────────────────
 // The two sub-tabs are two ways to fill one session. Questions keep the whole
 // existing flow (server-picked deck → preview → code/projector); an activity
 // has no deck to preview, so it goes straight from the form to the join code.
