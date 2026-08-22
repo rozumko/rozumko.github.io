@@ -130,10 +130,10 @@ body.teacher-dashboard-active {
   border-bottom-color: var(--clr-sky-dark);
 }
 
-/* Основний контент дашборду */
+/* Main dashboard content */
 .dashboard-main {
   padding: var(--sp-4);
-  max-width: 72rem;
+  max-width: 96rem;
   margin: 0 auto;
   width: 100%;
 }
@@ -154,7 +154,21 @@ body.teacher-dashboard-active {
   letter-spacing: .08em;
   text-transform: uppercase;
 }
-.teacher-section__heading--school { margin-bottom: var(--sp-5); }
+.teacher-section__heading--school {
+  display: grid;
+  grid-template-columns: minmax(18rem, .7fr) minmax(28rem, 1.3fr);
+  gap: 0 var(--sp-8);
+  align-items: end;
+  margin-bottom: var(--sp-4);
+}
+.teacher-section__heading--school .teacher-section__eyebrow,
+.teacher-section__heading--school h1 { grid-column: 1; }
+.teacher-section__heading--school p:last-child {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: end;
+  margin-bottom: .2rem;
+}
 
 /* Tab panel header */
 .tab-panel__top     { display: flex; flex-direction: column; gap: var(--sp-4); margin-bottom: var(--sp-6); }
@@ -454,7 +468,7 @@ body.teacher-dashboard-active {
 .school-mode-tabs {
   display: flex;
   gap: var(--sp-2);
-  margin-bottom: var(--sp-4);
+  margin-bottom: var(--sp-3);
   flex-wrap: wrap;
 }
 .school-mode-tab {
@@ -496,8 +510,8 @@ body.teacher-dashboard-active {
   gap: var(--sp-2);
 }
 .school-question-grade__btn {
-  min-width: 5rem;
-  min-height: 2.75rem;
+  min-width: 4.5rem;
+  min-height: 2.5rem;
   padding: var(--sp-2) var(--sp-4);
   border: 1px solid var(--clr-border);
   border-radius: var(--r-full);
@@ -513,18 +527,20 @@ body.teacher-dashboard-active {
   background: var(--clr-primary);
   color: var(--clr-text-inverse);
 }
-.school-question-topics { margin-top: var(--sp-6); }
+.school-question-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 21rem);
+  gap: var(--sp-5);
+  align-items: start;
+}
+.school-question-browser { min-width: 0; }
+.school-question-topics { margin-top: var(--sp-4); }
 .question-topic-picker {
   display: grid;
-  gap: var(--sp-6);
+  gap: var(--sp-4);
 }
-.question-topic-picker__group-title {
-  margin: 0 0 var(--sp-3);
-  color: var(--clr-text-muted);
-  font-size: var(--font-size-xs);
-  font-weight: 700;
-  letter-spacing: .04em;
-  text-transform: uppercase;
+.question-topic-picker__grid {
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
 }
 .question-topic-card[aria-pressed="true"] {
   border-color: var(--clr-primary);
@@ -564,8 +580,8 @@ body.teacher-dashboard-active {
   color: var(--clr-text-muted);
 }
 .school-create--question-options {
-  max-width: 34rem;
-  margin-top: var(--sp-6);
+  grid-template-columns: 1fr;
+  margin-top: var(--sp-4);
 }
 .school-question-availability {
   min-height: 1.4em;
@@ -591,7 +607,7 @@ body.teacher-dashboard-active {
 }
 .activity-picker__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(13.5rem, 1fr));
   gap: var(--sp-3);
 }
 .activity-card {
@@ -600,7 +616,7 @@ body.teacher-dashboard-active {
   align-items: center;
   gap: var(--sp-1) var(--sp-3);
   min-width: 0;
-  padding: var(--sp-4);
+  padding: var(--sp-3);
   border: 1px solid var(--clr-border);
   border-radius: var(--r-lg);
   background: #fff;
@@ -638,10 +654,48 @@ body.teacher-dashboard-active {
 }
 .activity-card__desc {
   grid-column: 2 / -1;
+  display: -webkit-box;
+  overflow: hidden;
   color: var(--clr-text-muted);
   font-size: var(--font-size-sm);
   line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
+.question-topic-card__availability { margin-top: var(--sp-1); }
+
+.school-launch-panel {
+  position: sticky;
+  top: var(--sp-4);
+  min-width: 0;
+  padding: var(--sp-5);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-lg);
+  background: var(--clr-surface);
+  box-shadow: var(--shadow-sm);
+}
+.school-launch-panel__head { padding-bottom: var(--sp-3); border-bottom: 1px solid var(--clr-border); }
+.school-launch-panel__eyebrow {
+  margin: 0 0 2px;
+  color: var(--clr-sky-dark);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.school-launch-panel__head h2 { margin: 0; font-size: var(--font-size-lg); }
+.school-launch-summary { display: grid; gap: var(--sp-2); margin: var(--sp-3) 0 0; }
+.school-launch-summary > div {
+  display: grid;
+  grid-template-columns: 4rem minmax(0, 1fr);
+  gap: var(--sp-2);
+  align-items: baseline;
+}
+.school-launch-summary dt { color: var(--clr-text-muted); font-size: var(--font-size-sm); }
+.school-launch-summary dd { min-width: 0; margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+.school-launch-panel .school-create__actions { grid-template-columns: 1fr; margin-top: var(--sp-4); }
+.school-launch-panel .school-create__action { min-height: 3.75rem; padding-inline: var(--sp-4); }
+.school-launch-panel .school-create__action small { font-size: var(--font-size-xs); line-height: 1.25; }
 /* Second screen: settings for the activity the teacher picked */
 .activity-detail__back {
   display: inline-flex;
@@ -688,7 +742,6 @@ body.teacher-dashboard-active {
   font-weight: 600;
 }
 
-.school-create-card,
 /* minmax(0,1fr) + min-width:0: the track must shrink below content
    min-content on phones, otherwise the page gets horizontal overflow */
 .school-live { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); }
@@ -1357,6 +1410,11 @@ body.teacher-projector-active { overflow: hidden !important; }
 .school-projector__complete p { margin-bottom: var(--sp-5); color: var(--clr-text-muted); font-size: var(--font-size-lg); }
 
 @media (max-width: 760px) {
+  .teacher-section__heading--school { display: block; }
+  .teacher-section__heading--school p:last-child { margin-top: var(--sp-2); }
+  .school-question-workspace { grid-template-columns: 1fr; }
+  .school-launch-panel { position: static; }
+  .question-topic-picker__grid { grid-template-columns: 1fr; }
   .school-create { grid-template-columns: 1fr; }
   .school-create__actions { grid-template-columns: 1fr; }
   .school-preview__head { flex-direction: column; }
@@ -1372,6 +1430,15 @@ body.teacher-projector-active { overflow: hidden !important; }
   .school-projector .quiz-options--two { grid-template-columns: 1fr; }
   .school-projector .quiz-match-row { align-items: stretch; flex-direction: column; }
   .school-projector .quiz-match-arrow { transform: rotate(90deg); }
+}
+
+@media (min-width: 761px) and (max-width: 1100px) {
+  .teacher-section__heading--school { display: block; }
+  .teacher-section__heading--school p:last-child { margin-top: var(--sp-2); }
+  .school-question-workspace { grid-template-columns: 1fr; }
+  .school-launch-panel { position: static; }
+  .school-launch-panel .school-create--question-options,
+  .school-launch-panel .school-create__actions { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 520px) {
