@@ -103,7 +103,11 @@ function trackStep(step: HomeFunnelStep, dims: { track?: HomeDemoTrack } = {}) {
 
 type RawAnswer = number | string | number[]
 
-const KEY_FIELDS = ['correct', 'explanation', 'correctOrder', 'pairs', 'answer'] as const
+// Must cover every field question-renderer scores on locally, otherwise that
+// question is graded in the browser and never reaches submitAnswer — it would
+// be missing from the parent report. Mirrors the backend secret-key list in
+// backend/src/lib/olympiad-content-policy.ts.
+const KEY_FIELDS = ['correct', 'explanation', 'correctOrder', 'pairs', 'answer', 'correctAnswers'] as const
 
 function stripKeys(q: Question): Question {
   const copy: Record<string, unknown> = { ...q }
