@@ -579,8 +579,10 @@ body.teacher-dashboard-active {
   background: var(--clr-surface-subtle);
   color: var(--clr-text-muted);
 }
-.school-create--question-options {
-  grid-template-columns: 1fr;
+/* Scoped to the panel on purpose: the base .school-create four-column
+   template is declared later in this file, so a bare modifier would lose. */
+.school-launch-panel .school-create--question-options {
+  grid-template-columns: minmax(0, 1fr);
   margin-top: var(--sp-4);
 }
 .school-question-availability {
@@ -769,7 +771,9 @@ body.teacher-dashboard-active {
   grid-template-columns: minmax(7rem, .7fr) minmax(9rem, .9fr);
 }
 .school-create__actions--single { grid-template-columns: minmax(0, 24rem); }
-.school-create__field { display: flex; flex-direction: column; gap: var(--sp-1); font-weight: 600; }
+/* min-width:0 — a select never shrinks below its widest option on its own,
+   so without this the field pushes out of a narrow grid track */
+.school-create__field { display: flex; flex-direction: column; min-width: 0; gap: var(--sp-1); font-weight: 600; }
 .school-create__select { width: 100%; min-height: 3rem; }
 .school-create__actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); margin-top: var(--sp-6); }
 .school-create__action {
