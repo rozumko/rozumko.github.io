@@ -973,6 +973,21 @@ test('teacher question topics use grade-aware cards instead of a dropdown', asyn
   expect(overflow).toBeLessThanOrEqual(0)
 })
 
+test('teacher launch panel keeps its selects inside the panel on desktop', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await openTeacherDashboard(page)
+
+  const panel = page.locator('.school-launch-panel')
+  await expect(panel).toBeVisible()
+  const panelBox = (await panel.boundingBox())!
+  // The base .school-create grid is four wide columns; inside a ~21rem panel
+  // that pushed the question-count select off the card.
+  for (const id of ['school-difficulty', 'school-count']) {
+    const box = (await page.locator(`#${id}`).boundingBox())!
+    expect(box.x + box.width).toBeLessThanOrEqual(panelBox.x + panelBox.width)
+  }
+})
+
 test('teacher school-game form stays accessible on a phone', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 667 })
   await openTeacherDashboard(page)
