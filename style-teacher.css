@@ -555,6 +555,7 @@ body.teacher-dashboard-active {
 }
 .question-topic-card__badge,
 .question-topic-card__availability {
+  grid-column: 1 / -1;
   width: max-content;
   max-width: 100%;
   padding: 2px 8px;
@@ -575,7 +576,6 @@ body.teacher-dashboard-active {
   color: var(--clr-violet-dark);
 }
 .question-topic-card__availability {
-  grid-column: 2 / -1;
   background: var(--clr-surface-subtle);
   color: var(--clr-text-muted);
 }
@@ -612,9 +612,11 @@ body.teacher-dashboard-active {
   grid-template-columns: repeat(auto-fill, minmax(13.5rem, 1fr));
   gap: var(--sp-3);
 }
+/* Two columns, not three: with the badge sharing the title's row the title
+   was left a sliver and broke one word per line. The badge sits below it. */
 .activity-card {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: var(--sp-1) var(--sp-3);
   min-width: 0;
@@ -646,6 +648,8 @@ body.teacher-dashboard-active {
 }
 .activity-card__title { min-width: 0; font-weight: 700; }
 .activity-card__badge {
+  grid-column: 1 / -1;
+  justify-self: start;
   padding: 2px 8px;
   border-radius: 999px;
   background: var(--clr-surface-muted);
@@ -654,15 +658,13 @@ body.teacher-dashboard-active {
   font-weight: 600;
   white-space: nowrap;
 }
+/* Full text, no clamp: for sixteen activities the teacher does not know yet,
+   what the game actually is matters more than a uniform card height. */
 .activity-card__desc {
-  grid-column: 2 / -1;
-  display: -webkit-box;
-  overflow: hidden;
+  grid-column: 1 / -1;
   color: var(--clr-text-muted);
   font-size: var(--font-size-sm);
-  line-height: 1.4;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  line-height: 1.35;
 }
 .question-topic-card__availability { margin-top: var(--sp-1); }
 
@@ -770,12 +772,14 @@ body.teacher-dashboard-active {
 .school-create--activity {
   grid-template-columns: minmax(7rem, .7fr) minmax(9rem, .9fr);
 }
-.school-create__actions--single { grid-template-columns: minmax(0, 24rem); }
 /* min-width:0 — a select never shrinks below its widest option on its own,
    so without this the field pushes out of a narrow grid track */
 .school-create__field { display: flex; flex-direction: column; min-width: 0; gap: var(--sp-1); font-weight: 600; }
 .school-create__select { width: 100%; min-height: 3rem; }
 .school-create__actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); margin-top: var(--sp-6); }
+/* Modifiers go directly after their base rule: same specificity, so the one
+   declared last wins. Declared earlier, this single column never applied. */
+.school-create__actions--single { grid-template-columns: minmax(0, 24rem); }
 .school-create__action {
   min-height: 4.5rem;
   justify-content: flex-start;
