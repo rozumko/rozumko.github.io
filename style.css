@@ -416,6 +416,22 @@ button {
 .site-header__link:hover   { color: var(--clr-primary); }
 .site-header__link--active { color: var(--clr-primary); }
 
+.site-header__link--coming-soon {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.site-header__status {
+  padding: .18rem .42rem;
+  border-radius: var(--r-full);
+  background: var(--clr-warning-light);
+  color: var(--clr-warning-text);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  line-height: 1.2;
+}
+
 /* ── CTA-кнопка (десктоп) ─── */
 .site-header__cta {
   font-size: var(--font-size-sm);

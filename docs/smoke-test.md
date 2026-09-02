@@ -81,6 +81,10 @@ Run this checklist before a real pilot.
 
 ## 6a. School Classroom Game (advanced School Mode)
 
+For a live lesson with a real class, follow
+[school-pilot-runbook.md](./school-pilot-runbook.md); this section is the
+functional pass.
+
 - [ ] The teacher dashboard opens on "Класна гра" and does not load Olympiad
       data until the teacher opens the separate "Олімпіада" section.
 - [ ] Teacher: choose grade, Informatics topic and difficulty -> "Гра з кодом";
@@ -97,8 +101,12 @@ Run this checklist before a real pilot.
 - [ ] Teacher: choose the same filters -> "Запустити на екрані"; the projector
       surface opens, can enter browser fullscreen, renders sanitized questions
       and receives only `{ correct: boolean }` after a class answer.
+- [ ] Teacher reloads the dashboard mid-game: it reopens the running session on
+      its own, with the same join code and the same class summary
 - [ ] Teacher presses "Завершити"; further answers are rejected and the
-      leaderboard freezes
+      leaderboard freezes; the join code and share link disappear
+- [ ] Teacher presses "Нова гра": the finished session appears under "Останні
+      ігри" and reopens as a results view
 - [ ] Admin cannot edit or delete a question while it belongs to the running
       game (409)
 
@@ -176,6 +184,8 @@ Run this checklist before a real pilot.
 - [ ] Create a completed private copy of `docs/security-ops-evidence.md` for
       this release; do not commit screenshots, secrets or private console URLs
 - [ ] `docs/olympiad-day-runbook.md` is printed or open for the event operator
+- [ ] For a classroom pilot: `docs/school-pilot-runbook.md` is open for the
+      operator and its content-coverage check passed for the lesson's grade
 - [ ] `docs/load-test.md` was run against staging at the planned concurrency
 - [ ] Before the first live event, a manual database export/import smoke test
       passed against local or non-production PostgreSQL

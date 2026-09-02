@@ -9,6 +9,7 @@ import {
   resetCodeThrottleForTests,
   STUDENT_CODE_THROTTLE_SCOPE,
   STUDENT_CODE_IP_THROTTLE_SCOPE,
+  SCHOOL_JOIN_CODE_IP_THROTTLE_SCOPE,
 } from './code-throttle.js'
 
 test('code throttle blocks after repeated failures and then cools down', () => {
@@ -112,4 +113,22 @@ test('per-IP threshold is independent of the per-code threshold', () => {
   recordCodeFailure('some-code-scope', 'ABC123', start)
   for (let i = 1; i < 5; i++) recordCodeFailure('some-code-scope', 'ABC123', start + i)
   assert.equal(getCodeThrottleStatus('some-code-scope', 'ABC123', start + 6).allowed, false)
+})
+
+test('classroom join keeps a whole class typing after the olympiad ceiling would block', () => {
+  resetCodeThrottleForTests()
+  const ip = '192.0.2.77'
+  const start = 5_000_000
+
+  // Enough typos to lock the stricter student-code scope out several times over.
+  for (let i = 0; i < 59; i++) {
+    recordCodeFailure(SCHOOL_JOIN_CODE_IP_THROTTLE_SCOPE, ip, start + i)
+  }
+  assert.deepEqual(getCodeThrottleStatus(SCHOOL_JOIN_CODE_IP_THROTTLE_SCOPE, ip, start + 59), { allowed: true })
+
+  recordCodeFailure(SCHOOL_JOIN_CODE_IP_THROTTLE_SCOPE, ip, start + 59)
+  const blocked = getCodeThrottleStatus(SCHOOL_JOIN_CODE_IP_THROTTLE_SCOPE, ip, start + 60)
+  assert.equal(blocked.allowed, false)
+  // The cooldown must not swallow a whole lesson.
+  assert.equal(blocked.allowed === false && blocked.retryAfterSeconds <= 5 * 60, true)
 })

@@ -1,7 +1,11 @@
 import './frontend-security.js'
 import './register-sw.js'
+import './surface-stub.css'
+import { isSurfaceAvailable } from './features/surfaces/availability.js'
+import { renderSurfaceStub } from './features/surfaces/stub-view.js'
 import {
   loginTeacher, logoutTeacher, getTeacherSession, storeTeacherSession, registerTeacher,
+  listSchoolSessions,
   createTeacherClass, createTeacherRegistration,
   getTeacherMe, generateCodes, getTeacherClasses, getTeacherCodes,
   getTeacherRegistrationEvents, getTeacherRegistrations, getTeacherResults,
@@ -15,6 +19,7 @@ import {
   TURNSTILE_SITE_KEY,
   type TeacherClass, type ClassStudent, type EventRegistration, type TeacherEvent, type Attempt,
   type SchoolSessionInfo, type Question, type SchoolActivityResultRow, type SchoolQuestionAvailability,
+  type SchoolParticipantRow, type SchoolTopicStat, type SchoolSessionSummary,
 } from './features/api/client.js'
 import { ACTIVITIES, ACTIVITY_GROUPS, findActivity, findActivityLevel } from './features/activities/registry.js'
 import { esc, friendlyError, recoveryErrorMessage, showConfirm, showModal } from './utils/ui.js'
@@ -27,7 +32,6 @@ import {
   schoolTopicToSessionId,
   type SchoolTopicId,
 } from './features/school/school-topics.js'
-import type { SchoolTopicStat } from './features/api/client.js'
 import { runMission, type MissionElements } from './features/missions/mission-runner.js'
 import { shuffleDeck } from './features/missions/question-shuffle.js'
 import { createFocusTrap } from './utils/focus-trap.js'
@@ -280,7 +284,37 @@ async function init() {
 }
 
 // --- Teacher dashboard navigation ---
+const olympiadAvailable = isSurfaceAvailable('olympiad')
+
+function configureOlympiadStub(): void {
+  if (olympiadAvailable) return
+  const section = $maybe('teacher-section-olympiad')
+  const link = document.querySelector<HTMLElement>('[data-section="olympiad"]')
+  if (!section || !link) return
+
+  link.querySelector('span')?.append(' · незабаром')
+  section.querySelector('.teacher-section__heading')?.classList.add('hidden')
+  section.querySelector('.dashboard-tabs')?.classList.add('hidden')
+  section.querySelectorAll('.olympiad-tab-panel').forEach(panel => panel.classList.add('hidden'))
+
+  const mount = document.createElement('div')
+  mount.id = 'teacher-olympiad-stub'
+  renderSurfaceStub(mount, 'olympiad', true)
+  const schoolLink = mount.querySelector<HTMLAnchorElement>('.kid-action')
+  if (schoolLink) {
+    schoolLink.href = '#teacher-section-school'
+    schoolLink.textContent = 'Перейти до класної гри'
+    schoolLink.addEventListener('click', event => {
+      event.preventDefault()
+      document.querySelector<HTMLElement>('[data-section="school"]')?.click()
+    })
+  }
+  mount.querySelector('.btn-ghost')?.remove()
+  section.prepend(mount)
+}
+
 async function ensureOlympiadLoaded() {
+  if (!olympiadAvailable) return
   if (olympiadLoaded) return
   if (!olympiadLoading) {
     olympiadLoading = Promise.allSettled([
@@ -298,6 +332,8 @@ async function ensureOlympiadLoaded() {
   }
   await olympiadLoading
 }
+
+configureOlympiadStub()
 
 document.querySelectorAll<HTMLElement>('.teacher-section-link').forEach(link => {
   link.addEventListener('click', () => {
@@ -1288,6 +1324,7 @@ function showDashboard(nameOrEmail: string) {
   document.body.classList.add('teacher-dashboard-active')
   $maybe('auth-back-link')?.classList.add('hidden')
   void refreshSchoolQuestionAvailability()
+  void restoreSchoolSessions()
 }
 
 function showAuth(message?: string) {
@@ -1348,6 +1385,11 @@ function renderSchoolStatus() {
     finished: '🏁 Завершено',
   }
   if (statusEl) statusEl.textContent = labels[schoolSession.status] ?? schoolSession.status
+  // A finished session takes no more players, so the dead code and link go away
+  // and the panel reads as a results view (also how a reopened game looks).
+  const finished = schoolSession.status === 'finished'
+  $maybe('school-join-access')?.classList.toggle('hidden', finished)
+  $maybe('school-join-share')?.classList.toggle('hidden', finished)
   // The click-a-student hint applies only once the breakdown is available
   $maybe('school-detail-hint')?.classList.toggle('hidden', schoolSession.status === 'lobby' || isActivity)
   $maybe('school-start-btn')?.classList.toggle('hidden', schoolSession.status !== 'lobby')
@@ -1356,7 +1398,7 @@ function renderSchoolStatus() {
   $maybe('school-new-btn')?.classList.toggle('hidden', schoolSession.status !== 'finished')
 }
 
-function renderSchoolLeaderboard(participants: { id: string; avatar: string; nickname: string; score: number }[]) {
+function renderSchoolLeaderboard(participants: SchoolParticipantRow[]) {
   const board = $maybe('school-leaderboard')
   if (!board) return
   const count = $maybe('school-participant-count')
@@ -1483,7 +1525,7 @@ function formatDuration(sec: number): string {
 }
 
 function renderSchoolActivityResults(
-  participants: { id: string; avatar: string; nickname: string }[],
+  participants: SchoolParticipantRow[],
   results: SchoolActivityResultRow[],
 ) {
   const wrap = $maybe('school-activity-results-wrap')
@@ -1541,6 +1583,40 @@ function renderSchoolActivityResults(
   wrap.classList.remove('hidden')
 }
 
+function renderSchoolClassSummary(
+  participants: SchoolParticipantRow[],
+  topicStats: SchoolTopicStat[],
+  activityResults: SchoolActivityResultRow[],
+) {
+  const wrap = $maybe('school-class-summary')
+  if (!wrap || !schoolSession) return
+
+  const joined = participants.length
+  const isActivity = schoolSession.kind === 'activity'
+  const answered = participants.reduce((sum, participant) => sum + Number(participant.answeredCount ?? 0), 0)
+  const completed = isActivity
+    ? activityResults.length
+    : participants.filter(participant => Number(participant.answeredCount ?? 0) >= schoolSession!.questionsCount).length
+  const expected = isActivity ? joined : joined * schoolSession.questionsCount
+  const progressCurrent = isActivity ? completed : answered
+  const progressPercent = expected > 0 ? Math.round((progressCurrent / expected) * 100) : 0
+  const correct = topicStats.reduce((sum, stat) => sum + stat.correct, 0)
+  const graded = topicStats.reduce((sum, stat) => sum + stat.total, 0)
+  const accuracy = graded > 0 ? `${Math.round((correct / graded) * 100)}%` : '—'
+
+  const items = [
+    { value: String(joined), label: 'приєдналися' },
+    { value: `${completed} / ${joined}`, label: 'завершили' },
+    { value: `${progressPercent}%`, label: isActivity ? 'завершення активності' : 'відповідей виконано' },
+    ...(!isActivity ? [{ value: accuracy, label: 'правильних відповідей' }] : []),
+  ]
+  wrap.innerHTML = items.map(item => `
+    <div class="school-class-summary__item">
+      <strong class="school-class-summary__value">${esc(item.value)}</strong>
+      <span class="school-class-summary__label">${esc(item.label)}</span>
+    </div>`).join('')
+}
+
 async function refreshSchoolSession() {
   if (!schoolSession) return
   const sessionId = schoolSession.id
@@ -1550,6 +1626,7 @@ async function refreshSchoolSession() {
     schoolSession = session
     renderSchoolStatus()
     renderSchoolLeaderboard(participants)
+    renderSchoolClassSummary(participants, topicStats, activityResults ?? [])
     renderSchoolTopicStats(topicStats)
     renderSchoolActivityResults(participants, activityResults ?? [])
     // Refresh an open breakdown together with the leaderboard while live
@@ -2074,6 +2151,7 @@ function resetSchoolView() {
   // Come back to whichever sub-tab the teacher was on
   setSchoolMode(schoolMode)
   schoolSetError('')
+  void loadSchoolSessions()
 }
 
 function buildSchoolJoinUrl(code: string): string {
@@ -2155,8 +2233,100 @@ schoolQrDialog?.addEventListener('click', event => {
   if (event.target === schoolQrDialog) closeSchoolQrDialog()
 })
 
+// ── Recent sessions ─────────────────────────────────────────────────────────
+// The dashboard holds the running session in memory only, so a reloaded tab (or
+// a restarted projector laptop) would otherwise lose control of a game the
+// class is still playing. The teacher's own session list restores it, and
+// doubles as post-lesson history once the game is finished.
+
+function participantWord(count: number): string {
+  const lastTwo = count % 100
+  if (lastTwo >= 11 && lastTwo <= 14) return 'учасників'
+  const last = count % 10
+  if (last === 1) return 'учасник'
+  if (last >= 2 && last <= 4) return 'учасники'
+  return 'учасників'
+}
+
+function schoolSessionTitle(session: SchoolSessionSummary): string {
+  if (session.kind === 'activity') return findActivity(session.activityKey)?.label ?? 'Активність'
+  return `Питання · ${session.questionsCount} ${questionWord(session.questionsCount)}`
+}
+
+function schoolSessionMeta(session: SchoolSessionSummary): string {
+  const parts = [`${session.grade} клас`, `${session.participantCount} ${participantWord(session.participantCount)}`]
+  const startedAt = session.createdAt ? new Date(session.createdAt) : null
+  if (startedAt && !Number.isNaN(startedAt.getTime())) {
+    parts.push(startedAt.toLocaleString('uk-UA', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }))
+  }
+  return parts.join(' · ')
+}
+
+function renderSchoolHistory(sessions: SchoolSessionSummary[]) {
+  const wrap = $maybe('school-history')
+  const list = $maybe('school-history-list')
+  if (!wrap || !list) return
+  if (!sessions.length) {
+    list.innerHTML = ''
+    wrap.classList.add('hidden')
+    return
+  }
+  list.innerHTML = sessions.map(session => `
+    <div class="school-history__row${session.live ? ' school-history__row--live' : ''}">
+      <span class="school-history__meta">
+        <strong class="school-history__title">${esc(schoolSessionTitle(session))}</strong>
+        <span class="school-history__sub">${esc(schoolSessionMeta(session))}</span>
+      </span>
+      ${session.live ? '<span class="school-history__badge">Триває</span>' : ''}
+      <button type="button" class="btn ${session.live ? 'btn--teacher' : 'btn--secondary'} school-history__open"
+              data-session-id="${esc(session.id)}">
+        ${session.live ? 'Повернутися до гри' : 'Переглянути результати'}
+      </button>
+    </div>`).join('')
+  // onclick (not addEventListener): the list is re-rendered on every reload
+  list.onclick = event => {
+    const id = (event.target as HTMLElement).closest<HTMLElement>('[data-session-id]')?.dataset.sessionId
+    if (id) void openSchoolSession(id)
+  }
+  wrap.classList.remove('hidden')
+}
+
+/** Reopen one of the teacher's own sessions — live game or finished results. */
+async function openSchoolSession(id: string) {
+  schoolSetError('')
+  try {
+    const { session } = await getSchoolSession(id)
+    hideSchoolPreview()
+    showSchoolLobby(session)
+  } catch (err) {
+    schoolSetError(friendlyError((err as Error).message))
+    void loadSchoolSessions()
+  }
+}
+
+async function loadSchoolSessions() {
+  try {
+    renderSchoolHistory((await listSchoolSessions()).sessions)
+  } catch {
+    // History is a convenience: a failed load must not block starting a game.
+  }
+}
+
+/** On dashboard open: land straight back on a game the class is still playing. */
+async function restoreSchoolSessions() {
+  let sessions: SchoolSessionSummary[]
+  try { ({ sessions } = await listSchoolSessions()) } catch { return }
+  const live = sessions.find(session => session.live)
+  if (live && !schoolSession && !previewSession) {
+    await openSchoolSession(live.id)
+    return
+  }
+  renderSchoolHistory(sessions)
+}
+
 function showSchoolLobby(session: SchoolSessionInfo) {
   schoolSession = session
+  $maybe('school-history')?.classList.add('hidden')
   $('school-join-code').textContent = session.joinCode
   const link = $maybe<HTMLInputElement>('school-join-link')
   const joinUrl = buildSchoolJoinUrl(session.joinCode)
@@ -2167,6 +2337,7 @@ function showSchoolLobby(session: SchoolSessionInfo) {
   $maybe('school-live')?.classList.remove('hidden')
   renderSchoolStatus()
   renderSchoolLeaderboard([])
+  renderSchoolClassSummary([], [], [])
   startSchoolPolling()
 }
 

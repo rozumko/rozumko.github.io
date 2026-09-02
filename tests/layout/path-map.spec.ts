@@ -395,6 +395,9 @@ for (const grade of [1, 2, 3, 4]) {
 
 test('map edges stay below the node presentation layer', async ({ page }) => {
   await page.goto('/path.html?grade=2')
+  // The map is rendered by a module the page loads on its own, so wait for a
+  // node before reading computed styles.
+  await expect(page.locator('.path-node__badge').first()).toBeAttached()
   const layers = await page.evaluate(() => ({
     edges: Number(getComputedStyle(document.querySelector('.path-map__edges')!).zIndex),
     nodes: Number(getComputedStyle(document.querySelector('.path-map__nodes')!).zIndex),
