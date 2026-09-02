@@ -32,6 +32,8 @@ function createState() {
       activityLevel: null as string | null,
     },
     sessionExists: true,
+    /** Participants already in the session, as the join-time roster check counts them. */
+    roster: 0,
     question: {
       id: ids.question,
       q: '2+2?',
@@ -91,6 +93,10 @@ function installFakeDb(state: ReturnType<typeof createState>) {
         return state.activityResults
       }
       if (isTable(this.table, schema.schoolParticipants)) {
+        // Roster size check on join
+        if (this.fields && Object.keys(this.fields).length === 1 && 'count' in this.fields) {
+          return [{ count: state.roster }]
+        }
         if (this.joins.includes(schema.schoolSessions) && state.participant) {
           return [{
             id: state.participant.id,
@@ -290,6 +296,20 @@ test('school: join → answer correct → score increments; keys are stripped', 
       const dashboard = await app.inject({ method: 'GET', url: `/api/school/sessions/${ids.session}` })
       assert.equal(dashboard.statusCode, 200, dashboard.body)
       assert.equal(dashboard.json().participants[0].answeredCount, 1)
+    })
+  } finally { restore() }
+})
+
+test('school: a full session stops accepting joins', async () => {
+  const state = createState()
+  state.roster = 60
+  const restore = installFakeDb(state)
+  try {
+    await withApp(async (app) => {
+      const res = await app.inject({ method: 'POST', url: '/api/school/join', payload: { code: '123456', avatar: AVATAR, nickname: 'Пізній' } })
+      assert.equal(res.statusCode, 409, res.body)
+      assert.match(res.json().error, /максимум учасників/)
+      assert.equal(state.participant, null)
     })
   } finally { restore() }
 })

@@ -33,9 +33,23 @@ const IP_LIMITS: ThrottleLimits = {
   cooldownMs: 10 * 60 * 1000,
 }
 
+/**
+ * A whole class joins one game at once, from one NAT address, by copying a
+ * 6-digit code off the board — in grades 1-4 the typos arrive in bursts, and a
+ * lockout mid-lesson costs the teacher the lesson. The looser ceiling is still
+ * far from enumeration: the code space is a million wide and a session's code
+ * dies after two hours, so 60 wrong guesses per 10 minutes buys an attacker
+ * nothing.
+ */
+const CLASSROOM_IP_LIMITS: ThrottleLimits = {
+  maxFailures: 60,
+  windowMs: 10 * 60 * 1000,
+  cooldownMs: 5 * 60 * 1000,
+}
+
 const SCOPE_LIMITS: Readonly<Record<string, ThrottleLimits>> = {
   [STUDENT_CODE_IP_THROTTLE_SCOPE]: IP_LIMITS,
-  [SCHOOL_JOIN_CODE_IP_THROTTLE_SCOPE]: IP_LIMITS,
+  [SCHOOL_JOIN_CODE_IP_THROTTLE_SCOPE]: CLASSROOM_IP_LIMITS,
 }
 
 function limitsFor(scope: string): ThrottleLimits {

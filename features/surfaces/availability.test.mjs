@@ -50,3 +50,19 @@ test('teacher Olympiad navigation is gated before data loading', async () => {
   assert.match(teacher, /if \(!olympiadAvailable\) return/)
   assert.match(teacher, /configureOlympiadStub\(\)/)
 })
+
+test('dormant routes stay out of search while they render a stub', async () => {
+  for (const path of ['home.html', 'parent.html', 'path.html', 'games.html', 'student.html', 'olympiad-enter.html']) {
+    assert.match(await repoFile(path), /<meta name="robots" content="noindex"/, path)
+  }
+
+  const sitemap = await repoFile('public/sitemap.xml')
+  for (const path of ['home.html', 'games.html', 'student.html']) {
+    assert.equal(sitemap.includes(`<loc>https://rozumko.com/${path}</loc>`), false, path)
+  }
+  assert.equal(sitemap.includes('<loc>https://rozumko.com/school.html</loc>'), true)
+
+  // An installed PWA must not open on a coming-soon surface.
+  const manifest = JSON.parse(await repoFile('public/manifest.json'))
+  assert.equal(manifest.start_url, '/school.html')
+})

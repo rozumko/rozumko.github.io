@@ -2,7 +2,7 @@
   "name": "Розумко — обчислювальне мислення",
   "short_name": "Розумко",
   "description": "Місії для дітей 1–4 класів: обчислювальне мислення, логіка, основи ШІ й корисний екранний час",
-  "start_url": "/home.html",
+  "start_url": "/school.html",
   "display": "standalone",
   "background_color": "#4c1d95",
   "theme_color": "#7c3aed",

@@ -40,6 +40,11 @@ const SESSION_JOIN_TTL_MS = 2 * 60 * 60 * 1000
 // comfortably; the list is a recovery and review aid, not an archive browser.
 const SESSION_HISTORY_LIMIT = 20
 
+// Blast radius of a leaked join code. Two merged classes still fit; a code
+// posted somewhere public cannot grow the roster without bound. The check is
+// deliberately not transactional — it caps abuse, it is not an exact quota.
+const MAX_SESSION_PARTICIPANTS = 60
+
 function isSessionExpired(createdAt: Date | null): boolean {
   return createdAt != null && Date.now() - createdAt.getTime() > SESSION_JOIN_TTL_MS
 }
@@ -831,6 +836,14 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
         .set({ status: 'finished', finishedAt: new Date() })
         .where(eq(schoolSessions.id, session.id))
       return reply.code(409).send({ error: 'Сесію вже завершено' })
+    }
+
+    const [joined] = await db
+      .select({ count: sql<number>`cast(count(*) as int)` })
+      .from(schoolParticipants)
+      .where(eq(schoolParticipants.sessionId, session.id))
+    if (Number(joined?.count ?? 0) >= MAX_SESSION_PARTICIPANTS) {
+      return reply.code(409).send({ error: 'У цій грі вже максимум учасників' })
     }
 
     const [participant] = await db.insert(schoolParticipants)
