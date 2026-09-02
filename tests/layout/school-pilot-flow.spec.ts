@@ -184,6 +184,9 @@ test('pilot happy path: teacher starts a code game, child completes it, class su
 
   await teacher.locator('#school-create-btn').click()
   await expect(teacher.locator('#school-preview')).toBeVisible()
+  // Setup and an open game are exclusive screens: the tabs must not stay live
+  // over a game and let a click stack new settings on another game's results.
+  await expect(teacher.locator('#school-mode-tabs')).toBeHidden()
   await teacher.locator('#school-preview-start-btn').click()
   await expect(teacher.locator('#school-live')).toBeVisible()
   await expect(teacher.locator('#school-join-code')).toHaveText(joinCode)
@@ -216,15 +219,23 @@ test('pilot happy path: teacher starts a code game, child completes it, class su
 
   await teacher.locator('#school-finish-btn').click()
   await expect(teacher.locator('#school-status')).toContainText('Завершено')
-  await expect(teacher.locator('#school-new-btn')).toBeVisible()
+  // Right after a live finish the useful next step is another game.
+  await expect(teacher.locator('#school-new-btn')).toContainText('Нова гра')
   // The dead code and share link go away once the game is over.
   await expect(teacher.locator('#school-join-access')).toBeHidden()
   await expect(teacher.locator('#school-join-share')).toBeHidden()
+  await expect(teacher.locator('#school-join-heading')).toHaveText('Гру завершено')
 
-  // The finished game stays reachable as history.
+  // The finished game stays reachable as history, and a results view offers a
+  // way back to the list rather than pretending to start a game.
   await teacher.locator('#school-new-btn').click()
+  await expect(teacher.locator('#school-mode-tabs')).toBeVisible()
   await expect(teacher.locator('#school-history')).toBeVisible()
   await teacher.locator('.school-history__open').click()
   await expect(teacher.locator('#school-live')).toBeVisible()
   await expect(teacher.locator('#school-class-summary')).toContainText('1 / 1', { timeout: 7_000 })
+  await expect(teacher.locator('#school-new-btn')).toContainText('До списку ігор')
+  await teacher.locator('#school-new-btn').click()
+  await expect(teacher.locator('#school-live')).toBeHidden()
+  await expect(teacher.locator('#school-history')).toBeVisible()
 })

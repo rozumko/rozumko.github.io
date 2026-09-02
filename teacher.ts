@@ -1349,6 +1349,9 @@ function showAuth(message?: string) {
 // nickname/avatar leaderboard. Polling keeps it current while the game runs.
 
 let schoolSession: SchoolSessionInfo | null = null
+// A session reopened from history is a results view, not a game the teacher is
+// running: the way out has to read as "back to the list", not "start a game".
+let schoolReviewMode = false
 let schoolPollTimer: ReturnType<typeof setInterval> | null = null
 let projectorTrapCleanup: (() => void) | null = null
 let qrDialogTrapCleanup: (() => void) | null = null
@@ -1382,7 +1385,9 @@ function renderSchoolStatus() {
     active: isActivity
       ? 'Активність триває. Результат кожного учня з’явиться, коли він завершить.'
       : 'Гра триває. Учні, які запізнилися, також можуть приєднатися за цим кодом.',
-    finished: '🏁 Завершено',
+    finished: schoolReviewMode
+      ? '🏁 Гру завершено. Це збережені результати уроку.'
+      : '🏁 Завершено',
   }
   if (statusEl) statusEl.textContent = labels[schoolSession.status] ?? schoolSession.status
   // A finished session takes no more players, so the dead code and link go away
@@ -1390,6 +1395,18 @@ function renderSchoolStatus() {
   const finished = schoolSession.status === 'finished'
   $maybe('school-join-access')?.classList.toggle('hidden', finished)
   $maybe('school-join-share')?.classList.toggle('hidden', finished)
+  const joinHeading = $maybe('school-join-heading')
+  if (joinHeading) joinHeading.textContent = finished ? 'Гру завершено' : 'Приєднання до гри'
+  // One button leaves this screen. After a live finish the useful next step is a
+  // new game; in a results view it is the way back to the list.
+  const leaveBtn = $maybe('school-new-btn')
+  if (leaveBtn) {
+    leaveBtn.innerHTML = schoolReviewMode
+      ? '<i class="fas fa-arrow-left" aria-hidden="true"></i> До списку ігор'
+      : '<i class="fas fa-plus" aria-hidden="true"></i> Нова гра'
+    leaveBtn.classList.toggle('btn--success', !schoolReviewMode)
+    leaveBtn.classList.toggle('btn--secondary', schoolReviewMode)
+  }
   // The click-a-student hint applies only once the breakdown is available
   $maybe('school-detail-hint')?.classList.toggle('hidden', schoolSession.status === 'lobby' || isActivity)
   $maybe('school-start-btn')?.classList.toggle('hidden', schoolSession.status !== 'lobby')
@@ -1576,9 +1593,12 @@ function renderSchoolActivityResults(
   const pending = rows.filter(row => !row.r).length
   const hint = $maybe('school-activity-results-hint')
   if (hint) {
+    // In a finished session nobody can still be on the way: the count is a
+    // result, not something the teacher is waiting for.
+    const pendingLabel = schoolSession?.status === 'finished' ? 'Не завершили' : 'Ще не завершили'
     hint.textContent = pending === 0
       ? 'Час і результат кожного учня (від найшвидшого). Дані надсилає браузер учня.'
-      : `Час і результат кожного учня (від найшвидшого). Ще не завершили: ${pending}.`
+      : `Час і результат кожного учня (від найшвидшого). ${pendingLabel}: ${pending}.`
   }
   wrap.classList.remove('hidden')
 }
@@ -1959,8 +1979,13 @@ function setSchoolMode(mode: SchoolMode) {
     tab.classList.toggle('school-mode-tab--active', active)
     tab.setAttribute('aria-selected', String(active))
   })
-  $maybe('school-create-panel')?.classList.toggle('hidden', mode !== 'questions')
-  $maybe('school-activity-panel')?.classList.toggle('hidden', mode !== 'activity')
+  // Setup, preview and an open game are exclusive screens. Without this the
+  // tabs stay live over a running or reviewed game and one click stacks the
+  // settings of a new game on top of another game's results.
+  const busy = previewSession != null || schoolSession != null
+  $maybe('school-mode-tabs')?.classList.toggle('hidden', busy)
+  $maybe('school-create-panel')?.classList.toggle('hidden', busy || mode !== 'questions')
+  $maybe('school-activity-panel')?.classList.toggle('hidden', busy || mode !== 'activity')
   schoolSetError('')
 }
 
@@ -2112,7 +2137,7 @@ async function openSchoolPreview(mode: SchoolLaunchMode) {
     previewMode = mode
     const { questions } = await getSchoolSessionPreview(session.id)
     renderSchoolPreview(session, questions)
-    $maybe('school-create-panel')?.classList.add('hidden')
+    setSchoolMode(schoolMode)
     $maybe('school-preview')?.classList.remove('hidden')
     $maybe<HTMLButtonElement>('school-preview-start-btn')?.focus()
   } catch (err) {
@@ -2144,6 +2169,7 @@ function resetSchoolView() {
   closeSchoolQrDialog()
   closeParticipantDetail()
   schoolSession = null
+  schoolReviewMode = false
   hideSchoolPreview()
   if (schoolPollTimer) { clearInterval(schoolPollTimer); schoolPollTimer = null }
   $maybe('school-live')?.classList.add('hidden')
@@ -2297,7 +2323,7 @@ async function openSchoolSession(id: string) {
   try {
     const { session } = await getSchoolSession(id)
     hideSchoolPreview()
-    showSchoolLobby(session)
+    showSchoolLobby(session, session.status === 'finished')
   } catch (err) {
     schoolSetError(friendlyError((err as Error).message))
     void loadSchoolSessions()
@@ -2324,16 +2350,16 @@ async function restoreSchoolSessions() {
   renderSchoolHistory(sessions)
 }
 
-function showSchoolLobby(session: SchoolSessionInfo) {
+function showSchoolLobby(session: SchoolSessionInfo, review = false) {
   schoolSession = session
+  schoolReviewMode = review
   $maybe('school-history')?.classList.add('hidden')
   $('school-join-code').textContent = session.joinCode
   const link = $maybe<HTMLInputElement>('school-join-link')
   const joinUrl = buildSchoolJoinUrl(session.joinCode)
   if (link) link.value = joinUrl
   void renderSchoolJoinQr(joinUrl, session.joinCode)
-  $maybe('school-create-panel')?.classList.add('hidden')
-  $maybe('school-activity-panel')?.classList.add('hidden')
+  setSchoolMode(schoolMode)
   $maybe('school-live')?.classList.remove('hidden')
   renderSchoolStatus()
   renderSchoolLeaderboard([])
