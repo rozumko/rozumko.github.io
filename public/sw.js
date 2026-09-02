@@ -11,7 +11,7 @@
  * ─────────────────────────────────────────────────────────────
  */
 
-const CACHE_NAME = 'rozumko-v4';
+const CACHE_NAME = 'rozumko-v5';
 
 /**
  * Статичні ресурси що кешуються при першому завантаженні.
@@ -20,6 +20,11 @@ const CACHE_NAME = 'rozumko-v4';
 const PRECACHE_URLS = [
   '/',
   '/index.html',
+  '/school.html',
+  '/home.html',
+  '/parent.html',
+  '/path.html',
+  '/games.html',
   '/student.html',
   '/olympiad-enter.html',
   '/for-students.html',

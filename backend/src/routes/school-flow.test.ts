@@ -69,12 +69,18 @@ function installFakeDb(state: ReturnType<typeof createState>) {
     innerJoin(t: unknown) { this.joins.push(t); return this }
     leftJoin(t: unknown) { this.joins.push(t); return this }
     where() { return this }
+    groupBy() { return this }
     orderBy() { return this }
     limit() { return this }
 
     rows() {
       if (isTable(this.table, schema.schoolSessions)) {
-        return state.sessionExists ? [state.session] : []
+        if (!state.sessionExists) return []
+        // Teacher session list: one aggregated row per session
+        if (this.joins.includes(schema.schoolParticipants)) {
+          return [{ ...state.session, finishedAt: null, participantCount: state.participant ? 1 : 0 }]
+        }
+        return [state.session]
       }
       if (isTable(this.table, schema.schoolSessionQuestions) && this.joins.includes(schema.schoolAnswers)) {
         // Teacher breakdown: one row per issued question + this participant's answer
@@ -97,7 +103,9 @@ function installFakeDb(state: ReturnType<typeof createState>) {
             activityLevel: state.session.activityLevel,
           }]
         }
-        return state.participant ? [state.participant] : []
+        return state.participant
+          ? [{ ...state.participant, answeredCount: state.answers.size }]
+          : []
       }
       if (isTable(this.table, schema.schoolAnswers)) {
         // Participant's own answered ids for the resume payload
@@ -278,6 +286,35 @@ test('school: join → answer correct → score increments; keys are stripped', 
       assert.equal(answer.statusCode, 200, answer.body)
       assert.deepEqual(answer.json(), { correct: true })
       assert.equal(state.participant?.score, 1)
+
+      const dashboard = await app.inject({ method: 'GET', url: `/api/school/sessions/${ids.session}` })
+      assert.equal(dashboard.statusCode, 200, dashboard.body)
+      assert.equal(dashboard.json().participants[0].answeredCount, 1)
+    })
+  } finally { restore() }
+})
+
+test('school: the teacher session list marks a fresh session live and an expired one not', async () => {
+  const state = createState()
+  const restore = installFakeDb(state)
+  try {
+    await withApp(async (app) => {
+      await app.inject({ method: 'POST', url: '/api/school/join', payload: { code: '123456', avatar: AVATAR, nickname: 'Оля' } })
+
+      const live = await app.inject({ method: 'GET', url: '/api/school/sessions' })
+      assert.equal(live.statusCode, 200, live.body)
+      const [session] = live.json().sessions
+      assert.equal(session.id, ids.session)
+      assert.equal(session.joinCode, '123456')
+      assert.equal(session.participantCount, 1)
+      assert.equal(session.live, true)
+      assert.equal(typeof session.createdAt, 'string')
+
+      // Past the join TTL the code is dead, so the row is history, not a game
+      // the dashboard may reopen.
+      state.session.createdAt = new Date(Date.now() - 3 * 60 * 60 * 1000)
+      const stale = await app.inject({ method: 'GET', url: '/api/school/sessions' })
+      assert.equal(stale.json().sessions[0].live, false)
     })
   } finally { restore() }
 })

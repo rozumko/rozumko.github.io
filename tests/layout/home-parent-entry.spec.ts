@@ -23,10 +23,11 @@ test('public parent entry points expose direct account registration', async ({ p
   await expect(signup).toHaveAttribute('href', 'parent.html?mode=register')
   await expect(signup).toHaveClass(/kid-action/)
 
+  // for-parents.html carries the pilot copy: Home is announced as coming soon
+  // instead of offering an account that the surface cannot serve yet.
   await page.goto('/for-parents.html')
-  await expect(page.getByRole('link', { name: 'Створити акаунт' })).toHaveAttribute('href', 'parent.html?mode=register')
-  await expect(page.getByText('Домашній кабінет уже доступний')).toBeVisible()
-  await expect(page.getByText('Домашній режим — незабаром')).toHaveCount(0)
+  await expect(page.getByRole('link', { name: 'Дізнатися більше' })).toHaveAttribute('href', 'home.html')
+  await expect(page.getByText('Домашні місії ще готуються')).toBeVisible()
 })
 
 test('Home path card follows all four ready grades', async ({ page }) => {

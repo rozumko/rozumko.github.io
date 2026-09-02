@@ -36,6 +36,10 @@ const QUESTION_TRACKS = ['informatics', 'computational-thinking', 'ai-basics'] a
 // the join code auto-expires: the session is closed and join returns 409.
 const SESSION_JOIN_TTL_MS = 2 * 60 * 60 * 1000
 
+// How far back the teacher dashboard can look. One school day of lessons fits
+// comfortably; the list is a recovery and review aid, not an archive browser.
+const SESSION_HISTORY_LIMIT = 20
+
 function isSessionExpired(createdAt: Date | null): boolean {
   return createdAt != null && Date.now() - createdAt.getTime() > SESSION_JOIN_TTL_MS
 }
@@ -453,6 +457,54 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
     return reply.send({ status: 'finished' })
   })
 
+  // ── Вчитель: свої останні сесії ───────────────────────────────────────────
+  // A live lesson survives a reloaded teacher tab only if the dashboard can
+  // find the running session again: the browser holds no durable session id.
+  // The same list doubles as post-lesson history for finished sessions.
+  app.get('/sessions', { preHandler: authorizeTeacher }, async req => {
+    const rows = await db
+      .select({
+        id:             schoolSessions.id,
+        joinCode:       schoolSessions.joinCode,
+        grade:          schoolSessions.grade,
+        difficulty:     schoolSessions.difficulty,
+        questionsCount: schoolSessions.questionsCount,
+        status:         schoolSessions.status,
+        kind:           schoolSessions.kind,
+        activityKey:    schoolSessions.activityKey,
+        activityLevel:  schoolSessions.activityLevel,
+        createdAt:      schoolSessions.createdAt,
+        finishedAt:     schoolSessions.finishedAt,
+        participantCount: sql<number>`cast(count(${schoolParticipants.id}) as int)`,
+      })
+      .from(schoolSessions)
+      .leftJoin(schoolParticipants, eq(schoolParticipants.sessionId, schoolSessions.id))
+      .where(eq(schoolSessions.teacherId, req.user!.id))
+      .groupBy(schoolSessions.id)
+      .orderBy(desc(schoolSessions.createdAt))
+      .limit(SESSION_HISTORY_LIMIT)
+
+    return {
+      sessions: rows.map(row => ({
+        id:               row.id,
+        joinCode:         row.joinCode,
+        grade:            row.grade,
+        difficulty:       row.difficulty,
+        questionsCount:   row.questionsCount,
+        status:           row.status,
+        kind:             row.kind,
+        activityKey:      row.activityKey,
+        activityLevel:    row.activityLevel,
+        createdAt:        row.createdAt?.toISOString() ?? null,
+        finishedAt:       row.finishedAt?.toISOString() ?? null,
+        participantCount: Number(row.participantCount ?? 0),
+        // Resumable only while the join code still works: an expired lobby or
+        // active session is closed by the next join attempt anyway.
+        live:             row.status !== 'finished' && !isSessionExpired(row.createdAt),
+      })),
+    }
+  })
+
   // ── Вчитель: стан + агрегат (лідерборд) своєї сесії ───────────────────────
   app.get<{ Params: { id: string } }>('/sessions/:id', { preHandler: authorizeTeacher, schema: { params: uuidParam } }, async (req, reply) => {
     const [session] = await db.select().from(schoolSessions)
@@ -461,9 +513,17 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
     if (!session) return reply.code(404).send({ error: 'Сесію не знайдено' })
 
     const participants = await db
-      .select({ id: schoolParticipants.id, avatar: schoolParticipants.avatar, nickname: schoolParticipants.nickname, score: schoolParticipants.score })
+      .select({
+        id: schoolParticipants.id,
+        avatar: schoolParticipants.avatar,
+        nickname: schoolParticipants.nickname,
+        score: schoolParticipants.score,
+        answeredCount: sql<number>`cast(count(${schoolAnswers.id}) as int)`,
+      })
       .from(schoolParticipants)
+      .leftJoin(schoolAnswers, eq(schoolAnswers.participantId, schoolParticipants.id))
       .where(eq(schoolParticipants.sessionId, session.id))
+      .groupBy(schoolParticipants.id)
       .orderBy(desc(schoolParticipants.score))
 
     // Activity sessions have no per-question data at all: the teacher gets the

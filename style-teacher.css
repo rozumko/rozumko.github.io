@@ -914,6 +914,55 @@ body.teacher-dashboard-active {
 .school-live__lobby + .school-live__heading { margin-top: var(--sp-5); }
 .school-live__heading { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-2); font-weight: 700; }
 .school-live__count { min-width: 1.6rem; padding: 2px var(--sp-2); border-radius: var(--r-full); background: var(--clr-sky-light); color: var(--clr-sky-dark); font-size: var(--font-size-xs); text-align: center; }
+.school-history { margin-top: var(--sp-6); }
+.school-history__heading { margin: 0 0 var(--sp-3); font-size: var(--font-size-lg); font-weight: 700; }
+.school-history__list { display: grid; gap: var(--sp-2); }
+.school-history__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-md);
+  background: var(--clr-surface);
+}
+.school-history__row--live { border-color: var(--clr-primary); background: var(--clr-sky-light); }
+.school-history__meta { display: grid; gap: 2px; flex: 1 1 12rem; min-width: 0; }
+.school-history__title { font-weight: 700; }
+.school-history__sub { color: var(--clr-text-muted); font-size: var(--font-size-sm); }
+.school-history__badge {
+  padding: .18rem .5rem;
+  border-radius: var(--r-full);
+  background: var(--clr-primary);
+  color: #fff;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+}
+.school-history__open { flex: 0 0 auto; }
+
+.school-class-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-5);
+}
+.school-class-summary__item {
+  display: grid;
+  gap: var(--sp-1);
+  min-width: 0;
+  padding: var(--sp-3);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-md);
+  background: var(--clr-surface-muted);
+}
+.school-class-summary__value {
+  color: var(--clr-primary-dark);
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.school-class-summary__label { color: var(--clr-text-muted); font-size: var(--font-size-sm); }
 .school-live__stats { margin-top: var(--sp-6); }
 .school-live__stats-hint { margin: 0 0 var(--sp-3); color: var(--clr-text-muted); font-size: var(--font-size-sm); }
 .school-leaderboard__empty { color: var(--clr-text-muted); }

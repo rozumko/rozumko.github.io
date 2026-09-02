@@ -174,6 +174,38 @@
   color: var(--clr-text-muted);
   line-height: 1.5;
 }
+
+.surface-status-badge {
+  display: inline-flex;
+  width: max-content;
+  padding: .25rem .55rem;
+  border-radius: var(--r-full);
+  background: var(--clr-warning-light);
+  color: var(--clr-warning-text);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.mode-card.is-coming-soon,
+.mode-door.is-coming-soon {
+  border-style: dashed;
+}
+
+.mode-card.is-coming-soon {
+  background: var(--clr-surface-muted);
+  border-color: var(--clr-border);
+  color: var(--clr-text-muted);
+}
+
+.mode-door.is-coming-soon {
+  background: var(--clr-surface-muted);
+  border-color: var(--clr-border);
+}
+
+.mode-door.is-coming-soon:hover {
+  transform: translateY(-2px);
+}
 .mode-card--home     { background: #fff7ed; border-color: #fcd34d; color: #7c2d12; }
 .mode-card--school   { background: #eff6ff; border-color: #93c5fd; color: var(--clr-primary-dark); }
 .mode-card--olympiad { background: #f5f3ff; border-color: #c4b5fd; color: #5b21b6; }

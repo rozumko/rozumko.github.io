@@ -1265,6 +1265,7 @@ export interface SchoolParticipantRow {
   avatar: string
   nickname: string
   score: number
+  answeredCount: number
 }
 
 export interface SchoolTopicStat {
@@ -1314,6 +1315,19 @@ export function createSchoolSession(data: {
     method: 'POST',
     body: JSON.stringify(data),
   })
+}
+
+/** One row of the teacher's own recent sessions (resume + post-lesson review). */
+export interface SchoolSessionSummary extends SchoolSessionInfo {
+  createdAt: string | null
+  finishedAt: string | null
+  participantCount: number
+  /** The join code still works, so the dashboard may reopen it as a live game. */
+  live: boolean
+}
+
+export function listSchoolSessions(): Promise<{ sessions: SchoolSessionSummary[] }> {
+  return authRequest('/api/school/sessions')
 }
 
 export function startSchoolSession(id: string): Promise<{ status: string }> {

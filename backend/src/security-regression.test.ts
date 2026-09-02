@@ -66,6 +66,16 @@ test('student traffic keeps classroom NAT capacity and verified-token isolation 
   assert.match(schoolSource, /config:\s*\{\s*rateLimit:\s*participantSessionRateLimit\s*\}/)
 })
 
+test('the teacher session list stays scoped to the requesting teacher', () => {
+  const schoolSource = readFileSync(new URL('./routes/school.ts', import.meta.url), 'utf8')
+  // The list hands back join codes, so an unscoped query would let one teacher
+  // walk into another class's running game.
+  const listHandler = schoolSource
+    .split("app.get('/sessions',")[1]
+    ?.split("app.get<{ Params: { id: string } }>('/sessions/:id'")[0] ?? ''
+  assert.match(listHandler, /eq\(schoolSessions\.teacherId, req\.user!\.id\)/)
+})
+
 test('CORS preflight дозволяє кастомні токен-заголовки з дозволеного origin', async () => {
   const app = Fastify()
   await app.register(cors, CORS_OPTIONS)

@@ -3,6 +3,8 @@
 // контент, що у вільних місіях; відповіді цих питань публічні за дизайном
 // (олімпіадні питання сюди не потрапляють, див. docs/security-model.md).
 
+import { isSurfaceAvailable, type ProductSurface } from './features/surfaces/availability.js'
+
 interface PreviewQuestion {
   q: string
   options: string[]
@@ -75,7 +77,7 @@ function pickQuestion(): PreviewQuestion {
 }
 
 function renderEventBanner(): void {
-  if (!SEASON_EVENT) return
+  if (!SEASON_EVENT || !isSurfaceAvailable('olympiad')) return
   const banner = document.getElementById('event-banner')
   if (!banner) return
   const title = document.createElement('span')
@@ -87,6 +89,30 @@ function renderEventBanner(): void {
   link.textContent = SEASON_EVENT.cta
   banner.append(title, link)
   banner.classList.remove('hidden')
+}
+
+function applySurfaceAvailability(): void {
+  document.querySelectorAll<HTMLElement>('[data-product-surface]').forEach(card => {
+    const surface = card.dataset.productSurface as ProductSurface | undefined
+    if (!surface || isSurfaceAvailable(surface)) return
+    card.classList.add('is-coming-soon')
+
+    const badge = document.createElement('span')
+    badge.className = 'surface-status-badge'
+    badge.textContent = 'Незабаром'
+
+    if (card.classList.contains('mode-door')) {
+      card.setAttribute('aria-label', `${card.querySelector('.mode-door__title')?.textContent ?? 'Режим'}, незабаром`)
+      card.querySelector('.mode-door__icon')?.after(badge)
+      const description = card.querySelector('.mode-door__desc')
+      const action = card.querySelector('.mode-door__cta')
+      if (description) description.textContent = 'Ми ще готуємо цей режим'
+      if (action) action.textContent = 'Дізнатися більше'
+      return
+    }
+
+    card.querySelector('.mode-card__head')?.append(badge)
+  })
 }
 
 function renderQuestion(): void {
@@ -135,6 +161,7 @@ function answer(
   actionsEl.classList.remove('hidden')
 }
 
+applySurfaceAvailability()
 renderEventBanner()
 // Прев'ю опційне: якщо картки немає на сторінці — нічого не робимо (і не тягнемо пул).
 if (document.getElementById('preview-question')) {

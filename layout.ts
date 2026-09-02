@@ -1,5 +1,6 @@
 import './frontend-security.js'
 import './register-sw.js'
+import { isSurfaceAvailable, type ProductSurface } from './features/surfaces/availability.js'
 // Unified header + footer for all public pages.
 // Each page includes this module via <script type="module" src="layout.js">.
 // Placeholders: <div id="site-header"></div> and <div id="site-footer"></div>
@@ -7,10 +8,10 @@ import './register-sw.js'
 // Хедер тримаємо мінімальним: лише дві продуктові поверхні + CTA.
 // Інформаційні сторінки (Для учнів/батьків/вчителів, Правила, Приватність)
 // живуть тільки у футері, щоб не перевантажувати навігацію.
-const NAV = [
-  { href: 'home.html', label: 'Я вдома' },
-  { href: 'school.html', label: 'Я в класі' },
-  { href: 'student.html', label: 'Олімпіада' },
+const NAV: Array<{ href: string; label: string; surface: ProductSurface }> = [
+  { href: 'school.html', label: 'Я в класі', surface: 'school' },
+  { href: 'home.html', label: 'Я вдома', surface: 'home' },
+  { href: 'student.html', label: 'Олімпіада', surface: 'olympiad' },
 ]
 
 function activePage(): string {
@@ -23,10 +24,18 @@ function injectHeader(): void {
 
   const page = activePage()
   const isHome = page === 'home.html'
-  const links = NAV.map(({ href, label }) => {
+  const homeAvailable = isSurfaceAvailable('home')
+  const links = NAV.map(({ href, label, surface }) => {
     const active = page === href ? ' site-header__link--active' : ''
-    return `<a href="${href}" class="site-header__link${active}">${label}</a>`
+    const available = isSurfaceAvailable(surface)
+    const unavailable = available ? '' : ' site-header__link--coming-soon'
+    const status = available ? '' : '<span class="site-header__status">Незабаром</span>'
+    const aria = available ? '' : ` aria-label="${label}, незабаром"`
+    return `<a href="${href}" class="site-header__link${active}${unavailable}"${aria}>${label}${status}</a>`
   }).join('')
+
+  const ctaHref = homeAvailable && isHome ? 'parent.html' : homeAvailable ? 'home.html' : 'school.html'
+  const ctaLabel = homeAvailable && isHome ? 'Кабінет батьків' : homeAvailable ? 'Почати гру →' : 'Ввести код →'
 
   el.outerHTML = `
     <header class="site-header">
@@ -40,7 +49,7 @@ function injectHeader(): void {
         <nav id="site-nav" class="site-header__nav" aria-label="Навігація сайтом">${links}<a href="parent.html" class="site-header__link site-header__mobile-only">Кабінет батьків</a><a href="teacher.html" class="site-header__link site-header__mobile-only">Для вчителя</a></nav>
         <div class="site-header__actions">
           <a href="teacher.html" class="site-header__teacher">Для вчителя</a>
-          <a href="${isHome ? 'parent.html' : 'home.html'}" class="site-header__cta">${isHome ? 'Кабінет батьків' : 'Почати гру →'}</a>
+          <a href="${ctaHref}" class="site-header__cta">${ctaLabel}</a>
         </div>
       </div>
     </header>`
@@ -83,6 +92,9 @@ function injectFooter(): void {
   const el = document.getElementById('site-footer')
   if (!el) return
 
+  const homeLabel = isSurfaceAvailable('home') ? 'Кабінет батьків' : 'Домашній режим — незабаром'
+  const olympiadLabel = isSurfaceAvailable('olympiad') ? 'Вхід учня за кодом' : 'Олімпіада — незабаром'
+
   el.outerHTML = `
     <footer class="site-footer">
       <div class="site-footer__inner">
@@ -107,9 +119,9 @@ function injectFooter(): void {
           <div class="footer-col--wide">
             <p class="footer-col__heading">Кабінет</p>
             <ul class="footer-col__list">
-              <li><a href="parent.html">Кабінет батьків</a></li>
+              <li><a href="parent.html">${homeLabel}</a></li>
               <li><a href="teacher.html">Вхід для вчителя</a></li>
-              <li><a href="student.html">Вхід учня за кодом</a></li>
+              <li><a href="student.html">${olympiadLabel}</a></li>
             </ul>
           </div>
         </nav>
@@ -120,5 +132,9 @@ function injectFooter(): void {
     </footer>`
 }
 
-injectHeader()
-injectFooter()
+export function renderSiteLayout(): void {
+  injectHeader()
+  injectFooter()
+}
+
+renderSiteLayout()

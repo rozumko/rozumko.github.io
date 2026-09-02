@@ -577,12 +577,19 @@
 
         <p id="school-error" class="quiz-feedback quiz-feedback--incorrect" aria-live="polite"></p>
 
+        <!-- Recent sessions: reopen a game that is still running after a reload,
+             or review the results of a finished lesson -->
+        <section id="school-history" class="school-history hidden" aria-labelledby="school-history-heading">
+          <h3 id="school-history-heading" class="school-history__heading">Останні ігри</h3>
+          <div id="school-history-list" class="school-history__list"></div>
+        </section>
+
         <!-- Active classroom game -->
         <div id="school-live" class="school-live hidden">
           <section class="school-live__panel" aria-label="Приєднання до гри">
           <h3 class="school-live__heading school-live__heading--panel">Приєднання до гри</h3>
           <div class="school-live__lobby">
-            <div class="school-live__access">
+            <div id="school-join-access" class="school-live__access">
               <div class="school-live__code-card" aria-label="Код гри">
                 <p class="school-live__code-label">КОД ГРИ</p>
                 <p id="school-join-code" class="school-live__code"></p>
@@ -600,12 +607,14 @@
             </div>
             <div class="school-live__join-info">
               <p id="school-status" class="school-live__status" aria-live="polite"></p>
-              <label for="school-join-link" class="form-label">Посилання для учнів</label>
-              <div class="school-live__link-row">
-                <input id="school-join-link" class="form-input" type="text" readonly />
-                <button id="school-copy-link-btn" class="btn btn--secondary" type="button">
-                  <i class="fas fa-copy" aria-hidden="true"></i> Копіювати
-                </button>
+              <div id="school-join-share">
+                <label for="school-join-link" class="form-label">Посилання для учнів</label>
+                <div class="school-live__link-row">
+                  <input id="school-join-link" class="form-input" type="text" readonly />
+                  <button id="school-copy-link-btn" class="btn btn--secondary" type="button">
+                    <i class="fas fa-copy" aria-hidden="true"></i> Копіювати
+                  </button>
+                </div>
               </div>
               <div class="school-live__actions">
                 <button id="school-start-btn" class="btn btn--teacher">
@@ -627,6 +636,7 @@
 
           <section class="school-live__panel" aria-label="Результати класу">
           <h3 class="school-live__heading school-live__heading--panel">Результати класу</h3>
+          <div id="school-class-summary" class="school-class-summary" aria-live="polite"></div>
           <h4 class="school-live__heading">Учасники <span id="school-participant-count" class="school-live__count">0</span></h4>
           <p id="school-detail-hint" class="school-live__stats-hint hidden">Натисніть на учня, щоб побачити його відповіді.</p>
           <div id="school-leaderboard"></div>

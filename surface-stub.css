@@ -1,0 +1,90 @@
+.surface-stub-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 15% 15%, var(--clr-surface-subtle), transparent 35%),
+    radial-gradient(circle at 85% 80%, var(--clr-warning-light), transparent 32%),
+    var(--clr-surface-muted);
+}
+
+.surface-stub-shell {
+  min-height: calc(100vh - 10rem);
+  display: grid;
+  place-items: center;
+  padding: clamp(2rem, 6vw, 5rem) 1rem;
+}
+
+.surface-stub {
+  width: min(100%, 44rem);
+  padding: clamp(1.5rem, 5vw, 3.5rem);
+  border: 1px solid var(--clr-border);
+  border-radius: 2rem;
+  background: var(--clr-surface);
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+}
+
+.surface-stub--compact {
+  margin: 1rem 0 2rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+.surface-stub__badge {
+  display: inline-flex;
+  padding: .45rem .8rem;
+  border-radius: 999px;
+  background: var(--clr-warning-light);
+  color: var(--clr-text);
+  font-size: .82rem;
+  font-weight: 800;
+}
+
+.surface-stub__icon {
+  margin: 1.25rem 0 .5rem;
+  font-size: clamp(3rem, 10vw, 5rem);
+  line-height: 1;
+}
+
+.surface-stub__title {
+  margin: .75rem 0;
+  color: var(--clr-text);
+  font-size: clamp(1.8rem, 5vw, 3rem);
+  line-height: 1.1;
+}
+
+.surface-stub__description,
+.surface-stub__note {
+  max-width: 36rem;
+  margin: .75rem auto 0;
+  color: var(--clr-text-muted);
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.surface-stub__note {
+  font-size: .95rem;
+}
+
+.surface-stub__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .75rem;
+  margin-top: 1.75rem;
+}
+
+.surface-stub__actions .kid-action,
+.surface-stub__actions .btn-ghost {
+  width: auto;
+  min-height: 48px;
+}
+
+@media (max-width: 540px) {
+  .surface-stub__actions {
+    flex-direction: column;
+  }
+
+  .surface-stub__actions .kid-action,
+  .surface-stub__actions .btn-ghost {
+    width: 100%;
+  }
+}
