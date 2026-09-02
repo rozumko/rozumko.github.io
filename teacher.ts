@@ -1389,14 +1389,22 @@ function renderSchoolStatus() {
       ? '🏁 Гру завершено. Це збережені результати уроку.'
       : '🏁 Завершено',
   }
-  if (statusEl) statusEl.textContent = labels[schoolSession.status] ?? schoolSession.status
-  // A finished session takes no more players, so the dead code and link go away
-  // and the panel reads as a results view (also how a reopened game looks).
-  const finished = schoolSession.status === 'finished'
-  $maybe('school-join-access')?.classList.toggle('hidden', finished)
-  $maybe('school-join-share')?.classList.toggle('hidden', finished)
+  if (statusEl) {
+    statusEl.textContent = schoolReviewMode && schoolSession.status !== 'finished'
+      ? '⏱ Код гри вже не діє. Це останній збережений стан уроку.'
+      : labels[schoolSession.status] ?? schoolSession.status
+  }
+  // A finished or expired session takes no more players, so the dead code and
+  // link go away and the panel reads as a results view.
+  const closed = schoolSession.status === 'finished' || schoolReviewMode
+  $maybe('school-join-access')?.classList.toggle('hidden', closed)
+  $maybe('school-join-share')?.classList.toggle('hidden', closed)
   const joinHeading = $maybe('school-join-heading')
-  if (joinHeading) joinHeading.textContent = finished ? 'Гру завершено' : 'Приєднання до гри'
+  if (joinHeading) {
+    joinHeading.textContent = schoolReviewMode && schoolSession.status !== 'finished'
+      ? 'Код гри неактивний'
+      : closed ? 'Гру завершено' : 'Приєднання до гри'
+  }
   // One button leaves this screen. After a live finish the useful next step is a
   // new game; in a results view it is the way back to the list.
   const leaveBtn = $maybe('school-new-btn')
@@ -1409,10 +1417,10 @@ function renderSchoolStatus() {
   }
   // The click-a-student hint applies only once the breakdown is available
   $maybe('school-detail-hint')?.classList.toggle('hidden', schoolSession.status === 'lobby' || isActivity)
-  $maybe('school-start-btn')?.classList.toggle('hidden', schoolSession.status !== 'lobby')
-  $maybe('school-cancel-btn')?.classList.toggle('hidden', schoolSession.status !== 'lobby')
-  $maybe('school-finish-btn')?.classList.toggle('hidden', schoolSession.status !== 'active')
-  $maybe('school-new-btn')?.classList.toggle('hidden', schoolSession.status !== 'finished')
+  $maybe('school-start-btn')?.classList.toggle('hidden', schoolReviewMode || schoolSession.status !== 'lobby')
+  $maybe('school-cancel-btn')?.classList.toggle('hidden', schoolReviewMode || schoolSession.status !== 'lobby')
+  $maybe('school-finish-btn')?.classList.toggle('hidden', schoolReviewMode || schoolSession.status !== 'active')
+  $maybe('school-new-btn')?.classList.toggle('hidden', !closed)
 }
 
 function renderSchoolLeaderboard(participants: SchoolParticipantRow[]) {
@@ -1595,7 +1603,7 @@ function renderSchoolActivityResults(
   if (hint) {
     // In a finished session nobody can still be on the way: the count is a
     // result, not something the teacher is waiting for.
-    const pendingLabel = schoolSession?.status === 'finished' ? 'Не завершили' : 'Ще не завершили'
+    const pendingLabel = schoolSession?.status === 'finished' || schoolReviewMode ? 'Не завершили' : 'Ще не завершили'
     hint.textContent = pending === 0
       ? 'Час і результат кожного учня (від найшвидшого). Дані надсилає браузер учня.'
       : `Час і результат кожного учня (від найшвидшого). ${pendingLabel}: ${pending}.`
@@ -2312,18 +2320,19 @@ function renderSchoolHistory(sessions: SchoolSessionSummary[]) {
   // onclick (not addEventListener): the list is re-rendered on every reload
   list.onclick = event => {
     const id = (event.target as HTMLElement).closest<HTMLElement>('[data-session-id]')?.dataset.sessionId
-    if (id) void openSchoolSession(id)
+    const summary = sessions.find(session => session.id === id)
+    if (summary) void openSchoolSession(summary.id, !summary.live)
   }
   wrap.classList.remove('hidden')
 }
 
 /** Reopen one of the teacher's own sessions — live game or finished results. */
-async function openSchoolSession(id: string) {
+async function openSchoolSession(id: string, review = false) {
   schoolSetError('')
   try {
     const { session } = await getSchoolSession(id)
     hideSchoolPreview()
-    showSchoolLobby(session, session.status === 'finished')
+    showSchoolLobby(session, review || session.status === 'finished')
   } catch (err) {
     schoolSetError(friendlyError((err as Error).message))
     void loadSchoolSessions()
@@ -2364,7 +2373,12 @@ function showSchoolLobby(session: SchoolSessionInfo, review = false) {
   renderSchoolStatus()
   renderSchoolLeaderboard([])
   renderSchoolClassSummary([], [], [])
-  startSchoolPolling()
+  if (review) {
+    if (schoolPollTimer) { clearInterval(schoolPollTimer); schoolPollTimer = null }
+    void refreshSchoolSession()
+  } else {
+    startSchoolPolling()
+  }
 }
 
 $maybe<HTMLButtonElement>('school-create-btn')?.addEventListener('click', () => {

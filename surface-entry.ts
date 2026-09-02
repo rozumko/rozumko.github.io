@@ -46,7 +46,7 @@ async function showUnavailableSurface(): Promise<void> {
 }
 
 if (surface && isSurfaceAvailable(surface)) {
-  void startAvailableSurface()
+  await startAvailableSurface()
 } else {
-  void showUnavailableSurface()
+  await showUnavailableSurface()
 }

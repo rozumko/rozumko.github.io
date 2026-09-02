@@ -26,4 +26,3 @@ export function surfaceForPath(pathname: string): ProductSurface | null {
   if (page === 'school.html') return 'school'
   return null
 }
-

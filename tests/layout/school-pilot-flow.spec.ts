@@ -12,6 +12,8 @@ interface PilotState {
   participantJoined: boolean
   answered: boolean
   score: number
+  /** The join TTL elapsed even though the persisted status is not finished. */
+  expired?: boolean
 }
 
 const question = {
@@ -89,7 +91,7 @@ async function installPilotApi(context: BrowserContext, state: PilotState) {
           createdAt: new Date().toISOString(),
           finishedAt: state.status === 'finished' ? new Date().toISOString() : null,
           participantCount: state.participantJoined ? 1 : 0,
-          live: state.status !== 'finished',
+          live: state.status !== 'finished' && !state.expired,
         }],
       })
       return
@@ -238,4 +240,39 @@ test('pilot happy path: teacher starts a code game, child completes it, class su
   await teacher.locator('#school-new-btn').click()
   await expect(teacher.locator('#school-live')).toBeHidden()
   await expect(teacher.locator('#school-history')).toBeVisible()
+})
+
+test('an expired unfinished session opens as a read-only history view', async ({ context }) => {
+  const state: PilotState = {
+    created: true,
+    status: 'active',
+    participantJoined: true,
+    answered: false,
+    score: 0,
+    expired: true,
+  }
+  await installPilotApi(context, state)
+
+  const teacher = await context.newPage()
+  await teacher.addInitScript(() => {
+    sessionStorage.setItem('teacher_session', JSON.stringify({
+      accessToken: 'teacher-pilot-token',
+      refreshToken: '',
+      email: 'teacher@example.test',
+    }))
+  })
+  await teacher.goto('/teacher.html')
+
+  await expect(teacher.locator('#school-history')).toBeVisible()
+  await expect(teacher.locator('.school-history__open')).toHaveText('Переглянути результати')
+  await teacher.locator('.school-history__open').click()
+
+  await expect(teacher.locator('#school-live')).toBeVisible()
+  await expect(teacher.locator('#school-status')).toContainText('Код гри вже не діє')
+  await expect(teacher.locator('#school-join-access')).toBeHidden()
+  await expect(teacher.locator('#school-join-share')).toBeHidden()
+  await expect(teacher.locator('#school-start-btn')).toBeHidden()
+  await expect(teacher.locator('#school-cancel-btn')).toBeHidden()
+  await expect(teacher.locator('#school-finish-btn')).toBeHidden()
+  await expect(teacher.locator('#school-new-btn')).toContainText('До списку ігор')
 })
