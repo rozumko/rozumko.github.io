@@ -1044,6 +1044,7 @@
 }
 .pm-preview svg { width: 100%; height: auto; display: block; }
 .pf-row { display: flex; gap: var(--sp-2); align-items: center; }
+.pf-row .pf-remove { flex: 0 0 auto; min-width: 2.5rem; }
 .pf-unlock { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4); }
 .pf-unlock__item { display: inline-flex; align-items: center; gap: 4px; font-size: var(--font-size-sm); }
 .event-question-picker__readiness {

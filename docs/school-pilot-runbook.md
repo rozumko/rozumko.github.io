@@ -23,7 +23,8 @@ pass over the classroom game, use §6a of [smoke-test.md](./smoke-test.md).
 | Session recovery after a reload, plus the last 20 sessions | Results older than the last 20 sessions |
 
 Children stay anonymous: a temporary nickname and an avatar, no account, no
-personal data. Answer keys never reach the browser; grading is server-side.
+personal data. Answer keys never reach the child's browser; grading is
+server-side. The authenticated teacher preview is the documented exception.
 
 ## Roles
 
@@ -125,16 +126,17 @@ A session accepts 60 participants (`MAX_SESSION_PARTICIPANTS`). For two merged
 classes, run two games. If the roster is unexpectedly full, the code leaked —
 finish the game and start a new one.
 
-### A Child's Device Lost Connection Or The Tab Closed
+### A Child's Device Lost Connection Or The Page Reloaded
 
 The child's identity survives a reload in `sessionStorage` (same tab).
 
-1. Ask the child to reopen the same tab, or the same link, and rejoin.
+1. Keep the same tab open and reload the page if needed.
 2. Answers already sent are already scored; the run resumes at the next
    unanswered question.
-3. A different device or a private window means a new participant — the old row
-   stays on the leaderboard. Note it so the teacher is not confused by a
-   duplicate nickname.
+3. A closed tab, a different device or a private window loses the tab-scoped
+   identity. Rejoining then creates a new participant, while the old row stays
+   on the leaderboard. Note it so the teacher is not confused by a duplicate
+   nickname.
 
 ### The Backend Is Slow Or Down
 

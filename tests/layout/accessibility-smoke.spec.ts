@@ -599,17 +599,15 @@ test.describe('reduced motion', () => {
     test(`${scenario.path} disables decorative animation`, async ({ page }) => {
       await page.emulateMedia({ reducedMotion: 'reduce' })
       await page.goto(scenario.path)
-      await expect(page.locator(scenario.selector).first()).toBeAttached()
+      const animatedElement = page.locator(scenario.selector).first()
+      await expect(animatedElement).toBeAttached()
+      await expect(animatedElement).toHaveCSS('animation-name', 'none')
 
-      const motion = await page.locator(scenario.selector).first().evaluate((element) => {
-        const style = getComputedStyle(element)
-        return {
-          animationName: style.animationName,
-          reduced: matchMedia('(prefers-reduced-motion: reduce)').matches,
-        }
-      })
+      const reduced = await animatedElement.evaluate(() =>
+        matchMedia('(prefers-reduced-motion: reduce)').matches,
+      )
 
-      expect(motion).toEqual({ animationName: 'none', reduced: true })
+      expect(reduced).toBe(true)
     })
   }
 })
