@@ -1,8 +1,13 @@
-// Render додає рівно один reverse-proxy hop перед застосунком.
-// Не змінювати на true: тоді клієнт зможе підробити X-Forwarded-For
-// і отримувати новий rate-limit bucket для кожного фейкового IP.
+import proxyAddr from '@fastify/proxy-addr'
+
+// Render connects to the app through an internal reverse proxy. Trust only
+// that immediate private-network peer; forwarded addresses never gain trust.
+const isInternalProxyAddress = proxyAddr.compile(['loopback', 'linklocal', 'uniquelocal'])
+
 export const FASTIFY_SECURITY_OPTIONS = {
-  trustProxy: 1,
+  trustProxy: (address: string, hop: number) => (
+    hop === 0 && isInternalProxyAddress(address, hop)
+  ),
 } as const
 
 // CORS — дозволяємо тільки GitHub Pages та localhost для розробки

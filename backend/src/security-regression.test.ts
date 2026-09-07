@@ -22,29 +22,37 @@ const [
   import('./db/schema.js'),
 ])
 
-test('rate-limit не довіряє підробленому лівому X-Forwarded-For', async () => {
-  assert.equal(FASTIFY_SECURITY_OPTIONS.trustProxy, 1)
-
+test('rate limiting trusts only the immediate internal proxy', async () => {
   const app = Fastify(FASTIFY_SECURITY_OPTIONS)
   await app.register(rateLimit, { max: 2, timeWindow: '1 minute' })
   app.get('/probe', async req => ({ ip: req.ip }))
   await app.ready()
 
-  const hit = (spoofedIp: string) => app.inject({
+  const directHit = (spoofedIp: string) => app.inject({
     method: 'GET',
     url: '/probe',
     remoteAddress: '192.0.2.10',
     headers: { 'x-forwarded-for': `${spoofedIp}, 198.51.100.7` },
   })
 
-  const first = await hit('10.0.0.1')
-  const second = await hit('10.0.0.2')
-  const third = await hit('10.0.0.3')
+  const first = await directHit('10.0.0.1')
+  const second = await directHit('10.0.0.2')
+  const third = await directHit('10.0.0.3')
 
   assert.equal(first.statusCode, 200)
-  assert.equal(first.json().ip, '198.51.100.7')
+  assert.equal(first.json().ip, '192.0.2.10')
   assert.equal(second.statusCode, 200)
   assert.equal(third.statusCode, 429)
+
+  const proxied = await app.inject({
+    method: 'GET',
+    url: '/probe',
+    remoteAddress: '10.0.0.5',
+    headers: { 'x-forwarded-for': '10.0.0.9, 192.0.2.20' },
+  })
+
+  assert.equal(proxied.statusCode, 200)
+  assert.equal(proxied.json().ip, '192.0.2.20')
 
   await app.close()
 })
