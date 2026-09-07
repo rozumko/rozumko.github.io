@@ -573,9 +573,11 @@ Backend:
   Horizontal scaling requires a shared store (Redis/Valkey) first. Unsupported
   store values also fail fast at startup so a multi-instance deploy cannot run
   with a false shared-limiter assumption.
-- Render adds one reverse-proxy hop. Fastify must use `trustProxy: 1`, never
-  `trustProxy: true`, so clients cannot spoof `X-Forwarded-For` and bypass
-  rate limits.
+- Render adds one internal reverse-proxy hop. Fastify uses an address-validating
+  trust function that accepts only hop zero when its socket peer is loopback,
+  link-local or unique-local. Numeric hop-count trust and `trustProxy: true`
+  are forbidden because direct clients could spoof `X-Forwarded-*` values and
+  bypass rate limits.
 - The public olympiad demo is issued by `POST /api/questions/demo/start` from
   published `olympiad_training` questions. A versioned pool uses 12 exact
   grade-specific slots and the server selects one tagged variant per slot.
@@ -858,13 +860,12 @@ MVP/free-tier pilot blockers:
 Deferred until higher traffic, paid campaigns or production-grade operations:
 
 - [ ] Add a shared rate-limit store before increasing backend instances.
-- [ ] **Open question — verify the real proxy depth in production.** `trustProxy: 1`
-      assumes exactly one reverse-proxy hop (Render). If any CDN or proxy sits in
-      front of the backend, the client IP the limiter keys on is the proxy's, not
-      the visitor's, which blurs per-IP limits into one shared bucket. Confirm
-      with server-side diagnostics of the received `X-Forwarded-For` chain — not
-      from client-side observation — and adjust the hop count together with the
-      spoofing regression tests if it turns out to be more than one.
+- [ ] **Open question — verify the real proxy peer and chain in production.**
+      The trust function assumes Render connects from a loopback, link-local or
+      unique-local address and trusts only that immediate peer. Confirm both the
+      socket peer and received `X-Forwarded-For` chain with server-side
+      diagnostics. If Render uses a different ingress CIDR, add only that exact
+      documented range together with spoofing regression tests.
 - [ ] Move authenticated frontend pages behind a host that can enforce HTTP
       `Content-Security-Policy: frame-ancestors`.
 - [ ] Run and record a restore drill on a non-production database.
