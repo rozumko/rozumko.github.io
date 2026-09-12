@@ -453,6 +453,8 @@ test('teacher question library is owner-scoped, RLS-protected and uses immutable
   assert.match(migration, /ADD COLUMN IF NOT EXISTS snapshot jsonb/)
   assert.match(journal, /"tag": "0048_add_teacher_question_library"/)
   assert.match(schoolRoute, /eq\(teacherQuestionTopics\.teacherId, req\.user!\.id\)/)
+  assert.match(schoolRoute, /topic: null,[\s\S]{0,300}teacherTopicId: topic\.id/)
+  assert.doesNotMatch(schoolRoute, /topic:\s*`teacher:\$\{topic\.id\}`/)
   assert.match(schoolRoute, /snapshot: questionSnapshot\(question\)/)
 })
 
