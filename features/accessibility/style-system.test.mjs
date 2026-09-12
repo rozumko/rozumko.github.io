@@ -161,7 +161,7 @@ test('school join makes the nickname explicit and prioritizes it for QR entry', 
   assert.doesNotMatch(html, /school-join__brand|school-join__eyebrow|join-subtitle/)
   assert.match(script, /mission-intro'\)\?\.classList\.add\('school-join--shared'\)/)
   assert.match(script, /setTimeout\(\(\) => nickInput\?\.focus\(\), 0\)/)
-  assert.match(serviceWorker, /const CACHE_NAME = 'rozumko-v6'/)
+  assert.match(serviceWorker, /const CACHE_NAME = 'rozumko-v7'/)
 })
 
 test('teacher cabinet separates games, owned content and lesson results', async () => {

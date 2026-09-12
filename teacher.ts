@@ -1536,17 +1536,41 @@ function renderTeacherQuestionShape(type: QuestionType, question?: Question) {
     : {}
   const lines = (value: unknown) => Array.isArray(value) ? value.map(String).join('\n') : ''
   const correct = question?.correct == null ? '' : String(Number(question.correct) + 1)
+  const answerRows = (values: unknown[], selected: number[], multiple = false, fixed = false) => {
+    const answers = values.length ? values.map(String) : ['', '', '', '']
+    const inputType = multiple ? 'checkbox' : 'radio'
+    const instruction = multiple ? 'Позначте всі правильні відповіді' : 'Позначте правильну відповідь'
+    return `<fieldset class="tq-answer-editor" data-answer-mode="${multiple ? 'multiple' : 'single'}"><legend>${instruction}</legend><div class="tq-answer-list">${answers.map((answer, index) => `<div class="tq-answer-row${fixed ? ' tq-answer-row--fixed' : ''}"><span class="tq-answer-row__number" aria-hidden="true">${index + 1}</span><input class="tq-answer-correct" type="${inputType}" name="tq-correct-answer${multiple ? `-${index}` : ''}" value="${index}" ${selected.includes(index) ? 'checked' : ''} aria-label="Відповідь ${index + 1} правильна"><input class="form-input tq-answer-text" value="${esc(answer)}" maxlength="500" placeholder="Варіант відповіді ${index + 1}" aria-label="Варіант відповіді ${index + 1}" ${fixed ? 'readonly' : ''}>${fixed ? '' : `<button class="tq-answer-remove" type="button" data-tq-remove="${index}" aria-label="Видалити варіант ${index + 1}"><i class="fas fa-times" aria-hidden="true"></i></button>`}</div>`).join('')}</div>${fixed ? '' : '<button class="tq-answer-add" type="button" data-tq-add><i class="fas fa-plus" aria-hidden="true"></i> Додати варіант</button>'}</fieldset>`
+  }
   const blocks: Record<QuestionType, string> = {
-    choice: `<label>Варіанти — кожен з нового рядка<textarea id="tq-options" class="form-input" rows="5">${esc(lines(options))}</textarea></label><label>Номер правильної відповіді<input id="tq-correct" class="form-input" type="number" min="1" value="${esc(correct)}"></label>`,
-    multi_select: `<label>Варіанти — кожен з нового рядка<textarea id="tq-options" class="form-input" rows="5">${esc(lines(objectOptions['choices']))}</textarea></label><label>Номери правильних відповідей через кому<input id="tq-correct-many" class="form-input" placeholder="1, 3" value="${esc(Array.isArray(objectOptions['correctAnswers']) ? (objectOptions['correctAnswers'] as number[]).map(index => index + 1).join(', ') : '')}"></label>`,
-    truefalse: `<label>Правильна відповідь<select id="tq-truefalse" class="form-input"><option value="0" ${question?.correct === 0 ? 'selected' : ''}>Так</option><option value="1" ${question?.correct === 1 ? 'selected' : ''}>Ні</option></select></label>`,
+    choice: answerRows(Array.isArray(options) ? options : [], question?.correct == null ? [] : [Number(question.correct)]),
+    multi_select: answerRows(Array.isArray(objectOptions['choices']) ? objectOptions['choices'] as unknown[] : [], Array.isArray(objectOptions['correctAnswers']) ? objectOptions['correctAnswers'] as number[] : [], true),
+    truefalse: answerRows(['Так', 'Ні'], question?.correct == null ? [0] : [Number(question.correct)], false, true),
     input: `<div class="teacher-question-form__grid"><label>Правильна відповідь<input id="tq-answer" class="form-input" value="${esc(String(objectOptions['answer'] ?? ''))}"></label><label>Формат відповіді<select id="tq-input-type" class="form-input"><option value="text">Текст</option><option value="number" ${objectOptions['inputType'] === 'number' ? 'selected' : ''}>Число</option></select></label></div>`,
-    sort: `<label>Правильний порядок — кожен крок з нового рядка<textarea id="tq-sort-items" class="form-input" rows="6">${esc(lines(objectOptions['items']))}</textarea></label>`,
-    sequence: `<label>Задана частина послідовності — кожен елемент з нового рядка<textarea id="tq-given" class="form-input" rows="3">${esc(lines(objectOptions['given']))}</textarea></label><label>Варіанти продовження — кожен з нового рядка<textarea id="tq-choices" class="form-input" rows="4">${esc(lines(objectOptions['choices']))}</textarea></label><label>Номер правильного варіанта<input id="tq-correct" class="form-input" type="number" min="1" value="${esc(correct)}"></label>`,
-    match: `<div class="teacher-question-form__grid"><label>Ліва колонка<textarea id="tq-left" class="form-input" rows="6">${esc(lines(objectOptions['left']))}</textarea></label><label>Права пара для кожного рядка<textarea id="tq-right" class="form-input" rows="6">${esc(lines(objectOptions['pairs']) && Array.isArray(objectOptions['right']) ? (objectOptions['pairs'] as number[]).map(index => String((objectOptions['right'] as unknown[])[index] ?? '')).join('\n') : lines(objectOptions['right']))}</textarea></label></div>`,
+    sort: `<label>Правильний порядок <span class="teacher-library__optional">кожен крок з нового рядка</span><textarea id="tq-sort-items" class="form-input" rows="4">${esc(lines(objectOptions['items']))}</textarea></label>`,
+    sequence: `<div class="teacher-question-form__grid"><label>Задана частина <span class="teacher-library__optional">кожен елемент з нового рядка</span><textarea id="tq-given" class="form-input" rows="4">${esc(lines(objectOptions['given']))}</textarea></label><label>Варіанти продовження <span class="teacher-library__optional">кожен з нового рядка</span><textarea id="tq-choices" class="form-input" rows="4">${esc(lines(objectOptions['choices']))}</textarea></label></div><label class="teacher-question-form__short-field">Номер правильної відповіді<input id="tq-correct" class="form-input" type="number" min="1" value="${esc(correct)}"></label>`,
+    match: `<div class="teacher-question-form__grid"><label>Ліва колонка<textarea id="tq-left" class="form-input" rows="5">${esc(lines(objectOptions['left']))}</textarea></label><label>Права пара для кожного рядка<textarea id="tq-right" class="form-input" rows="5">${esc(lines(objectOptions['pairs']) && Array.isArray(objectOptions['right']) ? (objectOptions['pairs'] as number[]).map(index => String((objectOptions['right'] as unknown[])[index] ?? '')).join('\n') : lines(objectOptions['right']))}</textarea></label></div>`,
   }
   mount.className = 'teacher-question-shape'
   mount.innerHTML = blocks[type]
+}
+
+function teacherAnswerRows(): Array<{ text: string; correct: boolean }> {
+  return [...document.querySelectorAll<HTMLElement>('.tq-answer-row')].map(row => ({
+    text: row.querySelector<HTMLInputElement>('.tq-answer-text')?.value.trim() ?? '',
+    correct: row.querySelector<HTMLInputElement>('.tq-answer-correct')?.checked ?? false,
+  }))
+}
+
+function updateTeacherAnswerRows(rows: Array<{ text: string; correct: boolean }>, multiple: boolean) {
+  const draft: Question = {
+    type: multiple ? 'multi_select' : 'choice',
+    options: multiple
+      ? { choices: rows.map(row => row.text), correctAnswers: rows.flatMap((row, index) => row.correct ? [index] : []) }
+      : rows.map(row => row.text),
+    correct: multiple ? null : rows.findIndex(row => row.correct),
+  } as Question
+  renderTeacherQuestionShape(draft.type as QuestionType, draft)
 }
 
 function questionLines(id: string): string[] {
@@ -1558,16 +1582,24 @@ function buildTeacherQuestionInput(): TeacherQuestionInput {
   let options: string[] | Record<string, unknown>
   let correct: number | null = null
   if (type === 'choice') {
-    options = questionLines('tq-options')
-    correct = Number($<HTMLInputElement>('tq-correct').value) - 1
+    const rows = teacherAnswerRows().filter(row => row.text)
+    if (rows.length < 2) throw new Error('Додайте щонайменше два варіанти відповіді')
+    correct = rows.findIndex(row => row.correct)
+    if (correct < 0) throw new Error('Оберіть правильну відповідь')
+    options = rows.map(row => row.text)
   } else if (type === 'multi_select') {
+    const rows = teacherAnswerRows().filter(row => row.text)
+    if (rows.length < 2) throw new Error('Додайте щонайменше два варіанти відповіді')
+    const correctAnswers = rows.flatMap((row, index) => row.correct ? [index] : [])
+    if (!correctAnswers.length) throw new Error('Оберіть хоча б одну правильну відповідь')
     options = {
-      choices: questionLines('tq-options'),
-      correctAnswers: $<HTMLInputElement>('tq-correct-many').value.split(',').map(value => Number(value.trim()) - 1),
+      choices: rows.map(row => row.text),
+      correctAnswers,
     }
   } else if (type === 'truefalse') {
     options = ['Так', 'Ні']
-    correct = Number($<HTMLSelectElement>('tq-truefalse').value)
+    correct = teacherAnswerRows().findIndex(row => row.correct)
+    if (correct < 0) throw new Error('Оберіть правильну відповідь')
   } else if (type === 'input') {
     const inputType = $<HTMLSelectElement>('tq-input-type').value
     const raw = $<HTMLInputElement>('tq-answer').value.trim()
@@ -1602,13 +1634,24 @@ function openTeacherQuestionForm(question?: Question) {
   $<HTMLTextAreaElement>('teacher-question-text').value = question?.q ?? ''
   $<HTMLTextAreaElement>('teacher-question-code').value = question?.code ?? ''
   $<HTMLTextAreaElement>('teacher-question-explanation').value = question?.explanation ?? ''
+  $<HTMLDetailsElement>('teacher-question-code-section').open = Boolean(question?.code)
+  $<HTMLDetailsElement>('teacher-question-explanation-section').open = Boolean(question?.explanation)
+  $<HTMLElement>('teacher-question-dialog-title').textContent = question ? 'Редагувати питання' : 'Нове питання'
   renderTeacherQuestionShape((question?.type ?? 'choice') as QuestionType, question)
-  $maybe('teacher-question-form')?.classList.remove('hidden')
+  $maybe('teacher-question-dialog')?.classList.remove('hidden')
+  document.body.classList.add('teacher-question-editor-open')
+  teacherQuestionTrapCleanup?.()
+  teacherQuestionTrapCleanup = createFocusTrap($<HTMLElement>('teacher-question-dialog'), closeTeacherQuestionForm)
   $<HTMLTextAreaElement>('teacher-question-text').focus()
 }
 
+let teacherQuestionTrapCleanup: (() => void) | null = null
+
 function closeTeacherQuestionForm() {
-  $maybe('teacher-question-form')?.classList.add('hidden')
+  $maybe('teacher-question-dialog')?.classList.add('hidden')
+  document.body.classList.remove('teacher-question-editor-open')
+  teacherQuestionTrapCleanup?.()
+  teacherQuestionTrapCleanup = null
   const error = $maybe('teacher-question-error')
   if (error) error.textContent = ''
 }
@@ -1631,8 +1674,23 @@ function confirmArchiveTeacherQuestion(id: string) {
 
 $maybe<HTMLButtonElement>('teacher-question-new')?.addEventListener('click', () => openTeacherQuestionForm())
 $maybe<HTMLButtonElement>('teacher-question-cancel')?.addEventListener('click', closeTeacherQuestionForm)
+$maybe<HTMLButtonElement>('teacher-question-close')?.addEventListener('click', closeTeacherQuestionForm)
+$maybe<HTMLButtonElement>('teacher-question-backdrop')?.addEventListener('click', closeTeacherQuestionForm)
 $maybe<HTMLSelectElement>('teacher-question-type')?.addEventListener('change', event => {
   renderTeacherQuestionShape((event.currentTarget as HTMLSelectElement).value as QuestionType)
+})
+$maybe('teacher-question-shape')?.addEventListener('click', event => {
+  const target = event.target as HTMLElement
+  const add = target.closest<HTMLElement>('[data-tq-add]')
+  const remove = target.closest<HTMLElement>('[data-tq-remove]')
+  if (!add && !remove) return
+  const editor = target.closest<HTMLElement>('[data-answer-mode]')
+  const multiple = editor?.dataset.answerMode === 'multiple'
+  const rows = teacherAnswerRows()
+  if (add) rows.push({ text: '', correct: false })
+  if (remove && rows.length > 2) rows.splice(Number(remove.dataset.tqRemove), 1)
+  updateTeacherAnswerRows(rows, multiple)
+  if (add) document.querySelector<HTMLInputElement>('.tq-answer-row:last-child .tq-answer-text')?.focus()
 })
 $maybe<HTMLFormElement>('teacher-question-form')?.addEventListener('submit', async event => {
   event.preventDefault()
