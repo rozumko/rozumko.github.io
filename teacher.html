@@ -774,43 +774,70 @@
                 <i class="fas fa-plus" aria-hidden="true"></i> Додати питання
               </button>
 
-              <form id="teacher-question-form" class="teacher-question-form hidden" novalidate>
-                <input id="teacher-question-id" type="hidden" />
-                <input id="teacher-question-version" type="hidden" />
-                <div class="teacher-question-form__grid">
-                  <label>Тип питання
-                    <select id="teacher-question-type" class="form-input">
-                      <option value="choice">Одна правильна відповідь</option>
-                      <option value="multi_select">Кілька правильних відповідей</option>
-                      <option value="truefalse">Так або ні</option>
-                      <option value="input">Коротка відповідь</option>
-                      <option value="sort">Сортування</option>
-                      <option value="sequence">Продовжити послідовність</option>
-                      <option value="match">Зіставлення пар</option>
-                    </select>
-                  </label>
-                  <label>Складність
-                    <select id="teacher-question-difficulty" class="form-input">
-                      <option value="easy">Легка</option><option value="medium">Середня</option><option value="hard">Складна</option>
-                    </select>
-                  </label>
+              <div id="teacher-question-dialog" class="teacher-question-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="teacher-question-dialog-title">
+                <button id="teacher-question-backdrop" class="teacher-question-dialog__backdrop" type="button" tabindex="-1" aria-label="Закрити редактор"></button>
+                <div class="teacher-question-dialog__surface">
+                  <header class="teacher-question-dialog__header">
+                    <div>
+                      <p class="teacher-section__eyebrow">Редактор питання</p>
+                      <h2 id="teacher-question-dialog-title">Нове питання</h2>
+                    </div>
+                    <button id="teacher-question-close" class="teacher-question-dialog__close" type="button" aria-label="Закрити редактор">
+                      <i class="fas fa-times" aria-hidden="true"></i>
+                    </button>
+                  </header>
+
+                  <form id="teacher-question-form" class="teacher-question-form" novalidate>
+                    <input id="teacher-question-id" type="hidden" />
+                    <input id="teacher-question-version" type="hidden" />
+                    <div class="teacher-question-form__body">
+                      <div class="teacher-question-form__toolbar">
+                        <label>Тип питання
+                          <select id="teacher-question-type" class="form-input">
+                            <option value="choice">Одна правильна відповідь</option>
+                            <option value="multi_select">Кілька правильних відповідей</option>
+                            <option value="truefalse">Так або ні</option>
+                            <option value="input">Коротка відповідь</option>
+                            <option value="sort">Сортування</option>
+                            <option value="sequence">Продовжити послідовність</option>
+                            <option value="match">Зіставлення пар</option>
+                          </select>
+                        </label>
+                        <label>Складність
+                          <select id="teacher-question-difficulty" class="form-input">
+                            <option value="easy">Легка</option><option value="medium">Середня</option><option value="hard">Складна</option>
+                          </select>
+                        </label>
+                      </div>
+
+                      <label class="teacher-question-form__prompt">Ваше питання
+                        <textarea id="teacher-question-text" class="form-input" maxlength="1000" rows="2" placeholder="Наприклад, що таке алгоритм?" required></textarea>
+                      </label>
+
+                      <div id="teacher-question-shape"></div>
+
+                      <div class="teacher-question-form__optional-grid">
+                        <details id="teacher-question-code-section" class="teacher-question-form__optional">
+                          <summary><i class="fas fa-code" aria-hidden="true"></i> Додати код або умову</summary>
+                          <label for="teacher-question-code">Фрагмент коду або додаткова умова</label>
+                          <textarea id="teacher-question-code" class="form-input" maxlength="4000" rows="3"></textarea>
+                        </details>
+                        <details id="teacher-question-explanation-section" class="teacher-question-form__optional">
+                          <summary><i class="fas fa-comment-alt" aria-hidden="true"></i> Додати пояснення</summary>
+                          <label for="teacher-question-explanation">Пояснення після відповіді</label>
+                          <textarea id="teacher-question-explanation" class="form-input" maxlength="2000" rows="3"></textarea>
+                        </details>
+                      </div>
+
+                      <p id="teacher-question-error" class="quiz-feedback quiz-feedback--incorrect" aria-live="polite"></p>
+                    </div>
+                    <footer class="teacher-question-dialog__footer">
+                      <button id="teacher-question-cancel" class="btn btn--secondary" type="button">Скасувати</button>
+                      <button id="teacher-question-save" class="btn btn--success" type="submit">Зберегти питання</button>
+                    </footer>
+                  </form>
                 </div>
-                <label>Текст питання
-                  <textarea id="teacher-question-text" class="form-input" maxlength="1000" rows="3" required></textarea>
-                </label>
-                <label>Фрагмент коду або додаткова умова <span class="teacher-library__optional">необов’язково</span>
-                  <textarea id="teacher-question-code" class="form-input" maxlength="4000" rows="3"></textarea>
-                </label>
-                <div id="teacher-question-shape"></div>
-                <label>Пояснення після відповіді <span class="teacher-library__optional">необов’язково</span>
-                  <textarea id="teacher-question-explanation" class="form-input" maxlength="2000" rows="2"></textarea>
-                </label>
-                <p id="teacher-question-error" class="quiz-feedback quiz-feedback--incorrect" aria-live="polite"></p>
-                <div class="teacher-library__form-actions">
-                  <button id="teacher-question-save" class="btn btn--success" type="submit">Зберегти питання</button>
-                  <button id="teacher-question-cancel" class="btn btn--secondary" type="button">Скасувати</button>
-                </div>
-              </form>
+              </div>
               <div id="teacher-question-list" class="teacher-question-list" aria-live="polite"></div>
             </div>
           </div>

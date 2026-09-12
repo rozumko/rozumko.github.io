@@ -971,6 +971,7 @@ test('teacher owned-content section is usable and responsive', async ({ page }) 
   await expect(page.locator('#teacher-content-title')).toHaveText('Моя безпечна тема')
   await expect(page.locator('.teacher-question-card')).toHaveCount(1)
   await page.locator('#teacher-question-new').click()
+  await expect(page.locator('#teacher-question-dialog')).toBeVisible()
   await page.locator('#teacher-question-type').selectOption('match')
   await expect(page.locator('#tq-left')).toBeVisible()
 
@@ -981,6 +982,19 @@ test('teacher owned-content section is usable and responsive', async ({ page }) 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
   expect(results.violations).toEqual([])
   expect(overflow).toBeLessThanOrEqual(0)
+})
+
+test('teacher choice editor keeps common question controls in one desktop view', async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 })
+  await openTeacherDashboard(page)
+  await page.locator('[data-section="content"]').click()
+  await page.locator('[data-teacher-topic-id="00000000-0000-4000-8000-0000000000c1"]').click()
+  await page.locator('#teacher-question-new').click()
+
+  await expect(page.locator('.tq-answer-row')).toHaveCount(4)
+  await expect(page.locator('#teacher-question-save')).toBeInViewport()
+  await expect(page.locator('#teacher-question-code-section')).not.toHaveAttribute('open', '')
+  await expect(page.locator('#teacher-question-explanation-section')).not.toHaveAttribute('open', '')
 })
 
 test('teacher activity cards open settings and return focus on a phone', async ({ page }) => {
