@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyReply, preHandlerHookHandler } from 'fastify'
-import { and, asc, desc, eq, inArray, sql, arrayContains } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNull, sql, arrayContains } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { questions, schoolSessions, schoolSessionQuestions, schoolParticipants, schoolAnswers, schoolActivityResults } from '../db/schema.js'
+import { questions, schoolSessions, schoolSessionQuestions, schoolParticipants, schoolAnswers, schoolActivityResults, teacherQuestionTopics } from '../db/schema.js'
 import { requireAuth } from '../lib/auth.js'
 import { sanitizeOlympiadQuestion, stripOptionKeys } from './question-sanitize.js'
 import { scoreAttempt, type AnswerValue } from './attempt-validation.js'
@@ -28,6 +28,7 @@ import {
 import { createVerifiedResourceRateLimit, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW } from '../lib/rate-limit-policy.js'
 import { publicSchoolFactOpinionPack, scoreSchoolFactOpinion, type SchoolFactOpinionChoice } from '../lib/school-fact-opinion.js'
 import type { QuestionTrack } from '../db/schema.js'
+import { QUESTION_TYPES, validateQuestionShape, type QuestionType } from './question-input-validation.js'
 
 const QUESTION_TRACKS = ['informatics', 'computational-thinking', 'ai-basics'] as const
 
@@ -84,6 +85,33 @@ const avatarBody = {
   additionalProperties: false,
   properties: {
     avatar: { type: 'string', maxLength: 16 },
+  },
+} as const
+
+const teacherTopicBody = {
+  type: 'object',
+  required: ['title', 'grade'],
+  additionalProperties: false,
+  properties: {
+    title: { type: 'string', minLength: 1, maxLength: 80 },
+    description: { type: 'string', maxLength: 240 },
+    grade: { type: 'integer', minimum: 1, maximum: 4 },
+  },
+} as const
+
+const teacherQuestionBody = {
+  type: 'object',
+  required: ['q', 'type', 'options', 'correct', 'difficulty'],
+  additionalProperties: false,
+  properties: {
+    q: { type: 'string', minLength: 1, maxLength: 1000 },
+    code: { anyOf: [{ type: 'string', maxLength: 4000 }, { type: 'null' }] },
+    type: { type: 'string', enum: QUESTION_TYPES },
+    options: {},
+    correct: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+    explanation: { anyOf: [{ type: 'string', maxLength: 2000 }, { type: 'null' }] },
+    difficulty: { type: 'string', enum: ['easy', 'medium', 'hard'] },
+    expectedEditVersion: { type: 'integer', minimum: 1 },
   },
 } as const
 
@@ -150,9 +178,60 @@ function describeCorrectAnswer(type: string | null, options: unknown, correct: n
   return correct == null ? null : describeAnswer(t, options, correct)
 }
 
+type QuestionSnapshot = {
+  id: string
+  q: string
+  code: string | null
+  type: QuestionType
+  options: unknown
+  correct: number | null
+  explanation: string | null
+  img: string | null
+  imageAlt: string | null
+  topic: string | null
+  difficulty: string | null
+}
+
+function questionSnapshot(question: typeof questions.$inferSelect): QuestionSnapshot {
+  return {
+    id: question.id,
+    q: question.q,
+    code: question.code,
+    type: question.type,
+    options: question.options,
+    correct: question.correct,
+    explanation: question.explanation,
+    img: question.img,
+    imageAlt: question.imageAlt,
+    topic: question.topic,
+    difficulty: question.difficulty,
+  }
+}
+
+function sessionQuestion(row: Record<string, unknown>): QuestionSnapshot {
+  const stored = row.snapshot && typeof row.snapshot === 'object' && !Array.isArray(row.snapshot)
+    ? row.snapshot as Partial<QuestionSnapshot>
+    : null
+  return {
+    id: String(stored?.id ?? row.questionId ?? row.id),
+    q: String(stored?.q ?? row.q ?? ''),
+    code: (stored?.code ?? row.code ?? null) as string | null,
+    type: (stored?.type ?? row.type ?? 'choice') as QuestionType,
+    options: stored?.options ?? row.options ?? [],
+    correct: (stored?.correct ?? row.correct ?? null) as number | null,
+    explanation: (stored?.explanation ?? row.explanation ?? null) as string | null,
+    img: (stored?.img ?? row.img ?? null) as string | null,
+    imageAlt: (stored?.imageAlt ?? row.imageAlt ?? null) as string | null,
+    topic: (stored?.topic ?? row.topic ?? null) as string | null,
+    difficulty: (stored?.difficulty ?? row.difficulty ?? null) as string | null,
+  }
+}
+
 async function loadSessionQuestions(sessionId: string) {
   const qs = await db
     .select({
+      questionId: schoolSessionQuestions.questionId,
+      snapshot: schoolSessionQuestions.snapshot,
       id: questions.id,
       q: questions.q,
       code: questions.code,
@@ -166,7 +245,7 @@ async function loadSessionQuestions(sessionId: string) {
     .where(eq(schoolSessionQuestions.sessionId, sessionId))
     .orderBy(asc(schoolSessionQuestions.position))
 
-  return qs.map(sanitizeOlympiadQuestion)
+  return qs.map(row => sanitizeOlympiadQuestion(sessionQuestion(row)))
 }
 
 // Guard учасника: HMAC-токен у X-Participant-Token має відповідати :id.
@@ -258,6 +337,7 @@ export interface SessionCreateBody {
   track?: string
   topic?: string
   schoolTopicId?: string
+  teacherTopicId?: string
   kind?: string
   activityKey?: string
   activityLevel?: string
@@ -302,6 +382,200 @@ async function insertSessionWithJoinCode(
 
 export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptions = {}) {
   const authorizeTeacher = opts.authorizeTeacher ?? requireAuth
+
+  // ── Teacher-owned private question library ───────────────────────────────
+  app.get('/teacher-topics', { preHandler: authorizeTeacher }, async req => {
+    const rows = await db
+      .select({
+        id: teacherQuestionTopics.id,
+        title: teacherQuestionTopics.title,
+        description: teacherQuestionTopics.description,
+        grade: teacherQuestionTopics.grade,
+        createdAt: teacherQuestionTopics.createdAt,
+        updatedAt: teacherQuestionTopics.updatedAt,
+        questionCount: sql<number>`cast(count(${questions.id}) as int)`,
+        easyCount: sql<number>`cast(sum(case when ${questions.difficulty} = 'easy' then 1 else 0 end) as int)`,
+        mediumCount: sql<number>`cast(sum(case when ${questions.difficulty} = 'medium' then 1 else 0 end) as int)`,
+        hardCount: sql<number>`cast(sum(case when ${questions.difficulty} = 'hard' then 1 else 0 end) as int)`,
+      })
+      .from(teacherQuestionTopics)
+      .leftJoin(questions, and(
+        eq(questions.teacherTopicId, teacherQuestionTopics.id),
+        eq(questions.editorialStatus, 'draft'),
+      ))
+      .where(and(
+        eq(teacherQuestionTopics.teacherId, req.user!.id),
+        isNull(teacherQuestionTopics.archivedAt),
+      ))
+      .groupBy(teacherQuestionTopics.id)
+      .orderBy(desc(teacherQuestionTopics.updatedAt))
+    return {
+      topics: rows.map(({ easyCount, mediumCount, hardCount, ...topic }) => ({
+        ...topic,
+        byDifficulty: { easy: easyCount, medium: mediumCount, hard: hardCount },
+      })),
+    }
+  })
+
+  app.post<{ Body: { title: string; description?: string; grade: number } }>('/teacher-topics', {
+    preHandler: authorizeTeacher,
+    schema: { body: teacherTopicBody },
+  }, async (req, reply) => {
+    const [topic] = await db.insert(teacherQuestionTopics).values({
+      teacherId: req.user!.id,
+      title: req.body.title.trim(),
+      description: req.body.description?.trim() || null,
+      grade: req.body.grade,
+    }).returning()
+    return reply.code(201).send({ topic: { ...topic, questionCount: 0 } })
+  })
+
+  app.put<{ Params: { id: string }; Body: { title: string; description?: string; grade: number } }>('/teacher-topics/:id', {
+    preHandler: authorizeTeacher,
+    schema: { params: uuidParam, body: teacherTopicBody },
+  }, async (req, reply) => {
+    const [topic] = await db.update(teacherQuestionTopics).set({
+      title: req.body.title.trim(),
+      description: req.body.description?.trim() || null,
+      grade: req.body.grade,
+      updatedAt: new Date(),
+    }).where(and(
+      eq(teacherQuestionTopics.id, req.params.id),
+      eq(teacherQuestionTopics.teacherId, req.user!.id),
+      isNull(teacherQuestionTopics.archivedAt),
+    )).returning()
+    if (!topic) return reply.code(404).send({ error: 'Тему не знайдено' })
+    await db.update(questions).set({ grade: topic.grade, updatedAt: new Date() })
+      .where(eq(questions.teacherTopicId, topic.id))
+    return { topic }
+  })
+
+  app.delete<{ Params: { id: string } }>('/teacher-topics/:id', {
+    preHandler: authorizeTeacher,
+    schema: { params: uuidParam },
+  }, async (req, reply) => {
+    const now = new Date()
+    const [topic] = await db.update(teacherQuestionTopics).set({ archivedAt: now, updatedAt: now })
+      .where(and(
+        eq(teacherQuestionTopics.id, req.params.id),
+        eq(teacherQuestionTopics.teacherId, req.user!.id),
+        isNull(teacherQuestionTopics.archivedAt),
+      )).returning({ id: teacherQuestionTopics.id })
+    if (!topic) return reply.code(404).send({ error: 'Тему не знайдено' })
+    await db.update(questions).set({ editorialStatus: 'archived', updatedAt: now })
+      .where(eq(questions.teacherTopicId, topic.id))
+    return { archived: true }
+  })
+
+  app.get<{ Params: { id: string } }>('/teacher-topics/:id/questions', {
+    preHandler: authorizeTeacher,
+    schema: { params: uuidParam },
+  }, async (req, reply) => {
+    const [topic] = await db.select({ id: teacherQuestionTopics.id }).from(teacherQuestionTopics)
+      .where(and(
+        eq(teacherQuestionTopics.id, req.params.id),
+        eq(teacherQuestionTopics.teacherId, req.user!.id),
+        isNull(teacherQuestionTopics.archivedAt),
+      )).limit(1)
+    if (!topic) return reply.code(404).send({ error: 'Тему не знайдено' })
+    const rows = await db.select().from(questions).where(and(
+      eq(questions.teacherTopicId, topic.id),
+      eq(questions.editorialStatus, 'draft'),
+    )).orderBy(desc(questions.updatedAt))
+    return { questions: rows.map(question => ({ ...question, options: question.options })) }
+  })
+
+  app.post<{ Params: { id: string }; Body: {
+    q: string; code?: string | null; type: QuestionType; options: unknown; correct: number | null
+    explanation?: string | null; difficulty: string
+  } }>('/teacher-topics/:id/questions', {
+    preHandler: authorizeTeacher,
+    schema: { params: uuidParam, body: teacherQuestionBody },
+  }, async (req, reply) => {
+    const [topic] = await db.select().from(teacherQuestionTopics).where(and(
+      eq(teacherQuestionTopics.id, req.params.id),
+      eq(teacherQuestionTopics.teacherId, req.user!.id),
+      isNull(teacherQuestionTopics.archivedAt),
+    )).limit(1)
+    if (!topic) return reply.code(404).send({ error: 'Тему не знайдено' })
+    let shape
+    try { shape = validateQuestionShape(req.body.type, req.body.options, req.body.correct) }
+    catch (error) { return reply.code(400).send({ error: (error as Error).message }) }
+    const [question] = await db.insert(questions).values({
+      q: req.body.q.trim(),
+      code: req.body.code?.trim() || null,
+      type: shape.type,
+      options: shape.options as string[] | Record<string, unknown>,
+      correct: shape.correct,
+      explanation: req.body.explanation?.trim() || null,
+      difficulty: req.body.difficulty,
+      track: 'informatics',
+      topic: `teacher:${topic.id}`,
+      grade: topic.grade,
+      isOlympiad: false,
+      channels: [],
+      editorialStatus: 'draft',
+      teacherTopicId: topic.id,
+      createdBy: req.user!.id,
+      updatedBy: req.user!.id,
+    }).returning()
+    return reply.code(201).send({ question })
+  })
+
+  app.put<{ Params: { id: string }; Body: {
+    q: string; code?: string | null; type: QuestionType; options: unknown; correct: number | null
+    explanation?: string | null; difficulty: string; expectedEditVersion?: number
+  } }>('/teacher-questions/:id', {
+    preHandler: authorizeTeacher,
+    schema: { params: uuidParam, body: teacherQuestionBody },
+  }, async (req, reply) => {
+    const [owned] = await db.select({ question: questions, topic: teacherQuestionTopics })
+      .from(questions)
+      .innerJoin(teacherQuestionTopics, eq(questions.teacherTopicId, teacherQuestionTopics.id))
+      .where(and(
+        eq(questions.id, req.params.id),
+        eq(teacherQuestionTopics.teacherId, req.user!.id),
+        eq(questions.editorialStatus, 'draft'),
+        isNull(teacherQuestionTopics.archivedAt),
+      )).limit(1)
+    if (!owned) return reply.code(404).send({ error: 'Питання не знайдено' })
+    if (req.body.expectedEditVersion != null && req.body.expectedEditVersion !== owned.question.editVersion) {
+      return reply.code(409).send({ error: 'Питання вже змінено в іншій вкладці. Оновіть список.' })
+    }
+    let shape
+    try { shape = validateQuestionShape(req.body.type, req.body.options, req.body.correct) }
+    catch (error) { return reply.code(400).send({ error: (error as Error).message }) }
+    const [question] = await db.update(questions).set({
+      q: req.body.q.trim(),
+      code: req.body.code?.trim() || null,
+      type: shape.type,
+      options: shape.options as string[] | Record<string, unknown>,
+      correct: shape.correct,
+      explanation: req.body.explanation?.trim() || null,
+      difficulty: req.body.difficulty,
+      version: sql`${questions.version} + 1`,
+      editVersion: sql`${questions.editVersion} + 1`,
+      updatedBy: req.user!.id,
+      updatedAt: new Date(),
+    }).where(and(eq(questions.id, owned.question.id), eq(questions.editVersion, owned.question.editVersion))).returning()
+    if (!question) return reply.code(409).send({ error: 'Питання вже змінено. Оновіть список.' })
+    return { question }
+  })
+
+  app.delete<{ Params: { id: string } }>('/teacher-questions/:id', {
+    preHandler: authorizeTeacher,
+    schema: { params: uuidParam },
+  }, async (req, reply) => {
+    const [question] = await db.update(questions).set({ editorialStatus: 'archived', updatedAt: new Date() })
+      .where(and(
+        eq(questions.id, req.params.id),
+        eq(questions.editorialStatus, 'draft'),
+        inArray(questions.teacherTopicId, db.select({ id: teacherQuestionTopics.id }).from(teacherQuestionTopics)
+          .where(eq(teacherQuestionTopics.teacherId, req.user!.id))),
+      )).returning({ id: questions.id })
+    if (!question) return reply.code(404).send({ error: 'Питання не знайдено' })
+    return { archived: true }
+  })
 
   app.get<{ Querystring: { grade: number } }>('/question-availability', {
     preHandler: authorizeTeacher,
@@ -382,6 +656,7 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
           track:          { type: 'string', enum: [...QUESTION_TRACKS] },
           topic:          { type: 'string', enum: ALL_TOPICS as string[] },
           schoolTopicId:  { type: 'string', enum: SCHOOL_TOPIC_IDS as unknown as string[] },
+          teacherTopicId: { type: 'string', format: 'uuid' },
           kind:           { type: 'string', enum: ['questions', 'activity'] },
           activityKey:    { type: 'string', enum: SCHOOL_ACTIVITY_KEYS as unknown as string[] },
           activityLevel:  { type: 'string', enum: SCHOOL_ACTIVITY_LEVEL_IDS as string[] },
@@ -398,6 +673,10 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
 
     let difficulty: 'easy' | 'medium' | 'hard' | null
     try { difficulty = normalizeDifficulty(req.body.difficulty) } catch (e) { return reply.code(400).send({ error: (e as Error).message }) }
+    if (req.body.teacherTopicId && (req.body.schoolTopicId || req.body.topic)) {
+      return reply.code(400).send({ error: 'Оберіть одну тему: готову або власну' })
+    }
+
     let schoolTopic
     try { schoolTopic = resolveSchoolTopicSelection(req.body.schoolTopicId) } catch (e) { return reply.code(400).send({ error: (e as Error).message }) }
     const track = schoolTopic?.track ?? (req.body.track ?? null) as QuestionTrack | null
@@ -406,22 +685,33 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
     try { topic = schoolTopic?.topic ?? normalizeTopic(req.body.topic, track) } catch (e) { return reply.code(400).send({ error: (e as Error).message }) }
     const wanted = req.body.questionsCount ?? 10
 
-    const filters = [
-      eq(questions.isOlympiad, false),
-      eq(questions.editorialStatus, 'published'),
-      arrayContains(questions.channels, ['class_game']),
-      eq(questions.grade, req.body.grade),
-    ]
-    if (difficulty) filters.push(eq(questions.difficulty, difficulty))
-    if (track)      filters.push(eq(questions.track, track))
-    if (topic)      filters.push(eq(questions.topic, topic))
-
-    const picked = await db
-      .select({ id: questions.id })
-      .from(questions)
-      .where(and(...filters))
-      .orderBy(sql`random()`)
-      .limit(wanted)
+    let picked: Array<typeof questions.$inferSelect>
+    if (req.body.teacherTopicId) {
+      const [ownedTopic] = await db.select().from(teacherQuestionTopics).where(and(
+        eq(teacherQuestionTopics.id, req.body.teacherTopicId),
+        eq(teacherQuestionTopics.teacherId, req.user!.id),
+        isNull(teacherQuestionTopics.archivedAt),
+      )).limit(1)
+      if (!ownedTopic) return reply.code(404).send({ error: 'Власну тему не знайдено' })
+      if (ownedTopic.grade !== req.body.grade) return reply.code(400).send({ error: 'Клас гри не відповідає класу власної теми' })
+      const filters = [
+        eq(questions.teacherTopicId, ownedTopic.id),
+        eq(questions.editorialStatus, 'draft'),
+      ]
+      if (difficulty) filters.push(eq(questions.difficulty, difficulty))
+      picked = await db.select().from(questions).where(and(...filters)).orderBy(sql`random()`).limit(wanted)
+    } else {
+      const filters = [
+        eq(questions.isOlympiad, false),
+        eq(questions.editorialStatus, 'published'),
+        arrayContains(questions.channels, ['class_game']),
+        eq(questions.grade, req.body.grade),
+      ]
+      if (difficulty) filters.push(eq(questions.difficulty, difficulty))
+      if (track)      filters.push(eq(questions.track, track))
+      if (topic)      filters.push(eq(questions.topic, topic))
+      picked = await db.select().from(questions).where(and(...filters)).orderBy(sql`random()`).limit(wanted)
+    }
 
     if (picked.length === 0) {
       return reply.code(422).send({ error: 'Немає тренувальних питань для цих параметрів' })
@@ -437,7 +727,12 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
     if (!session) return reply.code(500).send({ error: 'Не вдалося створити сесію' })
 
     await db.insert(schoolSessionQuestions).values(
-      picked.map((q, position) => ({ sessionId: session.id, questionId: q.id, position })),
+      picked.map((question, position) => ({
+        sessionId: session.id,
+        questionId: question.id,
+        position,
+        snapshot: questionSnapshot(question),
+      })),
     )
 
     return reply.code(201).send({ session: serializeSession(session) })
@@ -628,6 +923,8 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
 
     const rows = await db
       .select({
+        questionId: schoolSessionQuestions.questionId,
+        snapshot:   schoolSessionQuestions.snapshot,
         position:  schoolSessionQuestions.position,
         q:         questions.q,
         type:      questions.type,
@@ -648,12 +945,17 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
     return reply.send({
       participant,
       answers: rows.map(r => ({
+        ...(() => {
+          const question = sessionQuestion(r)
+          return {
+            q: question.q,
+            topic: question.topic,
+            answerText: r.isCorrect === null ? null : describeAnswer(question.type, question.options, r.answer),
+          }
+        })(),
         position:   r.position,
-        q:          r.q,
-        topic:      r.topic,
         answered:   r.isCorrect !== null,
         isCorrect:  r.isCorrect,
-        answerText: r.isCorrect === null ? null : describeAnswer(r.type, r.options, r.answer),
       })),
     })
   })
@@ -682,6 +984,8 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
 
     const rows = await db
       .select({
+        questionId:  schoolSessionQuestions.questionId,
+        snapshot:    schoolSessionQuestions.snapshot,
         id:          questions.id,
         position:    schoolSessionQuestions.position,
         q:           questions.q,
@@ -707,21 +1011,24 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
       correct != null && ['choice', 'truefalse', 'sequence'].includes(type ?? 'choice') ? correct : null
 
     return reply.send({
-      questions: rows.map(r => ({
-        id:            r.id,
-        position:      r.position,
-        q:             r.q,
-        code:          r.code,
-        type:          r.type,
-        topic:         r.topic,
-        difficulty:    r.difficulty,
-        options:       stripOptionKeys(r.options),
-        correctOption: correctOption(r.type, r.correct),
-        answerText:    describeCorrectAnswer(r.type, r.options, r.correct),
-        explanation:   r.explanation,
-        img:           r.img,
-        imageAlt:      r.imageAlt,
-      })),
+      questions: rows.map(r => {
+        const question = sessionQuestion(r)
+        return {
+          id:            question.id,
+          position:      r.position,
+          q:             question.q,
+          code:          question.code,
+          type:          question.type,
+          topic:         question.topic,
+          difficulty:    question.difficulty,
+          options:       stripOptionKeys(question.options),
+          correctOption: correctOption(question.type, question.correct),
+          answerText:    describeCorrectAnswer(question.type, question.options, question.correct),
+          explanation:   question.explanation,
+          img:           question.img,
+          imageAlt:      question.imageAlt,
+        }
+      }),
     })
   })
 
@@ -757,7 +1064,7 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
     if (session.status !== 'active') return reply.code(409).send({ error: 'Сесія неактивна' })
 
     const [issued] = await db
-      .select({ questionId: schoolSessionQuestions.questionId })
+      .select({ questionId: schoolSessionQuestions.questionId, snapshot: schoolSessionQuestions.snapshot })
       .from(schoolSessionQuestions)
       .where(and(
         eq(schoolSessionQuestions.sessionId, session.id),
@@ -766,12 +1073,12 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
       .limit(1)
     if (!issued) return reply.code(400).send({ error: 'Питання не належить цій сесії' })
 
-    const [question] = await db
-      .select({ id: questions.id, type: questions.type, correct: questions.correct, explanation: questions.explanation, options: questions.options })
-      .from(questions)
-      .where(eq(questions.id, req.body.questionId))
-      .limit(1)
-    if (!question) return reply.code(404).send({ error: 'Питання не знайдено' })
+    let question = issued.snapshot ? sessionQuestion(issued) : null
+    if (!question) {
+      const [current] = await db.select().from(questions).where(eq(questions.id, req.body.questionId)).limit(1)
+      if (!current) return reply.code(404).send({ error: 'Питання не знайдено' })
+      question = questionSnapshot(current)
+    }
 
     const { results } = scoreAttempt(
       [{ id: question.id, type: question.type ?? 'choice', correct: question.correct, explanation: question.explanation, options: question.options }],
@@ -969,18 +1276,18 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
 
     // Питання має належати саме цій сесії (immutable набір).
     const [issued] = await db
-      .select({ questionId: schoolSessionQuestions.questionId })
+      .select({ questionId: schoolSessionQuestions.questionId, snapshot: schoolSessionQuestions.snapshot })
       .from(schoolSessionQuestions)
       .where(and(eq(schoolSessionQuestions.sessionId, participant.sessionId), eq(schoolSessionQuestions.questionId, req.body.questionId)))
       .limit(1)
     if (!issued) return reply.code(400).send({ error: 'Питання не належить цій сесії' })
 
-    const [question] = await db
-      .select({ id: questions.id, type: questions.type, correct: questions.correct, explanation: questions.explanation, options: questions.options })
-      .from(questions)
-      .where(eq(questions.id, req.body.questionId))
-      .limit(1)
-    if (!question) return reply.code(404).send({ error: 'Питання не знайдено' })
+    let question = issued.snapshot ? sessionQuestion(issued) : null
+    if (!question) {
+      const [current] = await db.select().from(questions).where(eq(questions.id, req.body.questionId)).limit(1)
+      if (!current) return reply.code(404).send({ error: 'Питання не знайдено' })
+      question = questionSnapshot(current)
+    }
 
     const { results } = scoreAttempt(
       [{ id: question.id, type: question.type ?? 'choice', correct: question.correct, explanation: question.explanation, options: question.options }],

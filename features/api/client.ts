@@ -1284,6 +1284,70 @@ export interface SchoolQuestionAvailability {
   topics: Array<SchoolQuestionAvailabilityCount & { id: string }>
 }
 
+export interface TeacherQuestionTopic {
+  id: string
+  title: string
+  description: string | null
+  grade: number
+  questionCount: number
+  byDifficulty?: { easy: number; medium: number; hard: number }
+  createdAt?: string | null
+  updatedAt?: string | null
+}
+
+export type TeacherQuestionInput = {
+  q: string
+  code?: string | null
+  type: QuestionType
+  options: string[] | Record<string, unknown>
+  correct: number | null
+  explanation?: string | null
+  difficulty: 'easy' | 'medium' | 'hard'
+  expectedEditVersion?: number
+}
+
+export function getTeacherQuestionTopics(): Promise<{ topics: TeacherQuestionTopic[] }> {
+  return authRequest('/api/school/teacher-topics')
+}
+
+export function createTeacherQuestionTopic(data: { title: string; description?: string; grade: number }): Promise<{ topic: TeacherQuestionTopic }> {
+  return authRequest('/api/school/teacher-topics', { method: 'POST', body: JSON.stringify(data) })
+}
+
+export function updateTeacherQuestionTopic(id: string, data: { title: string; description?: string; grade: number }): Promise<{ topic: TeacherQuestionTopic }> {
+  return authRequest(`/api/school/teacher-topics/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) })
+}
+
+export function archiveTeacherQuestionTopic(id: string): Promise<{ archived: boolean }> {
+  return authRequest(`/api/school/teacher-topics/${encodeURIComponent(id)}`, { method: 'DELETE' })
+}
+
+export async function getTeacherTopicQuestions(topicId: string): Promise<{ questions: Question[] }> {
+  const data = await authRequest(`/api/school/teacher-topics/${encodeURIComponent(topicId)}/questions`)
+  data.questions = (data.questions ?? []).map(normalizeQuestion)
+  return data
+}
+
+export async function createTeacherQuestion(topicId: string, input: TeacherQuestionInput): Promise<{ question: Question }> {
+  const data = await authRequest(`/api/school/teacher-topics/${encodeURIComponent(topicId)}/questions`, {
+    method: 'POST', body: JSON.stringify(input),
+  })
+  data.question = normalizeQuestion(data.question)
+  return data
+}
+
+export async function updateTeacherQuestion(id: string, input: TeacherQuestionInput): Promise<{ question: Question }> {
+  const data = await authRequest(`/api/school/teacher-questions/${encodeURIComponent(id)}`, {
+    method: 'PUT', body: JSON.stringify(input),
+  })
+  data.question = normalizeQuestion(data.question)
+  return data
+}
+
+export function archiveTeacherQuestion(id: string): Promise<{ archived: boolean }> {
+  return authRequest(`/api/school/teacher-questions/${encodeURIComponent(id)}`, { method: 'DELETE' })
+}
+
 export function getSchoolQuestionAvailability(grade: number): Promise<SchoolQuestionAvailability> {
   return authRequest(`/api/school/question-availability?grade=${encodeURIComponent(String(grade))}`)
 }
@@ -1307,6 +1371,7 @@ export function createSchoolSession(data: {
   track?: string
   topic?: string
   schoolTopicId?: string
+  teacherTopicId?: string
   kind?: SchoolSessionKind
   activityKey?: string
   activityLevel?: string

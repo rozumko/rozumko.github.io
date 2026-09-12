@@ -311,8 +311,27 @@ async function openTeacherDashboard(page: Page) {
               ? { registrations: [] }
               : path === '/api/teacher/codes'
                 ? { codes: [] }
-                : path === '/api/teacher/results'
+              : path === '/api/teacher/results'
                   ? { results: [] }
+                  : path === '/api/school/teacher-topics'
+                    ? { topics: [{
+                        id: '00000000-0000-4000-8000-0000000000c1',
+                        title: 'Моя безпечна тема',
+                        description: 'Авторська добірка для уроку.',
+                        grade: 1,
+                        questionCount: 2,
+                        byDifficulty: { easy: 1, medium: 1, hard: 0 },
+                      }] }
+                  : path === '/api/school/teacher-topics/00000000-0000-4000-8000-0000000000c1/questions'
+                    ? { questions: [{
+                        id: '00000000-0000-4000-8000-0000000000c2',
+                        q: 'Які дані не можна повідомляти незнайомцям?',
+                        type: 'multi_select',
+                        options: { choices: ['Пароль', 'Адреса', 'Улюблений колір'], correctAnswers: [0, 1] },
+                        correct: null,
+                        difficulty: 'easy',
+                        editVersion: 1,
+                      }] }
                   : path === '/api/school/question-availability'
                     ? {
                         mixed: { total: 76, byDifficulty: { easy: 30, medium: 26, hard: 20 } },
@@ -385,6 +404,16 @@ async function openTeacherDashboard(page: Page) {
 
 test.describe('accessibility smoke: home and school missions', () => {
   test.use({ viewport: { width: 375, height: 667 } })
+
+  test('QR join lands on the nickname field without extra navigation', async ({ page }) => {
+    await page.goto('/school.html?code=123456')
+    await expect(page.locator('#join-nickname')).toBeFocused()
+    await expect(page.locator('#join-code-field')).toBeHidden()
+    await expect(page.locator('#join-code-summary')).toHaveText('Код гри 123456')
+    await expect(page.locator('#site-header')).toBeHidden()
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
+    expect(overflow).toBeLessThanOrEqual(0)
+  })
 
   test('home choice options expose radio semantics and checked state', async ({ page }) => {
     await startHomeMission(page, [choiceQuestion])
@@ -914,6 +943,27 @@ test('axe: /teacher.html dashboard', async ({ page }) => {
   expect(results.violations).toEqual([])
 })
 
+test('teacher owned-content section is usable and responsive', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 667 })
+  await openTeacherDashboard(page)
+  await page.locator('[data-section="content"]').click()
+  await page.locator('[data-teacher-topic-id="00000000-0000-4000-8000-0000000000c1"]').click()
+
+  await expect(page.locator('#teacher-content-title')).toHaveText('Моя безпечна тема')
+  await expect(page.locator('.teacher-question-card')).toHaveCount(1)
+  await page.locator('#teacher-question-new').click()
+  await page.locator('#teacher-question-type').selectOption('match')
+  await expect(page.locator('#tq-left')).toBeVisible()
+
+  const results = await new AxeBuilder({ page })
+    .include('#teacher-section-content')
+    .withTags(WCAG_AA_TAGS)
+    .analyze()
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
+  expect(results.violations).toEqual([])
+  expect(overflow).toBeLessThanOrEqual(0)
+})
+
 test('teacher activity cards open settings and return focus on a phone', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 667 })
   await openTeacherDashboard(page)
@@ -950,7 +1000,8 @@ test('teacher question topics use grade-aware cards instead of a dropdown', asyn
   await expect(page.locator('#school-topic')).toHaveAttribute('type', 'hidden')
   await expect(page.locator('#school-topic-picker')).toBeVisible()
   await expect(page.locator('.question-topic-picker__grid')).toHaveCount(1)
-  await expect(page.locator('.question-topic-card')).toHaveCount(8)
+  await expect(page.locator('.question-topic-card')).toHaveCount(9)
+  await expect(page.locator('[data-school-topic="teacher:00000000-0000-4000-8000-0000000000c1"]')).toBeVisible()
 
   const programming = page.locator('[data-school-topic="algorithms-programming"]')
   await programming.click()

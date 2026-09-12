@@ -443,6 +443,19 @@ test('school activity results are client-unverified, constrained, RLS-protected 
   assert.match(journal, /"tag": "0047_add_school_activities"/)
 })
 
+test('teacher question library is owner-scoped, RLS-protected and uses immutable session snapshots', () => {
+  const migration = readFileSync(new URL('../drizzle/0048_add_teacher_question_library.sql', import.meta.url), 'utf8')
+  const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')
+  const schoolRoute = readFileSync(new URL('./routes/school.ts', import.meta.url), 'utf8')
+
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS public\.teacher_question_topics/)
+  assert.match(migration, /ALTER TABLE public\.teacher_question_topics ENABLE ROW LEVEL SECURITY;/)
+  assert.match(migration, /ADD COLUMN IF NOT EXISTS snapshot jsonb/)
+  assert.match(journal, /"tag": "0048_add_teacher_question_library"/)
+  assert.match(schoolRoute, /eq\(teacherQuestionTopics\.teacherId, req\.user!\.id\)/)
+  assert.match(schoolRoute, /snapshot: questionSnapshot\(question\)/)
+})
+
 test('supply-chain guardrails are configured for npm dependencies', () => {
   const dependabot = readFileSync(new URL('../../.github/dependabot.yml', import.meta.url), 'utf8')
   const workflow = readFileSync(new URL('../../.github/workflows/supply-chain.yml', import.meta.url), 'utf8')
