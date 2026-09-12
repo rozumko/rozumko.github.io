@@ -68,35 +68,36 @@
   <link rel="stylesheet" href="style-app.css"/>
   <link rel="stylesheet" href="style-activities.css"/>
 </head>
-<body class="app-page">
+<body class="app-page school-join-page">
   <a href="#main-content" class="skip-link">Перейти до основного контенту</a>
   <div id="site-header"></div>
 
   <main id="main-content" class="app-main" tabindex="-1">
 
     <!-- INTRO: enter teacher code and nickname, then go to the lobby -->
-    <section id="mission-intro">
-      <h1 class="app-title">Я в класі</h1>
-      <p class="app-subtitle">Вчитель дав код? Введи його — і грай разом з класом.</p>
+    <section id="mission-intro" class="school-join">
+      <a class="school-join__brand" href="index.html" aria-label="Розумко — на головну">🤖 <span>Розумко</span></a>
+      <p class="school-join__eyebrow">Класна гра</p>
+      <h1 id="join-title" class="app-title">Приєднайся до гри</h1>
+      <p id="join-subtitle" class="app-subtitle">Введи код від учителя та придумай прізвисько.</p>
 
       <div class="code-entry">
-        <label for="join-code" class="sr-only">Код гри від вчителя</label>
-        <input id="join-code" class="code-input-lg" inputmode="numeric" autocomplete="off"
-               maxlength="6" placeholder="Код гри — 6 цифр" />
-        <input id="join-nickname" class="field-input" autocomplete="off" maxlength="20"
-               placeholder="Твоє прізвисько (не справжнє імʼя)" aria-label="Прізвисько" />
-        <button id="join-btn" class="kid-action">Приєднатися до гри</button>
+        <div id="join-code-field" class="school-join__field">
+          <label for="join-code">Код гри</label>
+          <input id="join-code" class="code-input-lg" inputmode="numeric" autocomplete="off"
+                 maxlength="6" placeholder="000000" />
+        </div>
+        <p id="join-code-summary" class="school-join__code-summary hidden"></p>
+        <div class="school-join__field school-join__field--nickname">
+          <label for="join-nickname">Як тебе називати у грі?</label>
+          <input id="join-nickname" class="field-input" autocomplete="off" maxlength="20"
+                 placeholder="Наприклад, Розумний Лис" aria-describedby="join-privacy" />
+          <p id="join-privacy" class="school-join__privacy">Не пиши справжнє ім’я або прізвище</p>
+        </div>
+        <button id="join-btn" class="kid-action">Готово, до гри!</button>
       </div>
 
       <p id="mission-error" class="quiz-feedback quiz-feedback--incorrect app-error" aria-live="polite"></p>
-
-      <div class="info-card info-card--center school-entry-help">
-        Немає коду? Дочекайся коду від учителя — домашні місії поки готуються.
-      </div>
-
-      <div class="info-card info-card--center school-entry-help">
-        Ви вчитель? <a href="teacher.html">Створити гру для класу →</a>
-      </div>
     </section>
 
     <!-- WAITING: the student has joined, but the teacher has not started the game yet -->
@@ -191,7 +192,7 @@
         <p id="result-message" class="finish-card__message"></p>
       </div>
       <div class="info-card info-card--center">
-        Дякуємо за гру! Домашні місії Розумко ще готуються.
+        Дякуємо за гру! Домашні місії поки готуються.
       </div>
       <div class="app-actions">
         <button id="mission-retry-btn" class="btn-ghost">Ввести інший код</button>

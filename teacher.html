@@ -259,6 +259,14 @@
             <i class="fas fa-gamepad" aria-hidden="true"></i>
             <span>Класна гра</span>
           </button>
+          <button data-section="content" class="teacher-section-link">
+            <i class="fas fa-layer-group" aria-hidden="true"></i>
+            <span>Мої теми й питання</span>
+          </button>
+          <button data-section="school-results" class="teacher-section-link">
+            <i class="fas fa-chart-column" aria-hidden="true"></i>
+            <span>Результати уроків</span>
+          </button>
           <button data-section="olympiad" class="teacher-section-link">
             <i class="fas fa-medal" aria-hidden="true"></i>
             <span>Олімпіада</span>
@@ -577,13 +585,6 @@
 
         <p id="school-error" class="quiz-feedback quiz-feedback--incorrect" aria-live="polite"></p>
 
-        <!-- Recent sessions: reopen a game that is still running after a reload,
-             or review the results of a finished lesson -->
-        <section id="school-history" class="school-history hidden" aria-labelledby="school-history-heading">
-          <h3 id="school-history-heading" class="school-history__heading">Останні ігри</h3>
-          <div id="school-history-list" class="school-history__list"></div>
-        </section>
-
         <!-- Active classroom game -->
         <div id="school-live" class="school-live hidden">
           <section class="school-live__panel" aria-labelledby="school-join-heading">
@@ -715,6 +716,117 @@
             </div>
           </div>
         </div>
+      </section>
+
+      <section id="teacher-section-content" class="teacher-section hidden">
+        <div class="teacher-section__heading">
+          <p class="teacher-section__eyebrow">Ваша приватна бібліотека</p>
+          <h1>Мої теми й питання</h1>
+          <p>Створюйте власні добірки для своїх уроків. Вони доступні лише вам і з’являються у «Класній грі».</p>
+        </div>
+
+        <div class="teacher-library">
+          <aside class="teacher-library__topics" aria-label="Мої теми">
+            <div class="teacher-library__pane-head">
+              <h2>Теми</h2>
+              <button id="teacher-topic-new" class="btn btn--teacher btn--compact" type="button">
+                <i class="fas fa-plus" aria-hidden="true"></i> Додати
+              </button>
+            </div>
+            <form id="teacher-topic-form" class="teacher-library__topic-form hidden" novalidate>
+              <input id="teacher-topic-id" type="hidden" />
+              <label class="form-label" for="teacher-topic-title">Назва теми</label>
+              <input id="teacher-topic-title" class="form-input" maxlength="80" placeholder="Наприклад: Безпека в інтернеті" required />
+              <label class="form-label" for="teacher-topic-grade">Клас</label>
+              <select id="teacher-topic-grade" class="form-input">
+                <option value="1">1 клас</option><option value="2">2 клас</option>
+                <option value="3">3 клас</option><option value="4">4 клас</option>
+              </select>
+              <label class="form-label" for="teacher-topic-description">Короткий опис</label>
+              <textarea id="teacher-topic-description" class="form-input" maxlength="240" rows="3" placeholder="Що тренує ця добірка"></textarea>
+              <div class="teacher-library__form-actions">
+                <button class="btn btn--success btn--compact" type="submit">Зберегти</button>
+                <button id="teacher-topic-cancel" class="btn btn--secondary btn--compact" type="button">Скасувати</button>
+              </div>
+            </form>
+            <div id="teacher-topic-list" class="teacher-library__topic-list" aria-live="polite"></div>
+          </aside>
+
+          <div class="teacher-library__questions">
+            <div id="teacher-content-empty" class="empty-state teacher-library__empty">
+              <i class="fas fa-layer-group empty-state__icon" aria-hidden="true"></i>
+              <p class="empty-state__title">Оберіть або створіть тему</p>
+              <p class="empty-state__sub">Після цього додайте питання для класної гри.</p>
+            </div>
+            <div id="teacher-content-topic" class="hidden">
+              <div class="teacher-library__topic-head">
+                <div>
+                  <p id="teacher-content-grade" class="teacher-section__eyebrow"></p>
+                  <h2 id="teacher-content-title"></h2>
+                  <p id="teacher-content-description"></p>
+                </div>
+                <div class="teacher-library__head-actions">
+                  <button id="teacher-topic-edit" class="btn btn--secondary btn--compact" type="button">Редагувати</button>
+                  <button id="teacher-topic-delete" class="btn btn--danger btn--compact" type="button">Видалити</button>
+                </div>
+              </div>
+              <button id="teacher-question-new" class="btn btn--teacher" type="button">
+                <i class="fas fa-plus" aria-hidden="true"></i> Додати питання
+              </button>
+
+              <form id="teacher-question-form" class="teacher-question-form hidden" novalidate>
+                <input id="teacher-question-id" type="hidden" />
+                <input id="teacher-question-version" type="hidden" />
+                <div class="teacher-question-form__grid">
+                  <label>Тип питання
+                    <select id="teacher-question-type" class="form-input">
+                      <option value="choice">Одна правильна відповідь</option>
+                      <option value="multi_select">Кілька правильних відповідей</option>
+                      <option value="truefalse">Так або ні</option>
+                      <option value="input">Коротка відповідь</option>
+                      <option value="sort">Сортування</option>
+                      <option value="sequence">Продовжити послідовність</option>
+                      <option value="match">Зіставлення пар</option>
+                    </select>
+                  </label>
+                  <label>Складність
+                    <select id="teacher-question-difficulty" class="form-input">
+                      <option value="easy">Легка</option><option value="medium">Середня</option><option value="hard">Складна</option>
+                    </select>
+                  </label>
+                </div>
+                <label>Текст питання
+                  <textarea id="teacher-question-text" class="form-input" maxlength="1000" rows="3" required></textarea>
+                </label>
+                <label>Фрагмент коду або додаткова умова <span class="teacher-library__optional">необов’язково</span>
+                  <textarea id="teacher-question-code" class="form-input" maxlength="4000" rows="3"></textarea>
+                </label>
+                <div id="teacher-question-shape"></div>
+                <label>Пояснення після відповіді <span class="teacher-library__optional">необов’язково</span>
+                  <textarea id="teacher-question-explanation" class="form-input" maxlength="2000" rows="2"></textarea>
+                </label>
+                <p id="teacher-question-error" class="quiz-feedback quiz-feedback--incorrect" aria-live="polite"></p>
+                <div class="teacher-library__form-actions">
+                  <button id="teacher-question-save" class="btn btn--success" type="submit">Зберегти питання</button>
+                  <button id="teacher-question-cancel" class="btn btn--secondary" type="button">Скасувати</button>
+                </div>
+              </form>
+              <div id="teacher-question-list" class="teacher-question-list" aria-live="polite"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="teacher-section-school-results" class="teacher-section hidden">
+        <div class="teacher-section__heading">
+          <p class="teacher-section__eyebrow">Проведені уроки</p>
+          <h1>Результати уроків</h1>
+          <p>Поверніться до активної гри або перегляньте підсумки завершеної.</p>
+        </div>
+        <section id="school-history" class="school-history hidden" aria-labelledby="school-history-heading">
+          <h2 id="school-history-heading" class="school-history__heading">Останні ігри</h2>
+          <div id="school-history-list" class="school-history__list"></div>
+        </section>
       </section>
 
         </main>

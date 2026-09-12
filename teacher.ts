@@ -15,11 +15,14 @@ import {
   createSchoolSession, startSchoolSession, finishSchoolSession, getSchoolSession,
   getSchoolSessionQuestions, submitSchoolProjectorAnswer, getSchoolParticipantAnswers,
   getSchoolSessionPreview, getSchoolQuestionAvailability,
+  getTeacherQuestionTopics, createTeacherQuestionTopic, updateTeacherQuestionTopic, archiveTeacherQuestionTopic,
+  getTeacherTopicQuestions, createTeacherQuestion, updateTeacherQuestion, archiveTeacherQuestion,
   type SchoolParticipantAnswer, type SchoolPreviewQuestion,
   TURNSTILE_SITE_KEY,
   type TeacherClass, type ClassStudent, type EventRegistration, type TeacherEvent, type Attempt,
   type SchoolSessionInfo, type Question, type SchoolActivityResultRow, type SchoolQuestionAvailability,
   type SchoolParticipantRow, type SchoolTopicStat, type SchoolSessionSummary,
+  type TeacherQuestionTopic, type TeacherQuestionInput, type QuestionType,
 } from './features/api/client.js'
 import { ACTIVITIES, ACTIVITY_GROUPS, findActivity, findActivityLevel } from './features/activities/registry.js'
 import { esc, friendlyError, recoveryErrorMessage, showConfirm, showModal } from './utils/ui.js'
@@ -335,19 +338,26 @@ async function ensureOlympiadLoaded() {
 
 configureOlympiadStub()
 
+function activateTeacherSection(sectionName: string) {
+  const link = document.querySelector<HTMLElement>(`[data-section="${sectionName}"]`)
+  if (!link) return
+  document.querySelectorAll('.teacher-section-link').forEach(item => {
+    item.classList.remove('teacher-section-link--active')
+    item.removeAttribute('aria-current')
+  })
+  document.querySelectorAll('.teacher-section').forEach(section => section.classList.add('hidden'))
+  link.classList.add('teacher-section-link--active')
+  link.setAttribute('aria-current', 'page')
+  $maybe(`teacher-section-${sectionName}`)?.classList.remove('hidden')
+  if (sectionName === 'olympiad') void ensureOlympiadLoaded()
+  if (sectionName === 'content') void loadTeacherTopics()
+  if (sectionName === 'school-results') void loadSchoolSessions()
+}
+
 document.querySelectorAll<HTMLElement>('.teacher-section-link').forEach(link => {
   link.addEventListener('click', () => {
     const sectionName = link.dataset['section']
-    if (!sectionName) return
-    document.querySelectorAll('.teacher-section-link').forEach(item => {
-      item.classList.remove('teacher-section-link--active')
-      item.removeAttribute('aria-current')
-    })
-    document.querySelectorAll('.teacher-section').forEach(section => section.classList.add('hidden'))
-    link.classList.add('teacher-section-link--active')
-    link.setAttribute('aria-current', 'page')
-    $maybe(`teacher-section-${sectionName}`)?.classList.remove('hidden')
-    if (sectionName === 'olympiad') void ensureOlympiadLoaded()
+    if (sectionName) activateTeacherSection(sectionName)
   })
 })
 
@@ -1324,6 +1334,7 @@ function showDashboard(nameOrEmail: string) {
   document.body.classList.add('teacher-dashboard-active')
   $maybe('auth-back-link')?.classList.add('hidden')
   void refreshSchoolQuestionAvailability()
+  void loadTeacherTopics()
   void restoreSchoolSessions()
 }
 
@@ -1343,6 +1354,306 @@ function showAuth(message?: string) {
     })
   }
 }
+
+// ── Private teacher content library ─────────────────────────────────────────
+
+let teacherTopics: TeacherQuestionTopic[] = []
+let selectedTeacherTopicId: string | null = null
+let teacherQuestions: Question[] = []
+
+const questionTypeLabels: Record<QuestionType, string> = {
+  choice: 'Одна відповідь',
+  multi_select: 'Кілька відповідей',
+  truefalse: 'Так або ні',
+  input: 'Коротка відповідь',
+  sort: 'Сортування',
+  sequence: 'Послідовність',
+  match: 'Зіставлення',
+}
+
+const difficultyLabels: Record<string, string> = { easy: 'Легка', medium: 'Середня', hard: 'Складна' }
+
+function selectedTeacherTopic(): TeacherQuestionTopic | null {
+  return teacherTopics.find(topic => topic.id === selectedTeacherTopicId) ?? null
+}
+
+function renderTeacherTopicList() {
+  const list = $maybe('teacher-topic-list')
+  if (!list) return
+  if (!teacherTopics.length) {
+    list.innerHTML = '<div class="empty-state"><p class="empty-state__title">Тем ще немає</p><p class="empty-state__sub">Створіть першу добірку для уроку.</p></div>'
+    return
+  }
+  list.innerHTML = teacherTopics.map(topic => `
+    <button class="teacher-library__topic-button" type="button" data-teacher-topic-id="${esc(topic.id)}"
+            aria-pressed="${String(topic.id === selectedTeacherTopicId)}">
+      <strong>${esc(topic.title)}</strong>
+      <span>${topic.grade} клас · ${topic.questionCount} ${questionWord(topic.questionCount)}</span>
+    </button>`).join('')
+  list.querySelectorAll<HTMLButtonElement>('[data-teacher-topic-id]').forEach(button => {
+    button.addEventListener('click', () => void selectTeacherTopic(button.dataset['teacherTopicId'] ?? ''))
+  })
+}
+
+function renderTeacherTopicHeader() {
+  const topic = selectedTeacherTopic()
+  $maybe('teacher-content-empty')?.classList.toggle('hidden', Boolean(topic))
+  $maybe('teacher-content-topic')?.classList.toggle('hidden', !topic)
+  if (!topic) return
+  const title = $maybe('teacher-content-title')
+  const grade = $maybe('teacher-content-grade')
+  const description = $maybe('teacher-content-description')
+  if (title) title.textContent = topic.title
+  if (grade) grade.textContent = `${topic.grade} клас · ${topic.questionCount} ${questionWord(topic.questionCount)}`
+  if (description) description.textContent = topic.description || 'Власна добірка для класної гри.'
+}
+
+function renderTeacherQuestionList() {
+  const list = $maybe('teacher-question-list')
+  if (!list) return
+  if (!teacherQuestions.length) {
+    list.innerHTML = '<div class="empty-state"><p class="empty-state__title">Питань ще немає</p><p class="empty-state__sub">Додайте щонайменше одне питання, щоб запустити цю тему.</p></div>'
+    return
+  }
+  list.innerHTML = teacherQuestions.map((question, index) => {
+    const type = (question.type ?? 'choice') as QuestionType
+    return `
+      <article class="teacher-question-card">
+        <div class="teacher-question-card__top">
+          <div>
+            <p class="teacher-question-card__q">${index + 1}. ${esc(question.q)}</p>
+            <p class="teacher-question-card__meta">${esc(questionTypeLabels[type])} · ${esc(difficultyLabels[String(question.difficulty)] ?? String(question.difficulty ?? ''))}</p>
+          </div>
+          <div class="teacher-question-card__actions">
+            <button class="btn btn--secondary btn--compact" type="button" data-question-edit="${esc(question.id)}">Редагувати</button>
+            <button class="btn btn--danger btn--compact" type="button" data-question-delete="${esc(question.id)}">Видалити</button>
+          </div>
+        </div>
+      </article>`
+  }).join('')
+  list.querySelectorAll<HTMLButtonElement>('[data-question-edit]').forEach(button => {
+    button.addEventListener('click', () => editTeacherQuestion(button.dataset['questionEdit'] ?? ''))
+  })
+  list.querySelectorAll<HTMLButtonElement>('[data-question-delete]').forEach(button => {
+    button.addEventListener('click', () => confirmArchiveTeacherQuestion(button.dataset['questionDelete'] ?? ''))
+  })
+}
+
+async function loadTeacherTopics() {
+  try {
+    teacherTopics = (await getTeacherQuestionTopics()).topics ?? []
+    if (selectedTeacherTopicId && !teacherTopics.some(topic => topic.id === selectedTeacherTopicId)) {
+      selectedTeacherTopicId = null
+      teacherQuestions = []
+    }
+    renderTeacherTopicList()
+    renderTeacherTopicHeader()
+    renderSchoolQuestionTopics()
+  } catch (error) {
+    const list = $maybe('teacher-topic-list')
+    if (list) list.innerHTML = `<p class="quiz-feedback quiz-feedback--incorrect">${esc(friendlyError((error as Error).message))}</p>`
+  }
+}
+
+async function selectTeacherTopic(id: string) {
+  const topic = teacherTopics.find(item => item.id === id)
+  if (!topic) return
+  selectedTeacherTopicId = topic.id
+  teacherQuestions = []
+  renderTeacherTopicList()
+  renderTeacherTopicHeader()
+  renderTeacherQuestionList()
+  closeTeacherQuestionForm()
+  try {
+    teacherQuestions = (await getTeacherTopicQuestions(topic.id)).questions
+    renderTeacherQuestionList()
+  } catch (error) {
+    const list = $maybe('teacher-question-list')
+    if (list) list.innerHTML = `<p class="quiz-feedback quiz-feedback--incorrect">${esc(friendlyError((error as Error).message))}</p>`
+  }
+}
+
+function openTeacherTopicForm(topic?: TeacherQuestionTopic) {
+  $<HTMLInputElement>('teacher-topic-id').value = topic?.id ?? ''
+  $<HTMLInputElement>('teacher-topic-title').value = topic?.title ?? ''
+  $<HTMLSelectElement>('teacher-topic-grade').value = String(topic?.grade ?? 1)
+  $<HTMLTextAreaElement>('teacher-topic-description').value = topic?.description ?? ''
+  $maybe('teacher-topic-form')?.classList.remove('hidden')
+  $<HTMLInputElement>('teacher-topic-title').focus()
+}
+
+function closeTeacherTopicForm() {
+  $maybe('teacher-topic-form')?.classList.add('hidden')
+}
+
+$maybe<HTMLButtonElement>('teacher-topic-new')?.addEventListener('click', () => openTeacherTopicForm())
+$maybe<HTMLButtonElement>('teacher-topic-cancel')?.addEventListener('click', closeTeacherTopicForm)
+$maybe<HTMLButtonElement>('teacher-topic-edit')?.addEventListener('click', () => {
+  const topic = selectedTeacherTopic()
+  if (topic) openTeacherTopicForm(topic)
+})
+
+$maybe<HTMLFormElement>('teacher-topic-form')?.addEventListener('submit', async event => {
+  event.preventDefault()
+  const id = $<HTMLInputElement>('teacher-topic-id').value
+  const input = {
+    title: $<HTMLInputElement>('teacher-topic-title').value.trim(),
+    description: $<HTMLTextAreaElement>('teacher-topic-description').value.trim(),
+    grade: Number($<HTMLSelectElement>('teacher-topic-grade').value),
+  }
+  if (!input.title) return
+  try {
+    const result = id
+      ? await updateTeacherQuestionTopic(id, input)
+      : await createTeacherQuestionTopic(input)
+    selectedTeacherTopicId = result.topic.id
+    closeTeacherTopicForm()
+    await loadTeacherTopics()
+    await selectTeacherTopic(result.topic.id)
+  } catch (error) {
+    showModal(friendlyError((error as Error).message))
+  }
+})
+
+$maybe<HTMLButtonElement>('teacher-topic-delete')?.addEventListener('click', () => {
+  const topic = selectedTeacherTopic()
+  if (!topic) return
+  showConfirm(`Видалити тему «${topic.title}» та всі її питання? Проведені ігри не зміняться.`, () => {
+    void archiveTeacherQuestionTopic(topic.id).then(async () => {
+      selectedTeacherTopicId = null
+      teacherQuestions = []
+      await loadTeacherTopics()
+    }).catch(error => showModal(friendlyError((error as Error).message)))
+  })
+})
+
+function renderTeacherQuestionShape(type: QuestionType, question?: Question) {
+  const mount = $maybe('teacher-question-shape')
+  if (!mount) return
+  const options = question?.options
+  const objectOptions = options && typeof options === 'object' && !Array.isArray(options)
+    ? options as Record<string, unknown>
+    : {}
+  const lines = (value: unknown) => Array.isArray(value) ? value.map(String).join('\n') : ''
+  const correct = question?.correct == null ? '' : String(Number(question.correct) + 1)
+  const blocks: Record<QuestionType, string> = {
+    choice: `<label>Варіанти — кожен з нового рядка<textarea id="tq-options" class="form-input" rows="5">${esc(lines(options))}</textarea></label><label>Номер правильної відповіді<input id="tq-correct" class="form-input" type="number" min="1" value="${esc(correct)}"></label>`,
+    multi_select: `<label>Варіанти — кожен з нового рядка<textarea id="tq-options" class="form-input" rows="5">${esc(lines(objectOptions['choices']))}</textarea></label><label>Номери правильних відповідей через кому<input id="tq-correct-many" class="form-input" placeholder="1, 3" value="${esc(Array.isArray(objectOptions['correctAnswers']) ? (objectOptions['correctAnswers'] as number[]).map(index => index + 1).join(', ') : '')}"></label>`,
+    truefalse: `<label>Правильна відповідь<select id="tq-truefalse" class="form-input"><option value="0" ${question?.correct === 0 ? 'selected' : ''}>Так</option><option value="1" ${question?.correct === 1 ? 'selected' : ''}>Ні</option></select></label>`,
+    input: `<div class="teacher-question-form__grid"><label>Правильна відповідь<input id="tq-answer" class="form-input" value="${esc(String(objectOptions['answer'] ?? ''))}"></label><label>Формат відповіді<select id="tq-input-type" class="form-input"><option value="text">Текст</option><option value="number" ${objectOptions['inputType'] === 'number' ? 'selected' : ''}>Число</option></select></label></div>`,
+    sort: `<label>Правильний порядок — кожен крок з нового рядка<textarea id="tq-sort-items" class="form-input" rows="6">${esc(lines(objectOptions['items']))}</textarea></label>`,
+    sequence: `<label>Задана частина послідовності — кожен елемент з нового рядка<textarea id="tq-given" class="form-input" rows="3">${esc(lines(objectOptions['given']))}</textarea></label><label>Варіанти продовження — кожен з нового рядка<textarea id="tq-choices" class="form-input" rows="4">${esc(lines(objectOptions['choices']))}</textarea></label><label>Номер правильного варіанта<input id="tq-correct" class="form-input" type="number" min="1" value="${esc(correct)}"></label>`,
+    match: `<div class="teacher-question-form__grid"><label>Ліва колонка<textarea id="tq-left" class="form-input" rows="6">${esc(lines(objectOptions['left']))}</textarea></label><label>Права пара для кожного рядка<textarea id="tq-right" class="form-input" rows="6">${esc(lines(objectOptions['pairs']) && Array.isArray(objectOptions['right']) ? (objectOptions['pairs'] as number[]).map(index => String((objectOptions['right'] as unknown[])[index] ?? '')).join('\n') : lines(objectOptions['right']))}</textarea></label></div>`,
+  }
+  mount.className = 'teacher-question-shape'
+  mount.innerHTML = blocks[type]
+}
+
+function questionLines(id: string): string[] {
+  return $<HTMLTextAreaElement>(id).value.split(/\r?\n/).map(value => value.trim()).filter(Boolean)
+}
+
+function buildTeacherQuestionInput(): TeacherQuestionInput {
+  const type = $<HTMLSelectElement>('teacher-question-type').value as QuestionType
+  let options: string[] | Record<string, unknown>
+  let correct: number | null = null
+  if (type === 'choice') {
+    options = questionLines('tq-options')
+    correct = Number($<HTMLInputElement>('tq-correct').value) - 1
+  } else if (type === 'multi_select') {
+    options = {
+      choices: questionLines('tq-options'),
+      correctAnswers: $<HTMLInputElement>('tq-correct-many').value.split(',').map(value => Number(value.trim()) - 1),
+    }
+  } else if (type === 'truefalse') {
+    options = ['Так', 'Ні']
+    correct = Number($<HTMLSelectElement>('tq-truefalse').value)
+  } else if (type === 'input') {
+    const inputType = $<HTMLSelectElement>('tq-input-type').value
+    const raw = $<HTMLInputElement>('tq-answer').value.trim()
+    options = { answer: inputType === 'number' ? Number(raw) : raw, inputType }
+  } else if (type === 'sort') {
+    const items = questionLines('tq-sort-items')
+    options = { items, correctOrder: items.map((_, index) => index) }
+  } else if (type === 'sequence') {
+    options = { given: questionLines('tq-given'), choices: questionLines('tq-choices') }
+    correct = Number($<HTMLInputElement>('tq-correct').value) - 1
+  } else {
+    const left = questionLines('tq-left')
+    const right = questionLines('tq-right')
+    options = { left, right, pairs: left.map((_, index) => index) }
+  }
+  return {
+    q: $<HTMLTextAreaElement>('teacher-question-text').value.trim(),
+    code: $<HTMLTextAreaElement>('teacher-question-code').value.trim() || null,
+    type,
+    options,
+    correct,
+    explanation: $<HTMLTextAreaElement>('teacher-question-explanation').value.trim() || null,
+    difficulty: $<HTMLSelectElement>('teacher-question-difficulty').value as TeacherQuestionInput['difficulty'],
+  }
+}
+
+function openTeacherQuestionForm(question?: Question) {
+  $<HTMLInputElement>('teacher-question-id').value = question?.id ?? ''
+  $<HTMLInputElement>('teacher-question-version').value = String(question?.editVersion ?? '')
+  $<HTMLSelectElement>('teacher-question-type').value = question?.type ?? 'choice'
+  $<HTMLSelectElement>('teacher-question-difficulty').value = String(question?.difficulty ?? 'easy')
+  $<HTMLTextAreaElement>('teacher-question-text').value = question?.q ?? ''
+  $<HTMLTextAreaElement>('teacher-question-code').value = question?.code ?? ''
+  $<HTMLTextAreaElement>('teacher-question-explanation').value = question?.explanation ?? ''
+  renderTeacherQuestionShape((question?.type ?? 'choice') as QuestionType, question)
+  $maybe('teacher-question-form')?.classList.remove('hidden')
+  $<HTMLTextAreaElement>('teacher-question-text').focus()
+}
+
+function closeTeacherQuestionForm() {
+  $maybe('teacher-question-form')?.classList.add('hidden')
+  const error = $maybe('teacher-question-error')
+  if (error) error.textContent = ''
+}
+
+function editTeacherQuestion(id: string) {
+  const question = teacherQuestions.find(item => item.id === id)
+  if (question) openTeacherQuestionForm(question)
+}
+
+function confirmArchiveTeacherQuestion(id: string) {
+  const question = teacherQuestions.find(item => item.id === id)
+  if (!question) return
+  showConfirm(`Видалити питання «${question.q}»? Проведені ігри не зміняться.`, () => {
+    void archiveTeacherQuestion(question.id).then(async () => {
+      if (selectedTeacherTopicId) await selectTeacherTopic(selectedTeacherTopicId)
+      await loadTeacherTopics()
+    }).catch(error => showModal(friendlyError((error as Error).message)))
+  })
+}
+
+$maybe<HTMLButtonElement>('teacher-question-new')?.addEventListener('click', () => openTeacherQuestionForm())
+$maybe<HTMLButtonElement>('teacher-question-cancel')?.addEventListener('click', closeTeacherQuestionForm)
+$maybe<HTMLSelectElement>('teacher-question-type')?.addEventListener('change', event => {
+  renderTeacherQuestionShape((event.currentTarget as HTMLSelectElement).value as QuestionType)
+})
+$maybe<HTMLFormElement>('teacher-question-form')?.addEventListener('submit', async event => {
+  event.preventDefault()
+  const topicId = selectedTeacherTopicId
+  if (!topicId) return
+  const error = $maybe('teacher-question-error')
+  if (error) error.textContent = ''
+  try {
+    const input = buildTeacherQuestionInput()
+    if (!input.q) throw new Error('Введіть текст питання')
+    const id = $<HTMLInputElement>('teacher-question-id').value
+    const version = Number($<HTMLInputElement>('teacher-question-version').value)
+    if (id) await updateTeacherQuestion(id, { ...input, ...(version ? { expectedEditVersion: version } : {}) })
+    else await createTeacherQuestion(topicId, input)
+    closeTeacherQuestionForm()
+    await selectTeacherTopic(topicId)
+    await loadTeacherTopics()
+  } catch (caught) {
+    if (error) error.textContent = friendlyError((caught as Error).message)
+  }
+})
 
 // ── Classroom game (advanced School Mode) ────────────────────────────────────
 // The teacher creates a session, shows its class code, and sees the anonymous
@@ -1677,7 +1988,7 @@ function startSchoolPolling() {
 }
 
 type SchoolGrade = 1 | 2 | 3 | 4
-type SchoolTopicChoice = SchoolTopicId | ''
+type SchoolTopicChoice = SchoolTopicId | `teacher:${string}` | ''
 
 let selectedSchoolTopicId: SchoolTopicChoice = ''
 let schoolQuestionAvailability: SchoolQuestionAvailability | null = null
@@ -1695,9 +2006,12 @@ function updateSchoolLaunchSummary() {
   const grade = $maybe('school-summary-grade')
   const topic = $maybe('school-summary-topic')
   if (grade) grade.textContent = `${currentSchoolGrade()} клас`
-  if (topic) topic.textContent = selectedSchoolTopicId
-    ? getSchoolTopicConfig(selectedSchoolTopicId)?.label ?? 'Змішана гра'
-    : 'Змішана гра'
+  const privateId = selectedSchoolTopicId.startsWith('teacher:') ? selectedSchoolTopicId.slice(8) : null
+  if (topic) topic.textContent = privateId
+    ? teacherTopics.find(item => item.id === privateId)?.title ?? 'Моя тема'
+    : selectedSchoolTopicId
+      ? getSchoolTopicConfig(selectedSchoolTopicId)?.label ?? 'Змішана гра'
+      : 'Змішана гра'
 }
 
 function questionWord(count: number): string {
@@ -1710,6 +2024,13 @@ function questionWord(count: number): string {
 }
 
 function topicAvailability(id: SchoolTopicChoice) {
+  if (id.startsWith('teacher:')) {
+    const topic = teacherTopics.find(item => item.id === id.slice(8))
+    return topic ? {
+      total: topic.questionCount,
+      byDifficulty: topic.byDifficulty ?? { easy: topic.questionCount, medium: topic.questionCount, hard: topic.questionCount },
+    } : null
+  }
   if (!schoolQuestionAvailability) return null
   return id === ''
     ? schoolQuestionAvailability.mixed
@@ -1718,15 +2039,18 @@ function topicAvailability(id: SchoolTopicChoice) {
 
 function renderQuestionTopicCard(id: SchoolTopicChoice): string {
   const grade = currentSchoolGrade()
-  const topic = id ? getSchoolTopicConfig(id) : null
+  const privateTopic = id.startsWith('teacher:') ? teacherTopics.find(item => item.id === id.slice(8)) : null
+  const topic = id && !privateTopic ? getSchoolTopicConfig(id) : null
   const status = topic?.grades[grade] ?? 'core'
   const availability = topicAvailability(id)
-  const badge = topic
+  const badge = privateTopic
+    ? '<span class="question-topic-card__badge question-topic-card__badge--mixed">Моя тема</span>'
+    : topic
     ? `<span class="question-topic-card__badge question-topic-card__badge--${status}">${status === 'core' ? 'Рекомендовано' : 'Додаткова тема'}</span>`
     : '<span class="question-topic-card__badge question-topic-card__badge--mixed">Кілька тем</span>'
-  const label = topic?.label ?? 'Змішана гра'
-  const description = topic?.description ?? 'Питання з різних тем інформатики для повторення або швидкої гри.'
-  const icon = topic?.icon ?? 'fa-random'
+  const label = privateTopic?.title ?? topic?.label ?? 'Змішана гра'
+  const description = privateTopic?.description ?? topic?.description ?? 'Питання з різних тем інформатики для повторення або швидкої гри.'
+  const icon = privateTopic ? 'fa-star' : topic?.icon ?? 'fa-random'
   const availabilityLabel = availability
     ? `${availability.total} ${questionWord(availability.total)}`
     : 'Перевіряємо…'
@@ -1747,16 +2071,18 @@ function renderSchoolQuestionTopics() {
   const grade = currentSchoolGrade()
   const topics = [...SCHOOL_TOPICS]
     .sort((a, b) => (a.grades[grade] === 'core' ? 0 : 1) - (b.grades[grade] === 'core' ? 0 : 1))
+  const privateTopics = teacherTopics.filter(topic => topic.grade === grade)
   picker.innerHTML = `
     <div class="activity-picker__grid question-topic-picker__grid">
       ${renderQuestionTopicCard('')}
+      ${privateTopics.map(topic => renderQuestionTopicCard(`teacher:${topic.id}`)).join('')}
       ${topics.map(topic => renderQuestionTopicCard(topic.id)).join('')}
     </div>`
 
   picker.querySelectorAll<HTMLButtonElement>('.question-topic-card').forEach(card => {
     card.addEventListener('click', () => {
       const id = card.dataset['schoolTopic'] ?? ''
-      if (id === '' || getSchoolTopicConfig(id)) selectSchoolTopic(id as SchoolTopicChoice)
+      if (id === '' || id.startsWith('teacher:') || getSchoolTopicConfig(id)) selectSchoolTopic(id as SchoolTopicChoice)
     })
   })
   updateSchoolQuestionAvailabilityPresentation()
@@ -1872,6 +2198,13 @@ document.querySelectorAll<HTMLButtonElement>('[data-school-grade]').forEach(butt
     const grade = Number(button.dataset['schoolGrade'])
     if (grade < 1 || grade > 4) return
     $<HTMLInputElement>('school-grade').value = String(grade)
+    if (selectedSchoolTopicId.startsWith('teacher:')) {
+      const topic = teacherTopics.find(item => item.id === selectedSchoolTopicId.slice(8))
+      if (!topic || topic.grade !== grade) {
+        selectedSchoolTopicId = ''
+        $<HTMLInputElement>('school-topic').value = ''
+      }
+    }
     document.querySelectorAll<HTMLButtonElement>('[data-school-grade]').forEach(item => {
       item.setAttribute('aria-pressed', String(item === button))
     })
@@ -2023,19 +2356,20 @@ $maybe<HTMLSelectElement>('school-activity-level')?.addEventListener('change', r
 
 populateSchoolActivities()
 
-// This is the content-source boundary for a classroom session. A future
-// "My questions" source can extend this payload without rebuilding the form.
+// One explicit source per session: the published catalog or an owned topic.
 function classroomSessionPayload() {
   const difficulty = $<HTMLSelectElement>('school-difficulty').value
   const schoolTopicId = $<HTMLInputElement>('school-topic').value
+  const teacherTopicId = schoolTopicId.startsWith('teacher:') ? schoolTopicId.slice(8) : null
   const topicFilter = schoolTopicId ? schoolTopicToSessionFilter(schoolTopicId) : null
   const sessionTopicId = schoolTopicId ? schoolTopicToSessionId(schoolTopicId) : null
   return {
     grade: Number($<HTMLInputElement>('school-grade').value),
-    track: topicFilter?.track ?? 'informatics',
+    ...(!teacherTopicId ? { track: topicFilter?.track ?? 'informatics' } : {}),
     ...(difficulty ? { difficulty } : {}),
-    ...(sessionTopicId ? { schoolTopicId: sessionTopicId } : {}),
-    ...(topicFilter?.topic ? { topic: topicFilter.topic } : {}),
+    ...(teacherTopicId ? { teacherTopicId } : {}),
+    ...(!teacherTopicId && sessionTopicId ? { schoolTopicId: sessionTopicId } : {}),
+    ...(!teacherTopicId && topicFilter?.topic ? { topic: topicFilter.topic } : {}),
     questionsCount: Number($<HTMLSelectElement>('school-count').value),
   }
 }
@@ -2101,9 +2435,12 @@ function renderPreviewOptions(question: SchoolPreviewQuestion): string {
 function renderSchoolPreview(session: SchoolSessionInfo, questions: SchoolPreviewQuestion[]) {
   const meta = $maybe('school-preview-meta')
   if (meta) {
-    const topicLabel = selectedSchoolTopicId
-      ? getSchoolTopicConfig(selectedSchoolTopicId)?.label ?? 'Змішана гра'
-      : 'Змішана гра'
+    const privateId = selectedSchoolTopicId.startsWith('teacher:') ? selectedSchoolTopicId.slice(8) : null
+    const topicLabel = privateId
+      ? teacherTopics.find(topic => topic.id === privateId)?.title ?? 'Моя тема'
+      : selectedSchoolTopicId
+        ? getSchoolTopicConfig(selectedSchoolTopicId)?.label ?? 'Змішана гра'
+        : 'Змішана гра'
     const difficulty = DIFFICULTY_LABELS[session.difficulty ?? ''] ?? 'будь-яка'
     meta.textContent = `${session.grade} клас · ${topicLabel} · складність: ${difficulty} · питань: ${questions.length}`
   }
@@ -2111,7 +2448,10 @@ function renderSchoolPreview(session: SchoolSessionInfo, questions: SchoolPrevie
   const list = $maybe('school-preview-list')
   if (list) {
     list.innerHTML = questions.map((question, index) => {
-      const topic = question.topic ? (TOPIC_LABELS[question.topic] ?? question.topic) : ''
+      const privateId = question.topic?.startsWith('teacher:') ? question.topic.slice(8) : null
+      const topic = privateId
+        ? teacherTopics.find(item => item.id === privateId)?.title ?? 'Моя тема'
+        : question.topic ? (TOPIC_LABELS[question.topic] ?? question.topic) : ''
       return `
         <li class="school-preview__item">
           <p class="school-preview__q">${index + 1}. ${esc(question.q)}</p>
@@ -2331,6 +2671,7 @@ async function openSchoolSession(id: string, review = false) {
   schoolSetError('')
   try {
     const { session } = await getSchoolSession(id)
+    activateTeacherSection('school')
     hideSchoolPreview()
     showSchoolLobby(session, review || session.status === 'finished')
   } catch (err) {

@@ -147,6 +147,32 @@ test('school activity screen stays visible in mission-active mode', async () => 
   )
 })
 
+test('school join makes the nickname explicit and prioritizes it for QR entry', async () => {
+  const [html, script] = await Promise.all([
+    readRepoFile('school.html'),
+    readRepoFile('school.ts'),
+  ])
+
+  assert.match(html, /<label for="join-nickname">Як тебе називати у грі\?<\/label>/)
+  assert.match(html, /id="join-privacy"[^>]*>Не пиши справжнє ім’я або прізвище/)
+  assert.doesNotMatch(html, /Ви вчитель\?/)
+  assert.match(script, /mission-intro'\)\?\.classList\.add\('school-join--shared'\)/)
+  assert.match(script, /setTimeout\(\(\) => nickInput\?\.focus\(\), 0\)/)
+})
+
+test('teacher cabinet separates games, owned content and lesson results', async () => {
+  const [html, client] = await Promise.all([
+    readRepoFile('teacher.html'),
+    readRepoFile('features/api/client.ts'),
+  ])
+
+  assert.match(html, /data-section="content"/)
+  assert.match(html, /data-section="school-results"/)
+  assert.match(html, /id="teacher-question-type"/)
+  assert.match(client, /\/api\/school\/teacher-topics/)
+  assert.match(client, /teacherTopicId\?: string/)
+})
+
 test('teacher and admin runtime templates use component classes', async () => {
   const sources = await Promise.all([
     readRepoFile('teacher.ts'),

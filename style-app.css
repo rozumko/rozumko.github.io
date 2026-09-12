@@ -1008,6 +1008,91 @@
 .info-card--center { text-align: center; }
 .school-entry-help { margin-top: var(--sp-6); }
 .school-entry-help + .school-entry-help { margin-top: var(--sp-3); }
+.school-join-page {
+  background:
+    radial-gradient(circle at 12% 18%, rgba(253, 224, 71, .32) 0 5rem, transparent 5.1rem),
+    radial-gradient(circle at 88% 78%, rgba(96, 165, 250, .24) 0 8rem, transparent 8.1rem),
+    linear-gradient(150deg, #eef2ff 0%, #dbeafe 100%);
+}
+.school-join-page #site-header,
+.school-join-page #site-footer { display: none; }
+.school-join-page .app-main {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 48rem;
+  padding-block: var(--sp-6);
+}
+.school-join { width: 100%; }
+.school-join__brand {
+  width: max-content;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0 auto var(--sp-6);
+  color: var(--clr-text);
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  text-decoration: none;
+}
+.school-join__eyebrow {
+  margin: 0 0 var(--sp-2);
+  text-align: center;
+  color: var(--clr-primary);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  font-size: var(--font-size-sm);
+}
+.school-join .app-subtitle { margin-bottom: var(--sp-5); }
+.school-join .code-entry {
+  max-width: 31rem;
+  padding: clamp(var(--sp-5), 5vw, var(--sp-8));
+  gap: var(--sp-5);
+  border: 2px solid #fff;
+  box-shadow: 0 1.5rem 4rem rgba(30, 64, 175, .16);
+}
+.school-join__field { display: grid; gap: var(--sp-2); }
+.school-join__field label {
+  color: var(--clr-text);
+  font-size: var(--font-size-lg);
+  font-weight: 800;
+}
+.school-join__field--nickname {
+  padding: var(--sp-4);
+  border-radius: var(--r-xl);
+  background: #eff6ff;
+  border: 2px solid #93c5fd;
+}
+.school-join__field--nickname .field-input {
+  min-height: 4.25rem;
+  background: #fff;
+  border: 3px solid #2563eb;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+.school-join__field--nickname .field-input::placeholder { color: #64748b; font-weight: 500; }
+.school-join__privacy { margin: 0; color: #475569; font-size: var(--font-size-sm); }
+.school-join__code-summary {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-4);
+  justify-self: center;
+  border-radius: 999px;
+  background: #e0e7ff;
+  color: #3730a3;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+.school-join--shared .school-join__field--nickname { order: -1; }
+.school-join .kid-action { font-size: 1.2rem; }
+@media (max-width: 520px) {
+  .school-join-page .app-main { align-items: flex-start; padding: var(--sp-5) var(--sp-3); }
+  .school-join__brand { margin-bottom: var(--sp-4); }
+  .school-join .code-entry { border-radius: var(--r-xl); padding: var(--sp-4); }
+  .school-join__field--nickname { padding: var(--sp-3); }
+}
 .info-card a { color: var(--clr-primary); font-weight: 700; }
 .info-card a:hover { text-decoration: underline; }
 .demo-report__summary { font-weight: 700; }

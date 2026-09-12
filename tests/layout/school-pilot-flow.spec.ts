@@ -232,6 +232,7 @@ test('pilot happy path: teacher starts a code game, child completes it, class su
   // way back to the list rather than pretending to start a game.
   await teacher.locator('#school-new-btn').click()
   await expect(teacher.locator('#school-mode-tabs')).toBeVisible()
+  await teacher.locator('[data-section="school-results"]').click()
   await expect(teacher.locator('#school-history')).toBeVisible()
   await teacher.locator('.school-history__open').click()
   await expect(teacher.locator('#school-live')).toBeVisible()
@@ -239,6 +240,7 @@ test('pilot happy path: teacher starts a code game, child completes it, class su
   await expect(teacher.locator('#school-new-btn')).toContainText('До списку ігор')
   await teacher.locator('#school-new-btn').click()
   await expect(teacher.locator('#school-live')).toBeHidden()
+  await teacher.locator('[data-section="school-results"]').click()
   await expect(teacher.locator('#school-history')).toBeVisible()
 })
 
@@ -263,6 +265,7 @@ test('an expired unfinished session opens as a read-only history view', async ({
   })
   await teacher.goto('/teacher.html')
 
+  await teacher.locator('[data-section="school-results"]').click()
   await expect(teacher.locator('#school-history')).toBeVisible()
   await expect(teacher.locator('.school-history__open')).toHaveText('Переглянути результати')
   await teacher.locator('.school-history__open').click()

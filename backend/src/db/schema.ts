@@ -48,6 +48,9 @@ export const questions = pgTable('questions', {
   publishedBy: text('published_by'),
   reviewedAt:  timestamp('reviewed_at', { withTimezone: true }),
   publishedAt: timestamp('published_at', { withTimezone: true }),
+  // Private teacher-authored questions point to an owned topic. Public/admin
+  // content keeps this null and continues through the editorial workflow.
+  teacherTopicId: uuid('teacher_topic_id'),
   createdAt:   timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt:   timestamp('updated_at', { withTimezone: true }).defaultNow(),
 })
@@ -159,6 +162,19 @@ export const appUsers = pgTable('app_users', {
 
 export type AppUser = typeof appUsers.$inferSelect
 
+export const teacherQuestionTopics = pgTable('teacher_question_topics', {
+  id:          uuid('id').primaryKey().defaultRandom(),
+  teacherId:   uuid('teacher_id').notNull().references(() => appUsers.id),
+  title:       text('title').notNull(),
+  description: text('description'),
+  grade:       integer('grade').notNull(),
+  archivedAt:  timestamp('archived_at', { withTimezone: true }),
+  createdAt:   timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt:   timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
+export type TeacherQuestionTopic = typeof teacherQuestionTopics.$inferSelect
+
 export const teacherClasses = pgTable('teacher_classes', {
   id:        uuid('id').primaryKey().defaultRandom(),
   teacherId: uuid('teacher_id').notNull().references(() => appUsers.id),
@@ -231,6 +247,9 @@ export const schoolSessionQuestions = pgTable('school_session_questions', {
   sessionId:  uuid('session_id').notNull().references(() => schoolSessions.id, { onDelete: 'cascade' }),
   questionId: uuid('question_id').notNull().references(() => questions.id),
   position:   integer('position').notNull(),
+  // Immutable server-side copy used for delivery and scoring. Nullable only
+  // for sessions created before migration 0048.
+  snapshot:   jsonb('snapshot').$type<Record<string, unknown>>(),
 })
 
 export type SchoolSessionQuestion = typeof schoolSessionQuestions.$inferSelect

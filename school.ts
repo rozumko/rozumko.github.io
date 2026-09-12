@@ -480,7 +480,28 @@ const codeInput  = $maybe<HTMLInputElement>('join-code')
 const nickInput  = $maybe<HTMLInputElement>('join-nickname')
 
 const sharedCode = new URLSearchParams(window.location.search).get('code')?.trim() ?? ''
-if (codeInput && /^\d{6}$/.test(sharedCode)) codeInput.value = sharedCode
+if (codeInput && /^\d{6}$/.test(sharedCode)) {
+  codeInput.value = sharedCode
+  codeInput.readOnly = true
+  $maybe('join-code-field')?.classList.add('hidden')
+  const summary = $maybe('join-code-summary')
+  if (summary) {
+    summary.textContent = `Код гри ${sharedCode}`
+    summary.classList.remove('hidden')
+  }
+  $maybe('mission-intro')?.classList.add('school-join--shared')
+  const title = $maybe('join-title')
+  const subtitle = $maybe('join-subtitle')
+  if (title) title.textContent = 'Як тебе називати у грі?'
+  if (subtitle) subtitle.textContent = 'Код уже готовий. Придумай прізвисько — і заходь!'
+  window.setTimeout(() => nickInput?.focus(), 0)
+} else {
+  window.setTimeout(() => codeInput?.focus(), 0)
+}
+
+codeInput?.addEventListener('input', () => {
+  codeInput.value = codeInput.value.replace(/\D/g, '').slice(0, 6)
+})
 
 if (avatarWrap) {
   AVATARS.forEach(slug => {
@@ -547,6 +568,14 @@ joinBtn?.addEventListener('click', async () => {
     if (joinBtn) joinBtn.disabled = false
   }
 })
+
+for (const input of [codeInput, nickInput]) {
+  input?.addEventListener('keydown', event => {
+    if (event.key !== 'Enter') return
+    event.preventDefault()
+    joinBtn?.click()
+  })
+}
 
 function showResult(summary: MissionSummary) {
   clearWaitingPoll()

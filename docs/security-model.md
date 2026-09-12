@@ -213,6 +213,24 @@ full document reload before private API calls or dashboard rendering. A
 document holding a Supabase session never loads Turnstile; the third-party
 script is limited to the unauthenticated credential-grant document.
 
+### Teacher-Owned Question Library — **[IMPLEMENTED]**
+
+Migration `0048` and the authenticated `/api/school/teacher-*` routes provide
+private classroom authoring without weakening the public content workflow:
+
+- every topic is owned by one `app_users` teacher row; every list, read, edit
+  and archive query includes that database-owned teacher id;
+- teacher questions remain private `draft` rows with no delivery channel, so
+  neither the public question API nor static exports can publish them;
+- only the owning teacher may request the answer-bearing authoring payload;
+- launching a class game verifies topic ownership and matching grade, then
+  stores an immutable answer-bearing snapshot in `school_session_questions`;
+- student and projector delivery sanitize that snapshot, while participant and
+  projector answers are scored from the server-held snapshot. Editing or
+  archiving the library item therefore cannot change an already created game;
+- `teacher_question_topics` has RLS enabled with no browser-facing policy. All
+  browser database access continues through the backend API.
+
 ## Database And RLS
 
 The backend is the only component that accesses application tables. Migration
@@ -223,6 +241,9 @@ progress), `0032`-`0034` (micro-lessons, path maps and their immutable
 revisions), `0036`-`0038` (`question_revisions`, `micro_lesson_revisions`,
 `mission_revisions`) and `0041` (`content_publications`). A regression test
 fails if any application table is left uncovered.
+Migration `0048` applies the same deny-by-default RLS rule to
+`teacher_question_topics`; its answer-bearing session snapshots remain inside
+the already protected `school_session_questions` table.
 No permissive browser-facing policies are created, so accidental Supabase Data
 API/grant exposure remains deny-by-default.
 No frontend code may call Supabase Data API tables directly.
@@ -678,7 +699,9 @@ through a pull request.
   Dependabot, pull-request dependency review and scheduled/manual
   `npm audit --audit-level=high`.
 - teacher refresh tokens are not persisted to `localStorage`; session writes go
-  through the frontend session helper.
+  through the frontend session helper;
+- the teacher library migration is RLS-protected, topic access stays scoped to
+  the requesting teacher and created games store immutable question snapshots.
 
 `backend/src/routes/school-flow.test.ts` protects the classroom-game
 invariants:
