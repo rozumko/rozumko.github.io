@@ -409,10 +409,29 @@ test.describe('accessibility smoke: home and school missions', () => {
     await page.goto('/school.html?code=123456')
     await expect(page.locator('#join-nickname')).toBeFocused()
     await expect(page.locator('#join-code-field')).toBeHidden()
-    await expect(page.locator('#join-code-summary')).toHaveText('Код гри 123456')
-    await expect(page.locator('#site-header')).toBeHidden()
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
-    expect(overflow).toBeLessThanOrEqual(0)
+    await expect(page.locator('#join-code-summary')).toHaveText('Гра 123456')
+    await expect(page.locator('#site-header, #site-footer, .school-join__brand, .school-join__eyebrow')).toHaveCount(0)
+    const overflow = await page.evaluate(() => ({
+      horizontal: document.documentElement.scrollWidth - window.innerWidth,
+      vertical: document.documentElement.scrollHeight - window.innerHeight,
+    }))
+    expect(overflow.horizontal).toBeLessThanOrEqual(0)
+    expect(overflow.vertical).toBeLessThanOrEqual(0)
+  })
+
+  test('manual join is one compact centered card on desktop', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto('/school.html')
+
+    await expect(page.locator('#site-header, #site-footer, .school-join__brand, .school-join__eyebrow')).toHaveCount(0)
+    await expect(page.locator('#join-code-field')).toBeVisible()
+    await expect(page.locator('#join-nickname')).toBeVisible()
+    const card = await page.locator('.school-join .code-entry').boundingBox()
+    expect(card).not.toBeNull()
+    expect(card!.width).toBeLessThanOrEqual(400)
+    expect(card!.height).toBeLessThanOrEqual(460)
+    expect(Math.abs(card!.x + card!.width / 2 - 720)).toBeLessThanOrEqual(2)
+    expect(Math.abs(card!.y + card!.height / 2 - 450)).toBeLessThanOrEqual(24)
   })
 
   test('home choice options expose radio semantics and checked state', async ({ page }) => {

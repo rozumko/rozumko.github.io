@@ -486,14 +486,10 @@ if (codeInput && /^\d{6}$/.test(sharedCode)) {
   $maybe('join-code-field')?.classList.add('hidden')
   const summary = $maybe('join-code-summary')
   if (summary) {
-    summary.textContent = `Код гри ${sharedCode}`
+    summary.textContent = `Гра ${sharedCode}`
     summary.classList.remove('hidden')
   }
   $maybe('mission-intro')?.classList.add('school-join--shared')
-  const title = $maybe('join-title')
-  const subtitle = $maybe('join-subtitle')
-  if (title) title.textContent = 'Як тебе називати у грі?'
-  if (subtitle) subtitle.textContent = 'Код уже готовий. Придумай прізвисько — і заходь!'
   window.setTimeout(() => nickInput?.focus(), 0)
 } else {
   window.setTimeout(() => codeInput?.focus(), 0)

@@ -148,16 +148,20 @@ test('school activity screen stays visible in mission-active mode', async () => 
 })
 
 test('school join makes the nickname explicit and prioritizes it for QR entry', async () => {
-  const [html, script] = await Promise.all([
+  const [html, script, serviceWorker] = await Promise.all([
     readRepoFile('school.html'),
     readRepoFile('school.ts'),
+    readRepoFile('public/sw.js'),
   ])
 
-  assert.match(html, /<label for="join-nickname">Як тебе називати у грі\?<\/label>/)
+  assert.match(html, /<label for="join-nickname">Придумай прізвисько<\/label>/)
   assert.match(html, /id="join-privacy"[^>]*>Не пиши справжнє ім’я або прізвище/)
   assert.doesNotMatch(html, /Ви вчитель\?/)
+  assert.doesNotMatch(html, /id="site-header"|id="site-footer"|src="layout\.js"/)
+  assert.doesNotMatch(html, /school-join__brand|school-join__eyebrow|join-subtitle/)
   assert.match(script, /mission-intro'\)\?\.classList\.add\('school-join--shared'\)/)
   assert.match(script, /setTimeout\(\(\) => nickInput\?\.focus\(\), 0\)/)
+  assert.match(serviceWorker, /const CACHE_NAME = 'rozumko-v6'/)
 })
 
 test('teacher cabinet separates games, owned content and lesson results', async () => {
