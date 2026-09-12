@@ -510,7 +510,10 @@ export async function schoolRoutes(app: FastifyInstance, opts: SchoolRoutesOptio
       explanation: req.body.explanation?.trim() || null,
       difficulty: req.body.difficulty,
       track: 'informatics',
-      topic: `teacher:${topic.id}`,
+      // The owned topic is represented by teacherTopicId. `topic` must stay
+      // null because its database constraint accepts only canonical taxonomy
+      // slugs and rejects teacher-owned UUID markers.
+      topic: null,
       grade: topic.grade,
       isOlympiad: false,
       channels: [],
