@@ -59,7 +59,8 @@ async function mockTeacherApi(page: Page, options: { lessonEngine: boolean; sess
     window.fetch = async (input, init) => {
       const url = input instanceof Request ? input.url : String(input)
       // Board checks, classes and runs are served by page.route in the test process.
-      if (!url.includes('/api/') || url.endsWith('/check') || url.includes('/lesson-runs') || url.includes('/api/teacher/classes')) {
+      if (!url.includes('/api/') || url.endsWith('/check') || url.includes('/lesson-runs') || url.includes('/api/teacher/classes')
+        || url.includes('/api/teacher/classroom-remote')) {
         return originalFetch(input, init)
       }
       const path = new URL(url).pathname
@@ -994,4 +995,83 @@ test('a rotated class link falls back to the code screen, and a code join still 
   await expect(page.locator('#lj-number')).toHaveText('№ 4')
   expect(joins[0]!.code).toBe('482913')
   expect(joins[0]!.seat).toBe(await page.evaluate(() => localStorage.getItem('rozumko_lesson_seat')))
+})
+
+// ── Classroom Remote from the run console ───────────────────────────────────
+
+test('the teacher connects Classroom Remote once and opens the lesson on every laptop from the console', async ({ page }) => {
+  await mockTeacherApi(page, { lessonEngine: true })
+  await routeRunServer(page)
+  const remote = { connected: false, opened: 0, keys: [] as string[] }
+  const json = (body: unknown, status = 200) => ({ status, contentType: 'application/json', body: JSON.stringify(body) })
+  const connection = () => remote.connected
+    ? { configured: true, connected: true, keyHint: 'AAAA', roomName: 'Кабінет інформатики', organizationName: 'UGS' }
+    : { configured: true, connected: false }
+  await page.route('**/api/teacher/classroom-remote', route => {
+    const request = route.request()
+    if (request.method() === 'PUT') {
+      const { key } = request.postDataJSON() as { key: string }
+      remote.keys.push(key)
+      remote.connected = true
+    }
+    if (request.method() === 'DELETE') remote.connected = false
+    return route.fulfill(json(connection()))
+  })
+  await page.route(`**/api/teacher/lesson-runs/${RUN_ID}/classroom-remote`, route => route.fulfill(json({
+    configured: true, connected: remote.connected, roomName: 'Кабінет інформатики',
+    showingThisClass: remote.opened > 0, revision: 3 + remote.opened,
+    summary: { total: 3, online: 2, synced: remote.opened > 0 ? 2 : 0 },
+    devices: [
+      { deviceName: 'PC-01', online: true, synced: remote.opened > 0 },
+      { deviceName: 'PC-02', online: true, synced: remote.opened > 0 },
+      { deviceName: 'PC-03', online: false, synced: false },
+    ],
+  })))
+  await page.route(`**/api/teacher/lesson-runs/${RUN_ID}/classroom-remote/open`, route => {
+    remote.opened += 1
+    return route.fulfill(json({ revision: 4 }))
+  })
+  page.on('dialog', dialog => void dialog.accept())
+
+  await page.goto('/lesson-engine.html?lesson=g2-m2-l8')
+  await page.getByRole('button', { name: 'Підготувати урок' }).click()
+  const panel = page.getByRole('region', { name: 'Ноутбуки класу' })
+  const key = panel.getByLabel('Ключ інтеграції Classroom Remote')
+  await key.fill('not-a-key')
+  await panel.getByRole('button', { name: 'Підключити' }).click()
+  await expect(panel.locator('.le-classlink__message')).toContainText('починається з crk_')
+  expect(remote.keys).toEqual([])
+
+  const token = `crk_${'1'.repeat(32)}_${'A'.repeat(43)}`
+  await key.fill(token)
+  await panel.getByRole('button', { name: 'Підключити' }).click()
+  await expect(panel.locator('.le-remote__room')).toHaveText('Кабінет: Кабінет інформатики')
+  await expect(panel.locator('.le-remote__summary')).toHaveText('2 з 3 онлайн · урок ще не відкрито')
+  expect(remote.keys).toEqual([token])
+  const axe = await new AxeBuilder({ page }).withTags(WCAG_AA_TAGS).analyze()
+  expect(axe.violations.map(v => v.id)).toEqual([])
+
+  await panel.getByRole('button', { name: 'Відкрити урок на ноутбуках' }).click()
+  await expect(panel.locator('.le-remote__summary')).toHaveText('2 з 3 онлайн · 2 відкрили урок')
+  await expect(panel.getByRole('list', { name: 'Ноутбуки кабінету' }).getByRole('listitem')).toHaveText([
+    'PC-01: урок відкрито ✓', 'PC-02: урок відкрито ✓', 'PC-03: офлайн',
+  ])
+  expect(remote.opened).toBe(1)
+  // The key never comes back to the page.
+  expect(await page.content()).not.toContain(token)
+
+  await panel.getByRole('button', { name: 'Відключити Classroom Remote' }).click()
+  await expect(panel.getByLabel('Ключ інтеграції Classroom Remote')).toBeVisible()
+})
+
+test('without a server-side integration the laptops panel stays hidden', async ({ page }) => {
+  await mockTeacherApi(page, { lessonEngine: true })
+  await routeRunServer(page)
+  await page.route('**/api/teacher/classroom-remote', route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({ configured: false, connected: false }),
+  }))
+  await page.goto('/lesson-engine.html?lesson=g2-m2-l8')
+  await page.getByRole('button', { name: 'Підготувати урок' }).click()
+  await expect(page.getByRole('region', { name: 'Приєднання учнів' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Ноутбуки класу' })).toHaveCount(0)
 })

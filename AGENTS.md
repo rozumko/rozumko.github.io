@@ -74,6 +74,7 @@ backend/src/lib/lesson-evidence.ts ← Lesson Engine evidence rows, outcome summ
 features/lesson-engine/classroom-control.ts ← ClassroomControlProvider boundary (fake only on loopback ?classroom=fake); device-assignments.ts + /launch single-use links
 features/lesson-engine/attempt-outbox.ts ← offline answer outbox on the device (IndexedDB via outbox-idb.ts; retry only codes in backend/src/lib/lesson-attempt-refusals.ts)
 backend/src/routes/class-lesson-links.ts ← class link (#class=, HMAC key, rotate) + remembered seats; /api/student/lesson/join-class; console class-link-panel.ts
+backend/src/routes/classroom-remote.ts ← Classroom Remote integration (encrypted key per teacher, env CLASSROOM_REMOTE_API_URL + INTEGRATION_ENCRYPTION_KEY); console classroom-remote-panel.ts
 backend/src/db/          ← Drizzle schema + migration runner
 backend/drizzle/         ← SQL-міграції
 public/                  ← sw.js, manifest, favicon (статичні assets)

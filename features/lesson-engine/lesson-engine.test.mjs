@@ -235,3 +235,10 @@ test('the class link panel explains remembered seats in words', async () => {
   assert.match(seatsLine(0), /ще не запам’ятовано/)
   assert.match(seatsLine(3), /Запам’ятовано місць: 3/)
 })
+
+test('the laptops panel summarises the room in words', async () => {
+  const { roomSummaryLine } = await import('./classroom-remote-panel.ts')
+  assert.equal(roomSummaryLine({ total: 0, online: 0, synced: 0 }, false), 'У кабінеті ще немає підключених ноутбуків.')
+  assert.equal(roomSummaryLine({ total: 14, online: 12, synced: 0 }, false), '12 з 14 онлайн · урок ще не відкрито')
+  assert.equal(roomSummaryLine({ total: 14, online: 12, synced: 11 }, true), '12 з 14 онлайн · 11 відкрили урок')
+})

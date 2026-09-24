@@ -111,6 +111,19 @@ test('Lesson Engine device traffic is limited per verified device, not per class
   assert.ok(!/rateLimit: \{ max: 30,/.test(source), 'no per-IP join ceiling below a class size')
 })
 
+test('the Classroom Remote client calls only the configured origin, without redirects, and never returns the key', () => {
+  const lib = readFileSync(new URL('./lib/classroom-remote.ts', import.meta.url), 'utf8')
+  const routes = readFileSync(new URL('./routes/classroom-remote.ts', import.meta.url), 'utf8')
+  const fetches = lib.match(/fetch\(/g) ?? []
+  assert.equal(fetches.length, 1, 'one outbound call site')
+  assert.match(lib, /fetch\(`\$\{config\.apiOrigin\}\$\{path\}`/, 'the origin comes only from server configuration')
+  assert.match(lib, /redirect: 'error'/)
+  assert.match(lib, /AbortSignal\.timeout\(/)
+  // Responses carry a four-character hint, never the ciphertext or the key.
+  assert.ok(!/reply\.send\([^)]*keyCiphertext/.test(routes))
+  assert.match(routes, /keyHint: classroomRemoteConnections\.keyHint/)
+})
+
 test('the teacher session list stays scoped to the requesting teacher', () => {
   const schoolSource = readFileSync(new URL('./routes/school.ts', import.meta.url), 'utf8')
   // The list hands back join codes, so an unscoped query would let one teacher

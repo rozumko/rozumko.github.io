@@ -230,6 +230,20 @@ Unmapping forgets the seat, and deleting a student removes theirs. A seat
 whose device the teacher disconnected cannot rejoin that lesson through the
 class link.
 
+Classroom Remote from the run console (migration `0056`) works as follows.
+- A teacher's Classroom Remote integration key is checked against Classroom
+  Remote, then stored encrypted: AES-256-GCM under
+  `INTEGRATION_ENCRYPTION_KEY`, with the teacher id as AAD.
+- Only its last four characters are ever returned.
+- The backend contacts only the origin in `CLASSROOM_REMOTE_API_URL`, never
+  a URL from a request or the database. Calls have a timeout, follow no
+  redirects, cap the response size, and parse it defensively.
+- The only URL it sends is the class link. Classroom Remote receives no
+  names and returns technical device status.
+- The key itself can open only HTTPS pages on its bound trusted domain. The
+  teacher can revoke it in Classroom Remote at any time.
+- Without both variables, the feature is off.
+
 Student lesson traffic is rate-limited per *verified device*: the token comes
 from the body, and the limiter runs at preValidation. Only unverified requests
 share the per-IP bucket. Joins allow a whole class behind one NAT address.
@@ -352,7 +366,8 @@ revisions), `0036`-`0038` (`question_revisions`, `micro_lesson_revisions`,
 (`lesson_runs`, `lesson_run_students`, `lesson_run_events`) `0051`
 (`lesson_run_devices`) `0052` (`lesson_run_dispatches`, `activity_attempts`), `0053`
 (`student_outcome_evidence`), `0054` (`device_assignments`) and `0055`
-(`lesson_class_links`, `lesson_class_seats`). A regression test
+(`lesson_class_links`, `lesson_class_seats`) and `0056`
+(`classroom_remote_connections`). A regression test
 fails if any application table is left uncovered.
 Migration `0048` applies the same deny-by-default RLS rule to
 `teacher_question_topics`; its answer-bearing session snapshots remain inside

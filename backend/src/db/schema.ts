@@ -881,3 +881,17 @@ export const lessonClassSeats = pgTable('lesson_class_seats', {
 }))
 
 export type LessonClassSeatRow = typeof lessonClassSeats.$inferSelect
+
+// Classroom Remote connection (0056): the teacher's integration key, encrypted
+// at rest (lib/classroom-remote.ts); only a four-character hint is ever shown.
+export const classroomRemoteConnections = pgTable('classroom_remote_connections', {
+  teacherId:        uuid('teacher_id').primaryKey().references(() => appUsers.id, { onDelete: 'cascade' }),
+  keyCiphertext:    text('key_ciphertext').notNull(),
+  keyHint:          text('key_hint').notNull(),
+  roomName:         text('room_name').notNull().default(''),
+  organizationName: text('organization_name').notNull().default(''),
+  createdAt:        timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:        timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type ClassroomRemoteConnectionRow = typeof classroomRemoteConnections.$inferSelect

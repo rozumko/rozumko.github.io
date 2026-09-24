@@ -1264,6 +1264,49 @@ export function getLessonRunReport(runId: string): Promise<LessonReport> {
 
 export interface DeviceAssignment { remoteDeviceId: string; classStudentId: string }
 
+// ─── Lesson Engine: Classroom Remote (the room's laptops) ─────────────────
+
+export interface ClassroomRemoteConnection {
+  /** False when the server has no integration configured: hide the feature. */
+  configured: boolean
+  connected: boolean
+  keyHint?: string
+  roomName?: string
+  organizationName?: string
+}
+
+export interface ClassroomRemoteRoomStatus {
+  configured: boolean
+  connected: boolean
+  roomName?: string
+  /** The laptops were told to show this class's link. */
+  showingThisClass?: boolean
+  revision?: number
+  summary?: { total: number; online: number; synced: number }
+  devices?: { deviceName: string; online: boolean; synced: boolean }[]
+}
+
+export function getClassroomRemoteConnection(): Promise<ClassroomRemoteConnection> {
+  return authRequest('/api/teacher/classroom-remote')
+}
+
+/** The key goes to our backend once; it is never read back. */
+export function connectClassroomRemote(key: string): Promise<ClassroomRemoteConnection> {
+  return authRequest('/api/teacher/classroom-remote', { method: 'PUT', body: JSON.stringify({ key }) })
+}
+
+export function disconnectClassroomRemote(): Promise<ClassroomRemoteConnection> {
+  return authRequest('/api/teacher/classroom-remote', { method: 'DELETE' })
+}
+
+export function getRunClassroomRemote(runId: string): Promise<ClassroomRemoteRoomStatus> {
+  return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}/classroom-remote`)
+}
+
+export function openRunOnClassroomRemote(runId: string): Promise<{ revision: number }> {
+  return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}/classroom-remote/open`, { method: 'POST' })
+}
+
 export interface ClassLessonLinkState {
   /** null until the teacher first turns the link on. */
   link: { enabled: boolean; version: number; path: string | null; updatedAt: string } | null

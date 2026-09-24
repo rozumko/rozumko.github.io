@@ -33,6 +33,18 @@ Do these in order. Nothing is visible to teachers until step 4.
    ```
    The script needs the flag on (step 3). If it reports that the engine is
    disabled, verify that the Render redeploy has finished before retrying.
+5. **Classroom Remote in the console (optional).**
+   1. Deploy Classroom Remote with integration API v1 (its repository, branch
+      with "integration keys").
+   2. On Render, set `CLASSROOM_REMOTE_API_URL` = `https://crr.itnauka.org`.
+   3. On Render, set `INTEGRATION_ENCRYPTION_KEY` = 64 hex characters:
+      `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
+      Keep it secret. Changing it disconnects every teacher, who then pastes a
+      key again.
+   4. Apply migration `0056`.
+
+   Without both variables, the «Ноутбуки класу» panel stays hidden, and the
+   class link can still be copied by hand.
 
 ## 2. Before each pilot lesson
 
@@ -43,12 +55,16 @@ Do these in order. Nothing is visible to teachers until step 4.
 - [ ] Each child device opens `https://<site>/lesson-join.html` in an
       up-to-date browser (Chrome, Edge or Safari). A bookmark or desktop
       shortcut on the lab computers saves time.
-- [ ] **Lab with Classroom Remote (once per class).**
-      1. In the console: «Приєднання учнів» → «Посилання класу (Classroom
-         Remote)» → «Увімкнути посилання класу» → «Копіювати».
-      2. In Classroom Remote, approve `rozumko.com` as a trusted domain (the
-         dashboard offers this the first time).
-      3. Save the link as a quick link named after the class.
+- [ ] **Lab with Classroom Remote (once per teacher).**
+      1. In Classroom Remote: «Налаштування та резервна копія» → «Ключі для
+         сервісів» → name «Розумко», domain `rozumko.com` → «Створити ключ».
+         Approve the domain if asked, then copy the key; it is shown once.
+      2. In the Rozumko run console: «Ноутбуки класу» → paste the key →
+         «Підключити».
+
+      Without the integration, use the class link instead: «Приєднання учнів»
+      → «Посилання класу (Classroom Remote)» → «Копіювати». Save it as a
+      quick link in Classroom Remote.
 - [ ] **Render cold start.** Ten minutes before the lesson, open
       `https://<backend>/health`. A free-plan backend sleeps and needs up to
       a minute to wake up. For real classes use a plan that does not sleep.
@@ -64,9 +80,12 @@ Do these in order. Nothing is visible to teachers until step 4.
    - **Code:** «Відкрити приєднання». Children type the 6-digit code and see
      a big number. The teacher matches each number to a name in
      «Приєднання учнів».
-   - **Class link via Classroom Remote:** press the class's quick link →
-     «Відкрити у класі». Every laptop opens the join page and joins by
-     itself; it waits if the lesson is not prepared yet. The first time,
+   - **Classroom Remote from the console:** «Ноутбуки класу» → «Відкрити
+     урок на ноутбуках». The panel shows «N з M онлайн · K відкрили урок» and
+     each laptop's state. Without the integration, use the saved quick link →
+     «Відкрити у класі» in Classroom Remote. Either way, every laptop opens
+     the join page and joins by itself; it waits if the lesson is not
+     prepared yet. The first time,
      match numbers to names as with a code. The laptop's seat is then
      remembered, and later lessons match the same child on that laptop
      automatically. Use «Забути місця» if laptops were moved.

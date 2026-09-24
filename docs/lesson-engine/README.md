@@ -624,6 +624,62 @@ the fake provider only. Removing it (`device_assignments`, `/launch`) is a
 separate change. Migration `0054` stays either way, because it may already
 be applied.
 
+## Classroom Remote from the run console
+
+The teacher never switches dashboards. Classroom Remote gained a small
+**integration API v1** in its own repository.
+- An integration key is created by the teacher in the Classroom Remote
+  dashboard. It is shown once, stored as a hash, bound to one trusted domain
+  of the room, and revocable.
+- With the key, a partner can read the room's technical status and set the
+  lesson URL, only to HTTPS on that domain.
+- The extension and its protocol are unchanged.
+
+Decisions (Rozumko side):
+
+- **One connection per teacher** (`classroom_remote_connections`,
+  migration `0056`), for the pilot: one teacher, one room. School-level
+  connections can come later.
+- **The key is a secret we hold on the teacher's behalf.**
+  - It is encrypted with AES-256-GCM under `INTEGRATION_ENCRYPTION_KEY`, and
+    the teacher id is the AAD, so a row copied to another teacher does not
+    decrypt.
+  - It is checked against Classroom Remote before it is stored.
+  - It never returns to a browser: only the last four characters are shown.
+- **Only one origin is ever contacted:** `CLASSROOM_REMOTE_API_URL`, from
+  server configuration, never from a request or the database. Calls have a
+  6-second timeout, follow no redirects, cap the response at 64 KB, and
+  parse it defensively. Without both variables the feature is off and the
+  panel is hidden.
+- **The URL Classroom Remote opens is the class link.** «Відкрити урок на
+  ноутбуках» switches the class link on if needed and sends its absolute URL
+  (`LESSON_SITE_ORIGIN`, default `https://rozumko.com`). Remembered seats
+  then map the laptops. Classroom Remote receives no names.
+- **Status is taken literally.** Classroom Remote counts a laptop as
+  «synced» to any current state, including idle. The console says «N
+  відкрили урок» only while the room shows *this* class's current link.
+
+Code:
+- `backend/src/lib/classroom-remote.ts`: config, encryption, client, parser.
+- `backend/src/routes/classroom-remote.ts`:
+  - `/api/teacher/classroom-remote` (GET, PUT `{key}`, DELETE);
+  - `/api/teacher/lesson-runs/:id/classroom-remote` (GET status, POST
+    `/open`).
+- `features/lesson-engine/classroom-remote-panel.ts`: «Ноутбуки класу» in the
+  run console.
+
+Verified end to end with a real local Classroom Remote worker (`wrangler
+dev`), two WebSocket laptops and PostgreSQL 16:
+- a wrong key is refused, and a good key is stored encrypted and never
+  returned;
+- another teacher is not connected;
+- «open» enables the class link, both laptops receive
+  `https://rozumko.com/lesson-join.html#class=…` and acknowledge it, and the
+  status reads 2/2;
+- the opened link really joins the run;
+- a key revoked in Classroom Remote surfaces as `CR_KEY_INVALID`;
+- disconnecting deletes the row.
+
 ## Open items
 
 - **Reference lesson differs from the specs.** Both specs name `g2-m1-l1`
@@ -638,11 +694,10 @@ be applied.
   Cambridge references are added there once a methodologist confirms the
   exact codes — never guessed. Do not use "ІФО = індекс формувального
   оцінювання": `ІФО` is the informatics education area code.
-- **Classroom Remote integration.** The class link needs no change to
-  Classroom Remote. Driving it from the Rozumko console, with no second
-  dashboard, needs a small server-to-server integration API in Classroom
-  Remote. That API is a separate decision; see the discussion in the pull
-  request.
+- **Classroom Remote integration API** lives in the Classroom Remote
+  repository and must be deployed there first. It changes the privacy
+  policy text (new section on integration keys); its owner decides the
+  effective date and the store listing update.
 - **Legacy `new_lessons`** is a reference for mechanics and UX only (stage E);
   it is not embedded or copied wholesale.
 - **Render capacity** — confirm the backend plan has no cold starts during

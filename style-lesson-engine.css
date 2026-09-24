@@ -409,6 +409,25 @@ body.le-board-open { overflow: hidden; }
 .le-join__message:empty { display: none; }
 .le-join__message { color: var(--fb-err-text); font-weight: 700; }
 .le-join__summary { margin: var(--sp-3) 0 var(--sp-2); font-weight: 700; }
+.le-remote {
+  margin: var(--sp-2) 0 var(--sp-4);
+  padding: var(--sp-4) var(--sp-5);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-md);
+}
+.le-remote__body,
+.le-remote__connect { display: grid; gap: var(--sp-3); }
+.le-remote__room,
+.le-remote__summary { margin: 0; }
+.le-remote__summary { font-weight: 700; }
+.le-remote__devices { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.le-remote__device {
+  padding: var(--sp-1) var(--sp-3);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-md);
+}
+.le-remote__device--synced { border-color: var(--fb-ok-border); color: var(--fb-ok-text); background: var(--fb-ok-bg); }
+.le-remote__device--offline { color: var(--clr-text-muted); border-style: dashed; }
 .le-classlink { margin-top: var(--sp-4); border-top: 1px solid var(--clr-border); padding-top: var(--sp-3); }
 .le-classlink__summary { cursor: pointer; font-weight: 700; min-height: 2.75rem; display: flex; align-items: center; }
 .le-classlink__body { display: grid; gap: var(--sp-3); margin-top: var(--sp-2); }
