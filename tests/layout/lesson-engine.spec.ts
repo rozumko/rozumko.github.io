@@ -77,6 +77,13 @@ async function mockTeacherApi(page: Page, options: { lessonEngine: boolean; sess
       return json({ error: 'Урок не знайдено' }, 404)
     }
   }, { lesson: options.lesson ?? servedLesson, lessonEngine: options.lessonEngine, session: options.session ?? true })
+  // Nothing here may reach a real backend: CI has network access, and whatever
+  // production answers today (e.g. a 401 that clears the test session) must not
+  // decide a test. Unrouted API calls get a plain 404; later routes win.
+  await page.route(/\/api\//, route => route.fulfill({ status: 404, contentType: 'application/json', body: '{"error":"Not mocked"}' }))
+  await page.route('**/api/teacher/classroom-remote', route => route.fulfill({
+    contentType: 'application/json', body: '{"configured":false,"connected":false}',
+  }))
   // Defaults for runs and classes; routeRunServer() overrides them when a test needs runs.
   await page.route('**/api/teacher/lesson-runs**', route => route.fulfill({ contentType: 'application/json', body: '{"runs":[]}' }))
   await page.route('**/api/teacher/classes', route => route.fulfill({ contentType: 'application/json', body: '{"classes":[]}' }))
