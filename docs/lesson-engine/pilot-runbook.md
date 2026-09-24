@@ -17,7 +17,10 @@ Do these in order. Nothing is visible to teachers until step 4.
 2. **Merge the branch into `main`.** GitHub Actions deploys the frontend.
    Render deploys the backend after checks pass. With the flag off, every
    Lesson Engine route is a 404 and the teacher link stays hidden.
-3. **Publish the reference lesson** (there is no admin UI for Lesson Engine
+3. **Turn the engine on.** On Render, set `LESSON_ENGINE_ENABLED` = `true`
+   for the backend service and wait for the redeploy. To roll back, set it to
+   `false`. Data stays; the surface disappears again.
+4. **Publish the reference lesson** (there is no admin UI for Lesson Engine
    lessons yet). Use the script:
    ```powershell
    cd backend
@@ -28,11 +31,8 @@ Do these in order. Nothing is visible to teachers until step 4.
    npm run curriculum:publish -- --dry-run     # local validation only
    npm run curriculum:publish -- --publish     # create + review + publish
    ```
-   The script needs the flag on (step 4). Run it again after step 4 if it
-   stopped with "is LESSON_ENGINE_ENABLED=true on the backend?".
-4. **Turn the engine on.** On Render, set `LESSON_ENGINE_ENABLED` = `true`
-   for the backend service and redeploy. To roll back, set it to `false`.
-   Data stays; the surface disappears again.
+   The script needs the flag on (step 3). If it reports that the engine is
+   disabled, verify that the Render redeploy has finished before retrying.
 
 ## 2. Before each pilot lesson
 
