@@ -16,6 +16,7 @@ import {
   lessonRunEvents,
   lessonRunStudents,
   lessonRuns,
+  studentOutcomeEvidence,
   teacherClasses,
   type LessonRunRow,
 } from '../db/schema.js'
@@ -36,6 +37,8 @@ import {
 import { CURRICULUM_LESSON_ID_PATTERN } from './curriculum-editorial.js'
 import { LESSON_JOIN_CODE_TTL_MS, generateLessonJoinCode } from '../lib/lesson-device.js'
 import { isDispatchable, liveSnapshot } from '../lib/lesson-live.js'
+import { lessonReport } from '../lib/lesson-evidence.js'
+import { findSubjectPack } from '../lib/subject-packs.js'
 import type { ActivitySpec } from '../lib/curriculum-lesson-schema.js'
 
 class RunNotFoundError extends Error {}
@@ -560,5 +563,67 @@ export async function lessonRunRoutes(app: FastifyInstance) {
     const live = await loadLive(req.params.id, req.user!.id)
     if (!live) return reply.code(404).send({ error: 'Урок не знайдено' })
     return reply.send(live)
+  })
+
+  // ── Evidence report (stage H) ────────────────────────────────────────────
+
+  // GET /api/teacher/lesson-runs/:id/report — per student: activities, outcome
+  // summaries by the written rule, the evidence trace behind each, and a
+  // factual comment draft. Available from start; final once the run finishes.
+  app.get<{ Params: { id: string } }>('/:id/report', { schema: { params: runIdParams } }, async (req, reply) => {
+    const teacherId = req.user!.id
+    const [row] = await db.select({ run: lessonRuns, className: teacherClasses.name }).from(lessonRuns)
+      .innerJoin(teacherClasses, eq(teacherClasses.id, lessonRuns.classId))
+      .where(and(eq(lessonRuns.id, req.params.id), eq(lessonRuns.teacherId, teacherId))).limit(1)
+    if (!row) return reply.code(404).send({ error: 'Урок не знайдено' })
+    const runId = row.run.id
+    const [students, devices, dispatches, attempts, evidence] = await Promise.all([
+      db.select({ id: lessonRunStudents.id, label: classStudents.label }).from(lessonRunStudents)
+        .leftJoin(classStudents, eq(classStudents.id, lessonRunStudents.classStudentId))
+        .where(eq(lessonRunStudents.lessonRunId, runId)).orderBy(asc(lessonRunStudents.createdAt)),
+      db.select({ lessonRunStudentId: lessonRunDevices.lessonRunStudentId }).from(lessonRunDevices)
+        .where(and(eq(lessonRunDevices.lessonRunId, runId), isNotNull(lessonRunDevices.lessonRunStudentId))),
+      db.select({ id: lessonRunDispatches.id, blockId: lessonRunDispatches.blockId, activityInstanceId: lessonRunDispatches.activityInstanceId })
+        .from(lessonRunDispatches).where(eq(lessonRunDispatches.lessonRunId, runId)).orderBy(asc(lessonRunDispatches.openedAt)),
+      db.select({
+        id: activityAttempts.id,
+        dispatchId: activityAttempts.dispatchId,
+        lessonRunStudentId: activityAttempts.lessonRunStudentId,
+        activityInstanceId: activityAttempts.activityInstanceId,
+        attemptNo: activityAttempts.attemptNo,
+        correct: activityAttempts.correct,
+        total: activityAttempts.total,
+        normalizedScore: activityAttempts.normalizedScore,
+        trust: activityAttempts.trust,
+        answerPayload: activityAttempts.answerPayload,
+        createdAt: activityAttempts.createdAt,
+      }).from(activityAttempts).where(eq(activityAttempts.lessonRunId, runId)),
+      db.select({
+        lessonRunStudentId: studentOutcomeEvidence.lessonRunStudentId,
+        activityAttemptId: studentOutcomeEvidence.activityAttemptId,
+        outcomeId: studentOutcomeEvidence.outcomeId,
+        evidenceRole: studentOutcomeEvidence.evidenceRole,
+        trust: studentOutcomeEvidence.trust,
+        score: studentOutcomeEvidence.score,
+        observedAt: studentOutcomeEvidence.observedAt,
+      }).from(studentOutcomeEvidence).where(eq(studentOutcomeEvidence.lessonRunId, runId)),
+    ])
+    const lesson = row.run.lessonSnapshot as unknown as LessonDefinitionV1
+    return reply.send(lessonReport({
+      run: {
+        status: row.run.status,
+        className: row.className,
+        lessonPublishedVersion: row.run.lessonPublishedVersion,
+        startedAt: row.run.startedAt,
+        finishedAt: row.run.finishedAt,
+      },
+      lesson,
+      outcomes: findSubjectPack(lesson.subjectPackId)?.outcomes ?? {},
+      students: students.map(s => ({ id: s.id, label: s.label ?? null })),
+      mappedStudentIds: new Set(devices.map(d => d.lessonRunStudentId!)),
+      dispatches,
+      attempts: attempts.map(a => ({ ...a, normalizedScore: Number(a.normalizedScore) })),
+      evidence: evidence.map(e => ({ ...e, score: Number(e.score) })),
+    }))
   })
 }

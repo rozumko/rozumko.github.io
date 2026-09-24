@@ -13,6 +13,7 @@ import {
   getCurriculumLesson,
   getLessonRun,
   getLessonRunLive,
+  getLessonRunReport,
   getTeacherClasses,
   lessonRunAction,
   listLessonRunDevices,
@@ -30,6 +31,7 @@ import { renderLessonDocument } from './features/lesson-engine/document-view.js'
 import { openPresentation } from './features/lesson-engine/presentation-view.js'
 import { lessonMetaLine } from './features/lesson-engine/projection.js'
 import { mountRunConsole } from './features/lesson-engine/run-console.js'
+import { renderLessonReport } from './features/lesson-engine/report-view.js'
 import { RUN_STATUS_LABELS, isOpenRun } from './features/lesson-engine/run-model.js'
 import type { CurriculumLessonSummary, LessonDefinition, LessonRunSummary } from './features/lesson-engine/types.js'
 
@@ -225,6 +227,13 @@ function renderLesson(lesson: LessonDefinition) {
     .catch(() => { /* the plan stays usable without the run launcher */ })
 }
 
+async function openReport(runId: string) {
+  const report = await getLessonRunReport(runId)
+  document.title = `Звіт: ${report.run.lessonTitle.uk} — ${report.run.className}`
+  clearStatus()
+  viewEl.replaceChildren(renderLessonReport(report, runHref(runId)))
+}
+
 async function openRun(runId: string) {
   const view = await getLessonRun(runId)
   document.title = `${view.lesson.title.uk} — урок з класом ${view.run.className}`
@@ -279,7 +288,8 @@ async function main() {
         setStatus('Урок не знайдено.', { href: 'lesson-engine.html', label: 'До списку уроків' })
         return
       }
-      await openRun(runId)
+      if (params.get('view') === 'report') await openReport(runId)
+      else await openRun(runId)
       return
     }
 

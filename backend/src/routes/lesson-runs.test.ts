@@ -41,6 +41,7 @@ const ROUTES: InjectOptions[] = [
   { method: 'POST', url: `/api/teacher/lesson-runs/${RUN_ID}/dispatch`, payload: { blockId: 'g2-m2-l8-b07' } },
   { method: 'POST', url: `/api/teacher/lesson-runs/${RUN_ID}/dispatch/close` },
   { method: 'GET', url: `/api/teacher/lesson-runs/${RUN_ID}/live` },
+  { method: 'GET', url: `/api/teacher/lesson-runs/${RUN_ID}/report` },
 ]
 
 test('lesson run routes are a 404 while the flag is off', async () => {

@@ -809,3 +809,24 @@ export const activityAttempts = pgTable('activity_attempts', {
 }))
 
 export type ActivityAttemptRow = typeof activityAttempts.$inferSelect
+
+// Learning evidence (0053): one attempt of an evidence activity × one targeted
+// outcome. Append-only (anonymisation aside); primary evidence is never
+// client-unverified (DB-checked).
+export const studentOutcomeEvidence = pgTable('student_outcome_evidence', {
+  id:                 uuid('id').primaryKey().defaultRandom(),
+  lessonRunId:        uuid('lesson_run_id').notNull().references(() => lessonRuns.id, { onDelete: 'restrict' }),
+  lessonRunStudentId: uuid('lesson_run_student_id').notNull().references(() => lessonRunStudents.id, { onDelete: 'restrict' }),
+  classStudentId:     uuid('class_student_id').references(() => classStudents.id, { onDelete: 'set null' }),
+  activityAttemptId:  uuid('activity_attempt_id').notNull().references(() => activityAttempts.id, { onDelete: 'restrict' }),
+  subjectPackId:      text('subject_pack_id').notNull(),
+  outcomeId:          text('outcome_id').notNull(),
+  evidenceRole:       text('evidence_role').notNull().$type<'primary' | 'supporting'>(),
+  trust:              text('trust').notNull().$type<'server-verified' | 'client-unverified' | 'teacher-observed'>(),
+  score:              numeric('score', { precision: 5, scale: 4, mode: 'number' }).notNull(),
+  observedAt:         timestamp('observed_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  uniqAttemptOutcome: unique('student_outcome_evidence_attempt_outcome_uq').on(t.activityAttemptId, t.outcomeId),
+}))
+
+export type StudentOutcomeEvidenceRow = typeof studentOutcomeEvidence.$inferSelect

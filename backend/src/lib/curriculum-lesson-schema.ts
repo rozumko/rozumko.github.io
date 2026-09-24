@@ -311,6 +311,24 @@ export interface SubjectPack {
   externalTools: Record<string, { url: string; integration: 'launch-only'; title: LocalizedText }>
   /** Registry keys of platform games lessons in this pack may embed. */
   games: string[]
+  /** Learning outcomes lessons in this pack may target and evidence. */
+  outcomes: Record<string, LearningOutcome>
+}
+
+export const OUTCOME_SOURCES = ['national-standard', 'program', 'international', 'internal'] as const
+export type OutcomeSource = (typeof OUTCOME_SOURCES)[number]
+
+/**
+ * A pack-owned learning outcome. `mappings` links it to external frameworks
+ * without the core knowing what a framework means.
+ */
+export interface LearningOutcome {
+  code: string
+  title: LocalizedText
+  source: OutcomeSource
+  sourceRef?: string
+  gradeBand?: string
+  mappings: { framework: string; ref: string }[]
 }
 
 // ── Validation ────────────────────────────────────────────────────────────────
@@ -952,6 +970,11 @@ export function validateLessonAgainstPack(lesson: LessonDefinitionV1, pack: Subj
   if (lesson.grade < pack.gradeRange.min || lesson.grade > pack.gradeRange.max) {
     c.add('grade', `must be within ${pack.gradeRange.min}–${pack.gradeRange.max}`)
   }
+  lesson.learningOutcomes.forEach((link, i) => {
+    if (!Object.prototype.hasOwnProperty.call(pack.outcomes, link.outcomeId)) {
+      c.add(`learningOutcomes[${i}].outcomeId`, 'is not in the subject pack outcome registry')
+    }
+  })
   lesson.blocks.forEach((block, i) => {
     if (block.type !== 'activity') return
     if (block.activity.mechanic === 'external') {
@@ -970,7 +993,29 @@ export function validateLessonAgainstPack(lesson: LessonDefinitionV1, pack: Subj
 export function validateSubjectPack(input: unknown): LessonValidationIssue[] {
   const c = new Collector()
   if (!isRecord(input)) return [{ path: '', message: 'must be an object' }]
-  checkKnownKeys(c, input, ['id', 'subject', 'title', 'gradeRange', 'curriculumRefs', 'externalTools', 'games'], '')
+  checkKnownKeys(c, input, ['id', 'subject', 'title', 'gradeRange', 'curriculumRefs', 'externalTools', 'games', 'outcomes'], '')
+  if (!isRecord(input.outcomes)) c.add('outcomes', 'must be an object')
+  else for (const [id, outcome] of Object.entries(input.outcomes)) {
+    const p = `outcomes.${id}`
+    if (!LOCAL_ID_RE.test(id)) c.add(p, 'has an invalid key')
+    if (!isRecord(outcome)) {
+      c.add(p, 'must be an object')
+      continue
+    }
+    checkKnownKeys(c, outcome, ['code', 'title', 'source', 'sourceRef', 'gradeBand', 'mappings'], p)
+    checkString(c, outcome.code, `${p}.code`, MAX_ID)
+    checkLocalized(c, outcome.title, `${p}.title`, MAX_SHORT)
+    checkEnum(c, outcome.source, OUTCOME_SOURCES, `${p}.source`)
+    if (outcome.sourceRef !== undefined) checkString(c, outcome.sourceRef, `${p}.sourceRef`, MAX_SHORT)
+    if (outcome.gradeBand !== undefined) checkString(c, outcome.gradeBand, `${p}.gradeBand`, 16)
+    if (!Array.isArray(outcome.mappings)) c.add(`${p}.mappings`, 'must be an array')
+    else outcome.mappings.forEach((m, i) => {
+      if (!isRecord(m)) return c.add(`${p}.mappings[${i}]`, 'must be an object')
+      checkKnownKeys(c, m, ['framework', 'ref'], `${p}.mappings[${i}]`)
+      checkString(c, m.framework, `${p}.mappings[${i}].framework`, MAX_ID)
+      checkString(c, m.ref, `${p}.mappings[${i}].ref`, MAX_SHORT)
+    })
+  }
   if (!Array.isArray(input.games)) c.add('games', 'must be an array')
   else input.games.forEach((key, i) => { checkString(c, key, `games[${i}]`, MAX_ID, LOCAL_ID_RE) })
   checkString(c, input.id, 'id', MAX_ID, SLUG_RE)

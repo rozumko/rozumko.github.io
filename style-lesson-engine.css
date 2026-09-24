@@ -465,6 +465,44 @@ body.le-board-open { overflow: hidden; }
 .le-live__cell--offline,
 .le-live__cell--skipped { color: var(--clr-text-muted); }
 
+/* ── Lesson report (stage H) ─────────────────────────────────── */
+a.le-board__action { display: inline-flex; align-items: center; text-decoration: none; }
+.le-report__rule {
+  padding: var(--sp-3) var(--sp-4);
+  border-left: 4px solid var(--clr-sky);
+  border-radius: var(--r-sm);
+  background: var(--clr-sky-light);
+  line-height: 1.5;
+}
+.le-report__table { margin: var(--sp-4) 0; background: var(--clr-surface); }
+.le-report__status { font-weight: 700; }
+.le-report__status--demonstrated { background: var(--fb-ok-bg); color: var(--fb-ok-text); }
+.le-report__status--progressing { background: var(--clr-sky-light); color: var(--clr-sky-dark); }
+.le-report__status--needs-support { background: var(--fb-err-bg); color: var(--fb-err-text); }
+.le-report__status--not-enough-evidence { color: var(--clr-text-muted); }
+.le-report__section { margin: var(--sp-6) 0; }
+.le-report__activities { padding-left: var(--sp-5); line-height: 1.6; }
+.le-report__student {
+  margin: var(--sp-2) 0;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-md);
+  background: var(--clr-surface);
+}
+.le-report__student summary { font-weight: 800; cursor: pointer; min-height: 2rem; }
+.le-report__outcome { margin: var(--sp-3) 0; }
+.le-report__outcome-title { margin: 0; font-weight: 700; }
+.le-report__basis { margin: var(--sp-1) 0; color: var(--clr-text-muted); }
+.le-report__evidence { margin: var(--sp-1) 0; padding-left: var(--sp-5); font-size: var(--font-size-sm); }
+.le-report__comment { margin-top: var(--sp-3); padding-top: var(--sp-3); border-top: 1px dashed var(--clr-border); }
+.le-report__comment-label { margin: 0; font-size: var(--font-size-sm); color: var(--clr-text-muted); }
+
+@media print {
+  .le-topbar, .le-report__toolbar, .le-report__comment button { display: none !important; }
+  .le-page { background: var(--clr-surface); }
+  .le-report__student { break-inside: avoid; }
+}
+
 /* Confirm dialog (utils/ui showConfirm) — this page loads no student styles. */
 .le-page .app-modal-overlay {
   position: fixed;

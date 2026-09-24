@@ -507,6 +507,24 @@ test('attempts are append-only, idempotent, trust-checked, and devices never rec
   assert.match(student, /eq\(activityAttempts\.clientAttemptId, clientAttemptId\)/)
 })
 
+test('learning evidence is append-only, never primary when client-reported, and written with its attempt', () => {
+  const migration = readFileSync(new URL('../drizzle/0053_add_student_outcome_evidence.sql', import.meta.url), 'utf8')
+  const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')
+  const student = readFileSync(new URL('./routes/lesson-student.ts', import.meta.url), 'utf8')
+  const evidence = readFileSync(new URL('./lib/lesson-evidence.ts', import.meta.url), 'utf8')
+
+  assert.match(migration, /ALTER TABLE public\.student_outcome_evidence ENABLE ROW LEVEL SECURITY;/)
+  assert.doesNotMatch(migration, /CREATE POLICY/)
+  assert.match(migration, /CHECK \(evidence_role <> 'primary' OR trust <> 'client-unverified'\)/)
+  assert.match(migration, /BEFORE UPDATE OR DELETE ON public\.student_outcome_evidence/)
+  assert.match(migration, /class_student_id uuid REFERENCES public\.class_students\(id\) ON DELETE SET NULL/)
+  assert.match(journal, /"tag": "0053_add_student_outcome_evidence"/)
+  // Written inside the attempt transaction, from the run's frozen activity.
+  assert.match(student, /evidenceRowsForAttempt\(found\.activity[\s\S]{0,600}tx\.insert\(studentOutcomeEvidence\)/)
+  // Only verified primary evidence can decide a summary.
+  assert.match(evidence, /e\.evidenceRole === 'primary' && e\.trust !== 'client-unverified'/)
+})
+
 test('question editorial history is RLS-protected and journaled', () => {
   const migration = readFileSync(new URL('../drizzle/0036_add_question_editorial_workflow.sql', import.meta.url), 'utf8')
   const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')

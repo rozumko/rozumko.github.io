@@ -147,6 +147,11 @@ export function mountRunConsole(root: HTMLElement, initial: LessonRunView, deps:
       })
       controls.append(control)
     }
+    if (run.status !== 'prepared') {
+      const report = el('a', 'le-board__action le-console__report', 'Звіт уроку')
+      report.href = `lesson-engine.html?run=${encodeURIComponent(run.id)}&view=report`
+      controls.append(report)
+    }
     if (run.status === 'finished' || run.status === 'cancelled') {
       const done = el('p', 'le-console__done')
       done.append(`Урок ${RUN_STATUS_LABELS[run.status].toLowerCase()}. `)

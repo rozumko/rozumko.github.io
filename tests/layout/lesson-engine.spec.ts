@@ -6,6 +6,7 @@ import { scoreServerActivity } from '../../backend/src/lib/curriculum-activity-s
 import { applyRunAction, resolveStep, runActionTimestamps, runSteps, type LessonRunAction } from '../../backend/src/lib/lesson-run-state'
 import { attemptLimit, liveSnapshot, scoreStudentAttempt, studentActivityView } from '../../backend/src/lib/lesson-live'
 import { findSubjectPack } from '../../backend/src/lib/subject-packs'
+import { lessonReport } from '../../backend/src/lib/lesson-evidence'
 
 const WCAG_AA_TAGS = ['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']
 
@@ -648,4 +649,45 @@ test('a launch-only tool opens from the device through its allowlisted link', as
   const link = page.getByRole('link', { name: /Швидкісні вікна/ })
   await expect(link).toHaveAttribute('href', /^https:\/\/itnauka\.org\//)
   await expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+})
+
+// ── Lesson report (stage H) ──────────────────────────────────────────────────
+
+test('the lesson report shows outcome summaries that open to their evidence', async ({ page }) => {
+  const t = (m: number) => new Date(Date.UTC(2026, 8, 24, 10, m))
+  const report = lessonReport({
+    run: { status: 'finished', className: '2-А', lessonPublishedVersion: 3, startedAt: t(0), finishedAt: t(40) },
+    lesson: fixture,
+    outcomes: findSubjectPack('informatics-ua-primary')!.outcomes,
+    students: [{ id: 's1', label: 'Марко' }, { id: 's2', label: 'Софія' }],
+    mappedStudentIds: new Set(['s1', 's2']),
+    dispatches: [{ id: 'd1', blockId: 'g2-m2-l8-b12', activityInstanceId: 'self-check-extension' }],
+    attempts: [
+      { id: 'a1', dispatchId: 'd1', lessonRunStudentId: 's1', activityInstanceId: 'self-check-extension', attemptNo: 1, correct: 1, total: 1, normalizedScore: 1, trust: 'server-verified', answerPayload: { answer: { optionId: 'b' } }, createdAt: t(20) },
+      { id: 'a2', dispatchId: 'd1', lessonRunStudentId: 's2', activityInstanceId: 'self-check-extension', attemptNo: 1, correct: 0, total: 1, normalizedScore: 0, trust: 'server-verified', answerPayload: { answer: { optionId: 'a' } }, createdAt: t(21) },
+    ],
+    evidence: [
+      { lessonRunStudentId: 's1', activityAttemptId: 'a1', outcomeId: 'int-files-name-extension', evidenceRole: 'primary', trust: 'server-verified', score: 1, observedAt: t(20) },
+      { lessonRunStudentId: 's2', activityAttemptId: 'a2', outcomeId: 'int-files-name-extension', evidenceRole: 'primary', trust: 'server-verified', score: 0, observedAt: t(21) },
+    ],
+  })
+  await mockTeacherApi(page, { lessonEngine: true })
+  await page.route('**/api/teacher/lesson-runs/*/report', route => route.fulfill({ contentType: 'application/json', body: JSON.stringify(report) }))
+  await page.goto(`/lesson-engine.html?run=${RUN_ID}&view=report`)
+
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Звіт уроку: Файли й папки')
+  await expect(page.locator('.le-report__rule')).toContainText('≥ 80%')
+  const table = page.getByRole('table', { name: 'Навчальні результати' })
+  await expect(table.getByRole('row', { name: /Марко/ })).toContainText('✓ Продемонстровано')
+  await expect(table.getByRole('row', { name: /Софія/ })).toContainText('! Потрібна підтримка')
+  await expect(table.getByRole('row', { name: /Марко/ })).toContainText('? Недостатньо даних')
+
+  await page.locator('summary', { hasText: 'Софія' }).click()
+  const sofia = page.locator('details', { hasText: 'Софія' })
+  await expect(sofia.getByRole('list', { name: 'Докази' })).toContainText('Перевір себе · спроба 1 · 0/1 · перевірено сервером · основний доказ')
+  await expect(sofia.locator('.le-report__comment')).toContainText('Софія: потрібна підтримка')
+  await expect(page.locator('.le-report__activities')).toContainText('відповіли 2 з 2')
+
+  const results = await new AxeBuilder({ page }).withTags(WCAG_AA_TAGS).analyze()
+  expect(results.violations.map(v => v.id)).toEqual([])
 })

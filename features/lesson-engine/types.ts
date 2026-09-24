@@ -240,3 +240,55 @@ export interface LiveSnapshot {
     cells: Record<string, { state: LiveCellState; attempts: number; correct: number | null; total: number | null }>
   }[]
 }
+
+// ── Lesson report (stage H) ──────────────────────────────────────────────────
+
+export type OutcomeStatus = 'demonstrated' | 'progressing' | 'needs-support' | 'not-enough-evidence'
+
+export interface ReportEvidence {
+  attemptId: string
+  activityInstanceId: string | null
+  activityTitle: string | null
+  attemptNo: number | null
+  correct: number | null
+  total: number | null
+  score: number
+  trust: 'server-verified' | 'client-unverified' | 'teacher-observed'
+  evidenceRole: 'primary' | 'supporting'
+  observedAt: string
+}
+
+export interface LessonReport {
+  run: {
+    status: LessonRunStatus
+    className: string
+    lessonTitle: LocalizedText
+    lessonId: string
+    lessonPublishedVersion: number
+    startedAt: string | null
+    finishedAt: string | null
+  }
+  rule: { demonstratedAt: number; progressingAt: number }
+  outcomes: { id: string; role: string; code: string; title: string }[]
+  activities: {
+    dispatchId: string
+    blockId: string
+    activityInstanceId: string
+    title: string
+    telemetry: ActivityTelemetry | null
+    mechanic: ActivityMechanic | null
+    answered: number
+    of: number
+    averageScore: number | null
+    pattern: { optionId: string; optionText: LocalizedText; count: number; of: number } | null
+  }[]
+  students: {
+    lessonRunStudentId: string
+    label: string
+    participated: boolean
+    activities: { dispatchId: string; title: string; attempts: number; correct: number | null; total: number | null; trust: string | null }[]
+    missing: string[]
+    outcomes: { outcomeId: string; status: OutcomeStatus; label: string; basis: string; evidence: ReportEvidence[] }[]
+    comment: string
+  }[]
+}

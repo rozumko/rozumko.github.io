@@ -6,7 +6,7 @@
 import type { FastifyInstance } from 'fastify'
 import { and, asc, eq, gt, inArray, isNull, sql } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { activityAttempts, classStudents, lessonRunDevices, lessonRunDispatches, lessonRunEvents, lessonRunStudents, lessonRuns } from '../db/schema.js'
+import { activityAttempts, classStudents, lessonRunDevices, lessonRunDispatches, lessonRunEvents, lessonRunStudents, lessonRuns, studentOutcomeEvidence } from '../db/schema.js'
 import { isLessonEngineEnabled } from '../lib/lesson-engine-flag.js'
 import { isUniqueViolation } from '../lib/db-errors.js'
 import { OPEN_RUN_STATUSES } from '../lib/lesson-run-state.js'
@@ -14,6 +14,7 @@ import type { ActivitySpec, LessonDefinitionV1 } from '../lib/curriculum-lesson-
 import { ActivityAnswerError } from '../lib/curriculum-activity-scoring.js'
 import { findSubjectPack } from '../lib/subject-packs.js'
 import { acceptsAttempts, attemptLimit, scoreStudentAttempt, studentActivityView } from '../lib/lesson-live.js'
+import { evidenceRowsForAttempt } from '../lib/lesson-evidence.js'
 import {
   LESSON_DEVICE_TTL_MS,
   MAX_RUN_DEVICES,
@@ -283,6 +284,24 @@ export async function lessonStudentRoutes(app: FastifyInstance) {
           durationSec: scored.result.durationSec ?? null,
           trust: scored.result.trust,
         }).returning()
+
+        // Evidence activities record outcome evidence in the same transaction.
+        const evidence = evidenceRowsForAttempt(found.activity, { trust: scored.result.trust, normalizedScore: scored.result.normalizedScore })
+        if (evidence.length > 0) {
+          const [runStudent] = await tx.select({ classStudentId: lessonRunStudents.classStudentId })
+            .from(lessonRunStudents).where(eq(lessonRunStudents.id, studentId)).limit(1)
+          await tx.insert(studentOutcomeEvidence).values(evidence.map(row => ({
+            lessonRunId: attempt!.lessonRunId,
+            lessonRunStudentId: studentId,
+            classStudentId: runStudent?.classStudentId ?? null,
+            activityAttemptId: attempt!.id,
+            subjectPackId: lesson.subjectPackId,
+            outcomeId: row.outcomeId,
+            evidenceRole: row.evidenceRole,
+            trust: row.trust,
+            score: row.score,
+          })))
+        }
         return { status: 201 as const, attempt: attempt!, feedback: scored.feedback, limit }
       })
       if (outcome.status === 401) return reply.code(401).send({ error: 'Приєднайся до уроку ще раз.', code: 'DEVICE_INVALID' })

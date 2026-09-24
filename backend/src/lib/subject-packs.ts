@@ -25,6 +25,24 @@ const INFORMATICS_UA_PRIMARY: SubjectPack = {
     'maze', 'windows', 'mouse-buttons', 'magic-squares', 'symbol-logic',
     'message-coding', 'sorting-station', 'precise-click', 'tangram', 'fireflies',
   ],
+  // Internal outcomes for the pilot lessons. NUSH / Cambridge mappings are
+  // added here once the methodologist confirms the exact codes — never guessed.
+  outcomes: {
+    'int-files-name-extension': {
+      code: 'INF-2-FILES-1',
+      title: { uk: 'Розрізняє ім’я файла та розширення і пояснює, навіщо потрібне розширення' },
+      source: 'internal',
+      gradeBand: '1-2',
+      mappings: [],
+    },
+    'int-files-organize': {
+      code: 'INF-2-FILES-2',
+      title: { uk: 'Створює, перейменовує, переміщує та знаходить файли в тематичній папці' },
+      source: 'internal',
+      gradeBand: '1-2',
+      mappings: [],
+    },
+  },
 }
 
 export const SUBJECT_PACKS: Readonly<Record<string, SubjectPack>> = Object.freeze({

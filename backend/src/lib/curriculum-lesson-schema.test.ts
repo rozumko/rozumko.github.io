@@ -360,3 +360,14 @@ test('pack games exist in the platform registry and none needs a School particip
     assert.ok(!pack.games.includes('fact-or-opinion'), pack.id)
   }
 })
+
+test('lessons may target only outcomes registered by their subject pack', () => {
+  const lesson = expectValid(fixture('g2-m2-l8.lesson.json'))
+  const pack = structuredClone(findSubjectPack('informatics-ua-primary')!)
+  delete (pack.outcomes as Record<string, unknown>)['int-files-organize']
+  assert.deepEqual(validateLessonAgainstPack(lesson, pack).map(e => e.path), ['learningOutcomes[1].outcomeId'])
+
+  const broken = structuredClone(findSubjectPack('informatics-ua-primary')) as Record<string, any>
+  broken.outcomes['int-files-name-extension'].source = 'rumour'
+  assert.deepEqual(validateSubjectPack(broken).map(e => e.path), ['outcomes.int-files-name-extension.source'])
+})

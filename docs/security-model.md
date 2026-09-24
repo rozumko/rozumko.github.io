@@ -190,6 +190,13 @@ clientAttemptId)`. For evidence activities the device gets neither a score
 nor per-item correctness. The teacher's live grid is owner-scoped like every
 other run route.
 
+Learning evidence (`student_outcome_evidence`, migration `0053`) is written
+only by the server, in the attempt's transaction, from the run's frozen
+activity. It is append-only; the one allowed change is anonymisation when a
+teacher deletes a student. A client-reported result can never be primary
+evidence (DB check). Outcome summaries follow a written, printed rule and
+link to their evidence. The report is owner-scoped.
+
 ## Mission Editorial Workflow — **[IMPLEMENTED]**
 
 Migration `0038` adds the same audited state machine, optimistic edit locking
@@ -306,7 +313,8 @@ revisions), `0036`-`0038` (`question_revisions`, `micro_lesson_revisions`,
 `mission_revisions`), `0041` (`content_publications`), `0049`
 (`curriculum_lessons`, `curriculum_lesson_revisions`) and `0050`
 (`lesson_runs`, `lesson_run_students`, `lesson_run_events`) `0051`
-(`lesson_run_devices`) and `0052` (`lesson_run_dispatches`, `activity_attempts`). A regression test
+(`lesson_run_devices`) `0052` (`lesson_run_dispatches`, `activity_attempts`) and `0053`
+(`student_outcome_evidence`). A regression test
 fails if any application table is left uncovered.
 Migration `0048` applies the same deny-by-default RLS rule to
 `teacher_question_topics`; its answer-bearing session snapshots remain inside

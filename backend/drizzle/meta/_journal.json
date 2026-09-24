@@ -372,6 +372,13 @@
       "when": 1789507200000,
       "tag": "0052_add_activity_attempts",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1789593600000,
+      "tag": "0053_add_student_outcome_evidence",
+      "breakpoints": true
     }
   ]
 }

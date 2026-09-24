@@ -7,6 +7,7 @@ import type {
   LessonDefinition,
   LessonDeviceJoin,
   LessonDeviceState,
+  LessonReport,
   LessonRunAction,
   LessonRunDevice,
   LessonRunSummary,
@@ -1255,6 +1256,10 @@ export function closeLessonActivity(runId: string): Promise<LiveSnapshot> {
 
 export function getLessonRunLive(runId: string): Promise<LiveSnapshot> {
   return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}/live`)
+}
+
+export function getLessonRunReport(runId: string): Promise<LessonReport> {
+  return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}/report`)
 }
 
 // ─── Lesson Engine: student device (no account) ────────────────────────────

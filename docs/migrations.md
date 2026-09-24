@@ -67,6 +67,7 @@ environments receive the same schema.
 | `0050_add_lesson_runs` | Lesson Engine runs: frozen snapshot, one open run per class, roster snapshot (student delete → anonymised), append-only events; triggers freeze closed runs (RLS enabled) |
 | `0051_add_lesson_run_devices` | Lesson Engine web join: run join code (cleared on close), anonymous devices never deleted, one live device per student, join/device event types (RLS enabled) |
 | `0052_add_activity_attempts` | Lesson Engine: dispatches (one open per run, close-once) and append-only, idempotent `activity_attempts` with DB-checked trust per mechanic (RLS enabled) |
+| `0053_add_student_outcome_evidence` | Lesson Engine learning evidence: append-only (anonymisation aside), never primary when client-reported, traceable to the attempt (RLS enabled) |
 
 `0012` is intentionally idempotent: production received the columns manually
 before the SQL was incorporated into Drizzle history.
@@ -207,7 +208,7 @@ history cannot be hard-deleted. The API is served only when
 
 Migration `0028` enabled RLS on every application table that existed at that
 revision; each later table migration (`0029`, `0031`-`0034`, `0036`-`0038`,
-`0041`, `0047`, `0048`, `0049`, `0050`, `0051`, `0052`) enables it in the same migration. A regression
+`0041`, `0047`, `0048`, `0049`, `0050`, `0051`, `0052`, `0053`) enables it in the same migration. A regression
 test in `backend/src/security-regression.test.ts` scans every `pgTable` in
 `schema.ts` and fails if any table lacks an `ENABLE ROW LEVEL SECURITY`
 migration, so this is enforced rather than periodically re-checked by hand.

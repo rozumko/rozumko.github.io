@@ -78,7 +78,7 @@ waiting on the extension protocol.
 | **E** ✅ | Activity adapter: server-scored choice/truefalse/classify + existing `features/activities` games (client-unverified) behind one result envelope | Same mechanic in board and student mode; no key leak |
 | **F** ✅ | `lesson_runs`, `lesson_run_students`, `lesson_run_events`, teacher console (Next/Back/Pause/Resume/Finish) | Server-side state machine; reload-safe; content edits do not touch active runs |
 | **G1** ✅ / **G2** ✅ | Web join + roster mapping, scoped launch token, submit, polling live heatmap | 5 simulated students; idempotent submit; teacher reload restores state |
-| H | Outcome registry, evidence, lesson report | Every summary traces to evidence → attempt → block → run → lesson version |
+| **H** ✅ | Outcome registry, evidence, lesson report | Every summary traces to evidence → attempt → block → run → lesson version |
 | I | `ClassroomControlProvider`: fake first, then Classroom Remote | Fake works in CI; real: 3–5 devices, correct URL on correct device |
 | J | IndexedDB outbox → internal pilot → external pilot → go/no-go | Offline submit produces exactly one server attempt |
 
@@ -349,6 +349,61 @@ flow through the real routes):
   skipped; finishing closes the open dispatch;
 - append-only and trust-check triggers fire.
 
+## Stage H — what exists (outcomes, evidence, report)
+
+Decisions:
+
+- **Outcome registry lives in the subject pack** (`SubjectPack.outcomes`),
+  code-owned like games and tools. A lesson may target only outcomes of its
+  own pack; save and publish refuse unknown IDs. The core knows only
+  generic sources (`national-standard`, `program`, `international`,
+  `internal`); named frameworks live in each outcome's `mappings`.
+- **Evidence is written with the attempt, in the same transaction**, only
+  for `evidence` activities: one row per outcome the activity links. A
+  client-reported (game) result is always demoted to `supporting`, and the
+  DB check `evidence_role <> 'primary' OR trust <> 'client-unverified'` backs
+  this up.
+- **The written rule** (printed on the report): only the latest *primary,
+  verified* evidence decides the result:
+  - ≥ 80% → «Продемонстровано»;
+  - 50–79% → «Прогрес»;
+  - < 50% → «Потрібна підтримка»;
+  - no primary evidence → «Недостатньо даних».
+
+  Supporting and unverified data are shown but decide nothing. There is no
+  hidden mastery score and no AI.
+- **Every summary is traceable**: evidence → attempt (number, correct/total,
+  trust, time) → activity → run → lesson version.
+- **Comment draft** is deterministic and factual. It is built only from the
+  summaries and counts, and the teacher reviews it before use.
+
+Code:
+
+- Migration `0053`: `student_outcome_evidence`. It is append-only (the only
+  permitted change is anonymising: deleting a student sets
+  `class_student_id` to NULL); unique per `(attempt, outcome)`; RLS on.
+- `backend/src/lib/lesson-evidence.ts` holds `evidenceRowsForAttempt`,
+  `summarizeOutcome`, `teacherCommentDraft` and `lessonReport`, all pure.
+- `GET /api/teacher/lesson-runs/:id/report` (owner-scoped).
+- `features/lesson-engine/report-view.ts` (`?run=<id>&view=report`, linked
+  from the console once the lesson has started):
+  - the rule, a students × outcomes table (icon + word), activity
+    statistics with shared-wrong-answer patterns;
+  - per-student details with the evidence trace, missing activities and the
+    comment draft with a copy button;
+  - print-friendly: printing opens all details.
+
+Verified on a real PostgreSQL 16:
+- a lesson with an unknown outcome is refused;
+- practice produces no evidence, while an evidence activity writes primary
+  rows;
+- the report gives «Продемонстровано», «Потрібна підтримка» and
+  «Недостатньо даних» as expected, with a traceable activity title;
+- another teacher gets 404;
+- the append-only and primary-trust checks fire;
+- deleting a student anonymises their evidence and removes them from the
+  report.
+
 The validator lives in the backend because the backend is the authority for
 anything that is published or scored. Frontend types arrive with stage D and
 will be kept in sync by a guard test (the pattern used for path data).
@@ -362,10 +417,11 @@ will be kept in sync by a guard test (the pattern used for path data).
   practice choice, off-platform practical task, external tool, evidence
   self-check, reflection, success criteria. `g2-m1-l1` can follow when its
   source is available.
-- **Outcome IDs are placeholders.** `int-files-name-extension` and
-  `int-files-organize` are internal IDs until the outcome registry (stage H)
-  maps real NUSH / Cambridge codes. Do not use "ІФО = індекс формувального
-  оцінювання" — `ІФО` is the informatics education area code.
+- **Outcome codes are internal.** The registry (`SubjectPack.outcomes`) holds
+  `INF-2-FILES-1/2` with `source: 'internal'` and empty `mappings`. NUSH and
+  Cambridge references are added there once a methodologist confirms the
+  exact codes — never guessed. Do not use "ІФО = індекс формувального
+  оцінювання": `ІФО` is the informatics education area code.
 - **Classroom Remote contract** — repository `artkysliakov/classroom-remote`
   must be made readable to the agent before stage I. Nothing is invented
   before then; stages A–H do not depend on it.
