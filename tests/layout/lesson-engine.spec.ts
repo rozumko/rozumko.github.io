@@ -238,15 +238,20 @@ test('a platform game runs on the board and holds the keyboard until stopped', a
 const RUN_ID = '00000000-0000-4000-8000-0000000000aa'
 const CLASS_ID = '00000000-0000-4000-8000-0000000000bb'
 
+interface FakeDevice { id: string; pairingNumber: number; lessonRunStudentId: string | null; lastSeenAt: null; createdAt: string }
+
 /** In-memory run server that applies the real backend state machine. */
-async function routeRunServer(page: Page) {
+async function routeRunServer(page: Page, devices: FakeDevice[] = [], mapped: unknown[] = []) {
   const json = (body: unknown, status = 200) => ({ status, contentType: 'application/json', body: JSON.stringify(body) })
   let run: Record<string, any> | null = null
   const steps = runSteps(fixture)
   const view = () => ({
     run: { ...run, steps },
     lesson: servedLesson,
-    students: [{ id: 's1', classStudentId: 'c1', label: 'Марко', status: 'expected' }],
+    students: [
+      { id: 's1', classStudentId: 'c1', label: 'Марко', status: 'expected' },
+      { id: 's2', classStudentId: 'c2', label: 'Софія', status: 'expected' },
+    ],
   })
 
   await page.route('**/api/teacher/classes', route => route.fulfill(json({
@@ -269,11 +274,29 @@ async function routeRunServer(page: Page) {
       run = {
         id: RUN_ID, status: 'prepared', classId: CLASS_ID, className: '2-А', lessonId: fixture.id,
         lessonPublishedVersion: 1, currentStepIndex: 0, currentBlockId: steps[0], createdAt: '',
+        joinCode: null, joinCodeExpiresAt: null,
         startedAt: null, pausedAt: null, finishedAt: null, cancelledAt: null,
       }
       return route.fulfill(json(view(), 201))
     }
     if (!run || parts[0] !== run.id) return route.fulfill(json({ error: 'Урок не знайдено' }, 404))
+    if (parts[1] === 'join-code') {
+      run.joinCode = method === 'POST' ? '482913' : null
+      run.joinCodeExpiresAt = method === 'POST' ? new Date(Date.now() + 3600e3).toISOString() : null
+      return route.fulfill(method === 'POST' ? json({ joinCode: run.joinCode, joinCodeExpiresAt: run.joinCodeExpiresAt }) : { status: 204 })
+    }
+    if (parts[1] === 'devices') {
+      if (parts.length === 2) return route.fulfill(json({ devices }))
+      const index = devices.findIndex(d => d.id === parts[2])
+      if (method === 'DELETE') devices.splice(index, 1)
+      else {
+        const { lessonRunStudentId } = request.postDataJSON() as { lessonRunStudentId: string | null }
+        mapped.push(lessonRunStudentId)
+        for (const d of devices) if (lessonRunStudentId && d.lessonRunStudentId === lessonRunStudentId) d.lessonRunStudentId = null
+        devices[index]!.lessonRunStudentId = lessonRunStudentId
+      }
+      return route.fulfill(method === 'DELETE' ? { status: 204 } : json({ ok: true }))
+    }
     try {
       if (parts.length === 2 && parts[1] === 'step' && method === 'PUT') {
         const { stepIndex } = request.postDataJSON() as { stepIndex: number }
@@ -361,4 +384,104 @@ test('moving through the board moves the run, and the lesson list offers to resu
   await expect(page.getByRole('link', { name: 'Продовжити урок: 2-А' })).toBeVisible()
   await page.getByRole('button', { name: 'Підготувати урок' }).click()
   await expect(page).toHaveURL(new RegExp(`run=${RUN_ID}`))
+})
+
+// ── Web join (stage G1) ──────────────────────────────────────────────────────
+
+test('the teacher opens joining, shows the code, and maps joined devices to students', async ({ page }) => {
+  const devices: FakeDevice[] = []
+  const mapped: unknown[] = []
+  await mockTeacherApi(page, { lessonEngine: true })
+  await routeRunServer(page, devices, mapped)
+  await page.goto('/lesson-engine.html?lesson=g2-m2-l8')
+  await page.getByRole('button', { name: 'Підготувати урок' }).click()
+
+  const panel = page.getByRole('region', { name: 'Приєднання учнів' })
+  await panel.getByRole('button', { name: 'Відкрити приєднання' }).click()
+  await expect(panel.locator('.le-join__code')).toHaveText('482 913')
+  await expect(panel.locator('.le-join__url')).toContainText('lesson-join.html?code=482913')
+  await expect(panel.locator('.le-join__empty')).toHaveText('Поки ніхто не приєднався.')
+
+  // Two children join; the panel picks them up on its next poll.
+  devices.push(
+    { id: 'd1', pairingNumber: 1, lessonRunStudentId: null, lastSeenAt: null, createdAt: '' },
+    { id: 'd2', pairingNumber: 2, lessonRunStudentId: null, lastSeenAt: null, createdAt: '' },
+  )
+  await expect(panel.getByLabel('№ 1', { exact: true })).toBeVisible({ timeout: 8000 })
+  await expect(panel.locator('.le-join__summary')).toHaveText('Призначено 0 з 2 учнів')
+
+  await panel.getByLabel('№ 1', { exact: true }).selectOption({ label: 'Марко' })
+  await expect(panel.locator('.le-join__summary')).toHaveText('Призначено 1 з 2 учнів')
+  await expect(panel.getByLabel('№ 2', { exact: true }).locator('option', { hasText: 'Марко (зараз на № 1)' })).toHaveCount(1)
+  expect(mapped).toEqual(['s1'])
+
+  const results = await new AxeBuilder({ page }).withTags(WCAG_AA_TAGS).analyze()
+  expect(results.violations.map(v => v.id)).toEqual([])
+
+  await panel.getByRole('button', { name: 'Відключити пристрій № 2' }).click()
+  await expect(panel.getByLabel('№ 2', { exact: true })).toHaveCount(0)
+
+  await panel.getByRole('button', { name: 'На весь екран' }).click()
+  const full = page.getByRole('dialog', { name: 'Код приєднання до уроку' })
+  await expect(full.locator('.le-join-full__code')).toHaveText('482 913')
+  await page.keyboard.press('Escape')
+  await expect(full).toHaveCount(0)
+
+  await panel.getByRole('button', { name: 'Закрити приєднання' }).click()
+  await expect(panel.getByRole('button', { name: 'Відкрити приєднання' })).toBeVisible()
+})
+
+async function routeStudentLesson(page: Page, state: { mapped: boolean; runStatus: string }, stateRequests: string[] = []) {
+  const json = (body: unknown, status = 200) => ({ status, contentType: 'application/json', body: JSON.stringify(body) })
+  await page.route('**/api/student/lesson/join', async route => {
+    const { code } = route.request().postDataJSON() as { code: string }
+    if (code !== '482913') return route.fulfill(json({ error: 'Урок із таким кодом не знайдено.' }, 404))
+    return route.fulfill(json({ deviceId: '00000000-0000-4000-8000-00000000d001', deviceToken: 'f'.repeat(64), pairingNumber: 4, expiresAt: '' }, 201))
+  })
+  await page.route('**/api/student/lesson/state', route => {
+    stateRequests.push(route.request().url())
+    return route.fulfill(json({
+      runStatus: state.runStatus, lessonTitle: fixture.title, pairingNumber: 4,
+      mapped: state.mapped, studentLabel: state.mapped ? 'Марко' : null,
+    }))
+  })
+}
+
+test('a child joins with the code, shows their number, and is greeted once mapped', async ({ page }) => {
+  const state = { mapped: false, runStatus: 'active' }
+  const stateRequests: string[] = []
+  await routeStudentLesson(page, state, stateRequests)
+  await page.goto('/lesson-join.html?code=482913')
+
+  await expect(page.getByLabel('Код від учителя')).toHaveValue('482 913')
+  const axeJoin = await new AxeBuilder({ page }).withTags(WCAG_AA_TAGS).analyze()
+  expect(axeJoin.violations.map(v => v.id)).toEqual([])
+
+  await page.getByRole('button', { name: 'Приєднатися' }).click()
+  await expect(page.locator('#lj-number')).toHaveText('№ 4')
+  await expect(page.locator('#lj-status')).toHaveText('Покажи свій номер учителю і чекай.')
+  await expect(page).toHaveURL(/lesson-join\.html$/)
+  expect(stateRequests.every(url => !url.includes('f'.repeat(16)))).toBe(true)
+
+  state.mapped = true
+  await expect(page.locator('#lj-status')).toHaveText('Привіт, Марко! Чекай на завдання від учителя.', { timeout: 8000 })
+  const axeWait = await new AxeBuilder({ page }).withTags(WCAG_AA_TAGS).analyze()
+  expect(axeWait.violations.map(v => v.id)).toEqual([])
+
+  // A reload keeps the device (sessionStorage), then the lesson ends.
+  await page.reload()
+  await expect(page.locator('#lj-number')).toHaveText('№ 4')
+  state.runStatus = 'finished'
+  await expect(page.locator('#lj-status')).toHaveText('Урок завершено. Дякуємо!', { timeout: 8000 })
+})
+
+test('a wrong code keeps the child on the code screen with a clear message', async ({ page }) => {
+  await routeStudentLesson(page, { mapped: false, runStatus: 'active' })
+  await page.goto('/lesson-join.html')
+  await page.getByLabel('Код від учителя').fill('111111')
+  await page.getByRole('button', { name: 'Приєднатися' }).click()
+  await expect(page.locator('#lj-error')).toHaveText('Урок із таким кодом не знайдено.')
+  await page.getByLabel('Код від учителя').fill('12')
+  await page.getByRole('button', { name: 'Приєднатися' }).click()
+  await expect(page.locator('#lj-error')).toHaveText('Введи 6 цифр коду.')
 })

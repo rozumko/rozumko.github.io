@@ -16,12 +16,15 @@ import {
   stepTitle,
 } from './run-model.js'
 import type { BoardActivityDeps } from './activity-board.js'
+import { mountJoinPanel, type JoinPanelDeps } from './join-panel.js'
 import type { LessonRunAction, LessonRunView } from './types.js'
 
 export interface RunConsoleDeps {
   act(action: LessonRunAction): Promise<LessonRunView>
   setStep(stepIndex: number): Promise<LessonRunView>
+  getRun(): Promise<LessonRunView>
   check: BoardActivityDeps['check']
+  join: Omit<JoinPanelDeps, 'refreshRun'>
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] {
@@ -44,6 +47,11 @@ const CONFIRM_ACTIONS: Partial<Record<LessonRunAction, string>> = {
 
 export function mountRunConsole(root: HTMLElement, initial: LessonRunView, deps: RunConsoleDeps): void {
   let view = initial
+  // Mounted once and kept across re-renders so its device polling survives.
+  const joinPanel = mountJoinPanel(initial, {
+    ...deps.join,
+    refreshRun: () => perform(() => deps.getRun()),
+  })
   const status = el('p', 'le-console__status')
   status.setAttribute('role', 'status')
 
@@ -175,7 +183,8 @@ export function mountRunConsole(root: HTMLElement, initial: LessonRunView, deps:
     for (const extra of attachments.get(run.currentBlockId) ?? []) current.append(renderLessonBlock(lesson, extra, {}, 'section'))
 
     layout.append(nav, current)
-    root.replaceChildren(header, controls, status, layout)
+    joinPanel.update(view)
+    root.replaceChildren(header, controls, status, joinPanel.element, layout)
   }
 
   render()

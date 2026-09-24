@@ -707,6 +707,9 @@ export const lessonRuns = pgTable('lesson_runs', {
   status:                 text('status').notNull().default('prepared').$type<LessonRunStatus>(),
   currentStepIndex:       integer('current_step_index').notNull().default(0),
   currentBlockId:         text('current_block_id').notNull(),
+  // 0051: web join. Six digits, unique while set; cleared when the run closes.
+  joinCode:               text('join_code'),
+  joinCodeExpiresAt:      timestamp('join_code_expires_at', { withTimezone: true }),
   createdAt:              timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   startedAt:              timestamp('started_at', { withTimezone: true }),
   pausedAt:               timestamp('paused_at', { withTimezone: true }),
@@ -734,16 +737,34 @@ export type LessonRunStudentRow = typeof lessonRunStudents.$inferSelect
 export type LessonRunEventType =
   | 'run_created' | 'run_started' | 'block_opened' | 'activity_dispatched'
   | 'run_paused' | 'run_resumed' | 'run_finished' | 'run_cancelled'
+  | 'join_opened' | 'join_closed' | 'device_joined' | 'device_mapped' | 'device_unmapped' | 'device_revoked'
 
 export const lessonRunEvents = pgTable('lesson_run_events', {
   id:          uuid('id').primaryKey().defaultRandom(),
   lessonRunId: uuid('lesson_run_id').notNull().references(() => lessonRuns.id, { onDelete: 'restrict' }),
   type:        text('type').notNull().$type<LessonRunEventType>(),
   blockId:     text('block_id'),
-  actorType:   text('actor_type').notNull().$type<'teacher' | 'system'>(),
+  actorType:   text('actor_type').notNull().$type<'teacher' | 'system' | 'device'>(),
   actorId:     uuid('actor_id'),
   payload:     jsonb('payload').notNull().default({}).$type<Record<string, unknown>>(),
   createdAt:   timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 })
 
 export type LessonRunEventRow = typeof lessonRunEvents.$inferSelect
+
+// Anonymous device joined to a run by code (0051). The teacher maps it to a
+// roster student; revoked devices are kept (never deleted) for the audit trail.
+export const lessonRunDevices = pgTable('lesson_run_devices', {
+  id:                 uuid('id').primaryKey().defaultRandom(),
+  lessonRunId:        uuid('lesson_run_id').notNull().references(() => lessonRuns.id, { onDelete: 'restrict' }),
+  pairingNumber:      integer('pairing_number').notNull(),
+  lessonRunStudentId: uuid('lesson_run_student_id').references(() => lessonRunStudents.id, { onDelete: 'restrict' }),
+  createdAt:          timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  lastSeenAt:         timestamp('last_seen_at', { withTimezone: true }),
+  expiresAt:          timestamp('expires_at', { withTimezone: true }).notNull(),
+  revokedAt:          timestamp('revoked_at', { withTimezone: true }),
+}, (t) => ({
+  uniqRunPairing: unique('lesson_run_devices_run_pairing_uq').on(t.lessonRunId, t.pairingNumber),
+}))
+
+export type LessonRunDeviceRow = typeof lessonRunDevices.$inferSelect

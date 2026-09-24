@@ -5,11 +5,12 @@
 // indistinguishable from a missing one. Dark unless LESSON_ENGINE_ENABLED.
 
 import type { FastifyInstance, FastifyReply } from 'fastify'
-import { and, asc, desc, eq, inArray, isNotNull, ne } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNotNull, isNull, ne } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import {
   classStudents,
   curriculumLessons,
+  lessonRunDevices,
   lessonRunEvents,
   lessonRunStudents,
   lessonRuns,
@@ -31,13 +32,34 @@ import {
   type LessonRunAction,
 } from '../lib/lesson-run-state.js'
 import { CURRICULUM_LESSON_ID_PATTERN } from './curriculum-editorial.js'
+import { LESSON_JOIN_CODE_TTL_MS, generateLessonJoinCode } from '../lib/lesson-device.js'
 
 class RunNotFoundError extends Error {}
+class DeviceNotFoundError extends Error {
+  constructor(message = 'Пристрій не знайдено') { super(message) }
+}
+
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0]
+
+/** Locks the teacher's own open run, or throws. Devices are managed only while it is open. */
+async function lockOpenRun(tx: Tx, runId: string, teacherId: string) {
+  const [run] = await tx.select({ id: lessonRuns.id, status: lessonRuns.status }).from(lessonRuns)
+    .where(and(eq(lessonRuns.id, runId), eq(lessonRuns.teacherId, teacherId))).limit(1).for('update')
+  if (!run) throw new RunNotFoundError()
+  if (!OPEN_RUN_STATUSES.includes(run.status)) throw new LessonRunStateError('Урок завершено: пристрої вже не змінюються')
+  return run
+}
 
 const runIdParams = {
   type: 'object',
   required: ['id'],
   properties: { id: { type: 'string', format: 'uuid' } },
+} as const
+
+const deviceParams = {
+  type: 'object',
+  required: ['id', 'deviceId'],
+  properties: { id: { type: 'string', format: 'uuid' }, deviceId: { type: 'string', format: 'uuid' } },
 } as const
 
 export interface LessonRunStudentView {
@@ -62,6 +84,8 @@ export function lessonRunView(run: LessonRunRow, className: string, students: Le
       currentStepIndex: run.currentStepIndex,
       currentBlockId: run.currentBlockId,
       steps: runSteps(lesson),
+      joinCode: run.joinCode,
+      joinCodeExpiresAt: run.joinCodeExpiresAt,
       createdAt: run.createdAt,
       startedAt: run.startedAt,
       pausedAt: run.pausedAt,
@@ -220,8 +244,14 @@ export async function lessonRunRoutes(app: FastifyInstance) {
         if (!run) throw new RunNotFoundError()
         const next = applyRunAction(run.status, action)
         const now = new Date()
-        await tx.update(lessonRuns).set({ status: next.status, ...runActionTimestamps(action, now), updatedAt: now })
-          .where(eq(lessonRuns.id, id))
+        // A closed run stops accepting joins in the same write (DB-checked).
+        const closing = next.status === 'finished' || next.status === 'cancelled'
+        await tx.update(lessonRuns).set({
+          status: next.status,
+          ...runActionTimestamps(action, now),
+          ...(closing ? { joinCode: null, joinCodeExpiresAt: null } : {}),
+          updatedAt: now,
+        }).where(eq(lessonRuns.id, id))
         await tx.insert(lessonRunEvents).values({
           lessonRunId: id, type: next.event, blockId: run.currentBlockId, actorType: 'teacher', actorId: teacherId,
         })
@@ -261,6 +291,149 @@ export async function lessonRunRoutes(app: FastifyInstance) {
       })
       return reply.send(await loadRunView(id, teacherId))
     } catch (err) {
+      return sendRunError(reply, err)
+    }
+  })
+
+  // ── Web join (stage G1) ──────────────────────────────────────────────────
+
+  // POST /api/teacher/lesson-runs/:id/join-code — open (or rotate) joining.
+  // Rotating only stops new joins with the old code; joined devices stay.
+  app.post<{ Params: { id: string } }>('/:id/join-code', { schema: { params: runIdParams } }, async (req, reply) => {
+    const teacherId = req.user!.id
+    const { id } = req.params
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        const result = await db.transaction(async tx => {
+          const [run] = await tx.select({ status: lessonRuns.status }).from(lessonRuns)
+            .where(and(eq(lessonRuns.id, id), eq(lessonRuns.teacherId, teacherId))).limit(1).for('update')
+          if (!run) throw new RunNotFoundError()
+          if (!OPEN_RUN_STATUSES.includes(run.status)) throw new LessonRunStateError('Урок завершено: приєднатися вже не можна')
+          const joinCode = generateLessonJoinCode()
+          const joinCodeExpiresAt = new Date(Date.now() + LESSON_JOIN_CODE_TTL_MS)
+          await tx.update(lessonRuns).set({ joinCode, joinCodeExpiresAt, updatedAt: new Date() }).where(eq(lessonRuns.id, id))
+          await tx.insert(lessonRunEvents).values({ lessonRunId: id, type: 'join_opened', actorType: 'teacher', actorId: teacherId })
+          return { joinCode, joinCodeExpiresAt }
+        })
+        return reply.send(result)
+      } catch (err) {
+        if (isUniqueViolation(err)) continue
+        return sendRunError(reply, err)
+      }
+    }
+    return reply.code(503).send({ error: 'Не вдалося створити код. Спробуйте ще раз.' })
+  })
+
+  // DELETE /api/teacher/lesson-runs/:id/join-code — stop new joins
+  app.delete<{ Params: { id: string } }>('/:id/join-code', { schema: { params: runIdParams } }, async (req, reply) => {
+    const teacherId = req.user!.id
+    const { id } = req.params
+    try {
+      await db.transaction(async tx => {
+        const [run] = await tx.select({ joinCode: lessonRuns.joinCode }).from(lessonRuns)
+          .where(and(eq(lessonRuns.id, id), eq(lessonRuns.teacherId, teacherId))).limit(1).for('update')
+        if (!run) throw new RunNotFoundError()
+        if (!run.joinCode) return
+        await tx.update(lessonRuns).set({ joinCode: null, joinCodeExpiresAt: null, updatedAt: new Date() }).where(eq(lessonRuns.id, id))
+        await tx.insert(lessonRunEvents).values({ lessonRunId: id, type: 'join_closed', actorType: 'teacher', actorId: teacherId })
+      })
+      return reply.code(204).send()
+    } catch (err) {
+      return sendRunError(reply, err)
+    }
+  })
+
+  // GET /api/teacher/lesson-runs/:id/devices — live devices and their mapping
+  app.get<{ Params: { id: string } }>('/:id/devices', { schema: { params: runIdParams } }, async (req, reply) => {
+    const [run] = await db.select({ id: lessonRuns.id }).from(lessonRuns)
+      .where(and(eq(lessonRuns.id, req.params.id), eq(lessonRuns.teacherId, req.user!.id))).limit(1)
+    if (!run) return reply.code(404).send({ error: 'Урок не знайдено' })
+    const devices = await db.select({
+      id: lessonRunDevices.id,
+      pairingNumber: lessonRunDevices.pairingNumber,
+      lessonRunStudentId: lessonRunDevices.lessonRunStudentId,
+      lastSeenAt: lessonRunDevices.lastSeenAt,
+      createdAt: lessonRunDevices.createdAt,
+    }).from(lessonRunDevices)
+      .where(and(eq(lessonRunDevices.lessonRunId, run.id), isNull(lessonRunDevices.revokedAt)))
+      .orderBy(asc(lessonRunDevices.pairingNumber))
+    return reply.send({ devices })
+  })
+
+  // PUT /api/teacher/lesson-runs/:id/devices/:deviceId — map a device to a roster
+  // student (null unmaps). A student already on another device moves here.
+  app.put<{ Params: { id: string; deviceId: string }; Body: { lessonRunStudentId: string | null } }>('/:id/devices/:deviceId', {
+    schema: {
+      params: deviceParams,
+      body: {
+        type: 'object',
+        required: ['lessonRunStudentId'],
+        properties: { lessonRunStudentId: { anyOf: [{ type: 'string', format: 'uuid' }, { type: 'null' }] } },
+      },
+    },
+  }, async (req, reply) => {
+    const teacherId = req.user!.id
+    const { id, deviceId } = req.params
+    const studentId = req.body.lessonRunStudentId
+    try {
+      await db.transaction(async tx => {
+        const run = await lockOpenRun(tx, id, teacherId)
+        const [device] = await tx.select().from(lessonRunDevices)
+          .where(and(eq(lessonRunDevices.id, deviceId), eq(lessonRunDevices.lessonRunId, run.id), isNull(lessonRunDevices.revokedAt)))
+          .limit(1).for('update')
+        if (!device) throw new DeviceNotFoundError()
+        if (studentId === null) {
+          if (device.lessonRunStudentId === null) return
+          await tx.update(lessonRunDevices).set({ lessonRunStudentId: null }).where(eq(lessonRunDevices.id, deviceId))
+          await tx.insert(lessonRunEvents).values({
+            lessonRunId: id, type: 'device_unmapped', actorType: 'teacher', actorId: teacherId, payload: { deviceId },
+          })
+          return
+        }
+        const [student] = await tx.select({ id: lessonRunStudents.id, joinedAt: lessonRunStudents.joinedAt })
+          .from(lessonRunStudents)
+          .where(and(eq(lessonRunStudents.id, studentId), eq(lessonRunStudents.lessonRunId, run.id), isNotNull(lessonRunStudents.classStudentId)))
+          .limit(1)
+        if (!student) throw new DeviceNotFoundError('Учня не знайдено в цьому уроці')
+        if (device.lessonRunStudentId === student.id) return
+        // Free the student's previous device first (one live device per student).
+        await tx.update(lessonRunDevices).set({ lessonRunStudentId: null }).where(and(
+          eq(lessonRunDevices.lessonRunStudentId, student.id), isNull(lessonRunDevices.revokedAt),
+        ))
+        await tx.update(lessonRunDevices).set({ lessonRunStudentId: student.id }).where(eq(lessonRunDevices.id, deviceId))
+        await tx.update(lessonRunStudents).set({ status: 'joined', joinedAt: student.joinedAt ?? new Date() })
+          .where(eq(lessonRunStudents.id, student.id))
+        await tx.insert(lessonRunEvents).values({
+          lessonRunId: id, type: 'device_mapped', actorType: 'teacher', actorId: teacherId,
+          payload: { deviceId, lessonRunStudentId: student.id },
+        })
+      })
+      return reply.send({ ok: true })
+    } catch (err) {
+      if (err instanceof DeviceNotFoundError) return reply.code(404).send({ error: err.message })
+      return sendRunError(reply, err)
+    }
+  })
+
+  // DELETE /api/teacher/lesson-runs/:id/devices/:deviceId — revoke: the token stops working
+  app.delete<{ Params: { id: string; deviceId: string } }>('/:id/devices/:deviceId', { schema: { params: deviceParams } }, async (req, reply) => {
+    const teacherId = req.user!.id
+    const { id, deviceId } = req.params
+    try {
+      await db.transaction(async tx => {
+        const run = await lockOpenRun(tx, id, teacherId)
+        const [revoked] = await tx.update(lessonRunDevices)
+          .set({ revokedAt: new Date(), lessonRunStudentId: null })
+          .where(and(eq(lessonRunDevices.id, deviceId), eq(lessonRunDevices.lessonRunId, run.id), isNull(lessonRunDevices.revokedAt)))
+          .returning({ id: lessonRunDevices.id })
+        if (!revoked) throw new DeviceNotFoundError()
+        await tx.insert(lessonRunEvents).values({
+          lessonRunId: id, type: 'device_revoked', actorType: 'teacher', actorId: teacherId, payload: { deviceId },
+        })
+      })
+      return reply.code(204).send()
+    } catch (err) {
+      if (err instanceof DeviceNotFoundError) return reply.code(404).send({ error: err.message })
       return sendRunError(reply, err)
     }
   })

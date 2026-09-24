@@ -7,7 +7,7 @@ import * as backendSchema from '../../backend/src/lib/curriculum-lesson-schema.t
 import { parseRichText } from './rich-text.ts'
 import { documentBlocks, presentationSlides, BLOCK_TYPE_LABELS, lessonMetaLine } from './projection.ts'
 import { answerFromSelection, boardActivityMode, boardQuestions, gameResultEnvelope } from './board-answers.ts'
-import { canNavigate, isOpenRun, runLifecycleActions, stepAttachments, stepTitle } from './run-model.ts'
+import { canNavigate, formatJoinCode, isOpenRun, mappingSummary, runLifecycleActions, stepAttachments, stepTitle, studentOptions } from './run-model.ts'
 import * as runState from '../../backend/src/lib/lesson-run-state.ts'
 
 const fixture = JSON.parse(readFileSync(
@@ -144,4 +144,30 @@ test('step titles prefer the authored board headline', () => {
   const byId = id => servedLesson.blocks.find(block => block.id === id)
   assert.equal(stepTitle(byId('g2-m2-l8-b07'), 'x'), 'Яка назва краща?')
   assert.equal(stepTitle(undefined, 'fallback'), 'fallback')
+})
+
+// ── Web join (stage G1) ──────────────────────────────────────────────────────
+
+const roster = [
+  { id: 'r1', classStudentId: 'c1', label: 'Марко', status: 'joined' },
+  { id: 'r2', classStudentId: 'c2', label: 'Софія', status: 'expected' },
+  { id: 'r3', classStudentId: null, label: null, status: 'expected' },
+]
+const devices = [
+  { id: 'd1', pairingNumber: 1, lessonRunStudentId: 'r1', lastSeenAt: null, createdAt: '' },
+  { id: 'd2', pairingNumber: 2, lessonRunStudentId: null, lastSeenAt: null, createdAt: '' },
+]
+
+test('join codes are grouped for reading aloud', () => {
+  assert.equal(formatJoinCode('123456'), '123 456')
+  assert.equal(formatJoinCode('12'), '12')
+})
+
+test('device mapping offers only live roster students and says where a student already is', () => {
+  assert.deepEqual(studentOptions(roster, devices, 'd2'), [
+    { value: 'r1', label: 'Марко (зараз на № 1)' },
+    { value: 'r2', label: 'Софія' },
+  ])
+  assert.deepEqual(studentOptions(roster, devices, 'd1').map(o => o.label), ['Марко', 'Софія'])
+  assert.equal(mappingSummary(roster, devices), 'Призначено 1 з 2 учнів')
 })

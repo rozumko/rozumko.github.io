@@ -172,6 +172,15 @@ append-only — all enforced by database triggers. Students are referenced only
 by `class_students.id`; deleting a student anonymises their run rows. The run
 tables have RLS enabled with no policies.
 
+Lesson web join (`/api/student/lesson/*`, migration `0051`) creates
+anonymous devices from a 6-digit run code. The code is throttled per code
+and per IP, expires after 3 h, and is cleared when the run closes. Device
+tokens are domain-separated HMACs with no PII, sent only in POST bodies, and
+honoured only while the device is neither revoked nor expired. A device never
+reads the roster: `class_students.label` reaches it only through its own
+teacher-made mapping. Devices are revoked rather than deleted (trigger), and
+`lesson_run_devices` has RLS enabled with no policies.
+
 ## Mission Editorial Workflow — **[IMPLEMENTED]**
 
 Migration `0038` adds the same audited state machine, optimistic edit locking
@@ -287,7 +296,8 @@ progress), `0032`-`0034` (micro-lessons, path maps and their immutable
 revisions), `0036`-`0038` (`question_revisions`, `micro_lesson_revisions`,
 `mission_revisions`), `0041` (`content_publications`), `0049`
 (`curriculum_lessons`, `curriculum_lesson_revisions`) and `0050`
-(`lesson_runs`, `lesson_run_students`, `lesson_run_events`). A regression test
+(`lesson_runs`, `lesson_run_students`, `lesson_run_events`) and `0051`
+(`lesson_run_devices`). A regression test
 fails if any application table is left uncovered.
 Migration `0048` applies the same deny-by-default RLS rule to
 `teacher_question_topics`; its answer-bearing session snapshots remain inside

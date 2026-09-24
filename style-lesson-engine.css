@@ -390,6 +390,47 @@ body.le-board-open { overflow: hidden; }
   .le-console__layout { grid-template-columns: 1fr; }
 }
 
+/* ── Web join panel (stage G1) ───────────────────────────────── */
+.le-join {
+  margin: var(--sp-2) 0 var(--sp-4);
+  padding: var(--sp-4) var(--sp-5);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-md);
+  background: var(--clr-surface);
+}
+.le-join[hidden] { display: none; }
+.le-join__title { margin: 0 0 var(--sp-3); font-size: var(--font-size-xl); }
+.le-join__code-area { display: grid; gap: var(--sp-2); justify-items: start; }
+.le-join__code { margin: 0; font-size: var(--font-size-5xl); font-weight: 900; letter-spacing: 0.06em; color: var(--clr-sky-dark); }
+.le-join__url { margin: 0; color: var(--clr-text-muted); word-break: break-all; }
+.le-join__qr { width: 10rem; height: 10rem; }
+.le-join__actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.le-join__actions .le-board__action { font-size: var(--font-size-base); min-height: 2.75rem; padding: var(--sp-2) var(--sp-4); }
+.le-join__message:empty { display: none; }
+.le-join__message { color: var(--fb-err-text); font-weight: 700; }
+.le-join__summary { margin: var(--sp-3) 0 var(--sp-2); font-weight: 700; }
+.le-join__empty { margin: var(--sp-3) 0 0; color: var(--clr-text-muted); }
+.le-join__device-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-2); }
+.le-join__device { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); }
+.le-join__device-number { min-width: 3.5rem; font-size: var(--font-size-xl); font-weight: 900; }
+.le-join__revoke {
+  min-height: 2.75rem;
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-sm);
+  background: var(--clr-surface);
+  color: var(--fb-err-text);
+  font: inherit;
+  cursor: pointer;
+}
+.le-join__revoke:focus-visible { outline: 3px solid var(--clr-focus-ring); outline-offset: 2px; }
+
+.le-join-full__stage { flex-direction: column; gap: var(--sp-4); text-align: center; }
+.le-join-full__hint { margin: 0; font-size: clamp(1.5rem, 3vw, 2.5rem); font-weight: 700; }
+.le-join-full__url { margin: 0; font-size: clamp(1.2rem, 2.5vw, 2rem); color: var(--clr-text-muted); }
+.le-join-full__code { margin: 0; font-size: clamp(4rem, 14vw, 11rem); font-weight: 900; letter-spacing: 0.06em; color: var(--clr-sky-dark); line-height: 1; }
+.le-join-full__qr { width: min(40vh, 22rem); height: min(40vh, 22rem); }
+
 /* Confirm dialog (utils/ui showConfirm) — this page loads no student styles. */
 .le-page .app-modal-overlay {
   position: fixed;

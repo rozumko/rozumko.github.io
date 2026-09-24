@@ -77,7 +77,7 @@ waiting on the extension protocol.
 | **D** ✅ | Teacher document view + presentation view from one definition (`features/lesson-engine/`) | No duplicated content; teacher-only never on the board; Playwright |
 | **E** ✅ | Activity adapter: server-scored choice/truefalse/classify + existing `features/activities` games (client-unverified) behind one result envelope | Same mechanic in board and student mode; no key leak |
 | **F** ✅ | `lesson_runs`, `lesson_run_students`, `lesson_run_events`, teacher console (Next/Back/Pause/Resume/Finish) | Server-side state machine; reload-safe; content edits do not touch active runs |
-| G | Web join + roster mapping, scoped launch token, submit, polling live heatmap | 5 simulated students; idempotent submit; teacher reload restores state |
+| **G1** ✅ / G2 | Web join + roster mapping, scoped launch token, submit, polling live heatmap | 5 simulated students; idempotent submit; teacher reload restores state |
 | H | Outcome registry, evidence, lesson report | Every summary traces to evidence → attempt → block → run → lesson version |
 | I | `ClassroomControlProvider`: fake first, then Classroom Remote | Fake works in CI; real: 3–5 devices, correct URL on correct device |
 | J | IndexedDB outbox → internal pilot → external pilot → go/no-go | Offline submit produces exactly one server attempt |
@@ -231,6 +231,56 @@ before start; step range enforced; reteach while paused; the step survives a
 reload; republishing the lesson leaves the running snapshot unchanged;
 deleting a student anonymises their row; finished runs refuse everything;
 trigger rejections; events recorded in order.
+
+## Stage G1 — what exists (web join)
+
+Decisions:
+
+- **The child types a code, never a name.** Joining creates an anonymous
+  device with a pairing number shown big on the child's screen. The teacher
+  maps "№ 4" to a roster student in the console. A device never sees the
+  roster; after mapping it learns only its own label. Anyone who merely
+  knows the code learns nothing about the class.
+- **Device token** = HMAC(`ATTEMPT_SECRET`, `lesson-run-device:` + deviceId).
+  It is domain-separated, so School, olympiad and Home tokens cannot be
+  replayed as device tokens. It carries no PII, is checked in constant time,
+  and is honoured only while the device row is live (not revoked, not
+  expired after 4 h). Tokens travel in POST bodies, never in URLs; the join
+  page also strips `?code=` from the address bar once used.
+- **Join code:** 6 digits, 3 h lifetime, unique while set, and throttled per
+  code and per IP with the School classroom limits. Rotating the code stops
+  new joins but keeps joined devices. Finishing or cancelling a run clears
+  the code in the same write (a DB check forbids a code on a closed run).
+
+Code:
+
+- Migration `0051`:
+  - `lesson_runs.join_code`/`join_code_expires_at`;
+  - `lesson_run_devices`, which is never deleted (revoked instead): one live
+    device per student, pairing numbers never reused;
+  - widened event types (`join_*`, `device_*`) and actor `device`.
+- Teacher: `POST|DELETE /api/teacher/lesson-runs/:id/join-code`,
+  `GET /:id/devices`, `PUT /:id/devices/:deviceId` (mapping a student who is
+  on another device moves them), `DELETE /:id/devices/:deviceId` (revoke).
+  All owner-scoped; changes are allowed only while the run is open.
+- Student (`routes/lesson-student.ts`, no Supabase): `POST
+  /api/student/lesson/join` and `POST /api/student/lesson/state` (status,
+  pairing number, own label once mapped).
+- Console join panel (`features/lesson-engine/join-panel.ts`): code grouped
+  as "482 913", QR, link, full-screen code for the board, new code, close
+  joining; a device list polled every 3 s with a roster picker per device,
+  "(зараз на № N)" hints and revoke.
+- `lesson-join.html` + `lesson-join.ts`: code entry for grades 1–4, big
+  pairing number, a greeting once mapped, "урок завершено" at the end. The
+  device survives a reload via sessionStorage.
+
+Verified on a real PostgreSQL 16 (migrations `0000`–`0051` plus a scripted
+flow through the real routes): join refused without a code; two anonymous
+devices; one device's token rejected for another; an unmapped device sees no
+roster; mapping gives the child their label; moving a student frees the old
+device; revoke returns 401; numbers are not reused; rotating the code kills
+the old one; closing and finishing clear the code; a finished run refuses
+device changes; triggers fire; 429 after many wrong codes from one IP.
 
 The validator lives in the backend because the backend is the authority for
 anything that is published or scored. Frontend types arrive with stage D and

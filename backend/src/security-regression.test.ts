@@ -427,9 +427,16 @@ test('lesson runs are RLS-protected, frozen once closed, and owner-scoped', () =
   assert.match(migration, /class_student_id uuid REFERENCES public\.class_students\(id\) ON DELETE SET NULL/)
   assert.match(journal, /"tag": "0050_add_lesson_runs"/)
 
-  // Every event type the code writes must be allowed by the table constraint.
-  const allowed = new Set([...migration.match(/lesson_run_events_type_check CHECK \(type IN \(([^)]*)\)/)![1]!.matchAll(/'([a-z_]+)'/g)].map(m => m[1]))
-  const written = new Set([...`${route}\n${state}`.matchAll(/(?:type|event): '(run_[a-z]+|block_opened|activity_dispatched)'/g)].map(m => m[1]))
+  // Every event type the code writes must be allowed by the newest migration
+  // that defines the constraint (0051 widened it for web join).
+  const constraintSources = readdirSync(new URL('../drizzle/', import.meta.url))
+    .filter(name => name.endsWith('.sql')).sort()
+    .map(name => readFileSync(new URL(`../drizzle/${name}`, import.meta.url), 'utf8'))
+    .filter(sql => /lesson_run_events_type_check CHECK \(type IN/.test(sql))
+  const latest = constraintSources[constraintSources.length - 1]!
+  const allowed = new Set([...latest.match(/lesson_run_events_type_check CHECK \(type IN \(([^)]*)\)/)![1]!.matchAll(/'([a-z_]+)'/g)].map(m => m[1]))
+  const student = readFileSync(new URL('./routes/lesson-student.ts', import.meta.url), 'utf8')
+  const written = new Set([...`${route}\n${state}\n${student}`.matchAll(/(?:type|event): '(run_[a-z]+|block_opened|activity_dispatched|join_[a-z]+|device_[a-z]+)'/g)].map(m => m[1]))
   assert.ok(written.size >= 6, 'event scan found too few event types')
   for (const type of written) assert.ok(allowed.has(type), type)
 
@@ -440,6 +447,36 @@ test('lesson runs are RLS-protected, frozen once closed, and owner-scoped', () =
   assert.ok(ownerScoped >= runLookups - 1, 'every run lookup must be owner-scoped (the open-run conflict lookup is by own class)')
   assert.match(route, /eq\(teacherClasses\.teacherId, teacherId\)/)
   assert.match(route, /toDisplaySafeLesson\(lesson\)/)
+})
+
+test('web join: devices are anonymous, revocable, RLS-protected, and tokens stay out of URLs', () => {
+  const migration = readFileSync(new URL('../drizzle/0051_add_lesson_run_devices.sql', import.meta.url), 'utf8')
+  const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')
+  const student = readFileSync(new URL('./routes/lesson-student.ts', import.meta.url), 'utf8')
+  const device = readFileSync(new URL('./lib/lesson-device.ts', import.meta.url), 'utf8')
+  const runs = readFileSync(new URL('./routes/lesson-runs.ts', import.meta.url), 'utf8')
+
+  assert.match(migration, /ALTER TABLE public\.lesson_run_devices ENABLE ROW LEVEL SECURITY;/)
+  assert.doesNotMatch(migration, /CREATE POLICY/)
+  assert.match(migration, /lesson_runs_join_code_open_check[\s\S]{0,120}status IN \('prepared', 'active', 'paused'\)/)
+  assert.match(migration, /lesson_run_devices_one_per_student_uq/)
+  assert.match(migration, /BEFORE DELETE ON public\.lesson_run_devices/)
+  assert.match(journal, /"tag": "0051_add_lesson_run_devices"/)
+
+  // Domain-separated HMAC, constant-time check, liveness re-checked per request.
+  assert.match(device, /LESSON_DEVICE_TOKEN_DOMAIN \+ deviceId/)
+  assert.match(device, /timingSafeEqual/)
+  assert.match(student, /verifyDeviceToken\(deviceId, deviceToken\)/)
+  assert.match(student, /deviceLiveness\(row\.device\) !== 'live'/)
+  // Join is throttled per code and per IP; tokens never ride in a query string.
+  assert.match(student, /LESSON_JOIN_CODE_THROTTLE_SCOPE/)
+  assert.match(student, /LESSON_JOIN_CODE_IP_THROTTLE_SCOPE/)
+  assert.doesNotMatch(student, /Querystring/)
+  // A device never reads the roster: class_students is reached only through its own mapping.
+  assert.doesNotMatch(student, /\.from\(classStudents\)/)
+  assert.match(student, /leftJoin\(classStudents, eq\(classStudents\.id, lessonRunStudents\.classStudentId\)\)/)
+  // Closing a run clears its join code in the same write.
+  assert.match(runs, /closing \? \{ joinCode: null, joinCodeExpiresAt: null \}/)
 })
 
 test('question editorial history is RLS-protected and journaled', () => {

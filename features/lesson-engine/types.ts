@@ -138,6 +138,9 @@ export interface LessonRunState {
   currentBlockId: string
   /** Block ids of the navigable steps, in order. */
   steps: string[]
+  /** Six digits while joining is open; null otherwise. */
+  joinCode: string | null
+  joinCodeExpiresAt: string | null
   createdAt: string
   startedAt: string | null
   pausedAt: string | null
@@ -162,4 +165,30 @@ export interface LessonRunSummary {
   currentStepIndex: number
   stepCount: number
   createdAt: string
+}
+
+// ── Web join (stage G1) ──────────────────────────────────────────────────────
+
+export interface LessonRunDevice {
+  id: string
+  pairingNumber: number
+  lessonRunStudentId: string | null
+  lastSeenAt: string | null
+  createdAt: string
+}
+
+export interface LessonDeviceJoin {
+  deviceId: string
+  deviceToken: string
+  pairingNumber: number
+  expiresAt: string
+}
+
+export interface LessonDeviceState {
+  runStatus: LessonRunStatus
+  lessonTitle: LocalizedText
+  pairingNumber: number
+  mapped: boolean
+  /** The child's own roster label, only after the teacher mapped the device. */
+  studentLabel: string | null
 }

@@ -4,7 +4,10 @@ import type {
   BoardAnswer,
   CurriculumLessonSummary,
   LessonDefinition,
+  LessonDeviceJoin,
+  LessonDeviceState,
   LessonRunAction,
+  LessonRunDevice,
   LessonRunSummary,
   LessonRunView,
 } from '../lesson-engine/types.js'
@@ -1209,6 +1212,42 @@ export function setLessonRunStep(runId: string, stepIndex: number): Promise<Less
     method: 'PUT',
     body: JSON.stringify({ stepIndex }),
   })
+}
+
+/** Opens (or rotates) web join for a run. */
+export function openLessonRunJoin(runId: string): Promise<{ joinCode: string; joinCodeExpiresAt: string }> {
+  return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}/join-code`, { method: 'POST' })
+}
+
+export function closeLessonRunJoin(runId: string): Promise<void> {
+  return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}/join-code`, { method: 'DELETE' })
+}
+
+export function listLessonRunDevices(runId: string): Promise<{ devices: LessonRunDevice[] }> {
+  return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}/devices`)
+}
+
+/** Maps a joined device to a roster student of the run (null unmaps). */
+export function mapLessonRunDevice(runId: string, deviceId: string, lessonRunStudentId: string | null): Promise<{ ok: true }> {
+  return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}/devices/${encodeURIComponent(deviceId)}`, {
+    method: 'PUT',
+    body: JSON.stringify({ lessonRunStudentId }),
+  })
+}
+
+export function revokeLessonRunDevice(runId: string, deviceId: string): Promise<void> {
+  return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}/devices/${encodeURIComponent(deviceId)}`, { method: 'DELETE' })
+}
+
+// ─── Lesson Engine: student device (no account) ────────────────────────────
+
+export function joinLessonRun(code: string): Promise<LessonDeviceJoin> {
+  return request('/api/student/lesson/join', { method: 'POST', body: JSON.stringify({ code }) })
+}
+
+/** Token goes in the body, never the URL. */
+export function getLessonDeviceState(deviceId: string, deviceToken: string): Promise<LessonDeviceState> {
+  return request('/api/student/lesson/state', { method: 'POST', body: JSON.stringify({ deviceId, deviceToken }) })
 }
 
 /** "Do it together" on the board: the server scores the class answer. */

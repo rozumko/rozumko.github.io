@@ -6,12 +6,17 @@
 import './frontend-security.js'
 import {
   checkCurriculumActivity,
+  closeLessonRunJoin,
   createLessonRun,
   getCurriculumLesson,
   getLessonRun,
   getTeacherClasses,
   lessonRunAction,
+  listLessonRunDevices,
   listLessonRuns,
+  mapLessonRunDevice,
+  openLessonRunJoin,
+  revokeLessonRunDevice,
   setLessonRunStep,
   getCurriculumLessons,
   getTeacherMe,
@@ -234,6 +239,14 @@ async function openRun(runId: string) {
   mountRunConsole(consoleRoot, view, {
     act: action => lessonRunAction(runId, action),
     setStep: stepIndex => setLessonRunStep(runId, stepIndex),
+    getRun: () => getLessonRun(runId),
+    join: {
+      openJoin: () => openLessonRunJoin(runId),
+      closeJoin: () => closeLessonRunJoin(runId),
+      listDevices: () => listLessonRunDevices(runId),
+      mapDevice: (deviceId, studentId) => mapLessonRunDevice(runId, deviceId, studentId),
+      revokeDevice: deviceId => revokeLessonRunDevice(runId, deviceId),
+    },
     check: (instanceId, answer) => checkCurriculumActivity(view.run.lessonId, instanceId, answer),
   })
 }

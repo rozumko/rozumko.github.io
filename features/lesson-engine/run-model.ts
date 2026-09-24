@@ -2,7 +2,7 @@
 // state; this only maps it to labels, available controls and step context.
 // Type-only imports keep it importable by node tests.
 
-import type { LessonBlock, LessonDefinition, LessonRunAction, LessonRunStatus } from './types.js'
+import type { LessonBlock, LessonDefinition, LessonRunAction, LessonRunDevice, LessonRunStatus, LessonRunView } from './types.js'
 
 export const RUN_STATUS_LABELS: Readonly<Record<LessonRunStatus, string>> = {
   prepared: 'Підготовлено',
@@ -66,4 +66,43 @@ export function stepTitle(block: LessonBlock | undefined, fallback: string): str
     if (value && typeof value.uk === 'string') return value.uk
   }
   return fallback
+}
+
+// ── Web join (stage G1) ──────────────────────────────────────────────────────
+
+/** "123456" → "123 456": easier to read aloud and copy off the board. */
+export function formatJoinCode(code: string): string {
+  return code.length === 6 ? `${code.slice(0, 3)} ${code.slice(3)}` : code
+}
+
+export interface StudentOption {
+  value: string
+  label: string
+}
+
+/**
+ * Roster choices for one device. A student already on another device stays
+ * selectable (the server moves them) but says where they are now. Deleted
+ * students (no label) cannot be chosen.
+ */
+export function studentOptions(
+  students: LessonRunView['students'],
+  devices: readonly LessonRunDevice[],
+  deviceId: string,
+): StudentOption[] {
+  const onDevice = new Map(devices.filter(d => d.lessonRunStudentId && d.id !== deviceId).map(d => [d.lessonRunStudentId!, d.pairingNumber]))
+  return students
+    .filter(student => student.label !== null)
+    .map(student => {
+      const elsewhere = onDevice.get(student.id)
+      return { value: student.id, label: elsewhere ? `${student.label} (зараз на № ${elsewhere})` : student.label! }
+    })
+}
+
+/** "Призначено 2 з 3 учнів" — roster students with a live device. */
+export function mappingSummary(students: LessonRunView['students'], devices: readonly LessonRunDevice[]): string {
+  const roster = students.filter(student => student.label !== null)
+  const mapped = new Set(devices.map(d => d.lessonRunStudentId).filter(Boolean))
+  const count = roster.filter(student => mapped.has(student.id)).length
+  return `Призначено ${count} з ${roster.length} учнів`
 }

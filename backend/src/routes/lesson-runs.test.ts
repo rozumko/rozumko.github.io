@@ -33,6 +33,11 @@ const ROUTES: InjectOptions[] = [
   { method: 'GET', url: `/api/teacher/lesson-runs/${RUN_ID}` },
   { method: 'POST', url: `/api/teacher/lesson-runs/${RUN_ID}/start` },
   { method: 'PUT', url: `/api/teacher/lesson-runs/${RUN_ID}/step`, payload: { stepIndex: 1 } },
+  { method: 'POST', url: `/api/teacher/lesson-runs/${RUN_ID}/join-code` },
+  { method: 'DELETE', url: `/api/teacher/lesson-runs/${RUN_ID}/join-code` },
+  { method: 'GET', url: `/api/teacher/lesson-runs/${RUN_ID}/devices` },
+  { method: 'PUT', url: `/api/teacher/lesson-runs/${RUN_ID}/devices/${CLASS_ID}`, payload: { lessonRunStudentId: null } },
+  { method: 'DELETE', url: `/api/teacher/lesson-runs/${RUN_ID}/devices/${CLASS_ID}` },
 ]
 
 test('lesson run routes are a 404 while the flag is off', async () => {
@@ -57,6 +62,10 @@ test('ids, actions and bodies are validated before auth or database access', asy
       { method: 'POST', url: '/api/teacher/lesson-runs', payload: { classId: CLASS_ID, lessonId: 'Bad Id' } },
       { method: 'PUT', url: `/api/teacher/lesson-runs/${RUN_ID}/step`, payload: { stepIndex: -1 } },
       { method: 'PUT', url: `/api/teacher/lesson-runs/${RUN_ID}/step`, payload: { stepIndex: 'next' } },
+      { method: 'PUT', url: `/api/teacher/lesson-runs/${RUN_ID}/devices/not-a-uuid`, payload: { lessonRunStudentId: null } },
+      { method: 'PUT', url: `/api/teacher/lesson-runs/${RUN_ID}/devices/${CLASS_ID}`, payload: { lessonRunStudentId: 'Марко' } },
+      { method: 'PUT', url: `/api/teacher/lesson-runs/${RUN_ID}/devices/${CLASS_ID}`, payload: {} },
+      { method: 'DELETE', url: `/api/teacher/lesson-runs/${RUN_ID}/devices/nope` },
     ]
     for (const request of cases) {
       assert.equal((await app.inject(request)).statusCode, 400, `${request.method} ${request.url} ${JSON.stringify(request.payload)}`)

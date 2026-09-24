@@ -21,6 +21,7 @@ const AXE_PAGES = [
   '/standards.html',
   '/olympiad-enter.html',
   '/lesson-engine.html',
+  '/lesson-join.html',
 ]
 
 const WCAG_AA_TAGS = ['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']
