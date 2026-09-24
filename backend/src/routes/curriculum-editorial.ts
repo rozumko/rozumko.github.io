@@ -7,8 +7,8 @@ import {
   type GameConfig,
   type LessonDefinitionV1,
   type LessonValidationIssue,
+  type SubjectPack,
 } from '../lib/curriculum-lesson-schema.js'
-import { findSubjectPack } from '../lib/subject-packs.js'
 import { resolveActivityDefinition, resolveActivityLevel } from '../lib/school-activities.js'
 import type { CurriculumLessonStatus } from '../db/schema.js'
 
@@ -46,13 +46,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 /**
  * Validates an editor-supplied definition for storage. `contentVersion` is
  * server-owned and stamped before validation; `lessonId` pins the definition
- * to the row being edited. Fails closed on schema errors, an unregistered
- * subject pack, or a pack mismatch.
+ * to the row being edited. `pack` is the lesson's subject pack joined with its
+ * active outcomes (resolveSubjectPack), or null when the pack is not
+ * registered. Fails closed on schema errors, an unregistered subject pack, or
+ * a pack mismatch.
  */
 export function prepareCurriculumDefinition(
   raw: unknown,
   lessonId: string | null,
   contentVersion: number,
+  pack: SubjectPack | null,
 ): LessonDefinitionV1 {
   if (!isRecord(raw)) throw new CurriculumValidationError([{ path: '', message: 'must be an object' }])
   const input = structuredClone(raw)
@@ -66,8 +69,7 @@ export function prepareCurriculumDefinition(
   if (lessonId !== null && lesson.id !== lessonId) {
     issues.push({ path: 'id', message: 'must match the lesson being edited' })
   }
-  const pack = findSubjectPack(lesson.subjectPackId)
-  if (!pack) issues.push({ path: 'subjectPackId', message: 'is not a registered subject pack' })
+  if (!pack || pack.id !== lesson.subjectPackId) issues.push({ path: 'subjectPackId', message: 'is not a registered subject pack' })
   else issues.push(...validateLessonAgainstPack(lesson, pack))
   issues.push(...gameRegistryIssues(lesson))
   if (issues.length > 0) throw new CurriculumValidationError(issues)

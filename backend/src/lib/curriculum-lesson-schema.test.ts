@@ -9,12 +9,19 @@ import {
   validateLessonDefinition,
   validateSubjectPack,
   type LessonDefinitionV1,
+  type SubjectPack,
 } from './curriculum-lesson-schema.js'
-import { SUBJECT_PACKS, findSubjectPack } from './subject-packs.js'
+import { SUBJECT_PACKS, findSubjectPack, withOutcomes } from './subject-packs.js'
 import { resolveActivityDefinition } from './school-activities.js'
 
 function fixture(name: string): Record<string, any> {
   return JSON.parse(readFileSync(new URL(`./curriculum-fixtures/${name}`, import.meta.url), 'utf8'))
+}
+
+const PILOT_OUTCOMES = fixture('pilot-outcomes.json')
+/** The informatics pack as resolveSubjectPack() returns it with the seeded directory. */
+function informaticsPack(): SubjectPack {
+  return withOutcomes(structuredClone(findSubjectPack('informatics-ua-primary')!), structuredClone(PILOT_OUTCOMES))
 }
 
 function expectValid(input: unknown): LessonDefinitionV1 {
@@ -57,7 +64,7 @@ test('every registered subject pack is itself valid', () => {
   assert.ok(Object.keys(SUBJECT_PACKS).length > 0)
   for (const [id, pack] of Object.entries(SUBJECT_PACKS)) {
     assert.equal(pack.id, id)
-    assert.deepEqual(validateSubjectPack(pack), [], id)
+    assert.deepEqual(validateSubjectPack(withOutcomes(pack, {})), [], id)
   }
   assert.equal(findSubjectPack('constructor'), null)
   assert.equal(findSubjectPack('unknown-pack'), null)
@@ -65,7 +72,7 @@ test('every registered subject pack is itself valid', () => {
 
 test('reference lesson g2-m2-l8 validates against the registered informatics pack', () => {
   const lesson = expectValid(fixture('g2-m2-l8.lesson.json'))
-  assert.deepEqual(validateLessonAgainstPack(lesson, findSubjectPack(lesson.subjectPackId)!), [])
+  assert.deepEqual(validateLessonAgainstPack(lesson, informaticsPack()), [])
 })
 
 test('a synthetic non-informatics lesson runs through the same core validator', () => {
@@ -290,7 +297,7 @@ test('media sources are https or relative only', () => {
 
 test('external tools must be in the subject pack allowlist', () => {
   const lesson = expectValid(fixture('g2-m2-l8.lesson.json'))
-  const pack = structuredClone(findSubjectPack('informatics-ua-primary')) as Record<string, any>
+  const pack = informaticsPack() as Record<string, any>
   const i = lesson.blocks.findIndex(b => b.id === 'g2-m2-l8-b11')
 
   const noTools = { ...pack, externalTools: {} }
@@ -315,7 +322,7 @@ test('lesson must match its pack subject and grade range', () => {
 })
 
 test('subject pack tools must use https', () => {
-  const pack = structuredClone(findSubjectPack('informatics-ua-primary')) as Record<string, any>
+  const pack = informaticsPack() as Record<string, any>
   pack.externalTools['itnauka-windows'].url = 'http://itnauka.org/x'
   assert.deepEqual(validateSubjectPack(pack).map(e => e.path), ['externalTools.itnauka-windows.url'])
 })
@@ -334,7 +341,7 @@ function withGame(game: Record<string, unknown>): Record<string, any> {
 
 test('games are client-unverified, carry no key and must be allowlisted by the pack', () => {
   const lesson = expectValid(withGame({}))
-  const pack = findSubjectPack('informatics-ua-primary')!
+  const pack = informaticsPack()
   assert.deepEqual(validateLessonAgainstPack(lesson, pack), [])
 
   const i = blockIndex(withGame({}), 'g2-m2-l8-b11')
@@ -363,11 +370,11 @@ test('pack games exist in the platform registry and none needs a School particip
 
 test('lessons may target only outcomes registered by their subject pack', () => {
   const lesson = expectValid(fixture('g2-m2-l8.lesson.json'))
-  const pack = structuredClone(findSubjectPack('informatics-ua-primary')!)
+  const pack = informaticsPack()
   delete (pack.outcomes as Record<string, unknown>)['int-files-organize']
   assert.deepEqual(validateLessonAgainstPack(lesson, pack).map(e => e.path), ['learningOutcomes[1].outcomeId'])
 
-  const broken = structuredClone(findSubjectPack('informatics-ua-primary')) as Record<string, any>
+  const broken = informaticsPack() as Record<string, any>
   broken.outcomes['int-files-name-extension'].source = 'rumour'
   assert.deepEqual(validateSubjectPack(broken).map(e => e.path), ['outcomes.int-files-name-extension.source'])
 })

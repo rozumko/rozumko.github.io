@@ -9,7 +9,7 @@ still apply.
 
 Do these in order. Nothing is visible to teachers until step 4.
 
-1. **Apply migrations `0049`–`0056`** before the backend code that needs
+1. **Apply migrations `0049`–`0057`** before the backend code that needs
    them is deployed (see [migrations.md](../migrations.md), "Production
    Workflow"). They are additive: new tables and columns only. Render's
    start command refuses to start a backend whose migrations are missing,
@@ -174,7 +174,8 @@ or agreeing to pay — not a teacher liking it.
   the teacher matches it once again.
 - **Outcome codes are internal** (`INF-2-FILES-1/2`). Do not present them to
   schools as НУШ or Cambridge codes until a methodologist confirms the
-  mapping.
+  mapping. Confirmed NUSH/Cambridge outcomes are entered in the admin tab
+  «Результати навчання».
 - **Rate limiting is in memory on a single backend instance.** Do not scale
   the backend above one instance during the pilot
   (see [security-model.md](../security-model.md)).

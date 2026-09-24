@@ -1123,3 +1123,22 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Learning outcome directory (Lesson Engine) ─────────────────── */
+.adm-field-hint {
+  margin: var(--sp-1) 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--adm-text-muted);
+}
+.of-mappings { border: 0; padding: 0; margin: 0; min-width: 0; }
+.of-mapping-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto;
+  gap: var(--sp-2);
+  align-items: end;
+  margin: var(--sp-2) 0;
+}
+.of-issues { margin: 0; padding-left: var(--sp-5); }
+@media (max-width: 480px) {
+  .of-mapping-row { grid-template-columns: 1fr; }
+}

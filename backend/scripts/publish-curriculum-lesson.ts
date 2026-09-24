@@ -23,8 +23,8 @@
 import 'dotenv/config'
 import { readFileSync } from 'fs'
 import { fileURLToPath } from 'url'
-import { validateLessonAgainstPack, validateLessonDefinition } from '../src/lib/curriculum-lesson-schema.js'
-import { findSubjectPack } from '../src/lib/subject-packs.js'
+import { validateLessonAgainstPack, validateLessonDefinition, type LearningOutcome } from '../src/lib/curriculum-lesson-schema.js'
+import { findSubjectPack, withOutcomes } from '../src/lib/subject-packs.js'
 
 const DEFAULT_LESSON = fileURLToPath(new URL('../src/lib/curriculum-fixtures/g2-m2-l8.lesson.json', import.meta.url))
 
@@ -44,10 +44,15 @@ const checked = validateLessonDefinition(raw)
 if (!checked.ok) fail(`schema:\n${checked.errors.map(e => `  ${e.path}: ${e.message}`).join('\n')}`)
 const pack = findSubjectPack(checked.lesson.subjectPackId)
 if (!pack) fail(`unknown subject pack "${checked.lesson.subjectPackId}"`)
-const packIssues = validateLessonAgainstPack(checked.lesson, pack)
+// Outcomes live in the directory (database), so they are checked by the
+// server on save; locally the lesson's own outcome ids stand in for them.
+const placeholders: Record<string, LearningOutcome> = Object.fromEntries(checked.lesson.learningOutcomes.map(link => [
+  link.outcomeId, { code: link.outcomeId, title: { uk: link.outcomeId }, source: 'internal', mappings: [] },
+]))
+const packIssues = validateLessonAgainstPack(checked.lesson, withOutcomes(pack, placeholders))
 if (packIssues.length) fail(`subject pack:\n${packIssues.map(e => `  ${e.path}: ${e.message}`).join('\n')}`)
 const lessonId = checked.lesson.id
-console.log(`✓ ${lessonId} is valid (${checked.lesson.blocks.length} blocks, pack ${pack.id})`)
+console.log(`✓ ${lessonId} is valid (${checked.lesson.blocks.length} blocks, pack ${pack.id}; outcomes are checked by the server)`)
 if (dryRun) process.exit(0)
 
 // 2. Admin session.

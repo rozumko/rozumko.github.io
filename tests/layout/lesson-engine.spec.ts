@@ -1,7 +1,7 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { readFileSync } from 'node:fs'
-import { toDisplaySafeLesson, type ActivitySpec, type LessonDefinitionV1 } from '../../backend/src/lib/curriculum-lesson-schema'
+import { toDisplaySafeLesson, type ActivitySpec, type LearningOutcome, type LessonDefinitionV1 } from '../../backend/src/lib/curriculum-lesson-schema'
 import { scoreServerActivity } from '../../backend/src/lib/curriculum-activity-scoring'
 import { applyRunAction, resolveStep, runActionTimestamps, runSteps, type LessonRunAction } from '../../backend/src/lib/lesson-run-state'
 import { attemptLimit, liveSnapshot, scoreStudentAttempt, studentActivityView } from '../../backend/src/lib/lesson-live'
@@ -13,6 +13,10 @@ const WCAG_AA_TAGS = ['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']
 const fixture = JSON.parse(readFileSync(
   new URL('../../backend/src/lib/curriculum-fixtures/g2-m2-l8.lesson.json', import.meta.url), 'utf8',
 )) as LessonDefinitionV1
+/** The outcome directory rows migration 0057 seeds for the reference lesson. */
+const PILOT_OUTCOMES = JSON.parse(readFileSync(
+  new URL('../../backend/src/lib/curriculum-fixtures/pilot-outcomes.json', import.meta.url), 'utf8',
+)) as Record<string, LearningOutcome>
 /** Exactly what GET /api/teacher/curriculum/lessons/:id serves. */
 const servedLesson = toDisplaySafeLesson(fixture)
 
@@ -440,7 +444,10 @@ test('the projector window shows only slides while the teacher keeps the plan an
   const board = projector.getByRole('dialog', { name: /Показ на дошці/ })
   const counter = board.locator('.le-board__counter')
   await expect(counter).toHaveText(`1 / ${SLIDE_COUNT}`)
-  await expect(board.getByRole('button', { name: /На весь екран/ })).toBeVisible()
+  // The board offers full screen unless the browser already granted it on open.
+  await expect.poll(() => projector.evaluate(() =>
+    Boolean(document.fullscreenElement) || Boolean(document.querySelector('.le-board__fullscreen:not([hidden])')),
+  )).toBe(true)
 
   // The teacher's window stays on the plan, notes included; no overlay covers it.
   const presenter = page.getByRole('region', { name: 'Показ на проєкторі' })
@@ -880,7 +887,7 @@ test('the lesson report shows outcome summaries that open to their evidence', as
   const report = lessonReport({
     run: { status: 'finished', className: '2-А', lessonPublishedVersion: 3, startedAt: t(0), finishedAt: t(40) },
     lesson: fixture,
-    outcomes: findSubjectPack('informatics-ua-primary')!.outcomes,
+    outcomes: PILOT_OUTCOMES,
     students: [{ id: 's1', label: 'Марко' }, { id: 's2', label: 'Софія' }],
     mappedStudentIds: new Set(['s1', 's2']),
     dispatches: [{ id: 'd1', blockId: 'g2-m2-l8-b12', activityInstanceId: 'self-check-extension' }],

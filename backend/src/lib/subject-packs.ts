@@ -1,11 +1,19 @@
 // ── Lesson Engine: subject pack registry ─────────────────────────────────────
 // Code-owned registry of subject packs. Subject knowledge (grade range,
-// allowlisted external tools) lives here, never in the core lesson schema.
-// A lesson whose subjectPackId is not registered cannot be saved or published.
+// allowlisted external tools and games) lives here, never in the core lesson
+// schema. A lesson whose subjectPackId is not registered cannot be saved or
+// published.
+//
+// Learning outcomes are not code-owned: they live in the outcome directory
+// (curriculum_outcomes, migration 0057) and are joined in at runtime by
+// resolveSubjectPack() in curriculum-outcomes.ts.
 
-import type { SubjectPack } from './curriculum-lesson-schema.js'
+import type { LearningOutcome, SubjectPack } from './curriculum-lesson-schema.js'
 
-const INFORMATICS_UA_PRIMARY: SubjectPack = {
+/** A registered pack without its outcomes (those come from the directory). */
+export type SubjectPackEntry = Omit<SubjectPack, 'outcomes'>
+
+const INFORMATICS_UA_PRIMARY: SubjectPackEntry = {
   id: 'informatics-ua-primary',
   subject: 'informatics',
   title: { uk: 'Розумко Інформатика 1–4', en: 'Rozumko Informatics 1–4' },
@@ -25,30 +33,17 @@ const INFORMATICS_UA_PRIMARY: SubjectPack = {
     'maze', 'windows', 'mouse-buttons', 'magic-squares', 'symbol-logic',
     'message-coding', 'sorting-station', 'precise-click', 'tangram', 'fireflies',
   ],
-  // Internal outcomes for the pilot lessons. NUSH / Cambridge mappings are
-  // added here once the methodologist confirms the exact codes — never guessed.
-  outcomes: {
-    'int-files-name-extension': {
-      code: 'INF-2-FILES-1',
-      title: { uk: 'Розрізняє ім’я файла та розширення і пояснює, навіщо потрібне розширення' },
-      source: 'internal',
-      gradeBand: '1-2',
-      mappings: [],
-    },
-    'int-files-organize': {
-      code: 'INF-2-FILES-2',
-      title: { uk: 'Створює, перейменовує, переміщує та знаходить файли в тематичній папці' },
-      source: 'internal',
-      gradeBand: '1-2',
-      mappings: [],
-    },
-  },
 }
 
-export const SUBJECT_PACKS: Readonly<Record<string, SubjectPack>> = Object.freeze({
+export const SUBJECT_PACKS: Readonly<Record<string, SubjectPackEntry>> = Object.freeze({
   [INFORMATICS_UA_PRIMARY.id]: INFORMATICS_UA_PRIMARY,
 })
 
-export function findSubjectPack(id: string): SubjectPack | null {
+export function findSubjectPack(id: string): SubjectPackEntry | null {
   return Object.prototype.hasOwnProperty.call(SUBJECT_PACKS, id) ? SUBJECT_PACKS[id]! : null
+}
+
+/** A registered pack joined with the outcomes a lesson may use. */
+export function withOutcomes(entry: SubjectPackEntry, outcomes: Record<string, LearningOutcome>): SubjectPack {
+  return { ...entry, outcomes }
 }

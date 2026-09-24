@@ -196,6 +196,7 @@ export function openPresentation(lesson: LessonDefinition, options: Presentation
     void overlay.requestFullscreen?.().catch(() => {})
   })
   document.addEventListener('fullscreenchange', syncFullscreenButton)
+  syncFullscreenButton()
   stage.addEventListener('pointerdown', onPointerDown)
   stage.addEventListener('pointerup', onPointerUp)
   document.addEventListener('keydown', onKey)
