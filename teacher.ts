@@ -2,11 +2,10 @@ import './frontend-security.js'
 import './register-sw.js'
 import './surface-stub.css'
 import { isSurfaceAvailable } from './features/surfaces/availability.js'
-import { renderSurfaceStub } from './features/surfaces/stub-view.js'
 import {
   loginTeacher, logoutTeacher, getTeacherSession, storeTeacherSession, registerTeacher,
   listSchoolSessions,
-  createTeacherClass, createTeacherRegistration,
+  createTeacherClass, renameTeacherClass, createTeacherRegistration,
   getTeacherMe, generateCodes, getTeacherClasses, getTeacherCodes,
   getTeacherRegistrationEvents, getTeacherRegistrations, getTeacherResults,
   cancelTeacherRegistration,
@@ -110,6 +109,8 @@ const filterRegistrationSelect   = $maybe<HTMLSelectElement>('filter-registratio
 const generateBtn               = $maybe<HTMLButtonElement>('generate-btn')
 
 let teacherClasses: TeacherClass[] = []
+let selectedClassId: string | null = null
+let lessonEngineEnabled = false
 let registrationEvents: TeacherEvent[] = []
 let teacherRegistrations: EventRegistration[] = []
 let olympiadLoaded = false
@@ -292,29 +293,10 @@ const olympiadAvailable = isSurfaceAvailable('olympiad')
 
 function configureOlympiadStub(): void {
   if (olympiadAvailable) return
-  const section = $maybe('teacher-section-olympiad')
-  const link = document.querySelector<HTMLElement>('[data-section="olympiad"]')
-  if (!section || !link) return
-
-  link.querySelector('span')?.append(' · незабаром')
-  section.querySelector('.teacher-section__heading')?.classList.add('hidden')
-  section.querySelector('.dashboard-tabs')?.classList.add('hidden')
-  section.querySelectorAll('.olympiad-tab-panel').forEach(panel => panel.classList.add('hidden'))
-
-  const mount = document.createElement('div')
-  mount.id = 'teacher-olympiad-stub'
-  renderSurfaceStub(mount, 'olympiad', true)
-  const schoolLink = mount.querySelector<HTMLAnchorElement>('.kid-action')
-  if (schoolLink) {
-    schoolLink.href = '#teacher-section-school'
-    schoolLink.textContent = 'Перейти до класної гри'
-    schoolLink.addEventListener('click', event => {
-      event.preventDefault()
-      document.querySelector<HTMLElement>('[data-section="school"]')?.click()
-    })
-  }
-  mount.querySelector('.btn-ghost')?.remove()
-  section.prepend(mount)
+  // The olympiad is paused: it leaves the menu instead of showing a
+  // "coming soon" page. Classes live in «Мої класи», so nothing is lost.
+  document.querySelector<HTMLElement>('[data-section="olympiad"]')?.classList.add('hidden')
+  $maybe('teacher-section-olympiad')?.classList.add('hidden')
 }
 
 async function ensureOlympiadLoaded() {
@@ -339,6 +321,16 @@ async function ensureOlympiadLoaded() {
 
 configureOlympiadStub()
 
+const TEACHER_SECTION_KEY = 'teacher:section'
+
+/** The section a returning teacher left off in; «Мої класи» the first time. */
+function initialTeacherSection(): string {
+  let saved: string | null
+  try { saved = localStorage.getItem(TEACHER_SECTION_KEY) } catch { saved = null }
+  const link = saved ? document.querySelector<HTMLElement>(`[data-section="${saved}"]`) : null
+  return link && !link.classList.contains('hidden') ? saved! : 'classes'
+}
+
 function activateTeacherSection(sectionName: string) {
   const link = document.querySelector<HTMLElement>(`[data-section="${sectionName}"]`)
   if (!link) return
@@ -350,6 +342,8 @@ function activateTeacherSection(sectionName: string) {
   link.classList.add('teacher-section-link--active')
   link.setAttribute('aria-current', 'page')
   $maybe(`teacher-section-${sectionName}`)?.classList.remove('hidden')
+  try { localStorage.setItem(TEACHER_SECTION_KEY, sectionName) } catch { /* storage unavailable */ }
+  if (sectionName === 'classes') void loadClasses()
   if (sectionName === 'olympiad') void ensureOlympiadLoaded()
   if (sectionName === 'content') void loadTeacherTopics()
   if (sectionName === 'school-results') void loadSchoolSessions()
@@ -704,11 +698,13 @@ classForm?.addEventListener('submit', async (e) => {
   classSubmitBtn!.innerHTML  = '<i class="fas fa-spinner fa-spin"></i> Збереження…'
   classStatus!.textContent   = ''
   try {
-    await createTeacherClass({ name, grade })
+    const { class: created } = await createTeacherClass({ name, grade })
     classNameInput!.value    = ''
-    classStatus!.textContent = '✓ Клас додано'
+    classStatus!.textContent = `✓ Клас «${created.name}» додано. Тепер додайте учнів.`
     classStatus!.className   = 'generate-status generate-status--ok'
+    selectedClassId = created.id
     await loadClasses()
+    document.getElementById('student-label-input')?.focus()
   } catch (err) {
     classStatus!.textContent = (err as Error).message
     classStatus!.className   = 'generate-status generate-status--err'
@@ -794,8 +790,11 @@ async function loadClasses() {
   try {
     const { classes } = await getTeacherClasses()
     teacherClasses = classes
+    if (!teacherClasses.some(c => c.id === selectedClassId)) selectedClassId = teacherClasses[0]?.id ?? null
     renderClasses()
+    renderClassDetail()
     renderRegistrationClassOptions()
+    $maybe('teacher-start')?.classList.toggle('hidden', teacherClasses.length > 0)
   } catch (err) {
     classesList.innerHTML = `<p class="empty-state__sub empty-state__sub--centered">${esc((err as Error).message)}</p>`
   }
@@ -913,137 +912,144 @@ function renderRegistrationEventOptions() {
 function renderClasses() {
   if (!teacherClasses.length) {
     classesList.innerHTML = `
-      <div class="empty-state">
-        <i class="fas fa-users empty-state__icon" aria-hidden="true"></i>
+      <div class="empty-state empty-state--compact">
         <p class="empty-state__title">Класів ще немає</p>
-        <p class="empty-state__sub">Додайте клас, щоб реєструвати учасників на події.</p>
+        <p class="empty-state__sub">Додайте перший клас у формі вище.</p>
       </div>`
     return
   }
   classesList.innerHTML = ''
   teacherClasses.forEach(cls => {
-    const card = document.createElement('div')
-    card.className = 'teacher-info-card teacher-info-card--clickable'
-    card.innerHTML = `
-      <div>
-        <p class="teacher-info-card__title">${esc(cls.name)}</p>
-        <p class="teacher-info-card__meta">${esc(String(cls.grade))} клас</p>
-      </div>
-      <button class="btn-class-open btn btn--secondary btn--sm" data-class-id="${esc(cls.id)}" data-class-name="${esc(cls.name)}" data-class-grade="${esc(String(cls.grade))}">
-        <i class="fas fa-users" aria-hidden="true"></i> Учні
-      </button>`
-    const openBtn = card.querySelector<HTMLButtonElement>('.btn-class-open')!
-    openBtn.addEventListener('click', () => openClassDetail(cls, openBtn))
-    classesList.appendChild(card)
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.className = 'class-picker__item'
+    button.dataset['classId'] = cls.id
+    const selected = cls.id === selectedClassId
+    button.setAttribute('aria-pressed', String(selected))
+    if (selected) button.classList.add('class-picker__item--active')
+    button.innerHTML = `
+      <span class="class-picker__name">${esc(cls.name)}</span>
+      <span class="class-picker__grade">${esc(String(cls.grade))} клас</span>`
+    button.addEventListener('click', () => {
+      selectedClassId = cls.id
+      renderClasses()
+      renderClassDetail()
+      document.getElementById('student-label-input')?.focus()
+    })
+    classesList.appendChild(button)
   })
 }
 
-// ─── Class detail panel ───────────────────────────────────────────────────
+// ─── Selected class: rename + students ───────────────────────────────────
 
-let classDetailPanel: HTMLElement | null = null
-let classDetailOpener: HTMLElement | null = null  // для повернення фокусу
+function renderClassDetail() {
+  const host = $maybe('class-detail')
+  if (!host) return
+  const cls = teacherClasses.find(c => c.id === selectedClassId)
+  if (!cls) {
+    host.innerHTML = `
+      <div class="class-detail__empty">
+        <i class="fas fa-users" aria-hidden="true"></i>
+        <p>Створіть клас або оберіть його зі списку, щоб додати учнів.</p>
+      </div>`
+    return
+  }
 
-function openClassDetail(cls: TeacherClass, opener?: HTMLElement) {
-  closeClassDetail()
-  classDetailOpener = opener ?? null
-
-  const panel = document.createElement('div')
-  panel.id              = 'class-detail-panel'
-  panel.className       = 'class-detail-overlay'
-  panel.setAttribute('role', 'dialog')
-  panel.setAttribute('aria-modal', 'true')
-  panel.setAttribute('aria-labelledby', 'class-detail-title')
-  panel.innerHTML = `<div class="class-detail-panel">
-    <div class="class-detail-panel__head">
+  const lessonLink = lessonEngineEnabled
+    ? '<a href="lesson-engine.html" class="btn btn--teacher btn--sm"><i class="fas fa-chalkboard-teacher" aria-hidden="true"></i> Провести урок</a>'
+    : ''
+  host.innerHTML = `
+    <div class="class-detail__head">
       <div>
-        <p class="class-detail-panel__eyebrow">${esc(String(cls.grade))} клас</p>
-        <h3 class="class-detail-panel__title" id="class-detail-title">${esc(cls.name)}</h3>
+        <p class="class-detail__eyebrow">${esc(String(cls.grade))} клас</p>
+        <h2 class="class-detail__title" id="class-detail-title">${esc(cls.name)}</h2>
       </div>
-      <button id="class-detail-close" class="btn btn--secondary btn--sm" aria-label="Закрити">
-        <i class="fas fa-times" aria-hidden="true"></i>
-      </button>
+      <div class="class-detail__actions">
+        <button id="class-rename-btn" type="button" class="btn btn--secondary btn--sm">
+          <i class="fas fa-pencil-alt" aria-hidden="true"></i> Перейменувати
+        </button>
+        ${lessonLink}
+      </div>
     </div>
-
-    <p class="class-detail-panel__hint">
-      <i class="fas fa-info-circle" aria-hidden="true"></i>
-      Введіть довільну мітку — наприклад <strong>«Маша К.»</strong>, <strong>«Учень 5»</strong>.
-      Повні прізвища не зберігайте — для сертифіката ім'я вводиться окремо перед друком.
-    </p>
-
-    <form id="add-student-form" class="class-detail-panel__add-form" novalidate>
-      <input id="student-label-input" type="text" maxlength="60"
-        placeholder="Маша К., Учень 5, …" class="form-input" autocomplete="off" />
-      <button type="submit" class="btn btn--success btn--sm">
-        <i class="fas fa-plus" aria-hidden="true"></i> Додати
-      </button>
+    <form id="class-rename-form" class="class-detail__rename hidden" novalidate>
+      <label for="class-rename-input" class="form-label">Нова назва класу</label>
+      <div class="class-detail__inline">
+        <input id="class-rename-input" type="text" maxlength="80" class="form-input" value="${esc(cls.name)}" />
+        <button type="submit" class="btn btn--success btn--sm">Зберегти</button>
+        <button id="class-rename-cancel" type="button" class="btn btn--secondary btn--sm">Скасувати</button>
+      </div>
     </form>
-    <p id="add-student-status" class="generate-status generate-status--spaced"></p>
+
+    <form id="add-student-form" class="class-detail__add" novalidate>
+      <label for="student-label-input" class="form-label">Додати учня</label>
+      <div class="class-detail__inline">
+        <input id="student-label-input" type="text" maxlength="60"
+          placeholder="Маша К., Учень 5, …" class="form-input" autocomplete="off" aria-describedby="student-label-hint" />
+        <button type="submit" class="btn btn--success">
+          <i class="fas fa-plus" aria-hidden="true"></i> Додати
+        </button>
+      </div>
+      <p id="student-label-hint" class="class-detail__hint">Мітка, за якою ви впізнаєте дитину. Повні прізвища не потрібні: для сертифіката ім’я вводиться окремо перед друком.</p>
+    </form>
+    <p id="add-student-status" class="generate-status" role="status"></p>
 
     <div id="students-list" class="students-list">
       <p class="admin-loading-text">Завантаження…</p>
-    </div>
-  </div>`
+    </div>`
 
-  document.body.appendChild(panel)
-  classDetailPanel = panel
-
-  panel.querySelector<HTMLButtonElement>('#class-detail-close')!
-    .addEventListener('click', closeClassDetail)
-
-  panel.querySelector<HTMLFormElement>('#add-student-form')!
-    .addEventListener('submit', async (e) => {
-      e.preventDefault()
-      const input  = panel.querySelector<HTMLInputElement>('#student-label-input')!
-      const status = panel.querySelector<HTMLElement>('#add-student-status')!
-      const label  = input.value.trim()
-      if (!label) { input.focus(); return }
-
-      const btn = panel.querySelector<HTMLButtonElement>('#add-student-form button[type="submit"]')!
-      btn.disabled = true
-      status.textContent = ''
-      try {
-        await addClassStudent(cls.id, label)
-        input.value = ''
-        input.focus()
-        await reloadStudentsList(cls.id)
-      } catch (err) {
-        status.textContent = (err as Error).message
-        status.className   = 'generate-status generate-status--err'
-      } finally {
-        btn.disabled = false
-      }
-    })
-
-  // Закрити по кліку на overlay (поза sidebar)
-  panel.addEventListener('click', (e) => { if (e.target === panel) closeClassDetail() })
-  // Закрити по Escape
-  document.addEventListener('keydown', handleDetailEsc)
-
-  reloadStudentsList(cls.id)
-
-  // Затримка для анімації, потім переводимо фокус усередину
-  requestAnimationFrame(() => {
-    panel.classList.add('class-detail-overlay--open')
-    const firstFocusable = panel.querySelector<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    )
-    firstFocusable?.focus()
+  const renameForm = host.querySelector<HTMLFormElement>('#class-rename-form')!
+  const renameInput = host.querySelector<HTMLInputElement>('#class-rename-input')!
+  const renameBtn = host.querySelector<HTMLButtonElement>('#class-rename-btn')!
+  const status = host.querySelector<HTMLElement>('#add-student-status')!
+  renameBtn.addEventListener('click', () => {
+    renameForm.classList.remove('hidden')
+    renameInput.focus()
+    renameInput.select()
   })
-}
+  host.querySelector<HTMLButtonElement>('#class-rename-cancel')!.addEventListener('click', () => {
+    renameForm.classList.add('hidden')
+    renameBtn.focus()
+  })
+  renameForm.addEventListener('submit', async e => {
+    e.preventDefault()
+    const name = renameInput.value.trim()
+    if (!name) { renameInput.focus(); return }
+    try {
+      const { class: updated } = await renameTeacherClass(cls.id, name)
+      teacherClasses = teacherClasses.map(c => (c.id === updated.id ? { ...c, name: updated.name } : c))
+      renderClasses()
+      renderClassDetail()
+      renderRegistrationClassOptions()
+      document.getElementById('class-rename-btn')?.focus()
+    } catch (err) {
+      status.textContent = (err as Error).message
+      status.className = 'generate-status generate-status--err'
+    }
+  })
 
-function closeClassDetail() {
-  document.removeEventListener('keydown', handleDetailEsc)
-  if (classDetailPanel) {
-    classDetailPanel.remove()
-    classDetailPanel = null
-  }
-  // Повертаємо фокус на кнопку що відкрила панель
-  classDetailOpener?.focus()
-  classDetailOpener = null
-}
+  host.querySelector<HTMLFormElement>('#add-student-form')!.addEventListener('submit', async e => {
+    e.preventDefault()
+    const input = host.querySelector<HTMLInputElement>('#student-label-input')!
+    const label = input.value.trim()
+    if (!label) { input.focus(); return }
+    const btn = host.querySelector<HTMLButtonElement>('#add-student-form button[type="submit"]')!
+    btn.disabled = true
+    status.textContent = ''
+    try {
+      await addClassStudent(cls.id, label)
+      // Keep what the teacher typed while this one was saving.
+      if (input.value.trim() === label) input.value = ''
+      input.focus()
+      await reloadStudentsList(cls.id)
+    } catch (err) {
+      status.textContent = (err as Error).message
+      status.className = 'generate-status generate-status--err'
+    } finally {
+      btn.disabled = false
+    }
+  })
 
-function handleDetailEsc(e: KeyboardEvent) {
-  if (e.key === 'Escape') closeClassDetail()
+  void reloadStudentsList(cls.id)
 }
 
 async function reloadStudentsList(classId: string) {
@@ -1073,7 +1079,6 @@ function renderStudentsList(container: HTMLElement, classId: string, students: C
     <div class="students-list__head" aria-hidden="true">
       <span>#</span>
       <span>Мітка учня</span>
-      <span class="students-list__head-code">Код доступу</span>
       <span class="students-list__head-count">${students.length} учн.</span>
     </div>
     <div class="students-list__body" role="list" aria-label="Учні класу"></div>`
@@ -1085,12 +1090,9 @@ function renderStudentsList(container: HTMLElement, classId: string, students: C
     row.className = 'student-row'
     row.dataset['id'] = s.id
     row.setAttribute('role', 'listitem')
-    // Колонка "Код" — поки порожня, буде заповнюватись після генерації кодів
-    const codeVal = (s as any).code ?? ''
     row.innerHTML = `
       <span class="student-row__num">${i + 1}</span>
       <span class="student-row__label" title="${esc(s.label)}">${esc(s.label)}</span>
-      <span class="student-row__code">${codeVal ? esc(codeVal) : '<span class="student-row__code-empty">—</span>'}</span>
       <div class="student-row__actions">
         <button class="btn-student-edit btn btn--secondary btn--sm" aria-label="Редагувати ${esc(s.label)}">
           <i class="fas fa-pencil-alt" aria-hidden="true"></i>
@@ -1329,7 +1331,8 @@ async function loadResults() {
 // --- Show/hide ---
 function showDashboard(nameOrEmail: string, features?: TeacherFeatures) {
   // The backend decides whether Lesson Engine is served; the link only mirrors it.
-  $maybe('lesson-engine-link')?.classList.toggle('hidden', !features?.lessonEngine)
+  lessonEngineEnabled = features?.lessonEngine === true
+  $maybe('lesson-engine-link')?.classList.toggle('hidden', !lessonEngineEnabled)
   authSection.classList.add('hidden')
   dashboardSection.classList.remove('hidden')
   teacherEmailDisplay.textContent = nameOrEmail
@@ -1339,6 +1342,9 @@ function showDashboard(nameOrEmail: string, features?: TeacherFeatures) {
   void refreshSchoolQuestionAvailability()
   void loadTeacherTopics()
   void restoreSchoolSessions()
+  // Classes decide the "where to start" hint, whatever section opens first.
+  void loadClasses()
+  activateTeacherSection(initialTeacherSection())
 }
 
 function showAuth(message?: string) {

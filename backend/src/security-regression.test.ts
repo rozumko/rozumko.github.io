@@ -328,6 +328,7 @@ test('критичні UUID-параметри відхиляються до з�
     { method: 'DELETE', url: '/api/admin/questions/not-a-uuid' },
     { method: 'DELETE', url: '/api/teacher/registrations/not-a-uuid' },
     { method: 'GET', url: '/api/teacher/codes?registrationId=not-a-uuid' },
+    { method: 'PUT', url: '/api/teacher/classes/not-a-uuid', payload: { name: '2-А' } },
     { method: 'GET', url: '/api/teacher/classes/not-a-uuid/students' },
     { method: 'POST', url: '/api/teacher/classes/not-a-uuid/students', payload: { label: 'Учень' } },
     { method: 'PUT', url: '/api/teacher/students/not-a-uuid', payload: { label: 'Учень' } },

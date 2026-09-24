@@ -199,6 +199,39 @@ export async function teacherRoutes(app: FastifyInstance, opts: TeacherRoutesOpt
     return reply.code(201).send({ class: created })
   })
 
+  // PUT /api/teacher/classes/:id — rename only. The grade stays: olympiad
+  // registrations copy it, so changing it later would make them disagree.
+  app.put<{
+    Params: { id: string }
+    Body: { name: string }
+  }>('/classes/:id', {
+    preHandler: requireAuth,
+    schema: {
+      params: {
+        type: 'object',
+        required: ['id'],
+        properties: { id: { type: 'string', format: 'uuid' } },
+      },
+      body: {
+        type: 'object',
+        required: ['name'],
+        properties: { name: { type: 'string', minLength: 1, maxLength: 80 } },
+      },
+    },
+  }, async (req, reply) => {
+    const name = req.body.name.trim()
+    if (!name) return reply.code(400).send({ error: 'Назва класу обовʼязкова' })
+
+    const [updated] = await db
+      .update(teacherClasses)
+      .set({ name, updatedAt: new Date() })
+      .where(and(eq(teacherClasses.id, req.params.id), eq(teacherClasses.teacherId, req.user!.id)))
+      .returning()
+    if (!updated) return reply.code(404).send({ error: 'Клас не знайдено' })
+
+    return reply.send({ class: updated })
+  })
+
   // GET /api/teacher/registrations
   app.get('/registrations', { preHandler: requireAuth }, async (req, reply) => {
     const registrations = await db

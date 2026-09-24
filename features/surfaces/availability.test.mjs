@@ -49,6 +49,9 @@ test('teacher Olympiad navigation is gated before data loading', async () => {
   assert.match(teacher, /const olympiadAvailable = isSurfaceAvailable\('olympiad'\)/)
   assert.match(teacher, /if \(!olympiadAvailable\) return/)
   assert.match(teacher, /configureOlympiadStub\(\)/)
+  // Paused: the menu item and section leave the cabinet; no "coming soon" label.
+  assert.match(teacher, /\[data-section="olympiad"\]'\)\?\.classList\.add\('hidden'\)/)
+  assert.doesNotMatch(teacher, /незабаром/)
 })
 
 test('dormant routes stay out of search while they render a stub', async () => {

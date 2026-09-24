@@ -1596,6 +1596,11 @@ export function deleteClassStudent(studentId: string): Promise<void> {
   return authRequest(`/api/teacher/students/${studentId}`, { method: 'DELETE' })
 }
 
+/** Renames a class; the grade is fixed once olympiad registrations may have copied it. */
+export function renameTeacherClass(classId: string, name: string): Promise<{ class: TeacherClass }> {
+  return authRequest(`/api/teacher/classes/${encodeURIComponent(classId)}`, { method: 'PUT', body: JSON.stringify({ name }) })
+}
+
 export function createTeacherClass(data: { name: string; grade: number }): Promise<{ class: TeacherClass }> {
   return authRequest('/api/teacher/classes', {
     method: 'POST',

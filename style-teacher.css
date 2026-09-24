@@ -275,84 +275,6 @@ a.teacher-section-link { text-decoration: none; }
 .teacher-info-card--clickable { transition: box-shadow .15s; }
 .teacher-info-card--clickable:hover { box-shadow: var(--shadow-md); }
 
-/* ─── Class detail: overlay + sidebar ─────────────────────── */
-.class-detail-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 400;
-  display: flex;
-  justify-content: flex-end;
-  background: rgba(0,0,0,.35);
-  opacity: 0;
-  transition: opacity .2s;
-}
-.class-detail-overlay--open { opacity: 1; }
-
-.class-detail-panel {
-  max-width: 480px;
-  width: 100%;
-  background: #fff;
-  height: 100%;
-  overflow-y: auto;
-  transform: translateX(40px);
-  transition: transform .25s cubic-bezier(.4,0,.2,1);
-  padding: var(--sp-6);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-4);
-}
-.class-detail-overlay--open .class-detail-panel { transform: translateX(0); }
-
-/* Full-screen on mobile */
-@media (max-width: 639px) {
-  .class-detail-panel {
-    max-width: 100%;
-    transform: translateY(40px);
-    border-radius: var(--r-2xl) var(--r-2xl) 0 0;
-    height: 92%;
-    margin-top: auto;
-  }
-  .class-detail-overlay--open .class-detail-panel {
-    transform: translateY(0);
-  }
-}
-
-.class-detail-panel__head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--sp-3);
-}
-.class-detail-panel__eyebrow {
-  font-size: var(--font-size-xs);
-  color: var(--clr-text-muted);
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  margin-bottom: .2rem;
-}
-.class-detail-panel__title {
-  font-size: var(--font-size-xl);
-  font-weight: 700;
-  color: var(--clr-text);
-}
-.class-detail-panel__hint {
-  background: #f0f9ff;
-  border: 1px solid #bae6fd;
-  border-radius: var(--r-lg);
-  padding: var(--sp-3) var(--sp-4);
-  font-size: var(--font-size-sm);
-  color: #0369a1;
-  line-height: 1.6;
-}
-.class-detail-panel__add-form {
-  display: flex;
-  gap: var(--sp-2);
-}
-.class-detail-panel__add-form .form-input {
-  flex: 1;
-  min-width: 0;
-}
-
 /* Список учнів */
 /* Students list — compact table */
 .students-list {
@@ -376,7 +298,7 @@ a.teacher-section-link { text-decoration: none; }
 /* Sticky header row */
 .students-list__head {
   display: grid;
-  grid-template-columns: 2rem 1fr auto auto;
+  grid-template-columns: 2rem 1fr auto;
   align-items: center;
   gap: var(--sp-3);
   padding: var(--sp-2) var(--sp-3);
@@ -390,7 +312,6 @@ a.teacher-section-link { text-decoration: none; }
 }
 
 /* Scrollable body */
-.students-list__head-code { text-align: center; }
 .students-list__head-count { text-align: right; }
 
 .students-list__body {
@@ -401,7 +322,7 @@ a.teacher-section-link { text-decoration: none; }
 
 .student-row {
   display: grid;
-  grid-template-columns: 2rem 1fr auto auto;
+  grid-template-columns: 2rem 1fr auto;
   align-items: center;
   gap: var(--sp-3);
   padding: var(--sp-2) var(--sp-3);
@@ -425,16 +346,6 @@ a.teacher-section-link { text-decoration: none; }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* Колонка "Код" — поки порожня, зарезервована для майбутнього */
-.student-row__code {
-  font-size: var(--font-size-xs);
-  color: var(--clr-text-muted);
-  font-family: monospace;
-  white-space: nowrap;
-  min-width: 5rem;
-  text-align: center;
-}
-.student-row__code-empty { opacity: .35; }
 .student-row__actions {
   display: flex;
   gap: var(--sp-1);
@@ -1646,7 +1557,7 @@ body.teacher-projector-active { overflow: hidden !important; }
   color: var(--clr-text-faint);
 }
 .generate-status--spaced { margin-top: var(--sp-2); }
-.generate-status--ok      { color: var(--clr-emerald-dark); }
+.generate-status--ok      { color: #047857; } /* 5.5:1 on white; the emerald token is below AA for text */
 .generate-status--err     { color: var(--fb-err-label); }
 .generate-status--neutral { color: var(--clr-text-faint); }
 .generate-status--info    { color: #0369a1; }
@@ -2058,3 +1969,99 @@ body.teacher-projector-active { overflow: hidden !important; }
   .tq-answer-row { grid-template-columns: 1.5rem 1.25rem minmax(0, 1fr) 2.5rem; gap: var(--sp-1); }
   .tq-answer-row--fixed { grid-template-columns: 1.5rem 1.25rem minmax(0, 1fr); padding-right: 2.5rem; }
 }
+
+/* ── Cabinet: clearer, higher-contrast shell ─────────────────── */
+.teacher-dashboard { --tc-line: #b9c3d9; --tc-ink: var(--clr-text); }
+.dashboard-sidebar { border-right-color: var(--tc-line); }
+.dashboard-header { border-bottom-color: var(--tc-line); box-shadow: none; }
+.teacher-section-link { color: #2f3a5c; border-left: 4px solid transparent; border-radius: 0 var(--r-md) var(--r-md) 0; }
+.teacher-section-link:hover { background: #e8eefc; color: var(--tc-ink); }
+.teacher-section-link--active {
+  background: #e3ecfb;
+  color: var(--clr-sky-dark);
+  border-left-color: var(--clr-sky-dark);
+  font-weight: 800;
+}
+.teacher-section__heading h1 { font-size: clamp(1.6rem, 2.6vw, 2.1rem); letter-spacing: -0.01em; }
+.teacher-section__heading p:last-child { color: #3a456a; }
+.class-form-card,
+.teacher-info-card { border-color: var(--tc-line); box-shadow: none; }
+.form-label { color: #2f3a5c; }
+.form-input { border-color: var(--tc-line); }
+
+/* ── Where to start (shown until the first class exists) ──────── */
+.teacher-start {
+  margin-bottom: var(--sp-6);
+  padding: var(--sp-4) var(--sp-5);
+  border: 2px solid var(--clr-sky-dark);
+  border-radius: var(--r-lg);
+  background: #fff;
+}
+.teacher-start__title { margin: 0 0 var(--sp-2); font-size: var(--font-size-lg); color: var(--tc-ink); }
+.teacher-start__steps { margin: 0; padding-left: var(--sp-6); display: grid; gap: var(--sp-2); color: #2f3a5c; line-height: 1.5; }
+.teacher-start__steps strong { color: var(--tc-ink); }
+
+/* ── Мої класи: list on the left, the selected class on the right ─ */
+.classes-layout {
+  display: grid;
+  grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);
+  gap: var(--sp-6);
+  align-items: start;
+}
+@media (max-width: 900px) { .classes-layout { grid-template-columns: 1fr; } }
+.classes-layout__list { display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; }
+.classes-layout__heading--first { margin-top: 0 !important; }
+.classes-layout__heading { margin: var(--sp-2) 0 0; font-size: var(--font-size-base); font-weight: 800; color: var(--tc-ink); }
+.class-form-card--compact { margin-bottom: 0; margin-top: var(--sp-3); padding: var(--sp-4); border-radius: var(--r-lg); }
+.class-form-card--compact .class-form-card__title { font-size: var(--font-size-base); margin-bottom: var(--sp-3); }
+.class-form-card--compact .class-form__row { flex-direction: column; align-items: stretch; }
+.class-form-card--compact .class-form__actions .btn { width: 100%; justify-content: center; }
+.classes-grid--single { grid-template-columns: minmax(0, 40rem); }
+
+.class-picker { display: flex; flex-direction: column; gap: var(--sp-2); }
+.class-picker__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  width: 100%;
+  min-height: 3rem;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--tc-line);
+  border-left: 4px solid transparent;
+  border-radius: var(--r-md);
+  background: #fff;
+  color: var(--tc-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.class-picker__item:hover { border-color: var(--clr-sky-dark); }
+.class-picker__item:focus-visible { outline: 3px solid var(--clr-sky); outline-offset: 2px; }
+.class-picker__item--active { border-color: var(--clr-sky-dark); border-left-color: var(--clr-sky-dark); background: #e3ecfb; }
+.class-picker__name { font-weight: 800; overflow-wrap: anywhere; }
+.class-picker__grade { color: #3a456a; font-size: var(--font-size-sm); white-space: nowrap; }
+.empty-state--compact { padding: var(--sp-5); }
+
+.class-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  min-width: 0;
+  padding: var(--sp-5);
+  border: 1px solid var(--tc-line);
+  border-radius: var(--r-lg);
+  background: #fff;
+}
+.class-detail__empty { display: flex; flex-direction: column; align-items: center; gap: var(--sp-3); padding: var(--sp-8) var(--sp-4); color: #3a456a; text-align: center; }
+.class-detail__empty i { font-size: 2rem; color: var(--clr-sky-dark); }
+.class-detail__head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); }
+.class-detail__eyebrow { margin: 0 0 .2rem; font-size: var(--font-size-xs); font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--clr-sky-dark); }
+.class-detail__title { margin: 0; font-size: var(--font-size-2xl, 1.5rem); font-weight: 800; color: var(--tc-ink); overflow-wrap: anywhere; }
+.class-detail__actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.class-detail__inline { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.class-detail__inline .form-input { flex: 1 1 12rem; min-width: 0; }
+.class-detail__hint { margin: var(--sp-2) 0 0; font-size: var(--font-size-sm); color: #3a456a; line-height: 1.5; }
+.class-detail__rename { padding: var(--sp-3); border: 1px dashed var(--tc-line); border-radius: var(--r-md); }
+.class-detail .students-list { border-color: var(--tc-line); }
+.class-detail .students-list__head { color: #2f3a5c; }

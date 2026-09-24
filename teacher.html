@@ -255,7 +255,15 @@
     <div class="dashboard-shell">
       <aside class="dashboard-sidebar">
         <nav class="dashboard-primary-nav" aria-label="Основні розділи кабінету">
-          <button data-section="school" class="teacher-section-link teacher-section-link--active" aria-current="page">
+          <button data-section="classes" class="teacher-section-link teacher-section-link--active" aria-current="page">
+            <i class="fas fa-users" aria-hidden="true"></i>
+            <span>Мої класи</span>
+          </button>
+          <a id="lesson-engine-link" href="lesson-engine.html" class="teacher-section-link hidden">
+            <i class="fas fa-chalkboard-teacher" aria-hidden="true"></i>
+            <span>Уроки</span>
+          </a>
+          <button data-section="school" class="teacher-section-link">
             <i class="fas fa-gamepad" aria-hidden="true"></i>
             <span>Класна гра</span>
           </button>
@@ -264,13 +272,9 @@
             <span>Мої теми й питання</span>
           </button>
           <button data-section="school-results" class="teacher-section-link">
-            <i class="fas fa-chart-column" aria-hidden="true"></i>
-            <span>Результати уроків</span>
+            <i class="fas fa-chart-bar" aria-hidden="true"></i>
+            <span>Результати ігор</span>
           </button>
-          <a id="lesson-engine-link" href="lesson-engine.html" class="teacher-section-link hidden">
-            <i class="fas fa-chalkboard-teacher" aria-hidden="true"></i>
-            <span>Керовані уроки</span>
-          </a>
           <button data-section="olympiad" class="teacher-section-link">
             <i class="fas fa-medal" aria-hidden="true"></i>
             <span>Олімпіада</span>
@@ -281,34 +285,31 @@
       <div class="dashboard-content">
         <main id="main-content" class="dashboard-main" tabindex="-1">
 
-      <section id="teacher-section-olympiad" class="teacher-section hidden">
+      <section id="teacher-start" class="teacher-start hidden" aria-labelledby="teacher-start-title">
+        <h2 id="teacher-start-title" class="teacher-start__title">З чого почати</h2>
+        <ol class="teacher-start__steps">
+          <li><strong>Створіть клас і додайте учнів.</strong> Діти не реєструються: ви вводите короткі мітки на кшталт «Маша К.».</li>
+          <li><strong>Проведіть урок або гру.</strong> «Уроки» — план, слайди й завдання на пристроях; «Класна гра» — швидка вікторина.</li>
+          <li><strong>Перегляньте результати.</strong> Звіт уроку або «Результати ігор».</li>
+        </ol>
+      </section>
+
+      <section id="teacher-section-classes" class="teacher-section">
         <div class="teacher-section__heading">
-          <p class="teacher-section__eyebrow">Окремий режим</p>
-          <h1>Олімпіада</h1>
-          <p>Реєструйте класи на події, створюйте персональні коди учасників і переглядайте офіційні результати.</p>
+          <h1>Мої класи</h1>
+          <p>Клас і список учнів потрібні для уроків і олімпіади. Повних імен не зберігайте — лише мітки, за якими ви впізнаєте дитину.</p>
         </div>
 
-        <nav class="dashboard-tabs" aria-label="Розділи олімпіади">
-          <button data-tab="classes" class="teacher-tab teacher-tab--active">
-            <i class="fas fa-users" aria-hidden="true"></i> Класи й реєстрації
-          </button>
-          <button data-tab="codes" class="teacher-tab">
-            <i class="fas fa-key" aria-hidden="true"></i> Коди учасників
-          </button>
-          <button data-tab="results" class="teacher-tab">
-            <i class="fas fa-poll" aria-hidden="true"></i> Результати
-          </button>
-        </nav>
+        <div class="classes-layout">
+          <div class="classes-layout__list">
+            <h2 class="classes-layout__heading classes-layout__heading--first">Класи</h2>
+            <div id="classes-list" class="class-picker" aria-label="Мої класи">
+              <p class="empty-state__sub">Завантаження…</p>
+            </div>
 
-      <!-- Вкладка: Класи -->
-      <section id="tab-classes" class="tab-panel olympiad-tab-panel">
-        <div class="classes-grid">
-
-          <!-- Ліва колонка: Класи -->
-          <div class="classes-col">
-            <div class="class-form-card">
-              <h2 class="tab-panel__heading">Мої класи</h2>
-              <form id="teacher-class-form" class="class-form__row" novalidate>
+            <form id="teacher-class-form" class="class-form-card class-form-card--compact" novalidate aria-labelledby="class-form-title">
+              <h2 id="class-form-title" class="class-form-card__title">Новий клас</h2>
+              <div class="class-form__row">
                 <div class="class-form__field">
                   <label for="class-name" class="form-label">Назва</label>
                   <input id="class-name" type="text" maxlength="80" placeholder="Наприклад: 2-А" class="form-input"/>
@@ -324,21 +325,45 @@
                 </div>
                 <div class="class-form__actions">
                   <button id="class-submit-btn" type="submit" class="btn btn--success">
-                    <i class="fas fa-plus" aria-hidden="true"></i> Додати
+                    <i class="fas fa-plus" aria-hidden="true"></i> Додати клас
                   </button>
                 </div>
-              </form>
-              <p id="class-form-status" class="generate-status"></p>
-            </div>
-
-            <div id="classes-list" class="teacher-card-list">
-              <div class="empty-state">
-                <i class="fas fa-users empty-state__icon" aria-hidden="true"></i>
-                <p class="empty-state__title">Класів ще немає</p>
-                <p class="empty-state__sub">Додайте клас, щоб реєструвати учасників на події.</p>
               </div>
+              <p id="class-form-status" class="generate-status" role="status"></p>
+            </form>
+          </div>
+
+          <div id="class-detail" class="class-detail" aria-live="polite">
+            <div class="class-detail__empty">
+              <i class="fas fa-users" aria-hidden="true"></i>
+              <p>Створіть клас або оберіть його зі списку, щоб додати учнів.</p>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section id="teacher-section-olympiad" class="teacher-section hidden">
+        <div class="teacher-section__heading">
+          <p class="teacher-section__eyebrow">Окремий режим</p>
+          <h1>Олімпіада</h1>
+          <p>Реєструйте класи на події, створюйте персональні коди учасників і переглядайте офіційні результати. Класи й учнів ведіть у розділі «Мої класи».</p>
+        </div>
+
+        <nav class="dashboard-tabs" aria-label="Розділи олімпіади">
+          <button data-tab="classes" class="teacher-tab teacher-tab--active">
+            <i class="fas fa-clipboard-check" aria-hidden="true"></i> Реєстрації
+          </button>
+          <button data-tab="codes" class="teacher-tab">
+            <i class="fas fa-key" aria-hidden="true"></i> Коди учасників
+          </button>
+          <button data-tab="results" class="teacher-tab">
+            <i class="fas fa-poll" aria-hidden="true"></i> Результати
+          </button>
+        </nav>
+
+      <!-- Вкладка: Класи -->
+      <section id="tab-classes" class="tab-panel olympiad-tab-panel">
+        <div class="classes-grid classes-grid--single">
 
           <!-- Права колонка: Реєстрації -->
           <div class="classes-col">
@@ -443,7 +468,7 @@
       </section>
 
       <!-- Вкладка: Класна гра (просунутий School Mode) -->
-      <section id="teacher-section-school" class="teacher-section">
+      <section id="teacher-section-school" class="teacher-section hidden">
         <div class="teacher-section__heading teacher-section__heading--school">
           <p class="teacher-section__eyebrow">Головний інструмент учителя</p>
           <h1>Класна гра</h1>
