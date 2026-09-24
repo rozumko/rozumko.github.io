@@ -1,0 +1,14 @@
+{
+  "id": "informatics-ua-primary",
+  "subject": "informatics",
+  "title": { "uk": "Розумко Інформатика 1–4", "en": "Rozumko Informatics 1–4" },
+  "gradeRange": { "min": 1, "max": 4 },
+  "curriculumRefs": ["nush-primary", "cambridge-primary-computing", "rozumko-ct-taxonomy"],
+  "externalTools": {
+    "itnauka-windows": {
+      "url": "https://itnauka.org/services/digital_literacy/mouse_skills/windows/index.html",
+      "integration": "launch-only",
+      "title": { "uk": "Швидкісні вікна" }
+    }
+  }
+}

@@ -45,3 +45,4 @@ What this buys us and what it costs. Follow-ups it creates.
 - [ADR-0005: Public repo — secret hygiene](./0005-public-repo-secret-hygiene.md)
 - [ADR-0006: Content is database-owned and ships only as a published snapshot](./0006-database-owned-published-content.md)
 - [ADR-0007: Question delivery is channel-scoped and fail-closed](./0007-question-delivery-channels.md)
+- [ADR-0008: Lesson Engine is an additive surface, not a rewrite](./0008-lesson-engine-additive-surface.md)

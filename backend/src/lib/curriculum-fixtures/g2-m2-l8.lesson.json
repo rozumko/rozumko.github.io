@@ -1,0 +1,375 @@
+{
+  "schemaVersion": 1,
+  "id": "g2-m2-l8",
+  "slug": "files-and-folders",
+  "subjectPackId": "informatics-ua-primary",
+  "subject": "informatics",
+  "grade": 2,
+  "moduleId": "g2-m2",
+  "lessonNumber": 8,
+  "title": {
+    "uk": "Файли й папки: створення, збереження, перейменування та переміщення",
+    "en": "Files and Folders: Create, Save, Rename and Move"
+  },
+  "shortTitle": { "uk": "Файли й папки", "en": "Files and Folders" },
+  "essentialQuestion": { "uk": "Як організувати файли так, щоб швидко знайти потрібний?" },
+  "durationMin": 40,
+  "objectives": [
+    { "id": "obj-1", "text": { "uk": "розрізняти файли, їхні назви, розширення (`.txt`, `.png`) та електронні папки" } },
+    { "id": "obj-2", "text": { "uk": "створювати, давати змістовні назви та зберігати файли у спеціально створеній папці" } },
+    { "id": "obj-3", "text": { "uk": "перейменовувати, переміщувати та повторно відкривати потрібні файли" } }
+  ],
+  "learningOutcomes": [
+    { "outcomeId": "int-files-name-extension", "role": "assessed" },
+    { "outcomeId": "int-files-organize", "role": "practised" }
+  ],
+  "vocabulary": [
+    { "term": { "uk": "створити", "en": "create" } },
+    { "term": { "uk": "зберегти", "en": "save" } },
+    { "term": { "uk": "перейменувати", "en": "rename" } },
+    { "term": { "uk": "перемістити", "en": "move" } },
+    { "term": { "uk": "знайти / відкрити", "en": "find / open" } },
+    { "term": { "uk": "файл / папка", "en": "file / folder" } },
+    { "term": { "uk": "розширення файла", "en": "extension" } }
+  ],
+  "assets": [
+    {
+      "id": "file-flow",
+      "kind": "diagram",
+      "src": "/curriculum-lessons/assets/g2-m2-l8-file-flow.svg",
+      "alt": { "uk": "Шлях файла: новий файл «Без_назви.txt» → перейменування на «Казка_2клас.txt» → переміщення в папку «Мої_Тексти»" },
+      "caption": { "uk": "Створити → Перейменувати → Перемістити у папку" }
+    }
+  ],
+  "blocks": [
+    {
+      "id": "g2-m2-l8-b01",
+      "type": "hero",
+      "audience": { "teacher": true, "student": true },
+      "views": { "document": true, "presentation": true, "remote": false },
+      "modality": "teacher-led",
+      "runtime": { "step": true },
+      "content": {
+        "kicker": { "uk": "Клас 2 • Модуль 2 • Урок 8" },
+        "title": { "uk": "Файли й папки: створення, збереження, перейменування та переміщення" },
+        "subtitle": { "uk": "Files and Folders: Create, Save, Rename and Move" }
+      },
+      "presentation": { "layout": "title", "headline": { "uk": "Файли й папки", "en": "Files and Folders" } }
+    },
+    {
+      "id": "g2-m2-l8-b02",
+      "type": "teacher-note",
+      "audience": { "teacher": true, "student": false },
+      "views": { "document": true, "presentation": false, "remote": false },
+      "modality": "teacher-led",
+      "content": {
+        "text": { "uk": "Орієнтовний час 35–40 хв; формат: індивідуально або в парах; обладнання: комп'ютер/планшет, файловий менеджер, текстовий/графічний редактор." }
+      }
+    },
+    {
+      "id": "g2-m2-l8-b03",
+      "type": "essential-question",
+      "audience": { "teacher": true, "student": true },
+      "views": { "document": true, "presentation": true, "remote": false },
+      "modality": "discussion",
+      "runtime": { "step": true },
+      "content": { "question": { "uk": "Як організувати файли так, щоб швидко знайти потрібний?" } },
+      "presentation": { "layout": "question", "headline": { "uk": "Як організувати файли так, щоб швидко знайти потрібний?" } }
+    },
+    {
+      "id": "g2-m2-l8-b04",
+      "type": "objectives",
+      "audience": { "teacher": true, "student": true },
+      "views": { "document": true, "presentation": true, "remote": false },
+      "modality": "teacher-led",
+      "runtime": { "step": true },
+      "content": { "heading": { "uk": "Сьогодні я навчуся:" } },
+      "presentation": {
+        "layout": "concept",
+        "headline": { "uk": "Сьогодні я навчуся" },
+        "shortText": [
+          { "uk": "Файл, назва, розширення, папка" },
+          { "uk": "Створити й зберегти у папку" },
+          { "uk": "Перейменувати, перемістити, відкрити" }
+        ]
+      }
+    },
+    {
+      "id": "g2-m2-l8-b05",
+      "type": "explanation",
+      "audience": { "teacher": true, "student": true },
+      "views": { "document": true, "presentation": true, "remote": false },
+      "modality": "teacher-led",
+      "estimatedMinutes": 7,
+      "runtime": { "step": true },
+      "outcomeIds": ["int-files-name-extension"],
+      "content": {
+        "heading": { "uk": "Що таке файл, розширення та папка?" },
+        "paragraphs": [
+          { "uk": "Усе, що ми створюємо на комп'ютері (малюнок, текст, музика чи відео), зберігається у вигляді **файла (file)**. Кожен файл має свій «будиночок» та власне ім'я." },
+          { "uk": "Назва файла складається з двох частин: **імені** (яке обираємо ми) та **розширення (extension)** — короткої позначки в кінці назви після крапки (наприклад, `.txt` для тексту або `.png` для малюнка). Розширення підказує комп'ютеру, яка програма може відкрити цей файл." },
+          { "uk": "Щоб файли не губилися, їх розкладають у **папки (folders)** — електронні конверти або коробки для зберігання." }
+        ],
+        "callout": {
+          "title": { "uk": "Порядок дій з файлами:" },
+          "text": { "uk": "Створити (Create) ➔ Зберегти (Save) ➔ Дати назву (Rename) ➔ Перемістити у папку (Move) ➔ Знайти й відкрити (Find and Open)." }
+        }
+      },
+      "presentation": {
+        "layout": "concept",
+        "headline": { "uk": "Файл = ім'я + розширення" },
+        "shortText": [
+          { "uk": "`.txt` — текст, `.png` — малюнок" },
+          { "uk": "Папка — коробка для файлів" }
+        ],
+        "speakerNotes": { "uk": "Покажіть на прикладі будь-якого файла на робочому столі: де ім'я, а де розширення." }
+      }
+    },
+    {
+      "id": "g2-m2-l8-b06",
+      "type": "visual",
+      "audience": { "teacher": true, "student": true },
+      "views": { "document": true, "presentation": true, "remote": false },
+      "modality": "teacher-led",
+      "runtime": { "step": true },
+      "content": { "assetId": "file-flow" },
+      "presentation": { "layout": "visual", "headline": { "uk": "Шлях файла" }, "assetIds": ["file-flow"] }
+    },
+    {
+      "id": "g2-m2-l8-b07",
+      "type": "activity",
+      "audience": { "teacher": true, "student": true },
+      "views": { "document": true, "presentation": true, "remote": true },
+      "modality": "screen",
+      "estimatedMinutes": 3,
+      "runtime": { "step": true },
+      "outcomeIds": ["int-files-name-extension"],
+      "content": { "heading": { "uk": "Спробуй!" } },
+      "activity": {
+        "instanceId": "try-meaningful-name",
+        "mechanic": "choice",
+        "telemetry": "practice",
+        "config": {
+          "prompt": { "uk": "Яку назву файла краще обрати, щоб через місяць одразу зрозуміти, що в ньому знаходиться?" },
+          "options": [
+            { "id": "a", "text": { "uk": "Файл А: `Документ123.png`" } },
+            { "id": "b", "text": { "uk": "Файл Б: `Малюнок_Робот_2клас.png`" } }
+          ]
+        },
+        "scoring": {
+          "mode": "server",
+          "key": {
+            "correctOptionId": "b",
+            "explanation": { "uk": "Змістовна назва підказує вміст файла, а розширення `.png` показує, що це зображення." }
+          }
+        }
+      },
+      "presentation": { "layout": "activity-launcher", "headline": { "uk": "Яка назва краща?" } }
+    },
+    {
+      "id": "g2-m2-l8-b08",
+      "type": "practice",
+      "audience": { "teacher": true, "student": true },
+      "views": { "document": true, "presentation": true, "remote": false },
+      "modality": "screen",
+      "estimatedMinutes": 15,
+      "runtime": { "step": true },
+      "outcomeIds": ["int-files-organize"],
+      "content": {
+        "heading": { "uk": "Основне завдання" },
+        "intro": { "uk": "Виконай повний цикл упорядкування файлів на комп'ютері або планшеті." },
+        "steps": [
+          {
+            "title": { "uk": "Крок 1. Створи два файли різного типу" },
+            "items": [
+              { "uk": "Відкрий графічний редактор (наприклад, Paint) і намалюй просту фігуру. Збережи малюнок із назвою `Проект_Малюнок`." },
+              { "uk": "Відкрий текстовий редактор (наприклад, Блокнот) і напиши одне речення про свій клас. Збережи файл із назвою `Замітка_Клас`." }
+            ]
+          },
+          {
+            "title": { "uk": "Крок 2. Створи нову папку" },
+            "items": [
+              { "uk": "У робочій області або в папці «Документи» створи нову папку та дай їй назву `Мої_Завдання_2клас`." }
+            ]
+          },
+          {
+            "title": { "uk": "Крок 3. Перейменуй та перемісти файли" },
+            "items": [
+              { "uk": "Перейменуй файл малюнка на `Готовий_Робот.png` (або відповідне розширення)." },
+              { "uk": "Перейменуй текстовий файл на `Моя_Розповідь.txt`." },
+              { "uk": "Перемісти обидва файли всередину папки `Мої_Завдання_2клас`." }
+            ]
+          },
+          {
+            "title": { "uk": "Крок 4. Знайди та відкрий" },
+            "items": [
+              { "uk": "Закрий усі програми, зайди у папку `Мої_Завдання_2клас`, знайди переміщені файли та відкрий їх знову для перевірки." }
+            ]
+          }
+        ]
+      },
+      "presentation": {
+        "layout": "concept",
+        "headline": { "uk": "Основне завдання" },
+        "shortText": [
+          { "uk": "1. Створи малюнок і текст" },
+          { "uk": "2. Створи папку `Мої_Завдання_2клас`" },
+          { "uk": "3. Перейменуй і перемісти файли" },
+          { "uk": "4. Знайди й відкрий їх знову" }
+        ]
+      }
+    },
+    {
+      "id": "g2-m2-l8-b09",
+      "type": "support",
+      "audience": { "teacher": true, "student": true },
+      "views": { "document": true, "presentation": false, "remote": false },
+      "modality": "screen",
+      "content": {
+        "heading": { "uk": "Потрібна допомога? (Підказка для дій із файлами)" },
+        "items": [
+          { "uk": "**Створити папку:** натисни правою кнопкою миші на порожньому місці ➔ Створити ➔ Папку." },
+          { "uk": "**Перейменувати:** натисни правою кнопкою на файл ➔ Перейменувати (або клавіша F2)." },
+          { "uk": "**Перемістити:** затисни файл мишею та перетягни його всередину значка папки." }
+        ]
+      }
+    },
+    {
+      "id": "g2-m2-l8-b10",
+      "type": "vocabulary",
+      "audience": { "teacher": true, "student": true },
+      "views": { "document": true, "presentation": true, "remote": false },
+      "modality": "teacher-led",
+      "runtime": { "step": true },
+      "content": {
+        "heading": { "uk": "Cambridge Corner" },
+        "sentenceFrames": [
+          { "uk": "I **create** a new **file** and **save** it." },
+          { "uk": "I **rename** the **file** and **move** it to the **folder**." }
+        ]
+      },
+      "presentation": {
+        "layout": "concept",
+        "headline": { "uk": "Cambridge Corner" },
+        "shortText": [
+          { "uk": "create • save • rename • move" },
+          { "uk": "find / open • file / folder • extension" }
+        ]
+      }
+    },
+    {
+      "id": "g2-m2-l8-b11",
+      "type": "activity",
+      "audience": { "teacher": true, "student": true },
+      "views": { "document": true, "presentation": true, "remote": true },
+      "modality": "screen",
+      "estimatedMinutes": 6,
+      "runtime": { "step": true },
+      "content": { "heading": { "uk": "Спробуй інтерактивно: «Швидкісні вікна»" } },
+      "activity": {
+        "instanceId": "windows-trainer",
+        "mechanic": "external",
+        "telemetry": "practice",
+        "config": {
+          "toolKey": "itnauka-windows",
+          "instructions": { "uk": "Тренажер роботи з вікнами: саме через вікна ти відкриваєш папки й шукаєш у них файли." },
+          "estimatedMinutesLabel": { "uk": "5–8 хв • українською" }
+        },
+        "scoring": { "mode": "none" }
+      },
+      "presentation": { "layout": "activity-launcher", "headline": { "uk": "Швидкісні вікна" } }
+    },
+    {
+      "id": "g2-m2-l8-b12",
+      "type": "activity",
+      "audience": { "teacher": true, "student": true },
+      "views": { "document": true, "presentation": true, "remote": true },
+      "modality": "screen",
+      "estimatedMinutes": 3,
+      "runtime": { "step": true },
+      "outcomeIds": ["int-files-name-extension"],
+      "content": { "heading": { "uk": "Перевір себе" } },
+      "activity": {
+        "instanceId": "self-check-extension",
+        "mechanic": "choice",
+        "telemetry": "evidence",
+        "config": {
+          "prompt": { "uk": "Для чого файлу потрібне розширення (наприклад, `.txt` або `.png`) у кінці назви?" },
+          "options": [
+            { "id": "a", "text": { "uk": "Щоб файл займав більше місця на диску" } },
+            { "id": "b", "text": { "uk": "Вона підказує комп'ютеру, який це тип файла та якою програмою його відкрити" } },
+            { "id": "c", "text": { "uk": "Щоб заховати файл від інших користувачів" } }
+          ]
+        },
+        "scoring": {
+          "mode": "server",
+          "key": {
+            "correctOptionId": "b",
+            "explanation": { "uk": "Розширення (extension) показує тип інформації: `.png` — графічний малюнок, `.txt` — текстовий документ." }
+          }
+        },
+        "outcomes": [{ "outcomeId": "int-files-name-extension", "evidenceRole": "primary" }]
+      },
+      "presentation": { "layout": "activity-launcher", "headline": { "uk": "Перевір себе" } }
+    },
+    {
+      "id": "g2-m2-l8-b13",
+      "type": "reflection",
+      "audience": { "teacher": true, "student": true },
+      "views": { "document": true, "presentation": true, "remote": false },
+      "modality": "discussion",
+      "estimatedMinutes": 4,
+      "runtime": { "step": true },
+      "content": {
+        "heading": { "uk": "Поясни своїми словами" },
+        "prompt": { "uk": "Уяви, що твій друг зберігає всі свої малюнки й тексти на Робочому столі з назвами «1», «2», «3». Поясни йому: чому краще створити папку, дати файлам змістовні назви та перемістити їх туди?" }
+      },
+      "presentation": { "layout": "question", "headline": { "uk": "Поясни другові: навіщо папки і змістовні назви?" } }
+    },
+    {
+      "id": "g2-m2-l8-b14",
+      "type": "success-criteria",
+      "audience": { "teacher": true, "student": true },
+      "views": { "document": true, "presentation": true, "remote": false },
+      "modality": "teacher-led",
+      "runtime": { "step": true },
+      "outcomeIds": ["int-files-organize"],
+      "content": {
+        "heading": { "uk": "Готово, якщо:" },
+        "items": [
+          { "uk": "Створено два файли різного типу (малюнок і текст)." },
+          { "uk": "Створено тематичну папку та перейменовано файли на зрозумілі назви." },
+          { "uk": "Файли переміщено всередину папки та відкрито повторно." }
+        ],
+        "evidenceHint": { "uk": "Що показати: скріншот або демонстрація екрана з відкритою папкою, у якій лежать два перейменовані файли." }
+      },
+      "presentation": {
+        "layout": "concept",
+        "headline": { "uk": "Готово, якщо" },
+        "shortText": [
+          { "uk": "Два файли: малюнок і текст" },
+          { "uk": "Папка і зрозумілі назви" },
+          { "uk": "Файли в папці й відкриваються" }
+        ]
+      }
+    },
+    {
+      "id": "g2-m2-l8-b15",
+      "type": "extension",
+      "audience": { "teacher": true, "student": true },
+      "views": { "document": true, "presentation": false, "remote": false },
+      "modality": "discussion",
+      "content": {
+        "heading": { "uk": "Хочеш більше?" },
+        "prompt": { "uk": "Поясни англійською мовою виконані кроки, використовуючи вивчені команди з Cambridge Corner." },
+        "example": { "uk": "«First, I **create** a **file**. Then I **rename** it and **move** it to my new **folder**.»" }
+      }
+    }
+  ],
+  "metadata": {
+    "source": "manual",
+    "sourceRef": "2_1.html (Клас 2 • Модуль 2 • Урок 8)",
+    "contentVersion": 1,
+    "language": "uk"
+  }
+}
