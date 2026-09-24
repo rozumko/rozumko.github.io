@@ -58,6 +58,7 @@ body.teacher-dashboard-active {
   cursor: pointer;
   transition: background-color var(--transition-fast), color var(--transition-fast);
 }
+a.teacher-section-link { text-decoration: none; }
 .teacher-section-link:hover { background: var(--clr-surface-muted); color: var(--clr-text); }
 .teacher-section-link:focus-visible { outline: 3px solid var(--clr-sky); outline-offset: 2px; }
 .teacher-section-link--active { background: var(--clr-sky-light); color: var(--clr-sky-dark); }

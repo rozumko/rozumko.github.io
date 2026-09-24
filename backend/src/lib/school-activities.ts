@@ -373,7 +373,7 @@ export function resolveActivityDefinition(raw: unknown): SchoolActivityDefinitio
   if (typeof raw !== 'string') throw new Error('Оберіть активність')
   // hasOwn, not a plain lookup: 'constructor' and friends would otherwise
   // resolve through Object.prototype and pass as an activity.
-  if (!Object.hasOwn(SCHOOL_ACTIVITIES, raw)) throw new Error('Невідома активність')
+  if (!Object.prototype.hasOwnProperty.call(SCHOOL_ACTIVITIES, raw)) throw new Error('Невідома активність')
   return SCHOOL_ACTIVITIES[raw as SchoolActivityKey]
 }
 

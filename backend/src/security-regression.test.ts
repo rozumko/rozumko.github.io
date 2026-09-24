@@ -349,6 +349,207 @@ test('application tables have an RLS enablement migration', () => {
   assert.match(journal, /"tag": "0028_enable_rls_all_application_tables"/)
 })
 
+test('every table in the Drizzle schema has RLS enabled by some migration', () => {
+  const schema = readFileSync(new URL('./db/schema.ts', import.meta.url), 'utf8')
+  const drizzleDir = new URL('../drizzle/', import.meta.url)
+  const migrations = readdirSync(drizzleDir)
+    .filter(name => name.endsWith('.sql'))
+    .map(name => readFileSync(new URL(name, drizzleDir), 'utf8'))
+    .join('\n')
+  const tables = [...schema.matchAll(/pgTable\('([a-z_]+)'/g)].map(match => match[1]!)
+
+  assert.ok(tables.length > 30, 'schema scan found too few tables — the scan is broken')
+  for (const table of tables) {
+    assert.match(migrations, new RegExp(`ALTER TABLE (public\\.)?${table} ENABLE ROW LEVEL SECURITY;`), table)
+  }
+})
+
+test('curriculum lessons are RLS-protected, journaled and keep published versions immutable', () => {
+  const migration = readFileSync(new URL('../drizzle/0049_add_curriculum_lessons.sql', import.meta.url), 'utf8')
+  const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')
+
+  assert.match(migration, /ALTER TABLE public\.curriculum_lessons ENABLE ROW LEVEL SECURITY;/)
+  assert.match(migration, /ALTER TABLE public\.curriculum_lesson_revisions ENABLE ROW LEVEL SECURITY;/)
+  assert.match(migration, /CHECK \(\(published_version IS NULL\) = \(published_snapshot IS NULL\)\)/)
+  assert.match(migration, /BEFORE UPDATE ON public\.curriculum_lessons/)
+  assert.match(migration, /BEFORE UPDATE OR DELETE ON public\.curriculum_lesson_revisions/)
+  assert.match(migration, /ON DELETE RESTRICT/)
+  assert.doesNotMatch(migration, /CREATE POLICY/)
+  assert.match(journal, /"tag": "0049_add_curriculum_lessons"/)
+})
+
+test('curriculum editorial API is flag-gated first and admin-only for every route', () => {
+  const route = readFileSync(new URL('./routes/curriculum-admin.ts', import.meta.url), 'utf8')
+  const flag = readFileSync(new URL('./lib/lesson-engine-flag.ts', import.meta.url), 'utf8')
+  const server = readFileSync(new URL('./server.ts', import.meta.url), 'utf8')
+
+  const onRequest = route.indexOf("app.addHook('onRequest'")
+  const preHandler = route.indexOf("app.addHook('preHandler', requireAdmin)")
+  const firstRoute = route.search(/app\.(get|post|put|delete)\b/)
+  assert.ok(onRequest >= 0 && preHandler > onRequest && firstRoute > preHandler, 'hooks must be registered before any route')
+  assert.match(route, /isLessonEngineEnabled\(\)/)
+  assert.match(flag, /=== 'true'/)
+  assert.match(server, /register\(curriculumAdminRoutes, \{ prefix: '\/api\/admin\/curriculum' \}\)/)
+
+  // Teacher routes: same flag-first ordering, authenticated, and every lesson
+  // leaves through the display-safe projection that strips answer keys.
+  const teacher = readFileSync(new URL('./routes/curriculum-teacher.ts', import.meta.url), 'utf8')
+  const teacherOnRequest = teacher.indexOf("app.addHook('onRequest'")
+  const teacherPreHandler = teacher.indexOf("app.addHook('preHandler', requireAuth)")
+  const teacherFirstRoute = teacher.search(/app\.(get|post|put|delete)\b/)
+  assert.ok(teacherOnRequest >= 0 && teacherPreHandler > teacherOnRequest && teacherFirstRoute > teacherPreHandler)
+  assert.match(teacher, /toDisplaySafeLesson\(/)
+  assert.doesNotMatch(teacher, /draftContent/)
+  assert.match(server, /register\(curriculumTeacherRoutes, \{ prefix: '\/api\/teacher\/curriculum' \}\)/)
+
+  // Board checks: scored on the server, refused for evidence, and the scorer
+  // never echoes key fields back.
+  const scoring = readFileSync(new URL('./lib/curriculum-activity-scoring.ts', import.meta.url), 'utf8')
+  assert.match(teacher, /boardCheckRefusal\(activity\)[\s\S]{0,200}scoreServerActivity\(activity/)
+  assert.match(teacher, /telemetry === 'evidence'/)
+  assert.doesNotMatch(scoring, /correctOptionId:|placement:|answers: key/)
+})
+
+test('lesson runs are RLS-protected, frozen once closed, and owner-scoped', () => {
+  const migration = readFileSync(new URL('../drizzle/0050_add_lesson_runs.sql', import.meta.url), 'utf8')
+  const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')
+  const route = readFileSync(new URL('./routes/lesson-runs.ts', import.meta.url), 'utf8')
+  const state = readFileSync(new URL('./lib/lesson-run-state.ts', import.meta.url), 'utf8')
+
+  for (const table of ['lesson_runs', 'lesson_run_students', 'lesson_run_events']) {
+    assert.match(migration, new RegExp(`ALTER TABLE public\\.${table} ENABLE ROW LEVEL SECURITY;`), table)
+  }
+  assert.doesNotMatch(migration, /CREATE POLICY/)
+  assert.match(migration, /lesson_runs_one_open_per_class_uq[\s\S]{0,120}WHERE status IN \('prepared', 'active', 'paused'\)/)
+  assert.match(migration, /OLD\.status IN \('finished', 'cancelled'\)/)
+  assert.match(migration, /NEW\.lesson_snapshot IS DISTINCT FROM OLD\.lesson_snapshot/)
+  assert.match(migration, /BEFORE UPDATE OR DELETE ON public\.lesson_run_events/)
+  assert.match(migration, /class_student_id uuid REFERENCES public\.class_students\(id\) ON DELETE SET NULL/)
+  assert.match(journal, /"tag": "0050_add_lesson_runs"/)
+
+  // Every event type the code writes must be allowed by the newest migration
+  // that defines the constraint (0051 widened it for web join).
+  const constraintSources = readdirSync(new URL('../drizzle/', import.meta.url))
+    .filter(name => name.endsWith('.sql')).sort()
+    .map(name => readFileSync(new URL(`../drizzle/${name}`, import.meta.url), 'utf8'))
+    .filter(sql => /lesson_run_events_type_check CHECK \(type IN/.test(sql))
+  const latest = constraintSources[constraintSources.length - 1]!
+  const allowed = new Set([...latest.match(/lesson_run_events_type_check CHECK \(type IN \(([^)]*)\)/)![1]!.matchAll(/'([a-z_]+)'/g)].map(m => m[1]))
+  const student = readFileSync(new URL('./routes/lesson-student.ts', import.meta.url), 'utf8')
+  const written = new Set([...`${route}\n${state}\n${student}`.matchAll(/(?:type|event): '(run_[a-z]+|block_opened|activity_dispatched|join_[a-z]+|device_[a-z]+)'/g)].map(m => m[1]))
+  assert.ok(written.size >= 6, 'event scan found too few event types')
+  for (const type of written) assert.ok(allowed.has(type), type)
+
+  // Flag first, then auth; every run lookup is scoped to the requesting teacher.
+  assert.ok(route.indexOf("app.addHook('onRequest'") < route.indexOf("app.addHook('preHandler', requireAuth)"))
+  const runLookups = route.match(/\.from\(lessonRuns\)/g)!.length
+  const ownerScoped = route.match(/eq\(lessonRuns\.teacherId, (teacherId|req\.user!\.id)\)/g)!.length
+  assert.ok(ownerScoped >= runLookups - 1, 'every run lookup must be owner-scoped (the open-run conflict lookup is by own class)')
+  assert.match(route, /eq\(teacherClasses\.teacherId, teacherId\)/)
+  assert.match(route, /toDisplaySafeLesson\(lesson\)/)
+})
+
+test('web join: devices are anonymous, revocable, RLS-protected, and tokens stay out of URLs', () => {
+  const migration = readFileSync(new URL('../drizzle/0051_add_lesson_run_devices.sql', import.meta.url), 'utf8')
+  const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')
+  const student = readFileSync(new URL('./routes/lesson-student.ts', import.meta.url), 'utf8')
+  const device = readFileSync(new URL('./lib/lesson-device.ts', import.meta.url), 'utf8')
+  const runs = readFileSync(new URL('./routes/lesson-runs.ts', import.meta.url), 'utf8')
+
+  assert.match(migration, /ALTER TABLE public\.lesson_run_devices ENABLE ROW LEVEL SECURITY;/)
+  assert.doesNotMatch(migration, /CREATE POLICY/)
+  assert.match(migration, /lesson_runs_join_code_open_check[\s\S]{0,120}status IN \('prepared', 'active', 'paused'\)/)
+  assert.match(migration, /lesson_run_devices_one_per_student_uq/)
+  assert.match(migration, /BEFORE DELETE ON public\.lesson_run_devices/)
+  assert.match(journal, /"tag": "0051_add_lesson_run_devices"/)
+
+  // Domain-separated HMAC, constant-time check, liveness re-checked per request.
+  assert.match(device, /LESSON_DEVICE_TOKEN_DOMAIN \+ deviceId/)
+  assert.match(device, /timingSafeEqual/)
+  assert.match(student, /verifyDeviceToken\(deviceId, deviceToken\)/)
+  assert.match(student, /deviceLiveness\(row\.device\) !== 'live'/)
+  // Join is throttled per code and per IP; tokens never ride in a query string.
+  assert.match(student, /LESSON_JOIN_CODE_THROTTLE_SCOPE/)
+  assert.match(student, /LESSON_JOIN_CODE_IP_THROTTLE_SCOPE/)
+  assert.doesNotMatch(student, /Querystring/)
+  // A device never reads the roster: class_students is reached only through its own mapping.
+  assert.doesNotMatch(student, /\.from\(classStudents\)/)
+  assert.match(student, /leftJoin\(classStudents, eq\(classStudents\.id, lessonRunStudents\.classStudentId\)\)/)
+  // Closing a run clears its join code in the same write.
+  assert.match(runs, /closing \? \{ joinCode: null, joinCodeExpiresAt: null \}/)
+})
+
+test('attempts are append-only, idempotent, trust-checked, and devices never receive keys', () => {
+  const migration = readFileSync(new URL('../drizzle/0052_add_activity_attempts.sql', import.meta.url), 'utf8')
+  const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')
+  const student = readFileSync(new URL('./routes/lesson-student.ts', import.meta.url), 'utf8')
+  const live = readFileSync(new URL('./lib/lesson-live.ts', import.meta.url), 'utf8')
+
+  for (const table of ['lesson_run_dispatches', 'activity_attempts']) {
+    assert.match(migration, new RegExp(`ALTER TABLE public\\.${table} ENABLE ROW LEVEL SECURITY;`), table)
+  }
+  assert.doesNotMatch(migration, /CREATE POLICY/)
+  assert.match(migration, /activity_attempts_device_client_uq UNIQUE \(lesson_run_device_id, client_attempt_id\)/)
+  assert.match(migration, /BEFORE UPDATE OR DELETE ON public\.activity_attempts/)
+  assert.match(migration, /mechanic = 'game' AND trust = 'client-unverified'/)
+  assert.match(migration, /lesson_run_dispatches_one_open_uq[\s\S]{0,120}WHERE closed_at IS NULL/)
+  assert.match(journal, /"tag": "0052_add_activity_attempts"/)
+
+  // Devices get activities only through the key-free projection.
+  assert.match(student, /studentActivityView\(found\.activity/)
+  assert.doesNotMatch(student, /scoring\.key/)
+  assert.match(live, /scoring: \{ mode: activity\.scoring\.mode \}/)
+  // Evidence never tells the child (or the neighbours) the score or which items were right.
+  assert.match(live, /feedback: activity\.telemetry === 'evidence' \? null : feedback/)
+  assert.match(student, /result: evidence \? null :/)
+  // Submissions are serialised per device and replayed by clientAttemptId.
+  assert.match(student, /\.for\('update', \{ of: lessonRunDevices \}\)/)
+  assert.match(student, /eq\(activityAttempts\.clientAttemptId, clientAttemptId\)/)
+})
+
+test('learning evidence is append-only, never primary when client-reported, and written with its attempt', () => {
+  const migration = readFileSync(new URL('../drizzle/0053_add_student_outcome_evidence.sql', import.meta.url), 'utf8')
+  const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')
+  const student = readFileSync(new URL('./routes/lesson-student.ts', import.meta.url), 'utf8')
+  const evidence = readFileSync(new URL('./lib/lesson-evidence.ts', import.meta.url), 'utf8')
+
+  assert.match(migration, /ALTER TABLE public\.student_outcome_evidence ENABLE ROW LEVEL SECURITY;/)
+  assert.doesNotMatch(migration, /CREATE POLICY/)
+  assert.match(migration, /CHECK \(evidence_role <> 'primary' OR trust <> 'client-unverified'\)/)
+  assert.match(migration, /BEFORE UPDATE OR DELETE ON public\.student_outcome_evidence/)
+  assert.match(migration, /class_student_id uuid REFERENCES public\.class_students\(id\) ON DELETE SET NULL/)
+  assert.match(journal, /"tag": "0053_add_student_outcome_evidence"/)
+  // Written inside the attempt transaction, from the run's frozen activity.
+  assert.match(student, /evidenceRowsForAttempt\(found\.activity[\s\S]{0,600}tx\.insert\(studentOutcomeEvidence\)/)
+  // Only verified primary evidence can decide a summary.
+  assert.match(evidence, /e\.evidenceRole === 'primary' && e\.trust !== 'client-unverified'/)
+})
+
+test('classroom control: providers see only computer ids and URLs; launch links are single-use hashes in the fragment', () => {
+  const migration = readFileSync(new URL('../drizzle/0054_add_device_assignments.sql', import.meta.url), 'utf8')
+  const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')
+  const runs = readFileSync(new URL('./routes/lesson-runs.ts', import.meta.url), 'utf8')
+  const student = readFileSync(new URL('./routes/lesson-student.ts', import.meta.url), 'utf8')
+  const assignments = readFileSync(new URL('./routes/device-assignments.ts', import.meta.url), 'utf8')
+
+  assert.match(migration, /ALTER TABLE public\.device_assignments ENABLE ROW LEVEL SECURITY;/)
+  assert.doesNotMatch(migration, /CREATE POLICY/)
+  assert.match(migration, /launch_token_hash ~ '\^\[0-9a-f\]\{64\}\$'/)
+  assert.match(journal, /"tag": "0054_add_device_assignments"/)
+  // Token in the fragment, only its hash stored, single use and short-lived.
+  assert.match(runs, /url: `lesson-join\.html#launch=\$\{token\}`/)
+  assert.match(runs, /launchTokenHash: hash/)
+  assert.doesNotMatch(runs, /launchToken: token/)
+  assert.match(student, /eq\(lessonRunDevices\.launchTokenHash, hashLaunchToken\(launchToken\)\)/)
+  assert.match(student, /row\.device\.launchedAt/)
+  assert.match(student, /set\(\{ launchedAt: now \}\)/)
+  // The launch plan carries computer ids and URLs only — no names or roster data.
+  assert.match(runs, /launches\.push\(\{ remoteDeviceId, url: /)
+  // Assignments are owner-scoped and flag-gated.
+  assert.match(assignments, /eq\(teacherClasses\.teacherId, req\.user!\.id\)|eq\(teacherClasses\.teacherId, teacherId\)/)
+  assert.ok(assignments.indexOf("app.addHook('onRequest'") < assignments.indexOf("app.addHook('preHandler', requireAuth)"))
+})
+
 test('question editorial history is RLS-protected and journaled', () => {
   const migration = readFileSync(new URL('../drizzle/0036_add_question_editorial_workflow.sql', import.meta.url), 'utf8')
   const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')

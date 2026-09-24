@@ -344,6 +344,48 @@
       "when": 1789161600000,
       "tag": "0048_add_teacher_question_library",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1789248000000,
+      "tag": "0049_add_curriculum_lessons",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1789334400000,
+      "tag": "0050_add_lesson_runs",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1789420800000,
+      "tag": "0051_add_lesson_run_devices",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1789507200000,
+      "tag": "0052_add_activity_attempts",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1789593600000,
+      "tag": "0053_add_student_outcome_evidence",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1789680000000,
+      "tag": "0054_add_device_assignments",
+      "breakpoints": true
     }
   ]
 }

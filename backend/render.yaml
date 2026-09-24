@@ -39,3 +39,7 @@ services:
         sync: false
       - key: NODE_ENV
         value: production
+      # Lesson Engine (ADR-0008). Only the exact string "true" enables it;
+      # flipping back to "false" is the rollback.
+      - key: LESSON_ENGINE_ENABLED
+        value: "false"

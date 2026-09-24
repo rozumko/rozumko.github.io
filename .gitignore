@@ -82,3 +82,6 @@ rozumko_brand_assets/
 # Референсні навчальні документи (Cambridge-програма .docx тощо) — лише локально.
 /documents/
 *.load-codes.local.txt
+# Browser profiles (cookies, sessions) from local tooling — never commit.
+.browser-profile/
+**/.browser-profile/

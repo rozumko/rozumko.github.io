@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Розумко — Уроки</title>
+  <meta name="description" content="Керовані уроки Розумко для вчителя: план уроку та показ на дошці." />
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#3b82f6">
+  <link rel="stylesheet" href="tokens.css"/>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="style-lesson-engine.css"/>
+</head>
+<body class="le-page">
+  <a href="#main-content" class="skip-link">Перейти до основного контенту</a>
+
+  <header class="le-topbar">
+    <a href="teacher.html" class="le-topbar__back">← Кабінет вчителя</a>
+    <span class="le-topbar__brand">Розумко · Уроки</span>
+  </header>
+
+  <main id="main-content" class="le-main" tabindex="-1">
+    <p id="le-status" class="le-status" role="status">Завантаження…</p>
+    <div id="le-view"></div>
+  </main>
+
+  <div id="app-modal" class="app-modal-overlay hidden"
+       role="dialog" aria-modal="true" aria-labelledby="modal-message">
+    <div class="app-modal-card">
+      <p id="modal-message" class="app-modal-msg"></p>
+      <div class="modal-actions">
+        <button id="modal-ok-btn" class="btn-modal-ok">OK</button>
+        <button id="modal-cancel-btn" class="btn-modal-cancel hidden">Скасувати</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="lesson-engine.js"></script>
+</body>
+</html>

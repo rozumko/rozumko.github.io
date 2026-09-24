@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Розумко — Приєднатися до уроку</title>
+  <meta name="description" content="Приєднайся до уроку Розумко за кодом від учителя." />
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#3b82f6">
+  <link rel="stylesheet" href="tokens.css"/>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="style-lesson-engine.css"/>
+  <link rel="stylesheet" href="style-lesson-join.css"/>
+</head>
+<body class="lj-page">
+  <a href="#main-content" class="skip-link">Перейти до основного контенту</a>
+  <main id="main-content" class="lj-main" tabindex="-1">
+    <section id="lj-join" class="lj-card" aria-labelledby="lj-join-title">
+      <h1 id="lj-join-title" class="lj-title">Приєднуйся до уроку</h1>
+      <form id="lj-form" class="lj-form" novalidate>
+        <label for="lj-code" class="lj-label">Код від учителя</label>
+        <input id="lj-code" class="lj-code-input" name="code" inputmode="numeric" autocomplete="off" maxlength="7"
+               placeholder="123 456" aria-describedby="lj-error" />
+        <button type="submit" class="lj-button">Приєднатися</button>
+        <p id="lj-error" class="lj-error" role="alert"></p>
+      </form>
+    </section>
+
+    <section id="lj-wait" class="lj-card" aria-labelledby="lj-wait-title" hidden>
+      <h1 id="lj-wait-title" class="lj-title">Ти в уроці!</h1>
+      <p id="lj-lesson" class="lj-lesson"></p>
+      <p class="lj-number-label">Твій номер</p>
+      <p id="lj-number" class="lj-number" aria-live="polite"></p>
+      <p id="lj-status" class="lj-status" role="status"></p>
+      <p id="lj-notice" class="lj-notice" role="alert"></p>
+      <div id="lj-task-host" class="lj-task-host"></div>
+    </section>
+  </main>
+  <script type="module" src="lesson-join.js"></script>
+</body>
+</html>

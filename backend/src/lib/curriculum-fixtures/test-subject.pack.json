@@ -1,0 +1,12 @@
+{
+  "id": "test-pack",
+  "subject": "test-subject",
+  "title": { "uk": "Тестовий пакет" },
+  "gradeRange": { "min": 1, "max": 1 },
+  "curriculumRefs": [],
+  "externalTools": {},
+  "games": [],
+  "outcomes": {
+    "ts-outcome-1": { "code": "TS-1", "title": { "uk": "Розрізняє A і B" }, "source": "internal", "mappings": [] }
+  }
+}

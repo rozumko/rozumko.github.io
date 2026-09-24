@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { pgTable, text, integer, smallint, date, boolean, timestamp, jsonb, uuid, unique, primaryKey } from 'drizzle-orm/pg-core'
+import { pgTable, text, integer, smallint, date, boolean, timestamp, jsonb, uuid, unique, primaryKey, numeric } from 'drizzle-orm/pg-core'
 
 /**
  * Типи питань:
@@ -643,3 +643,212 @@ export const homeFunnelCounters = pgTable('home_funnel_counters', {
 }))
 
 export type HomeFunnelCounter = typeof homeFunnelCounters.$inferSelect
+
+// ── Lesson Engine: curriculum lessons (0049) ──────────────────────────────────
+// Additive surface (ADR-0008). draft_content is the LessonDefinitionV1 under
+// edit (answer keys included, admin API only); published_snapshot is what runs
+// and exports read, and is immutable per published_version (DB trigger).
+export type CurriculumLessonStatus = 'draft' | 'review' | 'published' | 'archived'
+
+export const curriculumLessons = pgTable('curriculum_lessons', {
+  id:                text('id').primaryKey(),
+  subjectPackId:     text('subject_pack_id').notNull(),
+  subject:           text('subject').notNull(),
+  grade:             integer('grade').notNull(),
+  moduleId:          text('module_id'),
+  lessonNumber:      integer('lesson_number'),
+  title:             text('title').notNull(),
+  schemaVersion:     integer('schema_version').notNull(),
+  status:            text('status').notNull().default('draft').$type<CurriculumLessonStatus>(),
+  editVersion:       integer('edit_version').notNull().default(1),
+  contentVersion:    integer('content_version').notNull().default(1),
+  publishedVersion:  integer('published_version'),
+  draftContent:      jsonb('draft_content').notNull().$type<Record<string, unknown>>(),
+  publishedSnapshot: jsonb('published_snapshot').$type<Record<string, unknown>>(),
+  createdBy:         text('created_by'),
+  updatedBy:         text('updated_by'),
+  reviewedBy:        text('reviewed_by'),
+  publishedBy:       text('published_by'),
+  reviewedAt:        timestamp('reviewed_at', { withTimezone: true }),
+  publishedAt:       timestamp('published_at', { withTimezone: true }),
+  createdAt:         timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:         timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type CurriculumLessonRow = typeof curriculumLessons.$inferSelect
+
+export const curriculumLessonRevisions = pgTable('curriculum_lesson_revisions', {
+  id:          uuid('id').primaryKey().defaultRandom(),
+  lessonId:    text('lesson_id').notNull().references(() => curriculumLessons.id, { onDelete: 'restrict' }),
+  editVersion: integer('edit_version').notNull(),
+  action:      text('action').notNull(),
+  snapshot:    jsonb('snapshot').notNull().$type<Record<string, unknown>>(),
+  changedBy:   text('changed_by'),
+  createdAt:   timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  uniqLessonEditVersion: unique('curriculum_lesson_revisions_lesson_edit_version_uq').on(t.lessonId, t.editVersion),
+}))
+
+export type CurriculumLessonRevisionRow = typeof curriculumLessonRevisions.$inferSelect
+
+// ── Lesson Engine: lesson runs (0050) ─────────────────────────────────────────
+// A run freezes the published lesson snapshot (answer keys included, server
+// only). Identity and snapshot are immutable and finished/cancelled runs are
+// frozen by a DB trigger; one open run per class by a partial unique index.
+export type LessonRunStatus = 'prepared' | 'active' | 'paused' | 'finished' | 'cancelled'
+
+export const lessonRuns = pgTable('lesson_runs', {
+  id:                     uuid('id').primaryKey().defaultRandom(),
+  teacherId:              uuid('teacher_id').notNull().references(() => appUsers.id, { onDelete: 'restrict' }),
+  classId:                uuid('class_id').notNull().references(() => teacherClasses.id, { onDelete: 'restrict' }),
+  lessonId:               text('lesson_id').notNull().references(() => curriculumLessons.id, { onDelete: 'restrict' }),
+  lessonPublishedVersion: integer('lesson_published_version').notNull(),
+  lessonSnapshot:         jsonb('lesson_snapshot').notNull().$type<Record<string, unknown>>(),
+  status:                 text('status').notNull().default('prepared').$type<LessonRunStatus>(),
+  currentStepIndex:       integer('current_step_index').notNull().default(0),
+  currentBlockId:         text('current_block_id').notNull(),
+  // 0051: web join. Six digits, unique while set; cleared when the run closes.
+  joinCode:               text('join_code'),
+  joinCodeExpiresAt:      timestamp('join_code_expires_at', { withTimezone: true }),
+  createdAt:              timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  startedAt:              timestamp('started_at', { withTimezone: true }),
+  pausedAt:               timestamp('paused_at', { withTimezone: true }),
+  finishedAt:             timestamp('finished_at', { withTimezone: true }),
+  cancelledAt:            timestamp('cancelled_at', { withTimezone: true }),
+  updatedAt:              timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type LessonRunRow = typeof lessonRuns.$inferSelect
+
+export const lessonRunStudents = pgTable('lesson_run_students', {
+  id:             uuid('id').primaryKey().defaultRandom(),
+  lessonRunId:    uuid('lesson_run_id').notNull().references(() => lessonRuns.id, { onDelete: 'restrict' }),
+  classStudentId: uuid('class_student_id').references(() => classStudents.id, { onDelete: 'set null' }),
+  status:         text('status').notNull().default('expected').$type<'expected' | 'joined' | 'absent'>(),
+  joinedAt:       timestamp('joined_at', { withTimezone: true }),
+  lastSeenAt:     timestamp('last_seen_at', { withTimezone: true }),
+  createdAt:      timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  uniqRunStudent: unique('lesson_run_students_run_student_uq').on(t.lessonRunId, t.classStudentId),
+}))
+
+export type LessonRunStudentRow = typeof lessonRunStudents.$inferSelect
+
+export type LessonRunEventType =
+  | 'run_created' | 'run_started' | 'block_opened' | 'activity_dispatched' | 'activity_closed'
+  | 'run_paused' | 'run_resumed' | 'run_finished' | 'run_cancelled'
+  | 'join_opened' | 'join_closed' | 'device_joined' | 'device_mapped' | 'device_unmapped' | 'device_revoked'
+  | 'devices_launched' | 'device_launched'
+
+export const lessonRunEvents = pgTable('lesson_run_events', {
+  id:          uuid('id').primaryKey().defaultRandom(),
+  lessonRunId: uuid('lesson_run_id').notNull().references(() => lessonRuns.id, { onDelete: 'restrict' }),
+  type:        text('type').notNull().$type<LessonRunEventType>(),
+  blockId:     text('block_id'),
+  actorType:   text('actor_type').notNull().$type<'teacher' | 'system' | 'device'>(),
+  actorId:     uuid('actor_id'),
+  payload:     jsonb('payload').notNull().default({}).$type<Record<string, unknown>>(),
+  createdAt:   timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type LessonRunEventRow = typeof lessonRunEvents.$inferSelect
+
+// Anonymous device joined to a run by code (0051). The teacher maps it to a
+// roster student; revoked devices are kept (never deleted) for the audit trail.
+export const lessonRunDevices = pgTable('lesson_run_devices', {
+  id:                 uuid('id').primaryKey().defaultRandom(),
+  lessonRunId:        uuid('lesson_run_id').notNull().references(() => lessonRuns.id, { onDelete: 'restrict' }),
+  pairingNumber:      integer('pairing_number').notNull(),
+  lessonRunStudentId: uuid('lesson_run_student_id').references(() => lessonRunStudents.id, { onDelete: 'restrict' }),
+  createdAt:          timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  lastSeenAt:         timestamp('last_seen_at', { withTimezone: true }),
+  expiresAt:          timestamp('expires_at', { withTimezone: true }).notNull(),
+  revokedAt:          timestamp('revoked_at', { withTimezone: true }),
+  // 0054: opened on a lab computer by a classroom control provider.
+  remoteDeviceId:     text('remote_device_id'),
+  launchTokenHash:    text('launch_token_hash'),
+  launchExpiresAt:    timestamp('launch_expires_at', { withTimezone: true }),
+  launchedAt:         timestamp('launched_at', { withTimezone: true }),
+}, (t) => ({
+  uniqRunPairing: unique('lesson_run_devices_run_pairing_uq').on(t.lessonRunId, t.pairingNumber),
+}))
+
+export type LessonRunDeviceRow = typeof lessonRunDevices.$inferSelect
+
+// Activity currently open on the class's devices (0052). One open per run.
+export const lessonRunDispatches = pgTable('lesson_run_dispatches', {
+  id:                 uuid('id').primaryKey().defaultRandom(),
+  lessonRunId:        uuid('lesson_run_id').notNull().references(() => lessonRuns.id, { onDelete: 'restrict' }),
+  blockId:            text('block_id').notNull(),
+  activityInstanceId: text('activity_instance_id').notNull(),
+  openedBy:           uuid('opened_by').notNull().references(() => appUsers.id, { onDelete: 'restrict' }),
+  openedAt:           timestamp('opened_at', { withTimezone: true }).notNull().defaultNow(),
+  closedAt:           timestamp('closed_at', { withTimezone: true }),
+})
+
+export type LessonRunDispatchRow = typeof lessonRunDispatches.$inferSelect
+
+// One submission from one mapped device (0052). Append-only; idempotent per
+// (device, client_attempt_id). Trust is derived from the mechanic (DB-checked).
+export const activityAttempts = pgTable('activity_attempts', {
+  id:                 uuid('id').primaryKey().defaultRandom(),
+  clientAttemptId:    uuid('client_attempt_id').notNull(),
+  lessonRunId:        uuid('lesson_run_id').notNull().references(() => lessonRuns.id, { onDelete: 'restrict' }),
+  dispatchId:         uuid('dispatch_id').notNull().references(() => lessonRunDispatches.id, { onDelete: 'restrict' }),
+  lessonRunDeviceId:  uuid('lesson_run_device_id').notNull().references(() => lessonRunDevices.id, { onDelete: 'restrict' }),
+  lessonRunStudentId: uuid('lesson_run_student_id').notNull().references(() => lessonRunStudents.id, { onDelete: 'restrict' }),
+  blockId:            text('block_id').notNull(),
+  activityInstanceId: text('activity_instance_id').notNull(),
+  mechanic:           text('mechanic').notNull(),
+  telemetry:          text('telemetry').notNull(),
+  attemptNo:          integer('attempt_no').notNull(),
+  answerPayload:      jsonb('answer_payload').notNull().$type<Record<string, unknown>>(),
+  correct:            integer('correct').notNull(),
+  total:              integer('total').notNull(),
+  mistakes:           integer('mistakes').notNull(),
+  normalizedScore:    numeric('normalized_score', { precision: 5, scale: 4, mode: 'number' }).notNull(),
+  durationSec:        integer('duration_sec'),
+  trust:              text('trust').notNull().$type<'server-verified' | 'client-unverified'>(),
+  createdAt:          timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  uniqDeviceClient: unique('activity_attempts_device_client_uq').on(t.lessonRunDeviceId, t.clientAttemptId),
+}))
+
+export type ActivityAttemptRow = typeof activityAttempts.$inferSelect
+
+// Learning evidence (0053): one attempt of an evidence activity × one targeted
+// outcome. Append-only (anonymisation aside); primary evidence is never
+// client-unverified (DB-checked).
+export const studentOutcomeEvidence = pgTable('student_outcome_evidence', {
+  id:                 uuid('id').primaryKey().defaultRandom(),
+  lessonRunId:        uuid('lesson_run_id').notNull().references(() => lessonRuns.id, { onDelete: 'restrict' }),
+  lessonRunStudentId: uuid('lesson_run_student_id').notNull().references(() => lessonRunStudents.id, { onDelete: 'restrict' }),
+  classStudentId:     uuid('class_student_id').references(() => classStudents.id, { onDelete: 'set null' }),
+  activityAttemptId:  uuid('activity_attempt_id').notNull().references(() => activityAttempts.id, { onDelete: 'restrict' }),
+  subjectPackId:      text('subject_pack_id').notNull(),
+  outcomeId:          text('outcome_id').notNull(),
+  evidenceRole:       text('evidence_role').notNull().$type<'primary' | 'supporting'>(),
+  trust:              text('trust').notNull().$type<'server-verified' | 'client-unverified' | 'teacher-observed'>(),
+  score:              numeric('score', { precision: 5, scale: 4, mode: 'number' }).notNull(),
+  observedAt:         timestamp('observed_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  uniqAttemptOutcome: unique('student_outcome_evidence_attempt_outcome_uq').on(t.activityAttemptId, t.outcomeId),
+}))
+
+export type StudentOutcomeEvidenceRow = typeof studentOutcomeEvidence.$inferSelect
+
+// Lab computer → roster student, per class (0054). Configuration, not history:
+// it follows the class and the student (cascade).
+export const deviceAssignments = pgTable('device_assignments', {
+  id:             uuid('id').primaryKey().defaultRandom(),
+  teacherId:      uuid('teacher_id').notNull().references(() => appUsers.id, { onDelete: 'restrict' }),
+  classId:        uuid('class_id').notNull().references(() => teacherClasses.id, { onDelete: 'cascade' }),
+  remoteDeviceId: text('remote_device_id').notNull(),
+  classStudentId: uuid('class_student_id').notNull().references(() => classStudents.id, { onDelete: 'cascade' }),
+  updatedAt:      timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  uniqClassDevice: unique('device_assignments_class_device_uq').on(t.classId, t.remoteDeviceId),
+  uniqClassStudent: unique('device_assignments_class_student_uq').on(t.classId, t.classStudentId),
+}))
+
+export type DeviceAssignmentRow = typeof deviceAssignments.$inferSelect

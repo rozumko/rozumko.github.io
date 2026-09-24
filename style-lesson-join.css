@@ -1,0 +1,102 @@
+/* ───────────────────────────────────────────────────────────────
+   Lesson Engine — student web join (lesson-join.html)
+   Grades 1–4: huge digits, one action per screen, no chrome.
+   ─────────────────────────────────────────────────────────────── */
+
+.lj-page {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--clr-surface-muted);
+  color: var(--clr-text);
+  font-family: var(--font-family);
+}
+.lj-main {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-6) var(--sp-4);
+  box-sizing: border-box;
+}
+.lj-main:focus { outline: none; }
+.lj-card {
+  width: 100%;
+  max-width: 30rem;
+  padding: var(--sp-8) var(--sp-6);
+  border-radius: var(--r-2xl);
+  background: var(--clr-surface);
+  box-shadow: 0 10px 40px rgba(10, 15, 30, 0.08);
+  text-align: center;
+}
+.lj-title { margin: 0 0 var(--sp-6); font-size: var(--font-size-3xl); }
+.lj-form { display: grid; gap: var(--sp-4); }
+.lj-label { font-size: var(--font-size-xl); font-weight: 700; }
+.lj-code-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--sp-4);
+  border: 3px solid var(--clr-border);
+  border-radius: var(--r-lg);
+  font: inherit;
+  font-size: var(--font-size-4xl);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+.lj-code-input:focus-visible { outline: none; border-color: var(--clr-sky); box-shadow: 0 0 0 4px var(--clr-sky-light); }
+.lj-button {
+  min-height: 3.5rem;
+  border: 0;
+  border-radius: var(--r-lg);
+  background: var(--clr-sky-dark);
+  color: var(--clr-text-inverse);
+  font: inherit;
+  font-size: var(--font-size-2xl);
+  font-weight: 800;
+  cursor: pointer;
+}
+.lj-button:disabled { opacity: 0.6; cursor: default; }
+.lj-button:focus-visible { outline: 3px solid var(--clr-focus-ring); outline-offset: 3px; }
+.lj-error { min-height: 1.5em; margin: 0; color: var(--fb-err-text); font-size: var(--font-size-lg); font-weight: 700; }
+.lj-lesson { margin: 0 0 var(--sp-6); color: var(--clr-text-muted); font-size: var(--font-size-lg); }
+.lj-number-label { margin: 0; font-size: var(--font-size-xl); font-weight: 700; }
+.lj-number {
+  margin: var(--sp-2) 0 var(--sp-6);
+  font-size: clamp(4rem, 22vw, 8rem);
+  font-weight: 900;
+  line-height: 1;
+  color: var(--clr-sky-dark);
+}
+.lj-status { margin: 0; font-size: var(--font-size-xl); font-weight: 700; }
+
+/* ── Task on the device (stage G2) ───────────────────────────── */
+.lj-card--task { max-width: 46rem; text-align: left; }
+.lj-card--task .lj-title,
+.lj-card--task .lj-lesson,
+.lj-card--task .lj-number-label { display: none; }
+.lj-card--task .lj-number { margin: 0; font-size: var(--font-size-2xl); text-align: right; }
+.lj-card--task .lj-status { margin-bottom: var(--sp-4); }
+.lj-task__title { margin: 0 0 var(--sp-4); font-size: var(--font-size-2xl); }
+.lj-task__body { display: grid; gap: var(--sp-4); font-size: var(--font-size-xl); }
+.lj-task__body .le-interactive { font-size: var(--font-size-xl); }
+.lj-task__launch { display: inline-flex; align-items: center; justify-content: center; padding: 0 var(--sp-6); text-decoration: none; }
+.lj-task__done { text-align: center; }
+.lj-task__done-title { margin: 0; font-size: var(--font-size-3xl); font-weight: 900; color: var(--fb-ok-text); }
+.lj-task__status { margin: 0; font-weight: 700; }
+.lj-task__game:empty { display: none; }
+
+/* ── Offline outbox (stage J) ─────────────────────────────────── */
+.lj-notice { margin: 0; color: var(--fb-err-text); font-size: var(--font-size-lg); font-weight: 700; }
+.lj-notice:empty { display: none; }
+.lj-task__queued,
+.lj-task__delivered {
+  display: grid;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+  border: 2px dashed var(--clr-sky-dark);
+  border-radius: var(--r-lg);
+}
+.lj-task__delivered { border-style: solid; }
+.lj-task__queued p,
+.lj-task__delivered p { margin: 0; }
+.lj-task__queued-title { font-weight: 900; }

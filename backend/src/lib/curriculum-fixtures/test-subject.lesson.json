@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "id": "ts-l1",
+  "slug": "synthetic-lesson",
+  "subjectPackId": "test-pack",
+  "subject": "test-subject",
+  "grade": 1,
+  "title": { "uk": "Синтетичний урок" },
+  "durationMin": 20,
+  "objectives": [{ "id": "obj-1", "text": { "uk": "Розрізняти A і B" } }],
+  "learningOutcomes": [{ "outcomeId": "ts-outcome-1", "role": "assessed" }],
+  "blocks": [
+    {
+      "id": "ts-l1-b01",
+      "type": "explanation",
+      "audience": { "teacher": true, "student": true },
+      "views": { "document": true, "presentation": true, "remote": false },
+      "modality": "teacher-led",
+      "runtime": { "step": true },
+      "content": { "paragraphs": [{ "uk": "A — це одне, B — це інше." }] },
+      "presentation": { "layout": "concept", "headline": { "uk": "A і B" } }
+    },
+    {
+      "id": "ts-l1-b02",
+      "type": "teacher-note",
+      "audience": { "teacher": true, "student": false },
+      "views": { "document": true, "presentation": false, "remote": false },
+      "modality": "teacher-led",
+      "content": { "text": { "uk": "Нотатка лише для вчителя." } }
+    },
+    {
+      "id": "ts-l1-b03",
+      "type": "activity",
+      "audience": { "teacher": true, "student": true },
+      "views": { "document": true, "presentation": true, "remote": true },
+      "modality": "screen",
+      "runtime": { "step": true },
+      "content": {},
+      "activity": {
+        "instanceId": "check-statements",
+        "mechanic": "truefalse",
+        "telemetry": "checkpoint",
+        "config": {
+          "statements": [
+            { "id": "s1", "text": { "uk": "A — це одне." } },
+            { "id": "s2", "text": { "uk": "B — це те саме, що A." } }
+          ]
+        },
+        "scoring": { "mode": "server", "key": { "answers": { "s1": true, "s2": false } } }
+      },
+      "presentation": { "layout": "activity-launcher" }
+    },
+    {
+      "id": "ts-l1-b04",
+      "type": "activity",
+      "audience": { "teacher": true, "student": true },
+      "views": { "document": true, "presentation": true, "remote": true },
+      "modality": "screen",
+      "runtime": { "step": true },
+      "outcomeIds": ["ts-outcome-1"],
+      "content": {},
+      "activity": {
+        "instanceId": "sort-a-b",
+        "mechanic": "classify",
+        "telemetry": "evidence",
+        "config": {
+          "prompt": { "uk": "Розклади за групами." },
+          "categories": [
+            { "id": "a", "label": { "uk": "A" } },
+            { "id": "b", "label": { "uk": "B" } }
+          ],
+          "items": [
+            { "id": "i1", "label": { "uk": "перший" } },
+            { "id": "i2", "label": { "uk": "другий" } }
+          ]
+        },
+        "scoring": { "mode": "server", "key": { "placement": { "i1": "a", "i2": "b" } } },
+        "outcomes": [{ "outcomeId": "ts-outcome-1", "evidenceRole": "primary" }]
+      },
+      "presentation": { "layout": "activity-launcher" }
+    },
+    {
+      "id": "ts-l1-b05",
+      "type": "reflection",
+      "audience": { "teacher": true, "student": true },
+      "views": { "document": true, "presentation": false, "remote": false },
+      "modality": "discussion",
+      "content": { "prompt": { "uk": "Що було найважче?" } }
+    }
+  ],
+  "metadata": { "source": "fixture", "contentVersion": 1, "language": "uk" }
+}

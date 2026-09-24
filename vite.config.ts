@@ -171,6 +171,8 @@ export default defineConfig(({ mode }) => {
           terms:            resolve(__dirname, 'terms.html'),
           transparency:     resolve(__dirname, 'transparency.html'),
           standards:        resolve(__dirname, 'standards.html'),
+          'lesson-engine':  resolve(__dirname, 'lesson-engine.html'),
+          'lesson-join':    resolve(__dirname, 'lesson-join.html'),
         },
       },
     },

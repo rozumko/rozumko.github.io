@@ -126,6 +126,96 @@ reach children accidentally. Publishing atomically updates that snapshot;
 archiving is blocked while a published path references the lesson. Revision
 history remains admin-only and RLS-protected.
 
+## Lesson Engine Editorial Workflow — **[IMPLEMENTED]** (flag-gated)
+
+Migration `0049` and `backend/src/routes/curriculum-admin.ts` add editorial
+storage for Lesson Engine curriculum lessons (ADR-0008). The surface is off
+unless the backend env `LESSON_ENGINE_ENABLED` is exactly `true`. When it is
+off, every `/api/admin/curriculum/*` route answers `404` in an `onRequest`
+hook, before validation, auth or database access. When it is on, every route
+is admin-only through a plugin-level `requireAdmin` hook, and lesson IDs are
+schema-validated before any database access.
+
+A curriculum lesson carries server-only answer keys in
+`activity.scoring.key`. The admin API returns them; nothing else does.
+`toDisplaySafeLesson()` in `backend/src/lib/curriculum-lesson-schema.ts` is the
+single exit point that strips them for any non-admin consumer. Definitions are
+validated fail-closed on every save and again on publish: unknown fields, raw
+HTML, dangling references, an unregistered subject pack, and external tools
+missing from the pack allowlist are all rejected. Publishing requires `review`.
+A published version is immutable, enforced by a database trigger rather than
+by route code alone. Revision history is append-only, also by trigger. Both
+tables have RLS enabled with no policies.
+
+Teachers read lessons only through `/api/teacher/curriculum/lessons`
+(`curriculum-teacher.ts`). It is behind the same flag-first 404, requires an
+authenticated teacher or admin, serves only the published snapshot of
+non-archived lessons, and passes every lesson through `toDisplaySafeLesson()`.
+Drafts and answer keys have no teacher route. On the page, what can reach the
+board is decided solely by `presentationSlides()` in
+`features/lesson-engine/projection.ts`. Teacher-only blocks and speaker notes
+never render there; a Playwright test walks every slide to check this.
+
+Board checks (`POST …/activities/:instanceId/check`) score a teacher-entered
+class answer on the server against the published key. The response says only
+whether each submitted item was right, plus the authored explanation; it never
+returns the key. Evidence activities are refused (`409`) so their answers are
+not shown to the class before students do them. Platform games embedded in
+lessons are always `client-unverified` and can never be primary evidence.
+
+Lesson runs (`/api/teacher/lesson-runs`, migration `0050`) are owner-scoped
+on every lookup, and a run can only be prepared for the teacher's own class.
+A run freezes the published snapshot (answer keys included, server-only), and
+the teacher view of it is display-safe. Run identity and snapshot are
+immutable, closed runs are frozen, runs are never deleted, and events are
+append-only — all enforced by database triggers. Students are referenced only
+by `class_students.id`; deleting a student anonymises their run rows. The run
+tables have RLS enabled with no policies.
+
+Lesson web join (`/api/student/lesson/*`, migration `0051`) creates
+anonymous devices from a 6-digit run code. The code is throttled per code
+and per IP, expires after 3 h, and is cleared when the run closes. Device
+tokens are domain-separated HMACs with no PII, sent only in POST bodies, and
+honoured only while the device is neither revoked nor expired. A device never
+reads the roster: `class_students.label` reaches it only through its own
+teacher-made mapping. Devices are revoked rather than deleted (trigger), and
+`lesson_run_devices` has RLS enabled with no policies.
+
+Device activities (`/api/student/lesson/state|attempt`, migration `0052`)
+reach a child only as a key-free projection, only for a mapped device, and
+only while the run is active. Attempts are scored on the server against the
+run's frozen snapshot (games are bounded and stay `client-unverified`, a pair
+the DB checks). Attempts are append-only and idempotent per `(device,
+clientAttemptId)`. For evidence activities the device gets neither a score
+nor per-item correctness. The teacher's live grid is owner-scoped like every
+other run route.
+
+Learning evidence (`student_outcome_evidence`, migration `0053`) is written
+only by the server, in the attempt's transaction, from the run's frozen
+activity. It is append-only; the one allowed change is anonymisation when a
+teacher deletes a student. A client-reported result can never be primary
+evidence (DB check). Outcome summaries follow a written, printed rule and
+link to their evidence. The report is owner-scoped.
+
+Classroom control (stage I, migration `0054`) goes through one provider
+boundary. A provider receives only lab computer ids and launch URLs, never
+names, scores or evidence. The development fake is enabled only by
+`?classroom=fake` on a loopback host. Computer assignments
+(`device_assignments`) are owner-scoped, and each student in them must belong
+to the class. A launch link carries a single-use 256-bit token in the URL
+fragment, which keeps it out of server logs and `Referer`. The backend
+stores only its sha256. The link expires after 10 minutes and is exchanged
+for the device token in a POST body. Failed exchanges count towards the join
+throttle. Relaunching revokes the student's previous device.
+
+The device's offline outbox (stage J) stores only the device id, dispatch
+id, client attempt id and answer in IndexedDB, never the device token, a
+name or a score. Sending still needs the token from sessionStorage.
+Replays are idempotent per `(device, clientAttemptId)` and create no second
+attempt or evidence. Attempt refusals carry a `code`, and only transient ones
+are retried. A task closed while a device was offline stays closed to it:
+the server cannot verify when that answer was given.
+
 ## Mission Editorial Workflow — **[IMPLEMENTED]**
 
 Migration `0038` adds the same audited state machine, optimistic edit locking
@@ -239,7 +329,11 @@ application table that existed at that revision; every later table migration
 enables RLS in the same migration — `0029` and `0031` (parent accounts and path
 progress), `0032`-`0034` (micro-lessons, path maps and their immutable
 revisions), `0036`-`0038` (`question_revisions`, `micro_lesson_revisions`,
-`mission_revisions`) and `0041` (`content_publications`). A regression test
+`mission_revisions`), `0041` (`content_publications`), `0049`
+(`curriculum_lessons`, `curriculum_lesson_revisions`) and `0050`
+(`lesson_runs`, `lesson_run_students`, `lesson_run_events`) `0051`
+(`lesson_run_devices`) `0052` (`lesson_run_dispatches`, `activity_attempts`), `0053`
+(`student_outcome_evidence`) and `0054` (`device_assignments`). A regression test
 fails if any application table is left uncovered.
 Migration `0048` applies the same deny-by-default RLS rule to
 `teacher_question_topics`; its answer-bearing session snapshots remain inside

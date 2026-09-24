@@ -1,3 +1,19 @@
+import type {
+  ActivityFeedback,
+  ActivityResult,
+  BoardAnswer,
+  CurriculumLessonSummary,
+  LessonAttemptResponse,
+  LessonDefinition,
+  LessonDeviceJoin,
+  LessonDeviceState,
+  LessonReport,
+  LessonRunAction,
+  LessonRunDevice,
+  LessonRunSummary,
+  LessonRunView,
+  LiveSnapshot,
+} from '../lesson-engine/types.js'
 import {
   beginPkce,
   clearPendingPkce,
@@ -206,9 +222,9 @@ export interface EventRegistration {
 
 // Помилка API з HTTP-статусом і опційним кодом — щоб виклики (напр. authRequest)
 // могли реагувати на 401 і виконати refresh токена.
-export interface ApiError extends Error { status: number; code?: string }
-function apiError(message: string, status: number, code?: string): ApiError {
-  return Object.assign(new Error(message), { status, code })
+export interface ApiError extends Error { status: number; code?: string; body?: Record<string, unknown> }
+function apiError(message: string, status: number, code?: string, body?: Record<string, unknown>): ApiError {
+  return Object.assign(new Error(message), { status, code, body })
 }
 
 async function request(path: string, options: RequestInit = {}): Promise<any> {
@@ -238,7 +254,7 @@ async function request(path: string, options: RequestInit = {}): Promise<any> {
   }
 
   const data = await res.json()
-  if (!res.ok) throw apiError(data.error ?? `Помилка ${res.status}`, res.status, data.code)
+  if (!res.ok) throw apiError(data.error ?? `Помилка ${res.status}`, res.status, data.code, data)
   return data
 }
 
@@ -1158,8 +1174,159 @@ async function authRequest(path: string, options: RequestInit = {}): Promise<any
   }
 }
 
-export function getTeacherMe(): Promise<{ id: string; authUserId: string; role: string; name: string; email: string }> {
+export interface TeacherFeatures {
+  /** Lesson Engine surface; decided by the backend flag, never by the client. */
+  lessonEngine?: boolean
+}
+
+export function getTeacherMe(): Promise<{ id: string; authUserId: string; role: string; name: string; email: string; features?: TeacherFeatures }> {
   return authRequest('/api/teacher/me')
+}
+
+// ─── Lesson Engine (teacher, flag-gated on the backend) ────────────────────
+
+export function getCurriculumLessons(): Promise<{ lessons: CurriculumLessonSummary[] }> {
+  return authRequest('/api/teacher/curriculum/lessons')
+}
+
+export function getCurriculumLesson(id: string): Promise<{ lesson: LessonDefinition; publishedVersion: number }> {
+  return authRequest(`/api/teacher/curriculum/lessons/${encodeURIComponent(id)}`)
+}
+
+export function listLessonRuns(): Promise<{ runs: LessonRunSummary[] }> {
+  return authRequest('/api/teacher/lesson-runs')
+}
+
+/** Prepares a run; a 409 carries `runId` of the class's already open run. */
+export function createLessonRun(classId: string, lessonId: string): Promise<LessonRunView> {
+  return authRequest('/api/teacher/lesson-runs', { method: 'POST', body: JSON.stringify({ classId, lessonId }) })
+}
+
+export function getLessonRun(runId: string): Promise<LessonRunView> {
+  return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}`)
+}
+
+export function lessonRunAction(runId: string, action: LessonRunAction): Promise<LessonRunView> {
+  return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}/${action}`, { method: 'POST' })
+}
+
+export function setLessonRunStep(runId: string, stepIndex: number): Promise<LessonRunView> {
+  return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}/step`, {
+    method: 'PUT',
+    body: JSON.stringify({ stepIndex }),
+  })
+}
+
+/** Opens (or rotates) web join for a run. */
+export function openLessonRunJoin(runId: string): Promise<{ joinCode: string; joinCodeExpiresAt: string }> {
+  return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}/join-code`, { method: 'POST' })
+}
+
+export function closeLessonRunJoin(runId: string): Promise<void> {
+  return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}/join-code`, { method: 'DELETE' })
+}
+
+export function listLessonRunDevices(runId: string): Promise<{ devices: LessonRunDevice[] }> {
+  return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}/devices`)
+}
+
+/** Maps a joined device to a roster student of the run (null unmaps). */
+export function mapLessonRunDevice(runId: string, deviceId: string, lessonRunStudentId: string | null): Promise<{ ok: true }> {
+  return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}/devices/${encodeURIComponent(deviceId)}`, {
+    method: 'PUT',
+    body: JSON.stringify({ lessonRunStudentId }),
+  })
+}
+
+export function revokeLessonRunDevice(runId: string, deviceId: string): Promise<void> {
+  return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}/devices/${encodeURIComponent(deviceId)}`, { method: 'DELETE' })
+}
+
+/** Opens an activity on the class's devices (closing any other). */
+export function dispatchLessonActivity(runId: string, blockId: string): Promise<LiveSnapshot> {
+  return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}/dispatch`, {
+    method: 'POST',
+    body: JSON.stringify({ blockId }),
+  })
+}
+
+export function closeLessonActivity(runId: string): Promise<LiveSnapshot> {
+  return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}/dispatch/close`, { method: 'POST' })
+}
+
+export function getLessonRunLive(runId: string): Promise<LiveSnapshot> {
+  return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}/live`)
+}
+
+export function getLessonRunReport(runId: string): Promise<LessonReport> {
+  return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}/report`)
+}
+
+export interface DeviceAssignment { remoteDeviceId: string; classStudentId: string }
+
+export function getDeviceAssignments(classId: string): Promise<{ assignments: DeviceAssignment[] }> {
+  return authRequest(`/api/teacher/classes/${encodeURIComponent(classId)}/device-assignments`)
+}
+
+export function saveDeviceAssignments(classId: string, assignments: DeviceAssignment[]): Promise<{ assignments: DeviceAssignment[] }> {
+  return authRequest(`/api/teacher/classes/${encodeURIComponent(classId)}/device-assignments`, {
+    method: 'PUT',
+    body: JSON.stringify({ assignments }),
+  })
+}
+
+export interface LessonLaunchPlan {
+  commandId: string
+  /** Relative URLs; the single-use token is in the fragment. */
+  launches: { remoteDeviceId: string; url: string }[]
+  skipped: { remoteDeviceId: string; reason: 'unassigned' | 'not-in-roster' | 'full' }[]
+}
+
+export function launchLessonRun(runId: string, remoteDeviceIds: string[]): Promise<LessonLaunchPlan> {
+  return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}/launch`, {
+    method: 'POST',
+    body: JSON.stringify({ remoteDeviceIds }),
+  })
+}
+
+// ─── Lesson Engine: student device (no account) ────────────────────────────
+
+export function joinLessonRun(code: string): Promise<LessonDeviceJoin> {
+  return request('/api/student/lesson/join', { method: 'POST', body: JSON.stringify({ code }) })
+}
+
+/** Exchanges a single-use launch token (from a lab computer) for a pre-mapped device. */
+export function exchangeLessonLaunch(launchToken: string): Promise<LessonDeviceJoin> {
+  return request('/api/student/lesson/launch', { method: 'POST', body: JSON.stringify({ launchToken }) })
+}
+
+/** One submission; retrying with the same clientAttemptId returns the stored result. */
+export function submitLessonAttempt(payload: {
+  deviceId: string
+  deviceToken: string
+  dispatchId: string
+  clientAttemptId: string
+  answer?: BoardAnswer
+  gameResult?: { correct: number; total: number; mistakes: number; durationSec: number }
+}): Promise<LessonAttemptResponse> {
+  return request('/api/student/lesson/attempt', { method: 'POST', body: JSON.stringify(payload) })
+}
+
+/** Token goes in the body, never the URL. */
+export function getLessonDeviceState(deviceId: string, deviceToken: string): Promise<LessonDeviceState> {
+  return request('/api/student/lesson/state', { method: 'POST', body: JSON.stringify({ deviceId, deviceToken }) })
+}
+
+/** "Do it together" on the board: the server scores the class answer. */
+export function checkCurriculumActivity(
+  lessonId: string,
+  instanceId: string,
+  answer: BoardAnswer,
+): Promise<{ result: ActivityResult; feedback: ActivityFeedback }> {
+  return authRequest(
+    `/api/teacher/curriculum/lessons/${encodeURIComponent(lessonId)}/activities/${encodeURIComponent(instanceId)}/check`,
+    { method: 'POST', body: JSON.stringify({ answer }) },
+  )
 }
 
 /** Explicit teacher sign-up request — the only way a pending teacher row appears. */

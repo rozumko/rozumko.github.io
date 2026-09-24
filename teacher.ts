@@ -23,6 +23,7 @@ import {
   type SchoolSessionInfo, type Question, type SchoolActivityResultRow, type SchoolQuestionAvailability,
   type SchoolParticipantRow, type SchoolTopicStat, type SchoolSessionSummary,
   type TeacherQuestionTopic, type TeacherQuestionInput, type QuestionType,
+  type TeacherFeatures,
 } from './features/api/client.js'
 import { ACTIVITIES, ACTIVITY_GROUPS, findActivity, findActivityLevel } from './features/activities/registry.js'
 import { esc, friendlyError, recoveryErrorMessage, showConfirm, showModal } from './utils/ui.js'
@@ -223,7 +224,7 @@ async function init() {
     try {
       const me = await getTeacherMe()
       hideColdStartBanner()
-      showDashboard(teacherLabel(me, session.email))
+      showDashboard(teacherLabel(me, session.email), me.features)
       clearTeacherCallbackFlow()
     } catch (err) {
       hideColdStartBanner()
@@ -238,7 +239,7 @@ async function init() {
             // so the cabinet is already active — no second sign-in needed.
             if (status === 'active') {
               const me = await getTeacherMe()
-              showDashboard(teacherLabel(me, session.email))
+              showDashboard(teacherLabel(me, session.email), me.features)
               return
             }
             showAuth(PENDING_CREATED_MSG)
@@ -265,7 +266,7 @@ async function init() {
           const { status } = await registerTeacherRequest()
           if (status === 'active') {
             const me = await getTeacherMe()
-            showDashboard(teacherLabel(me, session.email))
+            showDashboard(teacherLabel(me, session.email), me.features)
             return
           }
         } catch {
@@ -1326,7 +1327,9 @@ async function loadResults() {
 }
 
 // --- Show/hide ---
-function showDashboard(nameOrEmail: string) {
+function showDashboard(nameOrEmail: string, features?: TeacherFeatures) {
+  // The backend decides whether Lesson Engine is served; the link only mirrors it.
+  $maybe('lesson-engine-link')?.classList.toggle('hidden', !features?.lessonEngine)
   authSection.classList.add('hidden')
   dashboardSection.classList.remove('hidden')
   teacherEmailDisplay.textContent = nameOrEmail
