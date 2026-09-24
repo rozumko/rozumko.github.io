@@ -1,12 +1,16 @@
 // Student side of Lesson Engine web join (stage G1). No account and no name:
 // the child types the teacher's code, gets a pairing number, and waits for the
 // teacher to say who they are. The device token lives in sessionStorage only.
+// Answers go through an offline outbox (stage J): saved on the device first,
+// then sent — again on reconnect, on each poll and on the next page load.
 
 import './frontend-security.js'
 import { exchangeLessonLaunch, getLessonDeviceState, joinLessonRun, submitLessonAttempt, type ApiError } from './features/api/client.js'
-import { renderStudentTask } from './features/lesson-engine/student-task.js'
+import { renderStudentTask, type StudentTaskView } from './features/lesson-engine/student-task.js'
+import { createAttemptOutbox } from './features/lesson-engine/attempt-outbox.js'
+import { indexedDbOutboxStore } from './features/lesson-engine/outbox-idb.js'
 import { formatJoinCode } from './features/lesson-engine/run-model.js'
-import type { LessonDeviceJoin, LessonDeviceState } from './features/lesson-engine/types.js'
+import type { LessonAttemptResponse, LessonDeviceJoin, LessonDeviceState } from './features/lesson-engine/types.js'
 
 const STORAGE_KEY = 'rozumko_lesson_device'
 // Fast enough that a sent task appears within a couple of seconds.
@@ -20,6 +24,7 @@ const errorEl = document.getElementById('lj-error') as HTMLParagraphElement
 const lessonEl = document.getElementById('lj-lesson') as HTMLParagraphElement
 const numberEl = document.getElementById('lj-number') as HTMLParagraphElement
 const statusEl = document.getElementById('lj-status') as HTMLParagraphElement
+const noticeEl = document.getElementById('lj-notice') as HTMLParagraphElement
 const taskHost = document.getElementById('lj-task-host') as HTMLDivElement
 
 type StoredDevice = Pick<LessonDeviceJoin, 'deviceId' | 'deviceToken' | 'pairingNumber'>
@@ -28,11 +33,11 @@ let timer: number | null = null
 // The task on screen; re-rendered only when the teacher sends a different one,
 // so a child's half-made choice survives each poll.
 let shownDispatchId: string | null = null
-let leaveTask: () => void = () => {}
+let taskView: StudentTaskView | null = null
 
 function clearTask() {
-  leaveTask()
-  leaveTask = () => {}
+  taskView?.leave()
+  taskView = null
   shownDispatchId = null
   taskHost.replaceChildren()
   waitSection.classList.remove('lj-card--task')
@@ -55,6 +60,35 @@ function storeDevice(device: StoredDevice | null) {
   } catch { /* sessionStorage unavailable: the child re-joins after a reload */ }
 }
 
+const outbox = createAttemptOutbox<LessonAttemptResponse>({
+  store: indexedDbOutboxStore(),
+  now: () => Date.now(),
+  send: item => {
+    const device = readDevice()
+    // Only the device that answered may send it; its token is never stored with the answer.
+    if (!device || device.deviceId !== item.deviceId) {
+      return Promise.reject(Object.assign(new Error('Цей пристрій уже не в уроці.'), { status: 401 }))
+    }
+    return submitLessonAttempt({
+      deviceId: device.deviceId,
+      deviceToken: device.deviceToken,
+      dispatchId: item.dispatchId,
+      clientAttemptId: item.clientAttemptId,
+      ...(item.payload as Pick<Parameters<typeof submitLessonAttempt>[0], 'answer' | 'gameResult'>),
+    })
+  },
+  onDelivered: (item, response) => {
+    if (item.dispatchId === shownDispatchId) taskView?.delivered(response)
+  },
+  onRejected: (item, message) => {
+    noticeEl.textContent = `Відповідь не зараховано: ${message}`
+    // Show the task as the server now sees it on the next poll.
+    if (item.dispatchId === shownDispatchId) shownDispatchId = null
+  },
+})
+
+window.addEventListener('online', () => void outbox.flush())
+
 function showJoin(message = '') {
   clearTask()
   if (timer !== null) window.clearInterval(timer)
@@ -75,6 +109,7 @@ function renderState(device: StoredDevice, state: LessonDeviceState) {
     if (timer !== null) window.clearInterval(timer)
     timer = null
     storeDevice(null)
+    void outbox.dropDevice(device.deviceId)
     return
   }
   if (!state.mapped || !state.studentLabel) {
@@ -94,21 +129,27 @@ function renderState(device: StoredDevice, state: LessonDeviceState) {
   }
   statusEl.textContent = `${state.studentLabel}, твоє завдання:`
   if (state.task.dispatchId === shownDispatchId) return
+  const previous = shownDispatchId
   clearTask()
+  if (previous !== null) noticeEl.textContent = ''
   shownDispatchId = state.task.dispatchId
   waitSection.classList.add('lj-card--task')
   const dispatchId = state.task.dispatchId
-  leaveTask = renderStudentTask(taskHost, state.task, state.grade, {
-    submit: payload => submitLessonAttempt({ deviceId: device.deviceId, deviceToken: device.deviceToken, dispatchId, ...payload }),
+  taskView = renderStudentTask(taskHost, state.task, state.grade, {
+    submit: ({ clientAttemptId, ...payload }) => outbox.submit({ clientAttemptId, deviceId: device.deviceId, dispatchId, payload }),
     newAttemptId: () => crypto.randomUUID(),
+    queued: outbox.hasPending(device.deviceId, dispatchId),
   })
 }
 
 async function refresh(device: StoredDevice) {
+  // Waiting answers go first; the flush is single-flight and never blocks the poll.
+  void outbox.flush()
   try {
     renderState(device, await getLessonDeviceState(device.deviceId, device.deviceToken))
   } catch (err) {
     if ((err as ApiError).status === 401 || (err as ApiError).status === 404) {
+      void outbox.dropDevice(device.deviceId)
       storeDevice(null)
       showJoin('Приєднайся до уроку ще раз.')
     }
@@ -117,7 +158,8 @@ async function refresh(device: StoredDevice) {
 }
 
 function startPolling(device: StoredDevice) {
-  void refresh(device)
+  // The stored outbox must be loaded before the first task renders its state.
+  void outbox.ready.then(() => refresh(device))
   if (timer !== null) window.clearInterval(timer)
   timer = window.setInterval(() => {
     if (document.visibilityState === 'visible') void refresh(device)

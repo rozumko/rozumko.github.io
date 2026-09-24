@@ -84,3 +84,19 @@
 .lj-task__done-title { margin: 0; font-size: var(--font-size-3xl); font-weight: 900; color: var(--fb-ok-text); }
 .lj-task__status { margin: 0; font-weight: 700; }
 .lj-task__game:empty { display: none; }
+
+/* ── Offline outbox (stage J) ─────────────────────────────────── */
+.lj-notice { margin: 0; color: var(--fb-err-text); font-size: var(--font-size-lg); font-weight: 700; }
+.lj-notice:empty { display: none; }
+.lj-task__queued,
+.lj-task__delivered {
+  display: grid;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+  border: 2px dashed var(--clr-sky-dark);
+  border-radius: var(--r-lg);
+}
+.lj-task__delivered { border-style: solid; }
+.lj-task__queued p,
+.lj-task__delivered p { margin: 0; }
+.lj-task__queued-title { font-weight: 900; }

@@ -72,6 +72,7 @@ backend/src/routes/lesson-student.ts ← Lesson Engine web join for students (/a
 backend/src/lib/lesson-live.ts ← Lesson Engine attempts + live class grid rules (dispatch/attempt/live routes; console live-panel.ts, device student-task.ts)
 backend/src/lib/lesson-evidence.ts ← Lesson Engine evidence rows, outcome summary rule, lesson report (/report; report-view.ts); outcomes registry in subject-packs.ts
 features/lesson-engine/classroom-control.ts ← ClassroomControlProvider boundary (fake only on loopback ?classroom=fake); device-assignments.ts + /launch single-use links
+features/lesson-engine/attempt-outbox.ts ← offline answer outbox on the device (IndexedDB via outbox-idb.ts; retry only codes in backend/src/lib/lesson-attempt-refusals.ts)
 backend/src/db/          ← Drizzle schema + migration runner
 backend/drizzle/         ← SQL-міграції
 public/                  ← sw.js, manifest, favicon (статичні assets)

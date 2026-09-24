@@ -80,7 +80,7 @@ waiting on the extension protocol.
 | **G1** ✅ / **G2** ✅ | Web join + roster mapping, scoped launch token, submit, polling live heatmap | 5 simulated students; idempotent submit; teacher reload restores state |
 | **H** ✅ | Outcome registry, evidence, lesson report | Every summary traces to evidence → attempt → block → run → lesson version |
 | **I** ✅ (fake) | `ClassroomControlProvider`: fake first, then Classroom Remote | Fake works in CI ✅; real: 3–5 devices, correct URL on correct device — pending access to the Classroom Remote repository |
-| J | IndexedDB outbox → internal pilot → external pilot → go/no-go | Offline submit produces exactly one server attempt |
+| **J** ✅ (outbox) | IndexedDB outbox → internal pilot → external pilot → go/no-go | Offline submit produces exactly one server attempt ✅; pilots and go/no-go are run by people |
 
 No mass content migration before the external pilot (both specs agree).
 
@@ -467,6 +467,77 @@ Verified on a real PostgreSQL 16:
 - a relaunch revokes the old device;
 - an expired link gives 410 and a closed run gives 409;
 - deleting a student removes their assignment.
+
+## Stage J — what exists (offline outbox)
+
+Decisions:
+
+- **Save first, then send.** Every answer from a child's device goes into an
+  outbox in IndexedDB before the first request, keyed by its client attempt
+  id. The server is idempotent per `(device, clientAttemptId)`. So a send
+  whose response was lost, a double send and a reload can never create a
+  second attempt or a second set of evidence.
+- **When it is sent again:**
+  - on the browser's `online` event;
+  - on every poll (every 2 s while the page is visible);
+  - on the next page load.
+
+  Sends go oldest first, one flush at a time. The first transient failure
+  stops the flush, so the order of attempts is kept.
+- **Transient or final** — the server says which. A 409 now carries a
+  `code` (`backend/src/lib/lesson-attempt-refusals.ts`).
+  - Kept and retried: `NOT_MAPPED`, `RUN_NOT_ACTIVE` (paused), `RETRY`
+    (a concurrent send won the race), network errors, 5xx, 408 and 429.
+  - Dropped with a message to the child («Відповідь не зараховано: …»):
+    `RUN_CLOSED`, `DISPATCH_CLOSED`, `NOT_ACCEPTING`, `NO_ATTEMPTS_LEFT`,
+    400 and 401.
+
+  A guard test keeps the frontend list in sync with the backend one.
+- **No late answers.** A task the teacher closed while a device was offline
+  does not accept that device's queued answer. The server cannot verify when
+  it was given, and the class may have discussed the answer by then.
+- **The token never enters IndexedDB.** The outbox stores the device id,
+  dispatch id, client attempt id and answer, and nothing else — no token,
+  name or score. Sending needs the device token from sessionStorage. So a
+  queued answer is sent only by its own device in its own session. Answers
+  older than 12 hours are discarded. A finished lesson or a revoked device
+  drops its answers.
+- **What the child sees.** A queued task shows «📡 Відповідь чекає на
+  зв'язок … Не відповідай ще раз» in place of the form; after a reload, too.
+  Once the answer lands, the note turns into the result: the score, or «✓
+  Відповідь надіслано» for evidence. The form comes back only when a retry
+  is allowed.
+
+Code:
+
+- `features/lesson-engine/attempt-outbox.ts` is pure and unit-tested:
+  `createAttemptOutbox`, `classifySubmitFailure`, `memoryOutboxStore`.
+- `features/lesson-engine/outbox-idb.ts` is the IndexedDB store. It falls
+  back to memory when storage is blocked.
+- `student-task.ts` renders the waiting and delivered states; `lesson-join.ts`
+  wires in the outbox.
+
+Verified:
+- **Unit tests:**
+  - offline, then reconnect, gives exactly one server attempt;
+  - a lost response counts once;
+  - order is kept through a pause;
+  - a final refusal drops the answer;
+  - a reload restores waiting answers and expires old ones;
+  - a storage failure keeps the answer for the page;
+  - concurrent flushes do not double-send.
+- **Playwright:**
+  - offline submit, then reconnect, stores one attempt;
+  - a lost response survives a reload;
+  - a task closed while offline drops the answer with a notice.
+- **Real PostgreSQL 16:**
+  - a resent attempt is stored once and its evidence once;
+  - each refusal code is correct;
+  - a stored attempt still replays while the lesson is paused and after it
+    ends.
+
+What remains of J is not code. It is the internal pilot, the external
+pilot and the go/no-go decision (master spec §pilots).
 
 ## Open items
 

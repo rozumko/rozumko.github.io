@@ -15,6 +15,7 @@ import { ActivityAnswerError } from '../lib/curriculum-activity-scoring.js'
 import { findSubjectPack } from '../lib/subject-packs.js'
 import { acceptsAttempts, attemptLimit, scoreStudentAttempt, studentActivityView } from '../lib/lesson-live.js'
 import { evidenceRowsForAttempt } from '../lib/lesson-evidence.js'
+import type { AttemptRefusalCode } from '../lib/lesson-attempt-refusals.js'
 import {
   LESSON_DEVICE_TTL_MS,
   MAX_RUN_DEVICES,
@@ -36,7 +37,13 @@ import {
 } from './code-throttle.js'
 
 class JoinClosedError extends Error {}
-class AttemptRefusedError extends Error {}
+class AttemptRefusedError extends Error {
+  readonly code: AttemptRefusalCode
+  constructor(code: AttemptRefusalCode, message: string) {
+    super(message)
+    this.code = code
+  }
+}
 
 function findActivity(lesson: LessonDefinitionV1, instanceId: string): { activity: ActivitySpec; heading: unknown } | null {
   for (const block of lesson.blocks) {
@@ -240,7 +247,7 @@ export async function lessonStudentRoutes(app: FastifyInstance) {
           .where(eq(lessonRunDevices.id, deviceId)).limit(1).for('update', { of: lessonRunDevices })
         if (!row || deviceLiveness(row.device) !== 'live') return { status: 401 as const }
         const studentId = row.device.lessonRunStudentId
-        if (!studentId) throw new AttemptRefusedError('Зачекай, поки вчитель тебе призначить.')
+        if (!studentId) throw new AttemptRefusedError('NOT_MAPPED', 'Зачекай, поки вчитель тебе призначить.')
         const lesson = row.lessonSnapshot as unknown as LessonDefinitionV1
 
         const [previous] = await tx.select().from(activityAttempts).where(and(
@@ -253,19 +260,20 @@ export async function lessonStudentRoutes(app: FastifyInstance) {
           return { status: 200 as const, attempt: previous, feedback: rescored?.feedback ?? null, limit: found ? attemptLimit(found.activity) : previous.attemptNo }
         }
 
-        if (row.runStatus !== 'active') throw new AttemptRefusedError('Зараз урок на паузі або завершений.')
+        if (row.runStatus === 'finished' || row.runStatus === 'cancelled') throw new AttemptRefusedError('RUN_CLOSED', 'Урок уже завершено.')
+        if (row.runStatus !== 'active') throw new AttemptRefusedError('RUN_NOT_ACTIVE', 'Зараз урок на паузі.')
         const [dispatch] = await tx.select().from(lessonRunDispatches).where(and(
           eq(lessonRunDispatches.id, dispatchId), eq(lessonRunDispatches.lessonRunId, row.device.lessonRunId),
         )).limit(1)
-        if (!dispatch || dispatch.closedAt) throw new AttemptRefusedError('Це завдання вже закрите.')
+        if (!dispatch || dispatch.closedAt) throw new AttemptRefusedError('DISPATCH_CLOSED', 'Це завдання вже закрите.')
         const found = findActivity(lesson, dispatch.activityInstanceId)
-        if (!found || !acceptsAttempts(found.activity)) throw new AttemptRefusedError('Це завдання не приймає відповідей.')
+        if (!found || !acceptsAttempts(found.activity)) throw new AttemptRefusedError('NOT_ACCEPTING', 'Це завдання не приймає відповідей.')
 
         const used = await tx.select({ n: activityAttempts.attemptNo }).from(activityAttempts).where(and(
           eq(activityAttempts.dispatchId, dispatch.id), eq(activityAttempts.lessonRunStudentId, studentId),
         ))
         const limit = attemptLimit(found.activity)
-        if (used.length >= limit) throw new AttemptRefusedError('Спроби вже використано.')
+        if (used.length >= limit) throw new AttemptRefusedError('NO_ATTEMPTS_LEFT', 'Спроби вже використано.')
 
         const scored = scoreStudentAttempt(found.activity, req.body)
         const [attempt] = await tx.insert(activityAttempts).values({
@@ -320,9 +328,9 @@ export async function lessonStudentRoutes(app: FastifyInstance) {
         feedback,
       })
     } catch (err) {
-      if (err instanceof AttemptRefusedError) return reply.code(409).send({ error: err.message })
+      if (err instanceof AttemptRefusedError) return reply.code(409).send({ error: err.message, code: err.code })
       if (err instanceof ActivityAnswerError) return reply.code(400).send({ error: err.message })
-      if (isUniqueViolation(err)) return reply.code(409).send({ error: 'Спробуй ще раз.' })
+      if (isUniqueViolation(err)) return reply.code(409).send({ error: 'Спробуй ще раз.', code: 'RETRY' satisfies AttemptRefusalCode })
       throw err
     }
   })

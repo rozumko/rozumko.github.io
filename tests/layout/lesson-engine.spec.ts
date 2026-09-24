@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type BrowserContext, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { readFileSync } from 'node:fs'
 import { toDisplaySafeLesson, type ActivitySpec, type LessonDefinitionV1 } from '../../backend/src/lib/curriculum-lesson-schema'
@@ -549,9 +549,25 @@ test('the teacher sends an activity to devices and watches the class grid', asyn
   await expect(live.locator('.le-live__summary')).toContainText('Останнє завдання')
 })
 
-type StudentServer = { runStatus: string; instanceId: string | null; attempts: number; clientIds: string[]; failNext: boolean }
+type StudentServer = {
+  runStatus: string
+  instanceId: string | null
+  /** Distinct attempts stored — the backend is idempotent per clientAttemptId. */
+  attempts: number
+  /** Every attempt request, including resends. */
+  clientIds: string[]
+  /** The next request never reaches the server. */
+  failNext: boolean
+  /** Every request fails before reaching the server. */
+  failAll?: boolean
+  /** The next request is stored but its response is lost. */
+  loseNextResponse?: boolean
+  /** A final refusal for every request. */
+  refuse?: { code: string; error: string }
+}
 
 async function routeStudentTasks(page: Page, server: StudentServer) {
+  const storedAttempts = new Map<string, number>()
   const json = (body: unknown, status = 200) => ({ status, contentType: 'application/json', body: JSON.stringify(body) })
   const activityOf = (id: string) => fixture.blocks.flatMap(b => b.type === 'activity' ? [b] : []).find(b => b.activity.instanceId === id)!
   await page.route('**/api/student/lesson/join', route => route.fulfill(json({
@@ -575,17 +591,24 @@ async function routeStudentTasks(page: Page, server: StudentServer) {
   await page.route('**/api/student/lesson/attempt', async route => {
     const body = route.request().postDataJSON() as { clientAttemptId: string; answer?: unknown; dispatchId: string }
     server.clientIds.push(body.clientAttemptId)
-    if (server.failNext) {
+    if (server.failNext || server.failAll) {
       server.failNext = false
       return route.abort('failed')
     }
+    if (server.refuse) return route.fulfill(json(server.refuse, 409))
     const activity = activityOf(body.dispatchId.replace('disp-', '')).activity
     const scored = scoreStudentAttempt(activity, body)
-    server.attempts += 1
+    storedAttempts.set(body.clientAttemptId, storedAttempts.get(body.clientAttemptId) ?? storedAttempts.size + 1)
+    server.attempts = storedAttempts.size
+    const attemptNo = storedAttempts.get(body.clientAttemptId)!
+    if (server.loseNextResponse) {
+      server.loseNextResponse = false
+      return route.abort('failed')
+    }
     const evidence = activity.telemetry === 'evidence'
     return route.fulfill(json({
-      attemptNo: server.attempts,
-      attemptsLeft: attemptLimit(activity) - server.attempts,
+      attemptNo,
+      attemptsLeft: attemptLimit(activity) - attemptNo,
       result: evidence ? null : { correct: scored.result.correct, total: scored.result.total, normalizedScore: scored.result.normalizedScore, trust: scored.result.trust },
       feedback: scored.feedback,
     }, 201))
@@ -597,7 +620,7 @@ async function joinAsChild(page: Page) {
   await page.getByRole('button', { name: 'Приєднатися' }).click()
 }
 
-test('a child answers a practice task, sees feedback, and retries a lost send with the same attempt id', async ({ page }) => {
+test('a child answers a practice task, sees feedback, and a lost send is resent with the same attempt id', async ({ page }) => {
   const server: StudentServer = { runStatus: 'active', instanceId: 'try-meaningful-name', attempts: 0, clientIds: [], failNext: true }
   await routeStudentTasks(page, server)
   await joinAsChild(page)
@@ -605,12 +628,12 @@ test('a child answers a practice task, sees feedback, and retries a lost send wi
   const task = page.getByRole('region', { name: 'Спробуй!' })
   await task.getByRole('radio', { name: /А\)/ }).check()
   await task.getByRole('button', { name: 'Надіслати' }).click()
-  await expect(task.getByRole('alert')).toBeVisible()
-  // The send was lost; sending again must reuse the same client attempt id.
-  await task.getByRole('button', { name: 'Надіслати' }).click()
-  await expect(task.locator('.le-interactive__score')).toHaveText('Правильно: 0 з 1')
+  // The send was lost: the answer waits on the device and goes out on the next poll.
+  await expect(task.getByText('Відповідь чекає на зв\'язок')).toBeVisible()
+  await expect(task.locator('.le-interactive__score')).toHaveText('Правильно: 0 з 1', { timeout: 6000 })
   expect(server.clientIds).toHaveLength(2)
   expect(server.clientIds[0]).toBe(server.clientIds[1])
+  expect(server.attempts).toBe(1)
 
   // A wrong practice answer may be retried, with a fresh attempt id.
   await task.getByRole('button', { name: 'Спробувати ще раз' }).click()
@@ -649,6 +672,88 @@ test('a launch-only tool opens from the device through its allowlisted link', as
   const link = page.getByRole('link', { name: /Швидкісні вікна/ })
   await expect(link).toHaveAttribute('href', /^https:\/\/itnauka\.org\//)
   await expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+})
+
+// ── Offline outbox (stage J) ─────────────────────────────────────────────────
+
+// Mocked routes still answer while the context is offline, so both sides go
+// down together: the browser's online state (and its events) and the "server".
+async function goOffline(context: BrowserContext, server: StudentServer) {
+  server.failAll = true
+  await context.setOffline(true)
+}
+
+async function goOnline(context: BrowserContext, server: StudentServer) {
+  server.failAll = false
+  await context.setOffline(false)
+}
+
+test('offline: the answer waits on the device and lands exactly once after reconnecting', async ({ page, context }) => {
+  const server: StudentServer = { runStatus: 'active', instanceId: 'self-check-extension', attempts: 0, clientIds: [], failNext: false }
+  await routeStudentTasks(page, server)
+  await joinAsChild(page)
+
+  const task = page.getByRole('region', { name: 'Перевір себе' })
+  await task.getByRole('radio', { name: /А\)/ }).check()
+  await goOffline(context, server)
+  await task.getByRole('button', { name: 'Надіслати' }).click()
+  await expect(task.getByText('Відповідь чекає на зв\'язок')).toBeVisible()
+  await expect(task.getByRole('button', { name: 'Надіслати' })).toHaveCount(0)
+  expect(server.attempts).toBe(0)
+
+  await goOnline(context, server)
+  await expect(task.getByText('✓ Відповідь надіслано')).toBeVisible()
+  await expect(task.getByText('Чекай на наступне завдання.')).toBeVisible()
+  expect(server.attempts).toBe(1)
+  expect(new Set(server.clientIds).size).toBe(1)
+
+  const results = await new AxeBuilder({ page }).withTags(WCAG_AA_TAGS).analyze()
+  expect(results.violations.map(v => v.id)).toEqual([])
+})
+
+test('a lost response survives a reload and is counted once', async ({ page }) => {
+  const server: StudentServer = {
+    runStatus: 'active', instanceId: 'self-check-extension', attempts: 0, clientIds: [], failNext: false, loseNextResponse: true,
+  }
+  await routeStudentTasks(page, server)
+  await joinAsChild(page)
+
+  const task = page.getByRole('region', { name: 'Перевір себе' })
+  await task.getByRole('radio', { name: /А\)/ }).check()
+  await task.getByRole('button', { name: 'Надіслати' }).click()
+  await expect(task.getByText('Відповідь чекає на зв\'язок')).toBeVisible()
+  expect(server.attempts).toBe(1) // stored, but the device never heard back
+
+  // The connection stays bad across a reload: the waiting answer is restored, not re-asked.
+  server.failAll = true
+  await page.reload()
+  await expect(page.getByRole('region', { name: 'Перевір себе' }).getByText('Відповідь чекає на зв\'язок')).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Перевір себе' }).getByRole('button', { name: 'Надіслати' })).toHaveCount(0)
+
+  server.failAll = false
+  await expect(page.getByRole('region', { name: 'Перевір себе' }).getByText('✓ Відповідь надіслано')).toBeVisible({ timeout: 6000 })
+  expect(server.attempts).toBe(1)
+  expect(new Set(server.clientIds).size).toBe(1)
+})
+
+test('an answer the server finally refuses after reconnecting is dropped with a clear message', async ({ page, context }) => {
+  const server: StudentServer = { runStatus: 'active', instanceId: 'try-meaningful-name', attempts: 0, clientIds: [], failNext: false }
+  await routeStudentTasks(page, server)
+  await joinAsChild(page)
+
+  const task = page.getByRole('region', { name: 'Спробуй!' })
+  await task.getByRole('radio', { name: /А\)/ }).check()
+  await goOffline(context, server)
+  await task.getByRole('button', { name: 'Надіслати' }).click()
+  await expect(task.getByText('Відповідь чекає на зв\'язок')).toBeVisible()
+
+  // While the device was offline the teacher closed the task.
+  server.refuse = { code: 'DISPATCH_CLOSED', error: 'Це завдання вже закрите.' }
+  await goOnline(context, server)
+  await expect(page.locator('#lj-notice')).toHaveText('Відповідь не зараховано: Це завдання вже закрите.')
+  expect(server.attempts).toBe(0)
+  // The next poll shows the task as the server sees it again.
+  await expect(task.getByRole('button', { name: 'Надіслати' })).toBeVisible({ timeout: 6000 })
 })
 
 // ── Lesson report (stage H) ──────────────────────────────────────────────────

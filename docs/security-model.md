@@ -208,6 +208,14 @@ stores only its sha256. The link expires after 10 minutes and is exchanged
 for the device token in a POST body. Failed exchanges count towards the join
 throttle. Relaunching revokes the student's previous device.
 
+The device's offline outbox (stage J) stores only the device id, dispatch
+id, client attempt id and answer in IndexedDB, never the device token, a
+name or a score. Sending still needs the token from sessionStorage.
+Replays are idempotent per `(device, clientAttemptId)` and create no second
+attempt or evidence. Attempt refusals carry a `code`, and only transient ones
+are retried. A task closed while a device was offline stays closed to it:
+the server cannot verify when that answer was given.
+
 ## Mission Editorial Workflow — **[IMPLEMENTED]**
 
 Migration `0038` adds the same audited state machine, optimistic edit locking
