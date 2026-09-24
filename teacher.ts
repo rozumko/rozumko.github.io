@@ -1113,11 +1113,11 @@ function renderStudentsList(container: HTMLElement, classId: string, students: C
       <span class="student-row__num">${i + 1}</span>
       <span class="student-row__label" title="${esc(s.label)}">${esc(s.label)}</span>
       <div class="student-row__actions">
-        <button class="btn-student-edit btn btn--secondary btn--sm" aria-label="Редагувати ${esc(s.label)}">
-          <i class="fas fa-pencil-alt" aria-hidden="true"></i>
+        <button class="btn-student-edit btn btn--secondary btn--sm" type="button" aria-label="Редагувати ${esc(s.label)}">
+          Редагувати
         </button>
-        <button class="btn-student-delete btn btn--danger btn--sm" aria-label="Видалити ${esc(s.label)}">
-          <i class="fas fa-trash" aria-hidden="true"></i>
+        <button class="btn-student-delete btn btn--danger btn--sm" type="button" aria-label="Видалити ${esc(s.label)}">
+          Видалити
         </button>
       </div>`
 
@@ -1145,15 +1145,15 @@ function renderStudentsList(container: HTMLElement, classId: string, students: C
 }
 
 function startEditStudent(row: HTMLElement, s: ClassStudent, classId: string) {
-  // Замінюємо label на inline input
+  // Replace the student label with an inline editor.
   const labelEl = row.querySelector<HTMLElement>('.student-row__label')!
   const actionsEl = row.querySelector<HTMLElement>('.student-row__actions')!
   const originalLabel = s.label
 
   labelEl.innerHTML = `<input class="student-edit-input form-input" value="${esc(s.label)}" maxlength="60" />`
   actionsEl.innerHTML = `
-    <button class="btn-student-save btn btn--success btn--sm" aria-label="Зберегти"><i class="fas fa-check" aria-hidden="true"></i></button>
-    <button class="btn-student-cancel btn btn--secondary btn--sm" aria-label="Скасувати редагування"><i class="fas fa-times" aria-hidden="true"></i></button>`
+    <button class="btn-student-save btn btn--success btn--sm" type="button">Зберегти</button>
+    <button class="btn-student-cancel btn btn--secondary btn--sm" type="button">Скасувати</button>`
 
   const input = labelEl.querySelector<HTMLInputElement>('.student-edit-input')!
   input.focus()
@@ -1784,12 +1784,12 @@ function renderSchoolStatus() {
       ? 'Активність триває. Результат кожного учня з’явиться, коли він завершить.'
       : 'Гра триває. Учні, які запізнилися, також можуть приєднатися за цим кодом.',
     finished: schoolReviewMode
-      ? '🏁 Гру завершено. Це збережені результати уроку.'
-      : '🏁 Завершено',
+      ? 'Це збережені результати гри.'
+      : 'Завершено. Результати збережено.',
   }
   if (statusEl) {
     statusEl.textContent = schoolReviewMode && schoolSession.status !== 'finished'
-      ? '⏱ Код гри вже не діє. Це останній збережений стан уроку.'
+      ? 'Код гри вже не діє. Це останній збережений стан гри.'
       : labels[schoolSession.status] ?? schoolSession.status
   }
   // A finished or expired session takes no more players, so the dead code and
@@ -1800,7 +1800,7 @@ function renderSchoolStatus() {
   const joinHeading = $maybe('school-join-heading')
   if (joinHeading) {
     joinHeading.textContent = schoolReviewMode && schoolSession.status !== 'finished'
-      ? 'Код гри неактивний'
+      ? 'Збережені результати'
       : closed ? 'Гру завершено' : 'Приєднання до гри'
   }
   // One button leaves this screen. After a live finish the useful next step is a
@@ -2347,6 +2347,7 @@ function populateSchoolActivities() {
               <span class="activity-card__title">${esc(a.label)}</span>
               ${a.device === 'desktop' ? '<span class="activity-card__badge">для ПК</span>' : ''}
               <span class="activity-card__desc">${esc(a.description)}</span>
+              <span class="activity-card__choose">Обрати активність <span aria-hidden="true">→</span></span>
             </button>
           `).join('')}
         </div>
@@ -2825,9 +2826,10 @@ function showSchoolLobby(session: SchoolSessionInfo, review = false) {
   const link = $maybe<HTMLInputElement>('school-join-link')
   const joinUrl = buildSchoolJoinUrl(session.joinCode)
   if (link) link.value = joinUrl
-  void renderSchoolJoinQr(joinUrl, session.joinCode)
+  if (!review) void renderSchoolJoinQr(joinUrl, session.joinCode)
   setSchoolMode(schoolMode)
   $maybe('school-live')?.classList.remove('hidden')
+  $maybe('school-live')?.classList.toggle('school-live--review', review)
   renderSchoolStatus()
   renderSchoolLeaderboard([])
   renderSchoolClassSummary([], [], [])

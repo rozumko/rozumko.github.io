@@ -133,6 +133,7 @@ test('finished lessons appear in the results table with a report link', async ({
 test('teacher opens a lesson from the list and sees the full plan with teacher-only notes', async ({ page }) => {
   await mockTeacherApi(page, { lessonEngine: true })
   await page.goto('/lesson-engine.html')
+  await expect(page.locator('.le-lesson-card__action')).toHaveText('Переглянути план')
   await page.getByRole('link', { name: /Файли й папки/ }).click()
 
   await expect(page).toHaveURL(/lesson=g2-m2-l8/)
@@ -439,6 +440,7 @@ test('moving through the board moves the run, and the lesson list offers to resu
 
   await page.goto('/lesson-engine.html')
   await expect(page.getByRole('heading', { name: 'Незавершені уроки' })).toBeVisible()
+  await expect(page.locator('.le-open-runs .le-lesson-card__action')).toHaveText('Продовжити урок')
   await expect(page.getByRole('link', { name: /2-А/ })).toHaveAttribute('href', /run=/)
 
   // Preparing again for the same class resumes the open run instead of forking it.

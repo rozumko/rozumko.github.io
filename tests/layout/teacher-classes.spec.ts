@@ -75,6 +75,8 @@ test('a new teacher starts in «Мої класи», creates a class, adds stude
   await studentInput.fill('Учень 2')
   await section.getByRole('button', { name: 'Додати', exact: true }).click()
   await expect(section.locator('.student-row')).toHaveCount(2)
+  await expect(section.locator('.student-row').first().getByRole('button', { name: 'Редагувати Маша К.' })).toBeVisible()
+  await expect(section.locator('.student-row').first().getByRole('button', { name: 'Видалити Маша К.' })).toBeVisible()
   expect(students.get(classes[0]!.id)!.map(s => s.label)).toEqual(['Маша К.', 'Учень 2'])
   await expect(section.getByRole('link', { name: 'Провести урок' })).toHaveAttribute('href', 'lesson-engine.html')
 
@@ -142,6 +144,9 @@ test('«Мої класи» fits a phone without horizontal scrolling', async ({
   await section.getByLabel('Назва').fill('1-В')
   await section.locator('#class-submit-btn').click()
   await expect(section.locator('#class-detail-title')).toHaveText('1-В')
+  await section.getByLabel('Додати учня').fill('Маша К.')
+  await section.getByLabel('Додати учня').press('Enter')
+  await expect(section.locator('.student-row')).toHaveCount(1)
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
   expect(overflow).toBeLessThanOrEqual(0)
   const results = await new AxeBuilder({ page }).include('#teacher-section-classes').withTags(WCAG_AA_TAGS).analyze()
