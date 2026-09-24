@@ -18,6 +18,8 @@ export const LESSON_JOIN_CODE_THROTTLE_SCOPE = 'lesson-join-code'
 export const LESSON_JOIN_CODE_IP_THROTTLE_SCOPE = 'lesson-join-code-ip'
 /** Failed launch-token exchanges per IP (tokens are unguessable; this caps probing). */
 export const LESSON_LAUNCH_IP_THROTTLE_SCOPE = 'lesson-launch-ip'
+/** Forged class-link keys per IP (keys are unguessable HMACs; this caps probing). */
+export const LESSON_CLASS_LINK_IP_THROTTLE_SCOPE = 'lesson-class-link-ip'
 
 const DEFAULT_MAX_FAILURES = 5
 const DEFAULT_WINDOW_MS = 5 * 60 * 1000
@@ -57,6 +59,7 @@ const SCOPE_LIMITS: Readonly<Record<string, ThrottleLimits>> = {
   [SCHOOL_JOIN_CODE_IP_THROTTLE_SCOPE]: CLASSROOM_IP_LIMITS,
   [LESSON_JOIN_CODE_IP_THROTTLE_SCOPE]: CLASSROOM_IP_LIMITS,
   [LESSON_LAUNCH_IP_THROTTLE_SCOPE]: CLASSROOM_IP_LIMITS,
+  [LESSON_CLASS_LINK_IP_THROTTLE_SCOPE]: CLASSROOM_IP_LIMITS,
 }
 
 function limitsFor(scope: string): ThrottleLimits {

@@ -77,6 +77,7 @@ backend/src/lib/lesson-live.ts ← Lesson Engine attempts + live class grid rule
 backend/src/lib/lesson-evidence.ts ← Lesson Engine evidence rows, outcome summary rule, lesson report (/report; report-view.ts); outcomes registry in subject-packs.ts
 features/lesson-engine/classroom-control.ts ← ClassroomControlProvider boundary (fake only on loopback ?classroom=fake); device-assignments.ts + /launch single-use links
 features/lesson-engine/attempt-outbox.ts ← offline answer outbox on the device (IndexedDB via outbox-idb.ts; retry only codes in backend/src/lib/lesson-attempt-refusals.ts)
+backend/src/routes/class-lesson-links.ts ← class link (#class=, HMAC key, rotate) + remembered seats; /api/student/lesson/join-class; console class-link-panel.ts
 backend/src/db/          ← Drizzle schema + migration runner
 backend/drizzle/         ← SQL-міграції (таксономія 0021, ігри 0023–0026, уроки 0032, редакційний цикл 0036–0038, сіди ігор 0039–0040+0042, публікація 0041)
 backend/scripts/         ← import-temp-content, import-temp-lessons, export:* (питання/уроки/шлях/пакети/manifest)

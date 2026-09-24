@@ -769,6 +769,8 @@ export const lessonRunDevices = pgTable('lesson_run_devices', {
   launchTokenHash:    text('launch_token_hash'),
   launchExpiresAt:    timestamp('launch_expires_at', { withTimezone: true }),
   launchedAt:         timestamp('launched_at', { withTimezone: true }),
+  // 0055: sha256 of the joining browser's seat secret (remembered seats).
+  seatHash:           text('seat_hash'),
 }, (t) => ({
   uniqRunPairing: unique('lesson_run_devices_run_pairing_uq').on(t.lessonRunId, t.pairingNumber),
 }))
@@ -852,3 +854,30 @@ export const deviceAssignments = pgTable('device_assignments', {
 }))
 
 export type DeviceAssignmentRow = typeof deviceAssignments.$inferSelect
+
+// Class link (0055): one stable join address per class; the key is derived
+// from (classId, linkVersion) by the backend, so no secret is stored here.
+export const lessonClassLinks = pgTable('lesson_class_links', {
+  classId:     uuid('class_id').primaryKey().references(() => teacherClasses.id, { onDelete: 'cascade' }),
+  teacherId:   uuid('teacher_id').notNull().references(() => appUsers.id, { onDelete: 'restrict' }),
+  linkVersion: integer('link_version').notNull().default(1),
+  enabled:     boolean('enabled').notNull().default(true),
+  createdAt:   timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:   timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type LessonClassLinkRow = typeof lessonClassLinks.$inferSelect
+
+// Remembered seats (0055): which roster student last sat at a lab browser.
+export const lessonClassSeats = pgTable('lesson_class_seats', {
+  id:             uuid('id').primaryKey().defaultRandom(),
+  classId:        uuid('class_id').notNull().references(() => teacherClasses.id, { onDelete: 'cascade' }),
+  seatHash:       text('seat_hash').notNull(),
+  classStudentId: uuid('class_student_id').notNull().references(() => classStudents.id, { onDelete: 'cascade' }),
+  updatedAt:      timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  uniqClassSeat: unique('lesson_class_seats_class_seat_uq').on(t.classId, t.seatHash),
+  uniqClassStudent: unique('lesson_class_seats_class_student_uq').on(t.classId, t.classStudentId),
+}))
+
+export type LessonClassSeatRow = typeof lessonClassSeats.$inferSelect

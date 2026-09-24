@@ -43,6 +43,12 @@ Do these in order. Nothing is visible to teachers until step 4.
 - [ ] Each child device opens `https://<site>/lesson-join.html` in an
       up-to-date browser (Chrome, Edge or Safari). A bookmark or desktop
       shortcut on the lab computers saves time.
+- [ ] **Lab with Classroom Remote (once per class).**
+      1. In the console: «Приєднання учнів» → «Посилання класу (Classroom
+         Remote)» → «Увімкнути посилання класу» → «Копіювати».
+      2. In Classroom Remote, approve `rozumko.com` as a trusted domain (the
+         dashboard offers this the first time).
+      3. Save the link as a quick link named after the class.
 - [ ] **Render cold start.** Ten minutes before the lesson, open
       `https://<backend>/health`. A free-plan backend sleeps and needs up to
       a minute to wake up. For real classes use a plan that does not sleep.
@@ -58,9 +64,12 @@ Do these in order. Nothing is visible to teachers until step 4.
    - **Code:** «Відкрити приєднання». Children type the 6-digit code and see
      a big number. The teacher matches each number to a name in
      «Приєднання учнів».
-   - **Lab computers** (only with a classroom provider — not yet available
-     in production, see §6): assign computers once, then «Відкрити урок на
-     комп'ютерах».
+   - **Class link via Classroom Remote:** press the class's quick link →
+     «Відкрити у класі». Every laptop opens the join page and joins by
+     itself; it waits if the lesson is not prepared yet. The first time,
+     match numbers to names as with a code. The laptop's seat is then
+     remembered, and later lessons match the same child on that laptop
+     automatically. Use «Забути місця» if laptops were moved.
 3. «Почати урок». The board follows «Далі →» and «← Назад». «Пауза» hides
    tasks on the devices; «Продовжити» brings them back.
 4. At an activity step: «Надіслати учням». The live grid shows who is
@@ -81,7 +90,7 @@ spec §101–103.
 | Measure | Value |
 |---|---|
 | Teacher preparation time before the lesson (min) — and the usual time for the old workflow | |
-| From «Відкрити приєднання» to all devices matched (min) | |
+| From «Відкрити приєднання» (or «Відкрити у класі») to all devices matched (min); how many were matched automatically | |
 | Children who could not join without adult help | |
 | Manual interventions by the teacher or an assistant (count, what) | |
 | Switches to other apps or tabs during the lesson | |
@@ -136,9 +145,13 @@ or agreeing to pay — not a teacher liking it.
 
 ## 6. Known limits during the pilot
 
-- **Lab-computer launch** works only with the development fake. The real
-  Classroom Remote adapter needs access to its repository and protocol;
-  until then, use code join.
+- **Classroom Remote opens one link for the whole room.** Use the class
+  link. The per-computer launch from stage I (a separate link per computer)
+  works only with the development fake and does not fit Classroom Remote's
+  model.
+- **Remembered seats live in the lab browser's storage.** Clearing the
+  browser data, or a different browser profile, gives the laptop a new seat;
+  the teacher matches it once again.
 - **Outcome codes are internal** (`INF-2-FILES-1/2`). Do not present them to
   schools as НУШ or Cambridge codes until a methodologist confirms the
   mapping.

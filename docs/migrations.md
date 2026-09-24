@@ -69,6 +69,7 @@ environments receive the same schema.
 | `0052_add_activity_attempts` | Lesson Engine: dispatches (one open per run, close-once) and append-only, idempotent `activity_attempts` with DB-checked trust per mechanic (RLS enabled) |
 | `0053_add_student_outcome_evidence` | Lesson Engine learning evidence: append-only (anonymisation aside), never primary when client-reported, traceable to the attempt (RLS enabled) |
 | `0054_add_device_assignments` | Lesson Engine classroom control: per-class computer↔student assignments (RLS enabled), single-use hashed launch tokens on run devices, launch events |
+| `0055_add_class_links_and_seats` | Lesson Engine class link (versioned, HMAC-derived key, nothing secret stored) and remembered seats (salted seat-secret hash → roster student); `lesson_run_devices.seat_hash` (RLS enabled) |
 
 `0012` is intentionally idempotent: production received the columns manually
 before the SQL was incorporated into Drizzle history.
@@ -209,7 +210,7 @@ history cannot be hard-deleted. The API is served only when
 
 Migration `0028` enabled RLS on every application table that existed at that
 revision; each later table migration (`0029`, `0031`-`0034`, `0036`-`0038`,
-`0041`, `0047`, `0048`, `0049`, `0050`, `0051`, `0052`, `0053`, `0054`) enables it in the same migration. A regression
+`0041`, `0047`, `0048`, `0049`, `0050`, `0051`, `0052`, `0053`, `0054`, `0055`) enables it in the same migration. A regression
 test in `backend/src/security-regression.test.ts` scans every `pgTable` in
 `schema.ts` and fails if any table lacks an `ENABLE ROW LEVEL SECURITY`
 migration, so this is enforced rather than periodically re-checked by hand.

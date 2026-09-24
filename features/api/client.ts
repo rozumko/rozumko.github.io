@@ -1264,6 +1264,31 @@ export function getLessonRunReport(runId: string): Promise<LessonReport> {
 
 export interface DeviceAssignment { remoteDeviceId: string; classStudentId: string }
 
+export interface ClassLessonLinkState {
+  /** null until the teacher first turns the link on. */
+  link: { enabled: boolean; version: number; path: string | null; updatedAt: string } | null
+  rememberedSeats: number
+}
+
+export function getClassLessonLink(classId: string): Promise<ClassLessonLinkState> {
+  return authRequest(`/api/teacher/classes/${encodeURIComponent(classId)}/lesson-link`)
+}
+
+export function setClassLessonLink(classId: string, enabled: boolean): Promise<ClassLessonLinkState> {
+  return authRequest(`/api/teacher/classes/${encodeURIComponent(classId)}/lesson-link`, {
+    method: 'PUT',
+    body: JSON.stringify({ enabled }),
+  })
+}
+
+export function rotateClassLessonLink(classId: string): Promise<ClassLessonLinkState> {
+  return authRequest(`/api/teacher/classes/${encodeURIComponent(classId)}/lesson-link/rotate`, { method: 'POST' })
+}
+
+export function forgetClassLessonSeats(classId: string): Promise<ClassLessonLinkState> {
+  return authRequest(`/api/teacher/classes/${encodeURIComponent(classId)}/lesson-seats`, { method: 'DELETE' })
+}
+
 export function getDeviceAssignments(classId: string): Promise<{ assignments: DeviceAssignment[] }> {
   return authRequest(`/api/teacher/classes/${encodeURIComponent(classId)}/device-assignments`)
 }
@@ -1291,8 +1316,17 @@ export function launchLessonRun(runId: string, remoteDeviceIds: string[]): Promi
 
 // ─── Lesson Engine: student device (no account) ────────────────────────────
 
-export function joinLessonRun(code: string): Promise<LessonDeviceJoin> {
-  return request('/api/student/lesson/join', { method: 'POST', body: JSON.stringify({ code }) })
+/** `seat` is this browser's remembered-seat secret, when storage allows one. */
+export function joinLessonRun(code: string, seat?: string | null): Promise<LessonDeviceJoin> {
+  return request('/api/student/lesson/join', { method: 'POST', body: JSON.stringify(seat ? { code, seat } : { code }) })
+}
+
+/** Joins whatever lesson the class has open through its class link (409 NO_OPEN_RUN: wait). */
+export function joinLessonByClassLink(
+  link: { classId: string; version: number; key: string },
+  seat?: string | null,
+): Promise<LessonDeviceJoin> {
+  return request('/api/student/lesson/join-class', { method: 'POST', body: JSON.stringify(seat ? { ...link, seat } : link) })
 }
 
 /** Exchanges a single-use launch token (from a lab computer) for a pre-mapped device. */

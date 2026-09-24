@@ -216,6 +216,24 @@ attempt or evidence. Attempt refusals carry a `code`, and only transient ones
 are retried. A task closed while a device was offline stays closed to it:
 the server cannot verify when that answer was given.
 
+A class link (migration `0055`) is one stable join address per class. It is
+never stored: its key is `HMAC(ATTEMPT_SECRET, classId + version)`, carried in
+the URL fragment. It joins only an *open* run of that class. Devices that join
+through it are anonymous until they are mapped, as with a code. Rotating the
+link bumps the version and revokes every copy. Forged keys are refused before
+any database access and count towards a per-IP throttle.
+
+Remembered seats store only a salted sha256 of a random secret kept in the lab
+browser's `localStorage`, next to the roster student last mapped there. A seat
+auto-maps a device only for a child in the run whom no other seat holds.
+Unmapping forgets the seat, and deleting a student removes theirs. A seat
+whose device the teacher disconnected cannot rejoin that lesson through the
+class link.
+
+Student lesson traffic is rate-limited per *verified device*: the token comes
+from the body, and the limiter runs at preValidation. Only unverified requests
+share the per-IP bucket. Joins allow a whole class behind one NAT address.
+
 ## Mission Editorial Workflow — **[IMPLEMENTED]**
 
 Migration `0038` adds the same audited state machine, optimistic edit locking
@@ -333,7 +351,8 @@ revisions), `0036`-`0038` (`question_revisions`, `micro_lesson_revisions`,
 (`curriculum_lessons`, `curriculum_lesson_revisions`) and `0050`
 (`lesson_runs`, `lesson_run_students`, `lesson_run_events`) `0051`
 (`lesson_run_devices`) `0052` (`lesson_run_dispatches`, `activity_attempts`), `0053`
-(`student_outcome_evidence`) and `0054` (`device_assignments`). A regression test
+(`student_outcome_evidence`), `0054` (`device_assignments`) and `0055`
+(`lesson_class_links`, `lesson_class_seats`). A regression test
 fails if any application table is left uncovered.
 Migration `0048` applies the same deny-by-default RLS rule to
 `teacher_question_topics`; its answer-bearing session snapshots remain inside

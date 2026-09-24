@@ -85,6 +85,7 @@ import { curriculumTeacherRoutes } from './routes/curriculum-teacher.js'
 import { lessonRunRoutes } from './routes/lesson-runs.js'
 import { lessonStudentRoutes } from './routes/lesson-student.js'
 import { deviceAssignmentRoutes } from './routes/device-assignments.js'
+import { classLessonLinkRoutes } from './routes/class-lesson-links.js'
 await app.register(studentRoutes,  { prefix: '/api/student' })
 await app.register(attemptRoutes,  { prefix: '/api/attempt' })
 await app.register(teacherRoutes,  { prefix: '/api/teacher' })
@@ -101,6 +102,7 @@ await app.register(curriculumTeacherRoutes, { prefix: '/api/teacher/curriculum' 
 await app.register(lessonRunRoutes, { prefix: '/api/teacher/lesson-runs' })
 await app.register(lessonStudentRoutes, { prefix: '/api/student/lesson' })
 await app.register(deviceAssignmentRoutes, { prefix: '/api/teacher/classes' })
+await app.register(classLessonLinkRoutes, { prefix: '/api/teacher/classes' })
 
 const port = Number(process.env.PORT) || 3000
 

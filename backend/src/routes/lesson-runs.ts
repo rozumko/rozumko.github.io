@@ -5,13 +5,14 @@
 // indistinguishable from a missing one. Dark unless LESSON_ENGINE_ENABLED.
 
 import type { FastifyInstance, FastifyReply } from 'fastify'
-import { and, asc, desc, eq, inArray, isNotNull, isNull, ne } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNotNull, isNull, ne, or } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import {
   classStudents,
   curriculumLessons,
   activityAttempts,
   deviceAssignments,
+  lessonClassSeats,
   lessonRunDevices,
   lessonRunDispatches,
   lessonRunEvents,
@@ -61,7 +62,7 @@ type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0]
 
 /** Locks the teacher's own open run, or throws. Devices are managed only while it is open. */
 async function lockOpenRun(tx: Tx, runId: string, teacherId: string) {
-  const [run] = await tx.select({ id: lessonRuns.id, status: lessonRuns.status }).from(lessonRuns)
+  const [run] = await tx.select({ id: lessonRuns.id, status: lessonRuns.status, classId: lessonRuns.classId }).from(lessonRuns)
     .where(and(eq(lessonRuns.id, runId), eq(lessonRuns.teacherId, teacherId))).limit(1).for('update')
   if (!run) throw new RunNotFoundError()
   if (!OPEN_RUN_STATUSES.includes(run.status)) throw new LessonRunStateError('Урок завершено: пристрої вже не змінюються')
@@ -447,12 +448,18 @@ export async function lessonRunRoutes(app: FastifyInstance) {
         if (studentId === null) {
           if (device.lessonRunStudentId === null) return
           await tx.update(lessonRunDevices).set({ lessonRunStudentId: null }).where(eq(lessonRunDevices.id, deviceId))
+          // An unmapped seat is forgotten, so it is not auto-mapped next lesson.
+          if (device.seatHash) {
+            await tx.delete(lessonClassSeats).where(and(eq(lessonClassSeats.classId, run.classId), eq(lessonClassSeats.seatHash, device.seatHash)))
+          }
           await tx.insert(lessonRunEvents).values({
             lessonRunId: id, type: 'device_unmapped', actorType: 'teacher', actorId: teacherId, payload: { deviceId },
           })
           return
         }
-        const [student] = await tx.select({ id: lessonRunStudents.id, joinedAt: lessonRunStudents.joinedAt })
+        const [student] = await tx.select({
+          id: lessonRunStudents.id, joinedAt: lessonRunStudents.joinedAt, classStudentId: lessonRunStudents.classStudentId,
+        })
           .from(lessonRunStudents)
           .where(and(eq(lessonRunStudents.id, studentId), eq(lessonRunStudents.lessonRunId, run.id), isNotNull(lessonRunStudents.classStudentId)))
           .limit(1)
@@ -465,6 +472,14 @@ export async function lessonRunRoutes(app: FastifyInstance) {
         await tx.update(lessonRunDevices).set({ lessonRunStudentId: student.id }).where(eq(lessonRunDevices.id, deviceId))
         await tx.update(lessonRunStudents).set({ status: 'joined', joinedAt: student.joinedAt ?? new Date() })
           .where(eq(lessonRunStudents.id, student.id))
+        // Remember the seat: one seat per student and one student per seat in this class.
+        if (device.seatHash && student.classStudentId) {
+          await tx.delete(lessonClassSeats).where(and(
+            eq(lessonClassSeats.classId, run.classId),
+            or(eq(lessonClassSeats.seatHash, device.seatHash), eq(lessonClassSeats.classStudentId, student.classStudentId)),
+          ))
+          await tx.insert(lessonClassSeats).values({ classId: run.classId, seatHash: device.seatHash, classStudentId: student.classStudentId })
+        }
         await tx.insert(lessonRunEvents).values({
           lessonRunId: id, type: 'device_mapped', actorType: 'teacher', actorId: teacherId,
           payload: { deviceId, lessonRunStudentId: student.id },

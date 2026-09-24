@@ -869,3 +869,129 @@ test('a used or expired launch link falls back to the code screen with a clear m
   await expect(page.getByLabel('Код від учителя')).toBeVisible()
   await expect(page).toHaveURL(/lesson-join\.html$/)
 })
+
+// ── Class link and remembered seats ─────────────────────────────────────────
+
+const CLASS_KEY = (version: number) => `${'k'.repeat(42)}${version}`
+
+test('the teacher turns on the class link, copies it, rotates it and forgets seats', async ({ page }) => {
+  await mockTeacherApi(page, { lessonEngine: true })
+  await routeRunServer(page)
+  const link = { enabled: false, version: 0, seats: 2 }
+  const state = () => ({
+    link: link.version === 0 ? null : {
+      enabled: link.enabled, version: link.version, updatedAt: '',
+      path: link.enabled ? `lesson-join.html#class=${CLASS_ID}.${link.version}.${CLASS_KEY(link.version)}` : null,
+    },
+    rememberedSeats: link.seats,
+  })
+  const json = (body: unknown) => ({ status: 200, contentType: 'application/json', body: JSON.stringify(body) })
+  await page.route(`**/api/teacher/classes/${CLASS_ID}/lesson-link**`, route => {
+    const request = route.request()
+    if (request.method() === 'PUT') {
+      const { enabled } = request.postDataJSON() as { enabled: boolean }
+      link.enabled = enabled
+      link.version ||= 1
+    } else if (request.method() === 'POST') {
+      link.version += 1
+      link.enabled = true
+    }
+    return route.fulfill(json(state()))
+  })
+  await page.route(`**/api/teacher/classes/${CLASS_ID}/lesson-seats`, route => {
+    link.seats = 0
+    return route.fulfill(json(state()))
+  })
+  page.on('dialog', dialog => void dialog.accept())
+
+  await page.goto('/lesson-engine.html?lesson=g2-m2-l8')
+  await page.getByRole('button', { name: 'Підготувати урок' }).click()
+  const panel = page.getByRole('region', { name: 'Приєднання учнів' })
+  await panel.getByText('Посилання класу (Classroom Remote)').click()
+  await expect(panel.locator('.le-classlink__seats')).toHaveText('Запам’ятовано місць: 2. На цих ноутбуках учні підхопляться самі.')
+
+  await panel.getByRole('button', { name: 'Увімкнути посилання класу' }).click()
+  const field = panel.getByLabel('Посилання класу', { exact: true })
+  await expect(field).toHaveValue(new RegExp(`/lesson-join\\.html#class=${CLASS_ID}\\.1\\.k{42}1$`))
+  const results = await new AxeBuilder({ page }).withTags(WCAG_AA_TAGS).analyze()
+  expect(results.violations.map(v => v.id)).toEqual([])
+
+  await panel.getByRole('button', { name: 'Нове посилання' }).click()
+  await expect(field).toHaveValue(new RegExp(`#class=${CLASS_ID}\\.2\\.k{42}2$`))
+  await expect(panel.locator('.le-classlink__message')).toHaveText('Створено нове посилання. Оновіть його в Classroom Remote.')
+
+  await panel.getByRole('button', { name: 'Забути місця' }).click()
+  await expect(panel.locator('.le-classlink__seats')).toContainText('ще не запам’ятовано')
+
+  await panel.getByRole('button', { name: 'Вимкнути' }).click()
+  await expect(panel.getByRole('button', { name: 'Увімкнути посилання класу' })).toBeVisible()
+})
+
+test('a laptop on the class link waits for the lesson, joins by itself with its seat, and rejoins the next lesson', async ({ page }) => {
+  const server = { open: false, runStatus: 'active', joins: [] as { seat?: string }[] }
+  const json = (body: unknown, status = 200) => ({ status, contentType: 'application/json', body: JSON.stringify(body) })
+  await page.route('**/api/student/lesson/join-class', route => {
+    const body = route.request().postDataJSON() as { classId: string; version: number; key: string; seat?: string }
+    expect(body).toMatchObject({ classId: CLASS_ID, version: 1, key: CLASS_KEY(1) })
+    server.joins.push(body)
+    if (!server.open) return route.fulfill(json({ error: 'Урок ще не почався. Зачекай.', code: 'NO_OPEN_RUN' }, 409))
+    server.runStatus = 'active'
+    const n = server.joins.length
+    return route.fulfill(json({ deviceId: `00000000-0000-4000-8000-00000000d00${n}`, deviceToken: 'f'.repeat(64), pairingNumber: n, expiresAt: '' }, 201))
+  })
+  await page.route('**/api/student/lesson/state', route => route.fulfill(json({
+    // The remembered seat maps the device by itself.
+    runStatus: server.runStatus, lessonTitle: fixture.title, grade: 2, pairingNumber: 1, mapped: true, studentLabel: 'Марко', task: null,
+  })))
+  await page.clock.install()
+  await page.goto(`/lesson-join.html#class=${CLASS_ID}.1.${CLASS_KEY(1)}`)
+
+  await expect(page.locator('#lj-status')).toHaveText('Чекай: урок ще не почався.')
+  await expect(page.locator('#lj-number')).toBeHidden()
+  await expect(page.getByLabel('Код від учителя')).toBeHidden()
+  const axe = await new AxeBuilder({ page }).withTags(WCAG_AA_TAGS).analyze()
+  expect(axe.violations.map(v => v.id)).toEqual([])
+
+  server.open = true
+  await page.clock.runFor(15_000)
+  await expect(page.locator('#lj-status')).toHaveText('Привіт, Марко! Чекай на завдання від учителя.')
+  const seat = server.joins[0]!.seat!
+  expect(seat).toMatch(/^[A-Za-z0-9_-]{43}$/)
+  expect(server.joins.every(j => j.seat === seat)).toBe(true)
+  expect(await page.evaluate(() => localStorage.getItem('rozumko_lesson_seat'))).toBe(seat)
+  await expect(page).toHaveURL(new RegExp(`#class=${CLASS_ID}`), { timeout: 1000 })
+
+  // The lesson ends; the laptop stays ready and joins the class's next lesson.
+  server.runStatus = 'finished'
+  server.open = false
+  await page.clock.runFor(2_000)
+  await expect(page.locator('#lj-status')).toHaveText('Урок завершено. Дякуємо!')
+  const joinsBefore = server.joins.length
+  server.open = true
+  await page.clock.runFor(15_000)
+  await expect(page.locator('#lj-status')).toHaveText('Привіт, Марко! Чекай на завдання від учителя.')
+  expect(server.joins.length).toBeGreaterThan(joinsBefore)
+  expect(server.joins[server.joins.length - 1]!.seat).toBe(seat)
+})
+
+test('a rotated class link falls back to the code screen, and a code join still carries the seat', async ({ page }) => {
+  const joins: { code: string; seat?: string }[] = []
+  const json = (body: unknown, status = 200) => ({ status, contentType: 'application/json', body: JSON.stringify(body) })
+  await page.route('**/api/student/lesson/join-class', route => route.fulfill(json({
+    error: 'Посилання класу більше не діє. Попроси вчителя нове.', code: 'LINK_INVALID',
+  }, 404)))
+  await page.route('**/api/student/lesson/join', route => {
+    joins.push(route.request().postDataJSON() as { code: string; seat?: string })
+    return route.fulfill(json({ deviceId: '00000000-0000-4000-8000-00000000d001', deviceToken: 'f'.repeat(64), pairingNumber: 4, expiresAt: '' }, 201))
+  })
+  await page.route('**/api/student/lesson/state', route => route.fulfill(json({
+    runStatus: 'active', lessonTitle: fixture.title, grade: 2, pairingNumber: 4, mapped: false, studentLabel: null, task: null,
+  })))
+  await page.goto(`/lesson-join.html#class=${CLASS_ID}.1.${CLASS_KEY(1)}`)
+  await expect(page.locator('#lj-error')).toHaveText('Посилання класу більше не діє. Попроси вчителя нове.')
+  await page.getByLabel('Код від учителя').fill('482913')
+  await page.getByRole('button', { name: 'Приєднатися' }).click()
+  await expect(page.locator('#lj-number')).toHaveText('№ 4')
+  expect(joins[0]!.code).toBe('482913')
+  expect(joins[0]!.seat).toBe(await page.evaluate(() => localStorage.getItem('rozumko_lesson_seat')))
+})
