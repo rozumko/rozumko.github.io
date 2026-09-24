@@ -171,7 +171,10 @@ Outcomes are validated with the same fail-closed rules as pack registries
 IDs, so triggers forbid deleting an outcome or changing its ID or pack.
 Revisions are append-only, and both tables have RLS enabled with no policies.
 Lesson save and publish validate against active directory outcomes only, never
-a code copy (pinned by a security regression test).
+a code copy (pinned by a security regression test). The admin lesson editor
+checks drafts with `POST /api/admin/curriculum/lessons/validate`. It runs the
+same checks as a save and stores nothing. It is admin-only because drafts carry
+answer keys.
 
 Lesson runs (`/api/teacher/lesson-runs`, migration `0050`) are owner-scoped
 on every lookup, and a run can only be prepared for the teacher's own class.

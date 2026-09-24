@@ -20,8 +20,9 @@ Do these in order. Nothing is visible to teachers until step 4.
 3. **Turn the engine on.** On Render, set `LESSON_ENGINE_ENABLED` = `true`
    for the backend service and wait for the redeploy. To roll back, set it to
    `false`. Data stays; the surface disappears again.
-4. **Publish the reference lesson** (there is no admin UI for Lesson Engine
-   lessons yet). Use the script:
+4. **Publish the reference lesson.** In the admin panel open «Керовані
+   уроки» → «Імпорт JSON» → `backend/src/lib/curriculum-fixtures/g2-m2-l8.lesson.json`
+   → «Зберегти» → «Опублікувати». Or load it from the file with the script:
    ```powershell
    cd backend
    $env:API_URL = "https://<backend>.onrender.com"

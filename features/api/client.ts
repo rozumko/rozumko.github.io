@@ -1217,6 +1217,91 @@ export interface AdminSubjectPack {
   subject: string
   title: { uk: string; en?: string }
   gradeRange: { min: number; max: number }
+  /** Launch-only external tools a lesson in this pack may open. */
+  tools: { key: string; title: { uk: string; en?: string } }[]
+  /** Platform games a lesson in this pack may embed, with their level ids. */
+  games: { key: string; levels: string[] }[]
+}
+
+export type CurriculumLessonStatus = 'draft' | 'review' | 'published' | 'archived'
+
+export interface AdminCurriculumLessonSummary {
+  id: string
+  subjectPackId: string
+  subject: string
+  grade: number
+  moduleId: string | null
+  lessonNumber: number | null
+  title: string
+  status: CurriculumLessonStatus
+  editVersion: number
+  contentVersion: number
+  publishedVersion: number | null
+  updatedAt: string
+}
+
+/** Full editorial row: the draft being edited (answer keys included) and the published snapshot. */
+export interface AdminCurriculumLesson extends AdminCurriculumLessonSummary {
+  draftContent: Record<string, unknown>
+  publishedSnapshot: Record<string, unknown> | null
+  publishedAt: string | null
+}
+
+export interface AdminCurriculumLessonRevision {
+  id: string
+  lessonId: string
+  editVersion: number
+  action: 'create' | 'update' | 'status' | 'restore'
+  snapshot: Record<string, unknown>
+  changedBy: string | null
+  createdAt: string
+}
+
+export interface CurriculumValidationIssue { path: string; message: string }
+
+export function getAdminCurriculumLessons(): Promise<{ lessons: AdminCurriculumLessonSummary[] }> {
+  return authRequest('/api/admin/curriculum/lessons')
+}
+
+export function getAdminCurriculumLesson(id: string): Promise<{ lesson: AdminCurriculumLesson }> {
+  return authRequest(`/api/admin/curriculum/lessons/${encodeURIComponent(id)}`)
+}
+
+/** Runs every save-time check without storing anything. */
+export function validateAdminCurriculumLesson(definition: unknown, lessonId?: string): Promise<{ ok: boolean; issues: CurriculumValidationIssue[] }> {
+  return authRequest('/api/admin/curriculum/lessons/validate', {
+    method: 'POST',
+    body: JSON.stringify({ definition, ...(lessonId ? { lessonId } : {}) }),
+  })
+}
+
+export function createAdminCurriculumLesson(definition: unknown): Promise<{ lesson: AdminCurriculumLesson }> {
+  return authRequest('/api/admin/curriculum/lessons', { method: 'POST', body: JSON.stringify({ definition }) })
+}
+
+export function updateAdminCurriculumLesson(id: string, definition: unknown, expectedEditVersion: number): Promise<{ lesson: AdminCurriculumLesson; changed: boolean }> {
+  return authRequest(`/api/admin/curriculum/lessons/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    body: JSON.stringify({ definition, expectedEditVersion }),
+  })
+}
+
+export function setAdminCurriculumLessonStatus(id: string, status: CurriculumLessonStatus, expectedEditVersion: number): Promise<{ lesson: AdminCurriculumLesson }> {
+  return authRequest(`/api/admin/curriculum/lessons/${encodeURIComponent(id)}/status`, {
+    method: 'PUT',
+    body: JSON.stringify({ status, expectedEditVersion }),
+  })
+}
+
+export function getAdminCurriculumLessonRevisions(id: string): Promise<{ revisions: AdminCurriculumLessonRevision[] }> {
+  return authRequest(`/api/admin/curriculum/lessons/${encodeURIComponent(id)}/revisions`)
+}
+
+export function restoreAdminCurriculumLessonRevision(id: string, revisionEditVersion: number, expectedEditVersion: number): Promise<{ lesson: AdminCurriculumLesson }> {
+  return authRequest(`/api/admin/curriculum/lessons/${encodeURIComponent(id)}/restore`, {
+    method: 'POST',
+    body: JSON.stringify({ revisionEditVersion, expectedEditVersion }),
+  })
 }
 
 export function getAdminSubjectPacks(): Promise<{ packs: AdminSubjectPack[] }> {

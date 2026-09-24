@@ -62,7 +62,8 @@ export function prepareCurriculumDefinition(
   if (isRecord(input.metadata)) input.metadata.contentVersion = contentVersion
 
   const result = validateLessonDefinition(input)
-  if (!result.ok) throw new CurriculumValidationError(result.errors)
+  // `in` narrows in the frontend build too (no strictNullChecks there; Playwright imports this file).
+  if ('errors' in result) throw new CurriculumValidationError(result.errors)
   const lesson = result.lesson
 
   const issues: LessonValidationIssue[] = []

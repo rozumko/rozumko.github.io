@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="style.css"/>
   <link rel="stylesheet" href="style-student.css"/>
   <link rel="stylesheet" href="style-admin.css"/>
+  <link rel="stylesheet" href="style-lesson-engine.css"/>
 </head>
 <body class="admin-page">
   <a href="#main-content" class="skip-link">Перейти до основного контенту</a>
@@ -80,6 +81,7 @@
       <button data-tab="missions"   class="admin-tab"><i class="fas fa-rocket" aria-hidden="true"></i> Місії</button>
       <button data-tab="lessons"    class="admin-tab"><i class="fas fa-book-open" aria-hidden="true"></i> Уроки</button>
       <button data-tab="path"       class="admin-tab"><i class="fas fa-map-signs" aria-hidden="true"></i> Шлях</button>
+      <button data-tab="curriculum" class="admin-tab" data-lesson-engine hidden><i class="fas fa-chalkboard" aria-hidden="true"></i> Керовані уроки</button>
       <button data-tab="outcomes"   class="admin-tab" data-lesson-engine hidden><i class="fas fa-bullseye" aria-hidden="true"></i> Результати навчання</button>
       <button data-tab="publication" class="admin-tab"><i class="fas fa-clipboard-list" aria-hidden="true"></i> Журнал сайту</button>
       <button data-tab="help"       class="admin-tab"><i class="fas fa-life-ring" aria-hidden="true"></i> Довідка</button>
@@ -335,6 +337,40 @@
         </div>
         <div id="lessons-list" class="admin-list admin-list--sm"></div>
         <div id="lessons-pager"></div>
+      </section>
+
+      <!-- Вкладка: керовані уроки (Lesson Engine) -->
+      <section id="tab-curriculum" class="tab-panel hidden">
+        <div id="cl-list-view">
+          <div class="admin-section-header">
+            <h2 class="admin-section-title">Керовані уроки</h2>
+            <div class="admin-section-actions">
+              <button id="cl-new-btn" class="btn-adm-emerald">
+                <i class="fas fa-plus" aria-hidden="true"></i> Новий урок
+              </button>
+              <label class="btn-adm-ghost cl-import">
+                <i class="fas fa-file-import" aria-hidden="true"></i> Імпорт JSON
+                <input id="cl-import-file" type="file" accept="application/json,.json" class="sr-only"/>
+              </label>
+            </div>
+          </div>
+          <p class="admin-section-note">Уроки для проведення з класом: план для вчителя, слайди для дошки й завдання для пристроїв учнів — з одного опису.
+            Вчителі бачать лише опубліковану версію. Зміни в опублікованому уроці стають новою чернеткою, а вчителі далі проводять попередню версію, доки нову не опублікують.</p>
+          <div class="admin-filter-bar">
+            <input id="cl-filter-search" class="adm-input adm-input--sm" type="search"
+                   placeholder="Пошук за назвою або id" aria-label="Пошук уроків"/>
+            <select id="cl-filter-status" class="adm-input adm-input--sm adm-input--auto" aria-label="Статус уроку">
+              <option value="">Усі статуси</option>
+              <option value="draft">Чернетки</option>
+              <option value="published">Опубліковані</option>
+              <option value="archived">Зняті</option>
+            </select>
+            <span id="cl-count" class="admin-filter-count"></span>
+          </div>
+          <p id="cl-list-error" class="adm-form-error" role="alert"></p>
+          <div id="cl-list" class="admin-list admin-list--sm"></div>
+        </div>
+        <div id="cl-editor-view" hidden></div>
       </section>
 
       <!-- Вкладка: довідник результатів навчання (Lesson Engine) -->

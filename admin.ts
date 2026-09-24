@@ -11,6 +11,7 @@ import { initMissionsTab,  loadMissionsTab   } from './features/admin/missions-t
 import { initLessonsTab,   loadLessonsTab    } from './features/admin/lessons-tab.js'
 import { initPathTab,      loadPathTab       } from './features/admin/path-tab.js'
 import { initOutcomesTab,   loadOutcomesTab   } from './features/admin/outcomes-tab.js'
+import { initCurriculumTab, loadCurriculumTab } from './features/admin/curriculum-tab.js'
 import { initPublicationTab, loadPublicationTab, refreshContentDeliveryBanner } from './features/admin/publication-tab.js'
 import { initFunnelPanel, loadFunnelPanel } from './features/admin/funnel-panel.js'
 import { friendlyError } from './features/admin/ui.js'
@@ -115,6 +116,7 @@ document.querySelectorAll<HTMLElement>('.admin-tab').forEach(tab => {
     if (tabName === 'lessons')   loadLessonsTab()
     if (tabName === 'path')      loadPathTab()
     if (tabName === 'outcomes')  loadOutcomesTab()
+    if (tabName === 'curriculum') loadCurriculumTab()
     if (tabName === 'publication') loadPublicationTab()
   })
 })
@@ -168,5 +170,6 @@ initMissionsTab()
 initLessonsTab()
 initPathTab()
 initOutcomesTab()
+initCurriculumTab()
 initPublicationTab()
 initFunnelPanel()
