@@ -59,7 +59,8 @@ async function mockTeacherApi(page: Page, options: { lessonEngine: boolean; sess
     window.fetch = async (input, init) => {
       const url = input instanceof Request ? input.url : String(input)
       // Board checks, classes and runs are served by page.route in the test process.
-      if (!url.includes('/api/') || url.endsWith('/check') || url.includes('/lesson-runs') || url.includes('/api/teacher/classes')) {
+      if (!url.includes('/api/') || url.endsWith('/check') || url.includes('/lesson-runs') || url.includes('/api/teacher/classes')
+        || url.includes('/api/teacher/classroom-remote')) {
         return originalFetch(input, init)
       }
       const path = new URL(url).pathname
@@ -868,4 +869,209 @@ test('a used or expired launch link falls back to the code screen with a clear m
   await expect(page.locator('#lj-error')).toContainText('вже використане')
   await expect(page.getByLabel('Код від учителя')).toBeVisible()
   await expect(page).toHaveURL(/lesson-join\.html$/)
+})
+
+// ── Class link and remembered seats ─────────────────────────────────────────
+
+const CLASS_KEY = (version: number) => `${'k'.repeat(42)}${version}`
+
+test('the teacher turns on the class link, copies it, rotates it and forgets seats', async ({ page }) => {
+  await mockTeacherApi(page, { lessonEngine: true })
+  await routeRunServer(page)
+  const link = { enabled: false, version: 0, seats: 2 }
+  const state = () => ({
+    link: link.version === 0 ? null : {
+      enabled: link.enabled, version: link.version, updatedAt: '',
+      path: link.enabled ? `lesson-join.html#class=${CLASS_ID}.${link.version}.${CLASS_KEY(link.version)}` : null,
+    },
+    rememberedSeats: link.seats,
+  })
+  const json = (body: unknown) => ({ status: 200, contentType: 'application/json', body: JSON.stringify(body) })
+  await page.route(`**/api/teacher/classes/${CLASS_ID}/lesson-link**`, route => {
+    const request = route.request()
+    if (request.method() === 'PUT') {
+      const { enabled } = request.postDataJSON() as { enabled: boolean }
+      link.enabled = enabled
+      link.version ||= 1
+    } else if (request.method() === 'POST') {
+      link.version += 1
+      link.enabled = true
+    }
+    return route.fulfill(json(state()))
+  })
+  await page.route(`**/api/teacher/classes/${CLASS_ID}/lesson-seats`, route => {
+    link.seats = 0
+    return route.fulfill(json(state()))
+  })
+  page.on('dialog', dialog => void dialog.accept())
+
+  await page.goto('/lesson-engine.html?lesson=g2-m2-l8')
+  await page.getByRole('button', { name: 'Підготувати урок' }).click()
+  const panel = page.getByRole('region', { name: 'Приєднання учнів' })
+  await panel.getByText('Посилання класу (Classroom Remote)').click()
+  await expect(panel.locator('.le-classlink__seats')).toHaveText('Запам’ятовано місць: 2. На цих ноутбуках учні підхопляться самі.')
+
+  await panel.getByRole('button', { name: 'Увімкнути посилання класу' }).click()
+  const field = panel.getByLabel('Посилання класу', { exact: true })
+  await expect(field).toHaveValue(new RegExp(`/lesson-join\\.html#class=${CLASS_ID}\\.1\\.k{42}1$`))
+  const results = await new AxeBuilder({ page }).withTags(WCAG_AA_TAGS).analyze()
+  expect(results.violations.map(v => v.id)).toEqual([])
+
+  await panel.getByRole('button', { name: 'Нове посилання' }).click()
+  await expect(field).toHaveValue(new RegExp(`#class=${CLASS_ID}\\.2\\.k{42}2$`))
+  await expect(panel.locator('.le-classlink__message')).toHaveText('Створено нове посилання. Оновіть його в Classroom Remote.')
+
+  await panel.getByRole('button', { name: 'Забути місця' }).click()
+  await expect(panel.locator('.le-classlink__seats')).toContainText('ще не запам’ятовано')
+
+  await panel.getByRole('button', { name: 'Вимкнути' }).click()
+  await expect(panel.getByRole('button', { name: 'Увімкнути посилання класу' })).toBeVisible()
+})
+
+test('a laptop on the class link waits for the lesson, joins by itself with its seat, and rejoins the next lesson', async ({ page }) => {
+  const server = { open: false, runStatus: 'active', joins: [] as { seat?: string }[] }
+  const json = (body: unknown, status = 200) => ({ status, contentType: 'application/json', body: JSON.stringify(body) })
+  await page.route('**/api/student/lesson/join-class', route => {
+    const body = route.request().postDataJSON() as { classId: string; version: number; key: string; seat?: string }
+    expect(body).toMatchObject({ classId: CLASS_ID, version: 1, key: CLASS_KEY(1) })
+    server.joins.push(body)
+    if (!server.open) return route.fulfill(json({ error: 'Урок ще не почався. Зачекай.', code: 'NO_OPEN_RUN' }, 409))
+    server.runStatus = 'active'
+    const n = server.joins.length
+    return route.fulfill(json({ deviceId: `00000000-0000-4000-8000-00000000d00${n}`, deviceToken: 'f'.repeat(64), pairingNumber: n, expiresAt: '' }, 201))
+  })
+  await page.route('**/api/student/lesson/state', route => route.fulfill(json({
+    // The remembered seat maps the device by itself.
+    runStatus: server.runStatus, lessonTitle: fixture.title, grade: 2, pairingNumber: 1, mapped: true, studentLabel: 'Марко', task: null,
+  })))
+  await page.clock.install()
+  await page.goto(`/lesson-join.html#class=${CLASS_ID}.1.${CLASS_KEY(1)}`)
+
+  await expect(page.locator('#lj-status')).toHaveText('Чекай: урок ще не почався.')
+  await expect(page.locator('#lj-number')).toBeHidden()
+  await expect(page.getByLabel('Код від учителя')).toBeHidden()
+  const axe = await new AxeBuilder({ page }).withTags(WCAG_AA_TAGS).analyze()
+  expect(axe.violations.map(v => v.id)).toEqual([])
+
+  server.open = true
+  await page.clock.runFor(15_000)
+  await expect(page.locator('#lj-status')).toHaveText('Привіт, Марко! Чекай на завдання від учителя.')
+  const seat = server.joins[0]!.seat!
+  expect(seat).toMatch(/^[A-Za-z0-9_-]{43}$/)
+  expect(server.joins.every(j => j.seat === seat)).toBe(true)
+  expect(await page.evaluate(() => localStorage.getItem('rozumko_lesson_seat'))).toBe(seat)
+  await expect(page).toHaveURL(new RegExp(`#class=${CLASS_ID}`), { timeout: 1000 })
+
+  // The lesson ends; the laptop stays ready and joins the class's next lesson.
+  server.runStatus = 'finished'
+  server.open = false
+  await page.clock.runFor(2_000)
+  await expect(page.locator('#lj-status')).toHaveText('Урок завершено. Дякуємо!')
+  const joinsBefore = server.joins.length
+  server.open = true
+  await page.clock.runFor(15_000)
+  await expect(page.locator('#lj-status')).toHaveText('Привіт, Марко! Чекай на завдання від учителя.')
+  expect(server.joins.length).toBeGreaterThan(joinsBefore)
+  expect(server.joins[server.joins.length - 1]!.seat).toBe(seat)
+})
+
+test('a rotated class link falls back to the code screen, and a code join still carries the seat', async ({ page }) => {
+  const joins: { code: string; seat?: string }[] = []
+  const json = (body: unknown, status = 200) => ({ status, contentType: 'application/json', body: JSON.stringify(body) })
+  await page.route('**/api/student/lesson/join-class', route => route.fulfill(json({
+    error: 'Посилання класу більше не діє. Попроси вчителя нове.', code: 'LINK_INVALID',
+  }, 404)))
+  await page.route('**/api/student/lesson/join', route => {
+    joins.push(route.request().postDataJSON() as { code: string; seat?: string })
+    return route.fulfill(json({ deviceId: '00000000-0000-4000-8000-00000000d001', deviceToken: 'f'.repeat(64), pairingNumber: 4, expiresAt: '' }, 201))
+  })
+  await page.route('**/api/student/lesson/state', route => route.fulfill(json({
+    runStatus: 'active', lessonTitle: fixture.title, grade: 2, pairingNumber: 4, mapped: false, studentLabel: null, task: null,
+  })))
+  await page.goto(`/lesson-join.html#class=${CLASS_ID}.1.${CLASS_KEY(1)}`)
+  await expect(page.locator('#lj-error')).toHaveText('Посилання класу більше не діє. Попроси вчителя нове.')
+  await page.getByLabel('Код від учителя').fill('482913')
+  await page.getByRole('button', { name: 'Приєднатися' }).click()
+  await expect(page.locator('#lj-number')).toHaveText('№ 4')
+  expect(joins[0]!.code).toBe('482913')
+  expect(joins[0]!.seat).toBe(await page.evaluate(() => localStorage.getItem('rozumko_lesson_seat')))
+})
+
+// ── Classroom Remote from the run console ───────────────────────────────────
+
+test('the teacher connects Classroom Remote once and opens the lesson on every laptop from the console', async ({ page }) => {
+  await mockTeacherApi(page, { lessonEngine: true })
+  await routeRunServer(page)
+  const remote = { connected: false, opened: 0, keys: [] as string[] }
+  const json = (body: unknown, status = 200) => ({ status, contentType: 'application/json', body: JSON.stringify(body) })
+  const connection = () => remote.connected
+    ? { configured: true, connected: true, keyHint: 'AAAA', roomName: 'Кабінет інформатики', organizationName: 'UGS' }
+    : { configured: true, connected: false }
+  await page.route('**/api/teacher/classroom-remote', route => {
+    const request = route.request()
+    if (request.method() === 'PUT') {
+      const { key } = request.postDataJSON() as { key: string }
+      remote.keys.push(key)
+      remote.connected = true
+    }
+    if (request.method() === 'DELETE') remote.connected = false
+    return route.fulfill(json(connection()))
+  })
+  await page.route(`**/api/teacher/lesson-runs/${RUN_ID}/classroom-remote`, route => route.fulfill(json({
+    configured: true, connected: remote.connected, roomName: 'Кабінет інформатики',
+    showingThisClass: remote.opened > 0, revision: 3 + remote.opened,
+    summary: { total: 3, online: 2, synced: remote.opened > 0 ? 2 : 0 },
+    devices: [
+      { deviceName: 'PC-01', online: true, synced: remote.opened > 0 },
+      { deviceName: 'PC-02', online: true, synced: remote.opened > 0 },
+      { deviceName: 'PC-03', online: false, synced: false },
+    ],
+  })))
+  await page.route(`**/api/teacher/lesson-runs/${RUN_ID}/classroom-remote/open`, route => {
+    remote.opened += 1
+    return route.fulfill(json({ revision: 4 }))
+  })
+  page.on('dialog', dialog => void dialog.accept())
+
+  await page.goto('/lesson-engine.html?lesson=g2-m2-l8')
+  await page.getByRole('button', { name: 'Підготувати урок' }).click()
+  const panel = page.getByRole('region', { name: 'Ноутбуки класу' })
+  const key = panel.getByLabel('Ключ інтеграції Classroom Remote')
+  await key.fill('not-a-key')
+  await panel.getByRole('button', { name: 'Підключити' }).click()
+  await expect(panel.locator('.le-classlink__message')).toContainText('починається з crk_')
+  expect(remote.keys).toEqual([])
+
+  const token = `crk_${'1'.repeat(32)}_${'A'.repeat(43)}`
+  await key.fill(token)
+  await panel.getByRole('button', { name: 'Підключити' }).click()
+  await expect(panel.locator('.le-remote__room')).toHaveText('Кабінет: Кабінет інформатики')
+  await expect(panel.locator('.le-remote__summary')).toHaveText('2 з 3 онлайн · урок ще не відкрито')
+  expect(remote.keys).toEqual([token])
+  const axe = await new AxeBuilder({ page }).withTags(WCAG_AA_TAGS).analyze()
+  expect(axe.violations.map(v => v.id)).toEqual([])
+
+  await panel.getByRole('button', { name: 'Відкрити урок на ноутбуках' }).click()
+  await expect(panel.locator('.le-remote__summary')).toHaveText('2 з 3 онлайн · 2 відкрили урок')
+  await expect(panel.getByRole('list', { name: 'Ноутбуки кабінету' }).getByRole('listitem')).toHaveText([
+    'PC-01: урок відкрито ✓', 'PC-02: урок відкрито ✓', 'PC-03: офлайн',
+  ])
+  expect(remote.opened).toBe(1)
+  // The key never comes back to the page.
+  expect(await page.content()).not.toContain(token)
+
+  await panel.getByRole('button', { name: 'Відключити Classroom Remote' }).click()
+  await expect(panel.getByLabel('Ключ інтеграції Classroom Remote')).toBeVisible()
+})
+
+test('without a server-side integration the laptops panel stays hidden', async ({ page }) => {
+  await mockTeacherApi(page, { lessonEngine: true })
+  await routeRunServer(page)
+  await page.route('**/api/teacher/classroom-remote', route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({ configured: false, connected: false }),
+  }))
+  await page.goto('/lesson-engine.html?lesson=g2-m2-l8')
+  await page.getByRole('button', { name: 'Підготувати урок' }).click()
+  await expect(page.getByRole('region', { name: 'Приєднання учнів' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Ноутбуки класу' })).toHaveCount(0)
 })

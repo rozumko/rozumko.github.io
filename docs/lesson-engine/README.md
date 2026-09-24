@@ -543,6 +543,143 @@ pilot and the go/no-go decision; see [pilot-runbook.md](./pilot-runbook.md).
 puts a lesson into a deployed backend through the admin API. It exists
 because there is no admin UI for Lesson Engine lessons yet.
 
+## Class link, remembered seats and classroom rate limits
+
+Classroom Remote opens **one URL for the whole room**. By design it does not
+know which child sits at which laptop, and it has no per-device URLs. Its
+teacher session is a `SameSite=Strict` cookie on its own origin, so a Rozumko
+page cannot drive it. The integration therefore uses a URL that Classroom
+Remote already understands.
+
+Decisions:
+
+- **A class link** is one stable address per class:
+  `lesson-join.html#class=<classId>.<version>.<key>`.
+  - The teacher saves it once as a Classroom Remote quick link. Every laptop
+    opened on it joins whatever lesson that class has open (prepared, active
+    or paused).
+  - With no lesson open, the laptop waits and asks every 15 s. When the
+    lesson ends, the laptop waits for the class's next lesson.
+  - The key is an HMAC over (class id, version) under `ATTEMPT_SECRET`.
+    Nothing secret is stored, and the key sits in the fragment, never sent to
+    a server.
+  - «Нове посилання» bumps the version and revokes every copy. «Вимкнути»
+    turns the link off.
+  - A device that joins through the link is still anonymous until it is
+    mapped, exactly as with a code.
+- **Remembered seats.**
+  - A lab browser keeps a random 256-bit seat secret in `localStorage` and
+    sends it on every join (code or class link). The server stores only its
+    salted sha256.
+  - When the teacher maps a device, the class remembers seat → roster
+    student: one seat per child and one child per seat. Unmapping forgets
+    the seat, and «Забути місця» forgets all of them.
+  - Next lesson, a device from a remembered seat is mapped automatically
+    (event `device_mapped`, actor `system`, reason `remembered-seat`).
+    This happens only if the child is in the run and no other seat holds
+    them. The same seat rejoining (a Lesson Tab reopened) replaces its
+    previous device.
+  - A seat whose device the teacher disconnected («Відключити») cannot come
+    back through the class link during that lesson (`DEVICE_REVOKED`). A
+    code join is still possible, and the next lesson is unaffected.
+  - Privacy: the laptop holds no name, and Classroom Remote still learns
+    nothing about children.
+- **Rate limits fit a classroom behind one NAT address.**
+  - `/state` and `/attempt` are limited per *verified device*
+    (`createVerifiedBodyRateLimit`, preValidation, token from the body).
+    Before this change they were limited per IP: 120 and 60 per minute,
+    while 25 devices polling every 2 s make about 750 per minute.
+  - Joins allow 120 per minute per IP. Failed codes are still capped by the
+    code throttle.
+  - Class-link joins get a bucket per class and seat.
+  - A security regression test pins all of this.
+
+Code:
+- Migration `0055`: `lesson_class_links`, `lesson_class_seats` (RLS on) and
+  `lesson_run_devices.seat_hash`.
+- `backend/src/routes/class-lesson-links.ts` (`/api/teacher/classes/:id/`):
+  - `lesson-link` (GET, PUT `{enabled}`);
+  - `lesson-link/rotate`;
+  - `lesson-seats` (DELETE).
+- `POST /api/student/lesson/join-class`. `LINK_INVALID` falls back to the
+  code screen; `NO_OPEN_RUN` means wait.
+- Frontend:
+  - `features/lesson-engine/class-link-panel.ts`, inside «Приєднання учнів»;
+  - class-link mode and seat in `lesson-join.ts`;
+  - `parseClassLinkFragment` and `seatSecretFrom` in `run-model.ts`.
+
+Verified on a real PostgreSQL 16:
+- owner-only access;
+- `NO_OPEN_RUN` while the lesson is not open;
+- a first join stays unmapped, and the mapping is remembered;
+- a reopened tab on the same seat is auto-mapped and the old device revoked;
+- another seat never takes over a child held elsewhere;
+- a code join is auto-mapped next lesson;
+- unmapping forgets the seat;
+- rotating and switching off the link;
+- deleting a student removes their seat.
+
+**Stage I per-computer launch does not fit Classroom Remote.** It stays dark:
+the fake provider only. Removing it (`device_assignments`, `/launch`) is a
+separate change. Migration `0054` stays either way, because it may already
+be applied.
+
+## Classroom Remote from the run console
+
+The teacher never switches dashboards. Classroom Remote gained a small
+**integration API v1** in its own repository.
+- An integration key is created by the teacher in the Classroom Remote
+  dashboard. It is shown once, stored as a hash, bound to one trusted domain
+  of the room, and revocable.
+- With the key, a partner can read the room's technical status and set the
+  lesson URL, only to HTTPS on that domain.
+- The extension and its protocol are unchanged.
+
+Decisions (Rozumko side):
+
+- **One connection per teacher** (`classroom_remote_connections`,
+  migration `0056`), for the pilot: one teacher, one room. School-level
+  connections can come later.
+- **The key is a secret we hold on the teacher's behalf.**
+  - It is encrypted with AES-256-GCM under `INTEGRATION_ENCRYPTION_KEY`, and
+    the teacher id is the AAD, so a row copied to another teacher does not
+    decrypt.
+  - It is checked against Classroom Remote before it is stored.
+  - It never returns to a browser: only the last four characters are shown.
+- **Only one origin is ever contacted:** `CLASSROOM_REMOTE_API_URL`, from
+  server configuration, never from a request or the database. Calls have a
+  6-second timeout, follow no redirects, cap the response at 64 KB, and
+  parse it defensively. Without both variables the feature is off and the
+  panel is hidden.
+- **The URL Classroom Remote opens is the class link.** «Відкрити урок на
+  ноутбуках» switches the class link on if needed and sends its absolute URL
+  (`LESSON_SITE_ORIGIN`, default `https://rozumko.com`). Remembered seats
+  then map the laptops. Classroom Remote receives no names.
+- **Status is taken literally.** Classroom Remote counts a laptop as
+  «synced» to any current state, including idle. The console says «N
+  відкрили урок» only while the room shows *this* class's current link.
+
+Code:
+- `backend/src/lib/classroom-remote.ts`: config, encryption, client, parser.
+- `backend/src/routes/classroom-remote.ts`:
+  - `/api/teacher/classroom-remote` (GET, PUT `{key}`, DELETE);
+  - `/api/teacher/lesson-runs/:id/classroom-remote` (GET status, POST
+    `/open`).
+- `features/lesson-engine/classroom-remote-panel.ts`: «Ноутбуки класу» in the
+  run console.
+
+Verified end to end with a real local Classroom Remote worker (`wrangler
+dev`), two WebSocket laptops and PostgreSQL 16:
+- a wrong key is refused, and a good key is stored encrypted and never
+  returned;
+- another teacher is not connected;
+- «open» enables the class link, both laptops receive
+  `https://rozumko.com/lesson-join.html#class=…` and acknowledge it, and the
+  status reads 2/2;
+- the opened link really joins the run;
+- a key revoked in Classroom Remote surfaces as `CR_KEY_INVALID`;
+- disconnecting deletes the row.
+
 ## Open items
 
 - **Reference lesson differs from the specs.** Both specs name `g2-m1-l1`
@@ -557,11 +694,10 @@ because there is no admin UI for Lesson Engine lessons yet.
   Cambridge references are added there once a methodologist confirms the
   exact codes — never guessed. Do not use "ІФО = індекс формувального
   оцінювання": `ІФО` is the informatics education area code.
-- **Classroom Remote contract** — repository `artkysliakov/classroom-remote`
-  must be made readable to the agent. Stage I ships the provider boundary
-  and a fake. The real adapter (device list, URL open, acknowledgements)
-  is added once the actual protocol is known, and is never guessed. The real
-  gate (3–5 devices, correct URL on the correct device) is still open.
+- **Classroom Remote integration API** lives in the Classroom Remote
+  repository and must be deployed there first. It changes the privacy
+  policy text (new section on integration keys); its owner decides the
+  effective date and the store listing update.
 - **Legacy `new_lessons`** is a reference for mechanics and UX only (stage E);
   it is not embedded or copied wholesale.
 - **Render capacity** — confirm the backend plan has no cold starts during

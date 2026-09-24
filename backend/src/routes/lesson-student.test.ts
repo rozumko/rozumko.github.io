@@ -96,3 +96,43 @@ test('launch-token exchange validates the token shape before any database access
     assert.equal(response.statusCode, 404)
   })
 })
+
+test('a class-link join validates its shape and refuses a forged key before any database access', async () => {
+  const { classLinkKey } = await import('../lib/lesson-device.js')
+  const classId = '00000000-0000-4000-8000-00000000c1a5'
+  const genuine = { classId, version: 1, key: classLinkKey(classId, 1) }
+  await withApp(undefined, async app => {
+    const response = await app.inject({ method: 'POST', url: '/api/student/lesson/join-class', payload: genuine })
+    assert.equal(response.statusCode, 404)
+  })
+  await withApp('true', async app => {
+    for (const payload of [
+      {},
+      { ...genuine, classId: 'nope' },
+      { ...genuine, version: 0 },
+      { ...genuine, key: 'short' },
+      { ...genuine, seat: 'short' },
+    ]) {
+      const response = await app.inject({ method: 'POST', url: '/api/student/lesson/join-class', payload })
+      assert.equal(response.statusCode, 400, JSON.stringify(payload))
+    }
+    for (const payload of [
+      { ...genuine, key: classLinkKey(classId, 2) }, // another version's key
+      { ...genuine, classId: '00000000-0000-4000-8000-00000000c1a6' }, // another class
+      { ...genuine, key: 'A'.repeat(43) },
+    ]) {
+      const response = await app.inject({ method: 'POST', url: '/api/student/lesson/join-class', payload })
+      assert.equal(response.statusCode, 404, JSON.stringify(payload))
+      assert.equal(response.json().code, 'LINK_INVALID')
+    }
+  })
+})
+
+test('a code join accepts only a well-formed seat', async () => {
+  await withApp('true', async app => {
+    for (const seat of ['short', '+'.repeat(43), 'a'.repeat(44)]) {
+      const response = await app.inject({ method: 'POST', url: '/api/student/lesson/join', payload: { code: '123456', seat } })
+      assert.equal(response.statusCode, 400, seat)
+    }
+  })
+})

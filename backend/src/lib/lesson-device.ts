@@ -86,3 +86,42 @@ export function hashLaunchToken(token: string): string {
 export function isLaunchToken(value: unknown): value is string {
   return typeof value === 'string' && LAUNCH_TOKEN_RE.test(value)
 }
+
+// ── Class link and remembered seats ─────────────────────────────────────────
+// A class link is one stable address per class (saved once, e.g. as a
+// Classroom Remote quick link): it joins whatever lesson that class has open.
+// Its key is an HMAC over the class id and a version, so nothing secret is
+// stored and bumping the version revokes every copy of the old link.
+// A seat is a random secret a lab browser keeps in localStorage; the server
+// stores only its sha256 and remembers which roster student sat there.
+
+const CLASS_LINK_DOMAIN = 'lesson-class-link:'
+const CLASS_LINK_KEY_RE = /^[A-Za-z0-9_-]{43}$/
+const SEAT_SECRET_RE = /^[A-Za-z0-9_-]{43}$/
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+export function classLinkKey(classId: string, version: number): string {
+  return createHmac('sha256', getSecret()).update(`${CLASS_LINK_DOMAIN}${classId}:${version}`).digest('base64url')
+}
+
+export function verifyClassLinkKey(classId: unknown, version: unknown, key: unknown): boolean {
+  if (typeof classId !== 'string' || !UUID_RE.test(classId)) return false
+  if (typeof version !== 'number' || !Number.isInteger(version) || version < 1) return false
+  if (typeof key !== 'string' || !CLASS_LINK_KEY_RE.test(key)) return false
+  const expected = Buffer.from(classLinkKey(classId.toLowerCase(), version))
+  const actual = Buffer.from(key)
+  return actual.length === expected.length && timingSafeEqual(expected, actual)
+}
+
+/** Relative device-page URL; the key sits in the fragment, never sent to a server. */
+export function classLinkPath(classId: string, version: number): string {
+  return `lesson-join.html#class=${classId}.${version}.${classLinkKey(classId, version)}`
+}
+
+export function isSeatSecret(value: unknown): value is string {
+  return typeof value === 'string' && SEAT_SECRET_RE.test(value)
+}
+
+export function hashSeatSecret(secret: string): string {
+  return createHash('sha256').update(`lesson-seat:${secret}`).digest('hex')
+}

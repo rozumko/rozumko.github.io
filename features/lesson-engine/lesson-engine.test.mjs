@@ -215,3 +215,30 @@ test('launch URLs keep the single-use token in the fragment', () => {
   const url = absoluteLaunchUrl('lesson-join.html#launch=abc', 'https://rozumko.com/lesson-engine.html?run=1')
   assert.equal(url, 'https://rozumko.com/lesson-join.html#launch=abc')
 })
+
+test('a class link fragment parses strictly; a seat secret is 43 url-safe chars', async () => {
+  const { parseClassLinkFragment, seatSecretFrom } = await import('./run-model.ts')
+  const classId = '6f1c1c9e-7f52-4a47-9d52-8a6f1f6d3b10'
+  const key = 'k'.repeat(43)
+  assert.deepEqual(parseClassLinkFragment(`#class=${classId}.3.${key}`), { classId, version: 3, key })
+  assert.deepEqual(parseClassLinkFragment(`#class=${classId.toUpperCase()}.1.${key}`)?.classId, classId)
+  for (const bad of ['', '#launch=abc', `#class=${classId}.0.${key}`, `#class=${classId}.1.${key}x`, `#class=nope.1.${key}`, `#class=${classId}.1`]) {
+    assert.equal(parseClassLinkFragment(bad), null, bad)
+  }
+  const seat = seatSecretFrom(new Uint8Array(32).fill(255))
+  assert.match(seat, /^[A-Za-z0-9_-]{43}$/)
+  assert.notEqual(seatSecretFrom(new Uint8Array(32)), seat)
+})
+
+test('the class link panel explains remembered seats in words', async () => {
+  const { seatsLine } = await import('./class-link-panel.ts')
+  assert.match(seatsLine(0), /ще не запам’ятовано/)
+  assert.match(seatsLine(3), /Запам’ятовано місць: 3/)
+})
+
+test('the laptops panel summarises the room in words', async () => {
+  const { roomSummaryLine } = await import('./classroom-remote-panel.ts')
+  assert.equal(roomSummaryLine({ total: 0, online: 0, synced: 0 }, false), 'У кабінеті ще немає підключених ноутбуків.')
+  assert.equal(roomSummaryLine({ total: 14, online: 12, synced: 0 }, false), '12 з 14 онлайн · урок ще не відкрито')
+  assert.equal(roomSummaryLine({ total: 14, online: 12, synced: 11 }, true), '12 з 14 онлайн · 11 відкрили урок')
+})

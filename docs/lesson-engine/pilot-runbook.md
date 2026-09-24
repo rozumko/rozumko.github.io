@@ -33,6 +33,18 @@ Do these in order. Nothing is visible to teachers until step 4.
    ```
    The script needs the flag on (step 3). If it reports that the engine is
    disabled, verify that the Render redeploy has finished before retrying.
+5. **Classroom Remote in the console (optional).**
+   1. Deploy Classroom Remote with integration API v1 (its repository, branch
+      with "integration keys").
+   2. On Render, set `CLASSROOM_REMOTE_API_URL` = `https://crr.itnauka.org`.
+   3. On Render, set `INTEGRATION_ENCRYPTION_KEY` = 64 hex characters:
+      `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
+      Keep it secret. Changing it disconnects every teacher, who then pastes a
+      key again.
+   4. Apply migration `0056`.
+
+   Without both variables, the «Ноутбуки класу» panel stays hidden, and the
+   class link can still be copied by hand.
 
 ## 2. Before each pilot lesson
 
@@ -43,6 +55,16 @@ Do these in order. Nothing is visible to teachers until step 4.
 - [ ] Each child device opens `https://<site>/lesson-join.html` in an
       up-to-date browser (Chrome, Edge or Safari). A bookmark or desktop
       shortcut on the lab computers saves time.
+- [ ] **Lab with Classroom Remote (once per teacher).**
+      1. In Classroom Remote: «Налаштування та резервна копія» → «Ключі для
+         сервісів» → name «Розумко», domain `rozumko.com` → «Створити ключ».
+         Approve the domain if asked, then copy the key; it is shown once.
+      2. In the Rozumko run console: «Ноутбуки класу» → paste the key →
+         «Підключити».
+
+      Without the integration, use the class link instead: «Приєднання учнів»
+      → «Посилання класу (Classroom Remote)» → «Копіювати». Save it as a
+      quick link in Classroom Remote.
 - [ ] **Render cold start.** Ten minutes before the lesson, open
       `https://<backend>/health`. A free-plan backend sleeps and needs up to
       a minute to wake up. For real classes use a plan that does not sleep.
@@ -58,9 +80,15 @@ Do these in order. Nothing is visible to teachers until step 4.
    - **Code:** «Відкрити приєднання». Children type the 6-digit code and see
      a big number. The teacher matches each number to a name in
      «Приєднання учнів».
-   - **Lab computers** (only with a classroom provider — not yet available
-     in production, see §6): assign computers once, then «Відкрити урок на
-     комп'ютерах».
+   - **Classroom Remote from the console:** «Ноутбуки класу» → «Відкрити
+     урок на ноутбуках». The panel shows «N з M онлайн · K відкрили урок» and
+     each laptop's state. Without the integration, use the saved quick link →
+     «Відкрити у класі» in Classroom Remote. Either way, every laptop opens
+     the join page and joins by itself; it waits if the lesson is not
+     prepared yet. The first time,
+     match numbers to names as with a code. The laptop's seat is then
+     remembered, and later lessons match the same child on that laptop
+     automatically. Use «Забути місця» if laptops were moved.
 3. «Почати урок». The board follows «Далі →» and «← Назад». «Пауза» hides
    tasks on the devices; «Продовжити» brings them back.
 4. At an activity step: «Надіслати учням». The live grid shows who is
@@ -81,7 +109,7 @@ spec §101–103.
 | Measure | Value |
 |---|---|
 | Teacher preparation time before the lesson (min) — and the usual time for the old workflow | |
-| From «Відкрити приєднання» to all devices matched (min) | |
+| From «Відкрити приєднання» (or «Відкрити у класі») to all devices matched (min); how many were matched automatically | |
 | Children who could not join without adult help | |
 | Manual interventions by the teacher or an assistant (count, what) | |
 | Switches to other apps or tabs during the lesson | |
@@ -136,9 +164,13 @@ or agreeing to pay — not a teacher liking it.
 
 ## 6. Known limits during the pilot
 
-- **Lab-computer launch** works only with the development fake. The real
-  Classroom Remote adapter needs access to its repository and protocol;
-  until then, use code join.
+- **Classroom Remote opens one link for the whole room.** Use the class
+  link. The per-computer launch from stage I (a separate link per computer)
+  works only with the development fake and does not fit Classroom Remote's
+  model.
+- **Remembered seats live in the lab browser's storage.** Clearing the
+  browser data, or a different browser profile, gives the laptop a new seat;
+  the teacher matches it once again.
 - **Outcome codes are internal** (`INF-2-FILES-1/2`). Do not present them to
   schools as НУШ or Cambridge codes until a methodologist confirms the
   mapping.

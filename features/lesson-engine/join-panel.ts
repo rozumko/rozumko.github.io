@@ -6,6 +6,7 @@
 import { createFocusTrap } from '../../utils/focus-trap.js'
 import { formatJoinCode, isOpenRun, mappingSummary, studentOptions } from './run-model.js'
 import type { LessonRunDevice, LessonRunView } from './types.js'
+import { mountClassLinkPanel, type ClassLinkDeps } from './class-link-panel.js'
 
 export interface JoinPanelDeps {
   openJoin(): Promise<unknown>
@@ -15,6 +16,8 @@ export interface JoinPanelDeps {
   revokeDevice(deviceId: string): Promise<unknown>
   /** Re-reads the run so the console shows the new join code. */
   refreshRun(): Promise<void>
+  /** The class's stable link and remembered seats; absent in older callers. */
+  classLink?: ClassLinkDeps
 }
 
 export interface JoinPanel {
@@ -97,6 +100,7 @@ export function mountJoinPanel(initial: LessonRunView, deps: JoinPanelDeps): Joi
   const message = el('p', 'le-join__message')
   message.setAttribute('role', 'status')
   root.append(title, codeArea, message, deviceArea)
+  if (deps.classLink) root.append(mountClassLinkPanel(deps.classLink))
 
   async function act(task: () => Promise<unknown>, thenRefreshRun = false) {
     message.textContent = ''

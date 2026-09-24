@@ -64,3 +64,24 @@ test('remote device ids are plain lab names', () => {
   for (const ok of ['PC-01', 'lab2.pc_14', 'room:3']) assert.ok(isRemoteDeviceId(ok))
   for (const bad of ['', 'PC 01', 'x'.repeat(65), '<script>', 'Марко']) assert.equal(isRemoteDeviceId(bad), false)
 })
+
+test('a class link verifies only for its class and current version, and never reveals the secret', async () => {
+  const { classLinkKey, classLinkPath, verifyClassLinkKey, hashSeatSecret, isSeatSecret } = await import('./lesson-device.js')
+  const classId = '6f1c1c9e-7f52-4a47-9d52-8a6f1f6d3b10'
+  const key = classLinkKey(classId, 1)
+  assert.match(key, /^[A-Za-z0-9_-]{43}$/)
+  assert.ok(verifyClassLinkKey(classId, 1, key))
+  assert.ok(!verifyClassLinkKey(classId, 2, key), 'rotating the version revokes the old link')
+  assert.ok(!verifyClassLinkKey('7f1c1c9e-7f52-4a47-9d52-8a6f1f6d3b10', 1, key))
+  assert.ok(!verifyClassLinkKey(classId, 1, key.slice(0, 42) + (key.endsWith('A') ? 'B' : 'A')))
+  assert.ok(!verifyClassLinkKey(classId, '1', key))
+  assert.ok(!verifyClassLinkKey('not-a-uuid', 1, key))
+  assert.ok(!key.includes(process.env.ATTEMPT_SECRET ?? '\u0000'))
+  assert.equal(classLinkPath(classId, 1), `lesson-join.html#class=${classId}.1.${key}`)
+
+  const seat = 'S'.repeat(43)
+  assert.ok(isSeatSecret(seat))
+  assert.ok(!isSeatSecret('short'))
+  assert.match(hashSeatSecret(seat), /^[0-9a-f]{64}$/)
+  assert.notEqual(hashSeatSecret(seat), hashSeatSecret('T'.repeat(43)))
+})

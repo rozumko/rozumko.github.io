@@ -3,18 +3,24 @@
 // teacher to say who they are. The device token lives in sessionStorage only.
 // Answers go through an offline outbox (stage J): saved on the device first,
 // then sent — again on reconnect, on each poll and on the next page load.
+// A class link (#class=…, e.g. opened by Classroom Remote) joins whatever
+// lesson the class has open, waits when none is, and rejoins the next one.
+// A random seat secret in localStorage lets the server remember who sat here.
 
 import './frontend-security.js'
-import { exchangeLessonLaunch, getLessonDeviceState, joinLessonRun, submitLessonAttempt, type ApiError } from './features/api/client.js'
+import { exchangeLessonLaunch, getLessonDeviceState, joinLessonByClassLink, joinLessonRun, submitLessonAttempt, type ApiError } from './features/api/client.js'
 import { renderStudentTask, type StudentTaskView } from './features/lesson-engine/student-task.js'
 import { createAttemptOutbox } from './features/lesson-engine/attempt-outbox.js'
 import { indexedDbOutboxStore } from './features/lesson-engine/outbox-idb.js'
-import { formatJoinCode } from './features/lesson-engine/run-model.js'
+import { formatJoinCode, parseClassLinkFragment, seatSecretFrom } from './features/lesson-engine/run-model.js'
 import type { LessonAttemptResponse, LessonDeviceJoin, LessonDeviceState } from './features/lesson-engine/types.js'
 
 const STORAGE_KEY = 'rozumko_lesson_device'
+const SEAT_KEY = 'rozumko_lesson_seat'
 // Fast enough that a sent task appears within a couple of seconds.
 const POLL_MS = 2000
+// A laptop on a class link waiting for the lesson to begin.
+const CLASS_WAIT_MS = 15_000
 
 const joinSection = document.getElementById('lj-join') as HTMLElement
 const waitSection = document.getElementById('lj-wait') as HTMLElement
@@ -30,6 +36,8 @@ const taskHost = document.getElementById('lj-task-host') as HTMLDivElement
 type StoredDevice = Pick<LessonDeviceJoin, 'deviceId' | 'deviceToken' | 'pairingNumber'>
 
 let timer: number | null = null
+let classTimer: number | null = null
+const classLink = parseClassLinkFragment(location.hash)
 // The task on screen; re-rendered only when the teacher sends a different one,
 // so a child's half-made choice survives each poll.
 let shownDispatchId: string | null = null
@@ -89,6 +97,59 @@ const outbox = createAttemptOutbox<LessonAttemptResponse>({
 
 window.addEventListener('online', () => void outbox.flush())
 
+/**
+ * This browser's seat: a random secret kept across lessons, so the teacher
+ * assigns a child to this laptop once. No name or score is stored here.
+ */
+function readSeat(): string | null {
+  try {
+    let seat = localStorage.getItem(SEAT_KEY)
+    if (!seat || !/^[A-Za-z0-9_-]{43}$/.test(seat)) {
+      seat = seatSecretFrom(crypto.getRandomValues(new Uint8Array(32)))
+      localStorage.setItem(SEAT_KEY, seat)
+    }
+    return seat
+  } catch {
+    return null // storage blocked: joins still work, the seat is just not remembered
+  }
+}
+
+function stopClassWait() {
+  if (classTimer !== null) window.clearTimeout(classTimer)
+  classTimer = null
+}
+
+/** Class link: join the class's open lesson, or wait and ask again. */
+function waitForClassLesson(status: string) {
+  if (!classLink) return
+  stopClassWait()
+  joinSection.hidden = true
+  waitSection.hidden = false
+  waitSection.classList.add('lj-card--waiting')
+  statusEl.textContent = status
+  const attempt = async () => {
+    classTimer = null
+    try {
+      const joined = await joinLessonByClassLink(classLink, readSeat())
+      waitSection.classList.remove('lj-card--waiting')
+      const device = { deviceId: joined.deviceId, deviceToken: joined.deviceToken, pairingNumber: joined.pairingNumber }
+      storeDevice(device)
+      startPolling(device)
+    } catch (err) {
+      // A revoked seat stays out of this lesson; the code screen remains.
+      if ((err as ApiError).code === 'LINK_INVALID' || (err as ApiError).code === 'DEVICE_REVOKED') {
+        waitSection.classList.remove('lj-card--waiting')
+        showJoin((err as Error).message || 'Посилання класу більше не діє.')
+        return
+      }
+      // No lesson yet, or a network blip: ask again soon.
+      statusEl.textContent = (err as ApiError).code === 'NO_OPEN_RUN' ? status : 'Немає зв’язку. Пробуємо ще раз…'
+      classTimer = window.setTimeout(() => void attempt(), CLASS_WAIT_MS)
+    }
+  }
+  void attempt()
+}
+
 function showJoin(message = '') {
   clearTask()
   if (timer !== null) window.clearInterval(timer)
@@ -110,6 +171,8 @@ function renderState(device: StoredDevice, state: LessonDeviceState) {
     timer = null
     storeDevice(null)
     void outbox.dropDevice(device.deviceId)
+    // On a class link the laptop stays ready for this class's next lesson.
+    if (classLink) waitForClassLesson('Урок завершено. Дякуємо!')
     return
   }
   if (!state.mapped || !state.studentLabel) {
@@ -151,7 +214,14 @@ async function refresh(device: StoredDevice) {
     if ((err as ApiError).status === 401 || (err as ApiError).status === 404) {
       void outbox.dropDevice(device.deviceId)
       storeDevice(null)
-      showJoin('Приєднайся до уроку ще раз.')
+      if (classLink) {
+        if (timer !== null) window.clearInterval(timer)
+        timer = null
+        clearTask()
+        waitForClassLesson('Приєднуємося до уроку…')
+      } else {
+        showJoin('Приєднайся до уроку ще раз.')
+      }
     }
     // Other errors are transient: keep the screen and retry on the next poll.
   }
@@ -178,9 +248,10 @@ form.addEventListener('submit', async event => {
   submit.disabled = true
   errorEl.textContent = ''
   try {
-    const joined = await joinLessonRun(code)
+    const joined = await joinLessonRun(code, readSeat())
     const device = { deviceId: joined.deviceId, deviceToken: joined.deviceToken, pairingNumber: joined.pairingNumber }
     storeDevice(device)
+    stopClassWait()
     // Keep the code out of the address bar and history once used.
     history.replaceState(null, '', location.pathname)
     startPolling(device)
@@ -217,6 +288,9 @@ if (launchToken) {
   void launchFromFragment(launchToken)
 } else if (stored) {
   startPolling(stored)
+} else if (classLink) {
+  // The class link stays in the address bar: reloading the Lesson Tab rejoins.
+  waitForClassLesson('Чекай: урок ще не почався.')
 } else {
   const fromLink = new URLSearchParams(location.search).get('code')?.replace(/\D/g, '').slice(0, 6) ?? ''
   if (fromLink) input.value = fromLink.length === 6 ? formatJoinCode(fromLink) : fromLink

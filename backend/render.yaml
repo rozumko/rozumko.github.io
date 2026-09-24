@@ -43,3 +43,11 @@ services:
       # flipping back to "false" is the rollback.
       - key: LESSON_ENGINE_ENABLED
         value: "false"
+      # Classroom Remote integration (docs/lesson-engine). Both unset = feature
+      # off. The API URL is the only origin the backend ever calls for it.
+      - key: CLASSROOM_REMOTE_API_URL
+        sync: false
+      # 64 hex chars (32 random bytes): encrypts teachers' integration keys at
+      # rest. Rotating it disconnects every teacher (they paste a key again).
+      - key: INTEGRATION_ENCRYPTION_KEY
+        sync: false

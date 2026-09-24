@@ -100,3 +100,8 @@
 .lj-task__queued p,
 .lj-task__delivered p { margin: 0; }
 .lj-task__queued-title { font-weight: 900; }
+
+/* ── Class link: waiting for this class's lesson ─────────────── */
+.lj-card--waiting .lj-lesson,
+.lj-card--waiting .lj-number-label,
+.lj-card--waiting .lj-number { display: none; }

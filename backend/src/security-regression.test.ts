@@ -74,6 +74,56 @@ test('student traffic keeps classroom NAT capacity and verified-token isolation 
   assert.match(schoolSource, /config:\s*\{\s*rateLimit:\s*participantSessionRateLimit\s*\}/)
 })
 
+test('Lesson Engine device traffic is limited per verified device, not per classroom NAT address', async () => {
+  const { createVerifiedBodyRateLimit } = await import('./lib/rate-limit-policy.js')
+  const app = Fastify(FASTIFY_SECURITY_OPTIONS)
+  await app.register(rateLimit, { max: 100, timeWindow: '1 minute' })
+  const limit = createVerifiedBodyRateLimit({
+    scope: 'probe',
+    max: 2,
+    resource: body => {
+      const { id, token } = body as { id?: string; token?: string }
+      return token === `good-${id}` ? id! : null
+    },
+  })
+  app.post('/probe', { config: { rateLimit: limit } }, async () => ({ ok: true }))
+  await app.ready()
+  const hit = (payload: unknown) => app.inject({ method: 'POST', url: '/probe', remoteAddress: '192.0.2.10', payload: payload as object })
+
+  // Thirty devices behind one address each get their own bucket.
+  for (let n = 0; n < 30; n++) {
+    assert.equal((await hit({ id: `d${n}`, token: `good-d${n}` })).statusCode, 200)
+    assert.equal((await hit({ id: `d${n}`, token: `good-d${n}` })).statusCode, 200)
+  }
+  assert.equal((await hit({ id: 'd0', token: 'good-d0' })).statusCode, 429, 'one device still has a ceiling')
+  // Forged or missing credentials share the address bucket.
+  assert.equal((await hit({ id: 'x', token: 'forged' })).statusCode, 200)
+  assert.equal((await hit({ id: 'y', token: 'forged' })).statusCode, 200)
+  assert.equal((await hit({ id: 'z', token: 'forged' })).statusCode, 429)
+  assert.equal((await hit([1, 2])).statusCode, 429, 'a body of the wrong shape counts against the address')
+  await app.close()
+
+  const source = readFileSync(new URL('./routes/lesson-student.ts', import.meta.url), 'utf8')
+  assert.match(source, /scope: 'lesson-device-state'/)
+  assert.match(source, /scope: 'lesson-device-attempt'/)
+  assert.match(source, /config: \{ rateLimit: deviceStateRateLimit \}/)
+  assert.match(source, /config: \{ rateLimit: deviceAttemptRateLimit \}/)
+  assert.ok(!/rateLimit: \{ max: 30,/.test(source), 'no per-IP join ceiling below a class size')
+})
+
+test('the Classroom Remote client calls only the configured origin, without redirects, and never returns the key', () => {
+  const lib = readFileSync(new URL('./lib/classroom-remote.ts', import.meta.url), 'utf8')
+  const routes = readFileSync(new URL('./routes/classroom-remote.ts', import.meta.url), 'utf8')
+  const fetches = lib.match(/fetch\(/g) ?? []
+  assert.equal(fetches.length, 1, 'one outbound call site')
+  assert.match(lib, /fetch\(`\$\{config\.apiOrigin\}\$\{path\}`/, 'the origin comes only from server configuration')
+  assert.match(lib, /redirect: 'error'/)
+  assert.match(lib, /AbortSignal\.timeout\(/)
+  // Responses carry a four-character hint, never the ciphertext or the key.
+  assert.ok(!/reply\.send\([^)]*keyCiphertext/.test(routes))
+  assert.match(routes, /keyHint: classroomRemoteConnections\.keyHint/)
+})
+
 test('the teacher session list stays scoped to the requesting teacher', () => {
   const schoolSource = readFileSync(new URL('./routes/school.ts', import.meta.url), 'utf8')
   // The list hands back join codes, so an unscoped query would let one teacher

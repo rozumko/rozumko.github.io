@@ -142,3 +142,27 @@ export function liveSummary(snapshot: LiveSnapshot, dispatchId: string): string 
 export function isSendable(block: LessonBlock | undefined): boolean {
   return block?.type === 'activity' && block.views.remote && block.activity !== undefined
 }
+
+// ── Class link and seats (device page) ──────────────────────────────────────
+
+export interface ClassLink {
+  classId: string
+  version: number
+  key: string
+}
+
+const CLASS_LINK_RE = /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.([1-9][0-9]{0,6})\.([A-Za-z0-9_-]{43})$/i
+
+/** `#class=<classId>.<version>.<key>` from a class link, or null. */
+export function parseClassLinkFragment(hash: string): ClassLink | null {
+  const value = new URLSearchParams(hash.replace(/^#/, '')).get('class')
+  const match = value ? CLASS_LINK_RE.exec(value) : null
+  return match ? { classId: match[1]!.toLowerCase(), version: Number(match[2]), key: match[3]! } : null
+}
+
+/** 256 random bits as base64url (43 chars): the browser's seat secret. */
+export function seatSecretFrom(bytes: Uint8Array): string {
+  let binary = ''
+  for (const byte of bytes) binary += String.fromCharCode(byte)
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
