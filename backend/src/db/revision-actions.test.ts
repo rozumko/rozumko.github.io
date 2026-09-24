@@ -46,6 +46,7 @@ for (const [table, constraint] of Object.entries({
   questionRevisions:   'question_revisions_action_check',
   microLessonRevisions: 'micro_lesson_revisions_action_check',
   missionRevisions:    'mission_revisions_action_check',
+  curriculumLessonRevisions: 'curriculum_lesson_revisions_action_check',
 })) {
   test(`${table}: every action the code writes is allowed by the constraint`, () => {
     const allowed = allowedActions(constraint)

@@ -80,6 +80,7 @@ import { homeRoutes } from './routes/home.js'
 import { homePaymentWebhookRoutes } from './routes/home-payment-webhook.js'
 import { parentRoutes } from './routes/parent.js'
 import { contentPublicationCallbackRoutes } from './routes/content-publication-callback.js'
+import { curriculumAdminRoutes } from './routes/curriculum-admin.js'
 await app.register(studentRoutes,  { prefix: '/api/student' })
 await app.register(attemptRoutes,  { prefix: '/api/attempt' })
 await app.register(teacherRoutes,  { prefix: '/api/teacher' })
@@ -90,6 +91,8 @@ await app.register(homeRoutes,     { prefix: '/api/home' })
 await app.register(homePaymentWebhookRoutes, { prefix: '/api/home' })
 await app.register(parentRoutes,   { prefix: '/api/parent' })
 await app.register(contentPublicationCallbackRoutes, { prefix: '/api/content-publication' })
+// Lesson Engine (ADR-0008): dark unless LESSON_ENGINE_ENABLED=true.
+await app.register(curriculumAdminRoutes, { prefix: '/api/admin/curriculum' })
 
 const port = Number(process.env.PORT) || 3000
 

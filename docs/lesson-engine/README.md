@@ -71,9 +71,9 @@ waiting on the extension protocol.
 
 | Stage | Scope | Gate |
 |---|---|---|
-| **A** | Specs + this decision record + ADR-0008 | Reviewed |
-| **B** | Schema v1 types, fail-closed validator, subject-pack check, display-safe projection, fixtures (reference lesson + synthetic `test-subject`) | Backend build + tests green; subject-independence and key-leak tests |
-| C | `curriculum_lessons` + `curriculum_lesson_revisions`, RLS in the same migration, admin editorial API (clone of the micro-lesson pattern), feature flag enforced by the backend | Draft/review/publish, immutable snapshot, RLS regression test, security tests |
+| **A** ✅ | Specs + this decision record + ADR-0008 | Reviewed |
+| **B** ✅ | Schema v1 types, fail-closed validator, subject-pack check, display-safe projection, fixtures (reference lesson + synthetic `test-subject`) | Backend build + tests green; subject-independence and key-leak tests |
+| **C** ✅ | `curriculum_lessons` + `curriculum_lesson_revisions`, RLS in the same migration, admin editorial API (clone of the micro-lesson pattern), feature flag enforced by the backend | Draft/review/publish, immutable snapshot, RLS regression test, security tests |
 | D | Teacher document view + presentation view from one definition (`features/lesson-engine/`) | No duplicated content; teacher-only never on the board; Playwright |
 | E | Activity adapter: server-scored choice/truefalse/classify + existing `features/activities` games (client-unverified) behind one result envelope | Same mechanic in board and student mode; no key leak |
 | F | `lesson_runs`, `lesson_run_students`, `lesson_run_events`, teacher console (Next/Back/Pause/Resume/Finish) | Server-side state machine; reload-safe; content edits do not touch active runs |
@@ -91,9 +91,37 @@ No mass content migration before the external pilot (both specs agree).
   Validation collects every issue with a JSON path (usable later as a
   migration report) and rejects unknown fields, dangling references and HTML.
   Text supports only `**bold**` and `` `code` `` markup; renderers escape the rest.
-- `backend/src/lib/curriculum-fixtures/` — `informatics-ua-primary` subject
-  pack, reference lesson `g2-m2-l8`, and a synthetic `test-subject` lesson/pack.
+- `backend/src/lib/subject-packs.ts` — code-owned subject pack registry
+  (`informatics-ua-primary`). A lesson with an unregistered pack cannot be saved.
+- `backend/src/lib/curriculum-fixtures/` — reference lesson `g2-m2-l8` and a
+  synthetic `test-subject` lesson/pack.
 - A guard test fails if subject names leak into the core schema module.
+
+## Stage C — what exists
+
+- Migration `0049`: `curriculum_lessons` (draft definition + published
+  snapshot, `edit_version` / `content_version` / `published_version`) and
+  append-only `curriculum_lesson_revisions`. RLS is on for both. Triggers keep
+  each published version immutable and history append-only.
+- `backend/src/routes/curriculum-admin.ts` under `/api/admin/curriculum/lessons`:
+  list, get, create, update (a content change bumps `content_version` and
+  returns the lesson to draft; the published snapshot stays), status,
+  revisions and restore. The pure rules live in `curriculum-editorial.ts`.
+  `content_version` is stamped by the server; the editor never sets it.
+- Workflow: `draft → review → published → archived`; `review → draft`;
+  `archived → draft`. Publishing requires review and re-validates the draft
+  against the current pack. A published lesson changes only by editing.
+- Feature flag `LESSON_ENGINE_ENABLED` (backend env, exactly `"true"`; default
+  off; declared as `"false"` in `render.yaml`). Off → every route is a 404
+  before validation, auth or DB access.
+- A new generic regression test fails if any `pgTable` lacks an RLS migration.
+
+Verified beyond unit tests: all migrations `0000`–`0049` applied to a clean
+PostgreSQL 16, then a scripted end-to-end run through the real routes (admin
+JWT against a local JWKS). It covered teacher refusal, validation issues,
+duplicate id, optimistic locking, skip-review refusal, publish, edit after
+publish with an untouched snapshot, trigger rejections, append-only history
+and restore.
 
 The validator lives in the backend because the backend is the authority for
 anything that is published or scored. Frontend types arrive with stage D and

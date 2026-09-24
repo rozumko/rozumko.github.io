@@ -643,3 +643,50 @@ export const homeFunnelCounters = pgTable('home_funnel_counters', {
 }))
 
 export type HomeFunnelCounter = typeof homeFunnelCounters.$inferSelect
+
+// ── Lesson Engine: curriculum lessons (0049) ──────────────────────────────────
+// Additive surface (ADR-0008). draft_content is the LessonDefinitionV1 under
+// edit (answer keys included, admin API only); published_snapshot is what runs
+// and exports read, and is immutable per published_version (DB trigger).
+export type CurriculumLessonStatus = 'draft' | 'review' | 'published' | 'archived'
+
+export const curriculumLessons = pgTable('curriculum_lessons', {
+  id:                text('id').primaryKey(),
+  subjectPackId:     text('subject_pack_id').notNull(),
+  subject:           text('subject').notNull(),
+  grade:             integer('grade').notNull(),
+  moduleId:          text('module_id'),
+  lessonNumber:      integer('lesson_number'),
+  title:             text('title').notNull(),
+  schemaVersion:     integer('schema_version').notNull(),
+  status:            text('status').notNull().default('draft').$type<CurriculumLessonStatus>(),
+  editVersion:       integer('edit_version').notNull().default(1),
+  contentVersion:    integer('content_version').notNull().default(1),
+  publishedVersion:  integer('published_version'),
+  draftContent:      jsonb('draft_content').notNull().$type<Record<string, unknown>>(),
+  publishedSnapshot: jsonb('published_snapshot').$type<Record<string, unknown>>(),
+  createdBy:         text('created_by'),
+  updatedBy:         text('updated_by'),
+  reviewedBy:        text('reviewed_by'),
+  publishedBy:       text('published_by'),
+  reviewedAt:        timestamp('reviewed_at', { withTimezone: true }),
+  publishedAt:       timestamp('published_at', { withTimezone: true }),
+  createdAt:         timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:         timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type CurriculumLessonRow = typeof curriculumLessons.$inferSelect
+
+export const curriculumLessonRevisions = pgTable('curriculum_lesson_revisions', {
+  id:          uuid('id').primaryKey().defaultRandom(),
+  lessonId:    text('lesson_id').notNull().references(() => curriculumLessons.id, { onDelete: 'restrict' }),
+  editVersion: integer('edit_version').notNull(),
+  action:      text('action').notNull(),
+  snapshot:    jsonb('snapshot').notNull().$type<Record<string, unknown>>(),
+  changedBy:   text('changed_by'),
+  createdAt:   timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  uniqLessonEditVersion: unique('curriculum_lesson_revisions_lesson_edit_version_uq').on(t.lessonId, t.editVersion),
+}))
+
+export type CurriculumLessonRevisionRow = typeof curriculumLessonRevisions.$inferSelect

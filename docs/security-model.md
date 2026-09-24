@@ -126,6 +126,27 @@ reach children accidentally. Publishing atomically updates that snapshot;
 archiving is blocked while a published path references the lesson. Revision
 history remains admin-only and RLS-protected.
 
+## Lesson Engine Editorial Workflow — **[IMPLEMENTED]** (flag-gated)
+
+Migration `0049` and `backend/src/routes/curriculum-admin.ts` add editorial
+storage for Lesson Engine curriculum lessons (ADR-0008). The surface is off
+unless the backend env `LESSON_ENGINE_ENABLED` is exactly `true`. When it is
+off, every `/api/admin/curriculum/*` route answers `404` in an `onRequest`
+hook, before validation, auth or database access. When it is on, every route
+is admin-only through a plugin-level `requireAdmin` hook, and lesson IDs are
+schema-validated before any database access.
+
+A curriculum lesson carries server-only answer keys in
+`activity.scoring.key`. The admin API returns them; nothing else does.
+`toDisplaySafeLesson()` in `backend/src/lib/curriculum-lesson-schema.ts` is the
+single exit point that strips them for any non-admin consumer. Definitions are
+validated fail-closed on every save and again on publish: unknown fields, raw
+HTML, dangling references, an unregistered subject pack, and external tools
+missing from the pack allowlist are all rejected. Publishing requires `review`.
+A published version is immutable, enforced by a database trigger rather than
+by route code alone. Revision history is append-only, also by trigger. Both
+tables have RLS enabled with no policies.
+
 ## Mission Editorial Workflow — **[IMPLEMENTED]**
 
 Migration `0038` adds the same audited state machine, optimistic edit locking
@@ -239,7 +260,8 @@ application table that existed at that revision; every later table migration
 enables RLS in the same migration — `0029` and `0031` (parent accounts and path
 progress), `0032`-`0034` (micro-lessons, path maps and their immutable
 revisions), `0036`-`0038` (`question_revisions`, `micro_lesson_revisions`,
-`mission_revisions`) and `0041` (`content_publications`). A regression test
+`mission_revisions`), `0041` (`content_publications`) and `0049`
+(`curriculum_lessons`, `curriculum_lesson_revisions`). A regression test
 fails if any application table is left uncovered.
 Migration `0048` applies the same deny-by-default RLS rule to
 `teacher_question_topics`; its answer-bearing session snapshots remain inside

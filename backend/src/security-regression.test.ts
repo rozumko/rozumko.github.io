@@ -349,6 +349,49 @@ test('application tables have an RLS enablement migration', () => {
   assert.match(journal, /"tag": "0028_enable_rls_all_application_tables"/)
 })
 
+test('every table in the Drizzle schema has RLS enabled by some migration', () => {
+  const schema = readFileSync(new URL('./db/schema.ts', import.meta.url), 'utf8')
+  const drizzleDir = new URL('../drizzle/', import.meta.url)
+  const migrations = readdirSync(drizzleDir)
+    .filter(name => name.endsWith('.sql'))
+    .map(name => readFileSync(new URL(name, drizzleDir), 'utf8'))
+    .join('\n')
+  const tables = [...schema.matchAll(/pgTable\('([a-z_]+)'/g)].map(match => match[1]!)
+
+  assert.ok(tables.length > 30, 'schema scan found too few tables — the scan is broken')
+  for (const table of tables) {
+    assert.match(migrations, new RegExp(`ALTER TABLE (public\\.)?${table} ENABLE ROW LEVEL SECURITY;`), table)
+  }
+})
+
+test('curriculum lessons are RLS-protected, journaled and keep published versions immutable', () => {
+  const migration = readFileSync(new URL('../drizzle/0049_add_curriculum_lessons.sql', import.meta.url), 'utf8')
+  const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')
+
+  assert.match(migration, /ALTER TABLE public\.curriculum_lessons ENABLE ROW LEVEL SECURITY;/)
+  assert.match(migration, /ALTER TABLE public\.curriculum_lesson_revisions ENABLE ROW LEVEL SECURITY;/)
+  assert.match(migration, /CHECK \(\(published_version IS NULL\) = \(published_snapshot IS NULL\)\)/)
+  assert.match(migration, /BEFORE UPDATE ON public\.curriculum_lessons/)
+  assert.match(migration, /BEFORE UPDATE OR DELETE ON public\.curriculum_lesson_revisions/)
+  assert.match(migration, /ON DELETE RESTRICT/)
+  assert.doesNotMatch(migration, /CREATE POLICY/)
+  assert.match(journal, /"tag": "0049_add_curriculum_lessons"/)
+})
+
+test('curriculum editorial API is flag-gated first and admin-only for every route', () => {
+  const route = readFileSync(new URL('./routes/curriculum-admin.ts', import.meta.url), 'utf8')
+  const flag = readFileSync(new URL('./lib/lesson-engine-flag.ts', import.meta.url), 'utf8')
+  const server = readFileSync(new URL('./server.ts', import.meta.url), 'utf8')
+
+  const onRequest = route.indexOf("app.addHook('onRequest'")
+  const preHandler = route.indexOf("app.addHook('preHandler', requireAdmin)")
+  const firstRoute = route.search(/app\.(get|post|put|delete)\b/)
+  assert.ok(onRequest >= 0 && preHandler > onRequest && firstRoute > preHandler, 'hooks must be registered before any route')
+  assert.match(route, /isLessonEngineEnabled\(\)/)
+  assert.match(flag, /=== 'true'/)
+  assert.match(server, /register\(curriculumAdminRoutes, \{ prefix: '\/api\/admin\/curriculum' \}\)/)
+})
+
 test('question editorial history is RLS-protected and journaled', () => {
   const migration = readFileSync(new URL('../drizzle/0036_add_question_editorial_workflow.sql', import.meta.url), 'utf8')
   const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')

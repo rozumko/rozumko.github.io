@@ -10,6 +10,7 @@ import {
   validateSubjectPack,
   type LessonDefinitionV1,
 } from './curriculum-lesson-schema.js'
+import { SUBJECT_PACKS, findSubjectPack } from './subject-packs.js'
 
 function fixture(name: string): Record<string, any> {
   return JSON.parse(readFileSync(new URL(`./curriculum-fixtures/${name}`, import.meta.url), 'utf8'))
@@ -51,11 +52,19 @@ function findKeyDeep(value: unknown, name: string, found: unknown[] = []): unkno
 
 // ── Reference lesson and subject independence ────────────────────────────────
 
-test('reference lesson g2-m2-l8 validates against the informatics pack', () => {
+test('every registered subject pack is itself valid', () => {
+  assert.ok(Object.keys(SUBJECT_PACKS).length > 0)
+  for (const [id, pack] of Object.entries(SUBJECT_PACKS)) {
+    assert.equal(pack.id, id)
+    assert.deepEqual(validateSubjectPack(pack), [], id)
+  }
+  assert.equal(findSubjectPack('constructor'), null)
+  assert.equal(findSubjectPack('unknown-pack'), null)
+})
+
+test('reference lesson g2-m2-l8 validates against the registered informatics pack', () => {
   const lesson = expectValid(fixture('g2-m2-l8.lesson.json'))
-  const pack = fixture('informatics-ua-primary.pack.json')
-  assert.deepEqual(validateSubjectPack(pack), [])
-  assert.deepEqual(validateLessonAgainstPack(lesson, pack as never), [])
+  assert.deepEqual(validateLessonAgainstPack(lesson, findSubjectPack(lesson.subjectPackId)!), [])
 })
 
 test('a synthetic non-informatics lesson runs through the same core validator', () => {
@@ -280,7 +289,7 @@ test('media sources are https or relative only', () => {
 
 test('external tools must be in the subject pack allowlist', () => {
   const lesson = expectValid(fixture('g2-m2-l8.lesson.json'))
-  const pack = fixture('informatics-ua-primary.pack.json')
+  const pack = structuredClone(findSubjectPack('informatics-ua-primary')) as Record<string, any>
   const i = lesson.blocks.findIndex(b => b.id === 'g2-m2-l8-b11')
 
   const noTools = { ...pack, externalTools: {} }
@@ -305,7 +314,7 @@ test('lesson must match its pack subject and grade range', () => {
 })
 
 test('subject pack tools must use https', () => {
-  const pack = fixture('informatics-ua-primary.pack.json')
+  const pack = structuredClone(findSubjectPack('informatics-ua-primary')) as Record<string, any>
   pack.externalTools['itnauka-windows'].url = 'http://itnauka.org/x'
   assert.deepEqual(validateSubjectPack(pack).map(e => e.path), ['externalTools.itnauka-windows.url'])
 })
