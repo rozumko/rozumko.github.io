@@ -9,7 +9,7 @@ still apply.
 
 Do these in order. Nothing is visible to teachers until step 4.
 
-1. **Apply migrations `0049`–`0054`** before the backend code that needs
+1. **Apply migrations `0049`–`0056`** before the backend code that needs
    them is deployed (see [migrations.md](../migrations.md), "Production
    Workflow"). They are additive: new tables and columns only. Render's
    start command refuses to start a backend whose migrations are missing,
@@ -34,14 +34,13 @@ Do these in order. Nothing is visible to teachers until step 4.
    The script needs the flag on (step 3). If it reports that the engine is
    disabled, verify that the Render redeploy has finished before retrying.
 5. **Classroom Remote in the console (optional).**
-   1. Deploy Classroom Remote with integration API v1 (its repository, branch
-      with "integration keys").
+   1. Deploy Classroom Remote from `main` of its repository (`npx wrangler
+      deploy` in `worker/`); integration API v1 is merged there.
    2. On Render, set `CLASSROOM_REMOTE_API_URL` = `https://crr.itnauka.org`.
    3. On Render, set `INTEGRATION_ENCRYPTION_KEY` = 64 hex characters:
       `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
       Keep it secret. Changing it disconnects every teacher, who then pastes a
       key again.
-   4. Apply migration `0056`.
 
    Without both variables, the «Ноутбуки класу» panel stays hidden, and the
    class link can still be copied by hand.

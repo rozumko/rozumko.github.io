@@ -80,7 +80,7 @@ features/lesson-engine/attempt-outbox.ts ← offline answer outbox on the device
 backend/src/routes/class-lesson-links.ts ← class link (#class=, HMAC key, rotate) + remembered seats; /api/student/lesson/join-class; console class-link-panel.ts
 backend/src/routes/classroom-remote.ts ← Classroom Remote integration (encrypted key per teacher, env CLASSROOM_REMOTE_API_URL + INTEGRATION_ENCRYPTION_KEY); console classroom-remote-panel.ts
 backend/src/db/          ← Drizzle schema + migration runner
-backend/drizzle/         ← SQL-міграції (таксономія 0021, ігри 0023–0026, уроки 0032, редакційний цикл 0036–0038, сіди ігор 0039–0040+0042, публікація 0041)
+backend/drizzle/         ← SQL-міграції (таксономія 0021, ігри 0023–0026, уроки 0032, редакційний цикл 0036–0038, сіди ігор 0039–0040+0042, публікація 0041, Lesson Engine 0049–0056)
 backend/scripts/         ← import-temp-content, import-temp-lessons, export:* (питання/уроки/шлях/пакети/manifest)
 public/questions/        ← статичний practice-бандл (track/topic; npm run export:questions)
 public/lessons/          ← мікро-уроки JSON з published snapshot БД (npm run export:lessons)
