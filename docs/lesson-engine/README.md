@@ -561,8 +561,9 @@ Verified:
 What remains of J is not code. It is the internal pilot, the external
 pilot and the go/no-go decision; see [pilot-runbook.md](./pilot-runbook.md).
 `npm run curriculum:publish` (`backend/scripts/publish-curriculum-lesson.ts`)
-puts a lesson into a deployed backend through the admin API. It exists
-because there is no admin UI for Lesson Engine lessons yet.
+puts a lesson file into a deployed backend through the admin API. Since the
+admin tab «Керовані уроки» exists (see "Lesson editor"), the script is for
+bulk loads from files.
 
 ## Class link, remembered seats and classroom rate limits
 
@@ -747,6 +748,47 @@ Verified: migration `0057` applied twice (idempotent) on embedded
 PostgreSQL 16 (PGlite): seed rows and revisions; delete, id change, pack
 change, duplicate code, bad source, bad id and revision update refused;
 editing wording and archiving allowed.
+
+## Lesson editor
+
+The admin tab «Керовані уроки» (`features/admin/curriculum-tab.ts`) edits
+lessons through the existing editorial API. It is shown only when the backend
+serves the surface.
+
+Decisions:
+
+- **Forms for structure, JSON for content.** Forms cover the lesson data,
+  objectives, block order, switches, slide, activity settings and outcome
+  links. The content of a block, an activity's configuration and its answer
+  key are JSON fields with per-type hints. JSON syntax errors are shown at the
+  field and block saving. Per-type content forms can come later without
+  changing the model.
+- **The server stays the only judge.** «Перевірити» calls
+  `POST /api/admin/curriculum/lessons/validate` (the same checks as a save,
+  nothing stored). Save and publish errors come back with paths. The editor
+  groups them per block and translates the common ones.
+- **Stable ids.** Block ids are `<lessonId>-bNN` and never renumbered.
+  Ids of the published version and ids deleted in this session are
+  reserved, so a new block never takes a deleted block's id. The lesson id
+  can change only before the first save.
+- **Outcome links keep the lesson consistent.** Linking an outcome to an
+  activity adds it to the lesson (`assessed` if an evidence activity links
+  it, else `practised`); removing it from the lesson removes every link. A
+  game link is always `supporting`.
+- **Coverage** per lesson outcome: 🟢 an evidence activity with a primary
+  link can decide it; 🟡 only practice or supporting links; 🔴 nothing checks
+  it (the report would say «Недостатньо даних»).
+- **Single-editor workflow**, as in the other admin tabs: «Опублікувати» on a
+  draft makes the API's `review` and `published` transitions in turn, and
+  both land in the history. The API keeps the review step.
+- **Unsaved work** is copied to `localStorage` (per browser, best effort) and
+  offered back when the same lesson and edit version are opened again.
+
+Code: `features/admin/curriculum-model.ts` (pure rules; a unit test runs
+every block and mechanic template through the real server validator),
+`features/admin/curriculum-tab.ts` (DOM), `/packs` now also lists each pack's
+tools and games with levels, `tests/layout/admin-curriculum.spec.ts` (the mock
+API runs the real editorial rules).
 
 ## Open items
 

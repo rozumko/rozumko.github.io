@@ -1,5 +1,6 @@
-// Put a Lesson Engine lesson into a deployed backend through its admin API
-// (there is no admin UI for curriculum lessons yet). The script goes through
+// Put a Lesson Engine lesson file into a deployed backend through its admin
+// API (bulk loads; single lessons are edited in the admin tab «Керовані
+// уроки»). The script goes through
 // the real routes, so validation, the editorial workflow, revisions and the
 // audit trail are exactly those of a manual edit by that administrator.
 //

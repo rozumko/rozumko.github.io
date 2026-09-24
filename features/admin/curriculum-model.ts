@@ -1,0 +1,500 @@
+// Pure editing rules for the admin Lesson Engine lesson editor
+// (features/admin/curriculum-tab.ts). The server re-validates everything on
+// save (backend/src/lib/curriculum-lesson-schema.ts); these helpers only keep
+// the draft consistent while it is edited:
+// - block ids are stable (`<lessonId>-bNN`) and never renumbered, because
+//   runs, reports and evidence refer to them;
+// - an outcome linked to an activity is always listed on the lesson;
+// - new blocks and activities start from templates that pass validation (a
+//   visual still needs an asset), so an author can save early and fill in the
+//   placeholders.
+
+import type {
+  ActivityMechanic,
+  ActivityTelemetry,
+  BlockModality,
+  LessonBlockType,
+  LocalizedText,
+  PresentationLayout,
+} from '../lesson-engine/types.js'
+
+export type Json = Record<string, unknown>
+
+export type OutcomeRole = 'introduced' | 'practised' | 'assessed'
+export type EvidenceRole = 'primary' | 'supporting'
+export type ScoringMode = 'none' | 'server' | 'client-unverified' | 'teacher-observed'
+
+export interface EditablePresentation {
+  layout: PresentationLayout
+  headline?: LocalizedText
+  shortText?: LocalizedText[]
+  assetIds?: string[]
+  speakerNotes?: LocalizedText
+}
+
+export interface EditableActivity {
+  instanceId: string
+  mechanic: ActivityMechanic
+  telemetry: ActivityTelemetry
+  config: Json
+  scoring: { mode: ScoringMode; key?: Json }
+  outcomes?: { outcomeId: string; evidenceRole: EvidenceRole }[]
+  attempts?: { max?: number }
+}
+
+export interface EditableBlock {
+  id: string
+  type: LessonBlockType
+  audience: { teacher: boolean; student: boolean }
+  views: { document: boolean; presentation: boolean; remote: boolean }
+  modality: BlockModality
+  estimatedMinutes?: number
+  runtime?: { step: boolean }
+  outcomeIds?: string[]
+  presentation?: EditablePresentation
+  content: Json
+  activity?: EditableActivity
+}
+
+export interface EditableLesson {
+  schemaVersion: 1
+  id: string
+  slug: string
+  subjectPackId: string
+  subject: string
+  grade: number
+  moduleId?: string
+  unitId?: string
+  lessonNumber?: number
+  title: LocalizedText
+  shortTitle?: LocalizedText
+  essentialQuestion?: LocalizedText
+  durationMin: number
+  objectives: { id: string; text: LocalizedText }[]
+  learningOutcomes: { outcomeId: string; role: OutcomeRole }[]
+  vocabulary?: unknown[]
+  assets?: { id: string; kind: string; src: string; alt: LocalizedText; caption?: LocalizedText }[]
+  blocks: EditableBlock[]
+  metadata: { source: string; sourceRef?: string; contentVersion: number; language: string }
+}
+
+/** What the editor needs to know about a subject pack. */
+export interface PackInfo {
+  id: string
+  subject: string
+  gradeRange: { min: number; max: number }
+  tools: { key: string }[]
+  games: { key: string; levels: string[] }[]
+}
+
+export const LESSON_ID_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/
+
+const uk = (text: string): LocalizedText => ({ uk: text })
+
+// ── Templates ───────────────────────────────────────────────────────────────
+
+/** Same list as ACTIVITY_MECHANICS in lesson-engine/types.ts (a unit test keeps them equal). */
+export const EDITOR_MECHANICS = ['choice', 'truefalse', 'classify', 'external', 'game'] as const satisfies readonly ActivityMechanic[]
+
+/** Content that passes validation; the author replaces the placeholders. */
+function contentTemplate(type: LessonBlockType): Json {
+  switch (type) {
+    case 'hero': return { title: uk('Назва уроку') }
+    case 'essential-question': return { question: uk('Головне питання уроку?') }
+    case 'objectives': return {}
+    case 'explanation': return { heading: uk('Пояснення'), paragraphs: [uk('Текст пояснення.')] }
+    case 'visual': return { heading: uk('Схема'), assetId: '' }
+    case 'discussion': return { prompt: uk('Питання для обговорення?') }
+    case 'practice': return { heading: uk('Практична робота'), steps: [{ items: [uk('Крок 1.')] }] }
+    case 'activity': return { heading: uk('Інтерактивне завдання') }
+    case 'support': return { heading: uk('Підтримка'), items: [uk('Підказка.')] }
+    case 'extension': return { heading: uk('Для тих, хто впорався'), prompt: uk('Додаткове завдання.') }
+    case 'reflection': return { heading: uk('Рефлексія'), prompt: uk('Що нового ти дізнався?') }
+    case 'success-criteria': return { heading: uk('Я зможу'), items: [uk('Критерій успіху.')] }
+    case 'vocabulary': return { heading: uk('Словник') }
+    case 'teacher-note': return { text: uk('Нотатка для вчителя.') }
+    case 'break': return { prompt: uk('Фізкультхвилинка.') }
+  }
+}
+
+const DEFAULT_LAYOUT: Partial<Record<LessonBlockType, PresentationLayout>> = {
+  hero: 'title',
+  'essential-question': 'question',
+  explanation: 'concept',
+  visual: 'visual',
+  discussion: 'question',
+  activity: 'activity-launcher',
+  reflection: 'question',
+}
+
+const DEFAULT_MODALITY: Partial<Record<LessonBlockType, BlockModality>> = {
+  activity: 'screen',
+  discussion: 'discussion',
+  practice: 'paper',
+  reflection: 'discussion',
+  break: 'movement',
+}
+
+/** Blocks the console steps through by default; support material is not a step. */
+const STEP_TYPES = new Set<LessonBlockType>([
+  'hero', 'essential-question', 'explanation', 'visual', 'discussion', 'practice', 'activity', 'reflection', 'break',
+])
+
+export function layoutFor(type: LessonBlockType): PresentationLayout {
+  return DEFAULT_LAYOUT[type] ?? 'concept'
+}
+
+export function activityTemplate(mechanic: ActivityMechanic, instanceId: string, pack: PackInfo | null): EditableActivity {
+  const base = { instanceId, mechanic, telemetry: 'practice' as ActivityTelemetry }
+  switch (mechanic) {
+    case 'choice':
+      return {
+        ...base,
+        config: { prompt: uk('Питання?'), options: [{ id: 'a', text: uk('Варіант А') }, { id: 'b', text: uk('Варіант Б') }] },
+        scoring: { mode: 'server', key: { correctOptionId: 'a' } },
+      }
+    case 'truefalse':
+      return {
+        ...base,
+        config: { prompt: uk('Правда чи ні?'), statements: [{ id: 's1', text: uk('Твердження.') }] },
+        scoring: { mode: 'server', key: { answers: { s1: true } } },
+      }
+    case 'classify':
+      return {
+        ...base,
+        config: {
+          prompt: uk('Розклади по групах.'),
+          categories: [{ id: 'c1', label: uk('Група 1') }, { id: 'c2', label: uk('Група 2') }],
+          items: [{ id: 'i1', label: uk('Предмет 1') }, { id: 'i2', label: uk('Предмет 2') }],
+        },
+        scoring: { mode: 'server', key: { placement: { i1: 'c1', i2: 'c2' } } },
+      }
+    case 'external':
+      return { ...base, config: { toolKey: pack?.tools[0]?.key ?? '' }, scoring: { mode: 'none' } }
+    case 'game': {
+      const game = pack?.games[0]
+      return {
+        ...base,
+        config: { gameKey: game?.key ?? '', level: game?.levels[0] ?? '' },
+        scoring: { mode: 'client-unverified' },
+      }
+    }
+  }
+}
+
+/** The scoring a mechanic implies: games report their own result, tools report nothing. */
+export function scoringModeFor(mechanic: ActivityMechanic): ScoringMode {
+  return mechanic === 'external' ? 'none' : mechanic === 'game' ? 'client-unverified' : 'server'
+}
+
+export function isActivityMechanic(value: string): value is ActivityMechanic {
+  return (EDITOR_MECHANICS as readonly string[]).includes(value)
+}
+
+/** `reserved`: ids a new block must not take (published or deleted blocks). */
+export function newBlock(type: LessonBlockType, lesson: EditableLesson, pack: PackInfo | null, reserved: Iterable<string> = []): EditableBlock {
+  const student = type !== 'teacher-note'
+  const layout = DEFAULT_LAYOUT[type]
+  const onBoard = student && layout !== undefined
+  const block: EditableBlock = {
+    id: nextBlockId(lesson, reserved),
+    type,
+    audience: { teacher: true, student },
+    views: { document: true, presentation: onBoard, remote: type === 'activity' },
+    modality: DEFAULT_MODALITY[type] ?? 'teacher-led',
+    content: contentTemplate(type),
+  }
+  if (STEP_TYPES.has(type)) block.runtime = { step: true }
+  if (onBoard) block.presentation = { layout: layout! }
+  if (type === 'activity') block.activity = activityTemplate('choice', nextInstanceId(lesson), pack)
+  return block
+}
+
+export function newLesson(input: { id: string; title: string; grade: number; pack: PackInfo }): EditableLesson {
+  const lesson: EditableLesson = {
+    schemaVersion: 1,
+    id: input.id,
+    slug: input.id,
+    subjectPackId: input.pack.id,
+    subject: input.pack.subject,
+    grade: input.grade,
+    title: uk(input.title.trim() || 'Новий урок'),
+    durationMin: 40,
+    objectives: [{ id: 'o1', text: uk('Учні зможуть …') }],
+    learningOutcomes: [],
+    blocks: [],
+    metadata: { source: 'manual', contentVersion: 1, language: 'uk' },
+  }
+  const hero = newBlock('hero', lesson, input.pack)
+  hero.content = { title: uk(lesson.title.uk) }
+  lesson.blocks.push(hero)
+  return lesson
+}
+
+// ── Ids ─────────────────────────────────────────────────────────────────────
+
+function blockNumber(lessonId: string, blockId: string): number | null {
+  const prefix = `${lessonId}-b`
+  if (!blockId.startsWith(prefix)) return null
+  const suffix = blockId.slice(prefix.length)
+  return /^\d{2,3}$/.test(suffix) ? Number(suffix) : null
+}
+
+/**
+ * Next free `<lessonId>-bNN`. Existing ids are never renumbered, and ids in
+ * `reserved` (blocks of the published version, blocks deleted while editing)
+ * are never handed to a different block.
+ */
+export function nextBlockId(lesson: EditableLesson, reserved: Iterable<string> = []): string {
+  const numbers = [...lesson.blocks.map(b => b.id), ...reserved].map(id => blockNumber(lesson.id, id) ?? 0)
+  const next = Math.max(0, ...numbers) + 1
+  return `${lesson.id}-b${String(next).padStart(2, '0')}`
+}
+
+export function nextInstanceId(lesson: EditableLesson): string {
+  const used = new Set(lesson.blocks.map(b => b.activity?.instanceId).filter(Boolean))
+  let n = 1
+  while (used.has(`activity-${n}`)) n++
+  return `activity-${n}`
+}
+
+/**
+ * Renames a lesson that was never saved: its block ids carry the lesson id,
+ * so they move with it. Saved lessons keep their id for good.
+ */
+export function renameLesson(lesson: EditableLesson, newId: string): EditableLesson {
+  const oldId = lesson.id
+  const copy = structuredClone(lesson)
+  copy.id = newId
+  if (copy.slug === oldId) copy.slug = newId
+  for (const block of copy.blocks) {
+    const n = blockNumber(oldId, block.id)
+    if (n !== null) block.id = `${newId}-b${String(n).padStart(2, '0')}`
+  }
+  return copy
+}
+
+// ── Structure edits ─────────────────────────────────────────────────────────
+
+export function moveBlock(lesson: EditableLesson, index: number, delta: -1 | 1): boolean {
+  const target = index + delta
+  if (index < 0 || target < 0 || target >= lesson.blocks.length) return false
+  const [block] = lesson.blocks.splice(index, 1)
+  lesson.blocks.splice(target, 0, block!)
+  return true
+}
+
+/** Whether children see the block. Teacher-only blocks never reach the board or devices. */
+export function setStudentAudience(block: EditableBlock, student: boolean): void {
+  if (block.type === 'teacher-note') student = false
+  block.audience.student = student
+  if (!student) {
+    block.views.presentation = false
+    block.views.remote = false
+    delete block.presentation
+  }
+}
+
+export function setOnBoard(block: EditableBlock, onBoard: boolean): void {
+  if (onBoard && !block.audience.student) return
+  block.views.presentation = onBoard
+  if (onBoard) block.presentation ??= { layout: layoutFor(block.type) }
+  else delete block.presentation
+}
+
+/** Only activities can be sent to student devices. */
+export function setOnDevices(block: EditableBlock, onDevices: boolean): void {
+  block.views.remote = onDevices && block.type === 'activity' && block.audience.student
+}
+
+export function setStep(block: EditableBlock, step: boolean): void {
+  if (step) block.runtime = { step: true }
+  else delete block.runtime
+}
+
+/** One short line per bullet, at most 5; empty lines are dropped. */
+export function shortTextFromLines(text: string): LocalizedText[] | undefined {
+  const lines = text.split('\n').map(line => line.trim()).filter(Boolean).slice(0, 5)
+  return lines.length ? lines.map(line => uk(line)) : undefined
+}
+
+export function optionalText(value: string, previous?: LocalizedText): LocalizedText | undefined {
+  const text = value.trim()
+  if (!text) return undefined
+  return previous?.en ? { uk: text, en: previous.en } : uk(text)
+}
+
+// ── Outcomes ────────────────────────────────────────────────────────────────
+
+function roleFromLinks(lesson: EditableLesson, outcomeId: string): OutcomeRole {
+  const evidence = lesson.blocks.some(b => b.activity?.telemetry === 'evidence'
+    && b.activity.outcomes?.some(o => o.outcomeId === outcomeId))
+  return evidence ? 'assessed' : 'practised'
+}
+
+/**
+ * Every outcome an activity links must be listed on the lesson. Missing ones
+ * are added (assessed when an evidence activity links them, else practised);
+ * roles the author set are kept.
+ */
+export function syncLessonOutcomes(lesson: EditableLesson): void {
+  const listed = new Set(lesson.learningOutcomes.map(link => link.outcomeId))
+  for (const block of lesson.blocks) {
+    for (const link of block.activity?.outcomes ?? []) {
+      if (listed.has(link.outcomeId)) continue
+      lesson.learningOutcomes.push({ outcomeId: link.outcomeId, role: roleFromLinks(lesson, link.outcomeId) })
+      listed.add(link.outcomeId)
+    }
+  }
+}
+
+export function addActivityOutcome(lesson: EditableLesson, blockIndex: number, outcomeId: string): boolean {
+  const activity = lesson.blocks[blockIndex]?.activity
+  if (!activity) return false
+  activity.outcomes ??= []
+  if (activity.outcomes.some(o => o.outcomeId === outcomeId)) return false
+  // Games report their own result, so they can only ever be supporting evidence.
+  activity.outcomes.push({ outcomeId, evidenceRole: activity.scoring.mode === 'client-unverified' ? 'supporting' : 'primary' })
+  syncLessonOutcomes(lesson)
+  return true
+}
+
+export function removeActivityOutcome(lesson: EditableLesson, blockIndex: number, outcomeId: string): void {
+  const activity = lesson.blocks[blockIndex]?.activity
+  if (!activity?.outcomes) return
+  activity.outcomes = activity.outcomes.filter(o => o.outcomeId !== outcomeId)
+  if (activity.outcomes.length === 0) delete activity.outcomes
+}
+
+export function addLessonOutcome(lesson: EditableLesson, outcomeId: string, role: OutcomeRole = 'introduced'): boolean {
+  if (lesson.learningOutcomes.some(link => link.outcomeId === outcomeId)) return false
+  lesson.learningOutcomes.push({ outcomeId, role })
+  return true
+}
+
+/** Removes an outcome from the lesson and from every block and activity that links it. */
+export function removeLessonOutcome(lesson: EditableLesson, outcomeId: string): void {
+  lesson.learningOutcomes = lesson.learningOutcomes.filter(link => link.outcomeId !== outcomeId)
+  lesson.blocks.forEach((block, i) => {
+    removeActivityOutcome(lesson, i, outcomeId)
+    if (block.outcomeIds) {
+      block.outcomeIds = block.outcomeIds.filter(id => id !== outcomeId)
+      if (block.outcomeIds.length === 0) delete block.outcomeIds
+    }
+  })
+}
+
+export interface OutcomeCoverage {
+  outcomeId: string
+  role: OutcomeRole
+  activities: { blockIndex: number; blockId: string; instanceId: string; telemetry: ActivityTelemetry; evidenceRole: EvidenceRole }[]
+  /** An evidence activity with a primary link: the report can decide this outcome. */
+  measured: boolean
+}
+
+/** For each lesson outcome: which activities check it, and whether any can decide it. */
+export function outcomeCoverage(lesson: EditableLesson): OutcomeCoverage[] {
+  return lesson.learningOutcomes.map(link => {
+    const activities: OutcomeCoverage['activities'] = []
+    lesson.blocks.forEach((block, blockIndex) => {
+      const activity = block.activity
+      const found = activity?.outcomes?.find(o => o.outcomeId === link.outcomeId)
+      if (activity && found) {
+        activities.push({ blockIndex, blockId: block.id, instanceId: activity.instanceId, telemetry: activity.telemetry, evidenceRole: found.evidenceRole })
+      }
+    })
+    const measured = activities.some(a => a.telemetry === 'evidence' && a.evidenceRole === 'primary')
+    return { outcomeId: link.outcomeId, role: link.role, activities, measured }
+  })
+}
+
+// ── Preview, issues, JSON ───────────────────────────────────────────────────
+
+/** The draft as a teacher would receive it: answer keys removed. */
+export function withoutAnswerKeys(lesson: EditableLesson): EditableLesson {
+  const copy = structuredClone(lesson)
+  for (const block of copy.blocks) if (block.activity) delete block.activity.scoring.key
+  return copy
+}
+
+export interface Issue { path: string; message: string }
+
+/** Server issues split into lesson-level ones and ones that belong to a block. */
+export function groupIssues(issues: Issue[]): { lesson: Issue[]; blocks: Map<number, Issue[]> } {
+  const lesson: Issue[] = []
+  const blocks = new Map<number, Issue[]>()
+  for (const issue of issues) {
+    const match = /^blocks\[(\d+)\](?:\.(.*))?$/.exec(issue.path)
+    if (!match) {
+      lesson.push(issue)
+      continue
+    }
+    const index = Number(match[1])
+    const list = blocks.get(index) ?? []
+    list.push({ path: match[2] ?? '', message: issue.message })
+    blocks.set(index, list)
+  }
+  return { lesson, blocks }
+}
+
+const MESSAGES: readonly [RegExp, string][] = [
+  [/^must be a non-empty string$/, 'не може бути порожнім'],
+  [/^unknown field$/, 'невідоме поле (приберіть його)'],
+  [/^must not contain HTML markup$/, 'без HTML: лише **жирний** і `код`'],
+  [/^must reference a lesson asset$/, 'має посилатися на ресурс уроку (розділ «Ресурси»)'],
+  [/^must reference a lesson learningOutcomes entry$/, 'результат має бути в списку результатів уроку'],
+  [/^is not in the subject pack outcome registry$/, 'такого діючого результату немає в довіднику'],
+  [/^is not in the subject pack allowlist$/, 'предмет не дозволяє цей інструмент або гру'],
+  [/^names an unknown game or level$/, 'невідома гра або рівень'],
+  [/^evidence activities must link an outcome$/, 'завдання-доказ має бути пов’язане з результатом'],
+  [/^evidence activities must be scored$/, 'завдання-доказ має оцінюватися'],
+  [/^client-unverified results can only be supporting evidence$/, 'результат гри може бути лише допоміжним доказом'],
+  [/^at least one block must be a runtime step$/, 'хоча б один блок має бути кроком уроку'],
+  [/^is required when views\.presentation is true$/, 'для показу на дошці потрібен слайд'],
+  [/^teacher-only blocks cannot appear in presentation or remote views$/, 'блок лише для вчителя не можна показувати учням'],
+  [/^must be unique$/, 'має бути унікальним'],
+  [/^must be unique within the lesson$/, 'має бути унікальним в уроці'],
+  [/^must match the lesson being edited$/, 'не збігається з уроком, який редагується'],
+  [/^is not a registered subject pack$/, 'такого предмета немає'],
+]
+
+export function describeIssueMessage(message: string): string {
+  for (const [pattern, text] of MESSAGES) if (pattern.test(message)) return text
+  return message
+}
+
+const LESSON_FIELDS: Readonly<Record<string, string>> = {
+  id: 'ID', slug: 'Slug', title: 'Назва', 'title.uk': 'Назва', grade: 'Клас', durationMin: 'Тривалість',
+  subjectPackId: 'Предмет', subject: 'Предмет', objectives: 'Цілі', learningOutcomes: 'Результати уроку',
+  blocks: 'Блоки', assets: 'Ресурси', vocabulary: 'Словник', essentialQuestion: 'Головне питання',
+  moduleId: 'Модуль', lessonNumber: 'Номер уроку',
+}
+
+/** «Цілі 2 → text.uk: не може бути порожнім» for a lesson-level issue. */
+export function describeLessonIssue(issue: Issue): string {
+  const list = /^(objectives|learningOutcomes|assets|vocabulary)\[(\d+)\](?:\.(.*))?$/.exec(issue.path)
+  const field = list
+    ? `${LESSON_FIELDS[list[1]!]} ${Number(list[2]) + 1}${list[3] ? ` → ${list[3]}` : ''}`
+    : LESSON_FIELDS[issue.path] ?? issue.path
+  return `${field || 'Урок'}: ${describeIssueMessage(issue.message)}`
+}
+
+/** `value` when ok, `error` otherwise (a flat shape: the frontend is not built with strictNullChecks). */
+export interface JsonParse { ok: boolean; value?: unknown; error?: string }
+
+export function parseJson(text: string): JsonParse {
+  try {
+    return { ok: true, value: JSON.parse(text) }
+  } catch (err) {
+    return { ok: false, error: (err as Error).message }
+  }
+}
+
+export function isRecord(value: unknown): value is Json {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+export function formatJson(value: unknown): string {
+  return JSON.stringify(value ?? null, null, 2)
+}
+

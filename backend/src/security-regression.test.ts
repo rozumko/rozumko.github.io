@@ -445,8 +445,8 @@ test('the learning outcome directory is RLS-protected, never deleted and journal
   // Outcomes are validated against the directory, never a stale code copy.
   const admin = readFileSync(new URL('./routes/curriculum-admin.ts', import.meta.url), 'utf8')
   const editorial = readFileSync(new URL('./routes/curriculum-editorial.ts', import.meta.url), 'utf8')
-  assert.equal((admin.match(/prepareCurriculumDefinition\(/g) ?? []).length, 4)
-  assert.equal((admin.match(/resolveSubjectPack\([^)]*\), ACTIVE_ONLY\)/g) ?? []).length, 4)
+  assert.equal((admin.match(/prepareCurriculumDefinition\(/g) ?? []).length, 5)
+  assert.equal((admin.match(/resolveSubjectPack\([^)]*\), ACTIVE_ONLY\)/g) ?? []).length, 5)
   assert.doesNotMatch(editorial, /findSubjectPack/)
 })
 

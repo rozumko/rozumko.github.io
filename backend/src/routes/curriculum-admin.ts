@@ -20,6 +20,7 @@ import { isLessonEngineEnabled } from '../lib/lesson-engine-flag.js'
 import { isUniqueViolation } from '../lib/db-errors.js'
 import { resolveSubjectPack } from '../lib/curriculum-outcomes.js'
 import { SUBJECT_PACKS, findSubjectPack } from '../lib/subject-packs.js'
+import { resolveActivityDefinition } from '../lib/school-activities.js'
 import {
   OUTCOME_ID_PATTERN,
   OUTCOME_STATUSES,
@@ -114,6 +115,30 @@ export async function curriculumAdminRoutes(app: FastifyInstance) {
     const [lesson] = await db.select().from(curriculumLessons).where(eq(curriculumLessons.id, req.params.id)).limit(1)
     if (!lesson) return reply.code(404).send({ error: 'Урок не знайдено' })
     return reply.send({ lesson })
+  })
+
+  // POST /api/admin/curriculum/lessons/validate — the editor's "check" button:
+  // the same checks as a save, nothing is stored. `lessonId` pins an existing row.
+  app.post<{ Body: { definition: unknown; lessonId?: string } }>('/lessons/validate', {
+    schema: {
+      body: {
+        type: 'object',
+        required: ['definition'],
+        properties: {
+          definition: { type: 'object' },
+          lessonId: { type: 'string', maxLength: 64, pattern: CURRICULUM_LESSON_ID_PATTERN },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    try {
+      const pack = await resolveSubjectPack(peekSubjectPackId(req.body.definition), ACTIVE_ONLY)
+      prepareCurriculumDefinition(req.body.definition, req.body.lessonId ?? null, 1, pack)
+      return reply.send({ ok: true, issues: [] })
+    } catch (err) {
+      if (err instanceof CurriculumValidationError) return reply.send({ ok: false, issues: err.issues })
+      throw err
+    }
   })
 
   // POST /api/admin/curriculum/lessons — create a draft from a full definition
@@ -313,10 +338,16 @@ export async function curriculumAdminRoutes(app: FastifyInstance) {
 
   // ── Learning outcome directory (migration 0057) ─────────────────────────
 
-  // GET /api/admin/curriculum/packs — registered subject packs (code-owned)
+  // GET /api/admin/curriculum/packs — registered subject packs (code-owned),
+  // with the tools and games a lesson in each pack may use.
   app.get('/packs', async (_req, reply) => {
     const packs = Object.values(SUBJECT_PACKS).map(pack => ({
-      id: pack.id, subject: pack.subject, title: pack.title, gradeRange: pack.gradeRange,
+      id: pack.id,
+      subject: pack.subject,
+      title: pack.title,
+      gradeRange: pack.gradeRange,
+      tools: Object.entries(pack.externalTools).map(([key, tool]) => ({ key, title: tool.title })),
+      games: pack.games.map(key => ({ key, levels: resolveActivityDefinition(key).levels.map(level => level.id) })),
     }))
     return reply.send({ packs })
   })
