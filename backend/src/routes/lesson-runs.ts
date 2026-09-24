@@ -51,6 +51,7 @@ import { randomUUID } from 'node:crypto'
 import { isDispatchable, liveSnapshot } from '../lib/lesson-live.js'
 import { lessonReport } from '../lib/lesson-evidence.js'
 import { findSubjectPack } from '../lib/subject-packs.js'
+import { resolveSubjectPack } from '../lib/curriculum-outcomes.js'
 import type { ActivitySpec } from '../lib/curriculum-lesson-schema.js'
 
 class RunNotFoundError extends Error {}
@@ -644,7 +645,7 @@ export async function lessonRunRoutes(app: FastifyInstance) {
         finishedAt: row.run.finishedAt,
       },
       lesson,
-      outcomes: findSubjectPack(lesson.subjectPackId)?.outcomes ?? {},
+      outcomes: (await resolveSubjectPack(lesson.subjectPackId, { includeArchived: true }))?.outcomes ?? {},
       students: students.map(s => ({ id: s.id, label: s.label ?? null })),
       mappedStudentIds: new Set(devices.map(d => d.lessonRunStudentId!)),
       dispatches,

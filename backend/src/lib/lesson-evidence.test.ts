@@ -3,9 +3,9 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 
 import { evidenceRowsForAttempt, lessonReport, summarizeOutcome, teacherCommentDraft } from './lesson-evidence.js'
-import { findSubjectPack } from './subject-packs.js'
 import type { ActivitySpec, LessonDefinitionV1 } from './curriculum-lesson-schema.js'
 
+const PILOT_OUTCOMES = JSON.parse(readFileSync(new URL('./curriculum-fixtures/pilot-outcomes.json', import.meta.url), 'utf8'))
 const lesson = JSON.parse(readFileSync(new URL('./curriculum-fixtures/g2-m2-l8.lesson.json', import.meta.url), 'utf8')) as LessonDefinitionV1
 const activity = (id: string) => lesson.blocks.flatMap(b => b.type === 'activity' ? [b.activity] : []).find(a => a.instanceId === id)!
 const evidenceActivity = activity('self-check-extension')
@@ -48,7 +48,7 @@ test('the lesson report traces every summary back to attempts and activities', (
   const report = lessonReport({
     run: { status: 'finished', className: '2-А', lessonPublishedVersion: 3, startedAt: t(0), finishedAt: t(40) },
     lesson,
-    outcomes: findSubjectPack('informatics-ua-primary')!.outcomes,
+    outcomes: PILOT_OUTCOMES,
     students: [{ id: 's1', label: 'Марко' }, { id: 's2', label: 'Софія' }, { id: 's3', label: null }],
     mappedStudentIds: new Set(['s1']),
     dispatches: [{ id: 'd1', blockId: 'g2-m2-l8-b12', activityInstanceId: 'self-check-extension' }],

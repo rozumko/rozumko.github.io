@@ -989,6 +989,34 @@ export function validateLessonAgainstPack(lesson: LessonDefinitionV1, pack: Subj
   return c.errors
 }
 
+function checkLearningOutcome(c: Collector, outcome: unknown, p: string): void {
+  if (!isRecord(outcome)) {
+    c.add(p, 'must be an object')
+    return
+  }
+  const at = (key: string) => (p ? `${p}.${key}` : key)
+  checkKnownKeys(c, outcome, ['code', 'title', 'source', 'sourceRef', 'gradeBand', 'mappings'], p)
+  checkString(c, outcome.code, at('code'), MAX_ID)
+  checkLocalized(c, outcome.title, at('title'), MAX_SHORT)
+  checkEnum(c, outcome.source, OUTCOME_SOURCES, at('source'))
+  if (outcome.sourceRef !== undefined) checkString(c, outcome.sourceRef, at('sourceRef'), MAX_SHORT)
+  if (outcome.gradeBand !== undefined) checkString(c, outcome.gradeBand, at('gradeBand'), 16)
+  if (!Array.isArray(outcome.mappings)) c.add(at('mappings'), 'must be an array')
+  else outcome.mappings.forEach((m, i) => {
+    if (!isRecord(m)) return c.add(at(`mappings[${i}]`), 'must be an object')
+    checkKnownKeys(c, m, ['framework', 'ref'], at(`mappings[${i}]`))
+    checkString(c, m.framework, at(`mappings[${i}].framework`), MAX_ID)
+    checkString(c, m.ref, at(`mappings[${i}].ref`), MAX_SHORT)
+  })
+}
+
+/** Validates one learning outcome (the outcome directory uses the same rules as packs). */
+export function validateLearningOutcome(input: unknown): LessonValidationIssue[] {
+  const c = new Collector()
+  checkLearningOutcome(c, input, '')
+  return c.errors
+}
+
 /** Validates a subject pack's own registry (external tools must be https). */
 export function validateSubjectPack(input: unknown): LessonValidationIssue[] {
   const c = new Collector()
@@ -998,23 +1026,7 @@ export function validateSubjectPack(input: unknown): LessonValidationIssue[] {
   else for (const [id, outcome] of Object.entries(input.outcomes)) {
     const p = `outcomes.${id}`
     if (!LOCAL_ID_RE.test(id)) c.add(p, 'has an invalid key')
-    if (!isRecord(outcome)) {
-      c.add(p, 'must be an object')
-      continue
-    }
-    checkKnownKeys(c, outcome, ['code', 'title', 'source', 'sourceRef', 'gradeBand', 'mappings'], p)
-    checkString(c, outcome.code, `${p}.code`, MAX_ID)
-    checkLocalized(c, outcome.title, `${p}.title`, MAX_SHORT)
-    checkEnum(c, outcome.source, OUTCOME_SOURCES, `${p}.source`)
-    if (outcome.sourceRef !== undefined) checkString(c, outcome.sourceRef, `${p}.sourceRef`, MAX_SHORT)
-    if (outcome.gradeBand !== undefined) checkString(c, outcome.gradeBand, `${p}.gradeBand`, 16)
-    if (!Array.isArray(outcome.mappings)) c.add(`${p}.mappings`, 'must be an array')
-    else outcome.mappings.forEach((m, i) => {
-      if (!isRecord(m)) return c.add(`${p}.mappings[${i}]`, 'must be an object')
-      checkKnownKeys(c, m, ['framework', 'ref'], `${p}.mappings[${i}]`)
-      checkString(c, m.framework, `${p}.mappings[${i}].framework`, MAX_ID)
-      checkString(c, m.ref, `${p}.mappings[${i}].ref`, MAX_SHORT)
-    })
+    checkLearningOutcome(c, outcome, p)
   }
   if (!Array.isArray(input.games)) c.add('games', 'must be an array')
   else input.games.forEach((key, i) => { checkString(c, key, `games[${i}]`, MAX_ID, LOCAL_ID_RE) })

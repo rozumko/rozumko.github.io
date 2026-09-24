@@ -371,8 +371,10 @@ flow through the real routes):
 
 Decisions:
 
-- **Outcome registry lives in the subject pack** (`SubjectPack.outcomes`),
-  code-owned like games and tools. A lesson may target only outcomes of its
+- **Outcome registry lives in the subject pack** (`SubjectPack.outcomes`).
+  *Superseded by the outcome directory (migration `0057`, see "Outcome
+  directory" below): the pack still carries tools and games in code, and its
+  outcomes are joined in from the database at runtime.* A lesson may target only outcomes of its
   own pack; save and publish refuse unknown IDs. The core knows only
   generic sources (`national-standard`, `program`, `international`,
   `internal`); named frameworks live in each outcome's `mappings`.
@@ -699,6 +701,53 @@ dev`), two WebSocket laptops and PostgreSQL 16:
 - a key revoked in Classroom Remote surfaces as `CR_KEY_INVALID`;
 - disconnecting deletes the row.
 
+## Outcome directory
+
+Methodologists add national-standard (NUSH), program and international
+(Cambridge) outcomes from the admin panel. Outcomes no longer ship in code.
+
+Decisions:
+
+- **Admin-only.** The admin maintains the directory and the lessons. Teacher-
+  authored criteria are a separate, later decision (visibility to other
+  teachers, place in reports).
+- **The database is authoritative; packs keep tools and games in code.**
+  `resolveSubjectPack()` (`backend/src/lib/curriculum-outcomes.ts`) joins a
+  registered pack with its outcomes. Lesson save, publish and restore
+  validate against **active** outcomes. The lesson report also resolves
+  **archived** ones, so old evidence keeps its title.
+- **Never deleted, identity fixed.** Evidence rows point at outcome ids.
+  A trigger forbids deleting an outcome or changing its id or pack; the
+  admin archives instead. Archiving blocks new saves and publishes that use
+  the outcome. Published lessons, running lessons and past reports are
+  unaffected. The tab warns which lessons use an outcome before archiving it.
+- **One outcome, several frameworks.** `source` says where the outcome itself
+  comes from; `mappings` (up to 10 `{framework, ref}` pairs, e.g.
+  `cambridge 3Pc.01`) link the same skill in other documents. The core still
+  knows no framework names. Codes are unique per pack.
+- **Audited.** Every create, edit and archive writes an append-only
+  revision in the same transaction; writes use `edit_version` optimistic
+  locking.
+
+Code:
+- Migration `0057`: `curriculum_outcomes`, `curriculum_outcome_revisions`
+  (RLS on, guard and append-only triggers), seeded with the two pilot
+  outcomes under their existing ids.
+- `backend/src/lib/curriculum-outcome-rules.ts` (pure: `prepareOutcome` uses
+  the same rules as pack validation, `outcomeRegistry`, `outcomeUsage`).
+- `/api/admin/curriculum/`: `packs` (GET), `outcomes` (GET with usage, POST),
+  `outcomes/:id` (PUT), `outcomes/:id/status` (PUT), `outcomes/:id/revisions`
+  (GET). Same flag-first 404 and admin-only hooks as the lesson routes.
+- Admin tab «Результати навчання» (`features/admin/outcomes-tab.ts`), shown
+  only when `/api/teacher/me` reports `features.lessonEngine`.
+- `npm run curriculum:publish -- --dry-run` can no longer check outcomes
+  offline; the server checks them on save.
+
+Verified: migration `0057` applied twice (idempotent) on embedded
+PostgreSQL 16 (PGlite): seed rows and revisions; delete, id change, pack
+change, duplicate code, bad source, bad id and revision update refused;
+editing wording and archiving allowed.
+
 ## Open items
 
 - **Reference lesson differs from the specs.** Both specs name `g2-m1-l1`
@@ -708,11 +757,12 @@ dev`), two WebSocket laptops and PostgreSQL 16:
   practice choice, off-platform practical task, external tool, evidence
   self-check, reflection, success criteria. `g2-m1-l1` can follow when its
   source is available.
-- **Outcome codes are internal.** The registry (`SubjectPack.outcomes`) holds
-  `INF-2-FILES-1/2` with `source: 'internal'` and empty `mappings`. NUSH and
-  Cambridge references are added there once a methodologist confirms the
-  exact codes — never guessed. Do not use "ІФО = індекс формувального
-  оцінювання": `ІФО` is the informatics education area code.
+- **Outcome codes are internal.** The directory is seeded with
+  `INF-2-FILES-1/2` (`source: 'internal'`, no mappings). NUSH and Cambridge
+  outcomes are added in the admin tab «Результати навчання» once a
+  methodologist confirms the exact codes — never guessed. Do not use "ІФО =
+  індекс формувального оцінювання": `ІФО` is the informatics education area
+  code.
 - **Classroom Remote integration API v1** is merged and deployed in its own
   repository (`artkysliakov/classroom-remote`). The privacy policy there
   carries the integration-keys section, effective 24 September 2026. The

@@ -7,10 +7,30 @@
 import type { FastifyInstance, FastifyReply } from 'fastify'
 import { and, asc, desc, eq } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { curriculumLessonRevisions, curriculumLessons, type CurriculumLessonStatus } from '../db/schema.js'
+import {
+  curriculumLessonRevisions,
+  curriculumLessons,
+  curriculumOutcomeRevisions,
+  curriculumOutcomes,
+  type CurriculumLessonStatus,
+  type CurriculumOutcomeStatus,
+} from '../db/schema.js'
 import { requireAdmin } from '../lib/auth.js'
 import { isLessonEngineEnabled } from '../lib/lesson-engine-flag.js'
 import { isUniqueViolation } from '../lib/db-errors.js'
+import { resolveSubjectPack } from '../lib/curriculum-outcomes.js'
+import { SUBJECT_PACKS, findSubjectPack } from '../lib/subject-packs.js'
+import {
+  OUTCOME_ID_PATTERN,
+  OUTCOME_STATUSES,
+  OutcomeValidationError,
+  generateOutcomeId,
+  outcomeColumns,
+  outcomeSnapshot,
+  outcomeUsage,
+  peekSubjectPackId,
+  prepareOutcome,
+} from '../lib/curriculum-outcome-rules.js'
 import {
   CURRICULUM_LESSON_ID_PATTERN,
   CURRICULUM_STATUSES,
@@ -25,6 +45,7 @@ import {
 
 class CurriculumEditConflictError extends Error {}
 class CurriculumTransitionError extends Error {}
+class OutcomeEditConflictError extends Error {}
 
 const CONFLICT_MESSAGE = 'Урок уже змінив інший редактор. Онови дані й повтори дію.'
 
@@ -36,8 +57,21 @@ const idParams = {
 
 const editVersion = { type: 'integer', minimum: 1 } as const
 
+// New content may use only active outcomes; archived ones stay for old reports.
+const ACTIVE_ONLY = { includeArchived: false } as const
+
+const outcomeIdParams = {
+  type: 'object',
+  required: ['id'],
+  properties: { id: { type: 'string', maxLength: 64, pattern: OUTCOME_ID_PATTERN } },
+} as const
+
+const packIdSchema = { type: 'string', maxLength: 64, pattern: CURRICULUM_LESSON_ID_PATTERN } as const
+
+const OUTCOME_CONFLICT_MESSAGE = 'Результат уже змінив інший редактор. Онови дані й повтори дію.'
+
 function sendError(reply: FastifyReply, err: unknown) {
-  if (err instanceof CurriculumValidationError) {
+  if (err instanceof CurriculumValidationError || err instanceof OutcomeValidationError) {
     return reply.code(400).send({ error: err.message, issues: err.issues })
   }
   if (err instanceof CurriculumEditConflictError) return reply.code(409).send({ error: CONFLICT_MESSAGE })
@@ -89,7 +123,8 @@ export async function curriculumAdminRoutes(app: FastifyInstance) {
     },
   }, async (req, reply) => {
     try {
-      const lesson = prepareCurriculumDefinition(req.body.definition, null, 1)
+      const pack = await resolveSubjectPack(peekSubjectPackId(req.body.definition), ACTIVE_ONLY)
+      const lesson = prepareCurriculumDefinition(req.body.definition, null, 1, pack)
       const created = await db.transaction(async tx => {
         const [row] = await tx.insert(curriculumLessons).values({
           id: lesson.id,
@@ -131,7 +166,8 @@ export async function curriculumAdminRoutes(app: FastifyInstance) {
       if (!existing) return reply.code(404).send({ error: 'Урок не знайдено' })
       if (existing.editVersion !== req.body.expectedEditVersion) throw new CurriculumEditConflictError()
 
-      const lesson = prepareCurriculumDefinition(req.body.definition, id, existing.contentVersion)
+      const pack = await resolveSubjectPack(peekSubjectPackId(req.body.definition), ACTIVE_ONLY)
+      const lesson = prepareCurriculumDefinition(req.body.definition, id, existing.contentVersion, pack)
       if (!curriculumDefinitionChanged(existing.draftContent, lesson)) {
         return reply.send({ lesson: existing, changed: false })
       }
@@ -193,7 +229,8 @@ export async function curriculumAdminRoutes(app: FastifyInstance) {
           updates.reviewedBy = req.user!.id
         }
         if (status === 'published') {
-          const lesson = prepareCurriculumDefinition(current.draftContent, id, current.contentVersion)
+          const pack = await resolveSubjectPack(peekSubjectPackId(current.draftContent), ACTIVE_ONLY)
+          const lesson = prepareCurriculumDefinition(current.draftContent, id, current.contentVersion, pack)
           updates.publishedVersion = current.contentVersion
           updates.publishedSnapshot = lesson as unknown as Record<string, unknown>
           updates.publishedAt = now
@@ -248,7 +285,9 @@ export async function curriculumAdminRoutes(app: FastifyInstance) {
       if (!revision) return reply.code(404).send({ error: 'Ревізію не знайдено' })
 
       const contentVersion = current.contentVersion + 1
-      const lesson = prepareCurriculumDefinition(draftFromCurriculumRevision(revision.snapshot), id, contentVersion)
+      const restored = draftFromCurriculumRevision(revision.snapshot)
+      const pack = await resolveSubjectPack(peekSubjectPackId(restored), ACTIVE_ONLY)
+      const lesson = prepareCurriculumDefinition(restored, id, contentVersion, pack)
       const updated = await db.transaction(async tx => {
         const [row] = await tx.update(curriculumLessons).set({
           ...curriculumRowColumns(lesson),
@@ -270,5 +309,165 @@ export async function curriculumAdminRoutes(app: FastifyInstance) {
     } catch (err) {
       return sendError(reply, err)
     }
+  })
+
+  // ── Learning outcome directory (migration 0057) ─────────────────────────
+
+  // GET /api/admin/curriculum/packs — registered subject packs (code-owned)
+  app.get('/packs', async (_req, reply) => {
+    const packs = Object.values(SUBJECT_PACKS).map(pack => ({
+      id: pack.id, subject: pack.subject, title: pack.title, gradeRange: pack.gradeRange,
+    }))
+    return reply.send({ packs })
+  })
+
+  // GET /api/admin/curriculum/outcomes — the directory, archived included, with
+  // the lessons (draft or published) that reference each outcome.
+  app.get<{ Querystring: { subjectPackId?: string } }>('/outcomes', {
+    schema: { querystring: { type: 'object', properties: { subjectPackId: packIdSchema }, additionalProperties: false } },
+  }, async (req, reply) => {
+    const packId = req.query.subjectPackId
+    const [outcomes, lessons] = await Promise.all([
+      db.select().from(curriculumOutcomes)
+        .where(packId ? eq(curriculumOutcomes.subjectPackId, packId) : undefined)
+        .orderBy(asc(curriculumOutcomes.subjectPackId), asc(curriculumOutcomes.code)),
+      db.select({
+        id: curriculumLessons.id,
+        draftContent: curriculumLessons.draftContent,
+        publishedSnapshot: curriculumLessons.publishedSnapshot,
+      }).from(curriculumLessons),
+    ])
+    return reply.send({ outcomes, usage: outcomeUsage(lessons) })
+  })
+
+  // POST /api/admin/curriculum/outcomes — add an outcome to a registered pack
+  app.post<{ Body: { subjectPackId: string; id?: string; outcome: unknown } }>('/outcomes', {
+    schema: {
+      body: {
+        type: 'object',
+        required: ['subjectPackId', 'outcome'],
+        additionalProperties: false,
+        properties: {
+          subjectPackId: packIdSchema,
+          id: { type: 'string', maxLength: 64, pattern: OUTCOME_ID_PATTERN },
+          outcome: { type: 'object' },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    try {
+      if (!findSubjectPack(req.body.subjectPackId)) {
+        throw new OutcomeValidationError([{ path: 'subjectPackId', message: 'is not a registered subject pack' }])
+      }
+      const outcome = prepareOutcome(req.body.outcome)
+      const created = await db.transaction(async tx => {
+        const [row] = await tx.insert(curriculumOutcomes).values({
+          id: req.body.id ?? generateOutcomeId(),
+          subjectPackId: req.body.subjectPackId,
+          ...outcomeColumns(outcome),
+          createdBy: req.user!.id,
+          updatedBy: req.user!.id,
+        }).returning()
+        await tx.insert(curriculumOutcomeRevisions).values({
+          outcomeId: row!.id, editVersion: row!.editVersion, action: 'create',
+          snapshot: outcomeSnapshot(row!), changedBy: req.user!.id,
+        })
+        return row!
+      })
+      return reply.code(201).send({ outcome: created })
+    } catch (err) {
+      if (isUniqueViolation(err)) return reply.code(409).send({ error: 'Результат з таким id або кодом уже є в цьому предметі' })
+      return sendError(reply, err)
+    }
+  })
+
+  // PUT /api/admin/curriculum/outcomes/:id — edit wording, source or mappings.
+  // The id and pack never change: evidence refers to them.
+  app.put<{ Params: { id: string }; Body: { outcome: unknown; expectedEditVersion: number } }>('/outcomes/:id', {
+    schema: {
+      params: outcomeIdParams,
+      body: {
+        type: 'object',
+        required: ['outcome', 'expectedEditVersion'],
+        additionalProperties: false,
+        properties: { outcome: { type: 'object' }, expectedEditVersion: editVersion },
+      },
+    },
+  }, async (req, reply) => {
+    const { id } = req.params
+    try {
+      const outcome = prepareOutcome(req.body.outcome)
+      const updated = await db.transaction(async tx => {
+        const [current] = await tx.select().from(curriculumOutcomes).where(eq(curriculumOutcomes.id, id)).limit(1).for('update')
+        if (!current) return null
+        if (current.editVersion !== req.body.expectedEditVersion) throw new OutcomeEditConflictError()
+        const [row] = await tx.update(curriculumOutcomes).set({
+          ...outcomeColumns(outcome),
+          editVersion: current.editVersion + 1,
+          updatedAt: new Date(),
+          updatedBy: req.user!.id,
+        }).where(eq(curriculumOutcomes.id, id)).returning()
+        await tx.insert(curriculumOutcomeRevisions).values({
+          outcomeId: row!.id, editVersion: row!.editVersion, action: 'update',
+          snapshot: outcomeSnapshot(row!), changedBy: req.user!.id,
+        })
+        return row!
+      })
+      if (!updated) return reply.code(404).send({ error: 'Результат не знайдено' })
+      return reply.send({ outcome: updated })
+    } catch (err) {
+      if (err instanceof OutcomeEditConflictError) return reply.code(409).send({ error: OUTCOME_CONFLICT_MESSAGE })
+      if (isUniqueViolation(err)) return reply.code(409).send({ error: 'Результат з таким кодом уже є в цьому предметі' })
+      return sendError(reply, err)
+    }
+  })
+
+  // PUT /api/admin/curriculum/outcomes/:id/status — archive or restore.
+  // Archiving blocks new saves and publishes that use the outcome; published
+  // lessons, running lessons and reports are unaffected.
+  app.put<{ Params: { id: string }; Body: { status: CurriculumOutcomeStatus; expectedEditVersion: number } }>('/outcomes/:id/status', {
+    schema: {
+      params: outcomeIdParams,
+      body: {
+        type: 'object',
+        required: ['status', 'expectedEditVersion'],
+        additionalProperties: false,
+        properties: { status: { type: 'string', enum: [...OUTCOME_STATUSES] }, expectedEditVersion: editVersion },
+      },
+    },
+  }, async (req, reply) => {
+    const { id } = req.params
+    try {
+      const updated = await db.transaction(async tx => {
+        const [current] = await tx.select().from(curriculumOutcomes).where(eq(curriculumOutcomes.id, id)).limit(1).for('update')
+        if (!current) return null
+        if (current.editVersion !== req.body.expectedEditVersion) throw new OutcomeEditConflictError()
+        if (current.status === req.body.status) return current
+        const [row] = await tx.update(curriculumOutcomes).set({
+          status: req.body.status,
+          editVersion: current.editVersion + 1,
+          updatedAt: new Date(),
+          updatedBy: req.user!.id,
+        }).where(eq(curriculumOutcomes.id, id)).returning()
+        await tx.insert(curriculumOutcomeRevisions).values({
+          outcomeId: row!.id, editVersion: row!.editVersion, action: 'status',
+          snapshot: outcomeSnapshot(row!), changedBy: req.user!.id,
+        })
+        return row!
+      })
+      if (!updated) return reply.code(404).send({ error: 'Результат не знайдено' })
+      return reply.send({ outcome: updated })
+    } catch (err) {
+      if (err instanceof OutcomeEditConflictError) return reply.code(409).send({ error: OUTCOME_CONFLICT_MESSAGE })
+      return sendError(reply, err)
+    }
+  })
+
+  // GET /api/admin/curriculum/outcomes/:id/revisions — append-only history
+  app.get<{ Params: { id: string } }>('/outcomes/:id/revisions', { schema: { params: outcomeIdParams } }, async (req, reply) => {
+    const revisions = await db.select().from(curriculumOutcomeRevisions)
+      .where(eq(curriculumOutcomeRevisions.outcomeId, req.params.id))
+      .orderBy(desc(curriculumOutcomeRevisions.editVersion))
+    return reply.send({ revisions })
   })
 }

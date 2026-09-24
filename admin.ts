@@ -10,6 +10,7 @@ import { initQuestionsTab, loadQuestionsTab  } from './features/admin/questions-
 import { initMissionsTab,  loadMissionsTab   } from './features/admin/missions-tab.js'
 import { initLessonsTab,   loadLessonsTab    } from './features/admin/lessons-tab.js'
 import { initPathTab,      loadPathTab       } from './features/admin/path-tab.js'
+import { initOutcomesTab,   loadOutcomesTab   } from './features/admin/outcomes-tab.js'
 import { initPublicationTab, loadPublicationTab, refreshContentDeliveryBanner } from './features/admin/publication-tab.js'
 import { initFunnelPanel, loadFunnelPanel } from './features/admin/funnel-panel.js'
 import { friendlyError } from './features/admin/ui.js'
@@ -50,6 +51,7 @@ async function init() {
       const me = await getTeacherMe()
       hideColdStartBanner()
       if (me.role !== 'admin') throw new Error('not admin')
+      showLessonEngineTabs(me.features?.lessonEngine === true)
       showDashboard(me.name || session.email)
     } catch {
       hideColdStartBanner()
@@ -79,6 +81,7 @@ loginForm.addEventListener('submit', async (e) => {
       await logoutTeacher()
       throw new Error('Доступ тільки для адміністратора')
     }
+    showLessonEngineTabs(me.features?.lessonEngine === true)
     showDashboard(me.name || email)
   } catch (err) {
     hideColdStartBanner()
@@ -111,9 +114,15 @@ document.querySelectorAll<HTMLElement>('.admin-tab').forEach(tab => {
     if (tabName === 'missions')  loadMissionsTab()
     if (tabName === 'lessons')   loadLessonsTab()
     if (tabName === 'path')      loadPathTab()
+    if (tabName === 'outcomes')  loadOutcomesTab()
     if (tabName === 'publication') loadPublicationTab()
   })
 })
+
+// --- Lesson Engine tabs: shown only when the backend serves the surface ---
+function showLessonEngineTabs(enabled: boolean) {
+  document.querySelectorAll<HTMLElement>('[data-lesson-engine]').forEach(tab => { tab.hidden = !enabled })
+}
 
 // --- Dashboard ---
 function showDashboard(nameOrEmail: string) {
@@ -158,5 +167,6 @@ initQuestionsTab()
 initMissionsTab()
 initLessonsTab()
 initPathTab()
+initOutcomesTab()
 initPublicationTab()
 initFunnelPanel()

@@ -428,6 +428,28 @@ test('curriculum lessons are RLS-protected, journaled and keep published version
   assert.match(journal, /"tag": "0049_add_curriculum_lessons"/)
 })
 
+test('the learning outcome directory is RLS-protected, never deleted and journaled', () => {
+  const migration = readFileSync(new URL('../drizzle/0057_add_curriculum_outcomes.sql', import.meta.url), 'utf8')
+  const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')
+
+  assert.match(migration, /ALTER TABLE public\.curriculum_outcomes ENABLE ROW LEVEL SECURITY;/)
+  assert.match(migration, /ALTER TABLE public\.curriculum_outcome_revisions ENABLE ROW LEVEL SECURITY;/)
+  // Evidence refers to outcome ids: no delete, and id/pack are immutable.
+  assert.match(migration, /BEFORE UPDATE OR DELETE ON public\.curriculum_outcomes/)
+  assert.match(migration, /cannot change its id or subject pack/)
+  assert.match(migration, /BEFORE UPDATE OR DELETE ON public\.curriculum_outcome_revisions/)
+  assert.match(migration, /ON DELETE RESTRICT/)
+  assert.doesNotMatch(migration, /CREATE POLICY/)
+  assert.match(journal, /"tag": "0057_add_curriculum_outcomes"/)
+
+  // Outcomes are validated against the directory, never a stale code copy.
+  const admin = readFileSync(new URL('./routes/curriculum-admin.ts', import.meta.url), 'utf8')
+  const editorial = readFileSync(new URL('./routes/curriculum-editorial.ts', import.meta.url), 'utf8')
+  assert.equal((admin.match(/prepareCurriculumDefinition\(/g) ?? []).length, 4)
+  assert.equal((admin.match(/resolveSubjectPack\([^)]*\), ACTIVE_ONLY\)/g) ?? []).length, 4)
+  assert.doesNotMatch(editorial, /findSubjectPack/)
+})
+
 test('curriculum editorial API is flag-gated first and admin-only for every route', () => {
   const route = readFileSync(new URL('./routes/curriculum-admin.ts', import.meta.url), 'utf8')
   const flag = readFileSync(new URL('./lib/lesson-engine-flag.ts', import.meta.url), 'utf8')

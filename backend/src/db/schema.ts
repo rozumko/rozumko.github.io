@@ -691,6 +691,45 @@ export const curriculumLessonRevisions = pgTable('curriculum_lesson_revisions', 
 
 export type CurriculumLessonRevisionRow = typeof curriculumLessonRevisions.$inferSelect
 
+// ── Lesson Engine: learning outcome directory (0057) ─────────────────────────
+// Outcomes lessons may target, per subject pack. Evidence refers to them by
+// id, so rows are archived, never deleted, and id/pack are immutable (trigger).
+export type CurriculumOutcomeStatus = 'active' | 'archived'
+
+export const curriculumOutcomes = pgTable('curriculum_outcomes', {
+  id:            text('id').primaryKey(),
+  subjectPackId: text('subject_pack_id').notNull(),
+  code:          text('code').notNull(),
+  titleUk:       text('title_uk').notNull(),
+  titleEn:       text('title_en'),
+  source:        text('source').notNull(),
+  sourceRef:     text('source_ref'),
+  gradeBand:     text('grade_band'),
+  mappings:      jsonb('mappings').notNull().default([]).$type<{ framework: string; ref: string }[]>(),
+  status:        text('status').notNull().default('active').$type<CurriculumOutcomeStatus>(),
+  editVersion:   integer('edit_version').notNull().default(1),
+  createdBy:     text('created_by'),
+  updatedBy:     text('updated_by'),
+  createdAt:     timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:     timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  uniqPackCode: unique('curriculum_outcomes_pack_code_uq').on(t.subjectPackId, t.code),
+}))
+
+export type CurriculumOutcomeRow = typeof curriculumOutcomes.$inferSelect
+
+export const curriculumOutcomeRevisions = pgTable('curriculum_outcome_revisions', {
+  id:          uuid('id').primaryKey().defaultRandom(),
+  outcomeId:   text('outcome_id').notNull().references(() => curriculumOutcomes.id, { onDelete: 'restrict' }),
+  editVersion: integer('edit_version').notNull(),
+  action:      text('action').notNull(),
+  snapshot:    jsonb('snapshot').notNull().$type<Record<string, unknown>>(),
+  changedBy:   text('changed_by'),
+  createdAt:   timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  uniqOutcomeEditVersion: unique('curriculum_outcome_revisions_outcome_edit_version_uq').on(t.outcomeId, t.editVersion),
+}))
+
 // ── Lesson Engine: lesson runs (0050) ─────────────────────────────────────────
 // A run freezes the published lesson snapshot (answer keys included, server
 // only). Identity and snapshot are immutable and finished/cancelled runs are

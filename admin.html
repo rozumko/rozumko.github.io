@@ -80,6 +80,7 @@
       <button data-tab="missions"   class="admin-tab"><i class="fas fa-rocket" aria-hidden="true"></i> Місії</button>
       <button data-tab="lessons"    class="admin-tab"><i class="fas fa-book-open" aria-hidden="true"></i> Уроки</button>
       <button data-tab="path"       class="admin-tab"><i class="fas fa-map-signs" aria-hidden="true"></i> Шлях</button>
+      <button data-tab="outcomes"   class="admin-tab" data-lesson-engine hidden><i class="fas fa-bullseye" aria-hidden="true"></i> Результати навчання</button>
       <button data-tab="publication" class="admin-tab"><i class="fas fa-clipboard-list" aria-hidden="true"></i> Журнал сайту</button>
       <button data-tab="help"       class="admin-tab"><i class="fas fa-life-ring" aria-hidden="true"></i> Довідка</button>
     </nav>
@@ -334,6 +335,37 @@
         </div>
         <div id="lessons-list" class="admin-list admin-list--sm"></div>
         <div id="lessons-pager"></div>
+      </section>
+
+      <!-- Вкладка: довідник результатів навчання (Lesson Engine) -->
+      <section id="tab-outcomes" class="tab-panel hidden">
+        <div class="admin-section-header">
+          <h2 class="admin-section-title">Результати навчання</h2>
+          <div class="admin-section-actions">
+            <button id="add-outcome-btn" class="btn-adm-emerald">
+              <i class="fas fa-plus" aria-hidden="true"></i> Додати результат
+            </button>
+          </div>
+        </div>
+        <p class="admin-section-note">Довідник для керованих уроків: очікувані результати НУШ, критерії Cambridge, результати програми.
+          Активність уроку посилається на результат, і відповіді учнів стають доказами його досягнення.
+          Результат не видаляється, бо на нього посилаються докази учнів: його можна лише зняти з використання.
+          Код і формулювання вносьте з офіційного документа, не вигадуйте.</p>
+        <div class="admin-filter-bar">
+          <input id="o-filter-search" class="adm-input adm-input--sm" type="search"
+                 placeholder="Пошук за кодом, словом або відповідністю" aria-label="Пошук результатів"/>
+          <select id="o-filter-pack" class="adm-input adm-input--sm adm-input--auto" aria-label="Предмет">
+            <option value="">Усі предмети</option>
+          </select>
+          <select id="o-filter-status" class="adm-input adm-input--sm adm-input--auto" aria-label="Стан результату">
+            <option value="active">Діючі</option>
+            <option value="archived">Зняті з використання</option>
+            <option value="">Усі</option>
+          </select>
+          <span id="o-count" class="admin-filter-count"></span>
+        </div>
+        <p id="o-load-error" class="adm-form-error" role="alert"></p>
+        <div id="outcomes-list" class="admin-list admin-list--sm"></div>
       </section>
 
       <!-- Вкладка: Карта шляху -->
@@ -1062,6 +1094,77 @@
             <i class="fas fa-eye" aria-hidden="true"></i> Переглянути
           </button>
           <button type="button" id="lf-cancel" class="btn-adm-slate">Скасувати</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Модальне вікно результату навчання -->
+  <div id="outcome-modal" class="question-modal-overlay hidden"
+       role="dialog" aria-modal="true" aria-labelledby="outcome-modal-title">
+    <div class="question-modal-card">
+      <h3 id="outcome-modal-title" class="question-modal-title">Новий результат навчання</h3>
+      <form id="outcome-form" novalidate class="qf-space">
+        <div class="adm-form-grid">
+          <div>
+            <label for="of-pack" class="adm-label">Предмет</label>
+            <select id="of-pack" class="adm-input adm-input--sm"></select>
+          </div>
+          <div>
+            <label for="of-source" class="adm-label">Джерело</label>
+            <select id="of-source" class="adm-input adm-input--sm">
+              <option value="national-standard">Державний стандарт (НУШ)</option>
+              <option value="program">Навчальна програма</option>
+              <option value="international">Міжнародний (Cambridge тощо)</option>
+              <option value="internal">Внутрішній</option>
+            </select>
+          </div>
+          <div>
+            <label for="of-code" class="adm-label">Код</label>
+            <input type="text" id="of-code" class="adm-input adm-input--sm adm-input--code" maxlength="64"
+                   placeholder="напр. 2 ІФО 2.1-1" required aria-describedby="of-code-hint"/>
+            <p id="of-code-hint" class="adm-field-hint">Як в офіційному документі. У межах предмета код унікальний.</p>
+          </div>
+          <div>
+            <label for="of-grade" class="adm-label">Класи</label>
+            <input type="text" id="of-grade" class="adm-input adm-input--sm" maxlength="16" placeholder="напр. 1-2"/>
+          </div>
+        </div>
+        <div>
+          <label for="of-title" class="adm-label">Формулювання</label>
+          <textarea id="of-title" class="adm-input" rows="2" maxlength="200" required
+                    placeholder="напр. Складає прості послідовності команд для виконавця"></textarea>
+        </div>
+        <div>
+          <label for="of-title-en" class="adm-label">Формулювання англійською (необов'язково)</label>
+          <input type="text" id="of-title-en" class="adm-input adm-input--sm" maxlength="200"/>
+        </div>
+        <div>
+          <label for="of-source-ref" class="adm-label">Документ або розділ (необов'язково)</label>
+          <input type="text" id="of-source-ref" class="adm-input adm-input--sm" maxlength="200"
+                 placeholder="напр. Типова освітня програма НУШ, 1–2 кл., інформатична галузь"/>
+        </div>
+        <fieldset class="of-mappings">
+          <legend class="adm-label">Відповідності іншим документам</legend>
+          <p class="adm-field-hint">Наприклад, для результату НУШ — критерій Cambridge, що перевіряє те саме.</p>
+          <div id="of-mappings"></div>
+          <button type="button" id="of-add-mapping" class="btn-adm-ghost btn--sm">
+            <i class="fas fa-plus" aria-hidden="true"></i> Відповідність
+          </button>
+          <datalist id="of-frameworks"></datalist>
+        </fieldset>
+        <div>
+          <label for="of-id" class="adm-label">ID (необов'язково)</label>
+          <input type="text" id="of-id" class="adm-input adm-input--sm adm-input--code" maxlength="64"
+                 placeholder="створиться автоматично" pattern="[a-z0-9]+(-[a-z0-9]+)*" aria-describedby="of-id-hint"/>
+          <p id="of-id-hint" class="adm-field-hint">Латиниця, цифри й дефіси. Уроки посилаються на результат за ID, тому після створення його не змінити.</p>
+        </div>
+        <div id="of-error" class="adm-form-error" role="alert"></div>
+        <div class="adm-form-actions">
+          <button type="submit" id="of-save" class="btn-adm-emerald">
+            <i class="fas fa-save" aria-hidden="true"></i> Зберегти
+          </button>
+          <button type="button" id="of-cancel" class="btn-adm-slate">Скасувати</button>
         </div>
       </form>
     </div>

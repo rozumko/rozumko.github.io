@@ -163,6 +163,16 @@ returns the key. Evidence activities are refused (`409`) so their answers are
 not shown to the class before students do them. Platform games embedded in
 lessons are always `client-unverified` and can never be primary evidence.
 
+The learning outcome directory (migration `0057`, `/api/admin/curriculum/
+outcomes` and `/packs`) sits behind the same flag-first 404 and admin-only
+hooks. Outcome IDs and pack IDs are schema-validated before database access.
+Outcomes are validated with the same fail-closed rules as pack registries
+(no HTML, no unknown fields, known source). Student evidence refers to outcome
+IDs, so triggers forbid deleting an outcome or changing its ID or pack.
+Revisions are append-only, and both tables have RLS enabled with no policies.
+Lesson save and publish validate against active directory outcomes only, never
+a code copy (pinned by a security regression test).
+
 Lesson runs (`/api/teacher/lesson-runs`, migration `0050`) are owner-scoped
 on every lookup, and a run can only be prepared for the teacher's own class.
 A run freezes the published snapshot (answer keys included, server-only), and
@@ -366,8 +376,9 @@ revisions), `0036`-`0038` (`question_revisions`, `micro_lesson_revisions`,
 (`lesson_runs`, `lesson_run_students`, `lesson_run_events`) `0051`
 (`lesson_run_devices`) `0052` (`lesson_run_dispatches`, `activity_attempts`), `0053`
 (`student_outcome_evidence`), `0054` (`device_assignments`) and `0055`
-(`lesson_class_links`, `lesson_class_seats`) and `0056`
-(`classroom_remote_connections`). A regression test
+(`lesson_class_links`, `lesson_class_seats`), `0056`
+(`classroom_remote_connections`) and `0057` (`curriculum_outcomes`,
+`curriculum_outcome_revisions`). A regression test
 fails if any application table is left uncovered.
 Migration `0048` applies the same deny-by-default RLS rule to
 `teacher_question_topics`; its answer-bearing session snapshots remain inside

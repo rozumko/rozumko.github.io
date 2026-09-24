@@ -1183,6 +1183,72 @@ export function getTeacherMe(): Promise<{ id: string; authUserId: string; role: 
   return authRequest('/api/teacher/me')
 }
 
+// ─── Lesson Engine: admin outcome directory (flag-gated on the backend) ────
+
+export type CurriculumOutcomeSource = 'national-standard' | 'program' | 'international' | 'internal'
+
+/** What the editor sends; the server trims, validates and stores it. */
+export interface CurriculumOutcomeInput {
+  code: string
+  title: { uk: string; en?: string }
+  source: CurriculumOutcomeSource
+  sourceRef?: string
+  gradeBand?: string
+  mappings: { framework: string; ref: string }[]
+}
+
+export interface AdminCurriculumOutcome {
+  id: string
+  subjectPackId: string
+  code: string
+  titleUk: string
+  titleEn: string | null
+  source: CurriculumOutcomeSource
+  sourceRef: string | null
+  gradeBand: string | null
+  mappings: { framework: string; ref: string }[]
+  status: 'active' | 'archived'
+  editVersion: number
+  updatedAt: string
+}
+
+export interface AdminSubjectPack {
+  id: string
+  subject: string
+  title: { uk: string; en?: string }
+  gradeRange: { min: number; max: number }
+}
+
+export function getAdminSubjectPacks(): Promise<{ packs: AdminSubjectPack[] }> {
+  return authRequest('/api/admin/curriculum/packs')
+}
+
+/** `usage` maps an outcome id to the lessons (draft or published) that target it. */
+export function getAdminCurriculumOutcomes(): Promise<{ outcomes: AdminCurriculumOutcome[]; usage: Record<string, string[]> }> {
+  return authRequest('/api/admin/curriculum/outcomes')
+}
+
+export function createAdminCurriculumOutcome(subjectPackId: string, outcome: CurriculumOutcomeInput, id?: string): Promise<{ outcome: AdminCurriculumOutcome }> {
+  return authRequest('/api/admin/curriculum/outcomes', {
+    method: 'POST',
+    body: JSON.stringify({ subjectPackId, outcome, ...(id ? { id } : {}) }),
+  })
+}
+
+export function updateAdminCurriculumOutcome(id: string, outcome: CurriculumOutcomeInput, expectedEditVersion: number): Promise<{ outcome: AdminCurriculumOutcome }> {
+  return authRequest(`/api/admin/curriculum/outcomes/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    body: JSON.stringify({ outcome, expectedEditVersion }),
+  })
+}
+
+export function setAdminCurriculumOutcomeStatus(id: string, status: 'active' | 'archived', expectedEditVersion: number): Promise<{ outcome: AdminCurriculumOutcome }> {
+  return authRequest(`/api/admin/curriculum/outcomes/${encodeURIComponent(id)}/status`, {
+    method: 'PUT',
+    body: JSON.stringify({ status, expectedEditVersion }),
+  })
+}
+
 // ─── Lesson Engine (teacher, flag-gated on the backend) ────────────────────
 
 export function getCurriculumLessons(): Promise<{ lessons: CurriculumLessonSummary[] }> {

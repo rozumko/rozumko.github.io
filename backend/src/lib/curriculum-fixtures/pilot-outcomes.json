@@ -1,0 +1,16 @@
+{
+  "int-files-name-extension": {
+    "code": "INF-2-FILES-1",
+    "title": { "uk": "Розрізняє ім’я файла та розширення і пояснює, навіщо потрібне розширення" },
+    "source": "internal",
+    "gradeBand": "1-2",
+    "mappings": []
+  },
+  "int-files-organize": {
+    "code": "INF-2-FILES-2",
+    "title": { "uk": "Створює, перейменовує, переміщує та знаходить файли в тематичній папці" },
+    "source": "internal",
+    "gradeBand": "1-2",
+    "mappings": []
+  }
+}

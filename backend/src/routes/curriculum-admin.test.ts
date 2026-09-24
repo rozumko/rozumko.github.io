@@ -34,6 +34,13 @@ const ROUTES: InjectOptions[] = [
   { method: 'PUT', url: '/api/admin/curriculum/lessons/g2-m2-l8/status', payload: { status: 'review', expectedEditVersion: 1 } },
   { method: 'GET', url: '/api/admin/curriculum/lessons/g2-m2-l8/revisions' },
   { method: 'POST', url: '/api/admin/curriculum/lessons/g2-m2-l8/restore', payload: { revisionEditVersion: 1, expectedEditVersion: 1 } },
+  { method: 'GET', url: '/api/admin/curriculum/packs' },
+  { method: 'GET', url: '/api/admin/curriculum/outcomes' },
+  { method: 'GET', url: '/api/admin/curriculum/outcomes?subjectPackId=informatics-ua-primary' },
+  { method: 'POST', url: '/api/admin/curriculum/outcomes', payload: { subjectPackId: 'informatics-ua-primary', outcome: {} } },
+  { method: 'PUT', url: '/api/admin/curriculum/outcomes/int-files-organize', payload: { outcome: {}, expectedEditVersion: 1 } },
+  { method: 'PUT', url: '/api/admin/curriculum/outcomes/int-files-organize/status', payload: { status: 'archived', expectedEditVersion: 1 } },
+  { method: 'GET', url: '/api/admin/curriculum/outcomes/int-files-organize/revisions' },
 ]
 
 test('with the flag off (default or mistyped) every route is a 404, before validation or auth', async () => {
@@ -80,6 +87,14 @@ test('malformed IDs and bodies are rejected before auth or database access', asy
         { method: 'PUT', url: '/api/admin/curriculum/lessons/g2-m2-l8', payload: { definition: {}, expectedEditVersion: 0 } },
         { method: 'PUT', url: '/api/admin/curriculum/lessons/g2-m2-l8/status', payload: { status: 'live', expectedEditVersion: 1 } },
         { method: 'POST', url: '/api/admin/curriculum/lessons/g2-m2-l8/restore', payload: { expectedEditVersion: 1 } },
+        { method: 'GET', url: '/api/admin/curriculum/outcomes?subjectPackId=Bad_Pack' },
+        { method: 'GET', url: '/api/admin/curriculum/outcomes/Not_An_Id/revisions' },
+        { method: 'POST', url: '/api/admin/curriculum/outcomes', payload: { outcome: {} } },
+        { method: 'POST', url: '/api/admin/curriculum/outcomes', payload: { subjectPackId: 'informatics-ua-primary', outcome: 'text' } },
+        { method: 'POST', url: '/api/admin/curriculum/outcomes', payload: { subjectPackId: 'informatics-ua-primary', id: 'Bad Id', outcome: {} } },
+        { method: 'PUT', url: '/api/admin/curriculum/outcomes/int-files-organize', payload: { outcome: {} } },
+        { method: 'PUT', url: `/api/admin/curriculum/outcomes/${'a'.repeat(65)}`, payload: { outcome: {}, expectedEditVersion: 1 } },
+        { method: 'PUT', url: '/api/admin/curriculum/outcomes/int-files-organize/status', payload: { status: 'deleted', expectedEditVersion: 1 } },
       ]
       for (const request of cases) {
         const response = await app.inject(request)

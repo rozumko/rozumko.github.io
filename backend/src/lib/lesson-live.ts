@@ -38,7 +38,7 @@ export interface StudentActivityView {
 }
 
 /** What a device may see of an activity: config without any key. */
-export function studentActivityView(activity: ActivitySpec, pack: SubjectPack | null): StudentActivityView {
+export function studentActivityView(activity: ActivitySpec, pack: Pick<SubjectPack, 'externalTools'> | null): StudentActivityView {
   const view: StudentActivityView = {
     instanceId: activity.instanceId,
     mechanic: activity.mechanic,
