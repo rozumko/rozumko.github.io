@@ -173,6 +173,7 @@ export default defineConfig(({ mode }) => {
           standards:        resolve(__dirname, 'standards.html'),
           'lesson-engine':  resolve(__dirname, 'lesson-engine.html'),
           'lesson-join':    resolve(__dirname, 'lesson-join.html'),
+          'lesson-board':   resolve(__dirname, 'lesson-board.html'),
         },
       },
     },

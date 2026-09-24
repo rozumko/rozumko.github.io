@@ -152,6 +152,23 @@ and restore.
   note, speaker hint or answer text; axe WCAG 2.2 AA on both views; start from
   a block; the diagram loads; no horizontal scroll at 375 px.
 
+### Projector window
+
+The teacher keeps the plan (or the run console) on their own screen and
+shows slides in a second window on the projector.
+- «Відкрити на проєкторі» opens `lesson-board.html`. It has no session and
+  calls no API. The lesson arrives over a `BroadcastChannel`
+  (`board-protocol.ts`), trimmed to the slide blocks and without speaker notes
+  (`boardLesson()`).
+- The teacher's page owns the current slide: its buttons, ←/→ and
+  PageUp/PageDown (clickers) move the board. Moving on the board is reported
+  back. In a run, the board and the run steps follow each other.
+- A "do it together" check on the board is proxied through the teacher's page,
+  which holds the session.
+- Opening again re-takes the same named window, so it keeps its place and full
+  screen. A blocked pop-up falls back to the full-screen overlay («На весь
+  екран тут»).
+
 ## Stage E — what exists
 
 Decisions:

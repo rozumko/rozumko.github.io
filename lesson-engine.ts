@@ -41,6 +41,8 @@ import {
 } from './features/api/client.js'
 import { renderLessonDocument } from './features/lesson-engine/document-view.js'
 import { openPresentation } from './features/lesson-engine/presentation-view.js'
+import { mountBoardWindow } from './features/lesson-engine/board-window.js'
+import type { BoardActivityDeps } from './features/lesson-engine/activity-board.js'
 import { lessonMetaLine } from './features/lesson-engine/projection.js'
 import { mountRunConsole } from './features/lesson-engine/run-console.js'
 import { renderLessonReport } from './features/lesson-engine/report-view.js'
@@ -223,20 +225,17 @@ function renderLesson(lesson: LessonDefinition) {
   back.href = 'lesson-engine.html'
   back.className = 'le-toolbar__back'
   back.textContent = '← Усі уроки'
-  const present = document.createElement('button')
-  present.type = 'button'
-  present.className = 'btn btn--teacher le-toolbar__present'
-  present.textContent = 'Показати на дошці'
-  toolbar.append(back, present)
+  const check: BoardActivityDeps['check'] = (instanceId, answer) => checkCurriculumActivity(lesson.id, instanceId, answer)
+  const board = mountBoardWindow(lesson, { check })
+  toolbar.append(back, board.element)
 
-  const start = (blockId?: string) => {
-    const handle = openPresentation(lesson, {
-      startBlockId: blockId,
-      activities: { check: (instanceId, answer) => checkCurriculumActivity(lesson.id, instanceId, answer) },
-    })
+  // With the projector open, "show from here" moves the class screen; without
+  // it, the slides open full screen on this page.
+  const start = (blockId: string) => {
+    if (board.follow(blockId)) return
+    const handle = openPresentation(lesson, { startBlockId: blockId, activities: { check } })
     if (!handle) setStatus('У цьому уроці немає слайдів для дошки.')
   }
-  present.addEventListener('click', () => start())
   viewEl.replaceChildren(toolbar, renderLessonDocument(lesson, { onPresentFrom: start }))
   renderRunLauncher(lesson)
     .then(panel => toolbar.after(panel))

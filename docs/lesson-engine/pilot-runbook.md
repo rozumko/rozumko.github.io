@@ -69,7 +69,9 @@ Do these in order. Nothing is visible to teachers until step 4.
       `https://<backend>/health`. A free-plan backend sleeps and needs up to
       a minute to wake up. For real classes use a plan that does not sleep.
 - [ ] The board computer shows `lesson-engine.html` (link «Керовані уроки»
-      in the teacher panel) and the projector works.
+      in the teacher panel) and the projector works as an extended (not
+      mirrored) display. «Відкрити на проєкторі» → drag the new window onto
+      the projector → «На весь екран» there. Allow pop-ups for the site.
 - [ ] Print or open the observation sheet (§4).
 
 ## 3. Lesson flow (what the teacher does)
