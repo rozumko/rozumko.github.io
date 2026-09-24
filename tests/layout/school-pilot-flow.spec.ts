@@ -174,6 +174,8 @@ test('pilot happy path: teacher starts a code game, child completes it, class su
 
   const teacher = await context.newPage()
   await teacher.addInitScript(() => {
+    // The cabinet reopens the last section; these tests work in the class game.
+    localStorage.setItem('teacher:section', 'school')
     sessionStorage.setItem('teacher_session', JSON.stringify({
       accessToken: 'teacher-pilot-token',
       refreshToken: '',

@@ -132,6 +132,8 @@ async function startHomeMission(page: Page, questions: unknown[]) {
 
 async function openAdminDashboard(page: Page) {
   await page.addInitScript(() => {
+    // The cabinet reopens the last section; these tests work in the class game.
+    localStorage.setItem('teacher:section', 'school')
     sessionStorage.setItem('teacher_session', JSON.stringify({
       accessToken: 'admin-test-token',
       refreshToken: '',
@@ -284,6 +286,8 @@ async function openAdminDashboard(page: Page) {
 
 async function openTeacherDashboard(page: Page) {
   await page.addInitScript(() => {
+    // The cabinet reopens the last section; these tests work in the class game.
+    localStorage.setItem('teacher:section', 'school')
     sessionStorage.setItem('teacher_session', JSON.stringify({
       accessToken: 'teacher-test-token',
       refreshToken: '',

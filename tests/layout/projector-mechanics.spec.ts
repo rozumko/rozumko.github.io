@@ -56,6 +56,8 @@ const QUESTIONS = [MATCH_Q, SORT_Q, SEQ_Q, CHOICE_Q, LONG_Q]
 
 async function openProjector(page: Page) {
   await page.addInitScript((questions) => {
+    // The cabinet reopens the last section; these tests work in the class game.
+    localStorage.setItem('teacher:section', 'school')
     sessionStorage.setItem('teacher_session', JSON.stringify({
       accessToken: 'teacher-test-token', refreshToken: '', email: 'teacher@example.test',
     }))
