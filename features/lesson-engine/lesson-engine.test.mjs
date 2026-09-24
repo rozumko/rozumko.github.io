@@ -242,3 +242,36 @@ test('the laptops panel summarises the room in words', async () => {
   assert.equal(roomSummaryLine({ total: 14, online: 12, synced: 0 }, false), '12 з 14 онлайн · урок ще не відкрито')
   assert.equal(roomSummaryLine({ total: 14, online: 12, synced: 11 }, true), '12 з 14 онлайн · 11 відкрили урок')
 })
+
+test('the projector receives only slide blocks, without speaker notes', async () => {
+  const { boardLesson } = await import('./board-protocol.ts')
+  const sent = boardLesson(servedLesson, presentationSlides(servedLesson))
+  assert.deepEqual(sent.blocks.map(b => b.id), presentationSlides(servedLesson).map(s => s.blockId))
+  assert.deepEqual(presentationSlides(sent).map(s => s.blockId), presentationSlides(servedLesson).map(s => s.blockId))
+  for (const block of sent.blocks) {
+    assert.notEqual(block.type, 'teacher-note')
+    assert.equal(block.presentation?.speakerNotes, undefined, block.id)
+  }
+  const json = JSON.stringify(sent)
+  for (const block of servedLesson.blocks.filter(b => b.presentation?.speakerNotes)) {
+    assert.ok(!json.includes(block.presentation.speakerNotes.uk), block.id)
+  }
+})
+
+test('projector messages are parsed defensively', async () => {
+  const { parseBoardMessage } = await import('./board-protocol.ts')
+  assert.deepEqual(parseBoardMessage({ type: 'hello', extra: 1 }), { type: 'hello' })
+  assert.deepEqual(parseBoardMessage({ type: 'show', session: 's1', blockId: 'g2-m2-l8-b01' }), { type: 'show', session: 's1', blockId: 'g2-m2-l8-b01' })
+  assert.equal(parseBoardMessage({ type: 'show', session: 's1' }), null)
+  assert.equal(parseBoardMessage({ type: 'show', session: 'a b', blockId: 'x' }), null)
+  assert.equal(parseBoardMessage({ type: 'claim', session: 's1', blockId: 'x', lesson: { id: 'x' } }), null)
+  assert.equal(parseBoardMessage({ type: 'eval', session: 's1' }), null)
+  assert.equal(parseBoardMessage('hello'), null)
+  assert.equal(parseBoardMessage(null), null)
+  assert.deepEqual(
+    parseBoardMessage({ type: 'check-result', session: 's1', requestId: 'r1', error: 'x', result: 1 }),
+    { type: 'check-result', session: 's1', requestId: 'r1', error: 'x' },
+  )
+  const claim = parseBoardMessage({ type: 'claim', session: 's1', blockId: 'g2-m2-l8-b01', lesson: servedLesson })
+  assert.equal(claim?.type, 'claim')
+})

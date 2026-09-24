@@ -203,6 +203,8 @@ body.le-board-open { overflow: hidden; }
 .le-board__nav:focus-visible,
 .le-board__close:focus-visible { outline: 3px solid var(--clr-focus-ring); outline-offset: 2px; }
 .le-board__close { margin-left: auto; }
+.le-board__fullscreen { margin-left: auto; }
+.le-board__fullscreen + .le-board__close { margin-left: 0; }
 .le-board__counter { margin: 0; min-width: 4rem; text-align: center; font-weight: 700; font-size: var(--font-size-lg); }
 
 .le-slide {
@@ -586,3 +588,39 @@ a.le-board__action { display: inline-flex; align-items: center; text-decoration:
 @media (prefers-reduced-motion: reduce) {
   .le-page * { transition: none !important; animation: none !important; }
 }
+
+/* ── Presenter controls for the projector window ─────────────── */
+.le-presenter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin: var(--sp-3) 0;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-md);
+  background: var(--clr-surface-muted);
+}
+.le-presenter[hidden],
+.le-presenter__row[hidden],
+.le-presenter p[hidden] { display: none; }
+.le-presenter__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.le-presenter .le-board__action { font-size: var(--font-size-base); min-height: 2.75rem; padding: var(--sp-2) var(--sp-4); }
+.le-presenter__now { margin: 0; flex: 1 1 14rem; font-weight: 700; }
+.le-presenter__next,
+.le-presenter__help { margin: 0; color: var(--clr-text-muted); font-size: var(--font-size-sm); }
+.le-presenter__status { margin: 0; }
+.le-presenter__status:empty { display: none; }
+.le-toolbar .le-presenter { flex: 1 1 100%; margin: 0; }
+
+/* ── Projector window (lesson-board.html) ────────────────────── */
+.lb-page { min-height: 100vh; background: var(--clr-surface); }
+.lb-main { min-height: 100vh; display: grid; place-items: center; padding: var(--sp-4); }
+.lb-waiting { max-width: 40rem; display: flex; flex-direction: column; align-items: center; gap: var(--sp-4); text-align: center; }
+.lb-waiting[hidden] { display: none; }
+.lb-waiting__title { margin: 0; font-size: var(--font-size-2xl, 2rem); }
+.lb-waiting__text { margin: 0; font-size: var(--font-size-lg); color: var(--clr-text-muted); }

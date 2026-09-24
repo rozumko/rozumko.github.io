@@ -121,7 +121,7 @@ test('teacher opens a lesson from the list and sees the full plan with teacher-o
 test('the board walks every slide by keyboard and never shows teacher notes or answers', async ({ page }) => {
   await mockTeacherApi(page, { lessonEngine: true })
   await page.goto('/lesson-engine.html?lesson=g2-m2-l8')
-  await page.getByRole('button', { name: 'Показати на дошці' }).click()
+  await page.getByRole('button', { name: 'На весь екран тут' }).click()
 
   const board = page.getByRole('dialog', { name: /Показ на дошці/ })
   const counter = board.locator('.le-board__counter')
@@ -179,7 +179,7 @@ test('the lesson page fits a phone without horizontal scrolling', async ({ page 
 
 async function openBoardAt(page: Page, slide: number) {
   await page.goto('/lesson-engine.html?lesson=g2-m2-l8')
-  await page.getByRole('button', { name: 'Показати на дошці' }).click()
+  await page.getByRole('button', { name: 'На весь екран тут' }).click()
   const board = page.getByRole('dialog', { name: /Показ на дошці/ })
   for (let i = 1; i < slide; i++) await page.keyboard.press('ArrowRight')
   await expect(board.locator('.le-board__counter')).toHaveText(`${slide} / ${SLIDE_COUNT}`)
@@ -401,7 +401,7 @@ test('moving through the board moves the run, and the lesson list offers to resu
   await page.getByRole('button', { name: 'Почати урок' }).click()
   await expect(page.locator('.le-console__badge')).toHaveText('Триває')
 
-  await page.getByRole('button', { name: 'Показати на дошці' }).click()
+  await page.getByRole('button', { name: 'На весь екран тут' }).click()
   const board = page.getByRole('dialog', { name: /Показ на дошці/ })
   await page.keyboard.press('ArrowRight')
   await page.keyboard.press('ArrowRight')
@@ -418,6 +418,115 @@ test('moving through the board moves the run, and the lesson list offers to resu
   await expect(page.getByRole('link', { name: 'Продовжити урок: 2-А' })).toBeVisible()
   await page.getByRole('button', { name: 'Підготувати урок' }).click()
   await expect(page).toHaveURL(new RegExp(`run=${RUN_ID}`))
+})
+
+// ── Projector window ─────────────────────────────────────────────────────────
+
+/** Block ids that can be slides, in order (mirrors presentationSlides()). */
+const SLIDE_IDS = servedLesson.blocks
+  .filter(b => b.views.presentation && b.audience.student && b.type !== 'teacher-note' && b.presentation)
+  .map(b => b.id)
+
+test('the projector window shows only slides while the teacher keeps the plan and drives it', async ({ page }) => {
+  const checks: unknown[] = []
+  await mockTeacherApi(page, { lessonEngine: true })
+  await routeBoardChecks(page, checks)
+  await page.goto('/lesson-engine.html?lesson=g2-m2-l8')
+  const [projector] = await Promise.all([
+    page.waitForEvent('popup'),
+    page.getByRole('button', { name: /Відкрити на проєкторі/ }).click(),
+  ])
+  await expect(projector).toHaveURL(/\/lesson-board\.html$/)
+  const board = projector.getByRole('dialog', { name: /Показ на дошці/ })
+  const counter = board.locator('.le-board__counter')
+  await expect(counter).toHaveText(`1 / ${SLIDE_COUNT}`)
+  await expect(board.getByRole('button', { name: /На весь екран/ })).toBeVisible()
+
+  // The teacher's window stays on the plan, notes included; no overlay covers it.
+  const presenter = page.getByRole('region', { name: 'Показ на проєкторі' })
+  const now = presenter.locator('.le-presenter__now')
+  await expect(now).toContainText(`Слайд 1 з ${SLIDE_COUNT}`)
+  await expect(page.locator('#g2-m2-l8-b02')).toContainText(TEACHER_NOTE)
+  await expect(page.getByRole('dialog', { name: /Показ на дошці/ })).toHaveCount(0)
+
+  // Every slide the projector shows is free of teacher notes and answers.
+  for (let slide = 1; slide <= SLIDE_COUNT; slide++) {
+    await expect(counter).toHaveText(`${slide} / ${SLIDE_COUNT}`)
+    const text = await projector.locator('body').innerText()
+    expect(text).not.toContain(TEACHER_NOTE)
+    expect(text).not.toContain(SPEAKER_NOTE)
+    expect(text).not.toContain('Правильна відповідь')
+    if (slide < SLIDE_COUNT) await presenter.getByRole('button', { name: 'Слайд →' }).click()
+  }
+  await expect(presenter.getByRole('button', { name: 'Слайд →' })).toBeDisabled()
+  const received = await projector.evaluate(() => document.documentElement.outerHTML)
+  expect(received).not.toContain(SPEAKER_NOTE)
+
+  // A clicker's PageUp on the teacher's window moves the class screen.
+  await page.locator('#le-document-title').click()
+  await page.keyboard.press('PageUp')
+  await expect(counter).toHaveText(`${SLIDE_COUNT - 1} / ${SLIDE_COUNT}`)
+
+  // "Show from here" moves the projector instead of covering the plan.
+  await page.locator('#g2-m2-l8-b06').getByRole('button', { name: 'Показати з цього місця' }).click()
+  await expect(counter).toHaveText(`5 / ${SLIDE_COUNT}`)
+  await expect(page.getByRole('dialog', { name: /Показ на дошці/ })).toHaveCount(0)
+
+  // Moving on the projector itself is reported back to the teacher.
+  await board.getByRole('button', { name: 'Далі →' }).click()
+  await expect(now).toContainText(`Слайд 6 з ${SLIDE_COUNT}`)
+
+  // "Do it together" on the projector is checked by the server through the teacher's page.
+  await board.getByRole('button', { name: 'Виконати разом' }).click()
+  await board.getByRole('radio', { name: /Б\)/ }).check()
+  await board.getByRole('button', { name: 'Перевірити' }).click()
+  await expect(board.locator('.le-interactive__score')).toHaveText('Правильно: 1 з 1')
+  expect(checks).toHaveLength(1)
+
+  const results = await new AxeBuilder({ page: projector }).include('.le-board').withTags(WCAG_AA_TAGS).analyze()
+  expect(results.violations.map(v => v.id)).toEqual([])
+
+  await Promise.all([
+    projector.waitForEvent('close'),
+    presenter.getByRole('button', { name: 'Закрити проєктор' }).click(),
+  ])
+  await expect(presenter.getByRole('button', { name: /Відкрити на проєкторі/ })).toBeVisible()
+})
+
+test('the projector and the run console follow each other', async ({ page }) => {
+  await mockTeacherApi(page, { lessonEngine: true })
+  await routeRunServer(page)
+  await page.goto('/lesson-engine.html?lesson=g2-m2-l8')
+  await page.getByRole('button', { name: 'Підготувати урок' }).click()
+  await page.getByRole('button', { name: 'Почати урок' }).click()
+  await expect(page.locator('.le-console__badge')).toHaveText('Триває')
+
+  const [projector] = await Promise.all([
+    page.waitForEvent('popup'),
+    page.getByRole('button', { name: /Відкрити на проєкторі/ }).click(),
+  ])
+  const counter = projector.getByRole('dialog', { name: /Показ на дошці/ }).locator('.le-board__counter')
+  await expect(counter).toHaveText(`1 / ${SLIDE_COUNT}`)
+
+  // The board moves the run...
+  await projector.keyboard.press('ArrowRight')
+  await projector.keyboard.press('ArrowRight')
+  await expect(counter).toHaveText(`3 / ${SLIDE_COUNT}`)
+  await expect(page.locator('.le-console__step[aria-current="step"]')).toContainText('3.')
+
+  // ...and the run moves the board to its step's slide.
+  const steps = runSteps(fixture)
+  await page.locator('.le-console__controls').getByRole('button', { name: 'Далі →' }).click()
+  await expect(page.locator('.le-console__step[aria-current="step"]')).toContainText('4.')
+  const slide = SLIDE_IDS.indexOf(steps[3]!)
+  if (slide >= 0) await expect(counter).toHaveText(`${slide + 1} / ${SLIDE_COUNT}`)
+
+  // Finishing the lesson closes the projector.
+  await page.getByRole('button', { name: 'Завершити урок' }).click()
+  await Promise.all([
+    projector.waitForEvent('close'),
+    page.getByRole('dialog').getByRole('button', { name: 'OK' }).click(),
+  ])
 })
 
 // ── Web join (stage G1) ──────────────────────────────────────────────────────

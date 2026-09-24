@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Розумко — Дошка</title>
+  <meta name="description" content="Вікно для проєктора: слайди керованого уроку Розумко." />
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <meta name="theme-color" content="#3b82f6">
+  <link rel="stylesheet" href="tokens.css"/>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="style-lesson-engine.css"/>
+</head>
+<body class="le-page lb-page">
+  <main id="main-content" class="lb-main">
+    <section id="lb-waiting" class="lb-waiting" aria-labelledby="lb-waiting-title">
+      <h1 id="lb-waiting-title" class="lb-waiting__title">Розумко · Дошка</h1>
+      <p id="lb-waiting-text" class="lb-waiting__text" role="status">Очікування уроку… Це вікно для проєктора: перетягніть його на екран проєктора.</p>
+      <button id="lb-fullscreen" type="button" class="le-board__action le-board__action--primary">⛶ На весь екран</button>
+    </section>
+  </main>
+
+  <script type="module" src="lesson-board.js"></script>
+</body>
+</html>

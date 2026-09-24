@@ -23,7 +23,7 @@ function isLocalized(value: unknown): value is LocalizedText {
 }
 
 /** Headline falls back to the block's own title/question so no slide is blank. */
-function slideHeadline(slide: PresentationSlide): LocalizedText | null {
+export function slideHeadline(slide: PresentationSlide): LocalizedText | null {
   if (slide.presentation.headline) return slide.presentation.headline
   const content = slide.block.content
   for (const key of ['title', 'question', 'heading', 'prompt'] as const) {
@@ -61,6 +61,8 @@ export function renderSlide(slide: PresentationSlide): HTMLElement {
 export interface PresentationHandle {
   close(): void
   goTo(index: number): void
+  /** Shows a slide without reporting it through onSlideChange (the caller already knows). */
+  showBlock(blockId: string): void
   readonly index: number
 }
 
@@ -71,6 +73,10 @@ export interface PresentationOptions {
   activities?: Pick<BoardActivityDeps, 'check'>
   /** Called after the teacher moves to another slide (not on opening). */
   onSlideChange?: (blockId: string) => void
+  /** Adds a "full screen" button (a separate projector window cannot enter full screen on its own). */
+  fullscreenButton?: boolean
+  /** Label of the button that ends the show. */
+  closeLabel?: string
 }
 
 /**
@@ -92,9 +98,15 @@ export function openPresentation(lesson: LessonDefinition, options: Presentation
   const next = el('button', 'le-board__nav', 'Далі →')
   const counter = el('p', 'le-board__counter')
   counter.setAttribute('aria-live', 'polite')
-  const close = el('button', 'le-board__close', 'Завершити показ')
+  const close = el('button', 'le-board__close', options.closeLabel ?? 'Завершити показ')
   for (const button of [prev, next, close]) button.type = 'button'
   bar.append(prev, counter, next, close)
+  let fullscreen: HTMLButtonElement | null = null
+  if (options.fullscreenButton) {
+    fullscreen = el('button', 'le-board__nav le-board__fullscreen', '⛶ На весь екран')
+    fullscreen.type = 'button'
+    close.before(fullscreen)
+  }
   overlay.append(stage, bar)
 
   let index = Math.max(0, slides.findIndex(slide => slide.blockId === options.startBlockId))
@@ -107,7 +119,7 @@ export function openPresentation(lesson: LessonDefinition, options: Presentation
     ? { check: options.activities.check, setKeyboardLocked: locked => { keyboardLocked = locked } }
     : null
 
-  function show(target: number) {
+  function show(target: number, notify = true) {
     const previous = stage.childElementCount > 0 ? index : null
     index = Math.min(Math.max(target, 0), slides.length - 1)
     leaveSlide()
@@ -125,7 +137,7 @@ export function openPresentation(lesson: LessonDefinition, options: Presentation
     next.disabled = index === slides.length - 1
     if (focused === prev && prev.disabled) next.focus()
     if (focused === next && next.disabled) close.focus()
-    if (previous !== null && previous !== index) options.onSlideChange?.(slide.blockId)
+    if (notify && previous !== null && previous !== index) options.onSlideChange?.(slide.blockId)
   }
 
   function onKey(event: KeyboardEvent) {
@@ -166,6 +178,7 @@ export function openPresentation(lesson: LessonDefinition, options: Presentation
     closed = true
     leaveSlide()
     document.removeEventListener('keydown', onKey)
+    document.removeEventListener('fullscreenchange', syncFullscreenButton)
     removeTrap()
     overlay.remove()
     document.body.classList.remove('le-board-open')
@@ -176,6 +189,13 @@ export function openPresentation(lesson: LessonDefinition, options: Presentation
   prev.addEventListener('click', () => show(index - 1))
   next.addEventListener('click', () => show(index + 1))
   close.addEventListener('click', closeBoard)
+  function syncFullscreenButton() {
+    if (fullscreen) fullscreen.hidden = Boolean(document.fullscreenElement)
+  }
+  fullscreen?.addEventListener('click', () => {
+    void overlay.requestFullscreen?.().catch(() => {})
+  })
+  document.addEventListener('fullscreenchange', syncFullscreenButton)
   stage.addEventListener('pointerdown', onPointerDown)
   stage.addEventListener('pointerup', onPointerUp)
   document.addEventListener('keydown', onKey)
@@ -191,7 +211,11 @@ export function openPresentation(lesson: LessonDefinition, options: Presentation
 
   return {
     close: closeBoard,
-    goTo: show,
+    goTo: target => show(target),
+    showBlock: blockId => {
+      const target = slides.findIndex(slide => slide.blockId === blockId)
+      if (target >= 0 && target !== index) show(target, false)
+    },
     get index() { return index },
   }
 }

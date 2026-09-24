@@ -5,8 +5,8 @@
 
 import { showConfirm } from '../../utils/ui.js'
 import { renderLessonBlock } from './document-view.js'
-import { openPresentation } from './presentation-view.js'
-import { BLOCK_TYPE_LABELS, presentationSlides } from './projection.js'
+import { mountBoardWindow } from './board-window.js'
+import { BLOCK_TYPE_LABELS } from './projection.js'
 import {
   RUN_ACTION_LABELS,
   RUN_STATUS_LABELS,
@@ -102,20 +102,17 @@ export function mountRunConsole(root: HTMLElement, initial: LessonRunView, deps:
     })
   }
 
-  function present() {
-    const { lesson, run } = view
-    const slides = presentationSlides(lesson)
-    const startBlockId = slides.some(slide => slide.blockId === run.currentBlockId) ? run.currentBlockId : undefined
-    openPresentation(lesson, {
-      startBlockId,
-      activities: { check: deps.check },
-      // The board follows the run: moving to a slide that is a step moves the run.
-      onSlideChange: blockId => {
-        const index = view.run.steps.indexOf(blockId)
-        if (index >= 0 && canNavigate(view.run.status)) goToStep(index)
-      },
-    })
-  }
+  // The projector window. The run's lesson is frozen, so one board serves the
+  // whole run. The two follow each other: a slide that is a step moves the
+  // run, and moving the run shows its step on the board.
+  const board = mountBoardWindow(initial.lesson, {
+    check: deps.check,
+    onSlideChange: blockId => {
+      const index = view.run.steps.indexOf(blockId)
+      if (index >= 0 && canNavigate(view.run.status)) goToStep(index)
+    },
+  })
+  board.follow(initial.run.currentBlockId)
 
   function render() {
     const { run, lesson } = view
@@ -140,9 +137,7 @@ export function mountRunConsole(root: HTMLElement, initial: LessonRunView, deps:
       const next = button('Далі →', 'le-board__action le-board__action--primary')
       next.disabled = run.currentStepIndex >= run.steps.length - 1
       next.addEventListener('click', () => goToStep(run.currentStepIndex + 1))
-      const board = button('Показати на дошці', 'le-board__action')
-      board.addEventListener('click', present)
-      controls.append(back, next, board)
+      controls.append(back, next)
     }
     for (const action of runLifecycleActions(run.status)) {
       const primary = action === 'start' || action === 'resume'
@@ -200,12 +195,14 @@ export function mountRunConsole(root: HTMLElement, initial: LessonRunView, deps:
     for (const extra of attachments.get(run.currentBlockId) ?? []) current.append(renderLessonBlock(lesson, extra, {}, 'section'))
 
     layout.append(nav, current)
+    board.setEnabled(navigable)
+    board.follow(run.currentBlockId)
     joinPanel.update(view)
     livePanel.update(view)
     computersPanel?.update(view)
     remotePanel?.setActive(isOpenRun(view.run.status))
     root.replaceChildren(
-      header, controls, status, livePanel.element,
+      header, controls, board.element, status, livePanel.element,
       ...(remotePanel ? [remotePanel.element] : []),
       ...(computersPanel ? [computersPanel.element] : []),
       joinPanel.element, layout,
