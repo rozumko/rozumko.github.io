@@ -56,10 +56,13 @@ test('a new teacher starts in «Мої класи», creates a class, adds stude
   // (on loopback it stays available for development).
   await expect(page.getByText('незабаром')).toHaveCount(0)
 
+  await expect(section.locator('#teacher-class-form')).toBeHidden()
+  await section.locator('#class-new-toggle').click()
+  await expect(section.locator('#teacher-class-form')).toBeVisible()
   await section.getByLabel('Назва').fill('2-А')
   await section.getByLabel('Клас', { exact: true }).selectOption('2')
-  await section.getByRole('button', { name: 'Додати клас' }).click()
-  await expect(section.locator('#class-form-status')).toContainText('Тепер додайте учнів')
+  await section.locator('#class-submit-btn').click()
+  await expect(section.locator('#teacher-class-form')).toBeHidden()
   await expect(page.locator('#teacher-start')).toBeHidden()
 
   // The new class is selected and the student field is ready.
@@ -84,7 +87,7 @@ test('a new teacher starts in «Мої класи», creates a class, adds stude
   expect(classes[0]!.name).toBe('2-Б')
 
   const results = await new AxeBuilder({ page }).include('#dashboard-section').withTags(WCAG_AA_TAGS).analyze()
-  expect(results.violations.map(v => v.id)).toEqual([])
+  expect(results.violations.flatMap(v => v.nodes.map(n => `${v.id}: ${n.target.join(' ')} ${n.failureSummary}`))).toEqual([])
 })
 
 test('the cabinet reopens the last section and the menu follows the teacher’s work order', async ({ page }) => {
@@ -92,7 +95,7 @@ test('the cabinet reopens the last section and the menu follows the teacher’s 
   await page.goto('/teacher.html')
   const labels = await page.locator('.dashboard-primary-nav .teacher-section-link:visible').allInnerTexts()
   // Olympiad is last; on loopback it is available for development.
-  expect(labels.map(l => l.trim())).toEqual(['Мої класи', 'Уроки', 'Класна гра', 'Мої теми й питання', 'Результати ігор', 'Олімпіада'])
+  expect(labels.map(l => l.trim())).toEqual(['Мої класи', 'Уроки', 'Класна гра', 'Мої матеріали', 'Результати', 'Олімпіада'])
 
   await page.locator('[data-section="school"]').click()
   await expect(page.locator('#teacher-section-school')).toBeVisible()
@@ -101,13 +104,43 @@ test('the cabinet reopens the last section and the menu follows the teacher’s 
   await expect(page.locator('#teacher-section-classes')).toBeHidden()
 })
 
+test('game results filter by grade in the compact table', async ({ page }) => {
+  await mockTeacher(page)
+  await page.route('**/api/school/sessions', route => route.fulfill({
+    contentType: 'application/json',
+    body: JSON.stringify({ sessions: [
+      { id: '00000000-0000-4000-8000-000000000001', kind: 'questions', grade: 2, questionsCount: 10, participantCount: 12, createdAt: '2026-09-20T10:00:00.000Z', live: false },
+      { id: '00000000-0000-4000-8000-000000000002', kind: 'questions', grade: 4, questionsCount: 15, participantCount: 18, createdAt: '2026-09-21T10:00:00.000Z', live: false },
+    ] }),
+  }))
+  await page.goto('/teacher.html#school-results')
+  const results = page.locator('#teacher-section-school-results')
+  await expect(results.locator('.teacher-data-table tbody tr:visible')).toHaveCount(2)
+  await results.getByLabel('Клас').selectOption('4')
+  await expect(results.locator('.teacher-data-table tbody tr:visible')).toHaveCount(1)
+  await expect(results.locator('.teacher-data-table tbody tr:visible')).toContainText('4 клас')
+})
+
+test('game topic search narrows the compact list', async ({ page }) => {
+  await mockTeacher(page)
+  await page.goto('/teacher.html#school')
+  const topics = page.locator('#school-topic-picker .question-topic-card:visible')
+  await expect(topics.first()).toBeVisible()
+  await page.getByLabel('Пошук теми').fill('немає-такої-теми')
+  await expect(topics).toHaveCount(0)
+  await expect(page.locator('#school-topic-search-empty')).toBeVisible()
+  await page.getByLabel('Пошук теми').fill('')
+  await expect(topics.first()).toBeVisible()
+})
+
 test('«Мої класи» fits a phone without horizontal scrolling', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 800 })
   await mockTeacher(page)
   await page.goto('/teacher.html')
   const section = page.locator('#teacher-section-classes')
+  await section.locator('#class-new-toggle').click()
   await section.getByLabel('Назва').fill('1-В')
-  await section.getByRole('button', { name: 'Додати клас' }).click()
+  await section.locator('#class-submit-btn').click()
   await expect(section.locator('#class-detail-title')).toHaveText('1-В')
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
   expect(overflow).toBeLessThanOrEqual(0)

@@ -32,6 +32,7 @@
   <link rel="stylesheet" href="style.css"/>
   <link rel="stylesheet" href="style-teacher.css"/>
   <link rel="stylesheet" href="style-auth.css"/>
+  <link rel="stylesheet" href="style-teacher-workspace.css"/>
 
 </head>
 <body class="teacher-auth-page auth-surface auth-surface--teacher">
@@ -242,7 +243,7 @@
           <i class="fas fa-home" aria-hidden="true"></i>
         </a>
         <span class="dashboard-brand">Розумко</span>
-        <span class="dashboard-role-badge">Вчитель</span>
+        <span class="dashboard-header__context">Кабінет учителя</span>
       </div>
       <div class="dashboard-header__right">
         <span id="teacher-email-display" class="dashboard-email hidden"></span>
@@ -255,6 +256,7 @@
     <div class="dashboard-shell">
       <aside class="dashboard-sidebar">
         <nav class="dashboard-primary-nav" aria-label="Основні розділи кабінету">
+          <span class="dashboard-nav-label">Робота з класом</span>
           <button data-section="classes" class="teacher-section-link teacher-section-link--active" aria-current="page">
             <i class="fas fa-users" aria-hidden="true"></i>
             <span>Мої класи</span>
@@ -267,13 +269,14 @@
             <i class="fas fa-gamepad" aria-hidden="true"></i>
             <span>Класна гра</span>
           </button>
+          <span class="dashboard-nav-label">Матеріали й дані</span>
           <button data-section="content" class="teacher-section-link">
             <i class="fas fa-layer-group" aria-hidden="true"></i>
-            <span>Мої теми й питання</span>
+            <span>Мої матеріали</span>
           </button>
           <button data-section="school-results" class="teacher-section-link">
             <i class="fas fa-chart-bar" aria-hidden="true"></i>
-            <span>Результати ігор</span>
+            <span>Результати</span>
           </button>
           <button data-section="olympiad" class="teacher-section-link">
             <i class="fas fa-medal" aria-hidden="true"></i>
@@ -295,9 +298,14 @@
       </section>
 
       <section id="teacher-section-classes" class="teacher-section">
-        <div class="teacher-section__heading">
+        <div class="teacher-section__heading teacher-section__heading--with-action">
+          <div>
           <h1>Мої класи</h1>
           <p>Клас і список учнів потрібні для уроків і олімпіади. Повних імен не зберігайте — лише мітки, за якими ви впізнаєте дитину.</p>
+          </div>
+          <button id="class-new-toggle" class="btn btn--teacher" type="button" aria-expanded="false" aria-controls="teacher-class-form">
+            <i class="fas fa-plus" aria-hidden="true"></i> Додати клас
+          </button>
         </div>
 
         <div class="classes-layout">
@@ -307,7 +315,7 @@
               <p class="empty-state__sub">Завантаження…</p>
             </div>
 
-            <form id="teacher-class-form" class="class-form-card class-form-card--compact" novalidate aria-labelledby="class-form-title">
+            <form id="teacher-class-form" class="class-form-card class-form-card--compact hidden" novalidate aria-labelledby="class-form-title">
               <h2 id="class-form-title" class="class-form-card__title">Новий клас</h2>
               <div class="class-form__row">
                 <div class="class-form__field">
@@ -327,6 +335,7 @@
                   <button id="class-submit-btn" type="submit" class="btn btn--success">
                     <i class="fas fa-plus" aria-hidden="true"></i> Додати клас
                   </button>
+                  <button id="class-form-cancel" type="button" class="btn btn--secondary">Скасувати</button>
                 </div>
               </div>
               <p id="class-form-status" class="generate-status" role="status"></p>
@@ -504,8 +513,11 @@
 
               <section class="school-question-topics" aria-labelledby="school-topic-heading">
                 <h2 id="school-topic-heading" class="school-question-topics__heading">Оберіть тему</h2>
+                <label class="sr-only" for="school-topic-search">Пошук теми</label>
+                <input id="school-topic-search" type="search" class="form-input school-topic-search" placeholder="Пошук теми" autocomplete="off" />
                 <input id="school-topic" type="hidden" value="" />
                 <div id="school-topic-picker" class="question-topic-picker"></div>
+                <p id="school-topic-search-empty" class="teacher-results-empty hidden">Тем за цим запитом немає.</p>
               </section>
             </div>
 
@@ -749,8 +761,7 @@
 
       <section id="teacher-section-content" class="teacher-section hidden">
         <div class="teacher-section__heading">
-          <p class="teacher-section__eyebrow">Ваша приватна бібліотека</p>
-          <h1>Мої теми й питання</h1>
+          <h1>Мої матеріали</h1>
           <p>Створюйте власні добірки для своїх уроків. Вони доступні лише вам і з’являються у «Класній грі».</p>
         </div>
 
@@ -875,12 +886,15 @@
 
       <section id="teacher-section-school-results" class="teacher-section hidden">
         <div class="teacher-section__heading">
-          <p class="teacher-section__eyebrow">Проведені уроки</p>
-          <h1>Результати уроків</h1>
-          <p>Поверніться до активної гри або перегляньте підсумки завершеної.</p>
+          <h1>Результати</h1>
+          <p>Перегляньте проведені ігри та звіти уроків.</p>
         </div>
+        <nav class="teacher-results-tabs" aria-label="Тип результатів">
+          <span class="teacher-results-tabs__active" aria-current="page">Класні ігри</span>
+          <a id="lesson-results-link" class="teacher-results-tabs__link hidden" href="lesson-engine.html?view=results">Уроки</a>
+        </nav>
         <section id="school-history" class="school-history hidden" aria-labelledby="school-history-heading">
-          <h2 id="school-history-heading" class="school-history__heading">Останні ігри</h2>
+          <h2 id="school-history-heading" class="school-history__heading">Історія ігор</h2>
           <div id="school-history-list" class="school-history__list"></div>
         </section>
       </section>
