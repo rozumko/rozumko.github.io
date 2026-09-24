@@ -325,6 +325,11 @@ const TEACHER_SECTION_KEY = 'teacher:section'
 
 /** The section a returning teacher left off in; «Мої класи» the first time. */
 function initialTeacherSection(): string {
+  const requested = location.hash.slice(1)
+  if (['classes', 'school', 'content', 'school-results', 'olympiad'].includes(requested)
+      && document.querySelector<HTMLElement>(`[data-section="${requested}"]`)?.classList.contains('hidden') === false) {
+    return requested
+  }
   let saved: string | null
   try { saved = localStorage.getItem(TEACHER_SECTION_KEY) } catch { saved = null }
   const link = saved ? document.querySelector<HTMLElement>(`[data-section="${saved}"]`) : null
@@ -685,6 +690,19 @@ registerForm?.addEventListener('submit', async (e) => {
 })
 
 // --- Create class ---
+const classNewToggle = $maybe<HTMLButtonElement>('class-new-toggle')
+const classFormCancel = $maybe<HTMLButtonElement>('class-form-cancel')
+
+function setClassFormOpen(open: boolean): void {
+  classForm?.classList.toggle('hidden', !open)
+  classNewToggle?.setAttribute('aria-expanded', String(open))
+  if (open) classNameInput?.focus()
+  else classNewToggle?.focus()
+}
+
+classNewToggle?.addEventListener('click', () => setClassFormOpen(classForm?.classList.contains('hidden') ?? true))
+classFormCancel?.addEventListener('click', () => setClassFormOpen(false))
+
 classForm?.addEventListener('submit', async (e) => {
   e.preventDefault()
   const name  = classNameInput!.value.trim()
@@ -704,6 +722,7 @@ classForm?.addEventListener('submit', async (e) => {
     classStatus!.className   = 'generate-status generate-status--ok'
     selectedClassId = created.id
     await loadClasses()
+    setClassFormOpen(false)
     document.getElementById('student-label-input')?.focus()
   } catch (err) {
     classStatus!.textContent = (err as Error).message
@@ -914,7 +933,7 @@ function renderClasses() {
     classesList.innerHTML = `
       <div class="empty-state empty-state--compact">
         <p class="empty-state__title">Класів ще немає</p>
-        <p class="empty-state__sub">Додайте перший клас у формі вище.</p>
+        <p class="empty-state__sub">Натисніть «Додати клас», щоб почати.</p>
       </div>`
     return
   }
@@ -1333,6 +1352,7 @@ function showDashboard(nameOrEmail: string, features?: TeacherFeatures) {
   // The backend decides whether Lesson Engine is served; the link only mirrors it.
   lessonEngineEnabled = features?.lessonEngine === true
   $maybe('lesson-engine-link')?.classList.toggle('hidden', !lessonEngineEnabled)
+  $maybe('lesson-results-link')?.classList.toggle('hidden', !lessonEngineEnabled)
   authSection.classList.add('hidden')
   dashboardSection.classList.remove('hidden')
   teacherEmailDisplay.textContent = nameOrEmail
@@ -2154,6 +2174,19 @@ function renderSchoolQuestionTopics() {
   })
   updateSchoolQuestionAvailabilityPresentation()
   updateSchoolLaunchSummary()
+  filterSchoolQuestionTopics()
+}
+
+function filterSchoolQuestionTopics(): void {
+  const query = $maybe<HTMLInputElement>('school-topic-search')?.value.trim().toLocaleLowerCase('uk-UA') ?? ''
+  let visible = 0
+  document.querySelectorAll<HTMLButtonElement>('.question-topic-card').forEach(card => {
+    const title = card.querySelector<HTMLElement>('.activity-card__title')?.textContent?.toLocaleLowerCase('uk-UA') ?? ''
+    const match = !query || title.includes(query)
+    card.classList.toggle('hidden', !match)
+    if (match) visible++
+  })
+  $maybe('school-topic-search-empty')?.classList.toggle('hidden', visible > 0)
 }
 
 function selectSchoolTopic(id: SchoolTopicChoice, focus = false) {
@@ -2282,6 +2315,7 @@ document.querySelectorAll<HTMLButtonElement>('[data-school-grade]').forEach(butt
 })
 
 $maybe<HTMLSelectElement>('school-difficulty')?.addEventListener('change', updateSchoolQuestionAvailabilityPresentation)
+$maybe<HTMLInputElement>('school-topic-search')?.addEventListener('input', filterSchoolQuestionTopics)
 renderSchoolQuestionTopics()
 
 // ── Activities: questions versus a game ─────────────────────────────────────
@@ -2680,27 +2714,9 @@ schoolQrDialog?.addEventListener('click', event => {
 // class is still playing. The teacher's own session list restores it, and
 // doubles as post-lesson history once the game is finished.
 
-function participantWord(count: number): string {
-  const lastTwo = count % 100
-  if (lastTwo >= 11 && lastTwo <= 14) return 'учасників'
-  const last = count % 10
-  if (last === 1) return 'учасник'
-  if (last >= 2 && last <= 4) return 'учасники'
-  return 'учасників'
-}
-
 function schoolSessionTitle(session: SchoolSessionSummary): string {
   if (session.kind === 'activity') return findActivity(session.activityKey)?.label ?? 'Активність'
   return `Питання · ${session.questionsCount} ${questionWord(session.questionsCount)}`
-}
-
-function schoolSessionMeta(session: SchoolSessionSummary): string {
-  const parts = [`${session.grade} клас`, `${session.participantCount} ${participantWord(session.participantCount)}`]
-  const startedAt = session.createdAt ? new Date(session.createdAt) : null
-  if (startedAt && !Number.isNaN(startedAt.getTime())) {
-    parts.push(startedAt.toLocaleString('uk-UA', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }))
-  }
-  return parts.join(' · ')
 }
 
 function renderSchoolHistory(sessions: SchoolSessionSummary[]) {
@@ -2708,22 +2724,56 @@ function renderSchoolHistory(sessions: SchoolSessionSummary[]) {
   const list = $maybe('school-history-list')
   if (!wrap || !list) return
   if (!sessions.length) {
-    list.innerHTML = ''
-    wrap.classList.add('hidden')
+    list.innerHTML = '<p class="teacher-results-empty">Проведених ігор поки немає.</p>'
+    wrap.classList.remove('hidden')
     return
   }
-  list.innerHTML = sessions.map(session => `
-    <div class="school-history__row${session.live ? ' school-history__row--live' : ''}">
-      <span class="school-history__meta">
-        <strong class="school-history__title">${esc(schoolSessionTitle(session))}</strong>
-        <span class="school-history__sub">${esc(schoolSessionMeta(session))}</span>
-      </span>
-      ${session.live ? '<span class="school-history__badge">Триває</span>' : ''}
-      <button type="button" class="btn ${session.live ? 'btn--teacher' : 'btn--secondary'} school-history__open"
-              data-session-id="${esc(session.id)}">
-        ${session.live ? 'Повернутися до гри' : 'Переглянути результати'}
-      </button>
-    </div>`).join('')
+  const grades = [...new Set(sessions.map(session => session.grade))].sort((a, b) => a - b)
+  list.innerHTML = `<div class="teacher-table-filters">
+    <label>Клас <select id="school-results-grade" class="form-input"><option value="">Усі класи</option>
+      ${grades.map(grade => `<option value="${esc(String(grade))}">${esc(String(grade))} клас</option>`).join('')}
+    </select></label>
+    <label>Період <select id="school-results-period" class="form-input"><option value="">Увесь час</option><option value="30">Останні 30 днів</option></select></label>
+  </div><p class="teacher-results-empty hidden" id="school-results-filter-empty">За цими фільтрами ігор немає.</p>
+  <table class="teacher-data-table">
+    <thead><tr><th scope="col">Гра</th><th scope="col">Клас</th><th scope="col">Учасники</th><th scope="col">Дата</th><th scope="col">Стан</th><th scope="col"><span class="sr-only">Дія</span></th></tr></thead>
+    <tbody>${sessions.map((session, index) => {
+      const date = session.createdAt ? new Date(session.createdAt) : null
+      const dateLabel = date && !Number.isNaN(date.getTime())
+        ? date.toLocaleString('uk-UA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+        : '—'
+      return `<tr data-result-index="${index}">
+        <th scope="row" data-label="Гра">${esc(schoolSessionTitle(session))}</th>
+        <td data-label="Клас">${esc(String(session.grade))} клас</td>
+        <td data-label="Учасники">${esc(String(session.participantCount))}</td>
+        <td data-label="Дата">${esc(dateLabel)}</td>
+        <td data-label="Стан"><span class="teacher-status${session.live ? ' teacher-status--live' : ''}">${session.live ? 'Триває' : 'Завершено'}</span></td>
+        <td data-label="Дія"><button type="button" class="teacher-table-action school-history__open" data-session-id="${esc(session.id)}">
+          ${session.live ? 'Повернутися до гри' : 'Переглянути результати'}
+        </button></td>
+      </tr>`
+    }).join('')}</tbody>
+  </table>`
+  const gradeFilter = list.querySelector<HTMLSelectElement>('#school-results-grade')!
+  const periodFilter = list.querySelector<HTMLSelectElement>('#school-results-period')!
+  const table = list.querySelector<HTMLTableElement>('table')!
+  const empty = list.querySelector<HTMLElement>('#school-results-filter-empty')!
+  const filterRows = () => {
+    const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000
+    let visible = 0
+    list.querySelectorAll<HTMLTableRowElement>('tbody tr').forEach(row => {
+      const session = sessions[Number(row.dataset.resultIndex)]!
+      const created = Date.parse(session.createdAt ?? '')
+      const match = (!gradeFilter.value || String(session.grade) === gradeFilter.value)
+        && (!periodFilter.value || (!Number.isNaN(created) && created >= cutoff))
+      row.classList.toggle('hidden', !match)
+      if (match) visible++
+    })
+    table.classList.toggle('hidden', visible === 0)
+    empty.classList.toggle('hidden', visible > 0)
+  }
+  gradeFilter.addEventListener('change', filterRows)
+  periodFilter.addEventListener('change', filterRows)
   // onclick (not addEventListener): the list is re-rendered on every reload
   list.onclick = event => {
     const id = (event.target as HTMLElement).closest<HTMLElement>('[data-session-id]')?.dataset.sessionId

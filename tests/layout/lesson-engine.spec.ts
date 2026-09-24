@@ -106,6 +106,30 @@ test('with the backend flag off the page stays closed', async ({ page }) => {
   await expect(page.locator('.le-lesson-card')).toHaveCount(0)
 })
 
+test('finished lessons appear in the results table with a report link', async ({ page }) => {
+  await mockTeacherApi(page, { lessonEngine: true })
+  const runId = '00000000-0000-4000-8000-0000000000aa'
+  await page.route('**/api/teacher/lesson-runs', route => route.fulfill({
+    contentType: 'application/json',
+    body: JSON.stringify({ runs: [{
+      id: runId, status: 'finished', classId: '00000000-0000-4000-8000-0000000000bb',
+      className: '2-А', lessonId: fixture.id, lessonTitle: fixture.title,
+      currentStepIndex: 11, stepCount: 12, createdAt: '2026-09-20T10:00:00.000Z',
+    }, {
+      id: '00000000-0000-4000-8000-0000000000cc', status: 'finished', classId: '00000000-0000-4000-8000-0000000000dd',
+      className: '2-Б', lessonId: fixture.id, lessonTitle: fixture.title,
+      currentStepIndex: 11, stepCount: 12, createdAt: '2026-09-21T10:00:00.000Z',
+    }] }),
+  }))
+  await page.goto('/lesson-engine.html?view=results')
+  await expect(page.locator('#le-nav-results')).toHaveAttribute('aria-current', 'page')
+  await expect(page.locator('.teacher-data-table tbody tr:visible')).toHaveCount(2)
+  await page.getByLabel('Клас').selectOption('00000000-0000-4000-8000-0000000000bb')
+  await expect(page.locator('.teacher-data-table tbody tr:visible')).toHaveCount(1)
+  await expect(page.getByRole('link', { name: 'Переглянути звіт' }))
+    .toHaveAttribute('href', `lesson-engine.html?run=${runId}&view=report`)
+})
+
 test('teacher opens a lesson from the list and sees the full plan with teacher-only notes', async ({ page }) => {
   await mockTeacherApi(page, { lessonEngine: true })
   await page.goto('/lesson-engine.html')

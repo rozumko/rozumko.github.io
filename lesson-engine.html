@@ -14,19 +14,33 @@
   <link rel="stylesheet" href="tokens.css"/>
   <link rel="stylesheet" href="style.css"/>
   <link rel="stylesheet" href="style-lesson-engine.css"/>
+  <link rel="stylesheet" href="style-teacher-workspace.css"/>
 </head>
 <body class="le-page">
   <a href="#main-content" class="skip-link">Перейти до основного контенту</a>
 
-  <header class="le-topbar">
-    <a href="teacher.html" class="le-topbar__back">← Кабінет вчителя</a>
-    <span class="le-topbar__brand">Розумко · Уроки</span>
+  <header class="le-topbar workspace-topbar">
+    <a href="teacher.html#classes" class="workspace-brand">Розумко</a>
+    <span class="workspace-context">Кабінет учителя</span>
   </header>
 
-  <main id="main-content" class="le-main" tabindex="-1">
-    <p id="le-status" class="le-status" role="status">Завантаження…</p>
-    <div id="le-view"></div>
-  </main>
+  <div class="le-shell">
+    <aside class="le-sidebar">
+      <nav class="dashboard-primary-nav" aria-label="Основні розділи кабінету">
+        <span class="dashboard-nav-label">Робота з класом</span>
+        <a href="teacher.html#classes" class="teacher-section-link"><span>Мої класи</span></a>
+        <a href="lesson-engine.html" class="teacher-section-link teacher-section-link--active" aria-current="page" id="le-nav-lessons"><span>Уроки</span></a>
+        <a href="teacher.html#school" class="teacher-section-link"><span>Класна гра</span></a>
+        <span class="dashboard-nav-label">Матеріали й дані</span>
+        <a href="teacher.html#content" class="teacher-section-link"><span>Мої матеріали</span></a>
+        <a href="lesson-engine.html?view=results" class="teacher-section-link" id="le-nav-results"><span>Результати</span></a>
+      </nav>
+    </aside>
+    <main id="main-content" class="le-main" tabindex="-1">
+      <p id="le-status" class="le-status" role="status">Завантаження…</p>
+      <div id="le-view"></div>
+    </main>
+  </div>
 
   <div id="app-modal" class="app-modal-overlay hidden"
        role="dialog" aria-modal="true" aria-labelledby="modal-message">

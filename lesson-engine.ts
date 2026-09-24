@@ -152,6 +152,107 @@ function renderLessonList(lessons: CurriculumLessonSummary[], runs: LessonRunSum
   viewEl.replaceChildren(section)
 }
 
+function renderLessonResults(runs: LessonRunSummary[]): void {
+  const section = document.createElement('section')
+  section.className = 'le-list-view'
+  const title = document.createElement('h1')
+  title.textContent = 'Результати'
+  section.append(title)
+  const tabs = document.createElement('nav')
+  tabs.className = 'teacher-results-tabs'
+  tabs.setAttribute('aria-label', 'Тип результатів')
+  const games = document.createElement('a')
+  games.className = 'teacher-results-tabs__link'
+  games.href = 'teacher.html#school-results'
+  games.textContent = 'Класні ігри'
+  const lessons = document.createElement('span')
+  lessons.className = 'teacher-results-tabs__active'
+  lessons.setAttribute('aria-current', 'page')
+  lessons.textContent = 'Уроки'
+  tabs.append(games, lessons)
+  section.append(tabs)
+  const finished = runs.filter(run => run.status === 'finished')
+    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
+  if (!finished.length) {
+    const empty = document.createElement('p')
+    empty.className = 'teacher-results-empty'
+    empty.textContent = 'Завершених уроків поки немає.'
+    section.append(empty)
+    viewEl.replaceChildren(section)
+    return
+  }
+  const filters = document.createElement('div')
+  filters.className = 'teacher-table-filters'
+  const classLabel = document.createElement('label')
+  classLabel.textContent = 'Клас '
+  const classFilter = document.createElement('select')
+  classFilter.className = 'form-input'
+  classFilter.append(new Option('Усі класи', ''))
+  for (const [classId, className] of new Map(finished.map(run => [run.classId, run.className]))) {
+    classFilter.append(new Option(className, classId))
+  }
+  classLabel.append(classFilter)
+  const periodLabel = document.createElement('label')
+  periodLabel.textContent = 'Період '
+  const periodFilter = document.createElement('select')
+  periodFilter.className = 'form-input'
+  periodFilter.append(new Option('Увесь час', ''), new Option('Останні 30 днів', '30'))
+  periodLabel.append(periodFilter)
+  filters.append(classLabel, periodLabel)
+  section.append(filters)
+  const filterEmpty = document.createElement('p')
+  filterEmpty.className = 'teacher-results-empty hidden'
+  filterEmpty.textContent = 'За цими фільтрами уроків немає.'
+  section.append(filterEmpty)
+  const table = document.createElement('table')
+  table.className = 'teacher-data-table'
+  table.innerHTML = '<thead><tr><th scope="col">Урок</th><th scope="col">Клас</th><th scope="col">Дата</th><th scope="col"><span class="sr-only">Дія</span></th></tr></thead>'
+  const body = document.createElement('tbody')
+  for (const [index, run] of finished.entries()) {
+    const row = document.createElement('tr')
+    row.dataset['resultIndex'] = String(index)
+    const lesson = document.createElement('th')
+    lesson.scope = 'row'
+    lesson.dataset['label'] = 'Урок'
+    lesson.textContent = run.lessonTitle.uk
+    const className = document.createElement('td')
+    className.dataset['label'] = 'Клас'
+    className.textContent = run.className
+    const date = document.createElement('td')
+    date.dataset['label'] = 'Дата'
+    const createdAt = new Date(run.createdAt)
+    date.textContent = Number.isNaN(createdAt.getTime()) ? '—' : createdAt.toLocaleDateString('uk-UA')
+    const actionCell = document.createElement('td')
+    actionCell.dataset['label'] = 'Дія'
+    const action = document.createElement('a')
+    action.className = 'teacher-table-action'
+    action.href = `${runHref(run.id)}&view=report`
+    action.textContent = 'Переглянути звіт'
+    actionCell.append(action)
+    row.append(lesson, className, date, actionCell)
+    body.append(row)
+  }
+  table.append(body)
+  section.append(table)
+  const filterRows = () => {
+    const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000
+    let visible = 0
+    for (const row of body.rows) {
+      const run = finished[Number(row.dataset['resultIndex'])]!
+      const created = Date.parse(run.createdAt)
+      const match = (!classFilter.value || run.classId === classFilter.value)
+        && (!periodFilter.value || (!Number.isNaN(created) && created >= cutoff))
+      row.classList.toggle('hidden', !match)
+      if (match) visible++
+    }
+    table.classList.toggle('hidden', visible === 0)
+    filterEmpty.classList.toggle('hidden', visible > 0)
+  }
+  classFilter.addEventListener('change', filterRows)
+  periodFilter.addEventListener('change', filterRows)
+  viewEl.replaceChildren(section)
+}
+
 /** Class picker + "prepare" for a lesson; an open run of this lesson offers resume instead. */
 async function renderRunLauncher(lesson: LessonDefinition): Promise<HTMLElement> {
   const panel = document.createElement('section')
@@ -322,6 +423,15 @@ async function main() {
     }
 
     const params = new URLSearchParams(location.search)
+    const resultsView = params.get('view') === 'results'
+    const lessonsNav = document.getElementById('le-nav-lessons')
+    const resultsNav = document.getElementById('le-nav-results')
+    if (resultsView || params.get('view') === 'report') {
+      lessonsNav?.classList.remove('teacher-section-link--active')
+      lessonsNav?.removeAttribute('aria-current')
+      resultsNav?.classList.add('teacher-section-link--active')
+      resultsNav?.setAttribute('aria-current', 'page')
+    }
     const runId = params.get('run')
     if (runId !== null) {
       if (!RUN_ID_RE.test(runId)) {
@@ -342,6 +452,13 @@ async function main() {
       const { lesson } = await getCurriculumLesson(lessonId)
       clearStatus()
       renderLesson(lesson)
+      return
+    }
+
+    if (resultsView) {
+      const { runs } = await listLessonRuns()
+      clearStatus()
+      renderLessonResults(runs)
       return
     }
 
