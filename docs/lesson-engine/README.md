@@ -80,7 +80,7 @@ waiting on the extension protocol.
 | **F** ✅ | `lesson_runs`, `lesson_run_students`, `lesson_run_events`, teacher console (Next/Back/Pause/Resume/Finish) | Server-side state machine; reload-safe; content edits do not touch active runs |
 | **G1** ✅ / **G2** ✅ | Web join + roster mapping, scoped launch token, submit, polling live heatmap | 5 simulated students; idempotent submit; teacher reload restores state |
 | **H** ✅ | Outcome registry, evidence, lesson report | Every summary traces to evidence → attempt → block → run → lesson version |
-| **I** ✅ (fake) | `ClassroomControlProvider`: fake first, then Classroom Remote | Fake works in CI ✅; real: 3–5 devices, correct URL on correct device — pending access to the Classroom Remote repository |
+| **I** ✅ | Classroom control: provider boundary + fake, then Classroom Remote | Fake works in CI ✅. Classroom Remote opens one URL per room, so the real path is the class link driven from the console through Classroom Remote integration API v1 ✅ (see the two sections after stage J). Physical check on 3–5 laptops is part of the pilot |
 | **J** ✅ (outbox) | IndexedDB outbox → internal pilot → external pilot → go/no-go | Offline submit produces exactly one server attempt ✅; pilots and go/no-go are run by people |
 
 No mass content migration before the external pilot (both specs agree).
@@ -416,9 +416,11 @@ Decisions:
 - **One boundary, no invented protocol.** The engine talks to lab computers
   only through `ClassroomControlProvider` (`listDevices`, `launchUrls`).
   The Classroom Remote repository was not readable when this stage was
-  built, so only `FakeClassroomControlProvider` exists. The real adapter
-  implements the same interface once its contract is available; nothing
-  else changes.
+  built, so only `FakeClassroomControlProvider` exists. *Superseded:* once
+  its protocol was known, Classroom Remote turned out to open one URL for a
+  whole room. The real integration is therefore the class link plus
+  integration API v1 (sections after stage J), not a per-computer provider.
+  The per-computer launch below stays dark (fake only) until it is removed.
 - **The fake is a development tool.** It is enabled only by
   `?classroom=fake` on a loopback host (`localhost`, `127.0.0.1`, `[::1]`),
   never on a production host. Without a provider the console offers web join
@@ -694,10 +696,14 @@ dev`), two WebSocket laptops and PostgreSQL 16:
   Cambridge references are added there once a methodologist confirms the
   exact codes — never guessed. Do not use "ІФО = індекс формувального
   оцінювання": `ІФО` is the informatics education area code.
-- **Classroom Remote integration API** lives in the Classroom Remote
-  repository and must be deployed there first. It changes the privacy
-  policy text (new section on integration keys); its owner decides the
-  effective date and the store listing update.
+- **Classroom Remote integration API v1** is merged and deployed in its own
+  repository (`artkysliakov/classroom-remote`). The privacy policy there
+  carries the integration-keys section, effective 24 September 2026. The
+  extension itself did not change, so the store listings need no new
+  version.
+- **Stage I per-computer launch** (`device_assignments`, `/launch`, the fake
+  provider and `computers-panel.ts`) is dark and superseded by the class
+  link. Remove it in a separate change; migration `0054` stays.
 - **Legacy `new_lessons`** is a reference for mechanics and UX only (stage E);
   it is not embedded or copied wholesale.
 - **Render capacity** — confirm the backend plan has no cold starts during

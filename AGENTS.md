@@ -76,7 +76,7 @@ features/lesson-engine/attempt-outbox.ts ← offline answer outbox on the device
 backend/src/routes/class-lesson-links.ts ← class link (#class=, HMAC key, rotate) + remembered seats; /api/student/lesson/join-class; console class-link-panel.ts
 backend/src/routes/classroom-remote.ts ← Classroom Remote integration (encrypted key per teacher, env CLASSROOM_REMOTE_API_URL + INTEGRATION_ENCRYPTION_KEY); console classroom-remote-panel.ts
 backend/src/db/          ← Drizzle schema + migration runner
-backend/drizzle/         ← SQL-міграції
+backend/drizzle/         ← SQL-міграції (Lesson Engine 0049–0056)
 public/                  ← sw.js, manifest, favicon (статичні assets)
 ```
 
