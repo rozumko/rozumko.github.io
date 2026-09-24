@@ -101,7 +101,10 @@ function renderOpenRuns(runs: LessonRunSummary[]): HTMLElement | null {
     const meta = document.createElement('span')
     meta.className = 'le-lesson-card__meta'
     meta.textContent = `${RUN_STATUS_LABELS[run.status]} · крок ${run.currentStepIndex + 1} з ${run.stepCount}`
-    a.append(title, meta)
+    const action = document.createElement('span')
+    action.className = 'le-lesson-card__action'
+    action.textContent = run.status === 'prepared' ? 'Відкрити підготовку' : 'Продовжити урок'
+    a.append(title, meta, action)
     li.append(a)
     list.append(li)
   }
@@ -141,7 +144,10 @@ function renderLessonList(lessons: CurriculumLessonSummary[], runs: LessonRunSum
       const meta = document.createElement('span')
       meta.className = 'le-lesson-card__meta'
       meta.textContent = lessonMetaLine(lesson)
-      a.append(title, meta)
+      const action = document.createElement('span')
+      action.className = 'le-lesson-card__action'
+      action.textContent = 'Переглянути план'
+      a.append(title, meta, action)
       li.append(a)
       list.append(li)
     }
