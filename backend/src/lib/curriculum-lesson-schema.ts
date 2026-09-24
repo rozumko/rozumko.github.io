@@ -932,7 +932,7 @@ export function validateLessonAgainstPack(lesson: LessonDefinitionV1, pack: Subj
   lesson.blocks.forEach((block, i) => {
     if (block.type !== 'activity' || block.activity.mechanic !== 'external') return
     const toolKey = (block.activity.config as ExternalConfig).toolKey
-    const tool = Object.hasOwn(pack.externalTools, toolKey) ? pack.externalTools[toolKey] : undefined
+    const tool = Object.prototype.hasOwnProperty.call(pack.externalTools, toolKey) ? pack.externalTools[toolKey] : undefined
     if (!tool) c.add(`blocks[${i}].activity.config.toolKey`, 'is not in the subject pack allowlist')
   })
   return c.errors

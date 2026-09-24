@@ -390,6 +390,17 @@ test('curriculum editorial API is flag-gated first and admin-only for every rout
   assert.match(route, /isLessonEngineEnabled\(\)/)
   assert.match(flag, /=== 'true'/)
   assert.match(server, /register\(curriculumAdminRoutes, \{ prefix: '\/api\/admin\/curriculum' \}\)/)
+
+  // Teacher routes: same flag-first ordering, authenticated, and every lesson
+  // leaves through the display-safe projection that strips answer keys.
+  const teacher = readFileSync(new URL('./routes/curriculum-teacher.ts', import.meta.url), 'utf8')
+  const teacherOnRequest = teacher.indexOf("app.addHook('onRequest'")
+  const teacherPreHandler = teacher.indexOf("app.addHook('preHandler', requireAuth)")
+  const teacherFirstRoute = teacher.search(/app\.(get|post|put|delete)\b/)
+  assert.ok(teacherOnRequest >= 0 && teacherPreHandler > teacherOnRequest && teacherFirstRoute > teacherPreHandler)
+  assert.match(teacher, /toDisplaySafeLesson\(/)
+  assert.doesNotMatch(teacher, /draftContent/)
+  assert.match(server, /register\(curriculumTeacherRoutes, \{ prefix: '\/api\/teacher\/curriculum' \}\)/)
 })
 
 test('question editorial history is RLS-protected and journaled', () => {

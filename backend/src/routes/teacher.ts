@@ -7,6 +7,7 @@ import { requireAuth, verifySupabaseIdentity, type SupabaseIdentity } from '../l
 import { emailConfirmedInAuth } from '../lib/email-confirmation.js'
 import { assertEventCanAcceptRegistrations, assertRegistrationCanBeCancelled, normalizeRegistrationInput, normalizeTeacherClassInput } from './registration-validation.js'
 import { assertEventCanIssueCodes, resolveCodeExpiry } from './teacher-events-validation.js'
+import { isLessonEngineEnabled } from '../lib/lesson-engine-flag.js'
 
 // Прості, знайомі дітям українські слова (3–5 літер, лише кирилиця).
 // Без англ. літер і спецсимволів — щоб дитині було легко прочитати і ввести.
@@ -90,7 +91,9 @@ export async function teacherRoutes(app: FastifyInstance, opts: TeacherRoutesOpt
 
   // GET /api/me
   app.get('/me', { preHandler: requireAuth }, async (req, reply) => {
-    return reply.send(req.user)
+    // Server-owned feature switches, so the cabinet shows only surfaces the
+    // backend will actually serve.
+    return reply.send({ ...req.user, features: { lessonEngine: isLessonEngineEnabled() } })
   })
 
   // POST /api/teacher/register-request

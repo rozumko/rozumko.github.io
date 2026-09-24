@@ -1,3 +1,4 @@
+import type { CurriculumLessonSummary, LessonDefinition } from '../lesson-engine/types.js'
 import {
   beginPkce,
   clearPendingPkce,
@@ -1158,8 +1159,23 @@ async function authRequest(path: string, options: RequestInit = {}): Promise<any
   }
 }
 
-export function getTeacherMe(): Promise<{ id: string; authUserId: string; role: string; name: string; email: string }> {
+export interface TeacherFeatures {
+  /** Lesson Engine surface; decided by the backend flag, never by the client. */
+  lessonEngine?: boolean
+}
+
+export function getTeacherMe(): Promise<{ id: string; authUserId: string; role: string; name: string; email: string; features?: TeacherFeatures }> {
   return authRequest('/api/teacher/me')
+}
+
+// ─── Lesson Engine (teacher, flag-gated on the backend) ────────────────────
+
+export function getCurriculumLessons(): Promise<{ lessons: CurriculumLessonSummary[] }> {
+  return authRequest('/api/teacher/curriculum/lessons')
+}
+
+export function getCurriculumLesson(id: string): Promise<{ lesson: LessonDefinition; publishedVersion: number }> {
+  return authRequest(`/api/teacher/curriculum/lessons/${encodeURIComponent(id)}`)
 }
 
 /** Explicit teacher sign-up request — the only way a pending teacher row appears. */

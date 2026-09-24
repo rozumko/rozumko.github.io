@@ -20,6 +20,7 @@ const AXE_PAGES = [
   '/transparency.html',
   '/standards.html',
   '/olympiad-enter.html',
+  '/lesson-engine.html',
 ]
 
 const WCAG_AA_TAGS = ['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']

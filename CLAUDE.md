@@ -70,6 +70,7 @@ backend/src/lib/auth.ts  ← requireAuth, requireAdmin middleware
 backend/src/lib/taxonomy.ts ← TOPICS_BY_TRACK, валідація тем/концептів (fail-closed)
 backend/src/lib/curriculum-lesson-schema.ts ← Lesson Engine schema v1 (docs/lesson-engine/README.md — decisions override the specs)
 backend/src/routes/curriculum-admin.ts ← Lesson Engine editorial API (/api/admin/curriculum, flag LESSON_ENGINE_ENABLED) + subject-packs.ts registry
+features/lesson-engine/  ← Lesson Engine teacher views (lesson-engine.html): document + board; projection.ts gates the board; teacher API curriculum-teacher.ts
 backend/src/db/          ← Drizzle schema + migration runner
 backend/drizzle/         ← SQL-міграції (таксономія 0021, ігри 0023–0026, уроки 0032, редакційний цикл 0036–0038, сіди ігор 0039–0040+0042, публікація 0041)
 backend/scripts/         ← import-temp-content, import-temp-lessons, export:* (питання/уроки/шлях/пакети/manifest)

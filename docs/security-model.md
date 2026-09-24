@@ -147,6 +147,15 @@ A published version is immutable, enforced by a database trigger rather than
 by route code alone. Revision history is append-only, also by trigger. Both
 tables have RLS enabled with no policies.
 
+Teachers read lessons only through `/api/teacher/curriculum/lessons`
+(`curriculum-teacher.ts`). It is behind the same flag-first 404, requires an
+authenticated teacher or admin, serves only the published snapshot of
+non-archived lessons, and passes every lesson through `toDisplaySafeLesson()`.
+Drafts and answer keys have no teacher route. On the page, what can reach the
+board is decided solely by `presentationSlides()` in
+`features/lesson-engine/projection.ts`. Teacher-only blocks and speaker notes
+never render there; a Playwright test walks every slide to check this.
+
 ## Mission Editorial Workflow — **[IMPLEMENTED]**
 
 Migration `0038` adds the same audited state machine, optimistic edit locking

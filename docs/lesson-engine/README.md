@@ -74,7 +74,7 @@ waiting on the extension protocol.
 | **A** ✅ | Specs + this decision record + ADR-0008 | Reviewed |
 | **B** ✅ | Schema v1 types, fail-closed validator, subject-pack check, display-safe projection, fixtures (reference lesson + synthetic `test-subject`) | Backend build + tests green; subject-independence and key-leak tests |
 | **C** ✅ | `curriculum_lessons` + `curriculum_lesson_revisions`, RLS in the same migration, admin editorial API (clone of the micro-lesson pattern), feature flag enforced by the backend | Draft/review/publish, immutable snapshot, RLS regression test, security tests |
-| D | Teacher document view + presentation view from one definition (`features/lesson-engine/`) | No duplicated content; teacher-only never on the board; Playwright |
+| **D** ✅ | Teacher document view + presentation view from one definition (`features/lesson-engine/`) | No duplicated content; teacher-only never on the board; Playwright |
 | E | Activity adapter: server-scored choice/truefalse/classify + existing `features/activities` games (client-unverified) behind one result envelope | Same mechanic in board and student mode; no key leak |
 | F | `lesson_runs`, `lesson_run_students`, `lesson_run_events`, teacher console (Next/Back/Pause/Resume/Finish) | Server-side state machine; reload-safe; content edits do not touch active runs |
 | G | Web join + roster mapping, scoped launch token, submit, polling live heatmap | 5 simulated students; idempotent submit; teacher reload restores state |
@@ -123,6 +123,34 @@ duplicate id, optimistic locking, skip-review refusal, publish, edit after
 publish with an untouched snapshot, trigger rejections, append-only history
 and restore.
 
+## Stage D — what exists
+
+- Teacher API `/api/teacher/curriculum/lessons` (list) and `/lessons/:id`
+  (`backend/src/routes/curriculum-teacher.ts`). It uses the same flag-first
+  404 and `requireAuth`, serves only published, non-archived lessons, and
+  always goes through `toDisplaySafeLesson()`. `/api/teacher/me` now returns
+  `features.lessonEngine`, so the cabinet shows the "Керовані уроки" link only
+  when the backend serves the surface.
+- `lesson-engine.html` + `lesson-engine.ts`: lesson list → teacher document →
+  board. It uses the teacher session from `teacher.html` (same tab).
+- `features/lesson-engine/`:
+  - `types.ts` — display-safe types; a guard test compares its enums with the
+    backend schema.
+  - `rich-text.ts` — `**bold**` / `` `code` `` into DOM nodes, never innerHTML.
+  - `projection.ts` — `presentationSlides()` is the only gate onto the board:
+    student-visible blocks with an authored projection; a `teacher-note` never
+    qualifies, even with forged flags.
+  - `document-view.ts` — the full plan: timing, modality, activity role,
+    teacher notes, speaker hints, and "show from here".
+  - `presentation-view.ts` — full-screen dialog: ←/→, PageUp/PageDown, Space,
+    Home/End, Escape; swipe; focus trap; speaker notes never rendered.
+- Asset `public/curriculum-lessons/assets/g2-m2-l8-file-flow.svg`, extracted
+  from the source lesson. A broken image falls back to its alt text.
+- `tests/layout/lesson-engine.spec.ts`: sign-in and flag-off states; the
+  teacher document with notes; every board slide by keyboard with no teacher
+  note, speaker hint or answer text; axe WCAG 2.2 AA on both views; start from
+  a block; the diagram loads; no horizontal scroll at 375 px.
+
 The validator lives in the backend because the backend is the authority for
 anything that is published or scored. Frontend types arrive with stage D and
 will be kept in sync by a guard test (the pattern used for path data).
@@ -140,9 +168,6 @@ will be kept in sync by a guard test (the pattern used for path data).
   `int-files-organize` are internal IDs until the outcome registry (stage H)
   maps real NUSH / Cambridge codes. Do not use "ІФО = індекс формувального
   оцінювання" — `ІФО` is the informatics education area code.
-- **Diagram asset not extracted yet.** The fixture references
-  `/curriculum-lessons/assets/g2-m2-l8-file-flow.svg`; the SVG from the source
-  is extracted with the renderers (stage D).
 - **Classroom Remote contract** — repository `artkysliakov/classroom-remote`
   must be made readable to the agent before stage I. Nothing is invented
   before then; stages A–H do not depend on it.
