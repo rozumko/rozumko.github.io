@@ -10,6 +10,7 @@ import { db } from '../db/index.js'
 import { curriculumLessonRevisions, curriculumLessons, type CurriculumLessonStatus } from '../db/schema.js'
 import { requireAdmin } from '../lib/auth.js'
 import { isLessonEngineEnabled } from '../lib/lesson-engine-flag.js'
+import { isUniqueViolation } from '../lib/db-errors.js'
 import {
   CURRICULUM_LESSON_ID_PATTERN,
   CURRICULUM_STATUSES,
@@ -34,14 +35,6 @@ const idParams = {
 } as const
 
 const editVersion = { type: 'integer', minimum: 1 } as const
-
-/** Drizzle wraps driver errors, so the Postgres code may sit on `cause`. */
-export function isUniqueViolation(err: unknown): boolean {
-  for (let current = err; typeof current === 'object' && current !== null; current = (current as { cause?: unknown }).cause) {
-    if ((current as { code?: unknown }).code === '23505') return true
-  }
-  return false
-}
 
 function sendError(reply: FastifyReply, err: unknown) {
   if (err instanceof CurriculumValidationError) {

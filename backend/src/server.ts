@@ -82,6 +82,7 @@ import { parentRoutes } from './routes/parent.js'
 import { contentPublicationCallbackRoutes } from './routes/content-publication-callback.js'
 import { curriculumAdminRoutes } from './routes/curriculum-admin.js'
 import { curriculumTeacherRoutes } from './routes/curriculum-teacher.js'
+import { lessonRunRoutes } from './routes/lesson-runs.js'
 await app.register(studentRoutes,  { prefix: '/api/student' })
 await app.register(attemptRoutes,  { prefix: '/api/attempt' })
 await app.register(teacherRoutes,  { prefix: '/api/teacher' })
@@ -95,6 +96,7 @@ await app.register(contentPublicationCallbackRoutes, { prefix: '/api/content-pub
 // Lesson Engine (ADR-0008): dark unless LESSON_ENGINE_ENABLED=true.
 await app.register(curriculumAdminRoutes, { prefix: '/api/admin/curriculum' })
 await app.register(curriculumTeacherRoutes, { prefix: '/api/teacher/curriculum' })
+await app.register(lessonRunRoutes, { prefix: '/api/teacher/lesson-runs' })
 
 const port = Number(process.env.PORT) || 3000
 

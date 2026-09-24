@@ -3,6 +3,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { readFileSync } from 'node:fs'
 import { toDisplaySafeLesson, type ActivitySpec, type LessonDefinitionV1 } from '../../backend/src/lib/curriculum-lesson-schema'
 import { scoreServerActivity } from '../../backend/src/lib/curriculum-activity-scoring'
+import { applyRunAction, resolveStep, runActionTimestamps, runSteps, type LessonRunAction } from '../../backend/src/lib/lesson-run-state'
 
 const WCAG_AA_TAGS = ['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']
 
@@ -54,7 +55,10 @@ async function mockTeacherApi(page: Page, options: { lessonEngine: boolean; sess
     const originalFetch = window.fetch.bind(window)
     window.fetch = async (input, init) => {
       const url = input instanceof Request ? input.url : String(input)
-      if (!url.includes('/api/') || url.endsWith('/check')) return originalFetch(input, init)
+      // Board checks, classes and runs are served by page.route in the test process.
+      if (!url.includes('/api/') || url.endsWith('/check') || url.includes('/lesson-runs') || url.includes('/api/teacher/classes')) {
+        return originalFetch(input, init)
+      }
       const path = new URL(url).pathname
       if (path === '/api/teacher/me') {
         return json({ id: 't1', authUserId: 'a1', role: 'teacher', name: 'Вчитель', email: 'teacher@example.test', features: { lessonEngine } })
@@ -69,6 +73,9 @@ async function mockTeacherApi(page: Page, options: { lessonEngine: boolean; sess
       return json({ error: 'Урок не знайдено' }, 404)
     }
   }, { lesson: options.lesson ?? servedLesson, lessonEngine: options.lessonEngine, session: options.session ?? true })
+  // Defaults for runs and classes; routeRunServer() overrides them when a test needs runs.
+  await page.route('**/api/teacher/lesson-runs**', route => route.fulfill({ contentType: 'application/json', body: '{"runs":[]}' }))
+  await page.route('**/api/teacher/classes', route => route.fulfill({ contentType: 'application/json', body: '{"classes":[]}' }))
 }
 
 test('without a teacher session the page asks to sign in', async ({ page }) => {
@@ -224,4 +231,134 @@ test('a platform game runs on the board and holds the keyboard until stopped', a
   await expect(board.locator('.le-game__stage')).toBeEmpty()
   await page.keyboard.press('ArrowRight')
   await expect(board.locator('.le-board__counter')).toHaveText(`10 / ${SLIDE_COUNT}`)
+})
+
+// ── Lesson runs (stage F) ────────────────────────────────────────────────────
+
+const RUN_ID = '00000000-0000-4000-8000-0000000000aa'
+const CLASS_ID = '00000000-0000-4000-8000-0000000000bb'
+
+/** In-memory run server that applies the real backend state machine. */
+async function routeRunServer(page: Page) {
+  const json = (body: unknown, status = 200) => ({ status, contentType: 'application/json', body: JSON.stringify(body) })
+  let run: Record<string, any> | null = null
+  const steps = runSteps(fixture)
+  const view = () => ({
+    run: { ...run, steps },
+    lesson: servedLesson,
+    students: [{ id: 's1', classStudentId: 'c1', label: 'Марко', status: 'expected' }],
+  })
+
+  await page.route('**/api/teacher/classes', route => route.fulfill(json({
+    classes: [{ id: CLASS_ID, teacherId: 't1', name: '2-А', grade: 2, createdAt: '', updatedAt: '' }],
+  })))
+  await page.route('**/api/teacher/lesson-runs**', async route => {
+    const request = route.request()
+    const parts = new URL(request.url()).pathname.split('/').filter(Boolean).slice(3)
+    const method = request.method()
+    if (parts.length === 0 && method === 'GET') {
+      return route.fulfill(json({ runs: run ? [{
+        id: run.id, status: run.status, classId: CLASS_ID, className: '2-А', lessonId: fixture.id,
+        lessonTitle: fixture.title, currentStepIndex: run.currentStepIndex, stepCount: steps.length, createdAt: '',
+      }] : [] }))
+    }
+    if (parts.length === 0 && method === 'POST') {
+      if (run && ['prepared', 'active', 'paused'].includes(run.status)) {
+        return route.fulfill(json({ error: 'У цього класу вже є незавершений урок', runId: run.id }, 409))
+      }
+      run = {
+        id: RUN_ID, status: 'prepared', classId: CLASS_ID, className: '2-А', lessonId: fixture.id,
+        lessonPublishedVersion: 1, currentStepIndex: 0, currentBlockId: steps[0], createdAt: '',
+        startedAt: null, pausedAt: null, finishedAt: null, cancelledAt: null,
+      }
+      return route.fulfill(json(view(), 201))
+    }
+    if (!run || parts[0] !== run.id) return route.fulfill(json({ error: 'Урок не знайдено' }, 404))
+    try {
+      if (parts.length === 2 && parts[1] === 'step' && method === 'PUT') {
+        const { stepIndex } = request.postDataJSON() as { stepIndex: number }
+        run.currentBlockId = resolveStep(fixture, run.status, stepIndex)
+        run.currentStepIndex = stepIndex
+      } else if (parts.length === 2 && method === 'POST') {
+        const action = parts[1] as LessonRunAction
+        run.status = applyRunAction(run.status, action).status
+        Object.assign(run, runActionTimestamps(action, new Date()))
+      }
+      return route.fulfill(json(view()))
+    } catch (err) {
+      return route.fulfill(json({ error: (err as Error).message }, 409))
+    }
+  })
+}
+
+test('a teacher prepares, conducts, pauses to reteach, and finishes a lesson with a class', async ({ page }) => {
+  await mockTeacherApi(page, { lessonEngine: true })
+  await routeRunServer(page)
+  await page.goto('/lesson-engine.html?lesson=g2-m2-l8')
+
+  await page.getByLabel('Клас', { exact: true }).selectOption(CLASS_ID)
+  await page.getByRole('button', { name: 'Підготувати урок' }).click()
+  await expect(page).toHaveURL(/run=/)
+
+  const controls = page.getByRole('toolbar', { name: 'Керування уроком' })
+  const badge = page.locator('.le-console__badge')
+  const current = page.locator('.le-console__step[aria-current="step"]')
+  await expect(badge).toHaveText('Підготовлено')
+  await expect(controls.getByRole('button', { name: 'Далі →' })).toHaveCount(0)
+  await expect(page.locator('.le-console__step').first()).toBeDisabled()
+  // The teacher note attached to the first step is visible in the console.
+  await expect(page.locator('.le-console__current')).toContainText(TEACHER_NOTE)
+
+  await controls.getByRole('button', { name: 'Почати урок' }).click()
+  await expect(badge).toHaveText('Триває')
+  await controls.getByRole('button', { name: 'Далі →' }).click()
+  await expect(current).toContainText('2.')
+
+  // The server owns the step: a reload resumes where the lesson is.
+  await page.reload()
+  await expect(current).toContainText('2.')
+
+  await controls.getByRole('button', { name: 'Пауза' }).click()
+  await expect(badge).toHaveText('Пауза')
+  await expect(page.locator('.le-console__paused')).toBeVisible()
+  await page.locator('.le-console__step').first().click()
+  await expect(current).toContainText('1.')
+  await controls.getByRole('button', { name: 'Продовжити' }).click()
+  await expect(badge).toHaveText('Триває')
+
+  const results = await new AxeBuilder({ page }).withTags(WCAG_AA_TAGS).analyze()
+  expect(results.violations.map(v => v.id)).toEqual([])
+
+  await controls.getByRole('button', { name: 'Завершити урок' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'OK' }).click()
+  await expect(badge).toHaveText('Завершено')
+  await expect(controls.getByRole('button', { name: 'Далі →' })).toHaveCount(0)
+  await expect(page.locator('.le-console__done')).toBeVisible()
+})
+
+test('moving through the board moves the run, and the lesson list offers to resume', async ({ page }) => {
+  await mockTeacherApi(page, { lessonEngine: true })
+  await routeRunServer(page)
+  await page.goto('/lesson-engine.html?lesson=g2-m2-l8')
+  await page.getByRole('button', { name: 'Підготувати урок' }).click()
+  await page.getByRole('button', { name: 'Почати урок' }).click()
+  await expect(page.locator('.le-console__badge')).toHaveText('Триває')
+
+  await page.getByRole('button', { name: 'Показати на дошці' }).click()
+  const board = page.getByRole('dialog', { name: /Показ на дошці/ })
+  await page.keyboard.press('ArrowRight')
+  await page.keyboard.press('ArrowRight')
+  await expect(board.locator('.le-board__counter')).toHaveText(`3 / ${SLIDE_COUNT}`)
+  await page.keyboard.press('Escape')
+  await expect(page.locator('.le-console__step[aria-current="step"]')).toContainText('3.')
+
+  await page.goto('/lesson-engine.html')
+  await expect(page.getByRole('heading', { name: 'Незавершені уроки' })).toBeVisible()
+  await expect(page.getByRole('link', { name: /2-А/ })).toHaveAttribute('href', /run=/)
+
+  // Preparing again for the same class resumes the open run instead of forking it.
+  await page.goto('/lesson-engine.html?lesson=g2-m2-l8')
+  await expect(page.getByRole('link', { name: 'Продовжити урок: 2-А' })).toBeVisible()
+  await page.getByRole('button', { name: 'Підготувати урок' }).click()
+  await expect(page).toHaveURL(new RegExp(`run=${RUN_ID}`))
 })

@@ -69,6 +69,8 @@ export interface PresentationOptions {
   onClose?: () => void
   /** Enables board activities ("do it together", games). Omitted → read-only slides. */
   activities?: Pick<BoardActivityDeps, 'check'>
+  /** Called after the teacher moves to another slide (not on opening). */
+  onSlideChange?: (blockId: string) => void
 }
 
 /**
@@ -106,6 +108,7 @@ export function openPresentation(lesson: LessonDefinition, options: Presentation
     : null
 
   function show(target: number) {
+    const previous = stage.childElementCount > 0 ? index : null
     index = Math.min(Math.max(target, 0), slides.length - 1)
     leaveSlide()
     leaveSlide = () => {}
@@ -122,6 +125,7 @@ export function openPresentation(lesson: LessonDefinition, options: Presentation
     next.disabled = index === slides.length - 1
     if (focused === prev && prev.disabled) next.focus()
     if (focused === next && next.disabled) close.focus()
+    if (previous !== null && previous !== index) options.onSlideChange?.(slide.blockId)
   }
 
   function onKey(event: KeyboardEvent) {

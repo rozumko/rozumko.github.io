@@ -7,6 +7,8 @@ import * as backendSchema from '../../backend/src/lib/curriculum-lesson-schema.t
 import { parseRichText } from './rich-text.ts'
 import { documentBlocks, presentationSlides, BLOCK_TYPE_LABELS, lessonMetaLine } from './projection.ts'
 import { answerFromSelection, boardActivityMode, boardQuestions, gameResultEnvelope } from './board-answers.ts'
+import { canNavigate, isOpenRun, runLifecycleActions, stepAttachments, stepTitle } from './run-model.ts'
+import * as runState from '../../backend/src/lib/lesson-run-state.ts'
 
 const fixture = JSON.parse(readFileSync(
   new URL('../../backend/src/lib/curriculum-fixtures/g2-m2-l8.lesson.json', import.meta.url), 'utf8',
@@ -110,4 +112,36 @@ test('a game result is always client-unverified and clamped', () => {
     normalizedScore: 1, durationSec: 41, trust: 'client-unverified',
   })
   assert.equal(gameResultEnvelope('g1', { correct: 0, total: 0, mistakes: 0, durationSec: 0 }).normalizedScore, 0)
+})
+
+// ── Run console (stage F) ────────────────────────────────────────────────────
+
+test('console lifecycle buttons match the server state machine exactly', () => {
+  for (const status of ['prepared', 'active', 'paused', 'finished', 'cancelled']) {
+    const serverAllowed = runState.LESSON_RUN_ACTIONS.filter(action => {
+      try { runState.applyRunAction(status, action); return true } catch { return false }
+    })
+    // The console folds "cancel" away once the lesson has started; finishing covers it.
+    const shown = runLifecycleActions(status)
+    for (const action of shown) assert.ok(serverAllowed.includes(action), `${status}: ${action} would be refused`)
+    assert.equal(canNavigate(status), status === 'active' || status === 'paused')
+    assert.equal(isOpenRun(status), ['prepared', 'active', 'paused'].includes(status))
+  }
+  assert.deepEqual(runLifecycleActions('prepared'), ['start', 'cancel'])
+  assert.deepEqual(runLifecycleActions('finished'), [])
+})
+
+test('non-step blocks travel with the step they follow', () => {
+  const steps = runState.runSteps(fixture)
+  const attachments = stepAttachments(servedLesson, steps)
+  assert.deepEqual(attachments.get('g2-m2-l8-b01').map(block => block.id), ['g2-m2-l8-b02'])
+  assert.deepEqual(attachments.get('g2-m2-l8-b08').map(block => block.id), ['g2-m2-l8-b09'])
+  assert.deepEqual(attachments.get('g2-m2-l8-b14').map(block => block.id), ['g2-m2-l8-b15'])
+  assert.equal([...attachments.values()].flat().length + steps.length, servedLesson.blocks.length)
+})
+
+test('step titles prefer the authored board headline', () => {
+  const byId = id => servedLesson.blocks.find(block => block.id === id)
+  assert.equal(stepTitle(byId('g2-m2-l8-b07'), 'x'), 'Яка назва краща?')
+  assert.equal(stepTitle(undefined, 'fallback'), 'fallback')
 })

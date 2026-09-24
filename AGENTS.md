@@ -67,6 +67,7 @@ backend/src/lib/auth.ts  ← requireAuth, requireAdmin middleware
 backend/src/lib/curriculum-lesson-schema.ts ← Lesson Engine schema v1 (docs/lesson-engine/README.md — decisions override the specs)
 backend/src/routes/curriculum-admin.ts ← Lesson Engine editorial API (/api/admin/curriculum, flag LESSON_ENGINE_ENABLED) + subject-packs.ts registry
 features/lesson-engine/  ← Lesson Engine teacher views (lesson-engine.html): document + board; projection.ts gates the board; teacher API curriculum-teacher.ts
+backend/src/routes/lesson-runs.ts ← Lesson Engine runs (/api/teacher/lesson-runs); state machine lib/lesson-run-state.ts; console features/lesson-engine/run-console.ts
 backend/src/db/          ← Drizzle schema + migration runner
 backend/drizzle/         ← SQL-міграції
 public/                  ← sw.js, manifest, favicon (статичні assets)

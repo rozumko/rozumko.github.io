@@ -410,6 +410,38 @@ test('curriculum editorial API is flag-gated first and admin-only for every rout
   assert.doesNotMatch(scoring, /correctOptionId:|placement:|answers: key/)
 })
 
+test('lesson runs are RLS-protected, frozen once closed, and owner-scoped', () => {
+  const migration = readFileSync(new URL('../drizzle/0050_add_lesson_runs.sql', import.meta.url), 'utf8')
+  const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')
+  const route = readFileSync(new URL('./routes/lesson-runs.ts', import.meta.url), 'utf8')
+  const state = readFileSync(new URL('./lib/lesson-run-state.ts', import.meta.url), 'utf8')
+
+  for (const table of ['lesson_runs', 'lesson_run_students', 'lesson_run_events']) {
+    assert.match(migration, new RegExp(`ALTER TABLE public\\.${table} ENABLE ROW LEVEL SECURITY;`), table)
+  }
+  assert.doesNotMatch(migration, /CREATE POLICY/)
+  assert.match(migration, /lesson_runs_one_open_per_class_uq[\s\S]{0,120}WHERE status IN \('prepared', 'active', 'paused'\)/)
+  assert.match(migration, /OLD\.status IN \('finished', 'cancelled'\)/)
+  assert.match(migration, /NEW\.lesson_snapshot IS DISTINCT FROM OLD\.lesson_snapshot/)
+  assert.match(migration, /BEFORE UPDATE OR DELETE ON public\.lesson_run_events/)
+  assert.match(migration, /class_student_id uuid REFERENCES public\.class_students\(id\) ON DELETE SET NULL/)
+  assert.match(journal, /"tag": "0050_add_lesson_runs"/)
+
+  // Every event type the code writes must be allowed by the table constraint.
+  const allowed = new Set([...migration.match(/lesson_run_events_type_check CHECK \(type IN \(([^)]*)\)/)![1]!.matchAll(/'([a-z_]+)'/g)].map(m => m[1]))
+  const written = new Set([...`${route}\n${state}`.matchAll(/(?:type|event): '(run_[a-z]+|block_opened|activity_dispatched)'/g)].map(m => m[1]))
+  assert.ok(written.size >= 6, 'event scan found too few event types')
+  for (const type of written) assert.ok(allowed.has(type), type)
+
+  // Flag first, then auth; every run lookup is scoped to the requesting teacher.
+  assert.ok(route.indexOf("app.addHook('onRequest'") < route.indexOf("app.addHook('preHandler', requireAuth)"))
+  const runLookups = route.match(/\.from\(lessonRuns\)/g)!.length
+  const ownerScoped = route.match(/eq\(lessonRuns\.teacherId, (teacherId|req\.user!\.id)\)/g)!.length
+  assert.ok(ownerScoped >= runLookups - 1, 'every run lookup must be owner-scoped (the open-run conflict lookup is by own class)')
+  assert.match(route, /eq\(teacherClasses\.teacherId, teacherId\)/)
+  assert.match(route, /toDisplaySafeLesson\(lesson\)/)
+})
+
 test('question editorial history is RLS-protected and journaled', () => {
   const migration = readFileSync(new URL('../drizzle/0036_add_question_editorial_workflow.sql', import.meta.url), 'utf8')
   const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')

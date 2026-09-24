@@ -207,6 +207,37 @@ export interface DocumentViewOptions {
   onPresentFrom?: (blockId: string) => void
 }
 
+/** One block as a document card: type, timing, content and speaker hint. */
+export function renderLessonBlock(
+  lesson: LessonDefinition,
+  block: LessonBlock,
+  options: DocumentViewOptions = {},
+  tag: 'li' | 'section' = 'li',
+): HTMLElement {
+  const item = el(tag, `le-block le-block--${block.type}`)
+  item.id = block.id
+  if (!block.audience.student) item.classList.add('le-block--teacher-only')
+
+  const top = el('div', 'le-block__top')
+  top.append(el('span', 'le-block__type', BLOCK_TYPE_LABELS[block.type]))
+  if (block.views.presentation && block.presentation && block.audience.student && options.onPresentFrom) {
+    const present = el('button', 'btn btn--secondary le-block__present', 'Показати з цього місця')
+    present.type = 'button'
+    present.addEventListener('click', () => options.onPresentFrom?.(block.id))
+    top.append(present)
+  }
+  item.append(top, renderBlockMeta(block), renderBlockContent(lesson, block))
+
+  const notes = block.presentation?.speakerNotes
+  if (notes) {
+    const hint = el('p', 'le-teacher-hint')
+    hint.append(el('span', 'le-teacher-hint__label', 'Підказка вчителю: '))
+    appendRichText(hint, notes.uk)
+    item.append(hint)
+  }
+  return item
+}
+
 export function renderLessonDocument(lesson: LessonDefinition, options: DocumentViewOptions = {}): HTMLElement {
   const root = el('article', 'le-document')
   root.setAttribute('aria-labelledby', 'le-document-title')
@@ -222,30 +253,7 @@ export function renderLessonDocument(lesson: LessonDefinition, options: Document
   root.append(header)
 
   const list = el('ol', 'le-blocks')
-  for (const block of documentBlocks(lesson)) {
-    const item = el('li', `le-block le-block--${block.type}`)
-    item.id = block.id
-    if (!block.audience.student) item.classList.add('le-block--teacher-only')
-
-    const top = el('div', 'le-block__top')
-    top.append(el('span', 'le-block__type', BLOCK_TYPE_LABELS[block.type]))
-    if (block.views.presentation && block.presentation && block.audience.student && options.onPresentFrom) {
-      const present = el('button', 'btn btn--secondary le-block__present', 'Показати з цього місця')
-      present.type = 'button'
-      present.addEventListener('click', () => options.onPresentFrom?.(block.id))
-      top.append(present)
-    }
-    item.append(top, renderBlockMeta(block), renderBlockContent(lesson, block))
-
-    const notes = block.presentation?.speakerNotes
-    if (notes) {
-      const hint = el('p', 'le-teacher-hint')
-      hint.append(el('span', 'le-teacher-hint__label', 'Підказка вчителю: '))
-      appendRichText(hint, notes.uk)
-      item.append(hint)
-    }
-    list.append(item)
-  }
+  for (const block of documentBlocks(lesson)) list.append(renderLessonBlock(lesson, block, options))
   root.append(list)
   return root
 }

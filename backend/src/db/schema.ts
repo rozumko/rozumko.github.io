@@ -690,3 +690,60 @@ export const curriculumLessonRevisions = pgTable('curriculum_lesson_revisions', 
 }))
 
 export type CurriculumLessonRevisionRow = typeof curriculumLessonRevisions.$inferSelect
+
+// ── Lesson Engine: lesson runs (0050) ─────────────────────────────────────────
+// A run freezes the published lesson snapshot (answer keys included, server
+// only). Identity and snapshot are immutable and finished/cancelled runs are
+// frozen by a DB trigger; one open run per class by a partial unique index.
+export type LessonRunStatus = 'prepared' | 'active' | 'paused' | 'finished' | 'cancelled'
+
+export const lessonRuns = pgTable('lesson_runs', {
+  id:                     uuid('id').primaryKey().defaultRandom(),
+  teacherId:              uuid('teacher_id').notNull().references(() => appUsers.id, { onDelete: 'restrict' }),
+  classId:                uuid('class_id').notNull().references(() => teacherClasses.id, { onDelete: 'restrict' }),
+  lessonId:               text('lesson_id').notNull().references(() => curriculumLessons.id, { onDelete: 'restrict' }),
+  lessonPublishedVersion: integer('lesson_published_version').notNull(),
+  lessonSnapshot:         jsonb('lesson_snapshot').notNull().$type<Record<string, unknown>>(),
+  status:                 text('status').notNull().default('prepared').$type<LessonRunStatus>(),
+  currentStepIndex:       integer('current_step_index').notNull().default(0),
+  currentBlockId:         text('current_block_id').notNull(),
+  createdAt:              timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  startedAt:              timestamp('started_at', { withTimezone: true }),
+  pausedAt:               timestamp('paused_at', { withTimezone: true }),
+  finishedAt:             timestamp('finished_at', { withTimezone: true }),
+  cancelledAt:            timestamp('cancelled_at', { withTimezone: true }),
+  updatedAt:              timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type LessonRunRow = typeof lessonRuns.$inferSelect
+
+export const lessonRunStudents = pgTable('lesson_run_students', {
+  id:             uuid('id').primaryKey().defaultRandom(),
+  lessonRunId:    uuid('lesson_run_id').notNull().references(() => lessonRuns.id, { onDelete: 'restrict' }),
+  classStudentId: uuid('class_student_id').references(() => classStudents.id, { onDelete: 'set null' }),
+  status:         text('status').notNull().default('expected').$type<'expected' | 'joined' | 'absent'>(),
+  joinedAt:       timestamp('joined_at', { withTimezone: true }),
+  lastSeenAt:     timestamp('last_seen_at', { withTimezone: true }),
+  createdAt:      timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  uniqRunStudent: unique('lesson_run_students_run_student_uq').on(t.lessonRunId, t.classStudentId),
+}))
+
+export type LessonRunStudentRow = typeof lessonRunStudents.$inferSelect
+
+export type LessonRunEventType =
+  | 'run_created' | 'run_started' | 'block_opened' | 'activity_dispatched'
+  | 'run_paused' | 'run_resumed' | 'run_finished' | 'run_cancelled'
+
+export const lessonRunEvents = pgTable('lesson_run_events', {
+  id:          uuid('id').primaryKey().defaultRandom(),
+  lessonRunId: uuid('lesson_run_id').notNull().references(() => lessonRuns.id, { onDelete: 'restrict' }),
+  type:        text('type').notNull().$type<LessonRunEventType>(),
+  blockId:     text('block_id'),
+  actorType:   text('actor_type').notNull().$type<'teacher' | 'system'>(),
+  actorId:     uuid('actor_id'),
+  payload:     jsonb('payload').notNull().default({}).$type<Record<string, unknown>>(),
+  createdAt:   timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type LessonRunEventRow = typeof lessonRunEvents.$inferSelect

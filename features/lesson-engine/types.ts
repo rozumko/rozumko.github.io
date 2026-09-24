@@ -121,3 +121,45 @@ export type BoardAnswer =
   | { optionId: string }
   | { answers: Record<string, boolean> }
   | { placement: Record<string, string> }
+
+// ── Lesson runs (stage F) ────────────────────────────────────────────────────
+
+export type LessonRunStatus = 'prepared' | 'active' | 'paused' | 'finished' | 'cancelled'
+export type LessonRunAction = 'start' | 'pause' | 'resume' | 'finish' | 'cancel'
+
+export interface LessonRunState {
+  id: string
+  status: LessonRunStatus
+  classId: string
+  className: string
+  lessonId: string
+  lessonPublishedVersion: number
+  currentStepIndex: number
+  currentBlockId: string
+  /** Block ids of the navigable steps, in order. */
+  steps: string[]
+  createdAt: string
+  startedAt: string | null
+  pausedAt: string | null
+  finishedAt: string | null
+  cancelledAt: string | null
+}
+
+export interface LessonRunView {
+  run: LessonRunState
+  /** The frozen lesson the run conducts, display-safe. */
+  lesson: LessonDefinition
+  students: { id: string; classStudentId: string | null; label: string | null; status: string }[]
+}
+
+export interface LessonRunSummary {
+  id: string
+  status: LessonRunStatus
+  classId: string
+  className: string
+  lessonId: string
+  lessonTitle: LocalizedText
+  currentStepIndex: number
+  stepCount: number
+  createdAt: string
+}

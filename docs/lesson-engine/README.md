@@ -76,7 +76,7 @@ waiting on the extension protocol.
 | **C** ✅ | `curriculum_lessons` + `curriculum_lesson_revisions`, RLS in the same migration, admin editorial API (clone of the micro-lesson pattern), feature flag enforced by the backend | Draft/review/publish, immutable snapshot, RLS regression test, security tests |
 | **D** ✅ | Teacher document view + presentation view from one definition (`features/lesson-engine/`) | No duplicated content; teacher-only never on the board; Playwright |
 | **E** ✅ | Activity adapter: server-scored choice/truefalse/classify + existing `features/activities` games (client-unverified) behind one result envelope | Same mechanic in board and student mode; no key leak |
-| F | `lesson_runs`, `lesson_run_students`, `lesson_run_events`, teacher console (Next/Back/Pause/Resume/Finish) | Server-side state machine; reload-safe; content edits do not touch active runs |
+| **F** ✅ | `lesson_runs`, `lesson_run_students`, `lesson_run_events`, teacher console (Next/Back/Pause/Resume/Finish) | Server-side state machine; reload-safe; content edits do not touch active runs |
 | G | Web join + roster mapping, scoped launch token, submit, polling live heatmap | 5 simulated students; idempotent submit; teacher reload restores state |
 | H | Outcome registry, evidence, lesson report | Every summary traces to evidence → attempt → block → run → lesson version |
 | I | `ClassroomControlProvider`: fake first, then Classroom Remote | Fake works in CI; real: 3–5 devices, correct URL on correct device |
@@ -188,6 +188,49 @@ Code:
 - Playwright: doing an activity together (server-scored in the test
   process), radio arrows not changing slides, evidence never checkable on
   the board, and a platform game holding the keyboard until stopped.
+
+## Stage F — what exists
+
+- Migration `0050`: `lesson_runs` (frozen published snapshot and version,
+  status, current step), `lesson_run_students` (roster snapshot keyed by
+  `class_students.id`) and `lesson_run_events` (lifecycle audit). RLS is on
+  for all three.
+  - A partial unique index allows **one open run per class**; preparing
+    again returns 409 with the open `runId`, so the UI resumes instead of
+    forking.
+  - Triggers keep identity and snapshot immutable, freeze finished and
+    cancelled runs, forbid deleting runs, and keep events append-only.
+  - Deleting a student sets their run rows' `class_student_id` to NULL:
+    history is anonymised, not blocked.
+- `backend/src/lib/lesson-run-state.ts` holds the pure state machine:
+  `prepared → active ⇄ paused → finished`, and `cancel` from any open state.
+  Steps are the `runtime.step` blocks. Navigation works while `active` or
+  `paused` (pause, go back to the explanation, resume).
+- `/api/teacher/lesson-runs` (`routes/lesson-runs.ts`): list, prepare,
+  get, `/:id/start|pause|resume|finish|cancel` and `PUT /:id/step`. Every
+  transition runs in a transaction with `FOR UPDATE` and writes an event.
+  Every lookup is scoped to the requesting teacher (another teacher's run is
+  a 404), the class must be the teacher's own, and the view serves the
+  frozen lesson through `toDisplaySafeLesson()`.
+- Console (`features/lesson-engine/run-console.ts`, `?run=<id>`):
+  - status badge, sticky controls, a step list, and the current step with
+    the teacher notes and support blocks that follow it;
+  - every action goes through one ordered queue and re-renders from the
+    server's answer, so a reload or a second tab shows the real state;
+  - rapid board navigation coalesces into one request for the latest step;
+  - finishing asks for confirmation;
+  - the board follows the run: moving to a step slide moves the run.
+- The lesson page has a class picker and "Підготувати урок", plus "Продовжити
+  урок" when that lesson has an open run. The list page shows unfinished
+  lessons; if loading runs fails, the list still renders.
+
+Verified on a real PostgreSQL 16 (migrations `0000`–`0050` plus a scripted run
+through the real routes): foreign class refused; second prepare returns 409
+with the open run; another teacher gets 404 on view, action and list; no step
+before start; step range enforced; reteach while paused; the step survives a
+reload; republishing the lesson leaves the running snapshot unchanged;
+deleting a student anonymises their row; finished runs refuse everything;
+trigger rejections; events recorded in order.
 
 The validator lives in the backend because the backend is the authority for
 anything that is published or scored. Frontend types arrive with stage D and

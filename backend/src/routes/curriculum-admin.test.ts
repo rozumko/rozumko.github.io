@@ -4,7 +4,8 @@ import Fastify, { type InjectOptions } from 'fastify'
 
 process.env.SUPABASE_URL = 'https://test.supabase.co'
 
-const { curriculumAdminRoutes, isUniqueViolation } = await import('./curriculum-admin.js')
+const { curriculumAdminRoutes } = await import('./curriculum-admin.js')
+const { isUniqueViolation } = await import('../lib/db-errors.js')
 
 async function buildApp() {
   const app = Fastify()

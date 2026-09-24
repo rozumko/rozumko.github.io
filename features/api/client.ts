@@ -1,4 +1,13 @@
-import type { ActivityFeedback, ActivityResult, BoardAnswer, CurriculumLessonSummary, LessonDefinition } from '../lesson-engine/types.js'
+import type {
+  ActivityFeedback,
+  ActivityResult,
+  BoardAnswer,
+  CurriculumLessonSummary,
+  LessonDefinition,
+  LessonRunAction,
+  LessonRunSummary,
+  LessonRunView,
+} from '../lesson-engine/types.js'
 import {
   beginPkce,
   clearPendingPkce,
@@ -207,9 +216,9 @@ export interface EventRegistration {
 
 // Помилка API з HTTP-статусом і опційним кодом — щоб виклики (напр. authRequest)
 // могли реагувати на 401 і виконати refresh токена.
-export interface ApiError extends Error { status: number; code?: string }
-function apiError(message: string, status: number, code?: string): ApiError {
-  return Object.assign(new Error(message), { status, code })
+export interface ApiError extends Error { status: number; code?: string; body?: Record<string, unknown> }
+function apiError(message: string, status: number, code?: string, body?: Record<string, unknown>): ApiError {
+  return Object.assign(new Error(message), { status, code, body })
 }
 
 async function request(path: string, options: RequestInit = {}): Promise<any> {
@@ -239,7 +248,7 @@ async function request(path: string, options: RequestInit = {}): Promise<any> {
   }
 
   const data = await res.json()
-  if (!res.ok) throw apiError(data.error ?? `Помилка ${res.status}`, res.status, data.code)
+  if (!res.ok) throw apiError(data.error ?? `Помилка ${res.status}`, res.status, data.code, data)
   return data
 }
 
@@ -1176,6 +1185,30 @@ export function getCurriculumLessons(): Promise<{ lessons: CurriculumLessonSumma
 
 export function getCurriculumLesson(id: string): Promise<{ lesson: LessonDefinition; publishedVersion: number }> {
   return authRequest(`/api/teacher/curriculum/lessons/${encodeURIComponent(id)}`)
+}
+
+export function listLessonRuns(): Promise<{ runs: LessonRunSummary[] }> {
+  return authRequest('/api/teacher/lesson-runs')
+}
+
+/** Prepares a run; a 409 carries `runId` of the class's already open run. */
+export function createLessonRun(classId: string, lessonId: string): Promise<LessonRunView> {
+  return authRequest('/api/teacher/lesson-runs', { method: 'POST', body: JSON.stringify({ classId, lessonId }) })
+}
+
+export function getLessonRun(runId: string): Promise<LessonRunView> {
+  return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}`)
+}
+
+export function lessonRunAction(runId: string, action: LessonRunAction): Promise<LessonRunView> {
+  return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}/${action}`, { method: 'POST' })
+}
+
+export function setLessonRunStep(runId: string, stepIndex: number): Promise<LessonRunView> {
+  return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}/step`, {
+    method: 'PUT',
+    body: JSON.stringify({ stepIndex }),
+  })
 }
 
 /** "Do it together" on the board: the server scores the class answer. */

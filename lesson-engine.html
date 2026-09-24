@@ -28,6 +28,17 @@
     <div id="le-view"></div>
   </main>
 
+  <div id="app-modal" class="app-modal-overlay hidden"
+       role="dialog" aria-modal="true" aria-labelledby="modal-message">
+    <div class="app-modal-card">
+      <p id="modal-message" class="app-modal-msg"></p>
+      <div class="modal-actions">
+        <button id="modal-ok-btn" class="btn-modal-ok">OK</button>
+        <button id="modal-cancel-btn" class="btn-modal-cancel hidden">Скасувати</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="lesson-engine.js"></script>
 </body>
 </html>
