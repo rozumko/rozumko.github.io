@@ -38,6 +38,9 @@ const ROUTES: InjectOptions[] = [
   { method: 'GET', url: `/api/teacher/lesson-runs/${RUN_ID}/devices` },
   { method: 'PUT', url: `/api/teacher/lesson-runs/${RUN_ID}/devices/${CLASS_ID}`, payload: { lessonRunStudentId: null } },
   { method: 'DELETE', url: `/api/teacher/lesson-runs/${RUN_ID}/devices/${CLASS_ID}` },
+  { method: 'POST', url: `/api/teacher/lesson-runs/${RUN_ID}/dispatch`, payload: { blockId: 'g2-m2-l8-b07' } },
+  { method: 'POST', url: `/api/teacher/lesson-runs/${RUN_ID}/dispatch/close` },
+  { method: 'GET', url: `/api/teacher/lesson-runs/${RUN_ID}/live` },
 ]
 
 test('lesson run routes are a 404 while the flag is off', async () => {
@@ -66,6 +69,9 @@ test('ids, actions and bodies are validated before auth or database access', asy
       { method: 'PUT', url: `/api/teacher/lesson-runs/${RUN_ID}/devices/${CLASS_ID}`, payload: { lessonRunStudentId: 'Марко' } },
       { method: 'PUT', url: `/api/teacher/lesson-runs/${RUN_ID}/devices/${CLASS_ID}`, payload: {} },
       { method: 'DELETE', url: `/api/teacher/lesson-runs/${RUN_ID}/devices/nope` },
+      { method: 'POST', url: `/api/teacher/lesson-runs/${RUN_ID}/dispatch`, payload: { blockId: 'Bad Block' } },
+      { method: 'POST', url: `/api/teacher/lesson-runs/${RUN_ID}/dispatch`, payload: {} },
+      { method: 'GET', url: '/api/teacher/lesson-runs/nope/live' },
     ]
     for (const request of cases) {
       assert.equal((await app.inject(request)).statusCode, 400, `${request.method} ${request.url} ${JSON.stringify(request.payload)}`)

@@ -59,3 +59,27 @@ test('a well-formed but forged device token is refused before any database acces
     assert.equal(response.json().code, 'DEVICE_INVALID')
   })
 })
+
+const ATTEMPT = {
+  deviceId: DEVICE,
+  deviceToken: 'b'.repeat(64),
+  dispatchId: '00000000-0000-4000-8000-000000000002',
+  clientAttemptId: '00000000-0000-4000-8000-000000000003',
+}
+
+test('attempts are validated before any database access and need a genuine device token', async () => {
+  await withApp('true', async app => {
+    for (const payload of [
+      { ...ATTEMPT, clientAttemptId: 'not-a-uuid' },
+      { ...ATTEMPT, dispatchId: 'nope' },
+      { ...ATTEMPT, answer: 'b' },
+      { ...ATTEMPT, gameResult: { correct: 'lots', total: 1, mistakes: 0, durationSec: 5 } },
+      { deviceId: DEVICE, deviceToken: 'b'.repeat(64) },
+    ]) {
+      const response = await app.inject({ method: 'POST', url: '/api/student/lesson/attempt', payload })
+      assert.equal(response.statusCode, 400, JSON.stringify(payload))
+    }
+    const forged = await app.inject({ method: 'POST', url: '/api/student/lesson/attempt', payload: { ...ATTEMPT, answer: { optionId: 'b' } } })
+    assert.equal(forged.statusCode, 401)
+  })
+})

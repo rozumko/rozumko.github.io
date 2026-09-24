@@ -181,6 +181,15 @@ reads the roster: `class_students.label` reaches it only through its own
 teacher-made mapping. Devices are revoked rather than deleted (trigger), and
 `lesson_run_devices` has RLS enabled with no policies.
 
+Device activities (`/api/student/lesson/state|attempt`, migration `0052`)
+reach a child only as a key-free projection, only for a mapped device, and
+only while the run is active. Attempts are scored on the server against the
+run's frozen snapshot (games are bounded and stay `client-unverified`, a pair
+the DB checks). Attempts are append-only and idempotent per `(device,
+clientAttemptId)`. For evidence activities the device gets neither a score
+nor per-item correctness. The teacher's live grid is owner-scoped like every
+other run route.
+
 ## Mission Editorial Workflow — **[IMPLEMENTED]**
 
 Migration `0038` adds the same audited state machine, optimistic edit locking
@@ -296,8 +305,8 @@ progress), `0032`-`0034` (micro-lessons, path maps and their immutable
 revisions), `0036`-`0038` (`question_revisions`, `micro_lesson_revisions`,
 `mission_revisions`), `0041` (`content_publications`), `0049`
 (`curriculum_lessons`, `curriculum_lesson_revisions`) and `0050`
-(`lesson_runs`, `lesson_run_students`, `lesson_run_events`) and `0051`
-(`lesson_run_devices`). A regression test
+(`lesson_runs`, `lesson_run_students`, `lesson_run_events`) `0051`
+(`lesson_run_devices`) and `0052` (`lesson_run_dispatches`, `activity_attempts`). A regression test
 fails if any application table is left uncovered.
 Migration `0048` applies the same deny-by-default RLS rule to
 `teacher_question_topics`; its answer-bearing session snapshots remain inside

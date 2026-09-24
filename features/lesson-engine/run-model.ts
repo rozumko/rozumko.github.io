@@ -2,7 +2,7 @@
 // state; this only maps it to labels, available controls and step context.
 // Type-only imports keep it importable by node tests.
 
-import type { LessonBlock, LessonDefinition, LessonRunAction, LessonRunDevice, LessonRunStatus, LessonRunView } from './types.js'
+import type { LessonBlock, LessonDefinition, LessonRunAction, LessonRunDevice, LessonRunStatus, LessonRunView, LiveCellState, LiveSnapshot } from './types.js'
 
 export const RUN_STATUS_LABELS: Readonly<Record<LessonRunStatus, string>> = {
   prepared: 'Підготовлено',
@@ -105,4 +105,40 @@ export function mappingSummary(students: LessonRunView['students'], devices: rea
   const mapped = new Set(devices.map(d => d.lessonRunStudentId).filter(Boolean))
   const count = roster.filter(student => mapped.has(student.id)).length
   return `Призначено ${count} з ${roster.length} учнів`
+}
+
+// ── Live class state (stage G2) ──────────────────────────────────────────────
+
+/** Icon + word, never colour alone. */
+export const LIVE_STATE_LABELS: Readonly<Record<LiveCellState, { icon: string; text: string }>> = {
+  'completed': { icon: '✓', text: 'Готово' },
+  'needs-attention': { icon: '!', text: 'Увага' },
+  'working': { icon: '…', text: 'Працює' },
+  'not-started': { icon: '○', text: 'Не почав' },
+  'offline': { icon: '⨯', text: 'Офлайн' },
+  'skipped': { icon: '–', text: 'Пропущено' },
+}
+
+export function liveCellText(cell: LiveSnapshot['students'][number]['cells'][string]): string {
+  const label = LIVE_STATE_LABELS[cell.state]
+  const score = cell.correct !== null && cell.total !== null ? ` ${cell.correct}/${cell.total}` : ''
+  return `${label.icon} ${label.text}${score}`
+}
+
+/** Counts per state for the open activity: "Готово 12 · Увага 3 · Працює 5 …". */
+export function liveSummary(snapshot: LiveSnapshot, dispatchId: string): string {
+  const counts = new Map<LiveCellState, number>()
+  for (const student of snapshot.students) {
+    const state = student.cells[dispatchId]?.state
+    if (state) counts.set(state, (counts.get(state) ?? 0) + 1)
+  }
+  return (Object.keys(LIVE_STATE_LABELS) as LiveCellState[])
+    .filter(state => counts.get(state))
+    .map(state => `${LIVE_STATE_LABELS[state].text} ${counts.get(state)}`)
+    .join(' · ')
+}
+
+/** Blocks the teacher may send to devices from this step. */
+export function isSendable(block: LessonBlock | undefined): boolean {
+  return block?.type === 'activity' && block.views.remote && block.activity !== undefined
 }

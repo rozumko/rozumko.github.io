@@ -77,7 +77,7 @@ waiting on the extension protocol.
 | **D** ✅ | Teacher document view + presentation view from one definition (`features/lesson-engine/`) | No duplicated content; teacher-only never on the board; Playwright |
 | **E** ✅ | Activity adapter: server-scored choice/truefalse/classify + existing `features/activities` games (client-unverified) behind one result envelope | Same mechanic in board and student mode; no key leak |
 | **F** ✅ | `lesson_runs`, `lesson_run_students`, `lesson_run_events`, teacher console (Next/Back/Pause/Resume/Finish) | Server-side state machine; reload-safe; content edits do not touch active runs |
-| **G1** ✅ / G2 | Web join + roster mapping, scoped launch token, submit, polling live heatmap | 5 simulated students; idempotent submit; teacher reload restores state |
+| **G1** ✅ / **G2** ✅ | Web join + roster mapping, scoped launch token, submit, polling live heatmap | 5 simulated students; idempotent submit; teacher reload restores state |
 | H | Outcome registry, evidence, lesson report | Every summary traces to evidence → attempt → block → run → lesson version |
 | I | `ClassroomControlProvider`: fake first, then Classroom Remote | Fake works in CI; real: 3–5 devices, correct URL on correct device |
 | J | IndexedDB outbox → internal pilot → external pilot → go/no-go | Offline submit produces exactly one server attempt |
@@ -281,6 +281,73 @@ roster; mapping gives the child their label; moving a student frees the old
 device; revoke returns 401; numbers are not reused; rotating the code kills
 the old one; closing and finishing clear the code; a finished run refuses
 device changes; triggers fire; 429 after many wrong codes from one IP.
+
+## Stage G2 — what exists (activities on devices, live state)
+
+Decisions:
+
+- **One open activity per run** (`lesson_run_dispatches`, partial unique
+  index). Sending another activity closes the previous one. Sending is
+  allowed only while the run is `active`. Pausing hides the task on devices,
+  and devices refuse answers while paused. Finishing or cancelling closes
+  any open dispatch.
+- **Attempts are append-only and idempotent.** Each submission carries a
+  device-generated `clientAttemptId`. Replaying it returns the stored
+  attempt: same answer, same score. It never creates a second row (one row
+  even under concurrent submits). Submissions are serialised per device
+  with `FOR UPDATE`.
+- **Trust follows the mechanic, enforced in the DB:** choice, truefalse and
+  classify are `server-verified`, scored against the run's frozen key; games
+  are `client-unverified`, bounded by the platform registry
+  (`normalizeActivityResult`).
+- **Attempt limits:** evidence gets one attempt by default, practice and
+  checkpoints get 10; `activity.attempts.max` overrides both.
+- **Evidence withholds the score on the device.** The child sees "✓ Відповідь
+  збережено"; neighbours cannot read answers off a classmate's screen.
+  Practice and checkpoints show per-item correctness and the explanation.
+- **Live grid**, polled every 2 s: students × dispatched activities with
+  states *готово / увага / працює / не почав / офлайн / пропущено*, always
+  shown as icon + word. A choice shared by two or more wrong answers is
+  surfaced as «N з M учнів обрали однакову неправильну відповідь: …» —
+  evidence for the teacher, never a verdict. The MVP sends a full snapshot;
+  it is small at class size, so delta queries wait until measurements say
+  otherwise.
+
+Code:
+
+- Migration `0052`: `lesson_run_dispatches` (close-once trigger, never
+  deleted) and `activity_attempts` (append-only trigger; unique
+  `(device, client_attempt_id)`; trust and count checks); event
+  `activity_closed`.
+- `backend/src/lib/lesson-live.ts` holds the pure rules: attempt limits, the
+  key-free `studentActivityView` (external URL from the pack allowlist),
+  `scoreStudentAttempt`, `liveCellState`, `choiceWrongPattern` and
+  `liveSnapshot`.
+- Teacher: `POST /api/teacher/lesson-runs/:id/dispatch`, `…/dispatch/close`
+  and `GET …/live`.
+- Student: `/state` now carries the open `task`; `POST
+  /api/student/lesson/attempt` records a submission.
+- Console "Учні на пристроях" panel (`live-panel.ts`): send and close the
+  activity, a summary line, the shared-wrong-answer callout and the grid.
+- Device task (`student-task.ts`): a shared `renderAnswerForm` (also used by
+  the board), game mount with result reporting, and a launch link for
+  external tools. A lost send is retried with the same `clientAttemptId`.
+
+Verified on a real PostgreSQL 16 (migrations `0000`–`0052` plus a scripted
+flow through the real routes):
+- dispatch refused before start, for non-activity steps and by another
+  teacher;
+- devices see no keys, and an unmapped device sees no task and cannot
+  answer;
+- practice feedback; replay with the same `clientAttemptId` returns the
+  first answer; a concurrent duplicate submit makes one row;
+- the live grid shows completed and offline cells;
+- evidence: one attempt, no score for the child, and a shared-wrong pattern
+  for the teacher;
+- games are bounded and client-unverified;
+- pause hides the task and refuses answers; closing marks unanswered cells
+  skipped; finishing closes the open dispatch;
+- append-only and trust-check triggers fire.
 
 The validator lives in the backend because the backend is the authority for
 anything that is published or scored. Frontend types arrive with stage D and

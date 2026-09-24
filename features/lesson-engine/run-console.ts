@@ -17,6 +17,7 @@ import {
 } from './run-model.js'
 import type { BoardActivityDeps } from './activity-board.js'
 import { mountJoinPanel, type JoinPanelDeps } from './join-panel.js'
+import { mountLivePanel, type LivePanelDeps } from './live-panel.js'
 import type { LessonRunAction, LessonRunView } from './types.js'
 
 export interface RunConsoleDeps {
@@ -25,6 +26,7 @@ export interface RunConsoleDeps {
   getRun(): Promise<LessonRunView>
   check: BoardActivityDeps['check']
   join: Omit<JoinPanelDeps, 'refreshRun'>
+  live: LivePanelDeps
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] {
@@ -52,6 +54,7 @@ export function mountRunConsole(root: HTMLElement, initial: LessonRunView, deps:
     ...deps.join,
     refreshRun: () => perform(() => deps.getRun()),
   })
+  const livePanel = mountLivePanel(initial, deps.live)
   const status = el('p', 'le-console__status')
   status.setAttribute('role', 'status')
 
@@ -184,7 +187,8 @@ export function mountRunConsole(root: HTMLElement, initial: LessonRunView, deps:
 
     layout.append(nav, current)
     joinPanel.update(view)
-    root.replaceChildren(header, controls, status, joinPanel.element, layout)
+    livePanel.update(view)
+    root.replaceChildren(header, controls, status, livePanel.element, joinPanel.element, layout)
   }
 
   render()

@@ -479,6 +479,34 @@ test('web join: devices are anonymous, revocable, RLS-protected, and tokens stay
   assert.match(runs, /closing \? \{ joinCode: null, joinCodeExpiresAt: null \}/)
 })
 
+test('attempts are append-only, idempotent, trust-checked, and devices never receive keys', () => {
+  const migration = readFileSync(new URL('../drizzle/0052_add_activity_attempts.sql', import.meta.url), 'utf8')
+  const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')
+  const student = readFileSync(new URL('./routes/lesson-student.ts', import.meta.url), 'utf8')
+  const live = readFileSync(new URL('./lib/lesson-live.ts', import.meta.url), 'utf8')
+
+  for (const table of ['lesson_run_dispatches', 'activity_attempts']) {
+    assert.match(migration, new RegExp(`ALTER TABLE public\\.${table} ENABLE ROW LEVEL SECURITY;`), table)
+  }
+  assert.doesNotMatch(migration, /CREATE POLICY/)
+  assert.match(migration, /activity_attempts_device_client_uq UNIQUE \(lesson_run_device_id, client_attempt_id\)/)
+  assert.match(migration, /BEFORE UPDATE OR DELETE ON public\.activity_attempts/)
+  assert.match(migration, /mechanic = 'game' AND trust = 'client-unverified'/)
+  assert.match(migration, /lesson_run_dispatches_one_open_uq[\s\S]{0,120}WHERE closed_at IS NULL/)
+  assert.match(journal, /"tag": "0052_add_activity_attempts"/)
+
+  // Devices get activities only through the key-free projection.
+  assert.match(student, /studentActivityView\(found\.activity/)
+  assert.doesNotMatch(student, /scoring\.key/)
+  assert.match(live, /scoring: \{ mode: activity\.scoring\.mode \}/)
+  // Evidence never tells the child (or the neighbours) the score or which items were right.
+  assert.match(live, /feedback: activity\.telemetry === 'evidence' \? null : feedback/)
+  assert.match(student, /result: evidence \? null :/)
+  // Submissions are serialised per device and replayed by clientAttemptId.
+  assert.match(student, /\.for\('update', \{ of: lessonRunDevices \}\)/)
+  assert.match(student, /eq\(activityAttempts\.clientAttemptId, clientAttemptId\)/)
+})
+
 test('question editorial history is RLS-protected and journaled', () => {
   const migration = readFileSync(new URL('../drizzle/0036_add_question_editorial_workflow.sql', import.meta.url), 'utf8')
   const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')

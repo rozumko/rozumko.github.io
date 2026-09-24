@@ -184,11 +184,59 @@ export interface LessonDeviceJoin {
   expiresAt: string
 }
 
+export interface StudentTask {
+  dispatchId: string
+  heading: LocalizedText | null
+  /** Display-safe: no key ever. External tools carry their allowlisted URL. */
+  activity: ActivityView & { external?: { url: string; title: LocalizedText } }
+  acceptsAttempts: boolean
+  attemptsUsed: number
+  attemptsMax: number
+  /** Withheld for evidence. */
+  lastResult: { correct: number; total: number } | null
+}
+
+export interface LessonAttemptResponse {
+  attemptNo: number
+  attemptsLeft: number
+  /** Null for evidence: the child sees that the answer was received, not its score. */
+  result: { correct: number; total: number; normalizedScore: number; trust: string } | null
+  feedback: ActivityFeedback | null
+}
+
 export interface LessonDeviceState {
+  task: StudentTask | null
   runStatus: LessonRunStatus
   lessonTitle: LocalizedText
+  grade: number
   pairingNumber: number
   mapped: boolean
   /** The child's own roster label, only after the teacher mapped the device. */
   studentLabel: string | null
+}
+
+// ── Live class state (stage G2) ──────────────────────────────────────────────
+
+export type LiveCellState = 'not-started' | 'working' | 'completed' | 'needs-attention' | 'offline' | 'skipped'
+
+export interface LiveDispatch {
+  id: string
+  blockId: string
+  activityInstanceId: string
+  mechanic: ActivityMechanic | null
+  telemetry: ActivityTelemetry | null
+  open: boolean
+  openedAt: string
+  pattern: { optionId: string; optionText: LocalizedText; count: number; of: number } | null
+}
+
+export interface LiveSnapshot {
+  dispatches: LiveDispatch[]
+  students: {
+    lessonRunStudentId: string
+    label: string
+    hasDevice: boolean
+    online: boolean
+    cells: Record<string, { state: LiveCellState; attempts: number; correct: number | null; total: number | null }>
+  }[]
 }

@@ -3,6 +3,7 @@ import type {
   ActivityResult,
   BoardAnswer,
   CurriculumLessonSummary,
+  LessonAttemptResponse,
   LessonDefinition,
   LessonDeviceJoin,
   LessonDeviceState,
@@ -10,6 +11,7 @@ import type {
   LessonRunDevice,
   LessonRunSummary,
   LessonRunView,
+  LiveSnapshot,
 } from '../lesson-engine/types.js'
 import {
   beginPkce,
@@ -1239,10 +1241,38 @@ export function revokeLessonRunDevice(runId: string, deviceId: string): Promise<
   return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}/devices/${encodeURIComponent(deviceId)}`, { method: 'DELETE' })
 }
 
+/** Opens an activity on the class's devices (closing any other). */
+export function dispatchLessonActivity(runId: string, blockId: string): Promise<LiveSnapshot> {
+  return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}/dispatch`, {
+    method: 'POST',
+    body: JSON.stringify({ blockId }),
+  })
+}
+
+export function closeLessonActivity(runId: string): Promise<LiveSnapshot> {
+  return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}/dispatch/close`, { method: 'POST' })
+}
+
+export function getLessonRunLive(runId: string): Promise<LiveSnapshot> {
+  return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}/live`)
+}
+
 // ─── Lesson Engine: student device (no account) ────────────────────────────
 
 export function joinLessonRun(code: string): Promise<LessonDeviceJoin> {
   return request('/api/student/lesson/join', { method: 'POST', body: JSON.stringify({ code }) })
+}
+
+/** One submission; retrying with the same clientAttemptId returns the stored result. */
+export function submitLessonAttempt(payload: {
+  deviceId: string
+  deviceToken: string
+  dispatchId: string
+  clientAttemptId: string
+  answer?: BoardAnswer
+  gameResult?: { correct: number; total: number; mistakes: number; durationSec: number }
+}): Promise<LessonAttemptResponse> {
+  return request('/api/student/lesson/attempt', { method: 'POST', body: JSON.stringify(payload) })
 }
 
 /** Token goes in the body, never the URL. */

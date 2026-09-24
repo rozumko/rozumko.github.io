@@ -7,7 +7,7 @@ import * as backendSchema from '../../backend/src/lib/curriculum-lesson-schema.t
 import { parseRichText } from './rich-text.ts'
 import { documentBlocks, presentationSlides, BLOCK_TYPE_LABELS, lessonMetaLine } from './projection.ts'
 import { answerFromSelection, boardActivityMode, boardQuestions, gameResultEnvelope } from './board-answers.ts'
-import { canNavigate, formatJoinCode, isOpenRun, mappingSummary, runLifecycleActions, stepAttachments, stepTitle, studentOptions } from './run-model.ts'
+import { canNavigate, formatJoinCode, isOpenRun, isSendable, liveCellText, liveSummary, mappingSummary, runLifecycleActions, stepAttachments, stepTitle, studentOptions } from './run-model.ts'
 import * as runState from '../../backend/src/lib/lesson-run-state.ts'
 
 const fixture = JSON.parse(readFileSync(
@@ -170,4 +170,22 @@ test('device mapping offers only live roster students and says where a student a
   ])
   assert.deepEqual(studentOptions(roster, devices, 'd1').map(o => o.label), ['Марко', 'Софія'])
   assert.equal(mappingSummary(roster, devices), 'Призначено 1 з 2 учнів')
+})
+
+// ── Live class state (stage G2) ──────────────────────────────────────────────
+
+test('live cells read as icon + word (+ score), never colour alone', () => {
+  assert.equal(liveCellText({ state: 'completed', attempts: 2, correct: 1, total: 1 }), '✓ Готово 1/1')
+  assert.equal(liveCellText({ state: 'offline', attempts: 0, correct: null, total: null }), '⨯ Офлайн')
+  const snapshot = { dispatches: [], students: [
+    { cells: { d1: { state: 'completed' } } }, { cells: { d1: { state: 'completed' } } }, { cells: { d1: { state: 'working' } } },
+  ] }
+  assert.equal(liveSummary(snapshot, 'd1'), 'Готово 2 · Працює 1')
+})
+
+test('only activity blocks marked for devices can be sent to students', () => {
+  const byId = id => servedLesson.blocks.find(block => block.id === id)
+  assert.equal(isSendable(byId('g2-m2-l8-b07')), true)
+  assert.equal(isSendable(byId('g2-m2-l8-b05')), false)
+  assert.equal(isSendable(undefined), false)
 })

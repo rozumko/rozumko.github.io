@@ -10,7 +10,9 @@ import { db } from '../db/index.js'
 import {
   classStudents,
   curriculumLessons,
+  activityAttempts,
   lessonRunDevices,
+  lessonRunDispatches,
   lessonRunEvents,
   lessonRunStudents,
   lessonRuns,
@@ -33,6 +35,8 @@ import {
 } from '../lib/lesson-run-state.js'
 import { CURRICULUM_LESSON_ID_PATTERN } from './curriculum-editorial.js'
 import { LESSON_JOIN_CODE_TTL_MS, generateLessonJoinCode } from '../lib/lesson-device.js'
+import { isDispatchable, liveSnapshot } from '../lib/lesson-live.js'
+import type { ActivitySpec } from '../lib/curriculum-lesson-schema.js'
 
 class RunNotFoundError extends Error {}
 class DeviceNotFoundError extends Error {
@@ -115,6 +119,46 @@ async function loadRunView(runId: string, teacherId: string) {
     .where(eq(lessonRunStudents.lessonRunId, runId))
     .orderBy(asc(lessonRunStudents.createdAt))
   return lessonRunView(row.run, row.className, students.map(s => ({ ...s, label: s.label ?? null })))
+}
+
+async function loadLive(runId: string, teacherId: string) {
+  const [run] = await db.select({ id: lessonRuns.id, lessonSnapshot: lessonRuns.lessonSnapshot }).from(lessonRuns)
+    .where(and(eq(lessonRuns.id, runId), eq(lessonRuns.teacherId, teacherId))).limit(1)
+  if (!run) return null
+  const [dispatches, students, devices, attempts] = await Promise.all([
+    db.select({
+      id: lessonRunDispatches.id,
+      blockId: lessonRunDispatches.blockId,
+      activityInstanceId: lessonRunDispatches.activityInstanceId,
+      openedAt: lessonRunDispatches.openedAt,
+      closedAt: lessonRunDispatches.closedAt,
+    }).from(lessonRunDispatches).where(eq(lessonRunDispatches.lessonRunId, runId)).orderBy(asc(lessonRunDispatches.openedAt)),
+    db.select({ id: lessonRunStudents.id, label: classStudents.label }).from(lessonRunStudents)
+      .leftJoin(classStudents, eq(classStudents.id, lessonRunStudents.classStudentId))
+      .where(eq(lessonRunStudents.lessonRunId, runId)).orderBy(asc(lessonRunStudents.createdAt)),
+    db.select({ lessonRunStudentId: lessonRunDevices.lessonRunStudentId, lastSeenAt: lessonRunDevices.lastSeenAt })
+      .from(lessonRunDevices).where(and(eq(lessonRunDevices.lessonRunId, runId), isNull(lessonRunDevices.revokedAt))),
+    db.select({
+      dispatchId: activityAttempts.dispatchId,
+      lessonRunStudentId: activityAttempts.lessonRunStudentId,
+      attemptNo: activityAttempts.attemptNo,
+      normalizedScore: activityAttempts.normalizedScore,
+      correct: activityAttempts.correct,
+      total: activityAttempts.total,
+      answerPayload: activityAttempts.answerPayload,
+    }).from(activityAttempts).where(eq(activityAttempts.lessonRunId, runId)),
+  ])
+  const lesson = run.lessonSnapshot as unknown as LessonDefinitionV1
+  const activities = new Map<string, ActivitySpec>()
+  for (const block of lesson.blocks) if (block.type === 'activity') activities.set(block.activity.instanceId, block.activity)
+  return liveSnapshot({
+    activities,
+    dispatches,
+    students: students.map(student => ({ id: student.id, label: student.label ?? null })),
+    devices,
+    attempts: attempts.map(a => ({ ...a, normalizedScore: Number(a.normalizedScore) })),
+    now: new Date(),
+  })
 }
 
 function sendRunError(reply: FastifyReply, err: unknown) {
@@ -252,6 +296,10 @@ export async function lessonRunRoutes(app: FastifyInstance) {
           ...(closing ? { joinCode: null, joinCodeExpiresAt: null } : {}),
           updatedAt: now,
         }).where(eq(lessonRuns.id, id))
+        if (closing) {
+          await tx.update(lessonRunDispatches).set({ closedAt: now })
+            .where(and(eq(lessonRunDispatches.lessonRunId, id), isNull(lessonRunDispatches.closedAt)))
+        }
         await tx.insert(lessonRunEvents).values({
           lessonRunId: id, type: next.event, blockId: run.currentBlockId, actorType: 'teacher', actorId: teacherId,
         })
@@ -436,5 +484,81 @@ export async function lessonRunRoutes(app: FastifyInstance) {
       if (err instanceof DeviceNotFoundError) return reply.code(404).send({ error: err.message })
       return sendRunError(reply, err)
     }
+  })
+
+  // ── Activities on devices + live class state (stage G2) ──────────────────
+
+  // POST /api/teacher/lesson-runs/:id/dispatch — open an activity on the class's
+  // devices (closing any other). Only while the lesson is live, not paused.
+  app.post<{ Params: { id: string }; Body: { blockId: string } }>('/:id/dispatch', {
+    schema: {
+      params: runIdParams,
+      body: {
+        type: 'object',
+        required: ['blockId'],
+        properties: { blockId: { type: 'string', maxLength: 80, pattern: '^[a-z0-9]+(-[a-z0-9]+)*$' } },
+      },
+    },
+  }, async (req, reply) => {
+    const teacherId = req.user!.id
+    const { id } = req.params
+    try {
+      await db.transaction(async tx => {
+        const [run] = await tx.select({ status: lessonRuns.status, lessonSnapshot: lessonRuns.lessonSnapshot }).from(lessonRuns)
+          .where(and(eq(lessonRuns.id, id), eq(lessonRuns.teacherId, teacherId))).limit(1).for('update')
+        if (!run) throw new RunNotFoundError()
+        if (run.status !== 'active') throw new LessonRunStateError('Надсилати завдання можна лише під час уроку (не на паузі)')
+        const block = (run.lessonSnapshot as unknown as LessonDefinitionV1).blocks.find(b => b.id === req.body.blockId)
+        if (!block || block.type !== 'activity' || !block.views.remote || !isDispatchable(block.activity)) {
+          throw new LessonRunStateError('Цей крок не можна надіслати учням')
+        }
+        const now = new Date()
+        await tx.update(lessonRunDispatches).set({ closedAt: now })
+          .where(and(eq(lessonRunDispatches.lessonRunId, id), isNull(lessonRunDispatches.closedAt)))
+        const [dispatch] = await tx.insert(lessonRunDispatches).values({
+          lessonRunId: id, blockId: block.id, activityInstanceId: block.activity.instanceId, openedBy: teacherId,
+        }).returning({ id: lessonRunDispatches.id })
+        await tx.insert(lessonRunEvents).values({
+          lessonRunId: id, type: 'activity_dispatched', blockId: block.id, actorType: 'teacher', actorId: teacherId,
+          payload: { dispatchId: dispatch!.id, activityInstanceId: block.activity.instanceId },
+        })
+      })
+      return reply.send(await loadLive(id, teacherId))
+    } catch (err) {
+      return sendRunError(reply, err)
+    }
+  })
+
+  // POST /api/teacher/lesson-runs/:id/dispatch/close — take the activity off the devices
+  app.post<{ Params: { id: string } }>('/:id/dispatch/close', { schema: { params: runIdParams } }, async (req, reply) => {
+    const teacherId = req.user!.id
+    const { id } = req.params
+    try {
+      await db.transaction(async tx => {
+        await lockOpenRun(tx, id, teacherId)
+        const closed = await tx.update(lessonRunDispatches).set({ closedAt: new Date() })
+          .where(and(eq(lessonRunDispatches.lessonRunId, id), isNull(lessonRunDispatches.closedAt)))
+          .returning({ id: lessonRunDispatches.id, blockId: lessonRunDispatches.blockId })
+        if (closed[0]) {
+          await tx.insert(lessonRunEvents).values({
+            lessonRunId: id, type: 'activity_closed', blockId: closed[0].blockId, actorType: 'teacher', actorId: teacherId,
+            payload: { dispatchId: closed[0].id },
+          })
+        }
+      })
+      return reply.send(await loadLive(id, teacherId))
+    } catch (err) {
+      return sendRunError(reply, err)
+    }
+  })
+
+  // GET /api/teacher/lesson-runs/:id/live — class grid, polled by the console
+  app.get<{ Params: { id: string } }>('/:id/live', {
+    config: { rateLimit: { max: 120, timeWindow: '1 minute' } },
+    schema: { params: runIdParams },
+  }, async (req, reply) => {
+    const live = await loadLive(req.params.id, req.user!.id)
+    if (!live) return reply.code(404).send({ error: 'Урок не знайдено' })
+    return reply.send(live)
   })
 }

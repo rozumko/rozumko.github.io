@@ -32,5 +32,5 @@ export const SUBJECT_PACKS: Readonly<Record<string, SubjectPack>> = Object.freez
 })
 
 export function findSubjectPack(id: string): SubjectPack | null {
-  return Object.hasOwn(SUBJECT_PACKS, id) ? SUBJECT_PACKS[id]! : null
+  return Object.prototype.hasOwnProperty.call(SUBJECT_PACKS, id) ? SUBJECT_PACKS[id]! : null
 }

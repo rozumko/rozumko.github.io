@@ -33,8 +33,27 @@ function button(label: string, className = 'le-board__action'): HTMLButtonElemen
 
 let widgetCounter = 0
 
-/** The widget holds no outside resources, so re-rendering it is the whole reset. */
-function renderTogether(host: HTMLElement, activity: ActivityView, deps: BoardActivityDeps): void {
+export interface AnswerOutcome {
+  /** Null when the score is withheld (evidence on a student's device). */
+  result: { correct: number; total: number } | null
+  feedback: ActivityFeedback | null
+  attemptsLeft?: number
+}
+
+export interface AnswerFormOptions {
+  submit(answer: BoardAnswer): Promise<AnswerOutcome>
+  submitLabel: string
+  /** Whether "try again" is offered after this outcome. */
+  retryable(outcome: AnswerOutcome): boolean
+}
+
+/**
+ * Radio-group answer form for choice/truefalse/classify, shared by the board
+ * ("do it together") and student devices. Correctness always comes from the
+ * server's outcome; the form never knows a key. It holds no outside
+ * resources, so re-rendering is the whole reset.
+ */
+export function renderAnswerForm(host: HTMLElement, activity: ActivityView, options: AnswerFormOptions): void {
   const widget = el('form', 'le-interactive')
   widget.noValidate = true
   const selection = new Map<string, string>()
@@ -75,7 +94,7 @@ function renderTogether(host: HTMLElement, activity: ActivityView, deps: BoardAc
   }
 
   const actions = el('div', 'le-interactive__actions')
-  const submit = button('Перевірити', 'le-board__action le-board__action--primary')
+  const submit = button(options.submitLabel, 'le-board__action le-board__action--primary')
   submit.type = 'submit'
   submit.disabled = true
   const retry = button('Спробувати ще раз')
@@ -101,18 +120,21 @@ function renderTogether(host: HTMLElement, activity: ActivityView, deps: BoardAc
     submit.disabled = true
     summary.replaceChildren(el('p', undefined, 'Перевіряємо…'))
     try {
-      const { result, feedback } = await deps.check(activity.instanceId, answer)
+      const outcome = await options.submit(answer)
+      const { result, feedback } = outcome
       for (const input of widget.querySelectorAll('input')) input.disabled = true
-      for (const item of feedback.items) {
+      for (const item of feedback?.items ?? []) {
         // A choice is one question; its verdict belongs to that question.
         markVerdict(activity.mechanic === 'choice' ? 'choice' : item.id, item.correct)
       }
-      const lines = [el('p', 'le-interactive__score', `Правильно: ${result.correct} з ${result.total}`)]
-      if (feedback.explanation) lines.push(richElement('p', feedback.explanation.uk, 'le-interactive__explanation'))
+      const lines = [el('p', 'le-interactive__score', result ? `Правильно: ${result.correct} з ${result.total}` : '✓ Відповідь збережено')]
+      if (feedback?.explanation) lines.push(richElement('p', feedback.explanation.uk, 'le-interactive__explanation'))
       summary.replaceChildren(...lines)
       submit.hidden = true
-      retry.hidden = false
-      retry.focus()
+      if (options.retryable(outcome)) {
+        retry.hidden = false
+        retry.focus()
+      }
     } catch (err) {
       const alert = el('p', 'le-interactive__error', (err as Error).message || 'Не вдалося перевірити відповідь.')
       alert.setAttribute('role', 'alert')
@@ -121,10 +143,18 @@ function renderTogether(host: HTMLElement, activity: ActivityView, deps: BoardAc
     }
   })
 
-  retry.addEventListener('click', () => renderTogether(host, activity, deps))
+  retry.addEventListener('click', () => renderAnswerForm(host, activity, options))
 
   host.replaceChildren(widget)
   widget.querySelector('input')?.focus()
+}
+
+function renderTogether(host: HTMLElement, activity: ActivityView, deps: BoardActivityDeps): void {
+  renderAnswerForm(host, activity, {
+    submitLabel: 'Перевірити',
+    submit: async answer => deps.check(activity.instanceId, answer),
+    retryable: () => true,
+  })
 }
 
 function renderGame(host: HTMLElement, lesson: LessonDefinition, activity: ActivityView, deps: BoardActivityDeps): () => void {

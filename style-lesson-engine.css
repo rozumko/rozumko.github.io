@@ -431,6 +431,40 @@ body.le-board-open { overflow: hidden; }
 .le-join-full__code { margin: 0; font-size: clamp(4rem, 14vw, 11rem); font-weight: 900; letter-spacing: 0.06em; color: var(--clr-sky-dark); line-height: 1; }
 .le-join-full__qr { width: min(40vh, 22rem); height: min(40vh, 22rem); }
 
+/* ── Live class state (stage G2) ─────────────────────────────── */
+.le-live {
+  margin: var(--sp-2) 0 var(--sp-4);
+  padding: var(--sp-4) var(--sp-5);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--r-md);
+  background: var(--clr-surface);
+}
+.le-live[hidden] { display: none; }
+.le-live__summary { margin: var(--sp-3) 0 0; font-weight: 700; }
+.le-live__pattern:empty { display: none; }
+.le-live__pattern {
+  margin: var(--sp-3) 0 0;
+  padding: var(--sp-2) var(--sp-3);
+  border-left: 4px solid var(--clr-warning);
+  border-radius: var(--r-sm);
+  background: var(--clr-warning-light);
+  color: var(--clr-warning-text);
+  font-weight: 700;
+}
+.le-live__grid { margin-top: var(--sp-3); overflow-x: auto; }
+.le-live__table { width: 100%; border-collapse: collapse; font-size: var(--font-size-sm); }
+.le-live__caption { text-align: left; font-weight: 700; margin-bottom: var(--sp-2); }
+.le-live__table th,
+.le-live__table td { padding: var(--sp-2); border-bottom: 1px solid var(--clr-border); text-align: left; vertical-align: top; }
+.le-live__student span { display: block; }
+.le-live__presence { font-weight: 400; color: var(--clr-text-muted); font-size: var(--font-size-xs); }
+.le-live__cell { font-weight: 700; white-space: nowrap; }
+.le-live__cell--completed { background: var(--fb-ok-bg); color: var(--fb-ok-text); }
+.le-live__cell--needs-attention { background: var(--fb-err-bg); color: var(--fb-err-text); }
+.le-live__cell--working { background: var(--clr-sky-light); color: var(--clr-sky-dark); }
+.le-live__cell--offline,
+.le-live__cell--skipped { color: var(--clr-text-muted); }
+
 /* Confirm dialog (utils/ui showConfirm) — this page loads no student styles. */
 .le-page .app-modal-overlay {
   position: fixed;

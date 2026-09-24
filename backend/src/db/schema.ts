@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { pgTable, text, integer, smallint, date, boolean, timestamp, jsonb, uuid, unique, primaryKey } from 'drizzle-orm/pg-core'
+import { pgTable, text, integer, smallint, date, boolean, timestamp, jsonb, uuid, unique, primaryKey, numeric } from 'drizzle-orm/pg-core'
 
 /**
  * Типи питань:
@@ -735,7 +735,7 @@ export const lessonRunStudents = pgTable('lesson_run_students', {
 export type LessonRunStudentRow = typeof lessonRunStudents.$inferSelect
 
 export type LessonRunEventType =
-  | 'run_created' | 'run_started' | 'block_opened' | 'activity_dispatched'
+  | 'run_created' | 'run_started' | 'block_opened' | 'activity_dispatched' | 'activity_closed'
   | 'run_paused' | 'run_resumed' | 'run_finished' | 'run_cancelled'
   | 'join_opened' | 'join_closed' | 'device_joined' | 'device_mapped' | 'device_unmapped' | 'device_revoked'
 
@@ -768,3 +768,44 @@ export const lessonRunDevices = pgTable('lesson_run_devices', {
 }))
 
 export type LessonRunDeviceRow = typeof lessonRunDevices.$inferSelect
+
+// Activity currently open on the class's devices (0052). One open per run.
+export const lessonRunDispatches = pgTable('lesson_run_dispatches', {
+  id:                 uuid('id').primaryKey().defaultRandom(),
+  lessonRunId:        uuid('lesson_run_id').notNull().references(() => lessonRuns.id, { onDelete: 'restrict' }),
+  blockId:            text('block_id').notNull(),
+  activityInstanceId: text('activity_instance_id').notNull(),
+  openedBy:           uuid('opened_by').notNull().references(() => appUsers.id, { onDelete: 'restrict' }),
+  openedAt:           timestamp('opened_at', { withTimezone: true }).notNull().defaultNow(),
+  closedAt:           timestamp('closed_at', { withTimezone: true }),
+})
+
+export type LessonRunDispatchRow = typeof lessonRunDispatches.$inferSelect
+
+// One submission from one mapped device (0052). Append-only; idempotent per
+// (device, client_attempt_id). Trust is derived from the mechanic (DB-checked).
+export const activityAttempts = pgTable('activity_attempts', {
+  id:                 uuid('id').primaryKey().defaultRandom(),
+  clientAttemptId:    uuid('client_attempt_id').notNull(),
+  lessonRunId:        uuid('lesson_run_id').notNull().references(() => lessonRuns.id, { onDelete: 'restrict' }),
+  dispatchId:         uuid('dispatch_id').notNull().references(() => lessonRunDispatches.id, { onDelete: 'restrict' }),
+  lessonRunDeviceId:  uuid('lesson_run_device_id').notNull().references(() => lessonRunDevices.id, { onDelete: 'restrict' }),
+  lessonRunStudentId: uuid('lesson_run_student_id').notNull().references(() => lessonRunStudents.id, { onDelete: 'restrict' }),
+  blockId:            text('block_id').notNull(),
+  activityInstanceId: text('activity_instance_id').notNull(),
+  mechanic:           text('mechanic').notNull(),
+  telemetry:          text('telemetry').notNull(),
+  attemptNo:          integer('attempt_no').notNull(),
+  answerPayload:      jsonb('answer_payload').notNull().$type<Record<string, unknown>>(),
+  correct:            integer('correct').notNull(),
+  total:              integer('total').notNull(),
+  mistakes:           integer('mistakes').notNull(),
+  normalizedScore:    numeric('normalized_score', { precision: 5, scale: 4, mode: 'number' }).notNull(),
+  durationSec:        integer('duration_sec'),
+  trust:              text('trust').notNull().$type<'server-verified' | 'client-unverified'>(),
+  createdAt:          timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  uniqDeviceClient: unique('activity_attempts_device_client_uq').on(t.lessonRunDeviceId, t.clientAttemptId),
+}))
+
+export type ActivityAttemptRow = typeof activityAttempts.$inferSelect

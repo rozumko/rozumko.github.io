@@ -6,10 +6,13 @@
 import './frontend-security.js'
 import {
   checkCurriculumActivity,
+  closeLessonActivity,
   closeLessonRunJoin,
   createLessonRun,
+  dispatchLessonActivity,
   getCurriculumLesson,
   getLessonRun,
+  getLessonRunLive,
   getTeacherClasses,
   lessonRunAction,
   listLessonRunDevices,
@@ -246,6 +249,11 @@ async function openRun(runId: string) {
       listDevices: () => listLessonRunDevices(runId),
       mapDevice: (deviceId, studentId) => mapLessonRunDevice(runId, deviceId, studentId),
       revokeDevice: deviceId => revokeLessonRunDevice(runId, deviceId),
+    },
+    live: {
+      getLive: () => getLessonRunLive(runId),
+      dispatch: blockId => dispatchLessonActivity(runId, blockId),
+      closeDispatch: () => closeLessonActivity(runId),
     },
     check: (instanceId, answer) => checkCurriculumActivity(view.run.lessonId, instanceId, answer),
   })

@@ -68,3 +68,19 @@
   color: var(--clr-sky-dark);
 }
 .lj-status { margin: 0; font-size: var(--font-size-xl); font-weight: 700; }
+
+/* ── Task on the device (stage G2) ───────────────────────────── */
+.lj-card--task { max-width: 46rem; text-align: left; }
+.lj-card--task .lj-title,
+.lj-card--task .lj-lesson,
+.lj-card--task .lj-number-label { display: none; }
+.lj-card--task .lj-number { margin: 0; font-size: var(--font-size-2xl); text-align: right; }
+.lj-card--task .lj-status { margin-bottom: var(--sp-4); }
+.lj-task__title { margin: 0 0 var(--sp-4); font-size: var(--font-size-2xl); }
+.lj-task__body { display: grid; gap: var(--sp-4); font-size: var(--font-size-xl); }
+.lj-task__body .le-interactive { font-size: var(--font-size-xl); }
+.lj-task__launch { display: inline-flex; align-items: center; justify-content: center; padding: 0 var(--sp-6); text-decoration: none; }
+.lj-task__done { text-align: center; }
+.lj-task__done-title { margin: 0; font-size: var(--font-size-3xl); font-weight: 900; color: var(--fb-ok-text); }
+.lj-task__status { margin: 0; font-weight: 700; }
+.lj-task__game:empty { display: none; }

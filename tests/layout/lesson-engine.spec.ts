@@ -4,6 +4,8 @@ import { readFileSync } from 'node:fs'
 import { toDisplaySafeLesson, type ActivitySpec, type LessonDefinitionV1 } from '../../backend/src/lib/curriculum-lesson-schema'
 import { scoreServerActivity } from '../../backend/src/lib/curriculum-activity-scoring'
 import { applyRunAction, resolveStep, runActionTimestamps, runSteps, type LessonRunAction } from '../../backend/src/lib/lesson-run-state'
+import { attemptLimit, liveSnapshot, scoreStudentAttempt, studentActivityView } from '../../backend/src/lib/lesson-live'
+import { findSubjectPack } from '../../backend/src/lib/subject-packs'
 
 const WCAG_AA_TAGS = ['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']
 
@@ -241,9 +243,12 @@ const CLASS_ID = '00000000-0000-4000-8000-0000000000bb'
 interface FakeDevice { id: string; pairingNumber: number; lessonRunStudentId: string | null; lastSeenAt: null; createdAt: string }
 
 /** In-memory run server that applies the real backend state machine. */
-async function routeRunServer(page: Page, devices: FakeDevice[] = [], mapped: unknown[] = []) {
+interface FakeAttempt { dispatchId: string; lessonRunStudentId: string; attemptNo: number; normalizedScore: number; correct: number; total: number; answerPayload: Record<string, unknown> }
+
+async function routeRunServer(page: Page, devices: FakeDevice[] = [], mapped: unknown[] = [], attempts: FakeAttempt[] = []) {
   const json = (body: unknown, status = 200) => ({ status, contentType: 'application/json', body: JSON.stringify(body) })
   let run: Record<string, any> | null = null
+  const dispatches: { id: string; blockId: string; activityInstanceId: string; openedAt: Date; closedAt: Date | null }[] = []
   const steps = runSteps(fixture)
   const view = () => ({
     run: { ...run, steps },
@@ -280,6 +285,26 @@ async function routeRunServer(page: Page, devices: FakeDevice[] = [], mapped: un
       return route.fulfill(json(view(), 201))
     }
     if (!run || parts[0] !== run.id) return route.fulfill(json({ error: 'Урок не знайдено' }, 404))
+    if (parts[1] === 'dispatch' || parts[1] === 'live') {
+      if (parts[1] === 'dispatch' && method === 'POST') {
+        for (const d of dispatches) d.closedAt ??= new Date()
+        if (parts[2] !== 'close') {
+          const { blockId } = request.postDataJSON() as { blockId: string }
+          const block = fixture.blocks.find(b => b.id === blockId)!
+          if (block.type === 'activity') {
+            dispatches.push({ id: `disp-${dispatches.length + 1}`, blockId, activityInstanceId: block.activity.instanceId, openedAt: new Date(), closedAt: null })
+          }
+        }
+      }
+      return route.fulfill(json(liveSnapshot({
+        activities: new Map(fixture.blocks.flatMap(b => b.type === 'activity' ? [[b.activity.instanceId, b.activity] as const] : [])),
+        dispatches,
+        students: [{ id: 's1', label: 'Марко' }, { id: 's2', label: 'Софія' }],
+        devices: [{ lessonRunStudentId: 's1', lastSeenAt: new Date() }],
+        attempts,
+        now: new Date(),
+      })))
+    }
     if (parts[1] === 'join-code') {
       run.joinCode = method === 'POST' ? '482913' : null
       run.joinCodeExpiresAt = method === 'POST' ? new Date(Date.now() + 3600e3).toISOString() : null
@@ -484,4 +509,143 @@ test('a wrong code keeps the child on the code screen with a clear message', asy
   await page.getByLabel('Код від учителя').fill('12')
   await page.getByRole('button', { name: 'Приєднатися' }).click()
   await expect(page.locator('#lj-error')).toHaveText('Введи 6 цифр коду.')
+})
+
+// ── Activities on devices + live state (stage G2) ────────────────────────────
+
+test('the teacher sends an activity to devices and watches the class grid', async ({ page }) => {
+  const attempts: FakeAttempt[] = []
+  await mockTeacherApi(page, { lessonEngine: true })
+  await routeRunServer(page, [], [], attempts)
+  await page.goto('/lesson-engine.html?lesson=g2-m2-l8')
+  await page.getByRole('button', { name: 'Підготувати урок' }).click()
+  await page.getByRole('button', { name: 'Почати урок' }).click()
+
+  const live = page.getByRole('region', { name: 'Учні на пристроях' })
+  await expect(live.getByRole('button', { name: 'Надіслати учням' })).toHaveCount(0)
+  // Step 6 is the practice activity "Яка назва краща?".
+  await page.locator('.le-console__step').nth(5).click()
+  await live.getByRole('button', { name: 'Надіслати учням' }).click()
+
+  const table = live.getByRole('table', { name: 'Стан класу за завданнями' })
+  await expect(table.getByRole('columnheader', { name: 'Яка назва краща? (зараз)' })).toBeVisible()
+  await expect(table.getByRole('row', { name: /Марко/ })).toContainText('… Працює')
+  await expect(table.getByRole('row', { name: /Софія/ })).toContainText('⨯ Офлайн')
+
+  attempts.push(
+    { dispatchId: 'disp-1', lessonRunStudentId: 's1', attemptNo: 1, normalizedScore: 0, correct: 0, total: 1, answerPayload: { answer: { optionId: 'a' } } },
+    { dispatchId: 'disp-1', lessonRunStudentId: 's2', attemptNo: 1, normalizedScore: 0, correct: 0, total: 1, answerPayload: { answer: { optionId: 'a' } } },
+  )
+  await expect(live.locator('.le-live__pattern')).toHaveText('2 з 2 учнів обрали однакову неправильну відповідь: «Файл А: Документ123.png».', { timeout: 8000 })
+  await expect(table.getByRole('row', { name: /Марко/ })).toContainText('! Увага 0/1')
+  await expect(live.locator('.le-live__summary')).toContainText('Увага 2')
+
+  const results = await new AxeBuilder({ page }).withTags(WCAG_AA_TAGS).analyze()
+  expect(results.violations.map(v => v.id)).toEqual([])
+
+  await live.getByRole('button', { name: 'Закрити завдання' }).click()
+  await expect(live.getByRole('button', { name: 'Надіслати учням' })).toBeVisible()
+  await expect(live.locator('.le-live__summary')).toContainText('Останнє завдання')
+})
+
+type StudentServer = { runStatus: string; instanceId: string | null; attempts: number; clientIds: string[]; failNext: boolean }
+
+async function routeStudentTasks(page: Page, server: StudentServer) {
+  const json = (body: unknown, status = 200) => ({ status, contentType: 'application/json', body: JSON.stringify(body) })
+  const activityOf = (id: string) => fixture.blocks.flatMap(b => b.type === 'activity' ? [b] : []).find(b => b.activity.instanceId === id)!
+  await page.route('**/api/student/lesson/join', route => route.fulfill(json({
+    deviceId: '00000000-0000-4000-8000-00000000d001', deviceToken: 'f'.repeat(64), pairingNumber: 4, expiresAt: '',
+  }, 201)))
+  await page.route('**/api/student/lesson/state', route => {
+    const block = server.instanceId ? activityOf(server.instanceId) : null
+    return route.fulfill(json({
+      runStatus: server.runStatus, lessonTitle: fixture.title, grade: 2, pairingNumber: 4, mapped: true, studentLabel: 'Марко',
+      task: block ? {
+        dispatchId: `disp-${server.instanceId}`,
+        heading: block.content.heading ?? null,
+        activity: studentActivityView(block.activity, findSubjectPack('informatics-ua-primary')),
+        acceptsAttempts: block.activity.mechanic !== 'external',
+        attemptsUsed: server.attempts,
+        attemptsMax: attemptLimit(block.activity),
+        lastResult: null,
+      } : null,
+    }))
+  })
+  await page.route('**/api/student/lesson/attempt', async route => {
+    const body = route.request().postDataJSON() as { clientAttemptId: string; answer?: unknown; dispatchId: string }
+    server.clientIds.push(body.clientAttemptId)
+    if (server.failNext) {
+      server.failNext = false
+      return route.abort('failed')
+    }
+    const activity = activityOf(body.dispatchId.replace('disp-', '')).activity
+    const scored = scoreStudentAttempt(activity, body)
+    server.attempts += 1
+    const evidence = activity.telemetry === 'evidence'
+    return route.fulfill(json({
+      attemptNo: server.attempts,
+      attemptsLeft: attemptLimit(activity) - server.attempts,
+      result: evidence ? null : { correct: scored.result.correct, total: scored.result.total, normalizedScore: scored.result.normalizedScore, trust: scored.result.trust },
+      feedback: scored.feedback,
+    }, 201))
+  })
+}
+
+async function joinAsChild(page: Page) {
+  await page.goto('/lesson-join.html?code=482913')
+  await page.getByRole('button', { name: 'Приєднатися' }).click()
+}
+
+test('a child answers a practice task, sees feedback, and retries a lost send with the same attempt id', async ({ page }) => {
+  const server: StudentServer = { runStatus: 'active', instanceId: 'try-meaningful-name', attempts: 0, clientIds: [], failNext: true }
+  await routeStudentTasks(page, server)
+  await joinAsChild(page)
+
+  const task = page.getByRole('region', { name: 'Спробуй!' })
+  await task.getByRole('radio', { name: /А\)/ }).check()
+  await task.getByRole('button', { name: 'Надіслати' }).click()
+  await expect(task.getByRole('alert')).toBeVisible()
+  // The send was lost; sending again must reuse the same client attempt id.
+  await task.getByRole('button', { name: 'Надіслати' }).click()
+  await expect(task.locator('.le-interactive__score')).toHaveText('Правильно: 0 з 1')
+  expect(server.clientIds).toHaveLength(2)
+  expect(server.clientIds[0]).toBe(server.clientIds[1])
+
+  // A wrong practice answer may be retried, with a fresh attempt id.
+  await task.getByRole('button', { name: 'Спробувати ще раз' }).click()
+  await task.getByRole('radio', { name: /Б\)/ }).check()
+  await task.getByRole('button', { name: 'Надіслати' }).click()
+  await expect(task.locator('.le-interactive__verdict')).toHaveText('✓ Правильно')
+  await expect(task.locator('.le-interactive__explanation')).toContainText('Змістовна назва')
+  await expect(task.getByRole('button', { name: 'Спробувати ще раз' })).toBeHidden()
+  expect(server.clientIds[2]).not.toBe(server.clientIds[0])
+
+  const results = await new AxeBuilder({ page }).withTags(WCAG_AA_TAGS).analyze()
+  expect(results.violations.map(v => v.id)).toEqual([])
+})
+
+test('evidence on a device confirms receipt without revealing the score, and a pause hides the task', async ({ page }) => {
+  const server: StudentServer = { runStatus: 'active', instanceId: 'self-check-extension', attempts: 0, clientIds: [], failNext: false }
+  await routeStudentTasks(page, server)
+  await joinAsChild(page)
+
+  const task = page.getByRole('region', { name: 'Перевір себе' })
+  await task.getByRole('radio', { name: /А\)/ }).check()
+  await task.getByRole('button', { name: 'Надіслати' }).click()
+  await expect(task.locator('.le-interactive__score')).toHaveText('✓ Відповідь збережено')
+  await expect(task.locator('.le-interactive__verdict:visible')).toHaveCount(0)
+  await expect(task.getByRole('button', { name: 'Спробувати ще раз' })).toBeHidden()
+
+  server.runStatus = 'paused'
+  await expect(page.locator('#lj-status')).toHaveText('Пауза. Слухай учителя.', { timeout: 6000 })
+  await expect(page.getByRole('region', { name: 'Перевір себе' })).toHaveCount(0)
+})
+
+test('a launch-only tool opens from the device through its allowlisted link', async ({ page }) => {
+  const server: StudentServer = { runStatus: 'active', instanceId: 'windows-trainer', attempts: 0, clientIds: [], failNext: false }
+  await routeStudentTasks(page, server)
+  await joinAsChild(page)
+  const link = page.getByRole('link', { name: /Швидкісні вікна/ })
+  await expect(link).toHaveAttribute('href', /^https:\/\/itnauka\.org\//)
+  await expect(link).toHaveAttribute('rel', 'noopener noreferrer')
 })
