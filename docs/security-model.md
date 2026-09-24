@@ -197,6 +197,17 @@ teacher deletes a student. A client-reported result can never be primary
 evidence (DB check). Outcome summaries follow a written, printed rule and
 link to their evidence. The report is owner-scoped.
 
+Classroom control (stage I, migration `0054`) goes through one provider
+boundary. A provider receives only lab computer ids and launch URLs, never
+names, scores or evidence. The development fake is enabled only by
+`?classroom=fake` on a loopback host. Computer assignments
+(`device_assignments`) are owner-scoped, and each student in them must belong
+to the class. A launch link carries a single-use 256-bit token in the URL
+fragment, which keeps it out of server logs and `Referer`. The backend
+stores only its sha256. The link expires after 10 minutes and is exchanged
+for the device token in a POST body. Failed exchanges count towards the join
+throttle. Relaunching revokes the student's previous device.
+
 ## Mission Editorial Workflow — **[IMPLEMENTED]**
 
 Migration `0038` adds the same audited state machine, optimistic edit locking
@@ -313,8 +324,8 @@ revisions), `0036`-`0038` (`question_revisions`, `micro_lesson_revisions`,
 `mission_revisions`), `0041` (`content_publications`), `0049`
 (`curriculum_lessons`, `curriculum_lesson_revisions`) and `0050`
 (`lesson_runs`, `lesson_run_students`, `lesson_run_events`) `0051`
-(`lesson_run_devices`) `0052` (`lesson_run_dispatches`, `activity_attempts`) and `0053`
-(`student_outcome_evidence`). A regression test
+(`lesson_run_devices`) `0052` (`lesson_run_dispatches`, `activity_attempts`), `0053`
+(`student_outcome_evidence`) and `0054` (`device_assignments`). A regression test
 fails if any application table is left uncovered.
 Migration `0048` applies the same deny-by-default RLS rule to
 `teacher_question_topics`; its answer-bearing session snapshots remain inside

@@ -83,3 +83,16 @@ test('attempts are validated before any database access and need a genuine devic
     assert.equal(forged.statusCode, 401)
   })
 })
+
+test('launch-token exchange validates the token shape before any database access', async () => {
+  await withApp('true', async app => {
+    for (const payload of [{}, { launchToken: 'short' }, { launchToken: '+'.repeat(43) }]) {
+      const response = await app.inject({ method: 'POST', url: '/api/student/lesson/launch', payload })
+      assert.equal(response.statusCode, 400, JSON.stringify(payload))
+    }
+  })
+  await withApp(undefined, async app => {
+    const response = await app.inject({ method: 'POST', url: '/api/student/lesson/launch', payload: { launchToken: 'a'.repeat(43) } })
+    assert.equal(response.statusCode, 404)
+  })
+})

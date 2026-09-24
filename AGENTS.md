@@ -71,6 +71,7 @@ backend/src/routes/lesson-runs.ts ← Lesson Engine runs (/api/teacher/lesson-ru
 backend/src/routes/lesson-student.ts ← Lesson Engine web join for students (/api/student/lesson, lesson-join.html); device tokens lib/lesson-device.ts
 backend/src/lib/lesson-live.ts ← Lesson Engine attempts + live class grid rules (dispatch/attempt/live routes; console live-panel.ts, device student-task.ts)
 backend/src/lib/lesson-evidence.ts ← Lesson Engine evidence rows, outcome summary rule, lesson report (/report; report-view.ts); outcomes registry in subject-packs.ts
+features/lesson-engine/classroom-control.ts ← ClassroomControlProvider boundary (fake only on loopback ?classroom=fake); device-assignments.ts + /launch single-use links
 backend/src/db/          ← Drizzle schema + migration runner
 backend/drizzle/         ← SQL-міграції
 public/                  ← sw.js, manifest, favicon (статичні assets)

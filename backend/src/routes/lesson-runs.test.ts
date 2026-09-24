@@ -42,6 +42,7 @@ const ROUTES: InjectOptions[] = [
   { method: 'POST', url: `/api/teacher/lesson-runs/${RUN_ID}/dispatch/close` },
   { method: 'GET', url: `/api/teacher/lesson-runs/${RUN_ID}/live` },
   { method: 'GET', url: `/api/teacher/lesson-runs/${RUN_ID}/report` },
+  { method: 'POST', url: `/api/teacher/lesson-runs/${RUN_ID}/launch`, payload: { remoteDeviceIds: ['PC-01'] } },
 ]
 
 test('lesson run routes are a 404 while the flag is off', async () => {
@@ -73,6 +74,9 @@ test('ids, actions and bodies are validated before auth or database access', asy
       { method: 'POST', url: `/api/teacher/lesson-runs/${RUN_ID}/dispatch`, payload: { blockId: 'Bad Block' } },
       { method: 'POST', url: `/api/teacher/lesson-runs/${RUN_ID}/dispatch`, payload: {} },
       { method: 'GET', url: '/api/teacher/lesson-runs/nope/live' },
+      { method: 'POST', url: `/api/teacher/lesson-runs/${RUN_ID}/launch`, payload: { remoteDeviceIds: [] } },
+      { method: 'POST', url: `/api/teacher/lesson-runs/${RUN_ID}/launch`, payload: { remoteDeviceIds: ['PC 01'] } },
+      { method: 'POST', url: `/api/teacher/lesson-runs/${RUN_ID}/launch`, payload: { remoteDeviceIds: ['PC-01', 'PC-01'] } },
     ]
     for (const request of cases) {
       assert.equal((await app.inject(request)).statusCode, 400, `${request.method} ${request.url} ${JSON.stringify(request.payload)}`)

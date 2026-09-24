@@ -4,7 +4,7 @@
 // honoured while the device row is live (not revoked, not expired) — so the
 // teacher can cut a device off at any time.
 
-import { createHmac, randomInt, timingSafeEqual } from 'node:crypto'
+import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from 'node:crypto'
 
 const LESSON_DEVICE_TOKEN_DOMAIN = 'lesson-run-device:'
 
@@ -54,4 +54,35 @@ export function deviceLiveness(device: { revokedAt: Date | null; expiresAt: Date
   if (device.revokedAt) return 'revoked'
   if (device.expiresAt.getTime() <= now.getTime()) return 'expired'
   return 'live'
+}
+
+// ── Launch on lab computers (stage I) ───────────────────────────────────────
+
+/** A launch link must be opened soon after the teacher sends it. */
+export const LESSON_LAUNCH_TTL_MS = 10 * 60 * 1000
+
+/** Computer ids as a classroom control provider reports them ("PC-01"). */
+export const REMOTE_DEVICE_ID_PATTERN = '^[A-Za-z0-9._:-]{1,64}$'
+const REMOTE_DEVICE_ID_RE = new RegExp(REMOTE_DEVICE_ID_PATTERN)
+const LAUNCH_TOKEN_RE = /^[A-Za-z0-9_-]{43}$/
+
+export function isRemoteDeviceId(value: unknown): value is string {
+  return typeof value === 'string' && REMOTE_DEVICE_ID_RE.test(value)
+}
+
+/**
+ * Single-use launch token: 256 random bits. Only its sha256 is stored, so a
+ * database read cannot be turned into a working link.
+ */
+export function generateLaunchToken(): { token: string; hash: string } {
+  const token = randomBytes(32).toString('base64url')
+  return { token, hash: hashLaunchToken(token) }
+}
+
+export function hashLaunchToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex')
+}
+
+export function isLaunchToken(value: unknown): value is string {
+  return typeof value === 'string' && LAUNCH_TOKEN_RE.test(value)
 }

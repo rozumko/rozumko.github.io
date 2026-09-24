@@ -4,6 +4,10 @@ import assert from 'node:assert/strict'
 process.env.ATTEMPT_SECRET ??= 'a'.repeat(64)
 
 const {
+  generateLaunchToken,
+  hashLaunchToken,
+  isLaunchToken,
+  isRemoteDeviceId,
   deviceLiveness,
   generateDeviceToken,
   generateLessonJoinCode,
@@ -43,4 +47,20 @@ test('a device is live only while neither revoked nor expired', () => {
   assert.equal(deviceLiveness({ revokedAt: null, expiresAt: later }, now), 'live')
   assert.equal(deviceLiveness({ revokedAt: now, expiresAt: later }, now), 'revoked')
   assert.equal(deviceLiveness({ revokedAt: null, expiresAt: now }, now), 'expired')
+})
+
+test('launch tokens are unguessable, stored only as a hash, and strictly shaped', () => {
+  const a = generateLaunchToken()
+  const b = generateLaunchToken()
+  assert.notEqual(a.token, b.token)
+  assert.ok(isLaunchToken(a.token))
+  assert.equal(a.hash, hashLaunchToken(a.token))
+  assert.match(a.hash, /^[0-9a-f]{64}$/)
+  assert.ok(!a.hash.includes(a.token))
+  for (const bad of ['', 'short', a.token + 'x', a.token.replace(/./, '+'), 42]) assert.equal(isLaunchToken(bad), false)
+})
+
+test('remote device ids are plain lab names', () => {
+  for (const ok of ['PC-01', 'lab2.pc_14', 'room:3']) assert.ok(isRemoteDeviceId(ok))
+  for (const bad of ['', 'PC 01', 'x'.repeat(65), '<script>', 'Марко']) assert.equal(isRemoteDeviceId(bad), false)
 })

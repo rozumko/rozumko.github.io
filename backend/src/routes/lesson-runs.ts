@@ -11,6 +11,7 @@ import {
   classStudents,
   curriculumLessons,
   activityAttempts,
+  deviceAssignments,
   lessonRunDevices,
   lessonRunDispatches,
   lessonRunEvents,
@@ -35,7 +36,17 @@ import {
   type LessonRunAction,
 } from '../lib/lesson-run-state.js'
 import { CURRICULUM_LESSON_ID_PATTERN } from './curriculum-editorial.js'
-import { LESSON_JOIN_CODE_TTL_MS, generateLessonJoinCode } from '../lib/lesson-device.js'
+import {
+  LESSON_DEVICE_TTL_MS,
+  LESSON_JOIN_CODE_TTL_MS,
+  LESSON_LAUNCH_TTL_MS,
+  MAX_RUN_DEVICES,
+  REMOTE_DEVICE_ID_PATTERN,
+  generateLaunchToken,
+  generateLessonJoinCode,
+  nextPairingNumber,
+} from '../lib/lesson-device.js'
+import { randomUUID } from 'node:crypto'
 import { isDispatchable, liveSnapshot } from '../lib/lesson-live.js'
 import { lessonReport } from '../lib/lesson-evidence.js'
 import { findSubjectPack } from '../lib/subject-packs.js'
@@ -625,5 +636,88 @@ export async function lessonRunRoutes(app: FastifyInstance) {
       attempts: attempts.map(a => ({ ...a, normalizedScore: Number(a.normalizedScore) })),
       evidence: evidence.map(e => ({ ...e, score: Number(e.score) })),
     }))
+  })
+
+  // ── Classroom control (stage I) ──────────────────────────────────────────
+
+  // POST /api/teacher/lesson-runs/:id/launch — launch plan for lab computers.
+  // Each assigned computer gets a pre-mapped device and a single-use link
+  // (token in the URL fragment, never sent to servers or Referer). The
+  // provider then only opens URLs: it never learns who sits where.
+  app.post<{ Params: { id: string }; Body: { remoteDeviceIds: string[] } }>('/:id/launch', {
+    schema: {
+      params: runIdParams,
+      body: {
+        type: 'object',
+        required: ['remoteDeviceIds'],
+        properties: {
+          remoteDeviceIds: { type: 'array', minItems: 1, maxItems: 60, uniqueItems: true, items: { type: 'string', pattern: REMOTE_DEVICE_ID_PATTERN } },
+        },
+      },
+    },
+  }, async (req, reply) => {
+    const teacherId = req.user!.id
+    const { id } = req.params
+    try {
+      const plan = await db.transaction(async tx => {
+        const [run] = await tx.select({ id: lessonRuns.id, status: lessonRuns.status, classId: lessonRuns.classId }).from(lessonRuns)
+          .where(and(eq(lessonRuns.id, id), eq(lessonRuns.teacherId, teacherId))).limit(1).for('update')
+        if (!run) throw new RunNotFoundError()
+        if (!OPEN_RUN_STATUSES.includes(run.status)) throw new LessonRunStateError('Урок завершено: відкрити його на комп’ютерах уже не можна')
+
+        const assignments = await tx.select({ remoteDeviceId: deviceAssignments.remoteDeviceId, classStudentId: deviceAssignments.classStudentId })
+          .from(deviceAssignments)
+          .where(and(eq(deviceAssignments.classId, run.classId), inArray(deviceAssignments.remoteDeviceId, req.body.remoteDeviceIds)))
+        const roster = await tx.select({ id: lessonRunStudents.id, classStudentId: lessonRunStudents.classStudentId })
+          .from(lessonRunStudents).where(eq(lessonRunStudents.lessonRunId, run.id))
+        const runStudentByClassStudent = new Map(roster.filter(r => r.classStudentId).map(r => [r.classStudentId!, r.id]))
+        const existing = await tx.select({ n: lessonRunDevices.pairingNumber }).from(lessonRunDevices)
+          .where(eq(lessonRunDevices.lessonRunId, run.id))
+        let numbers = existing.map(e => e.n)
+
+        const launches: { remoteDeviceId: string; url: string }[] = []
+        const skipped: { remoteDeviceId: string; reason: 'unassigned' | 'not-in-roster' | 'full' }[] = []
+        const byRemote = new Map(assignments.map(a => [a.remoteDeviceId, a.classStudentId]))
+        const now = Date.now()
+        for (const remoteDeviceId of req.body.remoteDeviceIds) {
+          const classStudentId = byRemote.get(remoteDeviceId)
+          if (!classStudentId) { skipped.push({ remoteDeviceId, reason: 'unassigned' }); continue }
+          const runStudentId = runStudentByClassStudent.get(classStudentId)
+          if (!runStudentId) { skipped.push({ remoteDeviceId, reason: 'not-in-roster' }); continue }
+          if (numbers.length >= MAX_RUN_DEVICES) { skipped.push({ remoteDeviceId, reason: 'full' }); continue }
+          // The new device replaces whatever device the student had in this run.
+          await tx.update(lessonRunDevices).set({ revokedAt: new Date(now), lessonRunStudentId: null }).where(and(
+            eq(lessonRunDevices.lessonRunStudentId, runStudentId), isNull(lessonRunDevices.revokedAt),
+          ))
+          const pairingNumber = nextPairingNumber(numbers)
+          numbers = [...numbers, pairingNumber]
+          const { token, hash } = generateLaunchToken()
+          const [device] = await tx.insert(lessonRunDevices).values({
+            lessonRunId: run.id,
+            pairingNumber,
+            lessonRunStudentId: runStudentId,
+            expiresAt: new Date(now + LESSON_DEVICE_TTL_MS),
+            remoteDeviceId,
+            launchTokenHash: hash,
+            launchExpiresAt: new Date(now + LESSON_LAUNCH_TTL_MS),
+          }).returning({ id: lessonRunDevices.id })
+          await tx.update(lessonRunStudents).set({ status: 'joined' }).where(eq(lessonRunStudents.id, runStudentId))
+          await tx.insert(lessonRunEvents).values({
+            lessonRunId: run.id, type: 'device_launched', actorType: 'teacher', actorId: teacherId,
+            payload: { deviceId: device!.id, remoteDeviceId },
+          })
+          launches.push({ remoteDeviceId, url: `lesson-join.html#launch=${token}` })
+        }
+        const commandId = randomUUID()
+        await tx.insert(lessonRunEvents).values({
+          lessonRunId: run.id, type: 'devices_launched', actorType: 'teacher', actorId: teacherId,
+          payload: { commandId, launched: launches.length, skipped: skipped.length },
+        })
+        return { commandId, launches, skipped }
+      })
+      return reply.send(plan)
+    } catch (err) {
+      return sendRunError(reply, err)
+    }
   })
 }

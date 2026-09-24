@@ -79,7 +79,7 @@ waiting on the extension protocol.
 | **F** ✅ | `lesson_runs`, `lesson_run_students`, `lesson_run_events`, teacher console (Next/Back/Pause/Resume/Finish) | Server-side state machine; reload-safe; content edits do not touch active runs |
 | **G1** ✅ / **G2** ✅ | Web join + roster mapping, scoped launch token, submit, polling live heatmap | 5 simulated students; idempotent submit; teacher reload restores state |
 | **H** ✅ | Outcome registry, evidence, lesson report | Every summary traces to evidence → attempt → block → run → lesson version |
-| I | `ClassroomControlProvider`: fake first, then Classroom Remote | Fake works in CI; real: 3–5 devices, correct URL on correct device |
+| **I** ✅ (fake) | `ClassroomControlProvider`: fake first, then Classroom Remote | Fake works in CI ✅; real: 3–5 devices, correct URL on correct device — pending access to the Classroom Remote repository |
 | J | IndexedDB outbox → internal pilot → external pilot → go/no-go | Offline submit produces exactly one server attempt |
 
 No mass content migration before the external pilot (both specs agree).
@@ -408,6 +408,66 @@ The validator lives in the backend because the backend is the authority for
 anything that is published or scored. Frontend types arrive with stage D and
 will be kept in sync by a guard test (the pattern used for path data).
 
+## Stage I — what exists (classroom control)
+
+Decisions:
+
+- **One boundary, no invented protocol.** The engine talks to lab computers
+  only through `ClassroomControlProvider` (`listDevices`, `launchUrls`).
+  The Classroom Remote repository was not readable when this stage was
+  built, so only `FakeClassroomControlProvider` exists. The real adapter
+  implements the same interface once its contract is available; nothing
+  else changes.
+- **The fake is a development tool.** It is enabled only by
+  `?classroom=fake` on a loopback host (`localhost`, `127.0.0.1`, `[::1]`),
+  never on a production host. Without a provider the console offers web join
+  (stage G1) only.
+- **A provider never sees children.** It receives computer ids and URLs.
+  Names, scores and evidence stay in the backend.
+- **Assignments are per class and reused.** A teacher maps lab computers to
+  roster students once (`device_assignments`, one computer ↔ one student per
+  class). Deleting a student or class removes their rows.
+- **Launch links are single-use.**
+  - Each link carries a fresh 256-bit token in the URL fragment
+    (`lesson-join.html#launch=<token>`), so it never reaches server logs or
+    `Referer`.
+  - The backend stores only its sha256. The link expires after 10 minutes and
+    works once; it is exchanged for the usual device token via a POST body.
+  - A used, expired or closed-run link returns 410 or 409 and falls back to
+    the code screen with a clear message. Failures count towards the join
+    throttle.
+- **Relaunch replaces, never duplicates.** Opening the lesson again for a
+  student revokes their previous live device, so one child is never on two
+  computers.
+
+Code:
+
+- Migration `0054`:
+  - adds `device_assignments` (RLS on);
+  - adds `remote_device_id`, `launch_token_hash`, `launch_expires_at` and
+    `launched_at` to `lesson_run_devices`;
+  - adds the `devices_launched` and `device_launched` events.
+- `GET/PUT /api/teacher/classes/:id/device-assignments` (owner-scoped; every
+  student must belong to the class).
+- `POST /api/teacher/lesson-runs/:id/launch` `{ remoteDeviceIds }` returns
+  the launch plan `{ launches: [{ remoteDeviceId, url }], skipped }`. A
+  device is skipped when it is unassigned, its student is not in the roster,
+  or the run is full.
+- `POST /api/student/lesson/launch` `{ launchToken }` returns a device token.
+- `features/lesson-engine/classroom-control.ts` holds the interface, the fake
+  provider and `resolveClassroomControlProvider`.
+  `features/lesson-engine/computers-panel.ts` is the console panel: it
+  assigns computers, opens the lesson on them and shows the result per
+  device. One device failing never blocks the others.
+
+Verified on a real PostgreSQL 16:
+- assignments are owner-scoped and 1:1;
+- the launch plan carries no names;
+- only the hash is stored, and a token works once;
+- a relaunch revokes the old device;
+- an expired link gives 410 and a closed run gives 409;
+- deleting a student removes their assignment.
+
 ## Open items
 
 - **Reference lesson differs from the specs.** Both specs name `g2-m1-l1`
@@ -423,8 +483,10 @@ will be kept in sync by a guard test (the pattern used for path data).
   exact codes — never guessed. Do not use "ІФО = індекс формувального
   оцінювання": `ІФО` is the informatics education area code.
 - **Classroom Remote contract** — repository `artkysliakov/classroom-remote`
-  must be made readable to the agent before stage I. Nothing is invented
-  before then; stages A–H do not depend on it.
+  must be made readable to the agent. Stage I ships the provider boundary
+  and a fake. The real adapter (device list, URL open, acknowledgements)
+  is added once the actual protocol is known, and is never guessed. The real
+  gate (3–5 devices, correct URL on the correct device) is still open.
 - **Legacy `new_lessons`** is a reference for mechanics and UX only (stage E);
   it is not embedded or copied wholesale.
 - **Render capacity** — confirm the backend plan has no cold starts during

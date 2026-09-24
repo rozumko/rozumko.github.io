@@ -16,6 +16,8 @@ export const SCHOOL_JOIN_CODE_IP_THROTTLE_SCOPE = 'school-join-code-ip'
 /** Lesson Engine web join: same classroom shape as a School game. */
 export const LESSON_JOIN_CODE_THROTTLE_SCOPE = 'lesson-join-code'
 export const LESSON_JOIN_CODE_IP_THROTTLE_SCOPE = 'lesson-join-code-ip'
+/** Failed launch-token exchanges per IP (tokens are unguessable; this caps probing). */
+export const LESSON_LAUNCH_IP_THROTTLE_SCOPE = 'lesson-launch-ip'
 
 const DEFAULT_MAX_FAILURES = 5
 const DEFAULT_WINDOW_MS = 5 * 60 * 1000
@@ -54,6 +56,7 @@ const SCOPE_LIMITS: Readonly<Record<string, ThrottleLimits>> = {
   [STUDENT_CODE_IP_THROTTLE_SCOPE]: IP_LIMITS,
   [SCHOOL_JOIN_CODE_IP_THROTTLE_SCOPE]: CLASSROOM_IP_LIMITS,
   [LESSON_JOIN_CODE_IP_THROTTLE_SCOPE]: CLASSROOM_IP_LIMITS,
+  [LESSON_LAUNCH_IP_THROTTLE_SCOPE]: CLASSROOM_IP_LIMITS,
 }
 
 function limitsFor(scope: string): ThrottleLimits {

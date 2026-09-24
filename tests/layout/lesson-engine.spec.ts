@@ -691,3 +691,76 @@ test('the lesson report shows outcome summaries that open to their evidence', as
   const results = await new AxeBuilder({ page }).withTags(WCAG_AA_TAGS).analyze()
   expect(results.violations.map(v => v.id)).toEqual([])
 })
+
+// ── Classroom control (stage I) ──────────────────────────────────────────────
+
+test('with a classroom provider the teacher assigns computers and opens the lesson on them', async ({ page, context }) => {
+  const saved: unknown[] = []
+  const launched: unknown[] = []
+  await mockTeacherApi(page, { lessonEngine: true })
+  await routeRunServer(page)
+  const json = (body: unknown, status = 200) => ({ status, contentType: 'application/json', body: JSON.stringify(body) })
+  await page.route('**/api/teacher/classes/*/device-assignments', route => {
+    if (route.request().method() === 'PUT') saved.push(route.request().postDataJSON())
+    return route.fulfill(json({ assignments: route.request().method() === 'PUT' ? (route.request().postDataJSON() as any).assignments : [] }))
+  })
+  await page.route('**/api/teacher/lesson-runs/*/launch', route => {
+    const { remoteDeviceIds } = route.request().postDataJSON() as { remoteDeviceIds: string[] }
+    launched.push(remoteDeviceIds)
+    return route.fulfill(json({
+      commandId: 'cmd-1',
+      launches: remoteDeviceIds.map(id => ({ remoteDeviceId: id, url: `lesson-join.html#launch=${id === 'PC-01' ? 'A'.repeat(43) : 'B'.repeat(43)}` })),
+      skipped: [],
+    }))
+  })
+
+  await page.goto('/lesson-engine.html?lesson=g2-m2-l8&classroom=fake')
+  await page.getByRole('button', { name: 'Підготувати урок' }).click()
+  await expect(page).toHaveURL(/run=.*classroom=fake/)
+
+  const panel = page.getByRole('region', { name: /Комп’ютери класу/ })
+  await expect(panel.getByLabel('PC-01', { exact: true })).toBeVisible()
+  await panel.getByLabel('PC-01', { exact: true }).selectOption({ label: 'Марко' })
+  await panel.getByLabel('PC-03', { exact: true }).selectOption({ label: 'Софія' })
+  await panel.getByRole('button', { name: 'Відкрити урок на комп’ютерах' }).click()
+
+  await expect(panel.getByRole('list', { name: 'Результат відкриття' })).toContainText('✓ PC-01: відкрито')
+  await expect(panel.getByRole('list', { name: 'Результат відкриття' })).toContainText('✗ PC-03: Пристрій не відповів')
+  await expect(panel.locator('.le-join__message')).toHaveText('Відкрито на 1 з 2 комп’ютерів.')
+  expect(launched).toEqual([['PC-01', 'PC-03']])
+  expect(saved[saved.length - 1]).toEqual({ assignments: [{ remoteDeviceId: 'PC-01', classStudentId: 'c1' }, { remoteDeviceId: 'PC-03', classStudentId: 'c2' }] })
+
+  // What the provider opened: an absolute URL with the token in the fragment only.
+  const opened = await page.evaluate(() => (window as any).__rozumkoClassroom.opened)
+  expect(opened).toHaveLength(1)
+  expect(opened[0].url).toMatch(/\/lesson-join\.html#launch=A{43}$/)
+
+  const results = await new AxeBuilder({ page }).withTags(WCAG_AA_TAGS).analyze()
+  expect(results.violations.map(v => v.id)).toEqual([])
+
+  // On the lab computer: the link joins as the mapped student, no code typed.
+  const child = await context.newPage()
+  const exchanges: unknown[] = []
+  await child.route('**/api/student/lesson/launch', route => {
+    exchanges.push(route.request().postDataJSON())
+    return route.fulfill(json({ deviceId: '00000000-0000-4000-8000-00000000d009', deviceToken: 'e'.repeat(64), pairingNumber: 7, expiresAt: '' }, 201))
+  })
+  await child.route('**/api/student/lesson/state', route => route.fulfill(json({
+    runStatus: 'prepared', lessonTitle: fixture.title, grade: 2, pairingNumber: 7, mapped: true, studentLabel: 'Марко', task: null,
+  })))
+  await child.goto(opened[0].url)
+  await expect(child.locator('#lj-status')).toHaveText('Привіт, Марко! Чекай на завдання від учителя.')
+  await expect(child).toHaveURL(/lesson-join\.html$/)
+  expect(exchanges).toEqual([{ launchToken: 'A'.repeat(43) }])
+})
+
+test('a used or expired launch link falls back to the code screen with a clear message', async ({ page }) => {
+  await page.route('**/api/student/lesson/launch', route => route.fulfill({
+    status: 410, contentType: 'application/json',
+    body: JSON.stringify({ error: 'Це посилання вже використане або застаріло. Попроси вчителя відкрити урок ще раз.' }),
+  }))
+  await page.goto(`/lesson-join.html#launch=${'C'.repeat(43)}`)
+  await expect(page.locator('#lj-error')).toContainText('вже використане')
+  await expect(page.getByLabel('Код від учителя')).toBeVisible()
+  await expect(page).toHaveURL(/lesson-join\.html$/)
+})

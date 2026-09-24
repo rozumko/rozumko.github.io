@@ -3,7 +3,7 @@
 // teacher to say who they are. The device token lives in sessionStorage only.
 
 import './frontend-security.js'
-import { getLessonDeviceState, joinLessonRun, submitLessonAttempt, type ApiError } from './features/api/client.js'
+import { exchangeLessonLaunch, getLessonDeviceState, joinLessonRun, submitLessonAttempt, type ApiError } from './features/api/client.js'
 import { renderStudentTask } from './features/lesson-engine/student-task.js'
 import { formatJoinCode } from './features/lesson-engine/run-model.js'
 import type { LessonDeviceJoin, LessonDeviceState } from './features/lesson-engine/types.js'
@@ -155,8 +155,25 @@ input.addEventListener('input', () => {
   if (input.value !== formatted) input.value = formatted
 })
 
+/** A lab computer opened by the teacher: #launch=<single-use token>. */
+async function launchFromFragment(token: string) {
+  // Drop the token from the address bar and history before anything else.
+  history.replaceState(null, '', location.pathname)
+  try {
+    const joined = await exchangeLessonLaunch(token)
+    const device = { deviceId: joined.deviceId, deviceToken: joined.deviceToken, pairingNumber: joined.pairingNumber }
+    storeDevice(device)
+    startPolling(device)
+  } catch (err) {
+    showJoin((err as Error).message || 'Не вдалося відкрити урок.')
+  }
+}
+
+const launchToken = new URLSearchParams(location.hash.slice(1)).get('launch')
 const stored = readDevice()
-if (stored) {
+if (launchToken) {
+  void launchFromFragment(launchToken)
+} else if (stored) {
   startPolling(stored)
 } else {
   const fromLink = new URLSearchParams(location.search).get('code')?.replace(/\D/g, '').slice(0, 6) ?? ''

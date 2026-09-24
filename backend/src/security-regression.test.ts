@@ -525,6 +525,31 @@ test('learning evidence is append-only, never primary when client-reported, and 
   assert.match(evidence, /e\.evidenceRole === 'primary' && e\.trust !== 'client-unverified'/)
 })
 
+test('classroom control: providers see only computer ids and URLs; launch links are single-use hashes in the fragment', () => {
+  const migration = readFileSync(new URL('../drizzle/0054_add_device_assignments.sql', import.meta.url), 'utf8')
+  const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')
+  const runs = readFileSync(new URL('./routes/lesson-runs.ts', import.meta.url), 'utf8')
+  const student = readFileSync(new URL('./routes/lesson-student.ts', import.meta.url), 'utf8')
+  const assignments = readFileSync(new URL('./routes/device-assignments.ts', import.meta.url), 'utf8')
+
+  assert.match(migration, /ALTER TABLE public\.device_assignments ENABLE ROW LEVEL SECURITY;/)
+  assert.doesNotMatch(migration, /CREATE POLICY/)
+  assert.match(migration, /launch_token_hash ~ '\^\[0-9a-f\]\{64\}\$'/)
+  assert.match(journal, /"tag": "0054_add_device_assignments"/)
+  // Token in the fragment, only its hash stored, single use and short-lived.
+  assert.match(runs, /url: `lesson-join\.html#launch=\$\{token\}`/)
+  assert.match(runs, /launchTokenHash: hash/)
+  assert.doesNotMatch(runs, /launchToken: token/)
+  assert.match(student, /eq\(lessonRunDevices\.launchTokenHash, hashLaunchToken\(launchToken\)\)/)
+  assert.match(student, /row\.device\.launchedAt/)
+  assert.match(student, /set\(\{ launchedAt: now \}\)/)
+  // The launch plan carries computer ids and URLs only — no names or roster data.
+  assert.match(runs, /launches\.push\(\{ remoteDeviceId, url: /)
+  // Assignments are owner-scoped and flag-gated.
+  assert.match(assignments, /eq\(teacherClasses\.teacherId, req\.user!\.id\)|eq\(teacherClasses\.teacherId, teacherId\)/)
+  assert.ok(assignments.indexOf("app.addHook('onRequest'") < assignments.indexOf("app.addHook('preHandler', requireAuth)"))
+})
+
 test('question editorial history is RLS-protected and journaled', () => {
   const migration = readFileSync(new URL('../drizzle/0036_add_question_editorial_workflow.sql', import.meta.url), 'utf8')
   const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')

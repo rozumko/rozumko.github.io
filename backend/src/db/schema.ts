@@ -738,6 +738,7 @@ export type LessonRunEventType =
   | 'run_created' | 'run_started' | 'block_opened' | 'activity_dispatched' | 'activity_closed'
   | 'run_paused' | 'run_resumed' | 'run_finished' | 'run_cancelled'
   | 'join_opened' | 'join_closed' | 'device_joined' | 'device_mapped' | 'device_unmapped' | 'device_revoked'
+  | 'devices_launched' | 'device_launched'
 
 export const lessonRunEvents = pgTable('lesson_run_events', {
   id:          uuid('id').primaryKey().defaultRandom(),
@@ -763,6 +764,11 @@ export const lessonRunDevices = pgTable('lesson_run_devices', {
   lastSeenAt:         timestamp('last_seen_at', { withTimezone: true }),
   expiresAt:          timestamp('expires_at', { withTimezone: true }).notNull(),
   revokedAt:          timestamp('revoked_at', { withTimezone: true }),
+  // 0054: opened on a lab computer by a classroom control provider.
+  remoteDeviceId:     text('remote_device_id'),
+  launchTokenHash:    text('launch_token_hash'),
+  launchExpiresAt:    timestamp('launch_expires_at', { withTimezone: true }),
+  launchedAt:         timestamp('launched_at', { withTimezone: true }),
 }, (t) => ({
   uniqRunPairing: unique('lesson_run_devices_run_pairing_uq').on(t.lessonRunId, t.pairingNumber),
 }))
@@ -830,3 +836,19 @@ export const studentOutcomeEvidence = pgTable('student_outcome_evidence', {
 }))
 
 export type StudentOutcomeEvidenceRow = typeof studentOutcomeEvidence.$inferSelect
+
+// Lab computer → roster student, per class (0054). Configuration, not history:
+// it follows the class and the student (cascade).
+export const deviceAssignments = pgTable('device_assignments', {
+  id:             uuid('id').primaryKey().defaultRandom(),
+  teacherId:      uuid('teacher_id').notNull().references(() => appUsers.id, { onDelete: 'restrict' }),
+  classId:        uuid('class_id').notNull().references(() => teacherClasses.id, { onDelete: 'cascade' }),
+  remoteDeviceId: text('remote_device_id').notNull(),
+  classStudentId: uuid('class_student_id').notNull().references(() => classStudents.id, { onDelete: 'cascade' }),
+  updatedAt:      timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  uniqClassDevice: unique('device_assignments_class_device_uq').on(t.classId, t.remoteDeviceId),
+  uniqClassStudent: unique('device_assignments_class_student_uq').on(t.classId, t.classStudentId),
+}))
+
+export type DeviceAssignmentRow = typeof deviceAssignments.$inferSelect

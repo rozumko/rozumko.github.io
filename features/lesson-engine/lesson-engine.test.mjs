@@ -9,6 +9,7 @@ import { documentBlocks, presentationSlides, BLOCK_TYPE_LABELS, lessonMetaLine }
 import { answerFromSelection, boardActivityMode, boardQuestions, gameResultEnvelope } from './board-answers.ts'
 import { canNavigate, formatJoinCode, isOpenRun, isSendable, liveCellText, liveSummary, mappingSummary, runLifecycleActions, stepAttachments, stepTitle, studentOptions } from './run-model.ts'
 import * as runState from '../../backend/src/lib/lesson-run-state.ts'
+import { FakeClassroomControlProvider, absoluteLaunchUrl, resolveClassroomControlProvider } from './classroom-control.ts'
 
 const fixture = JSON.parse(readFileSync(
   new URL('../../backend/src/lib/curriculum-fixtures/g2-m2-l8.lesson.json', import.meta.url), 'utf8',
@@ -188,4 +189,29 @@ test('only activity blocks marked for devices can be sent to students', () => {
   assert.equal(isSendable(byId('g2-m2-l8-b07')), true)
   assert.equal(isSendable(byId('g2-m2-l8-b05')), false)
   assert.equal(isSendable(undefined), false)
+})
+
+// ── Classroom control (stage I) ──────────────────────────────────────────────
+
+test('the fake provider opens URLs per device and one failure never blocks the rest', async () => {
+  const fake = new FakeClassroomControlProvider(
+    [{ id: 'PC-01', online: true }, { id: 'PC-02', online: false }, { id: 'PC-03', online: true }],
+    new Set(['PC-03']),
+  )
+  const acks = await fake.launchUrls([
+    { deviceId: 'PC-01', url: 'u1' }, { deviceId: 'PC-02', url: 'u2' }, { deviceId: 'PC-03', url: 'u3' }, { deviceId: 'PC-99', url: 'u4' },
+  ])
+  assert.deepEqual(acks.map(a => [a.deviceId, a.ok]), [['PC-01', true], ['PC-02', false], ['PC-03', false], ['PC-99', false]])
+  assert.deepEqual(fake.opened, [{ deviceId: 'PC-01', url: 'u1' }])
+})
+
+test('the fake provider exists only on a loopback host when asked for', () => {
+  assert.ok(resolveClassroomControlProvider({ hostname: 'localhost', search: '?classroom=fake' }))
+  assert.equal(resolveClassroomControlProvider({ hostname: 'rozumko.com', search: '?classroom=fake' }), null)
+  assert.equal(resolveClassroomControlProvider({ hostname: 'localhost', search: '' }), null)
+})
+
+test('launch URLs keep the single-use token in the fragment', () => {
+  const url = absoluteLaunchUrl('lesson-join.html#launch=abc', 'https://rozumko.com/lesson-engine.html?run=1')
+  assert.equal(url, 'https://rozumko.com/lesson-join.html#launch=abc')
 })

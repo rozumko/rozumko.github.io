@@ -1262,10 +1262,42 @@ export function getLessonRunReport(runId: string): Promise<LessonReport> {
   return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}/report`)
 }
 
+export interface DeviceAssignment { remoteDeviceId: string; classStudentId: string }
+
+export function getDeviceAssignments(classId: string): Promise<{ assignments: DeviceAssignment[] }> {
+  return authRequest(`/api/teacher/classes/${encodeURIComponent(classId)}/device-assignments`)
+}
+
+export function saveDeviceAssignments(classId: string, assignments: DeviceAssignment[]): Promise<{ assignments: DeviceAssignment[] }> {
+  return authRequest(`/api/teacher/classes/${encodeURIComponent(classId)}/device-assignments`, {
+    method: 'PUT',
+    body: JSON.stringify({ assignments }),
+  })
+}
+
+export interface LessonLaunchPlan {
+  commandId: string
+  /** Relative URLs; the single-use token is in the fragment. */
+  launches: { remoteDeviceId: string; url: string }[]
+  skipped: { remoteDeviceId: string; reason: 'unassigned' | 'not-in-roster' | 'full' }[]
+}
+
+export function launchLessonRun(runId: string, remoteDeviceIds: string[]): Promise<LessonLaunchPlan> {
+  return authRequest(`/api/teacher/lesson-runs/${encodeURIComponent(runId)}/launch`, {
+    method: 'POST',
+    body: JSON.stringify({ remoteDeviceIds }),
+  })
+}
+
 // ─── Lesson Engine: student device (no account) ────────────────────────────
 
 export function joinLessonRun(code: string): Promise<LessonDeviceJoin> {
   return request('/api/student/lesson/join', { method: 'POST', body: JSON.stringify({ code }) })
+}
+
+/** Exchanges a single-use launch token (from a lab computer) for a pre-mapped device. */
+export function exchangeLessonLaunch(launchToken: string): Promise<LessonDeviceJoin> {
+  return request('/api/student/lesson/launch', { method: 'POST', body: JSON.stringify({ launchToken }) })
 }
 
 /** One submission; retrying with the same clientAttemptId returns the stored result. */

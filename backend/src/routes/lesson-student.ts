@@ -20,6 +20,8 @@ import {
   MAX_RUN_DEVICES,
   deviceLiveness,
   generateDeviceToken,
+  hashLaunchToken,
+  isLaunchToken,
   isLessonJoinCode,
   nextPairingNumber,
   verifyDeviceToken,
@@ -27,6 +29,7 @@ import {
 import {
   LESSON_JOIN_CODE_IP_THROTTLE_SCOPE,
   LESSON_JOIN_CODE_THROTTLE_SCOPE,
+  LESSON_LAUNCH_IP_THROTTLE_SCOPE,
   clearCodeThrottle,
   getCodeThrottleStatus,
   recordCodeFailure,
@@ -322,5 +325,51 @@ export async function lessonStudentRoutes(app: FastifyInstance) {
       if (isUniqueViolation(err)) return reply.code(409).send({ error: 'Спробуй ще раз.' })
       throw err
     }
+  })
+
+  // POST /api/student/lesson/launch — exchange a single-use launch token (from
+  // a lab computer opened by the teacher) for the pre-mapped device.
+  app.post<{ Body: { launchToken: string } }>('/launch', {
+    config: { rateLimit: { max: 30, timeWindow: '1 minute' } },
+    schema: {
+      body: {
+        type: 'object',
+        required: ['launchToken'],
+        additionalProperties: false,
+        properties: { launchToken: { type: 'string', minLength: 43, maxLength: 43 } },
+      },
+    },
+  }, async (req, reply) => {
+    const { launchToken } = req.body
+    if (!isLaunchToken(launchToken)) return reply.code(400).send({ error: 'Посилання пошкоджене.' })
+    const throttle = getCodeThrottleStatus(LESSON_LAUNCH_IP_THROTTLE_SCOPE, req.ip)
+    if (!throttle.allowed) {
+      return reply.code(429).header('Retry-After', String(throttle.retryAfterSeconds))
+        .send({ error: 'Забагато невдалих спроб. Спробуй трохи пізніше.' })
+    }
+    const device = await db.transaction(async tx => {
+      const [row] = await tx.select({ device: lessonRunDevices, runStatus: lessonRuns.status })
+        .from(lessonRunDevices)
+        .innerJoin(lessonRuns, eq(lessonRuns.id, lessonRunDevices.lessonRunId))
+        .where(eq(lessonRunDevices.launchTokenHash, hashLaunchToken(launchToken))).limit(1)
+        .for('update', { of: lessonRunDevices })
+      const now = new Date()
+      if (!row || row.device.launchedAt || !row.device.launchExpiresAt || row.device.launchExpiresAt <= now
+        || deviceLiveness(row.device, now) !== 'live' || !OPEN_RUN_STATUSES.includes(row.runStatus)) {
+        return null
+      }
+      await tx.update(lessonRunDevices).set({ launchedAt: now }).where(eq(lessonRunDevices.id, row.device.id))
+      return row.device
+    })
+    if (!device) {
+      recordCodeFailure(LESSON_LAUNCH_IP_THROTTLE_SCOPE, req.ip)
+      return reply.code(410).send({ error: 'Це посилання вже використане або застаріло. Попроси вчителя відкрити урок ще раз.' })
+    }
+    return reply.code(201).send({
+      deviceId: device.id,
+      deviceToken: generateDeviceToken(device.id),
+      pairingNumber: device.pairingNumber,
+      expiresAt: device.expiresAt,
+    })
   })
 }

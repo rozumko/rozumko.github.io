@@ -18,6 +18,7 @@ import {
 import type { BoardActivityDeps } from './activity-board.js'
 import { mountJoinPanel, type JoinPanelDeps } from './join-panel.js'
 import { mountLivePanel, type LivePanelDeps } from './live-panel.js'
+import { mountComputersPanel, type ComputersPanelDeps } from './computers-panel.js'
 import type { LessonRunAction, LessonRunView } from './types.js'
 
 export interface RunConsoleDeps {
@@ -27,6 +28,8 @@ export interface RunConsoleDeps {
   check: BoardActivityDeps['check']
   join: Omit<JoinPanelDeps, 'refreshRun'>
   live: LivePanelDeps
+  /** Present only when a classroom control provider is available. */
+  computers?: ComputersPanelDeps
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] {
@@ -55,6 +58,7 @@ export function mountRunConsole(root: HTMLElement, initial: LessonRunView, deps:
     refreshRun: () => perform(() => deps.getRun()),
   })
   const livePanel = mountLivePanel(initial, deps.live)
+  const computersPanel = deps.computers ? mountComputersPanel(initial, deps.computers) : null
   const status = el('p', 'le-console__status')
   status.setAttribute('role', 'status')
 
@@ -193,7 +197,8 @@ export function mountRunConsole(root: HTMLElement, initial: LessonRunView, deps:
     layout.append(nav, current)
     joinPanel.update(view)
     livePanel.update(view)
-    root.replaceChildren(header, controls, status, livePanel.element, joinPanel.element, layout)
+    computersPanel?.update(view)
+    root.replaceChildren(header, controls, status, livePanel.element, ...(computersPanel ? [computersPanel.element] : []), joinPanel.element, layout)
   }
 
   render()

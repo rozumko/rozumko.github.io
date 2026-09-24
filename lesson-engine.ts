@@ -14,7 +14,10 @@ import {
   getLessonRun,
   getLessonRunLive,
   getLessonRunReport,
+  getDeviceAssignments,
   getTeacherClasses,
+  launchLessonRun,
+  saveDeviceAssignments,
   lessonRunAction,
   listLessonRunDevices,
   listLessonRuns,
@@ -32,6 +35,7 @@ import { openPresentation } from './features/lesson-engine/presentation-view.js'
 import { lessonMetaLine } from './features/lesson-engine/projection.js'
 import { mountRunConsole } from './features/lesson-engine/run-console.js'
 import { renderLessonReport } from './features/lesson-engine/report-view.js'
+import { resolveClassroomControlProvider, type ClassroomControlProvider } from './features/lesson-engine/classroom-control.js'
 import { RUN_STATUS_LABELS, isOpenRun } from './features/lesson-engine/run-model.js'
 import type { CurriculumLessonSummary, LessonDefinition, LessonRunSummary } from './features/lesson-engine/types.js'
 
@@ -42,7 +46,10 @@ const LESSON_ID_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/
 const RUN_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 function runHref(runId: string): string {
-  return `lesson-engine.html?run=${encodeURIComponent(runId)}`
+  // Keep a development classroom provider (?classroom=…) across navigation.
+  const classroom = new URLSearchParams(location.search).get('classroom')
+  const suffix = classroom ? `&classroom=${encodeURIComponent(classroom)}` : ''
+  return `lesson-engine.html?run=${encodeURIComponent(runId)}${suffix}`
 }
 
 function setStatus(message: string, link?: { href: string; label: string }) {
@@ -248,6 +255,9 @@ async function openRun(runId: string) {
   const consoleRoot = document.createElement('div')
   consoleRoot.className = 'le-console'
   viewEl.replaceChildren(toolbar, consoleRoot)
+  const provider = resolveClassroomControlProvider(location)
+  // Development aid: tests and demos inspect what the fake "opened".
+  if (provider) (window as unknown as { __rozumkoClassroom?: ClassroomControlProvider }).__rozumkoClassroom = provider
   mountRunConsole(consoleRoot, view, {
     act: action => lessonRunAction(runId, action),
     setStep: stepIndex => setLessonRunStep(runId, stepIndex),
@@ -259,6 +269,12 @@ async function openRun(runId: string) {
       mapDevice: (deviceId, studentId) => mapLessonRunDevice(runId, deviceId, studentId),
       revokeDevice: deviceId => revokeLessonRunDevice(runId, deviceId),
     },
+    computers: provider ? {
+      provider,
+      getAssignments: () => getDeviceAssignments(view.run.classId),
+      saveAssignments: assignments => saveDeviceAssignments(view.run.classId, assignments),
+      launch: remoteDeviceIds => launchLessonRun(runId, remoteDeviceIds),
+    } : undefined,
     live: {
       getLive: () => getLessonRunLive(runId),
       dispatch: blockId => dispatchLessonActivity(runId, blockId),

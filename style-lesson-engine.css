@@ -503,6 +503,12 @@ a.le-board__action { display: inline-flex; align-items: center; text-decoration:
   .le-report__student { break-inside: avoid; }
 }
 
+/* ── Lab computers (stage I) ─────────────────────────────────── */
+.le-computers[hidden] { display: none; }
+.le-computers__results { list-style: none; margin: var(--sp-2) 0 0; padding: 0; display: grid; gap: var(--sp-1); font-weight: 700; }
+.le-computers__ok { color: var(--fb-ok-text); }
+.le-computers__fail { color: var(--fb-err-text); }
+
 /* Confirm dialog (utils/ui showConfirm) — this page loads no student styles. */
 .le-page .app-modal-overlay {
   position: fixed;
