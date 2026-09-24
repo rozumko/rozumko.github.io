@@ -18,6 +18,13 @@ const INFORMATICS_UA_PRIMARY: SubjectPack = {
       title: { uk: 'Швидкісні вікна' },
     },
   },
+  // Platform games playable on the board without a School participant.
+  // fact-or-opinion is excluded: it fetches statements with a participant token.
+  games: [
+    'key-puzzle', 'typing-keys', 'typing-words', 'typing-sprint', 'typing-lessons',
+    'maze', 'windows', 'mouse-buttons', 'magic-squares', 'symbol-logic',
+    'message-coding', 'sorting-station', 'precise-click', 'tangram', 'fireflies',
+  ],
 }
 
 export const SUBJECT_PACKS: Readonly<Record<string, SubjectPack>> = Object.freeze({

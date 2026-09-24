@@ -101,3 +101,16 @@ test('restore reads the draft from a revision snapshot and rejects snapshots wit
   assert.equal(draftFromCurriculumRevision({ draft_content: draft }), draft)
   assert.deepEqual(issuePaths(() => draftFromCurriculumRevision({ status: 'draft' })), ['snapshot'])
 })
+
+test('game blocks must name a game and level the platform registry has', () => {
+  const lesson = reference()
+  const i = lesson.blocks.findIndex((b: { id: string }) => b.id === 'g2-m2-l8-b11')
+  lesson.blocks[i].activity = {
+    instanceId: 'windows-game', mechanic: 'game', telemetry: 'practice',
+    config: { gameKey: 'windows', level: 'easy' }, scoring: { mode: 'client-unverified' },
+  }
+  assert.equal(prepareCurriculumDefinition(lesson, null, 1).blocks[i]!.type, 'activity')
+
+  lesson.blocks[i].activity.config.level = 'impossible'
+  assert.deepEqual(issuePaths(() => prepareCurriculumDefinition(lesson, null, 1)), [`blocks[${i}].activity.config`])
+})

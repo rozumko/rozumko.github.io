@@ -2,6 +2,7 @@
 // timing, modality, teacher notes and speaker hints. Built from the same
 // display-safe definition as the board; nothing here is a separate copy.
 
+import { activityLabel, activityLevelLabel } from '../activities/registry.js'
 import { appendRichText, richElement } from './rich-text.js'
 import {
   BLOCK_TYPE_LABELS,
@@ -76,6 +77,10 @@ export function renderActivityBody(activity: ActivityView, variant: 'document' |
       if (isLocalized(item.label)) items.append(richElement('span', item.label.uk, 'le-chip'))
     }
     body.append(groups, items)
+  } else if (activity.mechanic === 'game') {
+    const gameKey = String(config.gameKey ?? '')
+    body.append(el('p', 'le-activity__meta', `${activityLabel(gameKey)} · ${activityLevelLabel(gameKey, String(config.level ?? ''))}`))
+    if (isLocalized(config.instructions)) body.append(richElement('p', config.instructions.uk, 'le-activity__instructions'))
   } else if (activity.mechanic === 'external') {
     if (isLocalized(config.instructions)) body.append(richElement('p', config.instructions.uk, 'le-activity__instructions'))
     if (isLocalized(config.estimatedMinutesLabel)) body.append(el('p', 'le-activity__meta', config.estimatedMinutesLabel.uk))

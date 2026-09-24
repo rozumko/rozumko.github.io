@@ -4,10 +4,12 @@
 import {
   validateLessonAgainstPack,
   validateLessonDefinition,
+  type GameConfig,
   type LessonDefinitionV1,
   type LessonValidationIssue,
 } from '../lib/curriculum-lesson-schema.js'
 import { findSubjectPack } from '../lib/subject-packs.js'
+import { resolveActivityDefinition, resolveActivityLevel } from '../lib/school-activities.js'
 import type { CurriculumLessonStatus } from '../db/schema.js'
 
 export const CURRICULUM_STATUSES = ['draft', 'review', 'published', 'archived'] as const satisfies readonly CurriculumLessonStatus[]
@@ -67,8 +69,24 @@ export function prepareCurriculumDefinition(
   const pack = findSubjectPack(lesson.subjectPackId)
   if (!pack) issues.push({ path: 'subjectPackId', message: 'is not a registered subject pack' })
   else issues.push(...validateLessonAgainstPack(lesson, pack))
+  issues.push(...gameRegistryIssues(lesson))
   if (issues.length > 0) throw new CurriculumValidationError(issues)
   return lesson
+}
+
+/** A game block must name a game and level the platform registry actually has. */
+function gameRegistryIssues(lesson: LessonDefinitionV1): LessonValidationIssue[] {
+  const issues: LessonValidationIssue[] = []
+  lesson.blocks.forEach((block, i) => {
+    if (block.type !== 'activity' || block.activity.mechanic !== 'game') return
+    const config = block.activity.config as GameConfig
+    try {
+      resolveActivityLevel(resolveActivityDefinition(config.gameKey), config.level)
+    } catch {
+      issues.push({ path: `blocks[${i}].activity.config`, message: 'names an unknown game or level' })
+    }
+  })
+  return issues
 }
 
 /** Stable JSON with sorted keys, so key order in editor payloads is irrelevant. */

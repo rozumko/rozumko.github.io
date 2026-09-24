@@ -156,6 +156,13 @@ board is decided solely by `presentationSlides()` in
 `features/lesson-engine/projection.ts`. Teacher-only blocks and speaker notes
 never render there; a Playwright test walks every slide to check this.
 
+Board checks (`POST …/activities/:instanceId/check`) score a teacher-entered
+class answer on the server against the published key. The response says only
+whether each submitted item was right, plus the authored explanation; it never
+returns the key. Evidence activities are refused (`409`) so their answers are
+not shown to the class before students do them. Platform games embedded in
+lessons are always `client-unverified` and can never be primary evidence.
+
 ## Mission Editorial Workflow — **[IMPLEMENTED]**
 
 Migration `0038` adds the same audited state machine, optimistic edit locking

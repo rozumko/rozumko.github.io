@@ -174,7 +174,7 @@ export interface BreakBlock extends LessonBlockBase {
 // ── Activities ────────────────────────────────────────────────────────────────
 
 /** MVP mechanics. New mechanics register a config validator below. */
-export const ACTIVITY_MECHANICS = ['choice', 'truefalse', 'classify', 'external'] as const
+export const ACTIVITY_MECHANICS = ['choice', 'truefalse', 'classify', 'external', 'game'] as const
 export type ActivityMechanic = (typeof ACTIVITY_MECHANICS)[number]
 
 /** practice → learning only; checkpoint → live teacher signal; evidence → persistent outcome evidence. */
@@ -214,12 +214,23 @@ export interface ExternalConfig {
   estimatedMinutesLabel?: LocalizedText
 }
 
+/**
+ * A code-owned interactive game from the platform registry. The game reports
+ * its own aggregate result, so it is always client-unverified; which games a
+ * lesson may use is decided by the subject pack.
+ */
+export interface GameConfig {
+  gameKey: string
+  level: string
+  instructions?: LocalizedText
+}
+
 export interface ActivitySpec {
   /** Unique within the lesson; stable across published versions. */
   instanceId: string
   mechanic: ActivityMechanic
   telemetry: ActivityTelemetry
-  config: ChoiceConfig | TrueFalseConfig | ClassifyConfig | ExternalConfig
+  config: ChoiceConfig | TrueFalseConfig | ClassifyConfig | ExternalConfig | GameConfig
   scoring: {
     mode: ScoringMode
     /** Server-only answer key. Stripped by toDisplaySafeLesson(). */
@@ -298,6 +309,8 @@ export interface SubjectPack {
   gradeRange: { min: number; max: number }
   curriculumRefs: string[]
   externalTools: Record<string, { url: string; integration: 'launch-only'; title: LocalizedText }>
+  /** Registry keys of platform games lessons in this pack may embed. */
+  games: string[]
 }
 
 // ── Validation ────────────────────────────────────────────────────────────────
@@ -542,6 +555,16 @@ const MECHANIC_VALIDATORS: Record<ActivityMechanic, MechanicValidator> = {
     checkOptionalLocalized(c, config.estimatedMinutesLabel, `${path}.config.estimatedMinutesLabel`, MAX_SHORT)
     // Launch-only tools report nothing back, so they can never score.
     if (scoring !== 'none') c.add(`${path}.scoring.mode`, 'must be "none" for launch-only external activities')
+    requireServerKey(c, key, scoring, path)
+  },
+
+  game(c, config, key, scoring, path) {
+    checkKnownKeys(c, config, ['gameKey', 'level', 'instructions'], `${path}.config`)
+    checkString(c, config.gameKey, `${path}.config.gameKey`, MAX_ID, LOCAL_ID_RE)
+    checkString(c, config.level, `${path}.config.level`, MAX_ID, LOCAL_ID_RE)
+    checkOptionalLocalized(c, config.instructions, `${path}.config.instructions`)
+    // The browser computes a game's result; the server can only bound it.
+    if (scoring !== 'client-unverified') c.add(`${path}.scoring.mode`, 'must be "client-unverified" for games')
     requireServerKey(c, key, scoring, path)
   },
 }
@@ -930,10 +953,15 @@ export function validateLessonAgainstPack(lesson: LessonDefinitionV1, pack: Subj
     c.add('grade', `must be within ${pack.gradeRange.min}–${pack.gradeRange.max}`)
   }
   lesson.blocks.forEach((block, i) => {
-    if (block.type !== 'activity' || block.activity.mechanic !== 'external') return
-    const toolKey = (block.activity.config as ExternalConfig).toolKey
-    const tool = Object.prototype.hasOwnProperty.call(pack.externalTools, toolKey) ? pack.externalTools[toolKey] : undefined
-    if (!tool) c.add(`blocks[${i}].activity.config.toolKey`, 'is not in the subject pack allowlist')
+    if (block.type !== 'activity') return
+    if (block.activity.mechanic === 'external') {
+      const toolKey = (block.activity.config as ExternalConfig).toolKey
+      const tool = Object.prototype.hasOwnProperty.call(pack.externalTools, toolKey) ? pack.externalTools[toolKey] : undefined
+      if (!tool) c.add(`blocks[${i}].activity.config.toolKey`, 'is not in the subject pack allowlist')
+    }
+    if (block.activity.mechanic === 'game' && !pack.games.includes((block.activity.config as GameConfig).gameKey)) {
+      c.add(`blocks[${i}].activity.config.gameKey`, 'is not in the subject pack allowlist')
+    }
   })
   return c.errors
 }
@@ -942,7 +970,9 @@ export function validateLessonAgainstPack(lesson: LessonDefinitionV1, pack: Subj
 export function validateSubjectPack(input: unknown): LessonValidationIssue[] {
   const c = new Collector()
   if (!isRecord(input)) return [{ path: '', message: 'must be an object' }]
-  checkKnownKeys(c, input, ['id', 'subject', 'title', 'gradeRange', 'curriculumRefs', 'externalTools'], '')
+  checkKnownKeys(c, input, ['id', 'subject', 'title', 'gradeRange', 'curriculumRefs', 'externalTools', 'games'], '')
+  if (!Array.isArray(input.games)) c.add('games', 'must be an array')
+  else input.games.forEach((key, i) => { checkString(c, key, `games[${i}]`, MAX_ID, LOCAL_ID_RE) })
   checkString(c, input.id, 'id', MAX_ID, SLUG_RE)
   checkString(c, input.subject, 'subject', MAX_ID, SLUG_RE)
   checkLocalized(c, input.title, 'title', MAX_SHORT)

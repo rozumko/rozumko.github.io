@@ -75,7 +75,7 @@ waiting on the extension protocol.
 | **B** ✅ | Schema v1 types, fail-closed validator, subject-pack check, display-safe projection, fixtures (reference lesson + synthetic `test-subject`) | Backend build + tests green; subject-independence and key-leak tests |
 | **C** ✅ | `curriculum_lessons` + `curriculum_lesson_revisions`, RLS in the same migration, admin editorial API (clone of the micro-lesson pattern), feature flag enforced by the backend | Draft/review/publish, immutable snapshot, RLS regression test, security tests |
 | **D** ✅ | Teacher document view + presentation view from one definition (`features/lesson-engine/`) | No duplicated content; teacher-only never on the board; Playwright |
-| E | Activity adapter: server-scored choice/truefalse/classify + existing `features/activities` games (client-unverified) behind one result envelope | Same mechanic in board and student mode; no key leak |
+| **E** ✅ | Activity adapter: server-scored choice/truefalse/classify + existing `features/activities` games (client-unverified) behind one result envelope | Same mechanic in board and student mode; no key leak |
 | F | `lesson_runs`, `lesson_run_students`, `lesson_run_events`, teacher console (Next/Back/Pause/Resume/Finish) | Server-side state machine; reload-safe; content edits do not touch active runs |
 | G | Web join + roster mapping, scoped launch token, submit, polling live heatmap | 5 simulated students; idempotent submit; teacher reload restores state |
 | H | Outcome registry, evidence, lesson report | Every summary traces to evidence → attempt → block → run → lesson version |
@@ -150,6 +150,44 @@ and restore.
   teacher document with notes; every board slide by keyboard with no teacher
   note, speaker hint or answer text; axe WCAG 2.2 AA on both views; start from
   a block; the diagram loads; no horizontal scroll at 375 px.
+
+## Stage E — what exists
+
+Decisions:
+
+- **Mechanic `game`** embeds a platform game from `features/activities`
+  (`config: { gameKey, level }`). It is always `client-unverified`, carries no
+  key, and can never be primary evidence. The subject pack lists which games a
+  lesson may use (`SubjectPack.games`). The editorial layer also checks the
+  game and level against `backend/src/lib/school-activities.ts`, so the core
+  schema stays game-agnostic. `fact-or-opinion` is excluded because it needs a
+  School participant token.
+- **Board checks never cover evidence.** "Виконати разом" is offered for
+  `practice` and `checkpoint` only. Evidence shows «учні виконують
+  самостійно»: checking it on the board first would give the class the
+  answers.
+- **Feedback never returns the key.** The server says which submitted items
+  were right, plus the authored explanation (which lives in the key because
+  it reveals the answer). For a choice, only the chosen option is judged.
+
+Code:
+
+- `backend/src/lib/curriculum-activity-scoring.ts` scores choice, truefalse
+  and classify into the common result envelope (`server-verified`), and
+  rejects incomplete or malformed answers rather than guessing.
+- `POST /api/teacher/curriculum/lessons/:id/activities/:instanceId/check`
+  scores against the published snapshot. It returns 409 for evidence or
+  unscored activities, stores nothing (attempts arrive with runs), and is
+  rate-limited to 120/min.
+- `features/lesson-engine/board-answers.ts` holds the pure logic: board mode,
+  questions, answer building, and the game result envelope (always
+  `client-unverified`, clamped). `activity-board.ts` renders the widgets:
+  radio groups with "Перевірити"/"Спробувати ще раз", verdicts not conveyed
+  by colour alone, and a game panel with start/stop. A running game owns the
+  keyboard, so slide shortcuts pause until it stops.
+- Playwright: doing an activity together (server-scored in the test
+  process), radio arrows not changing slides, evidence never checkable on
+  the board, and a platform game holding the keyboard until stopped.
 
 The validator lives in the backend because the backend is the authority for
 anything that is published or scored. Frontend types arrive with stage D and

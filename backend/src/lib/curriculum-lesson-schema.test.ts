@@ -11,6 +11,7 @@ import {
   type LessonDefinitionV1,
 } from './curriculum-lesson-schema.js'
 import { SUBJECT_PACKS, findSubjectPack } from './subject-packs.js'
+import { resolveActivityDefinition } from './school-activities.js'
 
 function fixture(name: string): Record<string, any> {
   return JSON.parse(readFileSync(new URL(`./curriculum-fixtures/${name}`, import.meta.url), 'utf8'))
@@ -317,4 +318,45 @@ test('subject pack tools must use https', () => {
   const pack = structuredClone(findSubjectPack('informatics-ua-primary')) as Record<string, any>
   pack.externalTools['itnauka-windows'].url = 'http://itnauka.org/x'
   assert.deepEqual(validateSubjectPack(pack).map(e => e.path), ['externalTools.itnauka-windows.url'])
+})
+
+// ── Platform games ───────────────────────────────────────────────────────────
+
+function withGame(game: Record<string, unknown>): Record<string, any> {
+  const lesson = fixture('g2-m2-l8.lesson.json')
+  const i = blockIndex(lesson, 'g2-m2-l8-b11')
+  lesson.blocks[i].activity = {
+    instanceId: 'windows-game', mechanic: 'game', telemetry: 'practice',
+    config: { gameKey: 'windows', level: 'easy' }, scoring: { mode: 'client-unverified' }, ...game,
+  }
+  return lesson
+}
+
+test('games are client-unverified, carry no key and must be allowlisted by the pack', () => {
+  const lesson = expectValid(withGame({}))
+  const pack = findSubjectPack('informatics-ua-primary')!
+  assert.deepEqual(validateLessonAgainstPack(lesson, pack), [])
+
+  const i = blockIndex(withGame({}), 'g2-m2-l8-b11')
+  expectError(withGame({ scoring: { mode: 'server', key: { correctOptionId: 'a' } } }), `blocks[${i}].activity.scoring.mode`)
+  expectError(withGame({ scoring: { mode: 'none' } }), `blocks[${i}].activity.scoring.mode`)
+  expectError(withGame({ config: { gameKey: 'windows' } }), `blocks[${i}].activity.config.level`)
+
+  const notAllowed = expectValid(withGame({ config: { gameKey: 'fact-or-opinion', level: 'easy' } }))
+  assert.deepEqual(validateLessonAgainstPack(notAllowed, pack).map(e => e.path), [`blocks[${i}].activity.config.gameKey`])
+
+  // A game result is client-reported, so it can never be primary evidence.
+  expectError(withGame({
+    telemetry: 'evidence',
+    outcomes: [{ outcomeId: 'int-files-organize', evidenceRole: 'primary' }],
+  }), `blocks[${i}].activity.outcomes`)
+})
+
+test('pack games exist in the platform registry and none needs a School participant', () => {
+  for (const pack of Object.values(SUBJECT_PACKS)) {
+    for (const key of pack.games) assert.doesNotThrow(() => resolveActivityDefinition(key), key)
+    // fact-or-opinion loads its statements with a School participant token,
+    // which the board and lesson runs do not have.
+    assert.ok(!pack.games.includes('fact-or-opinion'), pack.id)
+  }
 })

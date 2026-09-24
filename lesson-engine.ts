@@ -5,6 +5,7 @@
 
 import './frontend-security.js'
 import {
+  checkCurriculumActivity,
   getCurriculumLesson,
   getCurriculumLessons,
   getTeacherMe,
@@ -93,7 +94,10 @@ function renderLesson(lesson: LessonDefinition) {
   toolbar.append(back, present)
 
   const start = (blockId?: string) => {
-    const handle = openPresentation(lesson, { startBlockId: blockId })
+    const handle = openPresentation(lesson, {
+      startBlockId: blockId,
+      activities: { check: (instanceId, answer) => checkCurriculumActivity(lesson.id, instanceId, answer) },
+    })
     if (!handle) setStatus('У цьому уроці немає слайдів для дошки.')
   }
   present.addEventListener('click', () => start())

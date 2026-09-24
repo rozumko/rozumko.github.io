@@ -83,6 +83,7 @@ export const MECHANIC_LABELS: Readonly<Record<ActivityMechanic, string>> = {
   truefalse: 'Так чи ні',
   classify: 'Розподіл за групами',
   external: 'Зовнішній тренажер',
+  game: 'Гра Розумко',
 }
 
 /** "2 клас · Урок 8 · 40 хв" */

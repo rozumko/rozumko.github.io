@@ -1,4 +1,4 @@
-import type { CurriculumLessonSummary, LessonDefinition } from '../lesson-engine/types.js'
+import type { ActivityFeedback, ActivityResult, BoardAnswer, CurriculumLessonSummary, LessonDefinition } from '../lesson-engine/types.js'
 import {
   beginPkce,
   clearPendingPkce,
@@ -1176,6 +1176,18 @@ export function getCurriculumLessons(): Promise<{ lessons: CurriculumLessonSumma
 
 export function getCurriculumLesson(id: string): Promise<{ lesson: LessonDefinition; publishedVersion: number }> {
   return authRequest(`/api/teacher/curriculum/lessons/${encodeURIComponent(id)}`)
+}
+
+/** "Do it together" on the board: the server scores the class answer. */
+export function checkCurriculumActivity(
+  lessonId: string,
+  instanceId: string,
+  answer: BoardAnswer,
+): Promise<{ result: ActivityResult; feedback: ActivityFeedback }> {
+  return authRequest(
+    `/api/teacher/curriculum/lessons/${encodeURIComponent(lessonId)}/activities/${encodeURIComponent(instanceId)}/check`,
+    { method: 'POST', body: JSON.stringify({ answer }) },
+  )
 }
 
 /** Explicit teacher sign-up request — the only way a pending teacher row appears. */

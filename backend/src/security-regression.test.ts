@@ -401,6 +401,13 @@ test('curriculum editorial API is flag-gated first and admin-only for every rout
   assert.match(teacher, /toDisplaySafeLesson\(/)
   assert.doesNotMatch(teacher, /draftContent/)
   assert.match(server, /register\(curriculumTeacherRoutes, \{ prefix: '\/api\/teacher\/curriculum' \}\)/)
+
+  // Board checks: scored on the server, refused for evidence, and the scorer
+  // never echoes key fields back.
+  const scoring = readFileSync(new URL('./lib/curriculum-activity-scoring.ts', import.meta.url), 'utf8')
+  assert.match(teacher, /boardCheckRefusal\(activity\)[\s\S]{0,200}scoreServerActivity\(activity/)
+  assert.match(teacher, /telemetry === 'evidence'/)
+  assert.doesNotMatch(scoring, /correctOptionId:|placement:|answers: key/)
 })
 
 test('question editorial history is RLS-protected and journaled', () => {

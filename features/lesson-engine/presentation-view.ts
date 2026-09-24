@@ -6,6 +6,7 @@ import { createFocusTrap } from '../../utils/focus-trap.js'
 import { richElement } from './rich-text.js'
 import { presentationSlides, type PresentationSlide } from './projection.js'
 import { renderActivityBody, renderFigure } from './document-view.js'
+import { attachBoardActivity, type BoardActivityDeps } from './activity-board.js'
 import type { LessonDefinition, LocalizedText } from './types.js'
 
 const SWIPE_THRESHOLD_PX = 50
@@ -66,6 +67,8 @@ export interface PresentationHandle {
 export interface PresentationOptions {
   startBlockId?: string
   onClose?: () => void
+  /** Enables board activities ("do it together", games). Omitted → read-only slides. */
+  activities?: Pick<BoardActivityDeps, 'check'>
 }
 
 /**
@@ -94,9 +97,23 @@ export function openPresentation(lesson: LessonDefinition, options: Presentation
 
   let index = Math.max(0, slides.findIndex(slide => slide.blockId === options.startBlockId))
 
+  // Cleanup of the current slide's activity (e.g. a running game).
+  let leaveSlide: () => void = () => {}
+  // A running game owns the keyboard; slide shortcuts pause until it stops.
+  let keyboardLocked = false
+  const activityDeps: BoardActivityDeps | null = options.activities
+    ? { check: options.activities.check, setKeyboardLocked: locked => { keyboardLocked = locked } }
+    : null
+
   function show(target: number) {
     index = Math.min(Math.max(target, 0), slides.length - 1)
-    stage.replaceChildren(renderSlide(slides[index]!))
+    leaveSlide()
+    leaveSlide = () => {}
+    keyboardLocked = false
+    const slide = slides[index]!
+    const slideEl = renderSlide(slide)
+    stage.replaceChildren(slideEl)
+    if (activityDeps && slide.block.activity) leaveSlide = attachBoardActivity(slideEl, lesson, slide.block.activity, activityDeps)
     counter.textContent = `${index + 1} / ${slides.length}`
     // Disabling a focused button drops focus to <body>; read it first and keep
     // focus inside the dialog.
@@ -108,7 +125,10 @@ export function openPresentation(lesson: LessonDefinition, options: Presentation
   }
 
   function onKey(event: KeyboardEvent) {
+    if (keyboardLocked) return
     if (event.target instanceof HTMLButtonElement && (event.key === ' ' || event.key === 'Enter')) return
+    // Radio groups and other form controls own their arrow keys.
+    if (event.target instanceof Element && event.target.closest('input, select, textarea, .le-interactive')) return
     const moves: Record<string, () => number> = {
       ArrowRight: () => index + 1,
       PageDown: () => index + 1,
@@ -140,6 +160,7 @@ export function openPresentation(lesson: LessonDefinition, options: Presentation
   function closeBoard() {
     if (closed) return
     closed = true
+    leaveSlide()
     document.removeEventListener('keydown', onKey)
     removeTrap()
     overlay.remove()

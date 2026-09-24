@@ -6,6 +6,7 @@ import * as frontendTypes from './types.ts'
 import * as backendSchema from '../../backend/src/lib/curriculum-lesson-schema.ts'
 import { parseRichText } from './rich-text.ts'
 import { documentBlocks, presentationSlides, BLOCK_TYPE_LABELS, lessonMetaLine } from './projection.ts'
+import { answerFromSelection, boardActivityMode, boardQuestions, gameResultEnvelope } from './board-answers.ts'
 
 const fixture = JSON.parse(readFileSync(
   new URL('../../backend/src/lib/curriculum-fixtures/g2-m2-l8.lesson.json', import.meta.url), 'utf8',
@@ -67,4 +68,46 @@ test('the served lesson used by the views carries no answer keys', () => {
 test('lesson meta line reads naturally', () => {
   assert.equal(lessonMetaLine(servedLesson), '2 клас · Урок 8 · 40 хв')
   assert.equal(lessonMetaLine({ grade: 1, durationMin: 20 }), '1 клас · 20 хв')
+})
+
+// ── Board activities (stage E) ───────────────────────────────────────────────
+
+const activityById = id => servedLesson.blocks.find(block => block.activity?.instanceId === id).activity
+const synthetic = backendSchema.toDisplaySafeLesson(JSON.parse(readFileSync(
+  new URL('../../backend/src/lib/curriculum-fixtures/test-subject.lesson.json', import.meta.url), 'utf8',
+)))
+const syntheticActivity = id => synthetic.blocks.find(block => block.activity?.instanceId === id).activity
+
+test('board mode: practice and checkpoints together, evidence by students only, games mounted', () => {
+  assert.equal(boardActivityMode(activityById('try-meaningful-name')), 'together')
+  assert.equal(boardActivityMode(activityById('self-check-extension')), 'students-only')
+  assert.equal(boardActivityMode(activityById('windows-trainer')), 'view-only')
+  assert.equal(boardActivityMode(syntheticActivity('check-statements')), 'together')
+  assert.equal(boardActivityMode({ ...activityById('windows-trainer'), mechanic: 'game', scoring: { mode: 'client-unverified' } }), 'game')
+})
+
+test('board questions use Ukrainian option letters and cover every statement or item', () => {
+  const [choice] = boardQuestions(activityById('try-meaningful-name'))
+  assert.deepEqual(choice.options.map(option => option.label.slice(0, 2)), ['А)', 'Б)'])
+  assert.deepEqual(boardQuestions(syntheticActivity('check-statements')).map(q => q.id), ['s1', 's2'])
+  assert.deepEqual(boardQuestions(syntheticActivity('sort-a-b')).map(q => q.options.map(o => o.value)), [['a', 'b'], ['a', 'b']])
+})
+
+test('an answer is built only once every question is answered', () => {
+  const tf = syntheticActivity('check-statements')
+  assert.equal(answerFromSelection(tf, new Map([['s1', 'true']])), null)
+  assert.deepEqual(answerFromSelection(tf, new Map([['s1', 'true'], ['s2', 'false']])), { answers: { s1: true, s2: false } })
+  assert.deepEqual(answerFromSelection(activityById('try-meaningful-name'), new Map([['choice', 'b']])), { optionId: 'b' })
+  assert.deepEqual(
+    answerFromSelection(syntheticActivity('sort-a-b'), new Map([['i1', 'a'], ['i2', 'b']])),
+    { placement: { i1: 'a', i2: 'b' } },
+  )
+})
+
+test('a game result is always client-unverified and clamped', () => {
+  assert.deepEqual(gameResultEnvelope('g1', { correct: 12, total: 10, mistakes: -3, durationSec: 41.7 }), {
+    activityInstanceId: 'g1', status: 'submitted', correct: 10, total: 10, mistakes: 0,
+    normalizedScore: 1, durationSec: 41, trust: 'client-unverified',
+  })
+  assert.equal(gameResultEnvelope('g1', { correct: 0, total: 0, mistakes: 0, durationSec: 0 }).normalizedScore, 0)
 })

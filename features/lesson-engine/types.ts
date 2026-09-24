@@ -18,7 +18,7 @@ export type LessonBlockType = (typeof LESSON_BLOCK_TYPES)[number]
 export const PRESENTATION_LAYOUTS = ['title', 'visual', 'concept', 'question', 'activity-launcher'] as const
 export type PresentationLayout = (typeof PRESENTATION_LAYOUTS)[number]
 
-export const ACTIVITY_MECHANICS = ['choice', 'truefalse', 'classify', 'external'] as const
+export const ACTIVITY_MECHANICS = ['choice', 'truefalse', 'classify', 'external', 'game'] as const
 export type ActivityMechanic = (typeof ACTIVITY_MECHANICS)[number]
 
 export const ACTIVITY_TELEMETRY = ['practice', 'checkpoint', 'evidence'] as const
@@ -98,3 +98,26 @@ export interface CurriculumLessonSummary {
   durationMin: number
   publishedVersion: number
 }
+
+/** Common result envelope for every mechanic (matches the backend). */
+export interface ActivityResult {
+  activityInstanceId: string
+  status: 'submitted'
+  correct: number
+  total: number
+  mistakes: number
+  normalizedScore: number
+  durationSec?: number
+  trust: 'server-verified' | 'client-unverified' | 'teacher-observed'
+}
+
+/** Server feedback: correctness of submitted items, never the key itself. */
+export interface ActivityFeedback {
+  items: { id: string; correct: boolean }[]
+  explanation?: LocalizedText
+}
+
+export type BoardAnswer =
+  | { optionId: string }
+  | { answers: Record<string, boolean> }
+  | { placement: Record<string, string> }

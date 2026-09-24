@@ -1,7 +1,8 @@
 import { expect, test, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { readFileSync } from 'node:fs'
-import { toDisplaySafeLesson, type LessonDefinitionV1 } from '../../backend/src/lib/curriculum-lesson-schema'
+import { toDisplaySafeLesson, type ActivitySpec, type LessonDefinitionV1 } from '../../backend/src/lib/curriculum-lesson-schema'
+import { scoreServerActivity } from '../../backend/src/lib/curriculum-activity-scoring'
 
 const WCAG_AA_TAGS = ['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']
 
@@ -15,7 +16,32 @@ const TEACHER_NOTE = 'Орієнтовний час 35–40 хв'
 const SPEAKER_NOTE = 'Покажіть на прикладі'
 const SLIDE_COUNT = 12
 
-async function mockTeacherApi(page: Page, options: { lessonEngine: boolean; session?: boolean }) {
+/** The same lesson with the external trainer swapped for a platform game. */
+function withGame(lesson: LessonDefinitionV1): LessonDefinitionV1 {
+  const copy = structuredClone(lesson)
+  const block = copy.blocks.find(b => b.id === 'g2-m2-l8-b11')!
+  if (block.type === 'activity') {
+    block.activity = {
+      instanceId: 'windows-game', mechanic: 'game', telemetry: 'practice',
+      config: { gameKey: 'windows', level: 'easy' }, scoring: { mode: 'client-unverified' },
+    } as ActivitySpec
+  }
+  return copy
+}
+
+/** Server-side scoring for board checks, run in the test process like the real backend would. */
+async function routeBoardChecks(page: Page, checks: unknown[] = []) {
+  await page.route('**/api/teacher/curriculum/lessons/*/activities/*/check', async route => {
+    const instanceId = route.request().url().split('/activities/')[1]!.split('/')[0]!
+    const body = route.request().postDataJSON() as { answer: unknown }
+    checks.push(body)
+    const activity = fixture.blocks.flatMap(b => b.type === 'activity' ? [b.activity] : [])
+      .find(a => a.instanceId === instanceId)!
+    await route.fulfill({ contentType: 'application/json', body: JSON.stringify(scoreServerActivity(activity, body.answer)) })
+  })
+}
+
+async function mockTeacherApi(page: Page, options: { lessonEngine: boolean; session?: boolean; lesson?: LessonDefinitionV1 }) {
   await page.addInitScript(({ lesson, lessonEngine, session }) => {
     if (session) {
       sessionStorage.setItem('teacher_session', JSON.stringify({
@@ -28,7 +54,7 @@ async function mockTeacherApi(page: Page, options: { lessonEngine: boolean; sess
     const originalFetch = window.fetch.bind(window)
     window.fetch = async (input, init) => {
       const url = input instanceof Request ? input.url : String(input)
-      if (!url.includes('/api/')) return originalFetch(input, init)
+      if (!url.includes('/api/') || url.endsWith('/check')) return originalFetch(input, init)
       const path = new URL(url).pathname
       if (path === '/api/teacher/me') {
         return json({ id: 't1', authUserId: 'a1', role: 'teacher', name: 'Вчитель', email: 'teacher@example.test', features: { lessonEngine } })
@@ -42,7 +68,7 @@ async function mockTeacherApi(page: Page, options: { lessonEngine: boolean; sess
       if (path === `/api/teacher/curriculum/lessons/${lesson.id}`) return json({ lesson, publishedVersion: 1 })
       return json({ error: 'Урок не знайдено' }, 404)
     }
-  }, { lesson: servedLesson, lessonEngine: options.lessonEngine, session: options.session ?? true })
+  }, { lesson: options.lesson ?? servedLesson, lessonEngine: options.lessonEngine, session: options.session ?? true })
 }
 
 test('without a teacher session the page asks to sign in', async ({ page }) => {
@@ -131,4 +157,71 @@ test('the lesson page fits a phone without horizontal scrolling', async ({ page 
   await expect(page.locator('#le-document-title')).toBeVisible()
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
   expect(overflow).toBeLessThanOrEqual(0)
+})
+
+async function openBoardAt(page: Page, slide: number) {
+  await page.goto('/lesson-engine.html?lesson=g2-m2-l8')
+  await page.getByRole('button', { name: 'Показати на дошці' }).click()
+  const board = page.getByRole('dialog', { name: /Показ на дошці/ })
+  for (let i = 1; i < slide; i++) await page.keyboard.press('ArrowRight')
+  await expect(board.locator('.le-board__counter')).toHaveText(`${slide} / ${SLIDE_COUNT}`)
+  return board
+}
+
+test('the class does a practice activity together and the server scores it', async ({ page }) => {
+  const checks: unknown[] = []
+  await mockTeacherApi(page, { lessonEngine: true })
+  await routeBoardChecks(page, checks)
+  const board = await openBoardAt(page, 6)
+
+  await board.getByRole('button', { name: 'Виконати разом' }).click()
+  const submit = board.getByRole('button', { name: 'Перевірити' })
+  await expect(submit).toBeDisabled()
+
+  // Arrow keys belong to the radio group, not to slide navigation.
+  await board.getByRole('radio', { name: /А\)/ }).focus()
+  await page.keyboard.press('ArrowRight')
+  await expect(board.locator('.le-board__counter')).toHaveText(`6 / ${SLIDE_COUNT}`)
+
+  await board.getByRole('radio', { name: /Б\)/ }).check()
+  await submit.click()
+  await expect(board.locator('.le-interactive__score')).toHaveText('Правильно: 1 з 1')
+  await expect(board.locator('.le-interactive__verdict')).toHaveText('✓ Правильно')
+  await expect(board.locator('.le-interactive__explanation')).toContainText('Змістовна назва')
+  expect(checks).toEqual([{ answer: { optionId: 'b' } }])
+
+  const results = await new AxeBuilder({ page }).include('.le-board').withTags(WCAG_AA_TAGS).analyze()
+  expect(results.violations.map(v => v.id)).toEqual([])
+
+  await board.getByRole('button', { name: 'Спробувати ще раз' }).click()
+  await expect(board.getByRole('radio', { name: /Б\)/ })).not.toBeChecked()
+})
+
+test('evidence activities are never checked on the board', async ({ page }) => {
+  const checks: unknown[] = []
+  await mockTeacherApi(page, { lessonEngine: true })
+  await routeBoardChecks(page, checks)
+  const board = await openBoardAt(page, 10)
+
+  await expect(board.locator('.le-board__note')).toContainText('самостійно')
+  await expect(board.getByRole('button', { name: 'Виконати разом' })).toHaveCount(0)
+  await expect(board.getByRole('radio')).toHaveCount(0)
+  expect(checks).toEqual([])
+})
+
+test('a platform game runs on the board and holds the keyboard until stopped', async ({ page }) => {
+  await mockTeacherApi(page, { lessonEngine: true, lesson: toDisplaySafeLesson(withGame(fixture)) })
+  const board = await openBoardAt(page, 9)
+
+  await expect(board.locator('.le-game__title')).toContainText('Вікна програм')
+  await board.getByRole('button', { name: 'Запустити гру' }).click()
+  await expect(board.locator('.le-game__stage')).not.toBeEmpty()
+  await page.keyboard.press('ArrowRight')
+  await expect(board.locator('.le-board__counter')).toHaveText(`9 / ${SLIDE_COUNT}`)
+
+  await board.getByRole('button', { name: 'Зупинити гру' }).click()
+  await expect(board.locator('.le-game__status')).toContainText('Зупинено')
+  await expect(board.locator('.le-game__stage')).toBeEmpty()
+  await page.keyboard.press('ArrowRight')
+  await expect(board.locator('.le-board__counter')).toHaveText(`10 / ${SLIDE_COUNT}`)
 })
