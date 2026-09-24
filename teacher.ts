@@ -2748,8 +2748,8 @@ function renderSchoolHistory(sessions: SchoolSessionSummary[]) {
         <td data-label="Учасники">${esc(String(session.participantCount))}</td>
         <td data-label="Дата">${esc(dateLabel)}</td>
         <td data-label="Стан"><span class="teacher-status${session.live ? ' teacher-status--live' : ''}">${session.live ? 'Триває' : 'Завершено'}</span></td>
-        <td data-label="Дія"><button type="button" class="teacher-table-action" data-session-id="${esc(session.id)}">
-          ${session.live ? 'Повернутися' : 'Переглянути'}
+        <td data-label="Дія"><button type="button" class="teacher-table-action school-history__open" data-session-id="${esc(session.id)}">
+          ${session.live ? 'Повернутися до гри' : 'Переглянути результати'}
         </button></td>
       </tr>`
     }).join('')}</tbody>
