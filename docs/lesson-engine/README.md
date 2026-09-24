@@ -9,6 +9,7 @@ initiative and the decisions that reconcile them with the current codebase.
 | [orchestrator-spec.md](./orchestrator-spec.md) | Implementation detail: API shapes, tables, test lists, failure scenarios, Definition of Done. Where it is informatics-specific, the master spec wins. |
 | This file | Binding decisions that resolve conflicts between the two specs and the repository. **This file wins over both specs.** |
 | [ADR-0008](../adr/0008-lesson-engine-additive-surface.md) | Why the engine is an additive surface, not a rewrite. |
+| [pilot-runbook.md](./pilot-runbook.md) | Production setup, lesson-day steps, observation sheet, pilot phases and go/no-go signals. |
 
 The specs are kept verbatim (Ukrainian) as they were agreed. Do not edit them
 to record a change of mind — add a decision here instead.
@@ -537,7 +538,10 @@ Verified:
     ends.
 
 What remains of J is not code. It is the internal pilot, the external
-pilot and the go/no-go decision (master spec §pilots).
+pilot and the go/no-go decision; see [pilot-runbook.md](./pilot-runbook.md).
+`npm run curriculum:publish` (`backend/scripts/publish-curriculum-lesson.ts`)
+puts a lesson into a deployed backend through the admin API. It exists
+because there is no admin UI for Lesson Engine lessons yet.
 
 ## Open items
 
