@@ -25,7 +25,6 @@ import { $ } from '../../utils/dom.js'
 import { createFocusTrap } from '../../utils/focus-trap.js'
 import { friendlyError, showConfirm } from './ui.js'
 import { renderLessonDocument } from '../lesson-engine/document-view.js'
-import { renderCanvasEditor } from './curriculum-canvas-editor.js'
 import { openPresentation } from '../lesson-engine/presentation-view.js'
 import { BLOCK_TYPE_LABELS, MODALITY_LABELS } from '../lesson-engine/projection.js'
 import {
@@ -52,6 +51,7 @@ import {
   groupIssues,
   isRecord,
   moveBlock,
+  moveBlockTo,
   newBlock,
   newLesson,
   optionalText,
@@ -1017,24 +1017,174 @@ function renderBlocksSection(blockIssues: Map<number, Issue[]>): HTMLElement {
   const lesson = editor!.lesson
   const { root, body } = section(`Блоки уроку (${lesson.blocks.length})`)
   body.append(el('p', 'adm-field-hint', 'Редагуйте текст прямо в блоках. Додайте пояснення, ілюстрацію чи завдання в потрібному місці; порядок блоків — порядок уроку.'))
+  body.append(insertBlockRow(0))
   const list = el('ol', 'cl-blocks')
   lesson.blocks.forEach((block, index) => list.append(renderBlock(block, index, blockIssues.get(index) ?? [])))
   body.append(list)
-  if (!lesson.blocks.length) body.append(insertBlockRow(0))
   return root
 }
 
+// ── Insert menu («+» between blocks) ────────────────────────────────────────
+
+const ACTIVITY_INSERTS: { mechanic: ActivityMechanic; label: string }[] = [
+  { mechanic: 'choice', label: 'Тест: одна відповідь' },
+  { mechanic: 'truefalse', label: 'Правда / неправда' },
+  { mechanic: 'classify', label: 'Сортування по групах' },
+  { mechanic: 'game', label: 'Гра платформи' },
+  { mechanic: 'external', label: 'Зовнішній тренажер' },
+]
+const OTHER_INSERTS = LESSON_BLOCK_TYPES.filter(type => type !== 'canvas' && type !== 'activity')
+
+function closeInsertMenus(except?: Element): void {
+  document.querySelectorAll<HTMLElement>('.cl-insert__menu:not([hidden])').forEach(menu => {
+    if (menu === except) return
+    menu.hidden = true
+    menu.parentElement?.querySelector('.cl-insert__toggle')?.setAttribute('aria-expanded', 'false')
+  })
+}
+
+let insertOutsideClickBound = false
+function bindInsertOutsideClick(): void {
+  if (insertOutsideClickBound) return
+  insertOutsideClickBound = true
+  document.addEventListener('click', event => {
+    if (!(event.target instanceof Element) || !event.target.closest('.cl-insert')) closeInsertMenus()
+  })
+}
+
+/** A «+» line that opens one menu: content, interactive tasks, other block types. */
 function insertBlockRow(index: number): HTMLDivElement {
+  bindInsertOutsideClick()
   const lesson = editor!.lesson
-  const row = el('div', 'cl-row cl-insert-row')
-  const type = select(LESSON_BLOCK_TYPES, BLOCK_TYPE_LABELS as Record<LessonBlockType, string>, 'explanation', () => {})
-  row.append(field('Додати після цього блоку', type), button('+ Додати', 'btn-adm-ghost btn--sm', () => {
-    const block = newBlock(type.value as LessonBlockType, lesson, packInfo(lesson.subjectPackId), editor!.reserved)
+  const pack = packInfo(lesson.subjectPackId)
+  const row = el('div', 'cl-insert')
+  const menuId = `cl-insert-menu-${index}`
+  const toggle = button('+', 'cl-insert__toggle')
+  toggle.setAttribute('aria-label', index === 0 ? 'Додати блок на початок уроку' : `Додати блок після блоку ${index}`)
+  toggle.setAttribute('aria-expanded', 'false')
+  toggle.setAttribute('aria-controls', menuId)
+  const menu = el('div', 'cl-insert__menu')
+  menu.id = menuId
+  menu.hidden = true
+  menu.setAttribute('role', 'group')
+  menu.setAttribute('aria-label', 'Що додати')
+
+  const insert = (type: LessonBlockType, mechanic?: ActivityMechanic) => {
+    const block = newBlock(type, lesson, pack, editor!.reserved)
+    if (mechanic && block.activity) block.activity = activityTemplate(mechanic, block.activity.instanceId, pack)
     lesson.blocks.splice(index, 0, block)
     editor!.openBlocks.add(block.id)
     changed(`[data-block-id="${CSS.escape(block.id)}"] summary`)
-  }))
+  }
+  const choice = (label: string, onClick: () => void, hint?: string, disabled = false) => {
+    const node = button('', 'cl-insert__choice', onClick)
+    node.append(el('strong', undefined, label))
+    if (hint) node.append(el('span', undefined, hint))
+    node.disabled = disabled
+    return node
+  }
+  const groupOf = (title: string, ...choices: HTMLButtonElement[]) => {
+    const wrap = el('div', 'cl-insert__group')
+    wrap.append(el('p', 'cl-insert__title', title))
+    const grid = el('div', 'cl-insert__grid')
+    grid.append(...choices)
+    wrap.append(grid)
+    return wrap
+  }
+
+  menu.append(
+    groupOf('Контент', choice('Текст і медіа', () => insert('canvas'), 'Текст, таблиці, зображення, відео — окремо для вчителя, дошки й учнів')),
+    groupOf('Інтерактивні завдання', ...ACTIVITY_INSERTS.map(({ mechanic, label }) => {
+      const unavailable = (mechanic === 'game' && !pack?.games.length) || (mechanic === 'external' && !pack?.tools.length)
+      return choice(label, () => insert('activity', mechanic), unavailable ? 'Немає в цьому предметі' : undefined, unavailable)
+    })),
+  )
+  const more = el('details', 'cl-insert__more')
+  more.append(el('summary', undefined, 'Інші типи блоків'))
+  const moreGrid = el('div', 'cl-insert__grid cl-insert__grid--compact')
+  moreGrid.append(...OTHER_INSERTS.map(type => choice(BLOCK_TYPE_LABELS[type], () => insert(type))))
+  more.append(moreGrid)
+  menu.append(more)
+
+  toggle.addEventListener('click', () => {
+    const open = menu.hidden
+    closeInsertMenus(menu)
+    menu.hidden = !open
+    toggle.setAttribute('aria-expanded', String(open))
+    if (open) menu.querySelector<HTMLButtonElement>('.cl-insert__choice')?.focus()
+  })
+  menu.addEventListener('keydown', event => {
+    if (event.key !== 'Escape') return
+    event.stopPropagation()
+    menu.hidden = true
+    toggle.setAttribute('aria-expanded', 'false')
+    toggle.focus()
+  })
+  row.append(toggle, menu)
   return row
+}
+
+// ── Drag and drop of blocks (mouse); ↑/↓ buttons remain for the keyboard ────
+
+const BLOCK_DRAG_TYPE = 'application/x-rozumko-block'
+const DROP_CLASSES = ['cl-block--drop-before', 'cl-block--drop-after']
+
+function clearDropMarks(): void {
+  document.querySelectorAll('.cl-block--drop-before, .cl-block--drop-after').forEach(node => node.classList.remove(...DROP_CLASSES))
+}
+
+function dragHandle(li: HTMLLIElement, index: number): HTMLSpanElement {
+  const handle = el('span', 'cl-block__handle', '⠿')
+  handle.draggable = true
+  handle.title = 'Перетягніть, щоб змінити порядок'
+  handle.setAttribute('aria-hidden', 'true')
+  handle.addEventListener('dragstart', event => {
+    if (!event.dataTransfer) return
+    event.dataTransfer.setData(BLOCK_DRAG_TYPE, String(index))
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setDragImage(li, 24, 24)
+    li.classList.add('cl-block--dragging')
+    // Open blocks fold to their headers while dragging, so every drop target
+    // is near. Deferred: changing layout inside dragstart cancels the drag.
+    const list = li.parentElement
+    setTimeout(() => list?.classList.add('cl-blocks--dragging'))
+  })
+  handle.addEventListener('dragend', () => {
+    li.classList.remove('cl-block--dragging')
+    li.parentElement?.classList.remove('cl-blocks--dragging')
+    clearDropMarks()
+  })
+
+  const dropAfter = (event: DragEvent) => {
+    const rect = li.getBoundingClientRect()
+    return event.clientY > rect.top + rect.height / 2
+  }
+  // Only block drags count; text or images dragged inside an editor pass through.
+  const isBlockDrag = (event: DragEvent) => event.dataTransfer?.types.includes(BLOCK_DRAG_TYPE) ?? false
+  li.addEventListener('dragover', event => {
+    if (!isBlockDrag(event)) return
+    event.preventDefault()
+    event.dataTransfer!.dropEffect = 'move'
+    const after = dropAfter(event)
+    if (li.classList.contains(after ? DROP_CLASSES[1]! : DROP_CLASSES[0]!)) return
+    clearDropMarks()
+    li.classList.add(after ? DROP_CLASSES[1]! : DROP_CLASSES[0]!)
+  })
+  li.addEventListener('dragleave', event => {
+    if (!(event.relatedTarget instanceof Node) || !li.contains(event.relatedTarget)) li.classList.remove(...DROP_CLASSES)
+  })
+  li.addEventListener('drop', event => {
+    if (!isBlockDrag(event)) return
+    event.preventDefault()
+    clearDropMarks()
+    const lesson = editor!.lesson
+    const from = Number(event.dataTransfer!.getData(BLOCK_DRAG_TYPE))
+    let to = index + (dropAfter(event) ? 1 : 0)
+    if (from < to) to -= 1
+    const moved = lesson.blocks[from]
+    if (moved && moveBlockTo(lesson, from, to)) changed(`[data-block-id="${CSS.escape(moved.id)}"] summary`)
+  })
+  return handle
 }
 
 function renderBlock(block: EditableBlock, index: number, issues: Issue[]): HTMLLIElement {
@@ -1050,12 +1200,16 @@ function renderBlock(block: EditableBlock, index: number, issues: Issue[]): HTML
   })
   const summary = el('summary', 'cl-block__summary')
   summary.append(el('span', 'cl-block__title', blockSummaryText(block, index)))
-  const badges = el('span', 'question-item__badges')
-  if (block.runtime?.step) badges.append(el('span', 'qi-badge qi-badge--type', 'крок'))
-  if (block.views.presentation) badges.append(el('span', 'qi-badge qi-badge--type', 'дошка'))
-  if (block.views.remote) badges.append(el('span', 'qi-badge qi-badge--type', 'пристрої'))
-  if (!block.audience.student) badges.append(el('span', 'qi-badge qi-badge--medium', 'лише вчитель'))
-  if (issues.length) badges.append(el('span', 'qi-badge cl-badge--error', `помилок: ${issues.length}`))
+  const renderBadges = () => {
+    const badges = el('span', 'question-item__badges')
+    if (block.runtime?.step) badges.append(el('span', 'qi-badge qi-badge--type', 'крок'))
+    if (block.views.presentation) badges.append(el('span', 'qi-badge qi-badge--type', 'дошка'))
+    if (block.views.remote) badges.append(el('span', 'qi-badge qi-badge--type', 'пристрої'))
+    if (!block.audience.student) badges.append(el('span', 'qi-badge qi-badge--medium', 'лише вчитель'))
+    if (issues.length) badges.append(el('span', 'qi-badge cl-badge--error', `помилок: ${issues.length}`))
+    return badges
+  }
+  let badges = renderBadges()
   summary.append(badges, el('span', 'question-item__meta', block.id))
   details.append(summary)
 
@@ -1114,12 +1268,24 @@ function renderBlock(block: EditableBlock, index: number, issues: Issue[]): HTML
   body.append(grid)
 
   if (block.type === 'canvas') {
-    body.append(renderCanvasEditor(block, {
-      selected: state.surfaceTabs.get(block.id) ?? 'teacher',
-      select: surface => { state.surfaceTabs.set(block.id, surface); renderEditor() },
-      changed,
-      touched,
-    }))
+    // The visual editor (Tiptap) loads on first use; once cached, the import
+    // resolves in a microtask, before the browser paints the placeholder.
+    const slot = el('p', 'adm-field-hint', 'Завантажуємо редактор…')
+    body.append(slot)
+    void import('./curriculum-canvas-editor.js').then(({ renderCanvasEditor }) => {
+      if (!slot.isConnected) return
+      slot.replaceWith(renderCanvasEditor(block, {
+        selected: state.surfaceTabs.get(block.id) ?? 'teacher',
+        select: surface => { state.surfaceTabs.set(block.id, surface); renderEditor() },
+        changed,
+        touched,
+        viewsChanged: () => {
+          const next = renderBadges()
+          badges.replaceWith(next)
+          badges = next
+        },
+      }))
+    }, () => { slot.textContent = 'Не вдалося завантажити редактор. Оновіть сторінку.' })
   } else {
     body.append(renderContentFields(block))
     if (block.presentation) body.append(renderSlideFields(block))
@@ -1141,7 +1307,8 @@ function renderBlock(block: EditableBlock, index: number, issues: Issue[]): HTML
 
   if (issues.length) body.append(issueList(issues.map(i => `${i.path || 'блок'}: ${describeIssueMessage(i.message)}`)))
   details.append(body)
-  li.append(details, insertBlockRow(index + 1))
+  // The handle sits outside <summary>: browsers start no drag inside it.
+  li.append(dragHandle(li, index), details, insertBlockRow(index + 1))
   return li
 }
 

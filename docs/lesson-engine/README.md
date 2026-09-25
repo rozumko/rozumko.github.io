@@ -773,10 +773,19 @@ Decisions:
   syntax errors are shown at the field and block saving.
 - **Free content blocks have three independent surfaces.** A `canvas` block
   stores ordered teacher, board and student item lists. An empty list hides
-  that surface. The visual editor supports text, headings, lists, tables,
-  images, YouTube videos and links, plus item and block reordering. Its HTML
-  source action converts pasted markup into this structured content; markup,
-  scripts, styles and arbitrary iframes are never saved. Interactive questions
+  that surface.
+- **The canvas editor is a WYSIWYG view over structured items.** Each surface
+  is one Tiptap field with a toolbar (bold, code, heading, bulleted and
+  numbered lists, tables, links, https images, YouTube, `</>` HTML source).
+  Its schema allows only what `CanvasItem` can hold, and it loads and saves
+  through the same converter as the HTML source action (`curriculum-html.ts`):
+  HTML from `canvasItemsToHtml`, back to items with `parseCanvasHtml` on every
+  change. Pasted content from Word, Google Docs or Moodle goes through that
+  importer first. Markup, scripts, styles and arbitrary iframes are never
+  saved; inline text outside `<p>` is grouped into one paragraph, links inside
+  text become link items after it, and the import applies the schema limits
+  (items, table size, text length) with warnings. Italic is not supported:
+  lesson markup has only `**bold**` and `` `code` ``. Interactive questions
   remain native activity blocks so dispatch and server scoring still apply.
 - **The server stays the only judge.** «Перевірити» calls
   `POST /api/admin/curriculum/lessons/validate` (the same checks as a save,

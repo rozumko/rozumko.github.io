@@ -191,7 +191,9 @@ function renderState(device: StoredDevice, state: LessonDeviceState) {
   }
   if (!state.task) {
     if (state.material) {
-      statusEl.textContent = `${state.studentLabel}, практична робота:`
+      statusEl.textContent = state.material.kind === 'canvas'
+        ? `${state.studentLabel}, матеріал уроку:`
+        : `${state.studentLabel}, практична робота:`
       if (shownMaterialId === state.material.blockId) return
       clearTask()
       shownMaterialId = state.material.blockId

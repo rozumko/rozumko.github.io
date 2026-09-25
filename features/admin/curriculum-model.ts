@@ -278,10 +278,16 @@ export function renameLesson(lesson: EditableLesson, newId: string): EditableLes
 // ── Structure edits ─────────────────────────────────────────────────────────
 
 export function moveBlock(lesson: EditableLesson, index: number, delta: -1 | 1): boolean {
-  const target = index + delta
-  if (index < 0 || target < 0 || target >= lesson.blocks.length) return false
-  const [block] = lesson.blocks.splice(index, 1)
-  lesson.blocks.splice(target, 0, block!)
+  return moveBlockTo(lesson, index, index + delta)
+}
+
+/** Moves the block at `from` so that it ends up at index `to` (drag and drop). */
+export function moveBlockTo(lesson: EditableLesson, from: number, to: number): boolean {
+  const count = lesson.blocks.length
+  if (!Number.isInteger(from) || !Number.isInteger(to)) return false
+  if (from === to || from < 0 || from >= count || to < 0 || to >= count) return false
+  const [block] = lesson.blocks.splice(from, 1)
+  lesson.blocks.splice(to, 0, block!)
   return true
 }
 

@@ -10,6 +10,7 @@ import {
   describeLessonIssue,
   groupIssues,
   moveBlock,
+  moveBlockTo,
   newBlock,
   newLesson,
   nextBlockId,
@@ -167,4 +168,18 @@ test('preview drops answer keys; issues are grouped per block and read in Ukrain
     { path: 'content.paragraphs[0].uk', message: 'must not contain HTML markup' },
     { path: '', message: 'must be an object' },
   ])
+})
+
+test('drag and drop moves a block to any position and ignores no-op or out-of-range moves', () => {
+  const lesson = newLesson({ id: 'g2-m1-l1', title: 'Урок', grade: 2, pack: PACK_INFO })
+  for (const type of ['explanation', 'canvas', 'reflection']) lesson.blocks.push(newBlock(type, lesson, PACK_INFO))
+  const ids = () => lesson.blocks.map(b => b.id.slice(-3))
+  assert.equal(moveBlockTo(lesson, 3, 0), true)
+  assert.deepEqual(ids(), ['b04', 'b01', 'b02', 'b03'])
+  assert.equal(moveBlockTo(lesson, 0, 2), true)
+  assert.deepEqual(ids(), ['b01', 'b02', 'b04', 'b03'])
+  assert.equal(moveBlockTo(lesson, 1, 1), false)
+  assert.equal(moveBlockTo(lesson, 0, 4), false)
+  assert.equal(moveBlockTo(lesson, -1, 0), false)
+  assert.deepEqual(ids(), ['b01', 'b02', 'b04', 'b03'])
 })

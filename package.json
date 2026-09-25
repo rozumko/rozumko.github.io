@@ -31,6 +31,12 @@
     "brace-expansion": "5.0.9"
   },
   "dependencies": {
+    "@tiptap/core": "^3.31.3",
+    "@tiptap/extension-list": "^3.31.3",
+    "@tiptap/extension-table": "^3.31.3",
+    "@tiptap/extensions": "^3.31.3",
+    "@tiptap/pm": "^3.31.3",
+    "@tiptap/starter-kit": "^3.31.3",
     "qrcode": "^1.5.4"
   }
 }

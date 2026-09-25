@@ -74,4 +74,12 @@ test('canvas keeps teacher, board and student content separate', () => {
   assert.equal(validateLessonDefinition(copy).ok, false)
   copy.blocks[0] = { ...canvas, content: { ...canvas.content, board: [{ type: 'image', src: 'javascript:alert(1)', alt: { uk: 'bad' } }] } }
   assert.equal(validateLessonDefinition(copy).ok, false)
+  copy.blocks[0] = { ...canvas, content: { ...canvas.content, student: [{ type: 'image', src: 'http://example.com/a.png', alt: { uk: 'plain http' } }] } }
+  assert.equal(validateLessonDefinition(copy).ok, false)
+  copy.blocks[0] = { ...canvas, content: { ...canvas.content, student: [{ type: 'image', src: 'https://example.com/a.png', alt: { uk: 'https' } }] } }
+  assert.equal(validateLessonDefinition(copy).ok, true)
+  copy.blocks[0] = { ...canvas, content: { ...canvas.content, student: [{ type: 'list', ordered: true, items: [{ uk: 'Перший' }] }] } }
+  assert.equal(validateLessonDefinition(copy).ok, true)
+  copy.blocks[0] = { ...canvas, content: { ...canvas.content, student: [{ type: 'list', ordered: 'yes', items: [{ uk: 'Перший' }] }] } as never }
+  assert.equal(validateLessonDefinition(copy).ok, false)
 })

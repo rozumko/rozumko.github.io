@@ -139,7 +139,7 @@ export interface PracticeBlock extends LessonBlockBase {
 /** One authored block with independently composed teacher, board and student views. */
 export type CanvasItem =
   | { type: 'paragraph' | 'heading'; text: LocalizedText }
-  | { type: 'list'; items: LocalizedText[] }
+  | { type: 'list'; ordered?: boolean; items: LocalizedText[] }
   | { type: 'table'; headers: LocalizedText[]; rows: LocalizedText[][] }
   | { type: 'image'; src: string; alt: LocalizedText }
   | { type: 'video'; videoId: string }
@@ -669,6 +669,19 @@ function checkActivity(c: Collector, value: unknown, path: string, ctx: LessonCo
 
 const BASE_KEYS = ['id', 'type', 'audience', 'views', 'modality', 'estimatedMinutes', 'runtime', 'outcomeIds', 'presentation', 'content'] as const
 
+/** Structured table: 2–10 header cells and 1–MAX_LIST rows of the same width. */
+function checkTableCells(c: Collector, table: Record<string, unknown>, path: string): void {
+  const headers = table.headers
+  if (!Array.isArray(headers) || headers.length < 2 || headers.length > 10) c.add(`${path}.headers`, 'must have 2–10 columns')
+  else headers.forEach((cell, i) => checkLocalized(c, cell, `${path}.headers[${i}]`, MAX_SHORT))
+  const rows = table.rows
+  if (!Array.isArray(rows) || rows.length < 1 || rows.length > MAX_LIST) c.add(`${path}.rows`, `must have 1–${MAX_LIST} rows`)
+  else rows.forEach((row, i) => {
+    if (!Array.isArray(row) || !Array.isArray(headers) || row.length !== headers.length) c.add(`${path}.rows[${i}]`, 'must match the column count')
+    else row.forEach((cell, j) => checkLocalized(c, cell, `${path}.rows[${i}][${j}]`, MAX_SHORT))
+  })
+}
+
 function checkCanvasItems(c: Collector, value: unknown, path: string): void {
   if (!Array.isArray(value) || value.length > MAX_LIST) {
     c.add(path, `must be an array of at most ${MAX_LIST} items`)
@@ -684,22 +697,14 @@ function checkCanvasItems(c: Collector, value: unknown, path: string): void {
         checkLocalized(c, item.text, `${at}.text`, item.type === 'heading' ? MAX_SHORT : MAX_TEXT)
         break
       case 'list':
-        checkKnownKeys(c, item, ['type', 'items'], at)
+        checkKnownKeys(c, item, ['type', 'ordered', 'items'], at)
+        if (item.ordered !== undefined) checkBool(c, item.ordered, `${at}.ordered`)
         checkLocalizedList(c, item.items, `${at}.items`, 1)
         break
-      case 'table': {
+      case 'table':
         checkKnownKeys(c, item, ['type', 'headers', 'rows'], at)
-        const headers = item.headers
-        if (!Array.isArray(headers) || headers.length < 2 || headers.length > 10) c.add(`${at}.headers`, 'must have 2–10 columns')
-        else headers.forEach((cell, j) => checkLocalized(c, cell, `${at}.headers[${j}]`, MAX_SHORT))
-        const rows = item.rows
-        if (!Array.isArray(rows) || rows.length < 1 || rows.length > MAX_LIST) c.add(`${at}.rows`, `must have 1–${MAX_LIST} rows`)
-        else rows.forEach((row, j) => {
-          if (!Array.isArray(row) || !Array.isArray(headers) || row.length !== headers.length) c.add(`${at}.rows[${j}]`, 'must match the column count')
-          else row.forEach((cell, k) => checkLocalized(c, cell, `${at}.rows[${j}][${k}]`, MAX_SHORT))
-        })
+        checkTableCells(c, item, at)
         break
-      }
       case 'image':
         checkKnownKeys(c, item, ['type', 'src', 'alt'], at)
         checkMediaSrc(c, item.src, `${at}.src`)
@@ -781,15 +786,7 @@ function checkBlockContent(c: Collector, block: Json, type: LessonBlockType, pat
         if (!isRecord(table)) c.add(`${p}.table`, 'must be an object')
         else {
           checkKnownKeys(c, table, ['headers', 'rows'], `${p}.table`)
-          const headers = table.headers
-          if (!Array.isArray(headers) || headers.length < 2 || headers.length > 10) c.add(`${p}.table.headers`, 'must have 2–10 columns')
-          else headers.forEach((cell, i) => checkLocalized(c, cell, `${p}.table.headers[${i}]`, MAX_SHORT))
-          const rows = table.rows
-          if (!Array.isArray(rows) || rows.length < 1 || rows.length > MAX_LIST) c.add(`${p}.table.rows`, `must have 1–${MAX_LIST} rows`)
-          else rows.forEach((row, i) => {
-            if (!Array.isArray(row) || !Array.isArray(headers) || row.length !== headers.length) c.add(`${p}.table.rows[${i}]`, 'must match the column count')
-            else row.forEach((cell, j) => checkLocalized(c, cell, `${p}.table.rows[${i}][${j}]`, MAX_SHORT))
-          })
+          checkTableCells(c, table, `${p}.table`)
         }
       }
       const steps = content.steps

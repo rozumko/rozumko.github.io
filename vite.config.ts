@@ -6,6 +6,8 @@ import { resolve } from 'path'
 //   - Font Awesome:    cdnjs.cloudflare.com (CSS + webfonts, document pages only)
 //   - Backend API:     origin from VITE_API_URL
 //   - Supabase Auth:   origin from VITE_SUPABASE_URL
+//   - YouTube frames:  www.youtube-nocookie.com (lesson pages only)
+//   - Lesson images:   any https host (lesson pages only)
 // script-src keeps application JavaScript same-origin. Service-worker
 // registration is externalized in register-sw.ts and the modulepreload
 // polyfill is disabled below. style-src still permits required inline styles.
@@ -40,6 +42,10 @@ function isAnalyticsPage(path: string): boolean {
 // teacher.html and parent.html additionally load Cloudflare Turnstile.
 // Scope its script, frame and connection origins to authentication pages only.
 const TURNSTILE_ORIGIN = 'https://challenges.cloudflare.com'
+// Lesson canvas blocks embed validated YouTube IDs through the no-cookie host.
+// Only the pages that render lesson content may frame it.
+const YOUTUBE_FRAME_ORIGIN = 'https://www.youtube-nocookie.com'
+const LESSON_MEDIA_PAGES = new Set(['admin.html', 'lesson-engine.html', 'lesson-board.html', 'lesson-join.html'])
 // GitHub Pages cannot set CSP headers, so inject a CSP meta tag at build time.
 // Development remains unaffected to preserve Vite HMR.
 function cspPlugin(apiOrigin: string, supabaseOrigin: string): Plugin {
@@ -82,13 +88,18 @@ function cspPlugin(apiOrigin: string, supabaseOrigin: string): Plugin {
         const isOffline = ctx.path.endsWith('offline.html')
         const usesTurnstile = ctx.path.endsWith('teacher.html') || ctx.path.endsWith('parent.html')
         const usesAnalytics = Boolean(ANALYTICS_TOKEN) && isAnalyticsPage(ctx.path)
-        const content = isOffline
+        const usesLessonMedia = LESSON_MEDIA_PAGES.has(ctx.path.split('/').pop() || '')
+        const base = isOffline
           ? OFFLINE_CSP
           : usesTurnstile
             ? TEACHER_CSP
             : usesAnalytics
               ? ANALYTICS_CSP
               : STRICT_CSP
+        // Canvas blocks may show images from any https host (an editorial decision).
+        const content = usesLessonMedia && !usesTurnstile
+          ? `${base.replace("img-src 'self' data:", "img-src 'self' data: https:")}; frame-src ${YOUTUBE_FRAME_ORIGIN}`
+          : base
         return {
           html,
           tags: [{

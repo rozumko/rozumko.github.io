@@ -10,7 +10,7 @@ export interface LocalizedText {
 
 export type CanvasItem =
   | { type: 'paragraph' | 'heading'; text: LocalizedText }
-  | { type: 'list'; items: LocalizedText[] }
+  | { type: 'list'; ordered?: boolean; items: LocalizedText[] }
   | { type: 'table'; headers: LocalizedText[]; rows: LocalizedText[][] }
   | { type: 'image'; src: string; alt: LocalizedText }
   | { type: 'video'; videoId: string }
