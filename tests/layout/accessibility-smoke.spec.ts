@@ -284,6 +284,13 @@ async function openAdminDashboard(page: Page) {
   await expect(page.locator('#admin-panel')).toBeVisible()
 }
 
+/** Parked sections sit under «Інші розділи»; open that row first when needed. */
+async function openAdminTab(page: Page, name: string) {
+  const tab = page.locator(`.admin-tab[data-tab="${name}"]`)
+  if (!(await tab.isVisible())) await page.locator('#admin-more-toggle').click()
+  await tab.click()
+}
+
 async function openTeacherDashboard(page: Page) {
   await page.addInitScript(() => {
     // The cabinet reopens the last section; these tests work in the class game.
@@ -734,9 +741,47 @@ test('axe: /admin.html dashboard', async ({ page }) => {
   expect(results.violations).toEqual([])
 })
 
+test('admin navigation groups sections and keeps parked ones folded until needed', async ({ page }) => {
+  await openAdminDashboard(page)
+  // Without the lesson engine the overview opens first; the lessons group is hidden.
+  await expect(page.locator('.admin-tab[data-tab="overview"]')).toHaveAttribute('aria-current', 'page')
+  await expect(page.locator('#tab-overview')).toBeVisible()
+  await expect(page.getByRole('group', { name: 'Уроки' })).toBeHidden()
+  const more = page.getByRole('button', { name: 'Інші розділи' })
+  await expect(more).toHaveAttribute('aria-expanded', 'false')
+  await expect(page.locator('.admin-tab[data-tab="questions"]')).toBeHidden()
+
+  await more.click()
+  await expect(more).toHaveAttribute('aria-expanded', 'true')
+  await page.getByRole('button', { name: 'Мікро-уроки' }).click()
+  await expect(page.locator('#tab-lessons')).toBeVisible()
+  await expect(page).toHaveURL(/#lessons$/)
+
+  // A reload returns to the same section, with its row open.
+  await page.reload()
+  await expect(page.locator('#tab-lessons')).toBeVisible()
+  await expect(page.locator('.admin-tab[data-tab="lessons"]')).toHaveAttribute('aria-current', 'page')
+})
+
+test('admin opens in the light theme and remembers a switch to dark', async ({ page }) => {
+  await openAdminDashboard(page)
+  const html = page.locator('html')
+  const toggle = page.getByRole('button', { name: 'Темна тема' })
+  await expect(html).toHaveAttribute('data-admin-theme', 'light')
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false')
+  await toggle.click()
+  await expect(html).toHaveAttribute('data-admin-theme', 'dark')
+  await page.reload()
+  // Applied by the head script before the bundle runs, so there is no light flash.
+  await expect(html).toHaveAttribute('data-admin-theme', 'dark')
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+  const results = await new AxeBuilder({ page }).include('#admin-panel').withTags(WCAG_AA_TAGS).analyze()
+  expect(results.violations).toEqual([])
+})
+
 test('admin question bank opens on one delivery section and remembers it', async ({ page }) => {
   await openAdminDashboard(page)
-  await page.locator('[data-tab="questions"]').click()
+  await openAdminTab(page, 'questions')
 
   const scope = page.locator('#q-filter-section')
   await expect(scope.locator('[data-section=""]')).toHaveAttribute('aria-pressed', 'true')
@@ -761,7 +806,7 @@ test('admin question bank opens on one delivery section and remembers it', async
 
   // The chosen section survives a reload — the bank is never one pile again
   await page.reload()
-  await page.locator('[data-tab="questions"]').click()
+  await openAdminTab(page, 'questions')
   await expect(scope.locator('[data-section="class_game"]')).toHaveAttribute('aria-pressed', 'true')
 
   const urls = await page.evaluate(() => (window as unknown as { __bankUrls: string[] }).__bankUrls)
@@ -791,7 +836,7 @@ test('admin bank shows section gaps and moves a selection between sections', asy
   })
   await page.reload()
   await expect(page.locator('#admin-panel')).toBeVisible()
-  await page.locator('[data-tab="questions"]').click()
+  await openAdminTab(page, 'questions')
 
   // Coverage: a zero cell is marked as a gap, and a cell opens those questions
   await page.locator('#q-matrix-panel summary').click()
@@ -830,7 +875,7 @@ test('admin bank shows section gaps and moves a selection between sections', asy
 // grew. One page reaches the browser; the pager reaches the rest.
 test('admin bank renders one page and walks to the next', async ({ page }) => {
   await openAdminDashboard(page)
-  await page.locator('[data-tab="questions"]').click()
+  await openAdminTab(page, 'questions')
 
   const rows = page.locator('#questions-list .question-item')
   await expect(rows).toHaveCount(50)
@@ -861,7 +906,7 @@ test('admin bank renders one page and walks to the next', async ({ page }) => {
 
 test('axe: /admin.html question editor', async ({ page }) => {
   await openAdminDashboard(page)
-  await page.locator('[data-tab="questions"]').click()
+  await openAdminTab(page, 'questions')
   await page.locator('#add-question-btn').click()
   await expect(page.locator('#question-modal')).toBeVisible()
 
@@ -875,7 +920,7 @@ test('axe: /admin.html question editor', async ({ page }) => {
 
 test('admin publication journal is accessible and exposes the audited run', async ({ page }) => {
   await openAdminDashboard(page)
-  await page.locator('[data-tab="publication"]').click()
+  await openAdminTab(page, 'publication')
   await expect(page.locator('#publication-list')).toContainText('Опубліковано')
   await expect(page.locator('#publication-list a')).toHaveAttribute('rel', 'noopener noreferrer')
 
@@ -888,7 +933,7 @@ test('admin publication journal is accessible and exposes the audited run', asyn
 
 test('admin game content-pack editors are accessible and keyboard-contained', async ({ page }) => {
   await openAdminDashboard(page)
-  await page.locator('[data-tab="missions"]').click()
+  await openAdminTab(page, 'missions')
   for (const [buttonId, formSelector, closeSelector] of [
     ['#add-sorting-mission-btn', '.sorting-editor-form', '.se-close'],
     ['#add-sequence-mission-btn', '.narrative-editor-form', '.ne-close'],
@@ -912,7 +957,7 @@ test('admin game content-pack editors are accessible and keyboard-contained', as
 
 test('admin path editor traps focus, passes axe, and preserves unsaved edits across tabs', async ({ page }) => {
   await openAdminDashboard(page)
-  await page.locator('[data-tab="path"]').click()
+  await openAdminTab(page, 'path')
   await expect(page.locator('#pm-status')).toContainText('Test path')
 
   const editButton = page.locator('#pm-points .pm-edit')
@@ -932,8 +977,8 @@ test('admin path editor traps focus, passes axe, and preserves unsaved edits acr
   await expect(editButton).toBeFocused()
   await expect(page.locator('#pm-status')).toContainText('не збережено')
 
-  await page.locator('[data-tab="overview"]').click()
-  await page.locator('[data-tab="path"]').click()
+  await openAdminTab(page, 'overview')
+  await openAdminTab(page, 'path')
   await expect(page.locator('#pm-points')).toContainText('Unsaved point title')
 
   await editButton.click()
@@ -944,7 +989,7 @@ test('admin path editor traps focus, passes axe, and preserves unsaved edits acr
 
 test('shared certificate dialog is accessible from Admin results', async ({ page }) => {
   await openAdminDashboard(page)
-  await page.locator('[data-tab="results"]').click()
+  await openAdminTab(page, 'results')
   await page.locator('.btn-cert').click()
   await expect(page.locator('#cert-modal')).toBeVisible()
 

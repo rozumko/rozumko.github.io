@@ -52,8 +52,7 @@ async function init() {
       const me = await getTeacherMe()
       hideColdStartBanner()
       if (me.role !== 'admin') throw new Error('not admin')
-      showLessonEngineTabs(me.features?.lessonEngine === true)
-      showDashboard(me.name || session.email)
+      showDashboard(me.name || session.email, me.features?.lessonEngine === true)
     } catch {
       hideColdStartBanner()
       // authRequest чистить сесію, якщо refresh-токен теж мертвий. Тоді показуємо
@@ -82,8 +81,7 @@ loginForm.addEventListener('submit', async (e) => {
       await logoutTeacher()
       throw new Error('Доступ тільки для адміністратора')
     }
-    showLessonEngineTabs(me.features?.lessonEngine === true)
-    showDashboard(me.name || email)
+    showDashboard(me.name || email, me.features?.lessonEngine === true)
   } catch (err) {
     hideColdStartBanner()
     loginError.textContent = friendlyError((err as Error).message)
@@ -98,28 +96,86 @@ logoutBtn.addEventListener('click', async () => {
   showAuth()
 })
 
-// --- Tabs ---
-document.querySelectorAll<HTMLElement>('.admin-tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('tab-active'))
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'))
-    tab.classList.add('tab-active')
-    const tabName = tab.dataset['tab']
-    if (tabName) $maybe(`tab-${tabName}`)?.classList.remove('hidden')
-    if (tabName === 'overview')  loadFunnelPanel()
-    if (tabName === 'events')    loadEvents()
-    if (tabName === 'teachers')  loadTeachers()
-    if (tabName === 'parents')   loadParents()
-    if (tabName === 'results')   loadResults()
-    if (tabName === 'questions') loadQuestionsTab()
-    if (tabName === 'missions')  loadMissionsTab()
-    if (tabName === 'lessons')   loadLessonsTab()
-    if (tabName === 'path')      loadPathTab()
-    if (tabName === 'outcomes')  loadOutcomesTab()
-    if (tabName === 'curriculum') loadCurriculumTab()
-    if (tabName === 'publication') loadPublicationTab()
-  })
+// --- Theme: light by default; public/admin-theme.js applies a saved choice before paint ---
+const THEME_KEY = 'rozumko.admin.theme'
+const themeToggle = $<HTMLButtonElement>('admin-theme-toggle')
+
+function syncThemeToggle() {
+  const dark = document.documentElement.dataset['adminTheme'] === 'dark'
+  themeToggle.setAttribute('aria-pressed', String(dark))
+  themeToggle.querySelector('i')!.className = dark ? 'fas fa-sun' : 'fas fa-moon'
+}
+
+themeToggle.addEventListener('click', () => {
+  const dark = document.documentElement.dataset['adminTheme'] !== 'dark'
+  document.documentElement.dataset['adminTheme'] = dark ? 'dark' : 'light'
+  try { localStorage.setItem(THEME_KEY, dark ? 'dark' : 'light') } catch { /* storage unavailable */ }
+  syncThemeToggle()
 })
+syncThemeToggle()
+
+// --- Tabs ---
+// Each section loads its data when opened; the open section is kept in the
+// URL hash, so a reload or a shared link returns to it.
+const TAB_LOADERS: Record<string, () => unknown> = {
+  overview: () => { void refreshStats(); loadFunnelPanel() },
+  events: loadEvents,
+  teachers: loadTeachers,
+  parents: loadParents,
+  results: loadResults,
+  questions: loadQuestionsTab,
+  missions: loadMissionsTab,
+  lessons: loadLessonsTab,
+  path: loadPathTab,
+  outcomes: loadOutcomesTab,
+  curriculum: loadCurriculumTab,
+  publication: loadPublicationTab,
+}
+const moreToggle = $<HTMLButtonElement>('admin-more-toggle')
+const moreTabs = $('admin-more-tabs')
+const MORE_OPEN_KEY = 'rozumko.admin.moreSections'
+
+function tabButton(name: string): HTMLElement | null {
+  return document.querySelector<HTMLElement>(`.admin-tab[data-tab="${CSS.escape(name)}"]`)
+}
+
+function setMoreOpen(open: boolean, remember = true) {
+  moreTabs.hidden = !open
+  moreToggle.setAttribute('aria-expanded', String(open))
+  if (!remember) return
+  try { localStorage.setItem(MORE_OPEN_KEY, open ? '1' : '0') } catch { /* storage unavailable */ }
+}
+
+function activateTab(name: string) {
+  const tab = tabButton(name)
+  if (!tab || tab.hidden) return
+  // A parked section opened by link or reload shows its row without being remembered.
+  if (moreTabs.contains(tab) && moreTabs.hidden) setMoreOpen(true, false)
+  document.querySelectorAll('.admin-tab').forEach(t => {
+    t.classList.remove('tab-active')
+    t.removeAttribute('aria-current')
+  })
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'))
+  tab.classList.add('tab-active')
+  tab.setAttribute('aria-current', 'page')
+  $maybe(`tab-${name}`)?.classList.remove('hidden')
+  if (location.hash !== `#${name}`) history.replaceState(null, '', `#${name}`)
+  void TAB_LOADERS[name]?.()
+}
+
+document.querySelectorAll<HTMLElement>('.admin-tab').forEach(tab => {
+  tab.addEventListener('click', () => { if (tab.dataset['tab']) activateTab(tab.dataset['tab']) })
+})
+moreToggle.addEventListener('click', () => setMoreOpen(moreTabs.hidden === true))
+try { if (localStorage.getItem(MORE_OPEN_KEY) === '1') setMoreOpen(true, false) } catch { /* storage unavailable */ }
+
+/** The section from the URL, else lessons (when served), else the overview. */
+function initialTab(lessonEngine: boolean): string {
+  const fromHash = location.hash.slice(1)
+  const tab = fromHash ? tabButton(fromHash) : null
+  if (tab && !tab.hidden) return fromHash
+  return lessonEngine ? 'curriculum' : 'overview'
+}
 
 // --- Lesson Engine tabs: shown only when the backend serves the surface ---
 function showLessonEngineTabs(enabled: boolean) {
@@ -127,17 +183,13 @@ function showLessonEngineTabs(enabled: boolean) {
 }
 
 // --- Dashboard ---
-function showDashboard(nameOrEmail: string) {
+function showDashboard(nameOrEmail: string, lessonEngine: boolean) {
+  showLessonEngineTabs(lessonEngine)
   authSection.classList.add('hidden')
   adminPanel.classList.remove('hidden')
   emailDisplay.textContent = nameOrEmail
-  refreshStats()
-  loadFunnelPanel()
   void refreshContentDeliveryBanner()
-  loadEvents()
-  loadTeachers()
-  loadParents()
-  loadResults()
+  activateTab(initialTab(lessonEngine))
 }
 
 function showAuth(message?: string) {

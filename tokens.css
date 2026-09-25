@@ -159,4 +159,60 @@
   --adm-violet:         #7c3aed;
   --adm-violet-hover:   #6d28d9;
   --adm-rose:           #f43f5e;
+  /* Semantic admin colours: each has a dark value here and a light value below. */
+  --adm-header-bg:      #0f172a;
+  --adm-glass-bg:       rgba(255,255,255,0.05);
+  --adm-glass-border:   rgba(255,255,255,0.1);
+  --adm-focus-ring:     rgba(56,189,248,0.2);
+  --adm-tint:           rgba(15,23,42,0.38);   /* nested panels on a surface */
+  --adm-on-accent:      #060b18;               /* text on bright emerald */
+  --adm-code:           #6ee7b7;
+  --adm-danger-text:    #fb7185;
+  --adm-danger-strong:  #fda4af;
+  --adm-danger-soft:    rgba(251,113,133,0.15);
+  --adm-warn-text:      #fbbf24;
+  --adm-shadow:         0 1px 2px rgb(0 0 0 / 0.35);
+  --adm-shadow-lg:      0 12px 32px rgb(0 0 0 / 0.25);
+  --adm-badge-slate-bg: #334155;  --adm-badge-slate-fg: #cbd5e1;
+  --adm-badge-indigo-bg:#1e1b4b;  --adm-badge-indigo-fg:#c7d2fe;
+  --adm-badge-green-bg: #064e3b;  --adm-badge-green-fg: #6ee7b7;
+  --adm-badge-amber-bg: #451a03;  --adm-badge-amber-fg: #fcd34d;
+  --adm-badge-rose-bg:  #4c0519;  --adm-badge-rose-fg:  #fda4af;
+  --adm-badge-sky-bg:   #0c4a6e;  --adm-badge-sky-fg:   #7dd3fc;
+}
+
+/* Light admin theme (the default; dark is chosen with the header toggle). */
+:root[data-admin-theme="light"] {
+  --adm-bg:             #eef2f7;
+  --adm-surface:        #ffffff;
+  --adm-surface-2:      #f8fafc;
+  --adm-border:         #d5dce6;
+  --adm-text:           #0f172a;
+  --adm-text-muted:     #475569;
+  --adm-text-faint:     #56657a;   /* AA on --adm-bg and --adm-surface */
+  --adm-sky:            #0369a1;
+  --adm-emerald:        #10b981;
+  --adm-emerald-hover:  #34d399;
+  --adm-violet:         #6d28d9;
+  --adm-violet-hover:   #5b21b6;
+  --adm-rose:           #e11d48;
+  --adm-header-bg:      #ffffff;
+  --adm-glass-bg:       #ffffff;
+  --adm-glass-border:   #d5dce6;
+  --adm-focus-ring:     rgba(3,105,161,0.2);
+  --adm-tint:           #f8fafc;
+  --adm-on-accent:      #052e20;
+  --adm-code:           #047857;
+  --adm-danger-text:    #be123c;
+  --adm-danger-strong:  #9f1239;
+  --adm-danger-soft:    #ffe4e6;
+  --adm-warn-text:      #b45309;
+  --adm-shadow:         0 1px 2px rgb(15 23 42 / 0.06), 0 2px 8px rgb(15 23 42 / 0.06);
+  --adm-shadow-lg:      0 12px 32px rgb(15 23 42 / 0.16);
+  --adm-badge-slate-bg: #e2e8f0;  --adm-badge-slate-fg: #334155;
+  --adm-badge-indigo-bg:#e0e7ff;  --adm-badge-indigo-fg:#3730a3;
+  --adm-badge-green-bg: #d1fae5;  --adm-badge-green-fg: #065f46;
+  --adm-badge-amber-bg: #fef3c7;  --adm-badge-amber-fg: #92400e;
+  --adm-badge-rose-bg:  #ffe4e6;  --adm-badge-rose-fg:  #9f1239;
+  --adm-badge-sky-bg:   #e0f2fe;  --adm-badge-sky-fg:   #075985;
 }

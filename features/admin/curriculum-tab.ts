@@ -1,4 +1,4 @@
-// Admin tab "Керовані уроки": list and editor for Lesson Engine lessons.
+// Admin tab "Уроки" (guided lessons): list and editor for Lesson Engine lessons.
 // Common lesson content and activities use forms; JSON remains available for
 // advanced imported content. The server validates every save; pure editing
 // rules live in curriculum-model.ts.
@@ -1016,6 +1016,8 @@ function blockSummaryText(block: EditableBlock, index: number): string {
 function renderBlocksSection(blockIssues: Map<number, Issue[]>): HTMLElement {
   const lesson = editor!.lesson
   const { root, body } = section(`Блоки уроку (${lesson.blocks.length})`)
+  // Blocks are separate cards; the section itself carries no frame.
+  root.classList.add('cl-section--plain')
   body.append(el('p', 'adm-field-hint', 'Редагуйте текст прямо в блоках. Додайте пояснення, ілюстрацію чи завдання в потрібному місці; порядок блоків — порядок уроку.'))
   body.append(insertBlockRow(0))
   const list = el('ol', 'cl-blocks')
@@ -1191,6 +1193,8 @@ function renderBlock(block: EditableBlock, index: number, issues: Issue[]): HTML
   const state = editor!
   const lesson = state.lesson
   const li = el('li', 'cl-block')
+  // The coloured edge tells content, tasks and teacher-only material apart at a glance.
+  li.dataset.kind = block.type === 'activity' ? 'task' : !block.audience.student ? 'teacher' : 'content'
   const details = el('details')
   details.dataset.blockId = block.id
   details.open = state.openBlocks.has(block.id)

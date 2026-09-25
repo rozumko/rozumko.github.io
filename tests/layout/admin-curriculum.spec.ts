@@ -146,7 +146,7 @@ async function mockCurriculumAdmin(page: Page) {
 
 async function openCurriculumTab(page: Page) {
   await page.goto('/admin.html')
-  await page.getByRole('button', { name: 'Керовані уроки' }).click()
+  await page.getByRole('button', { name: 'Уроки', exact: true }).click()
   await expect(page.locator('#cl-list .question-item')).toHaveCount(1)
 }
 
