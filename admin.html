@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="uk" data-admin-theme="light">
 <head>
   <meta charset="UTF-8" />
+  <script src="/admin-theme.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Розумко — Адмін</title>
   <meta name="robots" content="noindex, nofollow" />
@@ -64,6 +65,9 @@
       </div>
       <div class="admin-header__right">
         <span id="admin-email-display" class="admin-email-display"></span>
+        <button id="admin-theme-toggle" class="admin-theme-toggle" type="button" aria-pressed="false" aria-label="Темна тема" title="Темна тема">
+          <i class="fas fa-moon" aria-hidden="true"></i>
+        </button>
         <button id="admin-logout-btn" class="btn-adm-slate">
           <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Вийти
         </button>
@@ -71,20 +75,35 @@
     </header>
 
     <!-- Вкладки -->
+    <!-- Sections grouped by task; parked sections sit under «Інші розділи». -->
     <nav class="admin-tabs" aria-label="Розділи адмін-панелі">
-      <button data-tab="overview"   class="admin-tab tab-active"><i class="fas fa-chart-bar" aria-hidden="true"></i> Огляд</button>
-      <button data-tab="events"     class="admin-tab"><i class="fas fa-calendar-alt" aria-hidden="true"></i> Олімпіади</button>
-      <button data-tab="teachers"   class="admin-tab"><i class="fas fa-chalkboard-teacher" aria-hidden="true"></i> Вчителі</button>
-      <button data-tab="parents"    class="admin-tab"><i class="fas fa-user-friends" aria-hidden="true"></i> Батьки</button>
-      <button data-tab="results"    class="admin-tab"><i class="fas fa-poll" aria-hidden="true"></i> Результати</button>
-      <button data-tab="questions"  class="admin-tab"><i class="fas fa-question" aria-hidden="true"></i> Питання</button>
-      <button data-tab="missions"   class="admin-tab"><i class="fas fa-rocket" aria-hidden="true"></i> Місії</button>
-      <button data-tab="lessons"    class="admin-tab"><i class="fas fa-book-open" aria-hidden="true"></i> Уроки</button>
-      <button data-tab="path"       class="admin-tab"><i class="fas fa-map-signs" aria-hidden="true"></i> Шлях</button>
-      <button data-tab="curriculum" class="admin-tab" data-lesson-engine hidden><i class="fas fa-chalkboard" aria-hidden="true"></i> Керовані уроки</button>
-      <button data-tab="outcomes"   class="admin-tab" data-lesson-engine hidden><i class="fas fa-bullseye" aria-hidden="true"></i> Результати навчання</button>
-      <button data-tab="publication" class="admin-tab"><i class="fas fa-clipboard-list" aria-hidden="true"></i> Журнал сайту</button>
-      <button data-tab="help"       class="admin-tab"><i class="fas fa-life-ring" aria-hidden="true"></i> Довідка</button>
+      <div class="admin-tabs__row">
+        <div class="admin-tabs__group" role="group" aria-label="Уроки" data-lesson-engine hidden>
+          <button data-tab="curriculum" class="admin-tab" data-lesson-engine hidden><i class="fas fa-chalkboard" aria-hidden="true"></i> Уроки</button>
+          <button data-tab="outcomes"   class="admin-tab" data-lesson-engine hidden><i class="fas fa-bullseye" aria-hidden="true"></i> Результати навчання</button>
+        </div>
+        <div class="admin-tabs__group" role="group" aria-label="Люди">
+          <button data-tab="teachers"   class="admin-tab"><i class="fas fa-chalkboard-teacher" aria-hidden="true"></i> Вчителі</button>
+          <button data-tab="parents"    class="admin-tab"><i class="fas fa-user-friends" aria-hidden="true"></i> Батьки</button>
+        </div>
+        <div class="admin-tabs__group" role="group" aria-label="Сайт">
+          <button data-tab="overview"   class="admin-tab"><i class="fas fa-chart-bar" aria-hidden="true"></i> Огляд</button>
+          <button data-tab="publication" class="admin-tab"><i class="fas fa-clipboard-list" aria-hidden="true"></i> Журнал сайту</button>
+          <button data-tab="help"       class="admin-tab"><i class="fas fa-life-ring" aria-hidden="true"></i> Довідка</button>
+        </div>
+        <button id="admin-more-toggle" class="admin-tabs__more" type="button" aria-expanded="false" aria-controls="admin-more-tabs">
+          Інші розділи <i class="fas fa-chevron-down" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div id="admin-more-tabs" class="admin-tabs__row admin-tabs__row--more" role="group" aria-label="Інші розділи" hidden>
+        <span class="admin-tabs__note">Відкладено:</span>
+        <button data-tab="events"     class="admin-tab"><i class="fas fa-calendar-alt" aria-hidden="true"></i> Олімпіади</button>
+        <button data-tab="results"    class="admin-tab"><i class="fas fa-poll" aria-hidden="true"></i> Результати олімпіад</button>
+        <button data-tab="questions"  class="admin-tab"><i class="fas fa-question" aria-hidden="true"></i> Питання</button>
+        <button data-tab="missions"   class="admin-tab"><i class="fas fa-rocket" aria-hidden="true"></i> Місії</button>
+        <button data-tab="lessons"    class="admin-tab"><i class="fas fa-book-open" aria-hidden="true"></i> Мікро-уроки</button>
+        <button data-tab="path"       class="admin-tab"><i class="fas fa-map-signs" aria-hidden="true"></i> Шлях</button>
+      </div>
     </nav>
 
     <section id="content-delivery-banner" class="content-delivery-banner hidden" aria-live="polite">
@@ -101,7 +120,7 @@
     <main id="main-content" class="admin-main">
 
       <!-- Вкладка: Огляд -->
-      <section id="tab-overview" class="tab-panel">
+      <section id="tab-overview" class="tab-panel hidden">
         <h2 class="admin-section-title admin-section-title--spaced">Загальна статистика</h2>
         <div class="stats-grid">
           <div class="stat-card"><p class="stat-card__label">Вчителів</p><p id="stat-teachers" class="stat-card__value">—</p></div>
@@ -343,7 +362,7 @@
       <section id="tab-curriculum" class="tab-panel hidden">
         <div id="cl-list-view">
           <div class="admin-section-header">
-            <h2 class="admin-section-title">Керовані уроки</h2>
+            <h2 class="admin-section-title">Уроки</h2>
             <div class="admin-section-actions">
               <label class="btn-adm-emerald cl-import">
                 <i class="fas fa-file-import" aria-hidden="true"></i> Імпортувати JSON
@@ -597,7 +616,7 @@
           <article class="admin-form-card admin-help-card admin-help-card--wide">
             <h3 class="admin-help-card__title">Активність у шляху: повний цикл</h3>
             <ol class="admin-help-steps">
-              <li><strong>Створи контент.</strong> Для теорії створи урок у вкладці «Уроки». Для гри створи активність у вкладці «Активності».</li>
+              <li><strong>Створи контент.</strong> Для теорії створи урок у вкладці «Мікро-уроки» (розділ «Інші розділи»). Для гри створи активність у вкладці «Активності».</li>
               <li><strong>Заповни метадані.</strong> Обери клас, напрям, тему зі списку, а для сортування також CT-концепт. Не вигадуй нові назви тем у полі вручну.</li>
               <li><strong>Заповни механіку.</strong> Для сортування додай кошики й предмети; для «Факт чи думка» — твердження й пояснення; для сценарію — ситуації та варіанти.</li>
               <li><strong>Опублікуй активність.</strong> Чернетка не потрапить у відкритий шлях, доки її не опубліковано.</li>
