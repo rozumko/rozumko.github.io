@@ -191,6 +191,9 @@ export function mountRunConsole(root: HTMLElement, initial: LessonRunView, deps:
     const current = el('section', 'le-console__current')
     current.setAttribute('aria-label', 'Поточний крок')
     const currentBlock = blocks.get(run.currentBlockId)
+    if (run.status === 'active' && (currentBlock?.type === 'practice' || currentBlock?.type === 'canvas') && currentBlock.views.remote) {
+      current.append(el('p', 'le-console__device-hint', 'Учні бачать вміст цього кроку на своїх пристроях.'))
+    }
     if (currentBlock) current.append(renderLessonBlock(lesson, currentBlock, {}, 'section'))
     for (const extra of attachments.get(run.currentBlockId) ?? []) current.append(renderLessonBlock(lesson, extra, {}, 'section'))
 

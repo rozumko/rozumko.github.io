@@ -10,6 +10,8 @@
 import './frontend-security.js'
 import { exchangeLessonLaunch, getLessonDeviceState, joinLessonByClassLink, joinLessonRun, submitLessonAttempt, type ApiError } from './features/api/client.js'
 import { renderStudentTask, type StudentTaskView } from './features/lesson-engine/student-task.js'
+import { renderStudentPractice } from './features/lesson-engine/practice-view.js'
+import { renderStudentCanvas } from './features/lesson-engine/canvas-view.js'
 import { createAttemptOutbox } from './features/lesson-engine/attempt-outbox.js'
 import { indexedDbOutboxStore } from './features/lesson-engine/outbox-idb.js'
 import { formatJoinCode, parseClassLinkFragment, seatSecretFrom } from './features/lesson-engine/run-model.js'
@@ -41,12 +43,14 @@ const classLink = parseClassLinkFragment(location.hash)
 // The task on screen; re-rendered only when the teacher sends a different one,
 // so a child's half-made choice survives each poll.
 let shownDispatchId: string | null = null
+let shownMaterialId: string | null = null
 let taskView: StudentTaskView | null = null
 
 function clearTask() {
   taskView?.leave()
   taskView = null
   shownDispatchId = null
+  shownMaterialId = null
   taskHost.replaceChildren()
   waitSection.classList.remove('lj-card--task')
 }
@@ -186,6 +190,16 @@ function renderState(device: StoredDevice, state: LessonDeviceState) {
     return
   }
   if (!state.task) {
+    if (state.material) {
+      statusEl.textContent = `${state.studentLabel}, практична робота:`
+      if (shownMaterialId === state.material.blockId) return
+      clearTask()
+      shownMaterialId = state.material.blockId
+      waitSection.classList.add('lj-card--task')
+      if (state.material.kind === 'canvas') renderStudentCanvas(taskHost, state.material)
+      else renderStudentPractice(taskHost, state.material)
+      return
+    }
     clearTask()
     statusEl.textContent = `Привіт, ${state.studentLabel}! Чекай на завдання від учителя.`
     return

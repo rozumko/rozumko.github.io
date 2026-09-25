@@ -14,6 +14,7 @@ import type { ActivitySpec, LessonDefinitionV1 } from '../lib/curriculum-lesson-
 import { ActivityAnswerError } from '../lib/curriculum-activity-scoring.js'
 import { findSubjectPack } from '../lib/subject-packs.js'
 import { acceptsAttempts, attemptLimit, scoreStudentAttempt, studentActivityView } from '../lib/lesson-live.js'
+import { studentPracticeMaterial } from '../lib/lesson-student-material.js'
 import { evidenceRowsForAttempt } from '../lib/lesson-evidence.js'
 import type { AttemptRefusalCode } from '../lib/lesson-attempt-refusals.js'
 import { RATE_LIMIT_MAX, RATE_LIMIT_WINDOW, createVerifiedBodyRateLimit } from '../lib/rate-limit-policy.js'
@@ -317,6 +318,7 @@ export async function lessonStudentRoutes(app: FastifyInstance) {
       device: lessonRunDevices,
       runStatus: lessonRuns.status,
       lessonSnapshot: lessonRuns.lessonSnapshot,
+      currentBlockId: lessonRuns.currentBlockId,
       label: classStudents.label,
     })
       .from(lessonRunDevices)
@@ -330,6 +332,9 @@ export async function lessonStudentRoutes(app: FastifyInstance) {
 
     await db.update(lessonRunDevices).set({ lastSeenAt: sql`now()` }).where(eq(lessonRunDevices.id, deviceId))
     const lesson = row.lessonSnapshot as unknown as LessonDefinitionV1
+    const material = row.device.lessonRunStudentId && row.runStatus === 'active'
+      ? studentPracticeMaterial(lesson, row.currentBlockId)
+      : null
 
     // The open activity, only for a mapped device while the lesson is live.
     let task: Record<string, unknown> | null = null
@@ -360,6 +365,7 @@ export async function lessonStudentRoutes(app: FastifyInstance) {
 
     return reply.send({
       task,
+      material,
       runStatus: row.runStatus,
       lessonTitle: lesson.title,
       grade: lesson.grade,

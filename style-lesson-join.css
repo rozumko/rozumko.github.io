@@ -71,6 +71,9 @@
 
 /* ── Task on the device (stage G2) ───────────────────────────── */
 .lj-card--task { max-width: 46rem; text-align: left; }
+.lj-card--task:has(.le-practice__table) { max-width: 76rem; }
+.lj-card--task:has(.le-canvas) { max-width: 76rem; }
+.lj-card--task .le-practice { font-size: var(--font-size-lg); line-height: 1.6; }
 .lj-card--task .lj-title,
 .lj-card--task .lj-lesson,
 .lj-card--task .lj-number-label { display: none; }

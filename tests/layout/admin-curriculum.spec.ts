@@ -167,7 +167,8 @@ test('an admin fixes a lesson with the server’s help, saves it and publishes i
 
   // Bad content: HTML in a paragraph is caught by "Перевірити" and pinned to its block.
   const explanation = block(page, 'g2-m2-l8-b05')
-  await explanation.locator('summary').click()
+  await explanation.locator(':scope > summary').click()
+  await explanation.locator('.cl-advanced > summary').click()
   const content = explanation.getByLabel('Зміст блоку (JSON)')
   const original = await content.inputValue()
   await content.fill(original.replace('"paragraphs": [', '"paragraphs": [\n    { "uk": "<b>жирно</b>" },'))
@@ -176,6 +177,7 @@ test('an admin fixes a lesson with the server’s help, saves it and publishes i
   await expect(explanation.locator('.cl-block-issues')).toContainText('без HTML')
 
   // Broken JSON blocks saving until fixed.
+  await explanation.locator('.cl-advanced > summary').click()
   await content.fill('{ "heading": ')
   await expect(explanation.locator('.cl-json-error')).toContainText('Помилка JSON')
   await view.getByRole('button', { name: 'Зберегти' }).click()
@@ -187,7 +189,7 @@ test('an admin fixes a lesson with the server’s help, saves it and publishes i
   await expect(view.getByRole('button', { name: 'Опублікувати' })).toBeDisabled()
   // Take the support block onto the board, with two points on its slide.
   const support = block(page, 'g2-m2-l8-b09')
-  await support.locator('summary').click()
+  await support.locator(':scope > summary').click()
   await support.getByLabel('Показувати на дошці').check()
   await support.getByLabel(/Тези на слайді/).fill('Назва підказує вміст\nРозширення — після крапки')
   await view.getByRole('button', { name: 'Зберегти' }).click()
@@ -211,7 +213,14 @@ test('an admin fixes a lesson with the server’s help, saves it and publishes i
 test('a new lesson gets an activity linked to an outcome from the directory, and coverage follows it', async ({ page }) => {
   const { rows } = await mockCurriculumAdmin(page)
   await openCurriculumTab(page)
-  await page.getByRole('button', { name: 'Новий урок' }).click()
+  const [templateDownload] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: 'Завантажити шаблон JSON' }).click(),
+  ])
+  const template = JSON.parse(readFileSync(await templateDownload.path(), 'utf8'))
+  expect(template.blocks.map((entry: any) => entry.type)).toEqual(['hero', 'explanation', 'canvas', 'practice', 'activity'])
+  expect(prepareCurriculumDefinition(template, null, 1, PACK).blocks).toHaveLength(5)
+  await page.getByRole('button', { name: 'Створити з шаблону' }).click()
 
   const view = editorView(page)
   await expect(view.getByText('Ще не збережено')).toBeVisible()
@@ -220,11 +229,15 @@ test('a new lesson gets an activity linked to an outcome from the directory, and
   await id.press('Tab')
   await view.getByLabel('Назва уроку').fill('Алгоритми навколо нас')
 
-  await view.getByLabel('Новий блок').selectOption('activity')
-  await view.getByRole('button', { name: 'Додати блок' }).click()
+  await view.getByLabel('Додати після цього блоку').selectOption('activity')
+  await view.getByRole('button', { name: '+ Додати' }).click()
   const activity = block(page, 'g2-m3-l1-b02')
   await expect(activity).toHaveAttribute('open', '')
   await expect(activity.getByLabel('Надсилати на пристрої учнів')).toBeChecked()
+  await activity.getByLabel('Запитання або інструкція').fill('Який крок перший?')
+  await activity.getByRole('textbox', { name: 'Варіант 1' }).fill('Спланувати дії')
+  await activity.getByRole('textbox', { name: 'Варіант 2' }).fill('Виконати дії')
+  await activity.getByRole('radio', { name: 'Правильна відповідь: варіант 2' }).check()
 
   await activity.getByLabel('Пов’язати з результатом').fill('INF-2-FILES-2')
   await activity.getByRole('button', { name: 'Додати', exact: true }).click()
@@ -241,14 +254,43 @@ test('a new lesson gets an activity linked to an outcome from the directory, and
   expect(stored.title.uk).toBe('Алгоритми навколо нас')
   expect(stored.blocks.map((b: any) => b.id)).toEqual(['g2-m3-l1-b01', 'g2-m3-l1-b02'])
   expect(stored.blocks[1].activity).toMatchObject({ telemetry: 'evidence', outcomes: [{ outcomeId: 'int-files-organize', evidenceRole: 'primary' }] })
+  expect(stored.blocks[1].activity.config.prompt.uk).toBe('Який крок перший?')
+  expect(stored.blocks[1].activity.scoring.key.correctOptionId).toBe('b')
   expect(stored.learningOutcomes).toEqual([{ outcomeId: 'int-files-organize', role: 'practised' }])
   // Saved lessons keep their id.
   await expect(view.getByLabel('ID уроку')).toBeDisabled()
 
   // Preview shows the teacher document without answer keys.
-  await view.getByRole('button', { name: 'Попередній перегляд' }).click()
+  await view.getByRole('button', { name: 'Переглянути план' }).click()
   const preview = page.getByRole('dialog', { name: /Попередній перегляд/ })
   await expect(preview.locator('.le-document')).toContainText('Алгоритми навколо нас')
   await preview.getByRole('button', { name: 'Закрити' }).click()
   await expect(preview).toHaveCount(0)
+})
+
+test('a free block imports HTML into separate teacher, board and student views', async ({ page }) => {
+  const { rows } = await mockCurriculumAdmin(page)
+  await openCurriculumTab(page)
+  await page.locator('[data-lesson-id="g2-m2-l8"]').getByRole('button', { name: 'Редагувати' }).click()
+  const view = editorView(page)
+  await view.getByLabel('Додати після цього блоку').first().selectOption('canvas')
+  await view.getByRole('button', { name: '+ Додати' }).first().click()
+  const canvas = view.locator('details[data-block-id]').filter({ has: page.getByRole('tab', { name: 'Учитель' }) })
+  await expect(canvas).toHaveCount(1)
+  await canvas.getByLabel('Назва блоку').fill('Таблиця для дослідження')
+  await canvas.getByRole('tab', { name: 'Учень' }).click()
+  await canvas.locator('.cl-canvas__html > summary').click()
+  await canvas.getByLabel('HTML для вкладки «Учень»').fill('<table><tr><th>Назва</th><th>Рік</th></tr><tr><td>Книга</td><td>2024</td></tr></table><script>alert(1)</script>')
+  await expect(canvas.locator('.cl-canvas__html .adm-field-hint')).toContainText('script')
+  await canvas.getByRole('button', { name: 'Застосувати HTML до цієї вкладки' }).click()
+  await expect(canvas.getByRole('textbox', { name: 'Рядок 1, стовпець 1' })).toHaveValue('Книга')
+  await canvas.getByRole('tab', { name: 'Презентація' }).click()
+  await canvas.getByRole('button', { name: '+ Текст' }).click()
+  await canvas.getByRole('textbox', { name: 'Текст абзацу' }).fill('Коротка теза')
+  await view.getByRole('button', { name: 'Зберегти' }).click()
+  await expect(view.locator('.cl-ed-message')).toContainText('Збережено')
+  const saved = (rows.get('g2-m2-l8')!.draftContent as any).blocks.find((entry: any) => entry.type === 'canvas')
+  expect(saved.content.student).toEqual([{ type: 'table', headers: [{ uk: 'Назва' }, { uk: 'Рік' }], rows: [[{ uk: 'Книга' }, { uk: '2024' }]] }])
+  expect(saved.content.board).toEqual([{ type: 'paragraph', text: { uk: 'Коротка теза' } }])
+  expect(saved.views).toMatchObject({ document: true, presentation: true, remote: true })
 })

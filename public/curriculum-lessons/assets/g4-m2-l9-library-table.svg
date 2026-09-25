@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 300" role="img" aria-labelledby="g4u9a-t g4u9a-d" style="display:block;width:100%;height:auto;margin:16px 0;">
+    <title id="g4u9a-t">Поле, запис і значення в таблиці бібліотеки</title>
+    <desc id="g4u9a-d">Таблиця з трьох книжок і чотирьох стовпчиків: назва, жанр, рік, чи є в наявності. Виділено рядок про «Острів скарбів» — це запис. Виділено стовпчик «Жанр» — це поле. Виділено одну клітинку з числом 1892 — це значення.</desc>
+    <rect x="10" y="14" width="840" height="44" rx="8" fill="#0033A0"></rect>
+    <g font-size="16" font-weight="700" fill="#FFFFFF" font-family="Arial, sans-serif">
+      <text x="30" y="42">Назва</text><text x="330" y="42">Жанр</text><text x="520" y="42">Рік</text><text x="680" y="42">В наявності</text>
+    </g>
+    <rect x="10" y="62" width="840" height="40" rx="6" fill="#FFFFFF" stroke="#D9E2F0"></rect>
+    <rect x="10" y="106" width="840" height="40" rx="6" fill="#FFF9DB" stroke="#B38600" stroke-width="3"></rect>
+    <rect x="10" y="150" width="840" height="40" rx="6" fill="#FFFFFF" stroke="#D9E2F0"></rect>
+    <g font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">
+      <text x="30" y="88">Маленький принц</text><text x="330" y="88">Казка</text><text x="520" y="88">1943</text><text x="680" y="88">Так</text>
+      <text x="30" y="132" font-weight="700">Острів скарбів</text><text x="330" y="132" font-weight="700">Пригоди</text><text x="520" y="132" font-weight="700">1883</text><text x="680" y="132" font-weight="700">Ні</text>
+      <text x="30" y="176">Шерлок Холмс</text><text x="330" y="176">Детектив</text><text x="680" y="176">Так</text>
+    </g>
+    <rect x="506" y="154" width="90" height="32" rx="6" fill="#EAF0FC" stroke="#0033A0" stroke-width="3"></rect>
+    <text x="520" y="176" font-size="16" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">1892</text>
+    <rect x="316" y="10" width="140" height="184" rx="8" fill="none" stroke="#1B6B3A" stroke-width="3" stroke-dasharray="8 6"></rect>
+
+    <text x="130" y="232" text-anchor="middle" font-size="16" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">RECORD • запис</text>
+    <text x="130" y="256" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">рядок про один об'єкт</text>
+    <text x="386" y="232" text-anchor="middle" font-size="16" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">FIELD • поле</text>
+    <text x="386" y="256" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">стовпчик однієї ознаки</text>
+    <text x="640" y="232" text-anchor="middle" font-size="16" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">VALUE • значення</text>
+    <text x="640" y="256" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">дані в одній клітинці</text>
+  </svg>

@@ -44,7 +44,11 @@ engine; the engine reuses existing building blocks through adapters.
    evidence is the `telemetry` role of an `activity` block (a checkpoint block
    without an activity would have nothing to measure). `practice` stays as a
    block type meaning *guided practical work outside the engine* (OS apps,
-   paper) — it carries steps, not telemetry.
+   paper) — it carries steps and optionally a structured table, not telemetry.
+   An authored `practice` step with `views.remote: true` appears in full on
+   mapped student devices while that step is current and the run is active.
+   This read-only material does not create attempts or evidence. Activity
+   dispatch remains a separate teacher action and takes display priority.
 4. **Answer keys** live only in `activity.scoring.key`, including post-answer
    feedback (`explanation`) because it reveals the answer. Keys are server-only
    for every telemetry role, practice included — there is no "local practice
@@ -92,6 +96,9 @@ No mass content migration before the external pilot (both specs agree).
   Validation collects every issue with a JSON path (usable later as a
   migration report) and rejects unknown fields, dangling references and HTML.
   Text supports only `**bold**` and `` `code` `` markup; renderers escape the rest.
+  Existing HTML lessons should be converted into these structured fields at
+  import time. Separate raw HTML fields for teacher, student and board would
+  bypass the audited audience and answer-key boundaries and are not supported.
 - `backend/src/lib/subject-packs.ts` — code-owned subject pack registry
   (`informatics-ua-primary`). A lesson with an unregistered pack cannot be saved.
 - `backend/src/lib/curriculum-fixtures/` — reference lesson `g2-m2-l8` and a
@@ -757,12 +764,20 @@ serves the surface.
 
 Decisions:
 
-- **Forms for structure, JSON for content.** Forms cover the lesson data,
-  objectives, block order, switches, slide, activity settings and outcome
-  links. The content of a block, an activity's configuration and its answer
-  key are JSON fields with per-type hints. JSON syntax errors are shown at the
-  field and block saving. Per-type content forms can come later without
-  changing the model.
+- **Forms for common editing, JSON for advanced editing.** The list provides
+  a downloadable lesson template and a prompt for converting existing HTML
+  into a draft. The editor puts blocks first and provides forms for block
+  content, assets, slides, activity questions and answer keys. Blocks can be
+  inserted after any existing block. The JSON fields remain in collapsed
+  advanced sections for imported content the forms cannot express. JSON
+  syntax errors are shown at the field and block saving.
+- **Free content blocks have three independent surfaces.** A `canvas` block
+  stores ordered teacher, board and student item lists. An empty list hides
+  that surface. The visual editor supports text, headings, lists, tables,
+  images, YouTube videos and links, plus item and block reordering. Its HTML
+  source action converts pasted markup into this structured content; markup,
+  scripts, styles and arbitrary iframes are never saved. Interactive questions
+  remain native activity blocks so dispatch and server scoring still apply.
 - **The server stays the only judge.** «Перевірити» calls
   `POST /api/admin/curriculum/lessons/validate` (the same checks as a save,
   nothing stored). Save and publish errors come back with paths. The editor

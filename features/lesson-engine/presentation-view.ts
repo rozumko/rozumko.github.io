@@ -6,8 +6,9 @@ import { createFocusTrap } from '../../utils/focus-trap.js'
 import { richElement } from './rich-text.js'
 import { presentationSlides, type PresentationSlide } from './projection.js'
 import { renderActivityBody, renderFigure } from './document-view.js'
+import { renderCanvasItems } from './canvas-view.js'
 import { attachBoardActivity, type BoardActivityDeps } from './activity-board.js'
-import type { LessonDefinition, LocalizedText } from './types.js'
+import type { CanvasItem, LessonDefinition, LocalizedText } from './types.js'
 
 const SWIPE_THRESHOLD_PX = 50
 
@@ -51,6 +52,10 @@ export function renderSlide(slide: PresentationSlide): HTMLElement {
   }
 
   for (const asset of slide.assets) root.append(renderFigure(asset.src, asset.alt.uk, asset.caption?.uk))
+
+  if (slide.block.type === 'canvas') {
+    root.append(renderCanvasItems((Array.isArray(slide.block.content.board) ? slide.block.content.board : []) as CanvasItem[], 'board'))
+  }
 
   if (layout === 'activity-launcher' && slide.block.activity) {
     root.append(renderActivityBody(slide.block.activity, 'board'))

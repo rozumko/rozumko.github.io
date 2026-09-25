@@ -8,9 +8,17 @@ export interface LocalizedText {
   en?: string
 }
 
+export type CanvasItem =
+  | { type: 'paragraph' | 'heading'; text: LocalizedText }
+  | { type: 'list'; items: LocalizedText[] }
+  | { type: 'table'; headers: LocalizedText[]; rows: LocalizedText[][] }
+  | { type: 'image'; src: string; alt: LocalizedText }
+  | { type: 'video'; videoId: string }
+  | { type: 'link'; url: string; label: LocalizedText }
+
 export const LESSON_BLOCK_TYPES = [
   'hero', 'essential-question', 'objectives', 'explanation', 'visual', 'discussion',
-  'practice', 'activity', 'support', 'extension', 'reflection', 'success-criteria',
+  'practice', 'canvas', 'activity', 'support', 'extension', 'reflection', 'success-criteria',
   'vocabulary', 'teacher-note', 'break',
 ] as const
 export type LessonBlockType = (typeof LESSON_BLOCK_TYPES)[number]
@@ -196,6 +204,22 @@ export interface StudentTask {
   lastResult: { correct: number; total: number } | null
 }
 
+export interface StudentPracticeMaterial {
+  kind: 'practice'
+  blockId: string
+  heading: LocalizedText | null
+  intro: LocalizedText | null
+  table: { headers: LocalizedText[]; rows: LocalizedText[][] } | null
+  steps: { title?: LocalizedText; items: LocalizedText[] }[]
+}
+
+export interface StudentCanvasMaterial {
+  kind: 'canvas'
+  blockId: string
+  heading: LocalizedText
+  items: CanvasItem[]
+}
+
 export interface LessonAttemptResponse {
   attemptNo: number
   attemptsLeft: number
@@ -206,6 +230,7 @@ export interface LessonAttemptResponse {
 
 export interface LessonDeviceState {
   task: StudentTask | null
+  material: StudentPracticeMaterial | StudentCanvasMaterial | null
   runStatus: LessonRunStatus
   lessonTitle: LocalizedText
   grade: number
