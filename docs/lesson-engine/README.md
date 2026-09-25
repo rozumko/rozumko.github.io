@@ -822,8 +822,10 @@ Decisions:
   teacher note into lesson text and parses it with `parseLessonText`; inline
   SVG diagrams become files in `public/curriculum-lessons/assets/`
   (`<lessonId>-sN.svg`) and a step's first diagram is its slide. Ids follow the
-  lesson number within the grade (`g2-m2-l8`), and lessons that already exist
-  as hand-built lessons (`g2-m2-l8`, `g4-m2-l9`) are skipped. A `<select>`
+  lesson number within the grade (`g2-m2-l8`). All 140 lessons are imported;
+  the hand-built `g2-m2-l8` and `g4-m2-l9` are replaced by their imported
+  versions on publish (their earlier published versions stay with past runs
+  and reports; the fixture `g2-m2-l8.lesson.json` is unchanged). A `<select>`
   self-check becomes a scored task only when its revealed answer names exactly
   one option (answer letter, «Так»/«Ні», or most of the option's own words,
   ignoring words of the question); an answer shared by several questions never

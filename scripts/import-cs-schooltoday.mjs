@@ -14,7 +14,7 @@
 //
 // Run from the repository root (needs the Playwright Chromium for the DOM):
 //   node scripts/import-cs-schooltoday.mjs --out <dir> [--grade 1] [--module 1] [--no-assets] [--skip id,id]
-// --skip defaults to the lessons that already exist as hand-built lessons.
+// --skip lists lesson ids to leave out.
 // Writes <dir>/text/<id>.txt, <dir>/lessons/<id>.json and <dir>/report.md.
 // Publish the JSON files with backend/scripts/publish-curriculum-lesson.ts.
 
@@ -42,9 +42,8 @@ if (!outDir) {
 const onlyGrade = option('--grade')
 const onlyModule = option('--module')
 const writeAssets = !args.includes('--no-assets')
-// Lessons that already exist as hand-built Lesson Engine lessons (with
-// evidence activities and outcomes) are not replaced.
-const skip = new Set((option('--skip') ?? 'g2-m2-l8,g4-m2-l9').split(',').filter(Boolean))
+// Lessons to leave as they are on the platform (none by default).
+const skip = new Set((option('--skip') ?? '').split(',').filter(Boolean))
 
 // ── Source files ────────────────────────────────────────────────────────────
 
