@@ -291,6 +291,137 @@ export function moveBlockTo(lesson: EditableLesson, from: number, to: number): b
   return true
 }
 
+// ── Converting old block types into «Текст і медіа» (canvas) ────────────────
+
+/** Types an author can turn into a canvas block; the rest carry behaviour of their own. */
+export const CONVERTIBLE_TYPES: ReadonlySet<LessonBlockType> = new Set<LessonBlockType>([
+  'essential-question', 'explanation', 'visual', 'discussion', 'practice',
+  'support', 'extension', 'reflection', 'success-criteria', 'teacher-note',
+])
+
+/** Heading a converted block gets when the old one had none. */
+const CONVERTED_HEADINGS: Partial<Record<LessonBlockType, string>> = {
+  'essential-question': 'Питання уроку', explanation: 'Пояснення', visual: 'Схема', discussion: 'Обговорення',
+  practice: 'Практична робота', support: 'Підтримка', extension: 'Для тих, хто хоче більше',
+  reflection: 'Рефлексія', 'success-criteria': 'Критерії успіху', 'teacher-note': 'Для вчителя',
+}
+
+const MAX_CANVAS_ITEMS = 20
+type CanvasItemJson = Json & { type: string }
+
+const isText = (value: unknown): value is LocalizedText =>
+  typeof value === 'object' && value !== null && typeof (value as LocalizedText).uk === 'string' && (value as LocalizedText).uk.trim() !== ''
+const texts = (value: unknown): LocalizedText[] => Array.isArray(value) ? value.filter(isText) : []
+const paragraph = (text: LocalizedText): CanvasItemJson => ({ type: 'paragraph', text })
+const prefixed = (label: string, text: LocalizedText): LocalizedText => ({ uk: `${label}: ${text.uk}` })
+
+/**
+ * Canvas items for one block. `teacherOnly` adds what children must not see
+ * (an expected answer), so the board and devices get the public part only.
+ */
+function contentItems(block: EditableBlock, lesson: EditableLesson, teacherOnly: boolean): CanvasItemJson[] {
+  const c = block.content
+  const items: CanvasItemJson[] = []
+  const list = (entries: LocalizedText[], ordered = false) => { if (entries.length) items.push(ordered ? { type: 'list', ordered: true, items: entries } : { type: 'list', items: entries }) }
+  switch (block.type) {
+    case 'essential-question':
+      if (isText(c.question)) items.push(paragraph(c.question))
+      break
+    case 'explanation': {
+      for (const text of texts(c.paragraphs)) items.push(paragraph(text))
+      const callout = c.callout as { title?: unknown; text?: unknown } | undefined
+      if (callout && isText(callout.title)) items.push({ type: 'heading', text: callout.title })
+      if (callout && isText(callout.text)) items.push(paragraph(callout.text))
+      break
+    }
+    case 'visual': {
+      const asset = lesson.assets?.find(entry => entry.id === c.assetId)
+      if (asset) items.push({ type: 'image', src: asset.src, alt: asset.alt })
+      if (asset?.caption && isText(asset.caption)) items.push(paragraph(asset.caption))
+      break
+    }
+    case 'discussion':
+    case 'reflection':
+    case 'extension':
+      if (isText(c.prompt)) items.push(paragraph(c.prompt))
+      if (isText(c.example)) items.push(paragraph(prefixed('Приклад', c.example)))
+      if (teacherOnly && isText(c.expectedResponse)) items.push(paragraph(prefixed('Очікувана відповідь', c.expectedResponse)))
+      break
+    case 'practice': {
+      if (isText(c.intro)) items.push(paragraph(c.intro))
+      const table = c.table as { headers?: unknown; rows?: unknown } | undefined
+      if (table && Array.isArray(table.headers) && Array.isArray(table.rows)) items.push({ type: 'table', headers: table.headers, rows: table.rows })
+      for (const step of (Array.isArray(c.steps) ? c.steps : []) as { title?: unknown; items?: unknown }[]) {
+        if (isText(step.title)) items.push({ type: 'heading', text: step.title })
+        list(texts(step.items), true)
+      }
+      break
+    }
+    case 'support':
+      list(texts(c.items))
+      break
+    case 'success-criteria':
+      list(texts(c.items))
+      if (isText(c.evidenceHint)) items.push(paragraph(c.evidenceHint))
+      break
+    case 'teacher-note':
+      if (isText(c.text)) items.push(paragraph(c.text))
+      break
+  }
+  return items
+}
+
+/**
+ * Turns an old-style block into «Текст і медіа», keeping its id, place,
+ * outcomes, timing, step and speaker notes. The teacher view gets the full
+ * content; the board gets the authored slide points and images,
+ * or the public content when the slide had none; devices get content only
+ * where the old block was already shown on them (practice). Returns false for
+ * types that cannot be converted.
+ */
+export function convertToCanvas(block: EditableBlock, lesson: EditableLesson): boolean {
+  if (!CONVERTIBLE_TYPES.has(block.type)) return false
+  const c = block.content
+  const heading: LocalizedText = isText(c.heading) ? c.heading : { uk: CONVERTED_HEADINGS[block.type] ?? 'Блок уроку' }
+  const teacher = contentItems(block, lesson, true)
+  const publicItems = contentItems(block, lesson, false)
+  const slide = block.presentation
+
+  let board: CanvasItemJson[] = []
+  if (block.views.presentation && block.audience.student && slide) {
+    const points = texts(slide.shortText)
+    if (points.length) board.push({ type: 'list', items: points })
+    for (const id of slide.assetIds ?? []) {
+      const asset = lesson.assets?.find(entry => entry.id === id)
+      if (asset) board.push({ type: 'image', src: asset.src, alt: asset.alt })
+    }
+    // The slide title already shows the headline; do not repeat it as text.
+    const headline = (slide.headline && isText(slide.headline) ? slide.headline : heading).uk.trim()
+    if (!board.length) board = publicItems.filter(item => !(isText(item.text) && item.text.uk.trim() === headline))
+    if (!board.length) board = publicItems
+  }
+  const student = block.views.remote && block.audience.student ? publicItems : []
+
+  block.type = 'canvas'
+  block.content = {
+    heading,
+    teacher: teacher.slice(0, MAX_CANVAS_ITEMS),
+    board: board.slice(0, MAX_CANVAS_ITEMS),
+    student: student.slice(0, MAX_CANVAS_ITEMS),
+  }
+  block.views = { document: teacher.length > 0, presentation: board.length > 0, remote: student.length > 0 }
+  block.audience = { teacher: true, student: board.length > 0 || student.length > 0 }
+  if (board.length && slide) {
+    block.presentation = { layout: slide.layout === 'activity-launcher' || slide.layout === 'title' ? 'concept' : slide.layout }
+    if (slide.headline && isText(slide.headline)) block.presentation.headline = slide.headline
+    if (slide.speakerNotes && isText(slide.speakerNotes)) block.presentation.speakerNotes = slide.speakerNotes
+  } else {
+    delete block.presentation
+  }
+  if (student.length) block.runtime = { step: true }
+  return true
+}
+
 /** Whether children see the block. Teacher-only blocks never reach the board or devices. */
 export function setStudentAudience(block: EditableBlock, student: boolean): void {
   if (block.type === 'teacher-note') student = false

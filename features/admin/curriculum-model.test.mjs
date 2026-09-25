@@ -11,6 +11,8 @@ import {
   groupIssues,
   moveBlock,
   moveBlockTo,
+  convertToCanvas,
+  CONVERTIBLE_TYPES,
   newBlock,
   newLesson,
   nextBlockId,
@@ -182,4 +184,45 @@ test('drag and drop moves a block to any position and ignores no-op or out-of-ra
   assert.equal(moveBlockTo(lesson, 0, 4), false)
   assert.equal(moveBlockTo(lesson, -1, 0), false)
   assert.deepEqual(ids(), ['b01', 'b02', 'b04', 'b03'])
+})
+
+const REFERENCE_LESSON = JSON.parse(readFileSync(new URL('../../backend/src/lib/curriculum-fixtures/g2-m2-l8.lesson.json', import.meta.url), 'utf8'))
+
+test('every old-style block of the reference lesson converts into a valid «Текст і медіа» block', () => {
+  const lesson = structuredClone(REFERENCE_LESSON)
+  const before = lesson.blocks.map(b => ({ id: b.id, type: b.type, step: b.runtime?.step, board: b.views.presentation, student: b.audience.student }))
+  let converted = 0
+  for (const block of lesson.blocks) if (convertToCanvas(block, lesson)) converted++
+  assert.ok(converted >= 5, `converted ${converted}`)
+  assertValid(lesson, 'converted reference lesson')
+  lesson.blocks.forEach((block, i) => {
+    const old = before[i]
+    assert.equal(block.id, old.id, 'ids and order are kept')
+    if (!CONVERTIBLE_TYPES.has(old.type)) return assert.equal(block.type, old.type)
+    assert.equal(block.type, 'canvas')
+    assert.equal(block.runtime?.step, old.step, `${old.id}: step kept`)
+    // A slide stays a slide, a teacher-only block stays off the board.
+    assert.equal(block.views.presentation, old.board && old.student, `${old.id}: board kept`)
+    if (!old.student) assert.equal(block.audience.student, false)
+  })
+})
+
+test('conversion keeps the expected answer for the teacher only and carries slide points to the board', () => {
+  const lesson = structuredClone(REFERENCE_LESSON)
+  const block = newBlock('discussion', lesson, PACK_INFO)
+  block.content = { heading: { uk: 'Обговорімо' }, prompt: { uk: 'Де зберігаються файли?' }, expectedResponse: { uk: 'У папках.' } }
+  block.presentation = { layout: 'question', shortText: [{ uk: 'Папка' }, { uk: 'Файл' }], speakerNotes: { uk: 'Дайте хвилину.' } }
+  lesson.blocks.push(block)
+  assert.equal(convertToCanvas(block, lesson), true)
+  const json = (items) => JSON.stringify(items)
+  assert.ok(json(block.content.teacher).includes('Очікувана відповідь: У папках.'))
+  assert.ok(!json(block.content.board).includes('У папках'))
+  assert.deepEqual(block.content.board, [{ type: 'list', items: [{ uk: 'Папка' }, { uk: 'Файл' }] }])
+  assert.deepEqual(block.presentation, { layout: 'question', speakerNotes: { uk: 'Дайте хвилину.' } })
+  assert.equal(block.content.heading.uk, 'Обговорімо')
+  assertValid(lesson, 'converted discussion')
+
+  const activity = newBlock('activity', lesson, PACK_INFO)
+  assert.equal(convertToCanvas(activity, lesson), false)
+  assert.equal(activity.type, 'activity')
 })

@@ -787,6 +787,19 @@ Decisions:
   (items, table size, text length) with warnings. Italic is not supported:
   lesson markup has only `**bold**` and `` `code` ``. Interactive questions
   remain native activity blocks so dispatch and server scoring still apply.
+- **Authors see three kinds of blocks.** The «+» menu offers «Текст і медіа»
+  (canvas), «Перерва» and the task mechanics. The other block types stay in
+  the schema, so existing lessons keep working, but are no longer offered.
+  `convertToCanvas` (`features/admin/curriculum-model.ts`) turns an old block
+  into a canvas block — per block or for the whole lesson — keeping its id,
+  order, step, outcomes, timing and speaker notes. The teacher view gets the
+  full content, including expected answers; the board gets the slide points
+  and images, or the public content when the slide had none; devices get
+  content only where the old block was already shown there. Hero, objectives,
+  vocabulary, activities and breaks are not converted: they render
+  lesson-level data or carry behaviour of their own. Visibility switches,
+  format, minutes, the task id and the JSON source sit under one «Додатково»
+  fold; block ids are not shown in the block header.
 - **The server stays the only judge.** «Перевірити» calls
   `POST /api/admin/curriculum/lessons/validate` (the same checks as a save,
   nothing stored). Save and publish errors come back with paths. The editor

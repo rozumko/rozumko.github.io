@@ -197,6 +197,7 @@ test('an admin fixes a lesson with the server’s help, saves it and publishes i
   // Take the support block onto the board, with two points on its slide.
   const support = block(page, 'g2-m2-l8-b09')
   await support.locator(':scope > summary').click()
+  await support.locator('.cl-advanced > summary').click()
   await support.getByLabel('Показувати на дошці').check()
   await support.getByLabel(/Тези на слайді/).fill('Назва підказує вміст\nРозширення — після крапки')
   await view.getByRole('button', { name: 'Зберегти' }).click()
@@ -413,4 +414,51 @@ test('the «+» menu inserts content or a task anywhere, and blocks can be dragg
   const saved = rows.get('g2-m2-l8')!.draftContent as any
   expect(saved.blocks.map((entry: any) => entry.id).slice(0, 2)).toEqual([movedId, insertedId])
   expect(saved.blocks[1].activity.mechanic).toBe('classify')
+})
+
+test('an old block turns into «Текст і медіа» in one click, and rare settings sit under «Додатково»', async ({ page }) => {
+  const { rows } = await mockCurriculumAdmin(page)
+  await openCurriculumTab(page)
+  await page.locator('[data-lesson-id="g2-m2-l8"]').getByRole('button', { name: 'Редагувати' }).click()
+  const view = editorView(page)
+  // The «+» menu offers only the simple kinds.
+  await view.getByRole('button', { name: 'Додати блок на початок уроку', exact: true }).click()
+  await expect(view.getByRole('button', { name: /Перерва/ })).toBeVisible()
+  await expect(view.getByText('Інші типи блоків')).toHaveCount(0)
+  await page.keyboard.press('Escape')
+
+  const explanation = block(page, 'g2-m2-l8-b05')
+  await explanation.locator(':scope > summary').click()
+  // Technical fields are folded away; the block id is not shown in the header.
+  await expect(explanation.getByLabel('Формат')).toBeHidden()
+  await expect(explanation.locator(':scope > summary')).not.toContainText('g2-m2-l8-b05')
+  await explanation.getByRole('button', { name: 'Перетворити на «Текст і медіа»' }).click()
+  await page.locator('#modal-ok-btn').click()
+
+  const converted = block(page, 'g2-m2-l8-b05')
+  await expect(converted.getByRole('tab', { name: 'Учитель' })).toHaveAttribute('aria-selected', 'true')
+  await expect(converted.getByRole('textbox', { name: 'Вміст для вкладки «Учитель»' })).not.toBeEmpty()
+  await view.getByRole('button', { name: 'Зберегти' }).click()
+  await expect(view.locator('.cl-ed-message')).toContainText('Збережено')
+  const saved = (rows.get('g2-m2-l8')!.draftContent as any).blocks.find((entry: any) => entry.id === 'g2-m2-l8-b05')
+  expect(saved.type).toBe('canvas')
+  expect(saved.content.teacher.length).toBeGreaterThan(0)
+  expect(saved.views.presentation).toBe(true)
+})
+
+test('all old blocks of a lesson convert at once and the lesson still saves', async ({ page }) => {
+  const { rows } = await mockCurriculumAdmin(page)
+  await openCurriculumTab(page)
+  await page.locator('[data-lesson-id="g2-m2-l8"]').getByRole('button', { name: 'Редагувати' }).click()
+  const view = editorView(page)
+  await view.getByRole('button', { name: /^Перетворити всі \(\d+\)$/ }).click()
+  await page.locator('#modal-ok-btn').click()
+  await expect(view.getByRole('button', { name: /^Перетворити всі/ })).toHaveCount(0)
+  await view.getByRole('button', { name: 'Перевірити' }).click()
+  await expect(view.locator('.cl-issues')).toHaveCount(0)
+  await view.getByRole('button', { name: 'Зберегти' }).click()
+  await expect(view.locator('.cl-ed-message')).toContainText('Збережено')
+  const types = new Set((rows.get('g2-m2-l8')!.draftContent as any).blocks.map((entry: any) => entry.type))
+  expect([...types].sort()).toEqual(expect.arrayContaining(['canvas']))
+  for (const old of ['explanation', 'discussion', 'support', 'reflection', 'teacher-note']) expect(types.has(old)).toBe(false)
 })

@@ -52,6 +52,8 @@ import {
   isRecord,
   moveBlock,
   moveBlockTo,
+  convertToCanvas,
+  CONVERTIBLE_TYPES,
   newBlock,
   newLesson,
   optionalText,
@@ -1018,7 +1020,19 @@ function renderBlocksSection(blockIssues: Map<number, Issue[]>): HTMLElement {
   const { root, body } = section(`Блоки уроку (${lesson.blocks.length})`)
   // Blocks are separate cards; the section itself carries no frame.
   root.classList.add('cl-section--plain')
-  body.append(el('p', 'adm-field-hint', 'Редагуйте текст прямо в блоках. Додайте пояснення, ілюстрацію чи завдання в потрібному місці; порядок блоків — порядок уроку.'))
+  body.append(el('p', 'adm-field-hint', 'Кнопка «+» додає текст із медіа, перерву або завдання в потрібне місце. Перетягніть блок за ⠿, щоб змінити порядок.'))
+  const oldBlocks = lesson.blocks.filter(block => CONVERTIBLE_TYPES.has(block.type))
+  if (oldBlocks.length) {
+    const convertAll = el('div', 'cl-convert')
+    convertAll.append(el('p', undefined, `Блоків старого типу в уроці: ${oldBlocks.length}. Їх можна перетворити на «Текст і медіа» всі разом.`))
+    convertAll.append(button(`Перетворити всі (${oldBlocks.length})`, 'btn-adm-sky btn--sm', () => {
+      showConfirm(`Перетворити ${oldBlocks.length} блоків старого типу на «Текст і медіа»? Порядок, кроки й слайди збережуться. Назад перетворити не можна, але до збереження зміни можна відкинути.`, () => {
+        for (const block of oldBlocks) convertToCanvas(block, lesson)
+        changed()
+      })
+    }))
+    body.append(convertAll)
+  }
   body.append(insertBlockRow(0))
   const list = el('ol', 'cl-blocks')
   lesson.blocks.forEach((block, index) => list.append(renderBlock(block, index, blockIssues.get(index) ?? [])))
@@ -1035,7 +1049,6 @@ const ACTIVITY_INSERTS: { mechanic: ActivityMechanic; label: string }[] = [
   { mechanic: 'game', label: 'Гра платформи' },
   { mechanic: 'external', label: 'Зовнішній тренажер' },
 ]
-const OTHER_INSERTS = LESSON_BLOCK_TYPES.filter(type => type !== 'canvas' && type !== 'activity')
 
 function closeInsertMenus(except?: Element): void {
   document.querySelectorAll<HTMLElement>('.cl-insert__menu:not([hidden])').forEach(menu => {
@@ -1095,18 +1108,14 @@ function insertBlockRow(index: number): HTMLDivElement {
   }
 
   menu.append(
-    groupOf('Контент', choice('Текст і медіа', () => insert('canvas'), 'Текст, таблиці, зображення, відео — окремо для вчителя, дошки й учнів')),
+    groupOf('Контент',
+      choice('Текст і медіа', () => insert('canvas'), 'Текст, таблиці, зображення, відео — окремо для вчителя, дошки й учнів'),
+      choice('Перерва', () => insert('break'), 'Фізкультхвилинка або пауза між частинами уроку')),
     groupOf('Інтерактивні завдання', ...ACTIVITY_INSERTS.map(({ mechanic, label }) => {
       const unavailable = (mechanic === 'game' && !pack?.games.length) || (mechanic === 'external' && !pack?.tools.length)
       return choice(label, () => insert('activity', mechanic), unavailable ? 'Немає в цьому предметі' : undefined, unavailable)
     })),
   )
-  const more = el('details', 'cl-insert__more')
-  more.append(el('summary', undefined, 'Інші типи блоків'))
-  const moreGrid = el('div', 'cl-insert__grid cl-insert__grid--compact')
-  moreGrid.append(...OTHER_INSERTS.map(type => choice(BLOCK_TYPE_LABELS[type], () => insert(type))))
-  more.append(moreGrid)
-  menu.append(more)
 
   toggle.addEventListener('click', () => {
     const open = menu.hidden
@@ -1214,7 +1223,7 @@ function renderBlock(block: EditableBlock, index: number, issues: Issue[]): HTML
     return badges
   }
   let badges = renderBadges()
-  summary.append(badges, el('span', 'question-item__meta', block.id))
+  summary.append(badges)
   details.append(summary)
 
   const body = el('div', 'cl-block__body')
@@ -1241,6 +1250,24 @@ function renderBlock(block: EditableBlock, index: number, issues: Issue[]): HTML
   tools.append(up, down, remove)
   body.append(tools)
 
+  // Old block types keep working; one click turns them into the simple kind.
+  if (CONVERTIBLE_TYPES.has(block.type)) {
+    const convert = el('div', 'cl-convert')
+    convert.append(el('p', undefined, 'Це блок старого типу. «Текст і медіа» простіший: вміст для вчителя, дошки й учнів редагується в одному полі.'))
+    convert.append(button('Перетворити на «Текст і медіа»', 'btn-adm-sky btn--sm', () => {
+      showConfirm('Перетворити блок на «Текст і медіа»? Текст перейде у вкладку «Учитель», слайд — у «Презентацію». Назад перетворити не можна, але до збереження зміни можна відкинути.', () => {
+        if (!convertToCanvas(block, lesson)) return
+        state.openBlocks.add(block.id)
+        state.surfaceTabs.set(block.id, 'teacher')
+        changed(`[data-block-id="${CSS.escape(block.id)}"] summary`)
+      })
+    }))
+    body.append(convert)
+  }
+
+  // Everything an author rarely needs goes under one fold, without nested frames.
+  const advanced = el('details', 'cl-advanced')
+  advanced.append(el('summary', undefined, 'Додатково'))
   if (block.type !== 'canvas') {
     const switches = el('div', 'cl-switches')
     switches.append(
@@ -1249,11 +1276,14 @@ function renderBlock(block: EditableBlock, index: number, issues: Issue[]): HTML
       checkbox('Показувати на дошці', block.views.presentation, v => { setOnBoard(block, v); changed() }, !block.audience.student),
       checkbox('У плані для вчителя', block.views.document, v => { block.views.document = v; touched() }),
     )
-    if (block.type === 'activity' || block.type === 'practice') {
-      const label = block.type === 'practice' ? 'Показувати учням під час цього кроку' : 'Надсилати на пристрої учнів'
-      switches.append(checkbox(label, block.views.remote, v => { setOnDevices(block, v); changed() }, !block.audience.student))
+    if (block.type === 'practice') {
+      switches.append(checkbox('Показувати учням під час цього кроку', block.views.remote, v => { setOnDevices(block, v); changed() }, !block.audience.student))
     }
-    body.append(switches)
+    advanced.append(switches)
+  }
+  // Sending a task to devices is its main choice, so it stays in view.
+  if (block.type === 'activity') {
+    body.append(checkbox('Надсилати на пристрої учнів', block.views.remote, v => { setOnDevices(block, v); changed() }, !block.audience.student))
   }
 
   const grid = el('div', 'adm-form-grid')
@@ -1269,7 +1299,7 @@ function renderBlock(block: EditableBlock, index: number, issues: Issue[]): HTML
     touched()
   })
   grid.append(field('Хвилин (необов’язково)', minutes))
-  body.append(grid)
+  advanced.append(grid)
 
   if (block.type === 'canvas') {
     // The visual editor (Tiptap) loads on first use; once cached, the import
@@ -1294,10 +1324,8 @@ function renderBlock(block: EditableBlock, index: number, issues: Issue[]): HTML
     body.append(renderContentFields(block))
     if (block.presentation) body.append(renderSlideFields(block))
   }
-  if (block.activity) body.append(renderActivityFields(block, index))
+  if (block.activity) body.append(renderActivityFields(block, index, advanced))
 
-  const advanced = el('details', 'cl-advanced')
-  advanced.append(el('summary', undefined, 'Розширене редагування JSON'))
   advanced.append(jsonField(`content:${block.id}`, 'Зміст блоку (JSON)', block.content, value => {
     if (!isRecord(value)) return 'Зміст має бути об’єктом { … }.'
     block.content = value
@@ -1305,7 +1333,7 @@ function renderBlock(block: EditableBlock, index: number, issues: Issue[]): HTML
   }, `${CONTENT_HINTS[block.type]}. ${TEXT_HINT}`))
   advanced.addEventListener('toggle', () => {
     if (!advanced.open || editor?.jsonErrors.has(`content:${block.id}`)) return
-    advanced.querySelector('textarea')!.value = formatJson(block.content)
+    advanced.querySelector<HTMLTextAreaElement>('textarea.cl-json')!.value = formatJson(block.content)
   })
   body.append(advanced)
 
@@ -1514,7 +1542,8 @@ function renderActivityForm(block: EditableBlock, pack: PackInfo | null): HTMLEl
   return box
 }
 
-function renderActivityFields(block: EditableBlock, index: number): HTMLElement {
+/** `more` is the block's «Додатково» fold, where the technical task id lives. */
+function renderActivityFields(block: EditableBlock, index: number, more: HTMLElement): HTMLElement {
   const state = editor!
   const lesson = state.lesson
   const activity = block.activity!
@@ -1538,7 +1567,7 @@ function renderActivityFields(block: EditableBlock, index: number): HTMLElement 
     'Доказ: одна спроба, учень не бачить оцінки, результат іде у звіт.'))
   const instance = textInput(activity.instanceId, v => { activity.instanceId = v.trim(); touched() }, { maxLength: 64 })
   instance.classList.add('adm-input--code')
-  grid.append(field('ID завдання', instance, 'Унікальний в уроці; не змінюйте після публікації.'))
+  more.append(field('ID завдання', instance, 'Унікальний в уроці; не змінюйте після публікації.'))
   const attempts = el('input', 'adm-input adm-input--sm')
   attempts.type = 'number'
   attempts.min = '1'
