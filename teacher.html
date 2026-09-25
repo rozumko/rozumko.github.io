@@ -187,28 +187,28 @@
         </p>
         <ul class="auth-aside__list">
           <li>
-            <span class="auth-aside__icon" aria-hidden="true">🎮</span>
+            <span class="auth-aside__icon" aria-hidden="true"><i class="fas fa-gamepad"></i></span>
             <div>
               <strong>Класна гра за пів хвилини</strong>
               <p>Оберіть клас, тему й складність. Учні грають зі своїх пристроїв за кодом або весь клас разом на великому екрані.</p>
             </div>
           </li>
           <li>
-            <span class="auth-aside__icon" aria-hidden="true">📊</span>
+            <span class="auth-aside__icon" aria-hidden="true"><i class="fas fa-chart-bar"></i></span>
             <div>
               <strong>Видно, що варто повторити</strong>
               <p>Після гри — відсоток правильних відповідей за темами і розбір відповідей кожного учня.</p>
             </div>
           </li>
           <li>
-            <span class="auth-aside__icon" aria-hidden="true">🏅</span>
+            <span class="auth-aside__icon" aria-hidden="true"><i class="fas fa-medal"></i></span>
             <div>
               <strong>Олімпіада з персональними кодами</strong>
               <p>Зареєструйте клас на подію, згенеруйте коди учасників і отримайте офіційні результати.</p>
             </div>
           </li>
           <li>
-            <span class="auth-aside__icon" aria-hidden="true">🔒</span>
+            <span class="auth-aside__icon" aria-hidden="true"><i class="fas fa-lock"></i></span>
             <div>
               <strong>Без персональних даних дітей</strong>
               <p>Зберігаємо лише вашу пошту й назву закладу. Імена учнів — необовʼязкові та лишаються у вашому кабінеті.</p>
@@ -303,7 +303,7 @@
           <h1>Мої класи</h1>
           <p>Клас і список учнів потрібні для уроків і олімпіади. Повних імен не зберігайте — лише мітки, за якими ви впізнаєте дитину.</p>
           </div>
-          <button id="class-new-toggle" class="btn btn--teacher" type="button" aria-expanded="false" aria-controls="teacher-class-form">
+          <button id="class-new-toggle" class="btn btn--secondary" type="button" aria-expanded="false" aria-controls="teacher-class-form">
             <i class="fas fa-plus" aria-hidden="true"></i> Додати клас
           </button>
         </div>
@@ -552,15 +552,16 @@
               <p id="school-question-availability" class="school-question-availability" aria-live="polite">Перевіряємо доступні питання…</p>
 
               <div class="school-create__actions">
-                <button id="school-create-btn" class="btn btn--success school-create__action">
+                <button id="school-create-btn" class="btn btn--teacher school-create__action" aria-describedby="school-launch-hint">
                   <i class="fas fa-mobile-alt" aria-hidden="true"></i>
-                  <span><strong>Гра з кодом</strong><small>Учні відповідають зі своїх пристроїв</small></span>
+                  <span><strong>Гра з кодом</strong></span>
                 </button>
-                <button id="school-projector-btn" class="btn btn--teacher school-create__action">
+                <button id="school-projector-btn" class="btn btn--secondary school-create__action" aria-describedby="school-launch-hint">
                   <i class="fas fa-tv" aria-hidden="true"></i>
-                  <span><strong>Запустити на екрані</strong><small>Працюйте над питаннями всім класом</small></span>
+                  <span><strong>Запустити на екрані</strong></span>
                 </button>
               </div>
+              <p id="school-launch-hint" class="school-create__hint">Гра з кодом: учні відповідають зі своїх пристроїв. На екрані: клас працює над питаннями разом.</p>
             </aside>
           </div>
         </div>
@@ -594,11 +595,12 @@
             </div>
 
             <div class="school-create__actions school-create__actions--single">
-              <button id="school-activity-create-btn" class="btn btn--success school-create__action" type="button">
+              <button id="school-activity-create-btn" class="btn btn--teacher school-create__action" type="button" aria-describedby="school-activity-launch-hint">
                 <i class="fas fa-mobile-alt" aria-hidden="true"></i>
-                <span><strong>Гра з кодом</strong><small>Учні виконують активність зі своїх пристроїв</small></span>
+                <span><strong>Гра з кодом</strong></span>
               </button>
             </div>
+            <p id="school-activity-launch-hint" class="school-create__hint">Учні виконують активність зі своїх пристроїв.</p>
           </div>
         </div>
 

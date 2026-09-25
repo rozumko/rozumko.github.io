@@ -108,7 +108,10 @@ export function openPresentation(lesson: LessonDefinition, options: Presentation
   bar.append(prev, counter, next, close)
   let fullscreen: HTMLButtonElement | null = null
   if (options.fullscreenButton) {
-    fullscreen = el('button', 'le-board__nav le-board__fullscreen', '⛶ На весь екран')
+    fullscreen = el('button', 'le-board__nav le-board__fullscreen', ' На весь екран')
+    const expand = el('i', 'fas fa-expand')
+    expand.setAttribute('aria-hidden', 'true')
+    fullscreen.prepend(expand)
     fullscreen.type = 'button'
     close.before(fullscreen)
   }
