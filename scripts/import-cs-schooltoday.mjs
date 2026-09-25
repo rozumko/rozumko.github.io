@@ -270,7 +270,8 @@ function convertLesson({ html, notes, id, assetBase }) {
     const essential = /^(🤔\s*)?Питання уроку:\s*(.+)$/u.exec(line)
     if (essential) {
       section('❓ Питання уроку')
-      emit(essential[2])
+      // «Питання уроку: як …» — on its own slide the question starts a sentence.
+      emit(essential[2].charAt(0).toUpperCase() + essential[2].slice(1))
       return
     }
     if (!line || (!inSection && /^UGS Informatics/u.test(line))) return

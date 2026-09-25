@@ -53,7 +53,7 @@ export const BLOCK_TYPE_LABELS: Readonly<Record<LessonBlockType, string>> = {
   visual: 'Схема',
   discussion: 'Обговорення',
   practice: 'Практична робота',
-  canvas: 'Вільний блок',
+  canvas: 'Текст і медіа',
   activity: 'Інтерактив',
   support: 'Підтримка',
   extension: 'Для тих, хто хоче більше',
