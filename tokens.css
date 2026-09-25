@@ -145,57 +145,98 @@
   --clr-emerald-dark:   #059669;
   --clr-emerald-light:  #d1fae5;
 
-  /* ── Акценти: адмін-панель (admin.html) — dark theme ────────── */
-  --adm-bg:             #060b18;   /* глибший */
-  --adm-surface:        #0f172a;   /* було #1e293b */
-  --adm-surface-2:      #060b18;
-  --adm-border:         #1e2d4a;   /* синюватий */
-  --adm-text:           #f1f5f9;
-  --adm-text-muted:     #8892b0;
-  --adm-text-faint:     #8b98bd;   /* AA on --adm-surface; was #4b5680 (2.2:1) */
-  --adm-sky:            #60a5fa;
-  --adm-emerald:        var(--clr-emerald);
-  --adm-emerald-hover:  var(--clr-emerald-dark);
-  --adm-violet:         #7c3aed;
-  --adm-violet-hover:   #6d28d9;
-  --adm-rose:           #f43f5e;
-  /* Semantic admin colours: each has a dark value here and a light value below. */
-  --adm-header-bg:      #0f172a;
-  --adm-glass-bg:       rgba(255,255,255,0.05);
-  --adm-glass-border:   rgba(255,255,255,0.1);
-  --adm-focus-ring:     rgba(56,189,248,0.2);
-  --adm-tint:           rgba(15,23,42,0.38);   /* nested panels on a surface */
-  --adm-on-accent:      #060b18;               /* text on bright emerald */
-  --adm-code:           #6ee7b7;
-  --adm-danger-text:    #fb7185;
-  --adm-danger-strong:  #fda4af;
-  --adm-danger-soft:    rgba(251,113,133,0.15);
-  --adm-warn-text:      #fbbf24;
+  /* ── Admin panel (admin.html), dark theme ─────────────────────
+     Same neutral scale as the workspace, inverted. Text >= 4.5:1 and
+     --adm-border-strong / --adm-focus-ring >= 3:1 on bg, surface and tint. */
+  --adm-bg:             #0c111d;
+  --adm-surface:        #161b26;
+  --adm-surface-2:      #0c111d;
+  --adm-border:         #454a55;   /* cards, panels, tables */
+  --adm-border-soft:    #333741;   /* rows inside a card */
+  --adm-border-strong:  #6b717d;   /* inputs, selects, secondary buttons */
+  --adm-text:           #f5f5f6;
+  --adm-text-muted:     #cecfd2;
+  --adm-text-faint:     #94969c;
+  --adm-sky:            #84adff;   /* accent as text, line and active state */
+  --adm-primary:        #2563eb;   /* primary button fill (white text 5.2:1) */
+  --adm-primary-hover:  #1d4ed8;
+  --adm-accent-soft:    rgb(132 173 255 / 0.14);
+  --adm-emerald:        #75e0a7;
+  --adm-emerald-hover:  #47cd89;
+  --adm-violet:         #b692f6;
+  --adm-violet-hover:   #9e77ed;
+  --adm-rose:           #fda29b;
+  --adm-header-bg:      #161b26;
+  --adm-glass-bg:       #161b26;
+  --adm-glass-border:   #454a55;
+  --adm-focus-ring:     #84adff;
+  --adm-tint:           #1f242f;   /* nested panels on a surface */
+  --adm-on-accent:      #ffffff;
+  --adm-code:           #75e0a7;
+  --adm-danger-text:    #fda29b;
+  --adm-danger-strong:  #fecdca;
+  --adm-danger-soft:    rgb(253 162 155 / 0.14);
+  --adm-danger-fill:    #d92d20;
+  --adm-success-soft:   rgb(117 224 167 / 0.12);
+  --adm-warn-soft:      rgb(254 200 75 / 0.12);
+  --adm-warn-text:      #fec84b;
   --adm-shadow:         0 1px 2px rgb(0 0 0 / 0.35);
-  --adm-shadow-lg:      0 12px 32px rgb(0 0 0 / 0.25);
-  --adm-badge-slate-bg: #334155;  --adm-badge-slate-fg: #cbd5e1;
-  --adm-badge-indigo-bg:#1e1b4b;  --adm-badge-indigo-fg:#c7d2fe;
-  --adm-badge-green-bg: #064e3b;  --adm-badge-green-fg: #6ee7b7;
-  --adm-badge-amber-bg: #451a03;  --adm-badge-amber-fg: #fcd34d;
-  --adm-badge-rose-bg:  #4c0519;  --adm-badge-rose-fg:  #fda4af;
-  --adm-badge-sky-bg:   #0c4a6e;  --adm-badge-sky-fg:   #7dd3fc;
+  --adm-shadow-lg:      0 12px 32px rgb(0 0 0 / 0.35);
+  --adm-badge-slate-bg: #333741;  --adm-badge-slate-fg: #cecfd2;
+  --adm-badge-indigo-bg:#1e2a4a;  --adm-badge-indigo-fg:#c7d7fe;
+  --adm-badge-green-bg: #053321;  --adm-badge-green-fg: #75e0a7;
+  --adm-badge-amber-bg: #4e1d09;  --adm-badge-amber-fg: #fec84b;
+  --adm-badge-rose-bg:  #55160c;  --adm-badge-rose-fg:  #fda29b;
+  --adm-badge-sky-bg:   #1e2a4a;  --adm-badge-sky-fg:   #84adff;
 }
 
-/* ── Teacher workspace (teacher.html, lesson-engine.html) ─────────
+/* Self-hosted Inter (variable, wght 400–700) for the teacher and admin workspaces;
+   kid-facing screens keep Nunito. Same subsets as Nunito in style.css. */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/inter-cyrillic.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/inter-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/inter-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ── Adult workspace (teacher.html, lesson-engine.html, admin.html) ──
    Neutral dashboard scale: plain grays, one brand accent, flat cards.
+   Contrast (WCAG 2.2): text tokens reach 4.5:1 on every workspace
+   background (white, gray-50, gray-100, brand-50); --ws-line-control
+   and the focus ring reach 3:1 (1.4.11) for control edges; --ws-line
+   is a visible structural line for cards, tables and panels.
    Scoped so the kid-facing screens keep the rounded Nunito look.
    The second half remaps the global tokens that style-teacher.css
    already consumes, so older rules follow the scale without edits. */
 .auth-surface--teacher,
 .teacher-dashboard,
-.le-page {
+.le-page,
+.admin-page {
   --ws-gray-25:   #fcfcfd;
   --ws-gray-50:   #f9fafb;
   --ws-gray-100:  #f2f4f7;
-  --ws-gray-200:  #e4e7ec;
-  --ws-gray-300:  #d0d5dd;
-  --ws-gray-400:  #98a2b3;
-  --ws-gray-500:  #667085;   /* AA on white and gray-50 */
+  --ws-gray-200:  #d0d5dd;
+  --ws-gray-300:  #b9c0cb;
+  --ws-gray-400:  #7d8799;   /* 3.3:1+ on every workspace background */
+  --ws-gray-500:  #5b6477;   /* 5.4:1+ on every workspace background */
   --ws-gray-600:  #475467;
   --ws-gray-700:  #344054;
   --ws-gray-800:  #1d2939;
@@ -224,8 +265,9 @@
   --ws-text:        var(--ws-gray-900);
   --ws-text-2:      var(--ws-gray-600);
   --ws-text-3:      var(--ws-gray-500);
-  --ws-line:        var(--ws-gray-200);
-  --ws-line-soft:   var(--ws-gray-100);
+  --ws-line:        var(--ws-gray-300);   /* cards, panels, tables */
+  --ws-line-soft:   var(--ws-gray-200);   /* rows inside a card */
+  --ws-line-control:var(--ws-gray-400);   /* inputs, selects, secondary buttons */
   --ws-bg:          var(--ws-gray-50);
   --ws-surface:     #ffffff;
   --ws-hover:       var(--ws-gray-50);
@@ -247,13 +289,13 @@
 
   --ws-shadow-xs: 0 1px 2px rgb(16 24 40 / 0.05);
   --ws-shadow-lg: 0 12px 16px -4px rgb(16 24 40 / 0.08), 0 4px 6px -2px rgb(16 24 40 / 0.03);
-  --ws-ring:      0 0 0 4px rgb(37 99 235 / 0.16);
+  --ws-ring:      0 0 0 2px #ffffff, 0 0 0 4px var(--ws-brand-600);
 
   /* Remap of the global tokens inside the workspace. */
   --font-family:        'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --clr-brand:          var(--ws-brand-500);
   --clr-brand-dark:     var(--ws-brand-600);
-  --clr-focus-ring:     rgb(37 99 235 / 0.5);
+  --clr-focus-ring:     var(--ws-brand-600);
   --clr-teacher:        var(--ws-brand-500);
   --clr-teacher-dark:   var(--ws-brand-600);
   --clr-sky:            var(--ws-brand-500);
@@ -261,8 +303,8 @@
   --clr-sky-light:      var(--ws-brand-50);
   --clr-surface-muted:  var(--ws-gray-50);
   --clr-surface-subtle: var(--ws-gray-100);
-  --clr-border:         var(--ws-gray-200);
-  --clr-border-light:   var(--ws-gray-100);
+  --clr-border:         var(--ws-line);
+  --clr-border-light:   var(--ws-line-soft);
   --clr-text:           var(--ws-gray-900);
   --clr-text-muted:     var(--ws-gray-600);
   --clr-text-faint:     var(--ws-gray-500);
@@ -287,38 +329,48 @@
   font-family: var(--font-family);
 }
 
-/* Light admin theme (the default; dark is chosen with the header toggle). */
+/* Light admin theme (the default; dark is chosen with the header toggle).
+   Literal values of the workspace scale: --ws-* live on .admin-page, and
+   :root cannot read them. */
 :root[data-admin-theme="light"] {
-  --adm-bg:             #eef2f7;
+  --adm-bg:             #f9fafb;
   --adm-surface:        #ffffff;
-  --adm-surface-2:      #f8fafc;
-  --adm-border:         #d5dce6;
-  --adm-text:           #0f172a;
-  --adm-text-muted:     #475569;
-  --adm-text-faint:     #56657a;   /* AA on --adm-bg and --adm-surface */
-  --adm-sky:            #0369a1;
-  --adm-emerald:        #10b981;
-  --adm-emerald-hover:  #34d399;
-  --adm-violet:         #6d28d9;
-  --adm-violet-hover:   #5b21b6;
-  --adm-rose:           #e11d48;
+  --adm-surface-2:      #f9fafb;
+  --adm-border:         #b9c0cb;   /* = --ws-line */
+  --adm-border-soft:    #d0d5dd;   /* = --ws-line-soft */
+  --adm-border-strong:  #7d8799;   /* = --ws-line-control, 3.3:1+ */
+  --adm-text:           #101828;
+  --adm-text-muted:     #475467;
+  --adm-text-faint:     #5b6477;
+  --adm-sky:            #1d4ed8;   /* accent as text/line: 6.1:1+ */
+  --adm-primary:        #2563eb;
+  --adm-primary-hover:  #1d4ed8;
+  --adm-accent-soft:    #eff4ff;
+  --adm-emerald:        #067647;
+  --adm-emerald-hover:  #05603a;
+  --adm-violet:         #6941c6;
+  --adm-violet-hover:   #53389e;
+  --adm-rose:           #b42318;
   --adm-header-bg:      #ffffff;
   --adm-glass-bg:       #ffffff;
-  --adm-glass-border:   #d5dce6;
-  --adm-focus-ring:     rgba(3,105,161,0.2);
-  --adm-tint:           #f8fafc;
-  --adm-on-accent:      #052e20;
-  --adm-code:           #047857;
-  --adm-danger-text:    #be123c;
-  --adm-danger-strong:  #9f1239;
-  --adm-danger-soft:    #ffe4e6;
-  --adm-warn-text:      #b45309;
-  --adm-shadow:         0 1px 2px rgb(15 23 42 / 0.06), 0 2px 8px rgb(15 23 42 / 0.06);
-  --adm-shadow-lg:      0 12px 32px rgb(15 23 42 / 0.16);
-  --adm-badge-slate-bg: #e2e8f0;  --adm-badge-slate-fg: #334155;
-  --adm-badge-indigo-bg:#e0e7ff;  --adm-badge-indigo-fg:#3730a3;
-  --adm-badge-green-bg: #d1fae5;  --adm-badge-green-fg: #065f46;
-  --adm-badge-amber-bg: #fef3c7;  --adm-badge-amber-fg: #92400e;
-  --adm-badge-rose-bg:  #ffe4e6;  --adm-badge-rose-fg:  #9f1239;
-  --adm-badge-sky-bg:   #e0f2fe;  --adm-badge-sky-fg:   #075985;
+  --adm-glass-border:   #b9c0cb;
+  --adm-focus-ring:     #1d4ed8;
+  --adm-tint:           #f9fafb;
+  --adm-on-accent:      #ffffff;
+  --adm-code:           #067647;
+  --adm-danger-text:    #b42318;
+  --adm-danger-strong:  #912018;
+  --adm-danger-soft:    #fef3f2;
+  --adm-danger-fill:    #b42318;
+  --adm-success-soft:   #ecfdf3;
+  --adm-warn-soft:      #fffaeb;
+  --adm-warn-text:      #b54708;
+  --adm-shadow:         0 1px 2px rgb(16 24 40 / 0.05);
+  --adm-shadow-lg:      0 12px 16px -4px rgb(16 24 40 / 0.08), 0 4px 6px -2px rgb(16 24 40 / 0.03);
+  --adm-badge-slate-bg: #f2f4f7;  --adm-badge-slate-fg: #344054;
+  --adm-badge-indigo-bg:#eff4ff;  --adm-badge-indigo-fg:#1e40af;
+  --adm-badge-green-bg: #ecfdf3;  --adm-badge-green-fg: #067647;
+  --adm-badge-amber-bg: #fffaeb;  --adm-badge-amber-fg: #b54708;
+  --adm-badge-rose-bg:  #fef3f2;  --adm-badge-rose-fg:  #b42318;
+  --adm-badge-sky-bg:   #eff4ff;  --adm-badge-sky-fg:   #1d4ed8;
 }
