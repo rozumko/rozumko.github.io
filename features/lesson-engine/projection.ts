@@ -7,6 +7,7 @@ import type {
   ActivityTelemetry,
   BlockModality,
   BlockPresentation,
+  CurriculumLessonSummary,
   LessonAsset,
   LessonBlock,
   LessonBlockType,
@@ -94,4 +95,49 @@ export function lessonMetaLine(lesson: Pick<LessonDefinition, 'grade' | 'lessonN
     lesson.lessonNumber ? `Урок ${lesson.lessonNumber}` : null,
     `${lesson.durationMin} хв`,
   ].filter(Boolean).join(' · ')
+}
+
+// ── Lesson list filters ─────────────────────────────────────────────────────
+
+/** «g2-m3» → 3; a module id without that shape has no number. */
+export function moduleNumber(moduleId: string | null): number | null {
+  const match = /-m(\d+)$/.exec(moduleId ?? '')
+  return match ? Number(match[1]) : null
+}
+
+export function moduleLabel(moduleId: string | null): string {
+  const n = moduleNumber(moduleId)
+  if (n !== null) return `Модуль ${n}`
+  return moduleId ?? 'Без модуля'
+}
+
+export interface LessonListFilter {
+  /** Words that must all appear in the title (either language) or as «урок N». */
+  query: string
+  grade: number | null
+  moduleId: string | null
+}
+
+type ListedLesson = Pick<CurriculumLessonSummary, 'grade' | 'moduleId' | 'lessonNumber' | 'title'>
+
+export function filterLessons<T extends ListedLesson>(lessons: readonly T[], filter: LessonListFilter): T[] {
+  const words = filter.query.toLocaleLowerCase('uk').split(/\s+/).filter(Boolean)
+  return lessons.filter(lesson => {
+    if (filter.grade !== null && lesson.grade !== filter.grade) return false
+    if (filter.moduleId !== null && lesson.moduleId !== filter.moduleId) return false
+    const haystack = `${lesson.title.uk} ${lesson.title.en ?? ''} урок ${lesson.lessonNumber ?? ''}`.toLocaleLowerCase('uk')
+    return words.every(word => haystack.includes(word))
+  })
+}
+
+/** Modules to offer for a grade (all grades when null), in course order. */
+export function lessonModules(lessons: readonly ListedLesson[], grade: number | null): { moduleId: string | null; grade: number }[] {
+  const seen = new Map<string, { moduleId: string | null; grade: number }>()
+  for (const lesson of lessons) {
+    if (grade !== null && lesson.grade !== grade) continue
+    seen.set(`${lesson.grade}|${lesson.moduleId ?? ''}`, { moduleId: lesson.moduleId, grade: lesson.grade })
+  }
+  return [...seen.values()].sort((a, b) => a.grade - b.grade
+    || (moduleNumber(a.moduleId) ?? Infinity) - (moduleNumber(b.moduleId) ?? Infinity)
+    || (a.moduleId ?? '').localeCompare(b.moduleId ?? ''))
 }
