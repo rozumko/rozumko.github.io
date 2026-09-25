@@ -1,4 +1,4 @@
-<svg viewBox="0 0 860 300" role="img" aria-labelledby="g4u9a-t g4u9a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 860 300" role="img" aria-labelledby="g4u9a-t g4u9a-d" xmlns="http://www.w3.org/2000/svg" width="860" height="300">
     <title id="g4u9a-t">Поле, запис і значення в таблиці бібліотеки</title>
     <desc id="g4u9a-d">Таблиця з трьох книжок і чотирьох стовпчиків: назва, жанр, рік, чи є в наявності. Виділено рядок про «Острів скарбів» — це запис. Виділено стовпчик «Жанр» — це поле. Виділено одну клітинку з числом 1892 — це значення.</desc>
     <rect x="10" y="14" width="840" height="44" rx="8" fill="#0033A0"/>

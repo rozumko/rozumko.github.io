@@ -1,4 +1,4 @@
-<svg viewBox="0 0 800 300" role="img" aria-labelledby="lesson-svg-title lesson-svg-desc" style="display:block;width:100%;height:auto;max-width:800px;margin:0 auto;" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 800 300" role="img" aria-labelledby="lesson-svg-title lesson-svg-desc" xmlns="http://www.w3.org/2000/svg" width="800" height="300">
     <title id="lesson-svg-title">Дві моделі одних даних: таблиця та піктограма</title>
     <desc id="lesson-svg-desc">Зліва показано таблицю з числами (Яблуко — 5, Банан — 2, Ківі — 1). Справа показано піктограму, де один значок означає один голос.</desc>
 

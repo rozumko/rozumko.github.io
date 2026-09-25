@@ -1,4 +1,4 @@
-<svg viewBox="0 0 800 300" role="img" aria-labelledby="svg-title-sort svg-desc-sort" style="display:block;width:100%;height:auto;max-width:800px;margin:18px auto;" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 800 300" role="img" aria-labelledby="svg-title-sort svg-desc-sort" xmlns="http://www.w3.org/2000/svg" width="800" height="300">
       <title id="svg-title-sort">Таблиця до і після сортування за категорією</title>
       <desc id="svg-desc-sort">Ліворуч таблиця з п'ятьма предметами вперемішку. Після кнопки «Сортувати за категорією» праворуч ті самі п'ять предметів: спершу всі канцтовари, потім увесь спорт. Записів так само п'ять — змінився лише порядок.</desc>
       <rect x="20" y="46" width="290" height="190" rx="8" fill="#FFFFFF" stroke="#B9C6DA" stroke-width="2"/>

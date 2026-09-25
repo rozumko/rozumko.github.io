@@ -250,6 +250,15 @@ function convertLesson({ html, notes, id, assetBase }) {
     const name = `${id}-s${stats.svgs}.svg`
     const clone = el.cloneNode(true)
     clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+    // The page styled the inline SVG (width:100%, margin:16px 0 …). In a file of
+    // its own a margin on the root shifts the drawing and crops its bottom, so
+    // the file keeps only its own size, taken from the viewBox.
+    clone.removeAttribute('style')
+    const box = (clone.getAttribute('viewBox') ?? '').trim().split(/[\s,]+/).map(Number)
+    if (box.length === 4 && box.every(Number.isFinite) && box[2] > 0 && box[3] > 0) {
+      if (!clone.hasAttribute('width') || /%/.test(clone.getAttribute('width'))) clone.setAttribute('width', String(box[2]))
+      if (!clone.hasAttribute('height') || /%|auto/.test(clone.getAttribute('height'))) clone.setAttribute('height', String(box[3]))
+    }
     svgs.push({ name, markup: new XMLSerializer().serializeToString(clone) })
     const alt = text(el.querySelector('title')) || el.getAttribute('aria-label') || 'Схема'
     // A step's first diagram is its slide: it carries the idea better than a photo.

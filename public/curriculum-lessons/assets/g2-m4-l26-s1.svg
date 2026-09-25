@@ -1,4 +1,4 @@
-<svg viewBox="0 0 800 240" role="img" aria-labelledby="svg-title-seq svg-desc-seq" style="display:block;width:100%;height:auto;max-width:800px;margin:18px auto;" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 800 240" role="img" aria-labelledby="svg-title-seq svg-desc-seq" xmlns="http://www.w3.org/2000/svg" width="800" height="240">
       <title id="svg-title-seq">Планування руху спрайта за послідовністю блоків</title>
       <desc id="svg-desc-seq">Схема демонструє рух котика на сітці від початкової позиції через блоки переміщення та повороту до кінцевої позиції зі зірочкою.</desc>
       

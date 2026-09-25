@@ -1,4 +1,4 @@
-<svg viewBox="0 0 800 250" role="img" aria-labelledby="svg-title-ieo svg-desc-ieo" style="display:block;width:100%;height:auto;max-width:800px;margin:18px auto;" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 800 250" role="img" aria-labelledby="svg-title-ieo svg-desc-ieo" xmlns="http://www.w3.org/2000/svg" width="800" height="250">
       <title id="svg-title-ieo">Два приклади: введення, подія і виведення у Scratch</title>
       <desc id="svg-desc-ieo">Перший приклад: ти натискаєш Пропуск — це введення; запускається скрипт «коли клавішу пропуск натиснуто» — це подія; котик стрибає — це виведення. Другий приклад: нового введення немає, інший спрайт надсилає повідомлення; запускається скрипт «коли я отримую повідомлення»; котик каже «Привіт!».</desc>
       <text x="130" y="26" font-family="sans-serif" font-size="15" font-weight="bold" fill="#0033A0" text-anchor="middle">Введення (input)</text>

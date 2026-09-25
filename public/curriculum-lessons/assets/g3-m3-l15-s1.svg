@@ -1,4 +1,4 @@
-<svg viewBox="0 0 860 200" role="img" aria-labelledby="g3u15a-t g3u15a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 860 200" role="img" aria-labelledby="g3u15a-t g3u15a-d" xmlns="http://www.w3.org/2000/svg" width="860" height="200">
     <title id="g3u15a-t">Як модель вчиться на прикладах</title>
     <desc id="g3u15a-d">Спочатку підписані приклади: яблука й банани. Далі модель шукає спільні ознаки. Потім новий приклад. Нарешті передбачення: «це яблуко». Модель може помилитися, якщо приклади були неповними.</desc>
     <rect x="6" y="14" width="190" height="130" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>

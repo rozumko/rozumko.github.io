@@ -1,4 +1,4 @@
-<svg viewBox="0 0 860 200" role="img" aria-labelledby="g3u33a-t g3u33a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 860 200" role="img" aria-labelledby="g3u33a-t g3u33a-d" xmlns="http://www.w3.org/2000/svg" width="860" height="200">
     <title id="g3u33a-t">Шлях сигналу в micro:bit</title>
     <desc id="g3u33a-d">Фізичний сигнал: кнопка A чи B або струшування. Програма в micro:bit. Фізичний результат: малюнок на світлодіодах або звук.</desc>
     <rect x="6" y="14" width="258" height="130" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>

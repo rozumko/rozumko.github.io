@@ -1,4 +1,4 @@
-<svg viewBox="0 0 860 250" role="img" aria-labelledby="g3u13a-t g3u13a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 860 250" role="img" aria-labelledby="g3u13a-t g3u13a-d" xmlns="http://www.w3.org/2000/svg" width="860" height="250">
     <title id="g3u13a-t">Сітка електронної таблиці з адресою комірки</title>
     <desc id="g3u13a-d">Таблиця зі стовпцями A, B, C і рядками 1, 2, 3. У рядку 1 заголовки: Персонаж, День, Сторінки. У рядку 2: Лисичка, Понеділок, 12. У рядку 3: Їжачок, Вівторок, 15. Комірку B2 виділено: це стовпець B і рядок 2.</desc>
     <rect x="80" y="14" width="620" height="36" fill="#F0F4F8" stroke="#D9E2F0"/>

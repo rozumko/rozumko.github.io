@@ -1,4 +1,4 @@
-<svg viewBox="0 0 860 230" role="img" aria-labelledby="g3u30a-t g3u30a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 860 230" role="img" aria-labelledby="g3u30a-t g3u30a-d" xmlns="http://www.w3.org/2000/svg" width="860" height="230">
     <title id="g3u30a-t">Як працює умова якщо… то…</title>
     <desc id="g3u30a-d">Програма ставить запитання «торкається зірки?». Якщо так — виконуються блоки всередині: звук і напис «Перемога!». Якщо ні — ці блоки пропускаються, і програма йде далі. Усередині блоку «завжди» запитання ставиться знову й знову.</desc>
     <rect x="300" y="10" width="260" height="56" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>

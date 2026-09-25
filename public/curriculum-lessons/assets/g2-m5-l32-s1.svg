@@ -1,4 +1,4 @@
-<svg viewBox="0 0 800 240" role="img" aria-labelledby="svg-title-dialog svg-desc-dialog" style="display:block;width:100%;height:auto;max-width:800px;margin:18px auto;" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 800 240" role="img" aria-labelledby="svg-title-dialog svg-desc-dialog" xmlns="http://www.w3.org/2000/svg" width="800" height="240">
       <title id="svg-title-dialog">Схема координації діалогу між двома спрайтами за допомогою блоку wait</title>
       <desc id="svg-desc-dialog">Схема демонструє запуск події, репліку й звук першого спрайта та очікування й відповідь другого спрайта.</desc>
       

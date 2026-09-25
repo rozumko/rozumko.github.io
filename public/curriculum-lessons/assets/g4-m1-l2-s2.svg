@@ -1,4 +1,4 @@
-<svg viewBox="0 0 860 220" role="img" aria-labelledby="g4u2b-t g4u2b-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 860 220" role="img" aria-labelledby="g4u2b-t g4u2b-d" xmlns="http://www.w3.org/2000/svg" width="860" height="220">
     <title id="g4u2b-t">Чотири частини веб-адреси</title>
     <desc id="g4u2b-d">Протокол https означає захищене з'єднання. Далі йде доменне ім'я — назва сайту. Закінчення домену вказує на тип або країну. Після скісної риски йде шлях до конкретної сторінки всередині сайту.</desc>
     <rect x="6" y="14" width="848" height="54" rx="10" fill="#F0F4F8"/>
