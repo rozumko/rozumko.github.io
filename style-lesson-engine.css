@@ -36,6 +36,32 @@
 /* ── Lesson list ─────────────────────────────────────────────── */
 .le-list-view h1 { font-size: var(--font-size-3xl); margin: 0 0 var(--sp-6); }
 .le-list-view h2 { font-size: var(--font-size-xl); margin: var(--sp-6) 0 var(--sp-3); }
+.le-list-view h3.le-lesson-module { margin: var(--sp-4) 0 var(--sp-2); font-size: var(--font-size-lg); color: var(--clr-text-muted); }
+.le-lesson-filters { align-items: end; }
+.le-lesson-filters .le-lesson-filters__search { flex: 1 1 16rem; }
+.le-lesson-filters input[type='search'] {
+  min-height: 2.4rem;
+  padding: .45rem .7rem;
+  border: 1px solid var(--workspace-line, var(--clr-border));
+  border-radius: .45rem;
+  background: #fff;
+  color: var(--workspace-ink, inherit);
+  font: inherit;
+  font-size: .88rem;
+}
+.le-lesson-filters input[type='search']:focus-visible { outline: 2px solid var(--workspace-accent, var(--clr-focus-ring)); outline-offset: 2px; }
+.le-lesson-filters__reset {
+  min-height: 2.4rem;
+  padding: .45rem .9rem;
+  border: 1px solid var(--workspace-line, var(--clr-border));
+  border-radius: .45rem;
+  background: #fff;
+  font: inherit;
+  font-size: .88rem;
+  cursor: pointer;
+}
+.le-lesson-filters__reset:focus-visible { outline: 2px solid var(--workspace-accent, var(--clr-focus-ring)); outline-offset: 2px; }
+.le-lesson-filters__count { margin: 0 0 var(--sp-2); color: var(--clr-text-muted); font-size: .88rem; }
 .le-lesson-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-3); }
 .le-lesson-card {
   display: flex;

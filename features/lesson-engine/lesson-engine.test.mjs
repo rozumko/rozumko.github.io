@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs'
 import * as frontendTypes from './types.ts'
 import * as backendSchema from '../../backend/src/lib/curriculum-lesson-schema.ts'
 import { parseRichText } from './rich-text.ts'
-import { documentBlocks, presentationSlides, BLOCK_TYPE_LABELS, lessonMetaLine } from './projection.ts'
+import { documentBlocks, presentationSlides, BLOCK_TYPE_LABELS, filterLessons, lessonMetaLine, lessonModules, moduleLabel } from './projection.ts'
 import { answerFromSelection, boardActivityMode, boardQuestions, gameResultEnvelope } from './board-answers.ts'
 import { canNavigate, formatJoinCode, isOpenRun, isSendable, liveCellText, liveSummary, mappingSummary, runLifecycleActions, stepAttachments, stepTitle, studentOptions } from './run-model.ts'
 import * as runState from '../../backend/src/lib/lesson-run-state.ts'
@@ -293,4 +293,25 @@ test('projector messages are parsed defensively', async () => {
   )
   const claim = parseBoardMessage({ type: 'claim', session: 's1', blockId: 'g2-m2-l8-b01', lesson: servedLesson })
   assert.equal(claim?.type, 'claim')
+})
+
+test('the lesson list filters by grade, module and all words of the title or «урок N»', () => {
+  const lesson = (grade, moduleId, lessonNumber, uk, en) => ({ grade, moduleId, lessonNumber, title: en ? { uk, en } : { uk } })
+  const lessons = [
+    lesson(1, 'g1-m1', 1, 'Цифрове і нецифрове навколо нас'),
+    lesson(1, 'g1-m2', 7, 'Увімкнення пристрою'),
+    lesson(2, 'g2-m1', 4, "Комп'ютерні мережі", 'Networks'),
+    lesson(2, null, null, 'Позакласний урок'),
+  ]
+  const all = { query: '', grade: null, moduleId: null }
+  assert.equal(filterLessons(lessons, all).length, 4)
+  assert.deepEqual(filterLessons(lessons, { ...all, grade: 1 }).map(l => l.lessonNumber), [1, 7])
+  assert.deepEqual(filterLessons(lessons, { ...all, moduleId: 'g1-m2' }).map(l => l.lessonNumber), [7])
+  assert.deepEqual(filterLessons(lessons, { ...all, query: '  Урок   7 ' }).map(l => l.lessonNumber), [7])
+  assert.deepEqual(filterLessons(lessons, { ...all, query: 'NETWORK' }).map(l => l.lessonNumber), [4])
+  assert.deepEqual(filterLessons(lessons, { ...all, query: 'цифрове нас' }).map(l => l.lessonNumber), [1])
+  assert.equal(filterLessons(lessons, { ...all, grade: 1, query: 'мережі' }).length, 0)
+  assert.deepEqual(lessonModules(lessons, 1).map(m => m.moduleId), ['g1-m1', 'g1-m2'])
+  assert.deepEqual(lessonModules(lessons, null).map(m => m.moduleId), ['g1-m1', 'g1-m2', 'g2-m1', null])
+  assert.deepEqual([moduleLabel('g3-m10'), moduleLabel(null), moduleLabel('extra')], ['Модуль 10', 'Без модуля', 'extra'])
 })

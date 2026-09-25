@@ -43,7 +43,7 @@ import { renderLessonDocument } from './features/lesson-engine/document-view.js'
 import { openPresentation } from './features/lesson-engine/presentation-view.js'
 import { mountBoardWindow } from './features/lesson-engine/board-window.js'
 import type { BoardActivityDeps } from './features/lesson-engine/activity-board.js'
-import { lessonMetaLine } from './features/lesson-engine/projection.js'
+import { filterLessons, lessonMetaLine, lessonModules, moduleLabel, type LessonListFilter } from './features/lesson-engine/projection.js'
 import { mountRunConsole } from './features/lesson-engine/run-console.js'
 import { renderLessonReport } from './features/lesson-engine/report-view.js'
 import { resolveClassroomControlProvider, type ClassroomControlProvider } from './features/lesson-engine/classroom-control.js'
@@ -125,34 +125,146 @@ function renderLessonList(lessons: CurriculumLessonSummary[], runs: LessonRunSum
     const empty = document.createElement('p')
     empty.textContent = 'Опублікованих уроків поки немає.'
     section.append(empty)
+    viewEl.replaceChildren(section)
+    return
   }
 
+  // Filters live in the address (replaceState), so «Назад» from a lesson
+  // returns to the same selection.
+  const params = new URLSearchParams(location.search)
   const grades = [...new Set(lessons.map(lesson => lesson.grade))].sort((a, b) => a - b)
-  for (const grade of grades) {
-    const h2 = document.createElement('h2')
-    h2.textContent = `${grade} клас`
-    const list = document.createElement('ul')
-    list.className = 'le-lesson-list'
-    for (const lesson of lessons.filter(item => item.grade === grade)) {
-      const li = document.createElement('li')
-      const a = document.createElement('a')
-      a.className = 'le-lesson-card'
-      a.href = `?lesson=${encodeURIComponent(lesson.id)}`
-      const title = document.createElement('span')
-      title.className = 'le-lesson-card__title'
-      title.textContent = lesson.title.uk
-      const meta = document.createElement('span')
-      meta.className = 'le-lesson-card__meta'
-      meta.textContent = lessonMetaLine(lesson)
-      const action = document.createElement('span')
-      action.className = 'le-lesson-card__action'
-      action.textContent = 'Переглянути план'
-      a.append(title, meta, action)
-      li.append(a)
-      list.append(li)
-    }
-    section.append(h2, list)
+  const initialGrade = Number(params.get('grade'))
+  const filter: LessonListFilter = {
+    query: params.get('q') ?? '',
+    grade: grades.includes(initialGrade) ? initialGrade : null,
+    moduleId: params.get('module'),
   }
+
+  const filters = document.createElement('div')
+  filters.className = 'teacher-table-filters le-lesson-filters'
+  filters.setAttribute('role', 'search')
+  filters.setAttribute('aria-label', 'Фільтри уроків')
+  const searchLabel = document.createElement('label')
+  searchLabel.className = 'le-lesson-filters__search'
+  searchLabel.textContent = 'Пошук '
+  const search = document.createElement('input')
+  search.type = 'search'
+  search.setAttribute('aria-label', 'Пошук уроку')
+  search.className = 'form-input'
+  search.placeholder = 'Назва або «урок 12»'
+  search.value = filter.query
+  searchLabel.append(search)
+  const gradeLabel = document.createElement('label')
+  gradeLabel.textContent = 'Клас '
+  const gradeSelect = document.createElement('select')
+  gradeSelect.className = 'form-input'
+  gradeSelect.setAttribute('aria-label', 'Клас')
+  gradeSelect.append(new Option('Усі класи', ''), ...grades.map(grade => new Option(`${grade} клас`, String(grade))))
+  gradeSelect.value = filter.grade === null ? '' : String(filter.grade)
+  gradeLabel.append(gradeSelect)
+  const moduleLabelEl = document.createElement('label')
+  moduleLabelEl.textContent = 'Модуль '
+  const moduleSelect = document.createElement('select')
+  moduleSelect.className = 'form-input'
+  moduleSelect.setAttribute('aria-label', 'Модуль')
+  moduleLabelEl.append(moduleSelect)
+  const reset = document.createElement('button')
+  reset.type = 'button'
+  reset.className = 'le-lesson-filters__reset'
+  reset.textContent = 'Скинути'
+  filters.append(searchLabel, gradeLabel, moduleLabelEl, reset)
+
+  const count = document.createElement('p')
+  count.className = 'le-lesson-filters__count'
+  count.setAttribute('role', 'status')
+  const results = document.createElement('div')
+  section.append(filters, count, results)
+
+  const NO_MODULE = '__none'
+  const fillModules = () => {
+    const modules = lessonModules(lessons, filter.grade)
+    if (filter.moduleId !== null && !modules.some(m => (m.moduleId ?? NO_MODULE) === filter.moduleId)) filter.moduleId = null
+    moduleSelect.replaceChildren(new Option('Усі модулі', ''), ...modules.map(m => new Option(
+      filter.grade === null ? `${m.grade} клас · ${moduleLabel(m.moduleId)}` : moduleLabel(m.moduleId),
+      m.moduleId ?? NO_MODULE,
+    )))
+    moduleSelect.value = filter.moduleId ?? ''
+  }
+
+  const renderResults = () => {
+    const shown = filterLessons(lessons, { ...filter, moduleId: filter.moduleId === NO_MODULE ? null : filter.moduleId })
+      .filter(lesson => filter.moduleId !== NO_MODULE || lesson.moduleId === null)
+    const active = filter.query.trim() !== '' || filter.grade !== null || filter.moduleId !== null
+    reset.hidden = !active
+    count.textContent = active ? `Знайдено уроків: ${shown.length} з ${lessons.length}` : `Уроків: ${lessons.length}`
+    const next = new URLSearchParams()
+    if (filter.query.trim()) next.set('q', filter.query.trim())
+    if (filter.grade !== null) next.set('grade', String(filter.grade))
+    if (filter.moduleId !== null) next.set('module', filter.moduleId)
+    history.replaceState(null, '', next.toString() ? `?${next}` : location.pathname)
+
+    if (!shown.length) {
+      const empty = document.createElement('p')
+      empty.className = 'teacher-results-empty'
+      empty.textContent = 'За цими фільтрами уроків немає.'
+      results.replaceChildren(empty)
+      return
+    }
+    const nodes: HTMLElement[] = []
+    for (const grade of [...new Set(shown.map(lesson => lesson.grade))].sort((a, b) => a - b)) {
+      const h2 = document.createElement('h2')
+      h2.textContent = `${grade} клас`
+      nodes.push(h2)
+      for (const { moduleId } of lessonModules(shown, grade)) {
+        const h3 = document.createElement('h3')
+        h3.className = 'le-lesson-module'
+        h3.textContent = moduleLabel(moduleId)
+        const list = document.createElement('ul')
+        list.className = 'le-lesson-list'
+        for (const lesson of shown.filter(item => item.grade === grade && item.moduleId === moduleId)) {
+          const li = document.createElement('li')
+          const a = document.createElement('a')
+          a.className = 'le-lesson-card'
+          a.href = `?lesson=${encodeURIComponent(lesson.id)}`
+          const title = document.createElement('span')
+          title.className = 'le-lesson-card__title'
+          title.textContent = lesson.title.uk
+          const meta = document.createElement('span')
+          meta.className = 'le-lesson-card__meta'
+          meta.textContent = lessonMetaLine(lesson)
+          const action = document.createElement('span')
+          action.className = 'le-lesson-card__action'
+          action.textContent = 'Переглянути план'
+          a.append(title, meta, action)
+          li.append(a)
+          list.append(li)
+        }
+        nodes.push(h3, list)
+      }
+    }
+    results.replaceChildren(...nodes)
+  }
+
+  search.addEventListener('input', () => { filter.query = search.value; renderResults() })
+  gradeSelect.addEventListener('change', () => {
+    filter.grade = gradeSelect.value ? Number(gradeSelect.value) : null
+    fillModules()
+    renderResults()
+  })
+  moduleSelect.addEventListener('change', () => { filter.moduleId = moduleSelect.value || null; renderResults() })
+  reset.addEventListener('click', () => {
+    filter.query = ''
+    filter.grade = null
+    filter.moduleId = null
+    search.value = ''
+    gradeSelect.value = ''
+    fillModules()
+    renderResults()
+    search.focus()
+  })
+
+  fillModules()
+  renderResults()
   const openRuns = renderOpenRuns(runs)
   if (openRuns) section.insertBefore(openRuns, h1.nextSibling)
   viewEl.replaceChildren(section)

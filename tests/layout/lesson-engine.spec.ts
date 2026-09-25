@@ -49,8 +49,8 @@ async function routeBoardChecks(page: Page, checks: unknown[] = []) {
   })
 }
 
-async function mockTeacherApi(page: Page, options: { lessonEngine: boolean; session?: boolean; lesson?: LessonDefinitionV1 }) {
-  await page.addInitScript(({ lesson, lessonEngine, session }) => {
+async function mockTeacherApi(page: Page, options: { lessonEngine: boolean; session?: boolean; lesson?: LessonDefinitionV1; extraLessons?: object[] }) {
+  await page.addInitScript(({ lesson, lessonEngine, session, extraLessons }) => {
     if (session) {
       sessionStorage.setItem('teacher_session', JSON.stringify({
         accessToken: 'teacher-test-token', refreshToken: '', email: 'teacher@example.test',
@@ -75,12 +75,12 @@ async function mockTeacherApi(page: Page, options: { lessonEngine: boolean; sess
         return json({ lessons: [{
           id: lesson.id, subjectPackId: lesson.subjectPackId, grade: lesson.grade, moduleId: lesson.moduleId,
           lessonNumber: lesson.lessonNumber, title: lesson.title, durationMin: lesson.durationMin, publishedVersion: 1,
-        }] })
+        }, ...extraLessons] })
       }
       if (path === `/api/teacher/curriculum/lessons/${lesson.id}`) return json({ lesson, publishedVersion: 1 })
       return json({ error: 'Урок не знайдено' }, 404)
     }
-  }, { lesson: options.lesson ?? servedLesson, lessonEngine: options.lessonEngine, session: options.session ?? true })
+  }, { lesson: options.lesson ?? servedLesson, lessonEngine: options.lessonEngine, session: options.session ?? true, extraLessons: options.extraLessons ?? [] })
   // Nothing here may reach a real backend: CI has network access, and whatever
   // production answers today (e.g. a 401 that clears the test session) must not
   // decide a test. Unrouted API calls get a plain 404; later routes win.
@@ -128,6 +128,43 @@ test('finished lessons appear in the results table with a report link', async ({
   await expect(page.locator('.teacher-data-table tbody tr:visible')).toHaveCount(1)
   await expect(page.getByRole('link', { name: 'Переглянути звіт' }))
     .toHaveAttribute('href', `lesson-engine.html?run=${runId}&view=report`)
+})
+
+test('the lesson list filters by grade, module and words, and keeps the filters in the address', async ({ page }) => {
+  const summary = (id: string, grade: number, moduleId: string, lessonNumber: number, title: string) =>
+    ({ id, subjectPackId: 'informatics-ua-primary', grade, moduleId, lessonNumber, title: { uk: title }, durationMin: 25, publishedVersion: 1 })
+  await mockTeacherApi(page, {
+    lessonEngine: true,
+    extraLessons: [
+      summary('g1-m1-l1', 1, 'g1-m1', 1, 'Цифрове і нецифрове навколо нас'),
+      summary('g1-m2-l7', 1, 'g1-m2', 7, 'Увімкнення пристрою'),
+      summary('g2-m1-l4', 2, 'g2-m1', 4, "Комп'ютерні мережі"),
+    ],
+  })
+  await page.goto('/lesson-engine.html')
+  const cards = page.locator('.le-lesson-list .le-lesson-card')
+  await expect(cards).toHaveCount(4)
+  await expect(page.getByRole('heading', { name: 'Модуль 2' }).first()).toBeVisible()
+
+  await page.getByLabel('Клас', { exact: true }).selectOption('1')
+  await expect(cards).toHaveCount(2)
+  await expect(page.getByLabel('Модуль', { exact: true }).locator('option')).toHaveText(['Усі модулі', 'Модуль 1', 'Модуль 2'])
+  await page.getByLabel('Модуль', { exact: true }).selectOption('g1-m2')
+  await expect(cards).toHaveText([/Увімкнення пристрою/])
+  await expect(page).toHaveURL(/grade=1&module=g1-m2/)
+
+  await page.getByRole('button', { name: 'Скинути' }).click()
+  await page.getByLabel('Пошук уроку').fill('урок 8')
+  await expect(cards).toHaveText([/Файли й папки/])
+  await page.getByLabel('Пошук уроку').fill('немає такого')
+  await expect(page.getByText('За цими фільтрами уроків немає.')).toBeVisible()
+
+  // Filters survive a reload (and «Назад» from a lesson).
+  await page.goto('/lesson-engine.html?grade=2')
+  await expect(page.getByLabel('Клас', { exact: true })).toHaveValue('2')
+  await expect(cards).toHaveCount(2)
+  const results = await new AxeBuilder({ page }).include('.le-list-view').withTags(WCAG_AA_TAGS).analyze()
+  expect(results.violations.map(v => v.id)).toEqual([])
 })
 
 test('teacher opens a lesson from the list and sees the full plan with teacher-only notes', async ({ page }) => {
