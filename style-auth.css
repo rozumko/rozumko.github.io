@@ -5,6 +5,7 @@
   --auth-accent: var(--clr-primary);
   --auth-accent-hover: var(--clr-primary-dark);
   --auth-focus-ring: var(--clr-focus-ring);
+  --auth-control-border: var(--clr-border);
   --auth-shadow-xs: 0 1px 2px rgb(16 24 40 / 0.05);
   min-height: 100vh;
   min-height: 100dvh;
@@ -47,7 +48,7 @@
   justify-content: center;
   min-height: 2.25rem;
   padding: 0.375rem 0.75rem;
-  border: 1px solid var(--clr-border);
+  border: 1px solid var(--auth-control-border);
   border-radius: 0.5rem;
   background: var(--clr-surface);
   color: var(--clr-text);
@@ -137,7 +138,7 @@
   width: 100%;
   min-height: 2.75rem;
   padding: var(--sp-2) 0.875rem;
-  border: 1px solid var(--clr-border);
+  border: 1px solid var(--auth-control-border);
   border-radius: 0.5rem;
   background: var(--clr-surface);
   color: var(--clr-text);
@@ -149,7 +150,7 @@
 .auth-input:focus-visible {
   border-color: var(--auth-accent);
   outline: none;
-  box-shadow: 0 0 0 4px var(--auth-focus-ring);
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--auth-focus-ring);
 }
 
 .auth-privacy {
@@ -202,7 +203,7 @@
 
 .auth-button:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 4px var(--auth-focus-ring);
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--auth-focus-ring);
 }
 
 .auth-button:disabled {
@@ -220,7 +221,7 @@
 }
 
 .auth-button--secondary {
-  border-color: var(--clr-border);
+  border-color: var(--auth-control-border);
   background: var(--clr-surface);
   color: var(--clr-text);
 }
