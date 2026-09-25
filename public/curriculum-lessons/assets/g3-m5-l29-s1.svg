@@ -1,4 +1,4 @@
-<svg viewBox="0 0 860 200" role="img" aria-labelledby="g3u29a-t g3u29a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 860 200" role="img" aria-labelledby="g3u29a-t g3u29a-d" xmlns="http://www.w3.org/2000/svg" width="860" height="200">
     <title id="g3u29a-t">Цикл підбору одного параметра</title>
     <desc id="g3u29a-d">Скинути початковий стан, змінити одне значення, спрогнозувати, запустити, порівняти з ціллю. Якщо не збіглося — наступна версія.</desc>
     <rect x="6" y="14" width="140" height="130" rx="12" fill="#F0F4F8" stroke="#0033A0" stroke-width="2"/>

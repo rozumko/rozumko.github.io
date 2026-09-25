@@ -1,4 +1,4 @@
-<svg viewBox="0 0 860 200" role="img" aria-labelledby="g3u24a-t g3u24a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 860 200" role="img" aria-labelledby="g3u24a-t g3u24a-d" xmlns="http://www.w3.org/2000/svg" width="860" height="200">
     <title id="g3u24a-t">Модель виправлення помилки</title>
     <desc id="g3u24a-d">Чотири кроки: очікував, отримав, знайшов, виправив. Після виправлення алгоритм запускають знову.</desc>
     <rect x="6" y="14" width="185" height="130" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>

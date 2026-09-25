@@ -1,4 +1,4 @@
-<svg viewBox="0 0 800 220" role="img" aria-labelledby="svg-title-debug-cycle svg-desc-debug-cycle" style="display:block;width:100%;height:auto;max-width:800px;margin:18px auto;" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 800 220" role="img" aria-labelledby="svg-title-debug-cycle svg-desc-debug-cycle" xmlns="http://www.w3.org/2000/svg" width="800" height="220">
       <title id="svg-title-debug-cycle">Цикл регулярного тестування та налагодження програм</title>
       <desc id="svg-desc-debug-cycle">Схема показує 5 послідовних кроків налагодження: Спрогнозуй, Запусти, Опиши проблему, Зміни одну річ і Запусти знову.</desc>
       

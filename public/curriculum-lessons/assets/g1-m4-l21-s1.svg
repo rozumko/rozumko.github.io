@@ -1,4 +1,4 @@
-<svg viewBox="0 0 600 240" role="img" aria-labelledby="lesson-svg-title lesson-svg-desc" style="display:block;width:100%;height:auto;max-width:600px;margin:16px auto;" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 600 240" role="img" aria-labelledby="lesson-svg-title lesson-svg-desc" xmlns="http://www.w3.org/2000/svg" width="600" height="240">
         <title id="lesson-svg-title">Схема простого лінійного алгоритму</title>
         <desc id="lesson-svg-desc">Ця схема показує три послідовні кроки алгоритму: початок, виконання дій по порядку та успішне завершення.</desc>
         <rect x="10" y="10" width="580" height="220" rx="8" fill="#FAFAFA" stroke="#D9E2F0" stroke-width="1"/>

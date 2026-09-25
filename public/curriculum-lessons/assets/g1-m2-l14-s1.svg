@@ -1,4 +1,4 @@
-<svg aria-label="Ілюстрація до теми уроку" viewBox="0 0 600 130" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: auto; max-height: 130px; display: block;">
+<svg aria-label="Ілюстрація до теми уроку" viewBox="0 0 600 130" xmlns="http://www.w3.org/2000/svg" width="600" height="130">
         <!-- Card 1: Subject -->
         <rect x="10" y="10" width="125" height="70" rx="8" fill="#EBFBEE" stroke="#48BB78" stroke-width="2"/>
         <text x="72.5" y="38" font-size="12" font-weight="bold" fill="#2F855A" text-anchor="middle">1. Хто / Що</text>

@@ -1,4 +1,4 @@
-<svg viewBox="0 0 860 220" role="img" aria-labelledby="g3u27a-t g3u27a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 860 220" role="img" aria-labelledby="g3u27a-t g3u27a-d" xmlns="http://www.w3.org/2000/svg" width="860" height="220">
     <title id="g3u27a-t">Два скрипти стартують разом і узгоджені блоком чекати</title>
     <desc id="g3u27a-d">Зелений прапорець запускає два скрипти одночасно. Котик говорить «Привіт!» 2 секунди, потім чекає. Песик спершу чекає 2 секунди, а потім відповідає. Репліки йдуть по черзі й не накладаються.</desc>
     <rect x="330" y="8" width="200" height="40" rx="10" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>

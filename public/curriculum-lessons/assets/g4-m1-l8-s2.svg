@@ -1,4 +1,4 @@
-<svg viewBox="0 0 860 250" role="img" aria-labelledby="g4u8b-t g4u8b-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 860 250" role="img" aria-labelledby="g4u8b-t g4u8b-d" xmlns="http://www.w3.org/2000/svg" width="860" height="250">
     <title id="g4u8b-t">Таблиця шифру Цезаря з ключем 3</title>
     <desc id="g4u8b-d">Два блоки по тринадцять літер. Верхній рядок кожного блоку — звичайна літера, нижній — шифрована, зсунута на три кроки вперед. A стає D, B стає E, C стає F і так далі. Наприкінці алфавіту відлік іде з початку: X стає A, Y стає B, Z стає C.</desc>
     <text x="10" y="50" font-size="15" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">plain</text>

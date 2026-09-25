@@ -1,4 +1,4 @@
-<svg viewBox="0 0 860 220" role="img" aria-labelledby="g3u23a-t g3u23a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 860 220" role="img" aria-labelledby="g3u23a-t g3u23a-d" xmlns="http://www.w3.org/2000/svg" width="860" height="220">
     <title id="g3u23a-t">Довгий і лаконічний алгоритм з однаковим результатом</title>
     <desc id="g3u23a-d">Ліворуч довгий алгоритм: вперед, вперед, поверни ліворуч, поверни праворуч, вперед — п'ять кроків. Праворуч лаконічний: вперед на 3 клітинки — один крок. Обидва приводять робота до прапорця.</desc>
     <rect x="6" y="14" width="418" height="170" rx="12" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>

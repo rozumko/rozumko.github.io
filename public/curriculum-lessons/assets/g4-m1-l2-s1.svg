@@ -1,4 +1,4 @@
-<svg viewBox="0 0 860 250" role="img" aria-labelledby="g4u2a-t g4u2a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 860 250" role="img" aria-labelledby="g4u2a-t g4u2a-d" xmlns="http://www.w3.org/2000/svg" width="860" height="250">
     <title id="g4u2a-t">Клієнт і сервер: запит і відповідь</title>
     <desc id="g4u2a-d">Ліворуч клієнт — браузер на твоєму пристрої. Праворуч сервер — комп'ютер, що зберігає сайт. Верхня стрілка: крок 1, запит — клієнт просить сторінку за URL. Нижня стрілка: крок 2, відповідь — сервер надсилає текст і картинки сторінки. Обидві стрілки проходять через Інтернет.</desc>
     <rect x="6" y="30" width="226" height="170" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
