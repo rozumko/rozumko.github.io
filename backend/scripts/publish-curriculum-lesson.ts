@@ -93,8 +93,12 @@ async function accessToken(): Promise<string> {
     headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY },
     body: JSON.stringify({ email: SUPABASE_EMAIL, password: SUPABASE_PASSWORD }),
   })
-  const data = await res.json() as { access_token?: string; error_description?: string }
-  if (!res.ok || !data.access_token) fail(`sign-in failed: ${data.error_description ?? res.status}`)
+  // Supabase Auth names the reason in different fields across versions.
+  const data = await res.json().catch(() => ({})) as { access_token?: string; error_description?: string; msg?: string; error_code?: string }
+  if (!res.ok || !data.access_token) {
+    const reason = [data.error_code, data.error_description ?? data.msg].filter(Boolean).join(': ')
+    fail(`sign-in failed: HTTP ${res.status}${reason ? ` — ${reason}` : ''}`)
+  }
   return data.access_token
 }
 const token = await accessToken()
