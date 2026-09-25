@@ -63,8 +63,8 @@ function isUnknownAccountError(err: unknown): boolean {
     || (apiErr.message ?? '').includes('ще не створено')
 }
 
-const PENDING_CREATED_MSG = '✅ Кабінет створено! Лишилось підтвердити email за посиланням у листі — після цього увійдіть ще раз.'
-const ACTIVATED_MSG = '✅ Кабінет готовий! Увійдіть, щоб почати.'
+const PENDING_CREATED_MSG = 'Кабінет створено! Лишилось підтвердити email за посиланням у листі — після цього увійдіть ще раз.'
+const ACTIVATED_MSG = 'Кабінет готовий! Увійдіть, щоб почати.'
 
 function showRegisterRequestBox() {
   $maybe('register-request-box')?.classList.remove('hidden')
@@ -400,7 +400,7 @@ loginForm.addEventListener('submit', async (e) => {
       showRegisterRequestBox()
     } else {
       loginError.textContent = isPendingError(err)
-        ? '⏳ Акаунт очікує підтвердження адміністратора. Зверніться до організатора олімпіади.'
+        ? 'Акаунт очікує підтвердження адміністратора. Зверніться до організатора олімпіади.'
         : friendlyError(msg)
     }
     loginSubmitBtn.disabled    = false
@@ -584,7 +584,7 @@ forgotForm?.addEventListener('submit', async (e) => {
   try {
     await requestPasswordReset(email, 'teacher.html', 'teacher', captchaToken)
     if (forgotError) {
-      forgotError.textContent = '✅ Якщо такий акаунт існує, лист уже в дорозі. Перевірте пошту (і папку «Спам»).'
+      forgotError.textContent = 'Якщо такий акаунт існує, лист уже в дорозі. Перевірте пошту (і папку «Спам»).'
       forgotError.classList.add('auth-message--success')
     }
   } catch (err) {
@@ -670,7 +670,7 @@ registerForm?.addEventListener('submit', async (e) => {
     await registerTeacher(email, password, school, captchaToken)
     hideColdStartBanner()
     if (registerError) {
-      registerError.textContent = '✅ Реєстрацію надіслано! Перевірте пошту та підтвердіть email, потім увійдіть.'
+      registerError.textContent = 'Реєстрацію надіслано! Перевірте пошту та підтвердіть email, потім увійдіть.'
       registerError.classList.add('auth-message--success')
     }
     // Turnstile tokens are single-use, so reset before a possible retry.
@@ -866,10 +866,10 @@ function renderGenerateRegistrationOptions() {
     if (hasRegs) {
       const pendingPayment = teacherRegistrations.some(r => r.paymentStatus === 'pending')
       generateStatus.textContent = pendingPayment
-        ? '⏳ Очікується підтвердження оплати. Зверніться до організатора олімпіади.'
-        : '✅ Всі коди для поточних реєстрацій вже згенеровані.'
+        ? 'Очікується підтвердження оплати. Зверніться до організатора олімпіади.'
+        : 'Всі коди для поточних реєстрацій вже згенеровані.'
     } else {
-      generateStatus.textContent = 'ℹ️ Спочатку зареєструйте клас на активну подію.'
+      generateStatus.textContent = 'Спочатку зареєструйте клас на активну подію.'
     }
     generateStatus.className = 'generate-status generate-status--info'
     return
@@ -913,7 +913,7 @@ function renderRegistrationEventOptions() {
     if (registrationSubmitBtn) registrationSubmitBtn.disabled = true
     // Підказка: адмін має опублікувати подію
     if (registrationStatus) {
-      registrationStatus.textContent = 'ℹ️ Адміністратор ще не опублікував жодної події. Зверніться до організатора олімпіади.'
+      registrationStatus.textContent = 'Адміністратор ще не опублікував жодної події. Зверніться до організатора олімпіади.'
       registrationStatus.className   = 'generate-status generate-status--info'
     }
     return
@@ -1004,7 +1004,7 @@ function renderClassDetail() {
       <div class="class-detail__inline">
         <input id="student-label-input" type="text" maxlength="60"
           placeholder="Маша К., Учень 5, …" class="form-input" autocomplete="off" aria-describedby="student-label-hint" />
-        <button type="submit" class="btn btn--success">
+        <button type="submit" class="btn btn--secondary">
           <i class="fas fa-plus" aria-hidden="true"></i> Додати
         </button>
       </div>
@@ -1208,7 +1208,7 @@ function renderRegistrations(registrations: EventRegistration[]) {
         <p class="teacher-info-card__meta">${esc(String(reg.grade))} клас · ${esc(String(reg.participantsCount))} учасників · ${paymentLabel(reg.paymentStatus)} · ${codeStatus}</p>
       </div>
       <div class="teacher-info-card__actions">
-        <span class="teacher-info-card__badge">${reg.status === 'cancelled' ? '❌ Скасовано' : esc(reg.status)}</span>
+        <span class="teacher-info-card__badge">${reg.status === 'cancelled' ? 'Скасовано' : esc(reg.status)}</span>
         ${isCancellable ? `<button class="btn-cancel-reg btn btn--danger btn--sm" data-id="${esc(reg.id)}" aria-label="Скасувати реєстрацію">
           <i class="fas fa-times" aria-hidden="true"></i>
         </button>` : ''}
@@ -1254,11 +1254,11 @@ function renderRegistrations(registrations: EventRegistration[]) {
 
 function paymentLabel(status: string): string {
   const labels: Record<string, string> = {
-    not_required: '🎉 Безкоштовно (пілот)',
-    pending:      '⏳ Очікує оплату батьків',
-    paid:         '✅ Оплачено',
-    failed:       '❌ Помилка оплати',
-    refunded:     '↩️ Повернено',
+    not_required: 'Безкоштовно (пілот)',
+    pending:      'Очікує оплату батьків',
+    paid:         'Оплачено',
+    failed:       'Помилка оплати',
+    refunded:     'Повернено',
   }
   return labels[status] ?? status
 }

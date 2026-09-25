@@ -37,7 +37,7 @@ async function authMetrics(page: Page): Promise<AuthMetrics> {
   })
 }
 
-test('teacher and parent auth use one component geometry with distinct accents', async ({ page }) => {
+test('teacher and parent auth use one component geometry with a plain header', async ({ page }) => {
   await page.addInitScript(() => {
     ;(window as any).turnstile = {
       render: () => 'stub-widget',
@@ -58,9 +58,11 @@ test('teacher and parent auth use one component geometry with distinct accents',
   expect(parent.inputRadius).toBe(teacher.inputRadius)
   expect(parent.buttonHeight).toBeCloseTo(teacher.buttonHeight, 0)
   expect(parent.buttonRadius).toBe(teacher.buttonRadius)
-  expect(teacher.headerColor).toBe(teacher.buttonColor)
-  expect(parent.headerColor).toBe(parent.buttonColor)
-  expect(parent.headerColor).not.toBe(teacher.headerColor)
+  // Plain card header on both: the accent lives on the primary button only.
+  expect(teacher.headerColor).toBe('rgba(0, 0, 0, 0)')
+  expect(parent.headerColor).toBe('rgba(0, 0, 0, 0)')
+  // The teacher sign-in uses the cabinet primary (#2563eb).
+  expect(teacher.buttonColor).toBe('rgb(37, 99, 235)')
 
   await page.setViewportSize({ width: 390, height: 844 })
 

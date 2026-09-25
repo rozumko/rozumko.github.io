@@ -181,6 +181,112 @@
   --adm-badge-sky-bg:   #0c4a6e;  --adm-badge-sky-fg:   #7dd3fc;
 }
 
+/* ── Teacher workspace (teacher.html, lesson-engine.html) ─────────
+   Neutral dashboard scale: plain grays, one brand accent, flat cards.
+   Scoped so the kid-facing screens keep the rounded Nunito look.
+   The second half remaps the global tokens that style-teacher.css
+   already consumes, so older rules follow the scale without edits. */
+.auth-surface--teacher,
+.teacher-dashboard,
+.le-page {
+  --ws-gray-25:   #fcfcfd;
+  --ws-gray-50:   #f9fafb;
+  --ws-gray-100:  #f2f4f7;
+  --ws-gray-200:  #e4e7ec;
+  --ws-gray-300:  #d0d5dd;
+  --ws-gray-400:  #98a2b3;
+  --ws-gray-500:  #667085;   /* AA on white and gray-50 */
+  --ws-gray-600:  #475467;
+  --ws-gray-700:  #344054;
+  --ws-gray-800:  #1d2939;
+  --ws-gray-900:  #101828;
+
+  --ws-brand-25:  #f5f8ff;
+  --ws-brand-50:  #eff4ff;
+  --ws-brand-100: #dbe6fe;
+  --ws-brand-200: #bfd3fe;
+  --ws-brand-500: #2563eb;
+  --ws-brand-600: #1d4ed8;
+  --ws-brand-700: #1e40af;
+
+  --ws-success-50:  #ecfdf3;
+  --ws-success-200: #abefc6;
+  --ws-success-600: #079455;
+  --ws-success-700: #067647;
+  --ws-warning-50:  #fffaeb;
+  --ws-warning-200: #fedf89;
+  --ws-warning-700: #b54708;
+  --ws-error-50:    #fef3f2;
+  --ws-error-200:   #fecdca;
+  --ws-error-600:   #d92d20;
+  --ws-error-700:   #b42318;
+
+  --ws-text:        var(--ws-gray-900);
+  --ws-text-2:      var(--ws-gray-600);
+  --ws-text-3:      var(--ws-gray-500);
+  --ws-line:        var(--ws-gray-200);
+  --ws-line-soft:   var(--ws-gray-100);
+  --ws-bg:          var(--ws-gray-50);
+  --ws-surface:     #ffffff;
+  --ws-hover:       var(--ws-gray-50);
+  --ws-accent:      var(--ws-brand-500);
+  --ws-accent-hover:var(--ws-brand-600);
+  --ws-accent-soft: var(--ws-brand-50);
+  --ws-accent-text: var(--ws-brand-600);
+
+  --ws-text-xs:   0.75rem;    /* 12 */
+  --ws-text-sm:   0.875rem;   /* 14 */
+  --ws-text-md:   1rem;       /* 16 */
+  --ws-text-lg:   1.125rem;   /* 18 */
+  --ws-text-xl:   1.25rem;    /* 20 */
+  --ws-text-2xl:  1.5rem;     /* 24 */
+
+  --ws-r-sm:  0.375rem;       /*  6 — badges, small controls */
+  --ws-r:     0.5rem;         /*  8 — buttons, inputs, list rows */
+  --ws-r-lg:  0.75rem;        /* 12 — cards, panels, tables */
+
+  --ws-shadow-xs: 0 1px 2px rgb(16 24 40 / 0.05);
+  --ws-shadow-lg: 0 12px 16px -4px rgb(16 24 40 / 0.08), 0 4px 6px -2px rgb(16 24 40 / 0.03);
+  --ws-ring:      0 0 0 4px rgb(37 99 235 / 0.16);
+
+  /* Remap of the global tokens inside the workspace. */
+  --font-family:        'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --clr-brand:          var(--ws-brand-500);
+  --clr-brand-dark:     var(--ws-brand-600);
+  --clr-focus-ring:     rgb(37 99 235 / 0.5);
+  --clr-teacher:        var(--ws-brand-500);
+  --clr-teacher-dark:   var(--ws-brand-600);
+  --clr-sky:            var(--ws-brand-500);
+  --clr-sky-dark:       var(--ws-brand-600);
+  --clr-sky-light:      var(--ws-brand-50);
+  --clr-surface-muted:  var(--ws-gray-50);
+  --clr-surface-subtle: var(--ws-gray-100);
+  --clr-border:         var(--ws-gray-200);
+  --clr-border-light:   var(--ws-gray-100);
+  --clr-text:           var(--ws-gray-900);
+  --clr-text-muted:     var(--ws-gray-600);
+  --clr-text-faint:     var(--ws-gray-500);
+  --r-sm:   var(--ws-r-sm);
+  --r-md:   var(--ws-r);
+  --r-lg:   var(--ws-r-lg);
+  --r-xl:   var(--ws-r-lg);
+  --r-2xl:  var(--ws-r-lg);
+  --r-3xl:  var(--ws-r-lg);
+  --shadow-card: var(--ws-shadow-xs);
+  --shadow-btn:  none;
+  --shadow-sm:   var(--ws-shadow-xs);
+  --shadow-md:   var(--ws-shadow-xs);
+  --shadow-lg:   var(--ws-shadow-lg);
+}
+
+/* What the class sees (projector window, in-page board) stays in the
+   kid-facing Nunito; only the teacher's own screens use Inter. */
+.lb-page,
+.le-page .le-board {
+  --font-family: 'Nunito', sans-serif;
+  font-family: var(--font-family);
+}
+
 /* Light admin theme (the default; dark is chosen with the header toggle). */
 :root[data-admin-theme="light"] {
   --adm-bg:             #eef2f7;

@@ -50,6 +50,13 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, t
   return node
 }
 
+/** Font Awesome glyph; decorative, the button text carries the name. */
+function icon(name: string): HTMLElement {
+  const i = el('i', `fas ${name}`)
+  i.setAttribute('aria-hidden', 'true')
+  return i
+}
+
 function button(label: string, className: string): HTMLButtonElement {
   const b = el('button', className, label)
   b.type = 'button'
@@ -93,7 +100,8 @@ export function mountBoardWindow(lesson: LessonDefinition, options: BoardWindowO
   const status = el('p', 'le-presenter__status')
   status.setAttribute('role', 'status')
 
-  const openButton = button('🖥 Відкрити на проєкторі', 'le-board__action le-board__action--primary')
+  const openButton = button('Відкрити на проєкторі', 'le-board__action le-board__action--primary')
+  openButton.prepend(icon('fa-desktop'), ' ')
   const hereButton = button('На весь екран тут', 'le-board__action')
   const prev = button('← Слайд', 'le-board__action')
   const next = button('Слайд →', 'le-board__action le-board__action--primary')
