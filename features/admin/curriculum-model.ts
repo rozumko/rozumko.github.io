@@ -106,6 +106,7 @@ function contentTemplate(type: LessonBlockType): Json {
     case 'visual': return { heading: uk('Схема'), assetId: '' }
     case 'discussion': return { prompt: uk('Питання для обговорення?') }
     case 'practice': return { heading: uk('Практична робота'), steps: [{ items: [uk('Крок 1.')] }] }
+    case 'canvas': return { heading: uk('Новий блок'), teacher: [{ type: 'paragraph', text: uk('Текст для вчителя.') }], board: [], student: [] }
     case 'activity': return { heading: uk('Інтерактивне завдання') }
     case 'support': return { heading: uk('Підтримка'), items: [uk('Підказка.')] }
     case 'extension': return { heading: uk('Для тих, хто впорався'), prompt: uk('Додаткове завдання.') }
@@ -137,7 +138,7 @@ const DEFAULT_MODALITY: Partial<Record<LessonBlockType, BlockModality>> = {
 
 /** Blocks the console steps through by default; support material is not a step. */
 const STEP_TYPES = new Set<LessonBlockType>([
-  'hero', 'essential-question', 'explanation', 'visual', 'discussion', 'practice', 'activity', 'reflection', 'break',
+  'hero', 'essential-question', 'explanation', 'visual', 'discussion', 'practice', 'canvas', 'activity', 'reflection', 'break',
 ])
 
 export function layoutFor(type: LessonBlockType): PresentationLayout {
@@ -302,14 +303,18 @@ export function setOnBoard(block: EditableBlock, onBoard: boolean): void {
   else delete block.presentation
 }
 
-/** Only activities can be sent to student devices. */
+/** Activities are dispatched; practice and canvas content appear with the current step. */
 export function setOnDevices(block: EditableBlock, onDevices: boolean): void {
-  block.views.remote = onDevices && block.type === 'activity' && block.audience.student
+  block.views.remote = onDevices && (block.type === 'activity' || block.type === 'practice' || block.type === 'canvas') && block.audience.student
+  if (block.views.remote && (block.type === 'practice' || block.type === 'canvas')) block.runtime = { step: true }
 }
 
 export function setStep(block: EditableBlock, step: boolean): void {
   if (step) block.runtime = { step: true }
-  else delete block.runtime
+  else {
+    delete block.runtime
+    if (block.type === 'practice' || block.type === 'canvas') block.views.remote = false
+  }
 }
 
 /** One short line per bullet, at most 5; empty lines are dropped. */

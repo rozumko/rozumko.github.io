@@ -1,8 +1,7 @@
 // Admin tab "Керовані уроки": list and editor for Lesson Engine lessons.
-// Structure is edited with forms (lesson data, blocks, board and device
-// switches, slides, outcomes); the content of a block and an activity's
-// configuration and answer key are edited as JSON. The server validates every
-// save; pure editing rules live in curriculum-model.ts.
+// Common lesson content and activities use forms; JSON remains available for
+// advanced imported content. The server validates every save; pure editing
+// rules live in curriculum-model.ts.
 
 import {
   createAdminCurriculumLesson,
@@ -26,6 +25,7 @@ import { $ } from '../../utils/dom.js'
 import { createFocusTrap } from '../../utils/focus-trap.js'
 import { friendlyError, showConfirm } from './ui.js'
 import { renderLessonDocument } from '../lesson-engine/document-view.js'
+import { renderCanvasEditor } from './curriculum-canvas-editor.js'
 import { openPresentation } from '../lesson-engine/presentation-view.js'
 import { BLOCK_TYPE_LABELS, MODALITY_LABELS } from '../lesson-engine/projection.js'
 import {
@@ -122,7 +122,8 @@ const CONTENT_HINTS: Record<LessonBlockType, string> = {
   explanation: 'heading, paragraphs (1–20, обов’язково), callout { title, text }',
   visual: 'heading, assetId (id ресурсу з розділу «Ресурси»)',
   discussion: 'heading, prompt (обов’язково), expectedResponse (бачить лише вчитель)',
-  practice: 'heading, intro, steps: [{ title, items: [...] }]',
+  practice: 'heading, intro, table: { headers: [...], rows: [[...]] }, steps: [{ title, items: [...] }]',
+  canvas: 'heading, teacher: [...], board: [...], student: [...]. HTML перетворюється на структуровані елементи.',
   activity: 'heading. Завдання налаштовується нижче.',
   support: 'heading, items (1–20)',
   extension: 'heading, prompt (обов’язково), example',
@@ -154,6 +155,8 @@ interface EditorState {
   issues: Issue[]
   jsonErrors: Map<string, string>
   openBlocks: Set<string>
+  surfaceTabs: Map<string, 'teacher' | 'board' | 'student'>
+  openSections: Map<string, boolean>
   message: string
 }
 
@@ -259,6 +262,15 @@ export function initCurriculumTab() {
   $<HTMLInputElement>('cl-filter-search').addEventListener('input', renderList)
   $<HTMLSelectElement>('cl-filter-status').addEventListener('change', renderList)
   $('cl-new-btn').addEventListener('click', () => { void startNewLesson() })
+  $('cl-template-btn').addEventListener('click', () => { void downloadTemplate() })
+  $('cl-copy-prompt').addEventListener('click', () => {
+    const prompt = $<HTMLTextAreaElement>('cl-ai-prompt')
+    const copy = navigator.clipboard?.writeText(prompt.value)
+    if (!copy) { prompt.focus(); prompt.select(); return }
+    void copy.then(() => {
+      $('cl-copy-prompt').textContent = 'Скопійовано'
+    }).catch(() => { prompt.focus(); prompt.select() })
+  })
   $<HTMLInputElement>('cl-import-file').addEventListener('change', event => {
     const input = event.currentTarget as HTMLInputElement
     const file = input.files?.[0]
@@ -345,6 +357,8 @@ function startEditor(row: AdminCurriculumLesson | null, lesson: EditableLesson, 
     issues: [],
     jsonErrors: new Map(),
     openBlocks: new Set(),
+    surfaceTabs: new Map(),
+    openSections: new Map(),
     message: '',
   }
   $('cl-list-view').hidden = true
@@ -537,6 +551,157 @@ function jsonField(key: string, label: string, value: unknown, apply: (value: un
   return wrap
 }
 
+async function downloadTemplate() {
+  if (!packs.length) await loadCurriculumTab()
+  const pack = packs[0]
+  if (!pack) {
+    $('cl-list-error').textContent = 'Немає жодного предмета для шаблону.'
+    return
+  }
+  const grade = Math.min(Math.max(2, pack.gradeRange.min), pack.gradeRange.max)
+  const lesson = newLesson({ id: freeLessonId(grade), title: 'Назва уроку', grade, pack: packInfo(pack.id)! })
+  lesson.blocks.push(newBlock('explanation', lesson, packInfo(pack.id)))
+  lesson.blocks.push(newBlock('canvas', lesson, packInfo(pack.id)))
+  const practice = newBlock('practice', lesson, packInfo(pack.id))
+  practice.content.table = { headers: [{ uk: 'Назва' }, { uk: 'Значення' }], rows: [[{ uk: 'Приклад' }, { uk: '1' }]] }
+  setOnDevices(practice, true)
+  lesson.blocks.push(practice)
+  lesson.blocks.push(newBlock('activity', lesson, packInfo(pack.id)))
+  downloadDefinition(lesson, 'kerovanyi-urok-template.json')
+}
+
+function localizedValue(value: unknown): string {
+  return isRecord(value) && typeof value.uk === 'string' ? value.uk : ''
+}
+
+function localizedField(target: Record<string, unknown>, key: string, label: string, required = false, rows = 2): HTMLElement {
+  const value = localizedValue(target[key])
+  const update = (text: string) => {
+    if (text || required) target[key] = { ...(isRecord(target[key]) ? target[key] : {}), uk: text }
+    else delete target[key]
+    touched()
+  }
+  return field(label, rows > 1 ? textArea(value, update, rows) : textInput(value, update), required ? 'Обов’язкове поле.' : undefined)
+}
+
+function localizedListField(target: Record<string, unknown>, key: string, label: string, itemLabel: string): HTMLElement {
+  const box = el('fieldset', 'cl-fieldset')
+  box.append(el('legend', 'adm-label', label))
+  const items = Array.isArray(target[key]) ? target[key] as unknown[] : []
+  items.forEach((item, index) => {
+    const row = el('div', 'cl-row cl-list-row')
+    const input = textArea(localizedValue(item), value => {
+      items[index] = { ...(isRecord(items[index]) ? items[index] : {}), uk: value }
+      target[key] = items
+      touched()
+    }, 2)
+    input.setAttribute('aria-label', `${itemLabel} ${index + 1}`)
+    row.append(input, button('Прибрати', 'btn-adm-ghost btn--sm', () => {
+      items.splice(index, 1)
+      target[key] = items
+      changed()
+    }))
+    box.append(row)
+  })
+  box.append(button(`+ ${itemLabel}`, 'btn-adm-ghost btn--sm', () => {
+    items.push({ uk: '' })
+    target[key] = items
+    changed()
+  }))
+  return box
+}
+
+function nextLocalId(items: unknown[], prefix: string): string {
+  const used = new Set(items.filter(isRecord).map(item => item.id))
+  let number = 1
+  while (used.has(`${prefix}${number}`)) number++
+  return `${prefix}${number}`
+}
+
+function renderContentFields(block: EditableBlock): HTMLElement {
+  const content = block.content
+  const box = el('fieldset', 'cl-fieldset')
+  box.append(el('legend', 'adm-label', 'Зміст блоку'))
+  const text = (key: string, label: string, required = false, rows = 2) => box.append(localizedField(content, key, label, required, rows))
+  const list = (key: string, label: string, itemLabel: string) => box.append(localizedListField(content, key, label, itemLabel))
+  if (!['hero', 'essential-question', 'teacher-note', 'break'].includes(block.type)) text('heading', 'Заголовок', false, 1)
+  switch (block.type) {
+    case 'hero':
+      text('kicker', 'Надзаголовок', false, 1)
+      text('title', 'Назва на сторінці', true, 1)
+      text('subtitle', 'Підзаголовок')
+      break
+    case 'essential-question': text('question', 'Головне питання', true); break
+    case 'explanation':
+      list('paragraphs', 'Пояснення', 'Абзац')
+      if (content.callout && isRecord(content.callout)) {
+        const callout = el('fieldset', 'cl-fieldset')
+        callout.append(el('legend', 'adm-label', 'Виділена думка'))
+        callout.append(localizedField(content.callout, 'title', 'Заголовок'), localizedField(content.callout, 'text', 'Текст', true))
+        callout.append(button('Прибрати виділення', 'btn-adm-ghost btn--sm', () => { delete content.callout; changed() }))
+        box.append(callout)
+      } else box.append(button('+ Виділена думка', 'btn-adm-ghost btn--sm', () => { content.callout = { text: { uk: '' } }; changed() }))
+      break
+    case 'visual': {
+      const assets = editor!.lesson.assets ?? []
+      const ids = assets.map(asset => asset.id)
+      const picker = select(ids, id => `${id}: ${assets.find(asset => asset.id === id)?.alt.uk ?? ''}`, String(content.assetId ?? ''), id => { content.assetId = id; touched() })
+      if (!ids.includes(String(content.assetId ?? ''))) picker.prepend(new Option('Оберіть ресурс', '', true, true))
+      box.append(field('Ілюстрація, схема або відео', picker, 'Додайте файл або URL у розділі «Ресурси й словник».'))
+      break
+    }
+    case 'discussion':
+      text('prompt', 'Питання класу', true)
+      text('expectedResponse', 'Орієнтовна відповідь для вчителя')
+      break
+    case 'practice': {
+      text('intro', 'Вступ до роботи')
+      const table = isRecord(content.table) ? content.table : null
+      if (table) {
+        const headers = Array.isArray(table.headers) ? table.headers as { uk?: string }[] : []
+        const rows = Array.isArray(table.rows) ? table.rows as { uk?: string }[][] : []
+        const group = el('fieldset', 'cl-fieldset')
+        group.append(el('legend', 'adm-label', 'Таблиця для учнів'))
+        group.append(field('Заголовки стовпців (через Tab)', textArea(headers.map(cell => cell.uk ?? '').join('\t'), value => {
+          table.headers = value.split('\t').map(cell => ({ uk: cell.trim() }))
+          touched()
+        }, 2)))
+        group.append(field('Рядки (кожен з нового рядка, клітинки через Tab)', textArea(rows.map(row => row.map(cell => cell.uk ?? '').join('\t')).join('\n'), value => {
+          table.rows = value.split('\n').filter(Boolean).map(row => row.split('\t').map(cell => ({ uk: cell.trim() })))
+          touched()
+        }, 6), 'Скопіюйте діапазон клітинок із таблиці та вставте сюди.'))
+        group.append(button('Прибрати таблицю', 'btn-adm-ghost btn--sm', () => { delete content.table; changed() }))
+        box.append(group)
+      } else box.append(button('+ Таблиця', 'btn-adm-ghost btn--sm', () => {
+        content.table = { headers: [{ uk: 'Стовпець 1' }, { uk: 'Стовпець 2' }], rows: [[{ uk: 'Значення 1' }, { uk: 'Значення 2' }]] }
+        changed()
+      }))
+      const steps = Array.isArray(content.steps) ? content.steps as unknown[] : []
+      steps.forEach((step, index) => {
+        if (!isRecord(step)) return
+        const group = el('fieldset', 'cl-fieldset')
+        group.append(el('legend', 'adm-label', `Крок ${index + 1}`))
+        group.append(localizedField(step, 'title', 'Назва кроку', false, 1), localizedListField(step, 'items', 'Дії', 'Дія'))
+        group.append(button('Прибрати крок', 'btn-adm-ghost btn--sm', () => { steps.splice(index, 1); changed() }))
+        box.append(group)
+      })
+      box.append(button('+ Крок', 'btn-adm-ghost btn--sm', () => { steps.push({ items: [{ uk: '' }] }); content.steps = steps; changed() }))
+      break
+    }
+    case 'canvas': break
+    case 'support': list('items', 'Підказки', 'Підказка'); break
+    case 'extension': text('prompt', 'Додаткове завдання', true); text('example', 'Приклад'); break
+    case 'reflection': text('prompt', 'Питання для рефлексії', true); break
+    case 'success-criteria': list('items', 'Критерії успіху', 'Критерій'); text('evidenceHint', 'Підказка для оцінювання'); break
+    case 'vocabulary': list('sentenceFrames', 'Приклади речень', 'Речення'); break
+    case 'teacher-note': text('text', 'Нотатка для вчителя', true); break
+    case 'break': text('prompt', 'Інструкція для перерви'); break
+    case 'activity': break
+    case 'objectives': box.append(el('p', 'adm-field-hint', 'Цілі редагуються в розділі «Урок».')); break
+  }
+  return box
+}
+
 // ── Editor rendering ────────────────────────────────────────────────────────
 
 const FOCUSABLE = 'input, select, textarea, button, summary'
@@ -578,7 +743,8 @@ function renderEditor() {
     actions.append(b)
   }
   actions.append(
-    button('Попередній перегляд', 'btn-adm-violet', openPreview),
+    button('Переглянути план', 'btn-adm-violet', openPreview),
+    button('Переглянути слайди', 'btn-adm-ghost', openSlides),
     button('Завантажити JSON', 'btn-adm-ghost', downloadJson),
   )
   if (state.row) actions.append(button('Історія', 'btn-adm-ghost', () => { void openHistory() }))
@@ -593,7 +759,10 @@ function renderEditor() {
   const grouped = groupIssues(state.issues)
   view.append(header, actions, dirty, message, backup)
   if (state.issues.length) view.append(renderIssueSummary(grouped))
-  view.append(renderLessonSection(grouped.lesson), renderOutcomeSection(), renderBlocksSection(grouped.blocks), renderResourcesSection())
+  if (!state.row) view.append(renderLessonSection(grouped.lesson))
+  view.append(renderBlocksSection(grouped.blocks))
+  if (state.row) view.append(renderLessonSection(grouped.lesson))
+  view.append(renderResourcesSection(), renderOutcomeSection())
   window.scrollTo(0, scrollY)
   if (focusIndex >= 0) {
     const controls = view.querySelectorAll<HTMLElement>(FOCUSABLE)
@@ -638,8 +807,10 @@ function renderIssueSummary(grouped: ReturnType<typeof groupIssues>): HTMLElemen
 }
 
 function section(title: string, open = true): { root: HTMLDetailsElement; body: HTMLDivElement } {
+  const key = title.startsWith('Блоки уроку (') ? 'Блоки уроку' : title
   const root = el('details', 'cl-section')
-  root.open = open
+  root.open = editor?.openSections.get(key) ?? open
+  root.addEventListener('toggle', () => { editor?.openSections.set(key, root.open) })
   root.append(el('summary', 'cl-section-title', title))
   const body = el('div', 'cl-section-body')
   root.append(body)
@@ -649,7 +820,7 @@ function section(title: string, open = true): { root: HTMLDetailsElement; body: 
 function renderLessonSection(issues: Issue[]): HTMLElement {
   const state = editor!
   const lesson = state.lesson
-  const { root, body } = section('Урок')
+  const { root, body } = section('Параметри уроку', !state.row || issues.length > 0)
   const grid = el('div', 'adm-form-grid')
 
   const idInput = textInput(lesson.id, () => {}, { maxLength: 64 })
@@ -801,7 +972,7 @@ function outcomePicker(label: string, onPick: (outcomeId: string) => void): HTML
 function renderOutcomeSection(): HTMLElement {
   const state = editor!
   const lesson = state.lesson
-  const { root, body } = section('Результати навчання уроку')
+  const { root, body } = section('Результати навчання уроку', false)
   body.append(el('p', 'adm-field-hint', 'Результат додається сам, коли ви пов’язуєте його із завданням. Щоб звіт міг вирішити, чи результат досягнуто, потрібне завдання-доказ з основним зв’язком.'))
   const coverage = outcomeCoverage(lesson)
   if (coverage.length === 0) body.append(el('p', 'question-item__meta', 'Урок ще не пов’язаний із жодним результатом.'))
@@ -843,24 +1014,27 @@ function blockSummaryText(block: EditableBlock, index: number): string {
 }
 
 function renderBlocksSection(blockIssues: Map<number, Issue[]>): HTMLElement {
-  const state = editor!
-  const lesson = state.lesson
+  const lesson = editor!.lesson
   const { root, body } = section(`Блоки уроку (${lesson.blocks.length})`)
-  body.append(el('p', 'adm-field-hint', 'Порядок блоків — порядок уроку. ID блоку не змінюється: на нього посилаються проведені уроки й докази.'))
+  body.append(el('p', 'adm-field-hint', 'Редагуйте текст прямо в блоках. Додайте пояснення, ілюстрацію чи завдання в потрібному місці; порядок блоків — порядок уроку.'))
   const list = el('ol', 'cl-blocks')
   lesson.blocks.forEach((block, index) => list.append(renderBlock(block, index, blockIssues.get(index) ?? [])))
   body.append(list)
+  if (!lesson.blocks.length) body.append(insertBlockRow(0))
+  return root
+}
 
-  const addRow = el('div', 'cl-row')
+function insertBlockRow(index: number): HTMLDivElement {
+  const lesson = editor!.lesson
+  const row = el('div', 'cl-row cl-insert-row')
   const type = select(LESSON_BLOCK_TYPES, BLOCK_TYPE_LABELS as Record<LessonBlockType, string>, 'explanation', () => {})
-  addRow.append(field('Новий блок', type), button('Додати блок', 'btn-adm-emerald btn--sm', () => {
-    const block = newBlock(type.value as LessonBlockType, lesson, packInfo(lesson.subjectPackId), state.reserved)
-    lesson.blocks.push(block)
-    state.openBlocks.add(block.id)
+  row.append(field('Додати після цього блоку', type), button('+ Додати', 'btn-adm-ghost btn--sm', () => {
+    const block = newBlock(type.value as LessonBlockType, lesson, packInfo(lesson.subjectPackId), editor!.reserved)
+    lesson.blocks.splice(index, 0, block)
+    editor!.openBlocks.add(block.id)
     changed(`[data-block-id="${CSS.escape(block.id)}"] summary`)
   }))
-  body.append(addRow)
-  return root
+  return row
 }
 
 function renderBlock(block: EditableBlock, index: number, issues: Issue[]): HTMLLIElement {
@@ -909,17 +1083,20 @@ function renderBlock(block: EditableBlock, index: number, issues: Issue[]): HTML
   tools.append(up, down, remove)
   body.append(tools)
 
-  const switches = el('div', 'cl-switches')
-  switches.append(
-    checkbox('Бачать учні', block.audience.student, v => { setStudentAudience(block, v); changed() }, block.type === 'teacher-note'),
-    checkbox('Крок уроку (консоль вчителя)', !!block.runtime?.step, v => { setStep(block, v); changed() }),
-    checkbox('Показувати на дошці', block.views.presentation, v => { setOnBoard(block, v); changed() }, !block.audience.student),
-    checkbox('У плані для вчителя', block.views.document, v => { block.views.document = v; touched() }),
-  )
-  if (block.type === 'activity') {
-    switches.append(checkbox('Надсилати на пристрої учнів', block.views.remote, v => { setOnDevices(block, v); changed() }, !block.audience.student))
+  if (block.type !== 'canvas') {
+    const switches = el('div', 'cl-switches')
+    switches.append(
+      checkbox('Бачать учні', block.audience.student, v => { setStudentAudience(block, v); changed() }, block.type === 'teacher-note'),
+      checkbox('Крок уроку (консоль вчителя)', !!block.runtime?.step, v => { setStep(block, v); changed() }),
+      checkbox('Показувати на дошці', block.views.presentation, v => { setOnBoard(block, v); changed() }, !block.audience.student),
+      checkbox('У плані для вчителя', block.views.document, v => { block.views.document = v; touched() }),
+    )
+    if (block.type === 'activity' || block.type === 'practice') {
+      const label = block.type === 'practice' ? 'Показувати учням під час цього кроку' : 'Надсилати на пристрої учнів'
+      switches.append(checkbox(label, block.views.remote, v => { setOnDevices(block, v); changed() }, !block.audience.student))
+    }
+    body.append(switches)
   }
-  body.append(switches)
 
   const grid = el('div', 'adm-form-grid')
   grid.append(field('Формат', select(BLOCK_MODALITIES, MODALITY_LABELS as Record<BlockModality, string>, block.modality, v => { block.modality = v; touched() })))
@@ -936,18 +1113,35 @@ function renderBlock(block: EditableBlock, index: number, issues: Issue[]): HTML
   grid.append(field('Хвилин (необов’язково)', minutes))
   body.append(grid)
 
-  if (block.presentation) body.append(renderSlideFields(block))
+  if (block.type === 'canvas') {
+    body.append(renderCanvasEditor(block, {
+      selected: state.surfaceTabs.get(block.id) ?? 'teacher',
+      select: surface => { state.surfaceTabs.set(block.id, surface); renderEditor() },
+      changed,
+      touched,
+    }))
+  } else {
+    body.append(renderContentFields(block))
+    if (block.presentation) body.append(renderSlideFields(block))
+  }
   if (block.activity) body.append(renderActivityFields(block, index))
 
-  body.append(jsonField(`content:${block.id}`, 'Зміст блоку (JSON)', block.content, value => {
+  const advanced = el('details', 'cl-advanced')
+  advanced.append(el('summary', undefined, 'Розширене редагування JSON'))
+  advanced.append(jsonField(`content:${block.id}`, 'Зміст блоку (JSON)', block.content, value => {
     if (!isRecord(value)) return 'Зміст має бути об’єктом { … }.'
     block.content = value
     return null
   }, `${CONTENT_HINTS[block.type]}. ${TEXT_HINT}`))
+  advanced.addEventListener('toggle', () => {
+    if (!advanced.open || editor?.jsonErrors.has(`content:${block.id}`)) return
+    advanced.querySelector('textarea')!.value = formatJson(block.content)
+  })
+  body.append(advanced)
 
   if (issues.length) body.append(issueList(issues.map(i => `${i.path || 'блок'}: ${describeIssueMessage(i.message)}`)))
   details.append(body)
-  li.append(details)
+  li.append(details, insertBlockRow(index + 1))
   return li
 }
 
@@ -992,6 +1186,160 @@ function renderSlideFields(block: EditableBlock): HTMLElement {
     else delete slide.speakerNotes
     touched()
   })))
+  return box
+}
+
+function renderActivityForm(block: EditableBlock, pack: PackInfo | null): HTMLElement {
+  const activity = block.activity!
+  const config = activity.config
+  const key = activity.scoring.key ?? {}
+  const box = el('fieldset', 'cl-fieldset')
+  box.append(el('legend', 'adm-label', 'Умова та відповіді'))
+  const question = activity.mechanic === 'truefalse' ? 'Загальна інструкція' : 'Запитання або інструкція'
+  if (activity.mechanic !== 'game' && activity.mechanic !== 'external') box.append(localizedField(config, 'prompt', question, activity.mechanic !== 'truefalse'))
+
+  if (activity.mechanic === 'choice') {
+    const options = Array.isArray(config.options) ? config.options as unknown[] : []
+    options.forEach((option, index) => {
+      if (!isRecord(option)) return
+      const row = el('div', 'cl-row cl-answer-row')
+      const correct = el('input')
+      correct.type = 'radio'
+      correct.name = `cl-correct-${block.id}`
+      correct.checked = key.correctOptionId === option.id
+      correct.setAttribute('aria-label', `Правильна відповідь: варіант ${index + 1}`)
+      correct.addEventListener('change', () => { key.correctOptionId = option.id; activity.scoring.key = key; touched() })
+      row.append(correct, localizedField(option, 'text', `Варіант ${index + 1}`, true, 1))
+      const remove = button('Прибрати', 'btn-adm-ghost btn--sm', () => {
+        options.splice(index, 1)
+        if (key.correctOptionId === option.id) key.correctOptionId = isRecord(options[0]) ? options[0].id : ''
+        config.options = options
+        activity.scoring.key = key
+        changed()
+      })
+      remove.disabled = options.length <= 2
+      row.append(remove)
+      box.append(row)
+    })
+    const add = button('+ Варіант', 'btn-adm-ghost btn--sm', () => {
+      options.push({ id: nextLocalId(options, 'o'), text: { uk: '' } })
+      config.options = options
+      changed()
+    })
+    add.disabled = options.length >= 6
+    box.append(add, localizedField(key, 'explanation', 'Пояснення після відповіді'))
+    activity.scoring.key = key
+  } else if (activity.mechanic === 'truefalse') {
+    const statements = Array.isArray(config.statements) ? config.statements as unknown[] : []
+    const answers = isRecord(key.answers) ? key.answers : {}
+    statements.forEach((statement, index) => {
+      if (!isRecord(statement)) return
+      const row = el('div', 'cl-row cl-answer-row')
+      row.append(localizedField(statement, 'text', `Твердження ${index + 1}`, true, 1))
+      row.append(field('Правильна відповідь', select(['true', 'false'] as const, { true: 'Так', false: 'Ні' }, String(answers[String(statement.id)]), value => {
+        answers[String(statement.id)] = value === 'true'
+        key.answers = answers
+        activity.scoring.key = key
+        touched()
+      })))
+      row.append(button('Прибрати', 'btn-adm-ghost btn--sm', () => {
+        delete answers[String(statement.id)]
+        statements.splice(index, 1)
+        config.statements = statements
+        changed()
+      }))
+      box.append(row)
+    })
+    const add = button('+ Твердження', 'btn-adm-ghost btn--sm', () => {
+      const id = nextLocalId(statements, 's')
+      statements.push({ id, text: { uk: '' } })
+      answers[id] = true
+      config.statements = statements
+      key.answers = answers
+      activity.scoring.key = key
+      changed()
+    })
+    add.disabled = statements.length >= 10
+    box.append(add)
+  } else if (activity.mechanic === 'classify') {
+    const categories = Array.isArray(config.categories) ? config.categories as unknown[] : []
+    const items = Array.isArray(config.items) ? config.items as unknown[] : []
+    const placement = isRecord(key.placement) ? key.placement : {}
+    const groups = el('fieldset', 'cl-fieldset')
+    groups.append(el('legend', 'adm-label', 'Групи'))
+    categories.forEach((category, index) => {
+      if (!isRecord(category)) return
+      const row = el('div', 'cl-row cl-answer-row')
+      row.append(localizedField(category, 'label', `Група ${index + 1}`, true, 1))
+      const remove = button('Прибрати', 'btn-adm-ghost btn--sm', () => {
+        categories.splice(index, 1)
+        const fallback = isRecord(categories[0]) ? categories[0].id : ''
+        for (const item of items) if (isRecord(item) && placement[String(item.id)] === category.id) placement[String(item.id)] = fallback
+        config.categories = categories
+        changed()
+      })
+      remove.disabled = categories.length <= 2
+      row.append(remove)
+      groups.append(row)
+    })
+    const addCategory = button('+ Група', 'btn-adm-ghost btn--sm', () => {
+      categories.push({ id: nextLocalId(categories, 'c'), label: { uk: '' } })
+      config.categories = categories
+      changed()
+    })
+    addCategory.disabled = categories.length >= 4
+    groups.append(addCategory)
+    box.append(groups)
+    const things = el('fieldset', 'cl-fieldset')
+    things.append(el('legend', 'adm-label', 'Елементи для сортування'))
+    items.forEach((item, index) => {
+      if (!isRecord(item)) return
+      const row = el('div', 'cl-row cl-answer-row')
+      row.append(localizedField(item, 'label', `Елемент ${index + 1}`, true, 1))
+      const categoryIds = categories.filter(isRecord).map(category => String(category.id))
+      row.append(field('Правильна група', select(categoryIds, id => localizedValue(categories.filter(isRecord).find(category => category.id === id)?.label) || id, String(placement[String(item.id)] ?? ''), id => {
+        placement[String(item.id)] = id
+        key.placement = placement
+        activity.scoring.key = key
+        touched()
+      })))
+      const remove = button('Прибрати', 'btn-adm-ghost btn--sm', () => {
+        delete placement[String(item.id)]
+        items.splice(index, 1)
+        config.items = items
+        changed()
+      })
+      remove.disabled = items.length <= 2
+      row.append(remove)
+      things.append(row)
+    })
+    const addItem = button('+ Елемент', 'btn-adm-ghost btn--sm', () => {
+      const id = nextLocalId(items, 'i')
+      items.push({ id, label: { uk: '' } })
+      placement[id] = isRecord(categories[0]) ? categories[0].id : ''
+      config.items = items
+      key.placement = placement
+      activity.scoring.key = key
+      changed()
+    })
+    addItem.disabled = items.length >= 20
+    things.append(addItem)
+    box.append(things)
+  } else if (activity.mechanic === 'external') {
+    const tools = pack?.tools.map(tool => tool.key) ?? []
+    box.append(field('Зовнішній тренажер', select(tools, id => id, String(config.toolKey ?? ''), id => { config.toolKey = id; touched() })))
+    box.append(localizedField(config, 'instructions', 'Інструкція для учнів'))
+  } else if (activity.mechanic === 'game') {
+    const games = pack?.games ?? []
+    box.append(field('Гра', select(games.map(game => game.key), id => id, String(config.gameKey ?? ''), id => {
+      config.gameKey = id
+      config.level = games.find(game => game.key === id)?.levels[0] ?? ''
+      changed()
+    })))
+    const levels = games.find(game => game.key === config.gameKey)?.levels ?? []
+    box.append(field('Рівень', select(levels, id => id, String(config.level ?? ''), id => { config.level = id; touched() })))
+    box.append(localizedField(config, 'instructions', 'Інструкція для учнів'))
+  }
   return box
 }
 
@@ -1059,39 +1407,90 @@ function renderActivityFields(block: EditableBlock, index: number): HTMLElement 
   }))
   box.append(links)
 
+  box.append(renderActivityForm(block, pack))
+
   let hint = MECHANIC_HINTS[activity.mechanic]
   if (activity.mechanic === 'external' && pack) hint += ` Дозволено: ${pack.tools.map(t => t.key).join(', ') || 'нічого'}.`
   if (activity.mechanic === 'game' && pack) hint += ` Дозволено: ${pack.games.map(g => `${g.key} (${g.levels.join('/')})`).join(', ')}.`
-  box.append(jsonField(`config:${block.id}`, 'Налаштування завдання (JSON)', activity.config, value => {
+  const advanced = el('details', 'cl-advanced')
+  advanced.append(el('summary', undefined, 'Розширене редагування завдання (JSON)'))
+  advanced.append(jsonField(`config:${block.id}`, 'Налаштування завдання (JSON)', activity.config, value => {
     if (!isRecord(value)) return 'Налаштування мають бути об’єктом { … }.'
     activity.config = value
     return null
   }, `${hint} ${TEXT_HINT}`))
   if (activity.scoring.mode === 'server') {
-    box.append(jsonField(`key:${block.id}`, 'Ключ відповіді (JSON; бачить лише сервер)', activity.scoring.key ?? {}, value => {
+    advanced.append(jsonField(`key:${block.id}`, 'Ключ відповіді (JSON; бачить лише сервер)', activity.scoring.key ?? {}, value => {
       if (!isRecord(value)) return 'Ключ має бути об’єктом { … }.'
       activity.scoring.key = value
       return null
     }, undefined, 4))
   }
+  advanced.addEventListener('toggle', () => {
+    if (!advanced.open) return
+    const areas = advanced.querySelectorAll<HTMLTextAreaElement>('textarea')
+    if (!editor?.jsonErrors.has(`config:${block.id}`)) areas[0].value = formatJson(activity.config)
+    if (areas[1] && !editor?.jsonErrors.has(`key:${block.id}`)) areas[1].value = formatJson(activity.scoring.key ?? {})
+  })
+  box.append(advanced)
   return box
 }
 
 function renderResourcesSection(): HTMLElement {
   const lesson = editor!.lesson
   const { root, body } = section('Ресурси й словник', false)
-  body.append(jsonField('assets', 'Ресурси: зображення, схеми, відео (JSON)', lesson.assets ?? [], value => {
+  const assets = lesson.assets ?? []
+  body.append(el('p', 'adm-field-hint', 'Укажіть адресу зображення, схеми або відео. ID ресурсу використовується в блоках і слайдах.'))
+  assets.forEach((asset, index) => {
+    const row = el('fieldset', 'cl-fieldset')
+    row.append(el('legend', 'adm-label', `Ресурс ${index + 1}`))
+    const grid = el('div', 'adm-form-grid')
+    grid.append(field('ID', textInput(asset.id, value => { asset.id = value.trim(); touched() }, { maxLength: 64 })))
+    grid.append(field('Тип', select(['image', 'diagram', 'video'] as const, { image: 'Зображення', diagram: 'Схема', video: 'Відео' }, asset.kind, value => { asset.kind = value; touched() })))
+    grid.append(field('Адреса ресурсу', textInput(asset.src, value => { asset.src = value.trim(); touched() }, { placeholder: '/curriculum-lessons/assets/… або https://…' })))
+    grid.append(field('Опис для доступності', textInput(asset.alt?.uk ?? '', value => { asset.alt = { ...asset.alt, uk: value }; touched() })))
+    grid.append(field('Підпис', textInput(asset.caption?.uk ?? '', value => {
+      if (value.trim()) asset.caption = { ...asset.caption, uk: value }
+      else delete asset.caption
+      touched()
+    })))
+    row.append(grid, button('Прибрати ресурс', 'btn-adm-ghost btn--sm', () => {
+      showConfirm(`Прибрати ресурс «${asset.id}»? Перевірте блоки та слайди, які його використовують.`, () => {
+        assets.splice(index, 1)
+        if (assets.length) lesson.assets = assets
+        else delete lesson.assets
+        changed()
+      })
+    }))
+    body.append(row)
+  })
+  body.append(button('+ Ресурс', 'btn-adm-ghost btn--sm', () => {
+    const id = nextLocalId(assets, 'asset')
+    assets.push({ id, kind: 'image', src: '', alt: { uk: '' } })
+    lesson.assets = assets
+    changed()
+  }))
+  const advanced = el('details', 'cl-advanced')
+  advanced.append(el('summary', undefined, 'Розширене редагування ресурсів і словника (JSON)'))
+  advanced.append(jsonField('assets', 'Ресурси (JSON)', lesson.assets ?? [], value => {
     if (!Array.isArray(value)) return 'Ресурси мають бути списком [ … ].'
     if (value.length) lesson.assets = value as EditableLesson['assets']
     else delete lesson.assets
     return null
   }, 'Кожен: { "id": "img1", "kind": "image" | "diagram" | "video", "src": "/curriculum-lessons/assets/… або https://…", "alt": { "uk": "опис для незрячих" }, "caption": { "uk": "…" } }.', 6))
-  body.append(jsonField('vocabulary', 'Словник уроку (JSON)', lesson.vocabulary ?? [], value => {
+  advanced.append(jsonField('vocabulary', 'Словник уроку (JSON)', lesson.vocabulary ?? [], value => {
     if (!Array.isArray(value)) return 'Словник має бути списком [ … ].'
     if (value.length) lesson.vocabulary = value
     else delete lesson.vocabulary
     return null
   }, 'Кожен: { "term": { "uk": "файл", "en": "file" }, "definition": { "uk": "…" } }.', 4))
+  advanced.addEventListener('toggle', () => {
+    if (!advanced.open) return
+    const areas = advanced.querySelectorAll<HTMLTextAreaElement>('textarea')
+    if (!editor?.jsonErrors.has('assets')) areas[0].value = formatJson(lesson.assets ?? [])
+    if (!editor?.jsonErrors.has('vocabulary')) areas[1].value = formatJson(lesson.vocabulary ?? [])
+  })
+  body.append(advanced)
   return root
 }
 
@@ -1188,11 +1587,15 @@ function changeStatus(status: CurriculumLessonStatus) {
 
 function downloadJson() {
   if (!editor) return
-  const blob = new Blob([`${formatJson(editor.lesson)}\n`], { type: 'application/json' })
+  downloadDefinition(editor.lesson, `${editor.lesson.id}.json`)
+}
+
+function downloadDefinition(lesson: EditableLesson, filename: string) {
+  const blob = new Blob([`${formatJson(lesson)}\n`], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = el('a')
   a.href = url
-  a.download = `${editor.lesson.id}.json`
+  a.download = filename
   document.body.append(a)
   a.click()
   a.remove()
@@ -1245,6 +1648,12 @@ function openPreview() {
   } catch {
     body.append(el('p', 'adm-form-error', 'Перегляд не вдався: спершу натисніть «Перевірити» й виправте помилки.'))
   }
+}
+
+function openSlides() {
+  if (!editor || blockedByJson()) return
+  const shown = withoutAnswerKeys(editor.lesson) as unknown as LessonDefinition
+  if (!openPresentation(shown, {})) setMessage('У цьому уроці немає слайдів для дошки.')
 }
 
 async function openHistory() {

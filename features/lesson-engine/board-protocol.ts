@@ -89,6 +89,12 @@ export function boardLesson(lesson: LessonDefinition, slides: readonly Pick<Pres
     blocks: lesson.blocks
       .filter(block => slideIds.has(block.id))
       .map(block => {
+        if (block.type === 'canvas') {
+          const content = { heading: block.content.heading, teacher: [], board: block.content.board, student: [] }
+          if (!block.presentation) return { ...block, content }
+          const { speakerNotes: _speakerNotes, ...shown } = block.presentation
+          return { ...block, content, presentation: shown }
+        }
         if (!block.presentation) return block
         const { speakerNotes: _speakerNotes, ...shown } = block.presentation
         return { ...block, presentation: shown }

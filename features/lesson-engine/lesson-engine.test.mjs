@@ -258,6 +258,25 @@ test('the projector receives only slide blocks, without speaker notes', async ()
   }
 })
 
+test('a canvas slide sends only its board items to the projector', async () => {
+  const { boardLesson } = await import('./board-protocol.ts')
+  const lesson = structuredClone(servedLesson)
+  lesson.blocks[0] = {
+    ...lesson.blocks[0], type: 'canvas',
+    content: {
+      heading: { uk: 'Інтернет' },
+      teacher: [{ type: 'paragraph', text: { uk: 'Прихована нотатка' } }],
+      board: [{ type: 'paragraph', text: { uk: 'Тільки на дошці' } }],
+      student: [{ type: 'paragraph', text: { uk: 'Тільки учневі' } }],
+    },
+  }
+  const sent = boardLesson(lesson, presentationSlides(lesson))
+  const json = JSON.stringify(sent)
+  assert.ok(json.includes('Тільки на дошці'))
+  assert.ok(!json.includes('Прихована нотатка'))
+  assert.ok(!json.includes('Тільки учневі'))
+})
+
 test('projector messages are parsed defensively', async () => {
   const { parseBoardMessage } = await import('./board-protocol.ts')
   assert.deepEqual(parseBoardMessage({ type: 'hello', extra: 1 }), { type: 'hello' })

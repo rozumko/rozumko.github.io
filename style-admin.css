@@ -1146,6 +1146,10 @@
 /* ── Lesson Engine lesson editor ─────────────────────────────────── */
 .cl-import { display: inline-flex; align-items: center; gap: var(--sp-2); cursor: pointer; }
 .cl-import:focus-within { outline: 3px solid var(--adm-sky); outline-offset: 2px; }
+.cl-import-help { margin: var(--sp-3) 0 var(--sp-4); padding: var(--sp-3) var(--sp-4); border: 1px solid var(--adm-border); border-radius: var(--r-md); color: var(--adm-text); }
+.cl-import-help > summary { cursor: pointer; font-weight: 600; }
+.cl-import-help > p { margin: var(--sp-3) 0; }
+.cl-import-help > textarea { display: block; width: 100%; margin: var(--sp-2) 0; }
 .cl-ed-header { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-3); }
 .cl-ed-header .admin-section-title { margin: 0; }
 .cl-ed-header .admin-section-title:focus { outline: none; }
@@ -1185,6 +1189,37 @@
 .cl-block__summary:focus-visible, .cl-section > summary:focus-visible { outline: 3px solid var(--adm-sky); outline-offset: -3px; }
 .cl-block__title { font-weight: 600; flex: 1 1 16rem; min-width: 0; overflow-wrap: anywhere; }
 .cl-block__body { display: flex; flex-direction: column; gap: var(--sp-3); padding: 0 var(--sp-3) var(--sp-3); }
+.cl-canvas { display: grid; gap: var(--sp-3); }
+.cl-canvas__tabs { display: flex; flex-wrap: wrap; gap: var(--sp-2); border-bottom: 1px solid var(--adm-border); }
+.cl-canvas__tab { border: 0; border-radius: var(--r-sm) var(--r-sm) 0 0; padding: var(--sp-2) var(--sp-4); background: transparent; color: var(--adm-text); cursor: pointer; font: inherit; }
+.cl-canvas__tab[aria-selected="true"] { background: var(--adm-sky); color: white; font-weight: 700; }
+.cl-canvas__tab:focus-visible { outline: 3px solid var(--adm-sky); outline-offset: 2px; }
+.cl-canvas__panel { display: grid; gap: var(--sp-3); }
+.cl-canvas__empty { margin: 0; padding: var(--sp-5); border: 1px dashed var(--adm-border); border-radius: var(--r-sm); color: var(--adm-text-muted); }
+.cl-canvas__item { display: grid; gap: var(--sp-2); padding: var(--sp-3); border: 1px solid var(--adm-border); border-radius: var(--r-sm); }
+.cl-canvas__item-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); flex-wrap: wrap; }
+.cl-canvas__item-actions { display: flex; gap: var(--sp-1); }
+.cl-canvas__field { display: grid; gap: var(--sp-1); }
+.cl-canvas__editable { min-height: 3rem; margin: 0; padding: var(--sp-3); border: 1px solid var(--adm-border); border-radius: var(--r-sm); background: var(--adm-bg); white-space: pre-wrap; line-height: 1.55; }
+.cl-canvas__editable:focus-visible { outline: 3px solid var(--adm-sky); outline-offset: 1px; }
+.cl-canvas__item-preview { padding: var(--sp-3); border-radius: var(--r-sm); background: var(--adm-bg); }
+.cl-canvas__item-preview:empty { display: none; }
+.cl-canvas__table-grid { max-width: 100%; overflow-x: auto; }
+.cl-canvas__table-grid .le-practice__table { min-width: 38rem; }
+.cl-canvas__table-grid .cl-canvas__field { min-width: 7rem; }
+.cl-canvas__table-grid .adm-label { font-size: var(--font-size-xs); }
+.cl-canvas__add { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+.cl-canvas__html { border: 1px solid var(--adm-border); border-radius: var(--r-sm); padding: var(--sp-3); }
+.cl-canvas__html > summary { cursor: pointer; font-weight: 700; }
+.cl-canvas__html > textarea { width: 100%; box-sizing: border-box; margin-top: var(--sp-3); }
+.cl-insert-row { padding: var(--sp-1) var(--sp-3) var(--sp-3); border-left: 2px solid var(--adm-border); margin-left: var(--sp-4); }
+.cl-insert-row .cl-field { flex: 1 1 12rem; }
+.cl-insert-row .adm-label { font-size: var(--font-size-xs); }
+.cl-list-row > textarea, .cl-answer-row > .cl-field { flex: 1 1 16rem; }
+.cl-answer-row > input[type="radio"] { width: 1.2rem; height: 1.2rem; }
+.cl-advanced { border-top: 1px solid var(--adm-border); padding-top: var(--sp-2); }
+.cl-advanced > summary { color: var(--adm-sky); cursor: pointer; font-size: var(--font-size-sm); }
+.cl-advanced > .cl-field { margin-top: var(--sp-3); }
 .cl-block-issues { margin: 0; padding-left: var(--sp-5); color: #fb7185; font-size: var(--font-size-sm); }
 .cl-badge--error { background: rgba(251, 113, 133, 0.15); color: #fda4af; }
 .cl-json { font-family: 'Courier New', monospace; font-size: var(--font-size-xs); }

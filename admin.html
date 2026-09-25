@@ -345,17 +345,25 @@
           <div class="admin-section-header">
             <h2 class="admin-section-title">Керовані уроки</h2>
             <div class="admin-section-actions">
-              <button id="cl-new-btn" class="btn-adm-emerald">
-                <i class="fas fa-plus" aria-hidden="true"></i> Новий урок
-              </button>
-              <label class="btn-adm-ghost cl-import">
-                <i class="fas fa-file-import" aria-hidden="true"></i> Імпорт JSON
+              <label class="btn-adm-emerald cl-import">
+                <i class="fas fa-file-import" aria-hidden="true"></i> Імпортувати JSON
                 <input id="cl-import-file" type="file" accept="application/json,.json" class="sr-only"/>
               </label>
+              <button id="cl-new-btn" class="btn-adm-ghost">
+                <i class="fas fa-plus" aria-hidden="true"></i> Створити з шаблону
+              </button>
+              <button id="cl-template-btn" class="btn-adm-ghost" type="button">Завантажити шаблон JSON</button>
             </div>
           </div>
-          <p class="admin-section-note">Уроки для проведення з класом: план для вчителя, слайди для дошки й завдання для пристроїв учнів — з одного опису.
+          <p class="admin-section-note">Підготуйте JSON уроку за шаблоном, імпортуйте його як чернетку, перевірте сторінку та слайди, а потім доповнюйте блоки й активності в редакторі.
             Вчителі бачать лише опубліковану версію. Зміни в опублікованому уроці стають новою чернеткою, а вчителі далі проводять попередню версію, доки нову не опублікують.</p>
+          <details class="cl-import-help">
+            <summary>Як підготувати урок із HTML</summary>
+            <p>Завантажте шаблон, додайте до запиту в ChatGPT шаблон і HTML одного уроку. Імпортуйте отриманий JSON та перевірте кожен блок перед публікацією. Для окремого фрагмента HTML додайте «Вільний блок» і вставте код у вкладці потрібного екрана.</p>
+            <label for="cl-ai-prompt" class="adm-label">Промпт для перетворення уроку</label>
+            <textarea id="cl-ai-prompt" class="adm-input" rows="6" readonly>Перетвори доданий HTML-урок на JSON за доданим шаблоном Керованого уроку. Збережи порядок пояснень і всі важливі тексти. Для кожного блоку підготуй повний вміст сторінки, а для слайда — лише короткі тези та ключові ілюстрації. Таблиці в практичній роботі записуй у content.table з headers і rows як окремими клітинками, а інструкції — у content.steps. Для практики, яку мають бачити учні на пристроях, установи audience.student: true, views.remote: true і runtime.step: true. Розпізнані завдання перетворюй тільки на типи choice, truefalse або classify, які є в шаблоні. Не вигадуй правильних відповідей, посилань, навчальних результатів чи полів JSON: якщо даних бракує, залиш завдання для ручного додавання. Не перенось HTML, CSS або JavaScript у поля уроку. Поверни лише коректний JSON без Markdown.</textarea>
+            <button id="cl-copy-prompt" class="btn-adm-ghost btn--sm" type="button">Скопіювати промпт</button>
+          </details>
           <div class="admin-filter-bar">
             <input id="cl-filter-search" class="adm-input adm-input--sm" type="search"
                    placeholder="Пошук за назвою або id" aria-label="Пошук уроків"/>

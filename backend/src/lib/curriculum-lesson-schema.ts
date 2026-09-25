@@ -131,8 +131,23 @@ export interface PracticeBlock extends LessonBlockBase {
   content: {
     heading?: LocalizedText
     intro?: LocalizedText
+    table?: { headers: LocalizedText[]; rows: LocalizedText[][] }
     steps: { title?: LocalizedText; items: LocalizedText[] }[]
   }
+}
+
+/** One authored block with independently composed teacher, board and student views. */
+export type CanvasItem =
+  | { type: 'paragraph' | 'heading'; text: LocalizedText }
+  | { type: 'list'; items: LocalizedText[] }
+  | { type: 'table'; headers: LocalizedText[]; rows: LocalizedText[][] }
+  | { type: 'image'; src: string; alt: LocalizedText }
+  | { type: 'video'; videoId: string }
+  | { type: 'link'; url: string; label: LocalizedText }
+
+export interface CanvasBlock extends LessonBlockBase {
+  type: 'canvas'
+  content: { heading: LocalizedText; teacher: CanvasItem[]; board: CanvasItem[]; student: CanvasItem[] }
 }
 
 export interface SupportBlock extends LessonBlockBase {
@@ -254,6 +269,7 @@ export type LessonBlock =
   | VisualBlock
   | DiscussionBlock
   | PracticeBlock
+  | CanvasBlock
   | ActivityBlock
   | SupportBlock
   | ExtensionBlock
@@ -267,7 +283,7 @@ export type LessonBlockType = LessonBlock['type']
 
 export const LESSON_BLOCK_TYPES: readonly LessonBlockType[] = [
   'hero', 'essential-question', 'objectives', 'explanation', 'visual', 'discussion',
-  'practice', 'activity', 'support', 'extension', 'reflection', 'success-criteria',
+  'practice', 'canvas', 'activity', 'support', 'extension', 'reflection', 'success-criteria',
   'vocabulary', 'teacher-note', 'break',
 ]
 
@@ -439,7 +455,7 @@ function checkBool(c: Collector, value: unknown, path: string): void {
 function checkMediaSrc(c: Collector, value: unknown, path: string): void {
   if (!checkString(c, value, path, 500)) return
   const src = value as string
-  if (src.startsWith('/') && !src.startsWith('//')) return
+  if (src.startsWith('/') && !src.startsWith('//') && !src.includes('\\')) return
   let parsed: URL
   try {
     parsed = new URL(src)
@@ -653,6 +669,57 @@ function checkActivity(c: Collector, value: unknown, path: string, ctx: LessonCo
 
 const BASE_KEYS = ['id', 'type', 'audience', 'views', 'modality', 'estimatedMinutes', 'runtime', 'outcomeIds', 'presentation', 'content'] as const
 
+function checkCanvasItems(c: Collector, value: unknown, path: string): void {
+  if (!Array.isArray(value) || value.length > MAX_LIST) {
+    c.add(path, `must be an array of at most ${MAX_LIST} items`)
+    return
+  }
+  value.forEach((item, i) => {
+    const at = `${path}[${i}]`
+    if (!isRecord(item)) return c.add(at, 'must be an object')
+    switch (item.type) {
+      case 'paragraph':
+      case 'heading':
+        checkKnownKeys(c, item, ['type', 'text'], at)
+        checkLocalized(c, item.text, `${at}.text`, item.type === 'heading' ? MAX_SHORT : MAX_TEXT)
+        break
+      case 'list':
+        checkKnownKeys(c, item, ['type', 'items'], at)
+        checkLocalizedList(c, item.items, `${at}.items`, 1)
+        break
+      case 'table': {
+        checkKnownKeys(c, item, ['type', 'headers', 'rows'], at)
+        const headers = item.headers
+        if (!Array.isArray(headers) || headers.length < 2 || headers.length > 10) c.add(`${at}.headers`, 'must have 2–10 columns')
+        else headers.forEach((cell, j) => checkLocalized(c, cell, `${at}.headers[${j}]`, MAX_SHORT))
+        const rows = item.rows
+        if (!Array.isArray(rows) || rows.length < 1 || rows.length > MAX_LIST) c.add(`${at}.rows`, `must have 1–${MAX_LIST} rows`)
+        else rows.forEach((row, j) => {
+          if (!Array.isArray(row) || !Array.isArray(headers) || row.length !== headers.length) c.add(`${at}.rows[${j}]`, 'must match the column count')
+          else row.forEach((cell, k) => checkLocalized(c, cell, `${at}.rows[${j}][${k}]`, MAX_SHORT))
+        })
+        break
+      }
+      case 'image':
+        checkKnownKeys(c, item, ['type', 'src', 'alt'], at)
+        checkMediaSrc(c, item.src, `${at}.src`)
+        checkLocalized(c, item.alt, `${at}.alt`, MAX_SHORT)
+        break
+      case 'video':
+        checkKnownKeys(c, item, ['type', 'videoId'], at)
+        checkString(c, item.videoId, `${at}.videoId`, 11, /^[A-Za-z0-9_-]{11}$/)
+        break
+      case 'link':
+        checkKnownKeys(c, item, ['type', 'url', 'label'], at)
+        checkMediaSrc(c, item.url, `${at}.url`)
+        checkLocalized(c, item.label, `${at}.label`, MAX_SHORT)
+        break
+      default:
+        c.add(`${at}.type`, 'unknown content item')
+    }
+  })
+}
+
 function checkBlockContent(c: Collector, block: Json, type: LessonBlockType, path: string, ctx: LessonContext): void {
   const p = `${path}.content`
   if (!isRecord(block.content)) {
@@ -706,9 +773,25 @@ function checkBlockContent(c: Collector, block: Json, type: LessonBlockType, pat
       checkOptionalLocalized(c, content.expectedResponse, `${p}.expectedResponse`)
       break
     case 'practice': {
-      known(['heading', 'intro', 'steps'])
+      known(['heading', 'intro', 'table', 'steps'])
       heading()
       checkOptionalLocalized(c, content.intro, `${p}.intro`)
+      if (content.table !== undefined) {
+        const table = content.table
+        if (!isRecord(table)) c.add(`${p}.table`, 'must be an object')
+        else {
+          checkKnownKeys(c, table, ['headers', 'rows'], `${p}.table`)
+          const headers = table.headers
+          if (!Array.isArray(headers) || headers.length < 2 || headers.length > 10) c.add(`${p}.table.headers`, 'must have 2–10 columns')
+          else headers.forEach((cell, i) => checkLocalized(c, cell, `${p}.table.headers[${i}]`, MAX_SHORT))
+          const rows = table.rows
+          if (!Array.isArray(rows) || rows.length < 1 || rows.length > MAX_LIST) c.add(`${p}.table.rows`, `must have 1–${MAX_LIST} rows`)
+          else rows.forEach((row, i) => {
+            if (!Array.isArray(row) || !Array.isArray(headers) || row.length !== headers.length) c.add(`${p}.table.rows[${i}]`, 'must match the column count')
+            else row.forEach((cell, j) => checkLocalized(c, cell, `${p}.table.rows[${i}][${j}]`, MAX_SHORT))
+          })
+        }
+      }
       const steps = content.steps
       if (!Array.isArray(steps) || steps.length < 1 || steps.length > MAX_LIST) {
         c.add(`${p}.steps`, `must have 1–${MAX_LIST} steps`)
@@ -722,6 +805,16 @@ function checkBlockContent(c: Collector, block: Json, type: LessonBlockType, pat
       })
       break
     }
+    case 'canvas':
+      known(['heading', 'teacher', 'board', 'student'])
+      checkLocalized(c, content.heading, `${p}.heading`, MAX_SHORT)
+      checkCanvasItems(c, content.teacher, `${p}.teacher`)
+      checkCanvasItems(c, content.board, `${p}.board`)
+      checkCanvasItems(c, content.student, `${p}.student`)
+      if (Array.isArray(content.teacher) && block.views && isRecord(block.views) && block.views.document === true && content.teacher.length === 0) c.add(`${p}.teacher`, 'visible teacher view needs content')
+      if (Array.isArray(content.board) && block.views && isRecord(block.views) && block.views.presentation === true && content.board.length === 0) c.add(`${p}.board`, 'visible presentation needs content')
+      if (Array.isArray(content.student) && block.views && isRecord(block.views) && block.views.remote === true && content.student.length === 0) c.add(`${p}.student`, 'visible student view needs content')
+      break
     case 'support':
       known(['heading', 'items'])
       heading()
@@ -840,8 +933,9 @@ function checkBlock(c: Collector, value: unknown, index: number, ctx: LessonCont
     c.add(`${path}.views`, 'teacher-only blocks cannot appear in presentation or remote views')
   }
   if (typeOk && type === 'teacher-note' && student) c.add(`${path}.audience.student`, 'teacher notes are teacher-only')
-  // Only activities are dispatched to student devices.
-  if (views.remote === true && type !== 'activity') c.add(`${path}.views.remote`, 'only activity blocks can be sent to devices')
+  // Practical work is shown with the current step; only activities are dispatched.
+  if (views.remote === true && type !== 'activity' && type !== 'practice' && type !== 'canvas') c.add(`${path}.views.remote`, 'only activity, practice and canvas blocks can appear on devices')
+  if (views.remote === true && (type === 'practice' || type === 'canvas') && (!isRecord(value.runtime) || value.runtime.step !== true)) c.add(`${path}.runtime.step`, 'device-visible content must be a lesson step')
 
   // The board shows an authored projection, never an on-the-fly summary.
   if (views.presentation === true) {

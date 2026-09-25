@@ -203,6 +203,19 @@ clientAttemptId)`. For evidence activities the device gets neither a score
 nor per-item correctness. The teacher's live grid is owner-scoped like every
 other run route.
 
+The same device state may return read-only practical work for the run's
+current step when the published block explicitly enables `views.remote` and
+student audience. The response contains only heading, introduction, structured
+table and steps; it does not include the lesson snapshot, teacher notes,
+answer keys or scoring fields. It is absent for unmapped devices and paused or
+closed runs, and creates no attempt or evidence.
+
+Free `canvas` blocks use the same current-step gate. The student response
+contains only the student item list. The projector message contains only the
+board item list; teacher and student lists are stripped before crossing that
+window boundary. HTML pasted in the admin editor is converted to validated
+structured items, with no authored HTML stored or rendered.
+
 Learning evidence (`student_outcome_evidence`, migration `0053`) is written
 only by the server, in the attempt's transaction, from the run's frozen
 activity. It is append-only; the one allowed change is anonymisation when a

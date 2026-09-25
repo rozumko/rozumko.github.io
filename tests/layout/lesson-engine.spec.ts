@@ -607,7 +607,7 @@ test('the teacher opens joining, shows the code, and maps joined devices to stud
   await expect(panel.getByRole('button', { name: 'Відкрити приєднання' })).toBeVisible()
 })
 
-async function routeStudentLesson(page: Page, state: { mapped: boolean; runStatus: string }, stateRequests: string[] = []) {
+async function routeStudentLesson(page: Page, state: { mapped: boolean; runStatus: string; material?: unknown }, stateRequests: string[] = []) {
   const json = (body: unknown, status = 200) => ({ status, contentType: 'application/json', body: JSON.stringify(body) })
   await page.route('**/api/student/lesson/join', async route => {
     const { code } = route.request().postDataJSON() as { code: string }
@@ -617,11 +617,45 @@ async function routeStudentLesson(page: Page, state: { mapped: boolean; runStatu
   await page.route('**/api/student/lesson/state', route => {
     stateRequests.push(route.request().url())
     return route.fulfill(json({
-      runStatus: state.runStatus, lessonTitle: fixture.title, pairingNumber: 4,
+      runStatus: state.runStatus, lessonTitle: fixture.title, grade: 4, pairingNumber: 4,
       mapped: state.mapped, studentLabel: state.mapped ? 'Марко' : null,
+      task: null, material: state.material ?? null,
     }))
   })
 }
+
+test('a mapped child sees the complete practice as a table while its step is current', async ({ page }) => {
+  const material = {
+    blockId: 'g4-m2-l9-b11', heading: { uk: 'Бібліотечна таблиця' }, intro: { uk: 'Прочитай таблицю.' },
+    table: { headers: [{ uk: 'Назва' }, { uk: 'Рік' }], rows: [[{ uk: 'Том Сойєр' }, { uk: 'стародавня книга' }]] },
+    steps: [{ title: { uk: 'Знайди й виправ' }, items: [{ uk: 'Знайди чотири невідповідні значення.' }] }],
+  }
+  const state: { mapped: boolean; runStatus: string; material?: unknown } = { mapped: true, runStatus: 'active', material }
+  await routeStudentLesson(page, state)
+  await page.goto('/lesson-join.html?code=482913')
+  await page.getByRole('button', { name: 'Приєднатися' }).click()
+  const table = page.getByRole('table')
+  await expect(table.getByRole('columnheader')).toHaveText(['Назва', 'Рік'], { timeout: 8000 })
+  await expect(table.getByRole('row').nth(1).getByRole('cell')).toHaveText(['Том Сойєр', 'стародавня книга'])
+  await expect(page.getByText('Знайди чотири невідповідні значення.')).toBeVisible()
+  state.material = null
+  await expect(table).toHaveCount(0, { timeout: 8000 })
+})
+
+test('a mapped child sees the student view of a free block', async ({ page }) => {
+  const material = {
+    kind: 'canvas', blockId: 'g4-m2-l9-b16', heading: { uk: 'Досліди таблицю' },
+    items: [
+      { type: 'paragraph', text: { uk: 'Прочитай рядки.' } },
+      { type: 'table', headers: [{ uk: 'Назва' }, { uk: 'Рік' }], rows: [[{ uk: 'Книга' }, { uk: '2024' }]] },
+    ],
+  }
+  await routeStudentLesson(page, { mapped: true, runStatus: 'active', material })
+  await page.goto('/lesson-join.html?code=482913')
+  await page.getByRole('button', { name: 'Приєднатися' }).click()
+  await expect(page.getByRole('heading', { name: 'Досліди таблицю' })).toBeVisible()
+  await expect(page.getByRole('table').getByRole('row').nth(1).getByRole('cell')).toHaveText(['Книга', '2024'])
+})
 
 test('a child joins with the code, shows their number, and is greeted once mapped', async ({ page }) => {
   const state = { mapped: false, runStatus: 'active' }

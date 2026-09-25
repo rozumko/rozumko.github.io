@@ -4,6 +4,8 @@
 
 import { activityLabel, activityLevelLabel } from '../activities/registry.js'
 import { appendRichText, richElement } from './rich-text.js'
+import { renderPracticeContent } from './practice-view.js'
+import { renderCanvasItems } from './canvas-view.js'
 import {
   BLOCK_TYPE_LABELS,
   MECHANIC_LABELS,
@@ -13,7 +15,7 @@ import {
   findAsset,
   lessonMetaLine,
 } from './projection.js'
-import type { ActivityView, LessonBlock, LessonDefinition, LocalizedText } from './types.js'
+import type { ActivityView, CanvasItem, LessonBlock, LessonDefinition, LocalizedText, StudentPracticeMaterial } from './types.js'
 
 const OPTION_LETTERS = 'АБВГҐД'
 
@@ -134,11 +136,14 @@ function renderBlockContent(lesson: LessonDefinition, block: LessonBlock): HTMLE
       }
       break
     case 'practice':
-      if (isLocalized(content.intro)) body.append(richElement('p', content.intro.uk))
-      for (const step of (Array.isArray(content.steps) ? content.steps : []) as { title?: unknown; items?: unknown }[]) {
-        if (isLocalized(step.title)) body.append(richElement('h4', step.title.uk, 'le-step__title'))
-        body.append(richList(localizedList(step.items), 'le-list', true))
-      }
+      body.append(renderPracticeContent({
+        intro: isLocalized(content.intro) ? content.intro : null,
+        table: (content.table ?? null) as StudentPracticeMaterial['table'],
+        steps: (Array.isArray(content.steps) ? content.steps : []) as StudentPracticeMaterial['steps'],
+      }))
+      break
+    case 'canvas':
+      body.append(renderCanvasItems((Array.isArray(content.teacher) ? content.teacher : []) as CanvasItem[], 'teacher'))
       break
     case 'support':
       body.append(richList(localizedList(content.items), 'le-list'))
