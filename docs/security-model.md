@@ -216,6 +216,19 @@ board item list; teacher and student lists are stripped before crossing that
 window boundary. HTML pasted in the admin editor is converted to validated
 structured items, with no authored HTML stored or rendered.
 
+Canvas media is scoped in the CSP to `admin.html`, `lesson-engine.html`,
+`lesson-board.html` and `lesson-join.html`. By editorial decision, images may
+come from any https host (or a site path): those pages allow `img-src https:`,
+and images render with `referrerpolicy="no-referrer"`. Every other page keeps
+`img-src 'self' data:`. Videos are 11-character YouTube IDs rendered only as
+`https://www.youtube-nocookie.com/embed/<id>`, the single `frame-src` origin
+on the same pages. Links may point to any https page and open in a new tab
+with `noopener noreferrer`. Scripts stay same-origin everywhere.
+
+The admin visual editor (Tiptap, loaded on demand) is a view over the same
+structured items: its schema allows only the item types above, pasted HTML
+goes through the importer, and every change is converted back into items.
+
 Learning evidence (`student_outcome_evidence`, migration `0053`) is written
 only by the server, in the attempt's transaction, from the run's frozen
 activity. It is append-only; the one allowed change is anonymisation when a

@@ -142,9 +142,18 @@ function renderBlockContent(lesson: LessonDefinition, block: LessonBlock): HTMLE
         steps: (Array.isArray(content.steps) ? content.steps : []) as StudentPracticeMaterial['steps'],
       }))
       break
-    case 'canvas':
+    case 'canvas': {
       body.append(renderCanvasItems((Array.isArray(content.teacher) ? content.teacher : []) as CanvasItem[], 'teacher'))
+      // The teacher can check what the class sees without switching screens.
+      for (const [key, label] of [['board', 'Що бачить клас на дошці'], ['student', 'Що бачать учні на пристроях']] as const) {
+        const items = (Array.isArray(content[key]) ? content[key] : []) as CanvasItem[]
+        if (!items.length) continue
+        const preview = el('details', 'le-canvas-preview')
+        preview.append(el('summary', undefined, label), renderCanvasItems(items, key))
+        body.append(preview)
+      }
       break
+    }
     case 'support':
       body.append(richList(localizedList(content.items), 'le-list'))
       break

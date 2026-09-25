@@ -7,7 +7,8 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string): 
   return node
 }
 
-function safeUrl(value: string): string | null {
+/** Images and links: a site path or any https URL (mirrors the server's checkMediaSrc). */
+export function safeMediaUrl(value: string): string | null {
   if (value.startsWith('/') && !value.startsWith('//') && !value.includes('\\')) return value
   try {
     const parsed = new URL(value)
@@ -23,7 +24,7 @@ export function renderCanvasItems(items: CanvasItem[], variant: 'teacher' | 'boa
       case 'paragraph': root.append(richElement('p', item.text.uk)); break
       case 'heading': root.append(richElement(variant === 'board' ? 'h3' : 'h4', item.text.uk)); break
       case 'list': {
-        const list = el('ul')
+        const list = el(item.ordered ? 'ol' : 'ul')
         for (const line of item.items) list.append(richElement('li', line.uk))
         root.append(list)
         break
@@ -52,12 +53,14 @@ export function renderCanvasItems(items: CanvasItem[], variant: 'teacher' | 'boa
         break
       }
       case 'image': {
-        const src = safeUrl(item.src)
+        const src = safeMediaUrl(item.src)
         if (!src) break
         const image = el('img', 'le-canvas__image')
         image.src = src
         image.alt = item.alt.uk
         image.loading = 'lazy'
+        // Third-party image hosts learn nothing about which lesson page asked.
+        image.referrerPolicy = 'no-referrer'
         root.append(image)
         break
       }
@@ -74,7 +77,7 @@ export function renderCanvasItems(items: CanvasItem[], variant: 'teacher' | 'boa
         break
       }
       case 'link': {
-        const href = safeUrl(item.url)
+        const href = safeMediaUrl(item.url)
         if (!href) break
         const link = el('a', 'le-canvas__link')
         link.href = href

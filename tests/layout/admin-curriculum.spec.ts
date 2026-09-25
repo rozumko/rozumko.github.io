@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Locator, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { readFileSync } from 'node:fs'
 import {
@@ -153,6 +153,13 @@ async function openCurriculumTab(page: Page) {
 const editorView = (page: Page) => page.locator('#cl-editor-view')
 const block = (page: Page, id: string) => page.locator(`details[data-block-id="${id}"]`)
 
+/** Opens the «+» after block `after` (0 = the top of the lesson) and picks a menu choice. */
+async function insertBlock(view: Locator, after: number, choice: string) {
+  const name = after === 0 ? 'Додати блок на початок уроку' : `Додати блок після блоку ${after}`
+  await view.getByRole('button', { name, exact: true }).click()
+  await view.getByRole('button', { name: choice }).click()
+}
+
 test('an admin fixes a lesson with the server’s help, saves it and publishes it in one step', async ({ page }) => {
   const { rows, calls } = await mockCurriculumAdmin(page)
   await openCurriculumTab(page)
@@ -229,8 +236,7 @@ test('a new lesson gets an activity linked to an outcome from the directory, and
   await id.press('Tab')
   await view.getByLabel('Назва уроку').fill('Алгоритми навколо нас')
 
-  await view.getByLabel('Додати після цього блоку').selectOption('activity')
-  await view.getByRole('button', { name: '+ Додати' }).click()
+  await insertBlock(view, 1, 'Тест: одна відповідь')
   const activity = block(page, 'g2-m3-l1-b02')
   await expect(activity).toHaveAttribute('open', '')
   await expect(activity.getByLabel('Надсилати на пристрої учнів')).toBeChecked()
@@ -273,24 +279,138 @@ test('a free block imports HTML into separate teacher, board and student views',
   await openCurriculumTab(page)
   await page.locator('[data-lesson-id="g2-m2-l8"]').getByRole('button', { name: 'Редагувати' }).click()
   const view = editorView(page)
-  await view.getByLabel('Додати після цього блоку').first().selectOption('canvas')
-  await view.getByRole('button', { name: '+ Додати' }).first().click()
+  await insertBlock(view, 1, 'Текст і медіа')
   const canvas = view.locator('details[data-block-id]').filter({ has: page.getByRole('tab', { name: 'Учитель' }) })
   await expect(canvas).toHaveCount(1)
   await canvas.getByLabel('Назва блоку').fill('Таблиця для дослідження')
   await canvas.getByRole('tab', { name: 'Учень' }).click()
-  await canvas.locator('.cl-canvas__html > summary').click()
+  await canvas.getByRole('button', { name: 'Початковий код HTML' }).click()
   await canvas.getByLabel('HTML для вкладки «Учень»').fill('<table><tr><th>Назва</th><th>Рік</th></tr><tr><td>Книга</td><td>2024</td></tr></table><script>alert(1)</script>')
-  await expect(canvas.locator('.cl-canvas__html .adm-field-hint')).toContainText('script')
+  await expect(canvas.locator('.cl-rte__source .adm-field-hint')).toContainText('script')
   await canvas.getByRole('button', { name: 'Застосувати HTML до цієї вкладки' }).click()
-  await expect(canvas.getByRole('textbox', { name: 'Рядок 1, стовпець 1' })).toHaveValue('Книга')
+  const studentEditor = canvas.getByRole('textbox', { name: 'Вміст для вкладки «Учень»' })
+  await expect(studentEditor.locator('td').first()).toHaveText('Книга')
+  await expect(canvas.locator('script')).toHaveCount(0)
   await canvas.getByRole('tab', { name: 'Презентація' }).click()
-  await canvas.getByRole('button', { name: '+ Текст' }).click()
-  await canvas.getByRole('textbox', { name: 'Текст абзацу' }).fill('Коротка теза')
+  await canvas.getByRole('textbox', { name: 'Вміст для вкладки «Презентація»' }).click()
+  await page.keyboard.type('Коротка теза')
+  await expect(canvas.locator('summary .question-item__badges')).toContainText('дошка')
   await view.getByRole('button', { name: 'Зберегти' }).click()
   await expect(view.locator('.cl-ed-message')).toContainText('Збережено')
   const saved = (rows.get('g2-m2-l8')!.draftContent as any).blocks.find((entry: any) => entry.type === 'canvas')
   expect(saved.content.student).toEqual([{ type: 'table', headers: [{ uk: 'Назва' }, { uk: 'Рік' }], rows: [[{ uk: 'Книга' }, { uk: '2024' }]] }])
   expect(saved.content.board).toEqual([{ type: 'paragraph', text: { uk: 'Коротка теза' } }])
   expect(saved.views).toMatchObject({ document: true, presentation: true, remote: true })
+})
+
+test('HTML import keeps inline text together, extracts links and keeps https images', async ({ page }) => {
+  await page.route(/^https:\/\/(example\.com|i\.ytimg\.com)\//, route => route.abort())
+  const { rows } = await mockCurriculumAdmin(page)
+  await openCurriculumTab(page)
+  await page.locator('[data-lesson-id="g2-m2-l8"]').getByRole('button', { name: 'Редагувати' }).click()
+  const view = editorView(page)
+  await insertBlock(view, 1, 'Текст і медіа')
+  const canvas = view.locator('details[data-block-id]').filter({ has: page.getByRole('tab', { name: 'Учитель' }) })
+  await canvas.getByRole('tab', { name: 'Учитель' }).focus()
+  await page.keyboard.press('ArrowRight')
+  await expect(canvas.getByRole('tab', { name: 'Презентація' })).toBeFocused()
+  await expect(canvas.getByRole('tab', { name: 'Презентація' })).toHaveAttribute('aria-selected', 'true')
+  await page.keyboard.press('ArrowLeft')
+  await canvas.getByRole('button', { name: 'Початковий код HTML' }).click()
+  await canvas.getByLabel('HTML для вкладки «Учитель»').fill(
+    '<div>Спершу <b>подумай</b>, потім <a href="https://example.org/">читай</a>.<br>Далі — практика.</div>'
+    + '<img src="http://example.com/x.png" alt="x"><img src="https://example.com/y.png" alt="Таблиця">',
+  )
+  await expect(canvas.locator('.cl-rte__source .adm-field-hint')).toContainText('https')
+  await canvas.getByRole('button', { name: 'Застосувати HTML до цієї вкладки' }).click()
+  // The formatting is visible in the editor, not as ** markers.
+  await expect(canvas.getByRole('textbox', { name: 'Вміст для вкладки «Учитель»' }).locator('strong')).toHaveText('подумай')
+  await view.getByRole('button', { name: 'Зберегти' }).click()
+  await expect(view.locator('.cl-ed-message')).toContainText('Збережено')
+  const saved = (rows.get('g2-m2-l8')!.draftContent as any).blocks.find((entry: any) => entry.type === 'canvas')
+  expect(saved.content.teacher).toEqual([
+    { type: 'paragraph', text: { uk: 'Спершу **подумай**, потім читай.\nДалі — практика.' } },
+    { type: 'link', url: 'https://example.org/', label: { uk: 'читай' } },
+    { type: 'image', src: 'https://example.com/y.png', alt: { uk: 'Таблиця' } },
+  ])
+})
+
+test('the visual editor formats text and inserts media from the toolbar', async ({ page }) => {
+  await page.route(/^https:\/\/(example\.com|i\.ytimg\.com)\//, route => route.abort())
+  const { rows } = await mockCurriculumAdmin(page)
+  await openCurriculumTab(page)
+  await page.locator('[data-lesson-id="g2-m2-l8"]').getByRole('button', { name: 'Редагувати' }).click()
+  const view = editorView(page)
+  await insertBlock(view, 1, 'Текст і медіа')
+  const canvas = view.locator('details[data-block-id]').filter({ has: page.getByRole('tab', { name: 'Учитель' }) })
+  await canvas.getByRole('tab', { name: 'Презентація' }).click()
+  const editor = canvas.getByRole('textbox', { name: 'Вміст для вкладки «Презентація»' })
+  await editor.click()
+  await canvas.getByRole('button', { name: 'Заголовок' }).click()
+  await page.keyboard.type('Що таке інтернет')
+  await page.keyboard.press('Enter')
+  await canvas.getByRole('button', { name: 'Нумерований список' }).click()
+  await page.keyboard.type('Комп’ютери')
+  await page.keyboard.press('Enter')
+  await canvas.getByRole('button', { name: 'Жирний' }).click()
+  await expect(canvas.getByRole('button', { name: 'Жирний' })).toHaveAttribute('aria-pressed', 'true')
+  await page.keyboard.type('зв’язок')
+  await page.keyboard.press('Enter')
+  await page.keyboard.press('Enter')
+
+  await canvas.getByRole('button', { name: 'Вставити відео YouTube' }).click()
+  await canvas.getByLabel('Посилання на відео YouTube').fill('https://example.com/not-youtube')
+  await canvas.getByRole('button', { name: 'Вставити', exact: true }).click()
+  await expect(canvas.getByRole('alert')).toContainText('YouTube')
+  await canvas.getByLabel('Посилання на відео YouTube').fill('https://youtu.be/abc123DEF45')
+  await canvas.getByRole('button', { name: 'Вставити', exact: true }).click()
+  await expect(editor.locator('[data-video-id="abc123DEF45"]')).toHaveCount(1)
+
+  await canvas.getByRole('button', { name: 'Вставити зображення' }).click()
+  await canvas.getByLabel('Адреса зображення (https://…)').fill('https://example.com/net.png')
+  await canvas.getByLabel('Опис зображення для незрячих').fill('Схема мережі')
+  await canvas.getByRole('button', { name: 'Вставити', exact: true }).click()
+  await expect(canvas.locator('summary .question-item__badges')).toContainText('дошка')
+  await expect(canvas.locator('.cl-rte__status')).toContainText('Елементів: 4')
+
+  await view.getByRole('button', { name: 'Зберегти' }).click()
+  await expect(view.locator('.cl-ed-message')).toContainText('Збережено')
+  const saved = (rows.get('g2-m2-l8')!.draftContent as any).blocks.find((entry: any) => entry.type === 'canvas')
+  expect(saved.content.board).toEqual([
+    { type: 'heading', text: { uk: 'Що таке інтернет' } },
+    { type: 'list', ordered: true, items: [{ uk: 'Комп’ютери' }, { uk: '**зв’язок**' }] },
+    { type: 'video', videoId: 'abc123DEF45' },
+    { type: 'image', src: 'https://example.com/net.png', alt: { uk: 'Схема мережі' } },
+  ])
+  expect(saved.views).toMatchObject({ presentation: true })
+})
+
+test('the «+» menu inserts content or a task anywhere, and blocks can be dragged into place', async ({ page }) => {
+  const { rows } = await mockCurriculumAdmin(page)
+  await openCurriculumTab(page)
+  await page.locator('[data-lesson-id="g2-m2-l8"]').getByRole('button', { name: 'Редагувати' }).click()
+  const view = editorView(page)
+  const toggle = view.getByRole('button', { name: 'Додати блок на початок уроку', exact: true })
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+  await expect(view.getByRole('button', { name: /Текст і медіа/ })).toBeFocused()
+  await page.keyboard.press('Escape')
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+  await expect(toggle).toBeFocused()
+
+  await insertBlock(view, 0, 'Сортування по групах')
+  const blocks = view.locator('.cl-blocks > li > details')
+  await expect(blocks.first().locator('.cl-block__title')).toContainText('1. Інтерактив')
+  const insertedId = await blocks.first().getAttribute('data-block-id')
+  await blocks.first().locator('> summary').click()
+  const movedId = await blocks.nth(2).getAttribute('data-block-id')
+  await view.locator('.cl-blocks > li').nth(2).locator('> .cl-block__handle').dragTo(blocks.first().locator('> summary'), { targetPosition: { x: 40, y: 2 } })
+  await expect(blocks.first()).toHaveAttribute('data-block-id', movedId!)
+  await expect(blocks.nth(1)).toHaveAttribute('data-block-id', insertedId!)
+
+  await view.getByRole('button', { name: 'Зберегти' }).click()
+  await expect(view.locator('.cl-ed-message')).toContainText('Збережено')
+  const saved = rows.get('g2-m2-l8')!.draftContent as any
+  expect(saved.blocks.map((entry: any) => entry.id).slice(0, 2)).toEqual([movedId, insertedId])
+  expect(saved.blocks[1].activity.mechanic).toBe('classify')
 })
