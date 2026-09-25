@@ -1,0 +1,29 @@
+<svg viewBox="0 0 780 300" role="img" aria-labelledby="g2u4a-t g2u4a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g2u4a-t">Схема мережі комп'ютерного класу</title>
+    <desc id="g2u4a-d">У центрі маршрутизатор. Принтер і проєктор з'єднані з ним кабелем — суцільними лініями. Ноутбук учителя і планшет учня з'єднані через Wi-Fi — пунктирними лініями. Усі чотири пристрої можуть обмінюватися файлами через центр.</desc>
+
+    <line x1="300" y1="128" x2="176" y2="66" stroke="#0033A0" stroke-width="4"/>
+    <line x1="300" y1="172" x2="176" y2="234" stroke="#0033A0" stroke-width="4"/>
+    <line x1="480" y1="128" x2="604" y2="66" stroke="#B38600" stroke-width="4" stroke-dasharray="9 7"/>
+    <line x1="480" y1="172" x2="604" y2="234" stroke="#B38600" stroke-width="4" stroke-dasharray="9 7"/>
+
+    <rect x="300" y="112" width="180" height="76" rx="10" fill="#FFD700" stroke="#B38600" stroke-width="2"/>
+    <text x="390" y="142" text-anchor="middle" font-size="17" font-weight="700" fill="#1A1A1A" font-family="Arial, sans-serif">📶 Маршрутизатор</text>
+    <text x="390" y="168" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">центр зв'язку</text>
+
+    <rect x="6" y="34" width="230" height="72" rx="10" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="121" y="64" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">🖨️ Принтер</text>
+    <text x="121" y="88" text-anchor="middle" font-size="15" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">кабель • wired</text>
+
+    <rect x="6" y="200" width="230" height="72" rx="10" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="121" y="230" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">📽️ Проєктор</text>
+    <text x="121" y="254" text-anchor="middle" font-size="15" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">кабель • wired</text>
+
+    <rect x="544" y="34" width="230" height="72" rx="10" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="659" y="64" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">💻 Ноутбук учителя</text>
+    <text x="659" y="88" text-anchor="middle" font-size="15" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">Wi-Fi • wireless</text>
+
+    <rect x="544" y="200" width="230" height="72" rx="10" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="659" y="230" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">📱 Планшет учня</text>
+    <text x="659" y="254" text-anchor="middle" font-size="15" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">Wi-Fi • wireless</text>
+  </svg>

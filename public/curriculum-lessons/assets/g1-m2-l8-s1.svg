@@ -1,0 +1,16 @@
+<svg width="240" height="110" viewBox="0 0 240 110" style="max-width: 100%; height: auto;" aria-label="Схема жестів: клік мишкою та дотик до екрана" xmlns="http://www.w3.org/2000/svg">
+          <!-- Mouse outline -->
+          <rect x="20" y="5" width="70" height="90" rx="35" fill="#ffffff" stroke="#0033A0" stroke-width="3"/>
+          <rect x="51" y="15" width="8" height="20" rx="4" fill="#41B6E6"/>
+          <line x1="55" y1="5" x2="55" y2="35" stroke="#0033A0" stroke-width="2"/>
+          <line x1="20" y1="35" x2="90" y2="35" stroke="#0033A0" stroke-width="2"/>
+          <circle cx="38" cy="22" r="10" fill="none" stroke="#41B6E6" stroke-width="1.5" stroke-dasharray="3 2"/>
+          <text x="55" y="105" text-anchor="middle" font-size="11" font-weight="bold" fill="#0033A0">Клік (Click)</text>
+
+          <!-- Hand and Touch Screen -->
+          <rect x="150" y="5" width="80" height="75" rx="10" fill="#EBF3FC" stroke="#0033A0" stroke-width="3"/>
+          <circle cx="190" cy="40" r="7" fill="#41B6E6"/>
+          <circle cx="190" cy="40" r="14" fill="none" stroke="#41B6E6" stroke-width="1.5"/>
+          <path d="M 205,85 C 205,70 190,60 190,40 C 190,35 185,35 185,40 C 185,55 170,65 170,85 Z" fill="#FFD1B3" stroke="#0033A0" stroke-width="2"/>
+          <text x="190" y="105" text-anchor="middle" font-size="11" font-weight="bold" fill="#0033A0">Тап (Tap)</text>
+        </svg>

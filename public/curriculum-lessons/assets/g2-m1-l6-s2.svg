@@ -1,0 +1,25 @@
+<svg viewBox="0 0 780 250" role="img" aria-labelledby="g2u6b-t g2u6b-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g2u6b-t">Три відмінності чат-бота від людини</title>
+    <desc id="g2u6b-d">Чат-бот не починає розмову сам — відповідає лише тоді, коли його спитали. Він не має почуттів і не вміє співчувати. Він може впевнено написати неправду, бо складає слова за закономірностями.</desc>
+
+    <rect x="6" y="14" width="248" height="220" rx="12" fill="#F0F4F8" stroke="#B9C6DA" stroke-width="2"/>
+    <text x="130" y="64" text-anchor="middle" font-size="34" font-family="Arial, sans-serif">🔇</text>
+    <text x="130" y="106" text-anchor="middle" font-size="17" font-weight="700" fill="#1A1A1A" font-family="Arial, sans-serif">Мовчить, поки</text>
+    <text x="130" y="130" text-anchor="middle" font-size="17" font-weight="700" fill="#1A1A1A" font-family="Arial, sans-serif">його не спитали</text>
+    <text x="130" y="168" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">Розмову сам</text>
+    <text x="130" y="190" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">не починає</text>
+
+    <rect x="266" y="14" width="248" height="220" rx="12" fill="#F0F4F8" stroke="#B9C6DA" stroke-width="2"/>
+    <text x="390" y="64" text-anchor="middle" font-size="34" font-family="Arial, sans-serif">💔</text>
+    <text x="390" y="106" text-anchor="middle" font-size="17" font-weight="700" fill="#1A1A1A" font-family="Arial, sans-serif">Не має почуттів</text>
+    <text x="390" y="144" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">Не вміє радіти,</text>
+    <text x="390" y="166" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">сумувати чи</text>
+    <text x="390" y="188" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">по-справжньому співчувати</text>
+
+    <rect x="526" y="14" width="248" height="220" rx="12" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+    <text x="650" y="64" text-anchor="middle" font-size="34" font-family="Arial, sans-serif">⚠️</text>
+    <text x="650" y="106" text-anchor="middle" font-size="17" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">Може помилятися</text>
+    <text x="650" y="144" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">Впевнено пише</text>
+    <text x="650" y="166" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">і правду, і вигадку.</text>
+    <text x="650" y="188" text-anchor="middle" font-size="15" fill="#96271B" font-family="Arial, sans-serif">Перевіряй відповіді</text>
+  </svg>

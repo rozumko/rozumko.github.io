@@ -1,0 +1,16 @@
+<svg viewBox="0 0 700 200" role="img" aria-labelledby="g1u6b-t g1u6b-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g1u6b-t">Що працює онлайн, а що офлайн</title>
+    <desc id="g1u6b-d">Інтернет потрібен, щоб дивитися нове відео, дзвонити друзям і шукати відповіді в мережі. Без нього все одно можна малювати, дивитися вже збережені фото й слухати завантажену музику.</desc>
+    <rect x="6" y="14" width="336" height="172" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="174" y="56" text-anchor="middle" font-size="28" font-family="Arial, sans-serif">🟢</text>
+    <text x="174" y="90" text-anchor="middle" font-size="18" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">Потрібен інтернет</text>
+    <text x="174" y="122" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">🎬 нове відео</text>
+    <text x="174" y="150" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">📹 відеодзвінок</text>
+    <text x="174" y="178" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">🔎 пошук відповіді</text>
+    <rect x="358" y="14" width="336" height="172" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="526" y="56" text-anchor="middle" font-size="28" font-family="Arial, sans-serif">🟡</text>
+    <text x="526" y="90" text-anchor="middle" font-size="18" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">Працює й без нього</text>
+    <text x="526" y="122" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">🎨 малювання</text>
+    <text x="526" y="150" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">🖼️ збережені фото</text>
+    <text x="526" y="178" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">🎵 завантажена музика</text>
+  </svg>

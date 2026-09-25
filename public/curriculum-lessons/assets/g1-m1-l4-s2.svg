@@ -1,0 +1,16 @@
+<svg viewBox="0 0 700 210" role="img" aria-labelledby="g1u4b-t g1u4b-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g1u4b-t">Що можна і чого не можна писати чат-боту</title>
+    <desc id="g1u4b-d">Чат-боту можна ставити питання про динозаврів, космос чи погоду. Не можна писати прізвище, домашню адресу, назву школи й номер телефону.</desc>
+    <rect x="6" y="14" width="336" height="182" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="174" y="58" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">✅</text>
+    <text x="174" y="92" text-anchor="middle" font-size="18" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">Можна питати</text>
+    <text x="174" y="124" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">🦕 про динозаврів</text>
+    <text x="174" y="152" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">🚀 про космос</text>
+    <text x="174" y="180" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">🌦️ про погоду</text>
+    <rect x="358" y="14" width="336" height="182" rx="12" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+    <text x="526" y="58" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">🚫</text>
+    <text x="526" y="92" text-anchor="middle" font-size="18" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">Не пишемо ніколи</text>
+    <text x="526" y="124" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">🏡 адресу й прізвище</text>
+    <text x="526" y="152" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">🏫 назву школи</text>
+    <text x="526" y="180" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">📞 номер телефону</text>
+  </svg>

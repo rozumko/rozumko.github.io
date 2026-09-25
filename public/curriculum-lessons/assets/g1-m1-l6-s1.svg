@@ -1,0 +1,29 @@
+<svg viewBox="0 0 660 250" role="img" aria-labelledby="g1u6-t g1u6-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g1u6-t">Два способи під'єднатися до мережі</title>
+    <desc id="g1u6-d">Роутер у центрі. Комп'ютер і принтер під'єднані до нього дротом — суцільною лінією. Планшет і ноутбук під'єднані без дроту, через Wi-Fi — пунктирною лінією.</desc>
+
+    <line x1="248" y1="112" x2="140" y2="56" stroke="#0033A0" stroke-width="4"/>
+    <line x1="248" y1="142" x2="140" y2="198" stroke="#0033A0" stroke-width="4"/>
+    <line x1="412" y1="112" x2="520" y2="56" stroke="#B38600" stroke-width="4" stroke-dasharray="9 7"/>
+    <line x1="412" y1="142" x2="520" y2="198" stroke="#B38600" stroke-width="4" stroke-dasharray="9 7"/>
+
+    <rect x="248" y="96" width="164" height="62" rx="10" fill="#FFD700" stroke="#B38600" stroke-width="2"/>
+    <text x="330" y="122" text-anchor="middle" font-size="17" font-weight="700" fill="#1A1A1A" font-family="Arial, sans-serif">📶 Роутер</text>
+    <text x="330" y="145" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">центр мережі</text>
+
+    <rect x="6" y="22" width="200" height="62" rx="10" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="106" y="48" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">🖥️ Комп'ютер</text>
+    <text x="106" y="71" text-anchor="middle" font-size="15" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">дріт • wired</text>
+
+    <rect x="6" y="166" width="200" height="62" rx="10" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="106" y="192" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">🖨️ Принтер</text>
+    <text x="106" y="215" text-anchor="middle" font-size="15" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">дріт • wired</text>
+
+    <rect x="454" y="22" width="200" height="62" rx="10" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="554" y="48" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">📱 Планшет</text>
+    <text x="554" y="71" text-anchor="middle" font-size="15" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">Wi-Fi • wireless</text>
+
+    <rect x="454" y="166" width="200" height="62" rx="10" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="554" y="192" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">💻 Ноутбук</text>
+    <text x="554" y="215" text-anchor="middle" font-size="15" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">Wi-Fi • wireless</text>
+  </svg>

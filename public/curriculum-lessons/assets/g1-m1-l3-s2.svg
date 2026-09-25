@@ -1,0 +1,14 @@
+<svg viewBox="0 0 700 200" role="img" aria-labelledby="g1u3b-t g1u3b-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g1u3b-t">Робот і ШІ — це різні речі</title>
+    <desc id="g1u3b-d">Робот-пилосос має колеса й рухається, але працює за простим правилом і ШІ не має. Чат-бот має ШІ, але не має жодних рухомих частин. Тому робот буває без ШІ, а ШІ буває без робота.</desc>
+    <rect x="6" y="14" width="336" height="172" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="174" y="62" text-anchor="middle" font-size="34" font-family="Arial, sans-serif">🤖</text>
+    <text x="174" y="100" text-anchor="middle" font-size="18" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Робот-пилосос</text>
+    <text x="174" y="130" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">✅ має колеса й рухається</text>
+    <text x="174" y="160" text-anchor="middle" font-size="16" fill="#96271B" font-family="Arial, sans-serif">➖ ШІ немає</text>
+    <rect x="358" y="14" width="336" height="172" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="526" y="62" text-anchor="middle" font-size="34" font-family="Arial, sans-serif">💬</text>
+    <text x="526" y="100" text-anchor="middle" font-size="18" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">Чат-бот</text>
+    <text x="526" y="130" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">✅ має ШІ</text>
+    <text x="526" y="160" text-anchor="middle" font-size="16" fill="#96271B" font-family="Arial, sans-serif">➖ ні рук, ні коліс</text>
+  </svg>

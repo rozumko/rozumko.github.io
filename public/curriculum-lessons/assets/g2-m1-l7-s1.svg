@@ -1,0 +1,22 @@
+<svg viewBox="0 0 780 280" role="img" aria-labelledby="g2u7a-t g2u7a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g2u7a-t">Що тримати при собі, а про що спитати дорослого</title>
+    <desc id="g2u7a-d">Ліворуч дані, які не надсилають нікому: домашня адреса, назва школи, номер телефону, паролі, фото родини. Праворуч те, про що варто спершу спитати дорослого: улюблена гра, хобі, місто, малюнок власної роботи.</desc>
+
+    <rect x="6" y="10" width="376" height="262" rx="12" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+    <text x="194" y="48" text-anchor="middle" font-size="19" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">🔒 Тримаю при собі</text>
+    <text x="34" y="88" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">🏡 домашня адреса</text>
+    <text x="34" y="122" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">🏫 назва моєї школи</text>
+    <text x="34" y="156" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">📞 номер телефону</text>
+    <text x="34" y="190" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">🔑 паролі до акаунтів</text>
+    <text x="34" y="224" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">📸 фото родини й друзів</text>
+    <text x="194" y="256" text-anchor="middle" font-size="15" fill="#96271B" font-family="Arial, sans-serif">Це не надсилають нікому в мережі</text>
+
+    <rect x="398" y="10" width="376" height="262" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="586" y="48" text-anchor="middle" font-size="19" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">🤔 Спершу питаю дорослого</text>
+    <text x="426" y="88" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">🎮 улюблена гра</text>
+    <text x="426" y="122" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">⚽ моє хобі</text>
+    <text x="426" y="156" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">🏙️ місто, де я живу</text>
+    <text x="426" y="190" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">🎨 малюнок моєї роботи</text>
+    <text x="426" y="224" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">📚 книжка, яку читаю</text>
+    <text x="586" y="256" text-anchor="middle" font-size="15" fill="#7A5A00" font-family="Arial, sans-serif">Разом вони теж багато розкажуть</text>
+  </svg>

@@ -1,0 +1,28 @@
+<svg aria-label="Ілюстрація до теми уроку" viewBox="0 0 600 140" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: auto; display: block;">
+        <!-- Steps background line -->
+        <line x1="70" y1="70" x2="530" y2="70" stroke="#BCE3F9" stroke-width="4" stroke-dasharray="8 8"/>
+
+        <!-- Step 1: Create -->
+        <circle cx="70" cy="70" r="28" fill="#41B6E6"/>
+        <text x="70" y="74" font-family="sans-serif" font-size="12" font-weight="bold" fill="#ffffff" text-anchor="middle">🎨</text>
+        <text x="70" y="115" font-family="sans-serif" font-size="12" font-weight="bold" fill="#0033A0" text-anchor="middle">Створи</text>
+        <text x="70" y="130" font-family="sans-serif" font-size="12" fill="#555555" text-anchor="middle">малюнок або текст</text>
+
+        <!-- Step 2: Name & Save -->
+        <circle cx="200" cy="70" r="28" fill="#0033A0"/>
+        <text x="200" y="74" font-family="sans-serif" font-size="12" font-weight="bold" fill="#ffffff" text-anchor="middle">💾</text>
+        <text x="200" y="115" font-family="sans-serif" font-size="12" font-weight="bold" fill="#0033A0" text-anchor="middle">Назви й Збережи</text>
+        <text x="200" y="130" font-family="sans-serif" font-size="12" fill="#555555" text-anchor="middle">save file</text>
+
+        <!-- Step 3: Close -->
+        <circle cx="330" cy="70" r="28" fill="#F4F6FA" stroke="#41B6E6" stroke-width="2"/>
+        <text x="330" y="74" font-family="sans-serif" font-size="12" font-weight="bold" fill="#0033A0" text-anchor="middle">❌</text>
+        <text x="330" y="115" font-family="sans-serif" font-size="12" font-weight="bold" fill="#0033A0" text-anchor="middle">Закрий</text>
+        <text x="330" y="130" font-family="sans-serif" font-size="12" fill="#555555" text-anchor="middle">close app</text>
+
+        <!-- Step 4: Open & Find -->
+        <circle cx="460" cy="70" r="28" fill="#41B6E6"/>
+        <text x="460" y="74" font-family="sans-serif" font-size="12" font-weight="bold" fill="#ffffff" text-anchor="middle">🔍</text>
+        <text x="460" y="115" font-family="sans-serif" font-size="12" font-weight="bold" fill="#0033A0" text-anchor="middle">Знайди й Відкрий</text>
+        <text x="460" y="130" font-family="sans-serif" font-size="12" fill="#555555" text-anchor="middle">open &amp; find</text>
+      </svg>

@@ -1,0 +1,42 @@
+<svg viewBox="0 0 600 240" role="img" aria-labelledby="svg-title svg-desc" style="display:block; width:100%; height:auto; max-width:600px; margin:16px auto;" xmlns="http://www.w3.org/2000/svg">
+        <title id="svg-title">Схема виконавців та їхніх меж</title>
+        <desc id="svg-desc">Ця схема показує двох виконавців: Робота у середовищі суші з командами йти та стрибати, та Рибку у середовищі води з командами плисти та пірнати.</desc>
+        <!-- Background -->
+        <rect width="600" height="240" rx="8" fill="#FAFAFA"/>
+
+        <!-- Robot Executor (Land) -->
+        <g transform="translate(10, 10)">
+          <rect width="275" height="220" rx="6" fill="#F0F4F8" stroke="#D9E2F0" stroke-width="2"/>
+          <text x="137" y="30" font-size="14" font-family="sans-serif" font-weight="bold" fill="#0033A0" text-anchor="middle">Виконавець: РОБОТ (Robot)</text>
+
+          <!-- Environment -->
+          <text x="20" y="60" font-size="12" font-family="sans-serif" fill="#555555">Де діє: суша 🪵</text>
+
+          <!-- Command Set -->
+          <text x="20" y="85" font-size="12" font-family="sans-serif" font-weight="bold" fill="#1A1A1A">Може виконати:</text>
+          <text x="35" y="110" font-size="12" font-family="sans-serif" fill="#2E7D32">🟢 Walk (Йти) — Розуміє! ✔</text>
+          <text x="35" y="130" font-size="12" font-family="sans-serif" fill="#2E7D32">🟢 Jump (Стрибати) — Розуміє! ✔</text>
+
+          <!-- Limits -->
+          <text x="35" y="165" font-size="12" font-family="sans-serif" font-weight="bold" fill="#D32F2F">❌ Swim (Плисти) — не може</text>
+          <text x="35" y="185" font-size="12" font-family="sans-serif" fill="#777777">Команда не підходить</text>
+        </g>
+
+        <!-- Fish Executor (Water) -->
+        <g transform="translate(315, 10)">
+          <rect width="275" height="220" rx="6" fill="#E8F4F8" stroke="#BCE3F9" stroke-width="2"/>
+          <text x="137" y="30" font-size="14" font-family="sans-serif" font-weight="bold" fill="#0033A0" text-anchor="middle">Виконавець: РИБКА (Fish)</text>
+
+          <!-- Environment -->
+          <text x="20" y="60" font-size="12" font-family="sans-serif" fill="#555555">Де діє: вода 🌊</text>
+
+          <!-- Command Set -->
+          <text x="20" y="85" font-size="12" font-family="sans-serif" font-weight="bold" fill="#1A1A1A">Може виконати:</text>
+          <text x="35" y="110" font-size="12" font-family="sans-serif" fill="#2E7D32">🟢 Swim (Плисти) — Розуміє! ✔</text>
+          <text x="35" y="130" font-size="12" font-family="sans-serif" fill="#2E7D32">🟢 Dive (Пірнати) — Розуміє! ✔</text>
+
+          <!-- Limits -->
+          <text x="35" y="165" font-size="12" font-family="sans-serif" font-weight="bold" fill="#D32F2F">❌ Walk (Йти) — не може</text>
+          <text x="35" y="185" font-size="12" font-family="sans-serif" fill="#777777">Команда не підходить</text>
+        </g>
+      </svg>

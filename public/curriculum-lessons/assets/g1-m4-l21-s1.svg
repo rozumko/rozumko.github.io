@@ -1,0 +1,34 @@
+<svg viewBox="0 0 600 240" role="img" aria-labelledby="lesson-svg-title lesson-svg-desc" style="display:block;width:100%;height:auto;max-width:600px;margin:16px auto;" xmlns="http://www.w3.org/2000/svg">
+        <title id="lesson-svg-title">Схема простого лінійного алгоритму</title>
+        <desc id="lesson-svg-desc">Ця схема показує три послідовні кроки алгоритму: початок, виконання дій по порядку та успішне завершення.</desc>
+        <rect x="10" y="10" width="580" height="220" rx="8" fill="#FAFAFA" stroke="#D9E2F0" stroke-width="1"/>
+
+        <!-- Start Block -->
+        <rect x="30" y="70" width="110" height="80" rx="20" fill="#2E7D32" stroke="#1B5E20" stroke-width="2"/>
+        <text x="85" y="115" font-size="14" font-family="sans-serif" font-weight="bold" fill="#ffffff" text-anchor="middle">START 🟢</text>
+        <text x="85" y="135" font-size="12" font-family="sans-serif" fill="#ffffff" text-anchor="middle">(Початок)</text>
+
+        <!-- Arrow 1 -->
+        <path d="M 140 110 L 195 110" stroke="#0033A0" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+
+        <!-- Steps Block -->
+        <rect x="205" y="60" width="190" height="100" rx="8" fill="#ffffff" stroke="#0033A0" stroke-width="2"/>
+        <text x="300" y="85" font-size="13" font-family="sans-serif" font-weight="bold" fill="#0033A0" text-anchor="middle">Кроки по порядку (Order)</text>
+        <text x="220" y="115" font-size="12" font-family="sans-serif" fill="#1A1A1A">1. Одягни лівий носок</text>
+        <text x="220" y="140" font-size="12" font-family="sans-serif" fill="#1A1A1A">2. Одягни лівий черевик</text>
+
+        <!-- Arrow 2 -->
+        <path d="M 395 110 L 450 110" stroke="#0033A0" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+
+        <!-- Finish Block -->
+        <rect x="460" y="70" width="110" height="80" rx="20" fill="#D32F2F" stroke="#B71C1C" stroke-width="2"/>
+        <text x="515" y="115" font-size="14" font-family="sans-serif" font-weight="bold" fill="#ffffff" text-anchor="middle">FINISH 🛑</text>
+        <text x="515" y="135" font-size="12" font-family="sans-serif" fill="#ffffff" text-anchor="middle">(Кінець)</text>
+
+        <!-- Arrow marker definition -->
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#0033A0"/>
+          </marker>
+        </defs>
+      </svg>

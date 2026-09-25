@@ -1,0 +1,17 @@
+<svg viewBox="0 0 860 250" role="img" aria-labelledby="g3u19a-t g3u19a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g3u19a-t">Ручне редагування і редагування ШІ: що перевіряти</title>
+    <desc id="g3u19a-d">Від оригіналу дві стрілки. Ручне редагування: перевір, як змінилися фокус і повідомлення. Редагування ШІ: перевір повідомлення і нові деталі, яких не було. Будь-яку версію порівнюють з оригіналом.</desc>
+    <rect x="330" y="10" width="200" height="60" rx="12" fill="#F0F4F8" stroke="#0033A0" stroke-width="2"/>
+    <text x="430" y="47" text-anchor="middle" font-size="17" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">🖼 Оригінал</text>
+    <path d="M380 70 L230 104" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <path d="M480 70 L630 104" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <rect x="30" y="106" width="380" height="104" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="220" y="138" text-anchor="middle" font-size="17" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">✂️ Ручне редагування</text>
+    <text x="220" y="166" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">перевір: чи не змінилися</text>
+    <text x="220" y="188" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">фокус і повідомлення?</text>
+    <rect x="450" y="106" width="380" height="104" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="640" y="138" text-anchor="middle" font-size="17" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">🤖 Редагування ШІ</text>
+    <text x="640" y="166" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">перевір повідомлення</text>
+    <text x="640" y="188" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">і нові деталі, яких не було</text>
+    <text x="430" y="238" text-anchor="middle" font-size="16" fill="#3D4757" font-family="Arial, sans-serif">Будь-яку версію порівнюй з оригіналом.</text>
+  </svg>

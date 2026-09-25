@@ -1,0 +1,33 @@
+<svg viewBox="0 0 860 200" role="img" aria-labelledby="g3u22a-t g3u22a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g3u22a-t">Складне завдання, його частини і шлях input → кроки → output</title>
+    <desc id="g3u22a-d">Складне завдання ділиться на частини. Кожна частина отримує введення, виконує кроки алгоритму й дає виведення.</desc>
+    <rect x="6" y="14" width="140" height="130" rx="12" fill="#F0F4F8" stroke="#0033A0" stroke-width="2"/>
+    <text x="76" y="52" text-anchor="middle" font-size="24" font-family="Arial, sans-serif">🎯</text>
+    <text x="76" y="86" text-anchor="middle" font-size="16" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Завдання</text>
+    <text x="76" y="112" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">велике</text>
+    <path d="M150 79 H168" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="168,72 178,79 168,86" fill="#0033A0"/>
+    <rect x="182" y="14" width="140" height="130" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="252" y="52" text-anchor="middle" font-size="24" font-family="Arial, sans-serif">✂️</text>
+    <text x="252" y="86" text-anchor="middle" font-size="16" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">Частини</text>
+    <text x="252" y="112" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">3–5 секцій</text>
+    <path d="M326 79 H344" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="344,72 354,79 344,86" fill="#0033A0"/>
+    <rect x="358" y="14" width="140" height="130" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="428" y="52" text-anchor="middle" font-size="24" font-family="Arial, sans-serif">📥</text>
+    <text x="428" y="86" text-anchor="middle" font-size="16" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Input</text>
+    <text x="428" y="112" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">що отримує</text>
+    <path d="M502 79 H520" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="520,72 530,79 520,86" fill="#0033A0"/>
+    <rect x="534" y="14" width="140" height="130" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="604" y="52" text-anchor="middle" font-size="24" font-family="Arial, sans-serif">⚙️</text>
+    <text x="604" y="86" text-anchor="middle" font-size="16" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Кроки</text>
+    <text x="604" y="112" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">по порядку</text>
+    <path d="M678 79 H696" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="696,72 706,79 696,86" fill="#0033A0"/>
+    <rect x="710" y="14" width="140" height="130" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="780" y="52" text-anchor="middle" font-size="24" font-family="Arial, sans-serif">📤</text>
+    <text x="780" y="86" text-anchor="middle" font-size="16" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">Output</text>
+    <text x="780" y="112" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">що виходить</text>
+    <text x="430" y="182" text-anchor="middle" font-size="16" fill="#3D4757" font-family="Arial, sans-serif">Декомпозиція: одне велике завдання → кілька маленьких алгоритмів.</text>
+  </svg>

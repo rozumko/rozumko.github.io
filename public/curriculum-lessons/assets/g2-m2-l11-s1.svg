@@ -1,0 +1,36 @@
+<svg viewBox="0 0 800 220" role="img" aria-labelledby="svg-title-media svg-desc-media" style="display:block;width:100%;height:auto;max-width:800px;margin:18px auto;" xmlns="http://www.w3.org/2000/svg">
+      <title id="svg-title-media">Шлях покращення медіафайла</title>
+      <desc id="svg-desc-media">Схема показує кроки від знімання та запису до обрізання та збереження з новою назвою.</desc>
+      
+      <!-- Box 1: Raw media -->
+      <rect x="20" y="30" width="220" height="160" rx="10" fill="#FFFFFF" stroke="#D9E2F0" stroke-width="2"/>
+      <rect x="20" y="30" width="220" height="36" rx="10" fill="#0033A0"/>
+      <text x="130" y="53" font-family="sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">1. Запис (Capture/Record)</text>
+      <text x="130" y="95" font-family="sans-serif" font-size="32" text-anchor="middle">📸 🎙️</text>
+      <text x="130" y="135" font-family="sans-serif" font-size="13" font-weight="bold" fill="#0033A0" text-anchor="middle">Зайві краї та тиша</text>
+      <text x="130" y="155" font-family="sans-serif" font-size="12" fill="#52606D" text-anchor="middle">Початковий кадр</text>
+
+      <!-- Arrow 1 -->
+      <path d="M 250 110 L 280 110" stroke="#0033A0" stroke-width="3" fill="none"/>
+      <polygon points="280,105 290,110 280,115" fill="#0033A0"/>
+
+      <!-- Box 2: Editing -->
+      <rect x="300" y="30" width="220" height="160" rx="10" fill="#F0F4F8" stroke="#0033A0" stroke-width="2"/>
+      <rect x="300" y="30" width="220" height="36" rx="10" fill="#0033A0"/>
+      <text x="410" y="53" font-family="sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">2. Редагування (Edit)</text>
+      <text x="410" y="95" font-family="sans-serif" font-size="32" text-anchor="middle">✂️ 📐</text>
+      <text x="410" y="135" font-family="sans-serif" font-size="13" font-weight="bold" fill="#0033A0" text-anchor="middle">Crop (фото) / Trim (відео)</text>
+      <text x="410" y="155" font-family="sans-serif" font-size="12" fill="#52606D" text-anchor="middle">Видалення зайвого</text>
+
+      <!-- Arrow 2 -->
+      <path d="M 530 110 L 560 110" stroke="#0033A0" stroke-width="3" fill="none"/>
+      <polygon points="560,105 570,110 560,115" fill="#0033A0"/>
+
+      <!-- Box 3: Save & Name -->
+      <rect x="580" y="30" width="200" height="160" rx="10" fill="#FFF9DB" stroke="#FFD700" stroke-width="2"/>
+      <rect x="580" y="30" width="200" height="36" rx="10" fill="#FFD700"/>
+      <text x="680" y="53" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1A1A1A" text-anchor="middle">3. Збереження (Save)</text>
+      <text x="680" y="95" font-family="sans-serif" font-size="32" text-anchor="middle">💾</text>
+      <text x="680" y="135" font-family="sans-serif" font-size="13" font-weight="bold" fill="#0033A0" text-anchor="middle">Змістовна назва</text>
+      <text x="680" y="155" font-family="sans-serif" font-size="12" fill="#52606D" text-anchor="middle">Фото_Олівець.jpg</text>
+    </svg>

@@ -1,0 +1,16 @@
+<svg viewBox="0 0 860 230" role="img" aria-labelledby="g3u30a-t g3u30a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g3u30a-t">Як працює умова якщо… то…</title>
+    <desc id="g3u30a-d">Програма ставить запитання «торкається зірки?». Якщо так — виконуються блоки всередині: звук і напис «Перемога!». Якщо ні — ці блоки пропускаються, і програма йде далі. Усередині блоку «завжди» запитання ставиться знову й знову.</desc>
+    <rect x="300" y="10" width="260" height="56" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="430" y="44" text-anchor="middle" font-size="17" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">❓ Торкається зірки?</text>
+    <path d="M360 66 L220 104 M500 66 L640 104" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <text x="270" y="92" text-anchor="middle" font-size="15" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">так</text>
+    <text x="590" y="92" text-anchor="middle" font-size="15" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">ні</text>
+    <rect x="40" y="106" width="360" height="80" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="220" y="140" text-anchor="middle" font-size="16" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">виконати блоки всередині</text>
+    <text x="220" y="166" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">звук і «Перемога!»</text>
+    <rect x="460" y="106" width="360" height="80" rx="12" fill="#F0F4F8" stroke="#0033A0" stroke-width="2"/>
+    <text x="640" y="140" text-anchor="middle" font-size="16" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">пропустити їх</text>
+    <text x="640" y="166" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">і йти далі</text>
+    <text x="430" y="218" text-anchor="middle" font-size="16" fill="#3D4757" font-family="Arial, sans-serif">У блоці «завжди» запитання ставиться знову й знову.</text>
+  </svg>

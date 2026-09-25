@@ -1,0 +1,28 @@
+<svg viewBox="0 0 780 300" role="img" aria-labelledby="g2u6a-t g2u6a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g2u6a-t">Чотири мети інтернет-контенту</title>
+    <desc id="g2u6a-d">Інформація повідомляє факти, наприклад прогноз погоди. Навчання вчить за планом, наприклад відеоурок. Розваги дарують відпочинок, наприклад мультфільм. Спілкування об'єднує людей, наприклад повідомлення бабусі.</desc>
+
+    <rect x="6" y="10" width="380" height="134" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="34" y="52" font-size="28" font-family="Arial, sans-serif">📊</text>
+    <text x="80" y="52" font-size="18" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Information • інформація</text>
+    <text x="34" y="88" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">Повідомляє точні факти.</text>
+    <text x="34" y="116" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">Прогноз погоди, розклад уроків.</text>
+
+    <rect x="398" y="10" width="376" height="134" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="426" y="52" font-size="28" font-family="Arial, sans-serif">📖</text>
+    <text x="472" y="52" font-size="18" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">Learning • навчання</text>
+    <text x="426" y="88" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">Вчить чогось за планом.</text>
+    <text x="426" y="116" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">Відеоурок, вправа з математики.</text>
+
+    <rect x="6" y="158" width="380" height="134" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="34" y="200" font-size="28" font-family="Arial, sans-serif">🎮</text>
+    <text x="80" y="200" font-size="18" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">Entertainment • розваги</text>
+    <text x="34" y="236" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">Дарує радість і відпочинок.</text>
+    <text x="34" y="264" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">Мультфільм, гра, пісенька.</text>
+
+    <rect x="398" y="158" width="376" height="134" rx="12" fill="#F0F4F8" stroke="#0033A0" stroke-width="2"/>
+    <text x="426" y="200" font-size="28" font-family="Arial, sans-serif">💬</text>
+    <text x="472" y="200" font-size="18" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Communication</text>
+    <text x="426" y="236" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">Об'єднує з друзями й рідними.</text>
+    <text x="426" y="264" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">Повідомлення бабусі в іншу країну.</text>
+  </svg>

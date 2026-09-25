@@ -1,0 +1,16 @@
+<svg viewBox="0 0 860 240" role="img" aria-labelledby="g3u20a-t g3u20a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g3u20a-t">Той самий текст із різними зображеннями</title>
+    <desc id="g3u20a-d">Угорі текст «Неймовірна пригода!». Ліворуч до нього додано зображення походу в гори — картинка підсилює текст, тон захопливий. Праворуч додано зображення загубленої шкарпетки — тон стає жартівливим.</desc>
+    <rect x="280" y="10" width="300" height="56" rx="12" fill="#F0F4F8" stroke="#0033A0" stroke-width="2"/>
+    <text x="430" y="45" text-anchor="middle" font-size="18" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">📝 «Неймовірна пригода!»</text>
+    <path d="M340 66 L220 100" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <path d="M520 66 L640 100" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <rect x="30" y="102" width="380" height="120" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="220" y="140" text-anchor="middle" font-size="26" font-family="Arial, sans-serif">🏔️</text>
+    <text x="220" y="172" text-anchor="middle" font-size="16" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">+ похід у гори</text>
+    <text x="220" y="200" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">картинка підсилює: тон захопливий</text>
+    <rect x="450" y="102" width="380" height="120" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="640" y="140" text-anchor="middle" font-size="26" font-family="Arial, sans-serif">🧦</text>
+    <text x="640" y="172" text-anchor="middle" font-size="16" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">+ загублена шкарпетка</text>
+    <text x="640" y="200" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">картинка змінює тон: жартівливий</text>
+  </svg>

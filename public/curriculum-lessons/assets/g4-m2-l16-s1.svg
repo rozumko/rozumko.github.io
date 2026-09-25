@@ -1,0 +1,23 @@
+<svg viewBox="0 0 860 210" role="img" aria-labelledby="g4u16a-t g4u16a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g4u16a-t">Які ресурси потрібні цифровим даним</title>
+    <desc id="g4u16a-d">Три картки. Електроенергія: сервери в дата-центрах працюють цілодобово. Вода: деякі дата-центри охолоджують водою. Електронне сміття: старі пристрої треба здавати на переробку. Внизу порада: зберігай потрібне, стискай, коли висока якість не потрібна, не створюй зайвого.</desc>
+    <g font-family="Arial, sans-serif">
+      <rect x="6" y="14" width="270" height="140" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+      <text x="141" y="52" text-anchor="middle" font-size="26">⚡</text>
+      <text x="141" y="84" text-anchor="middle" font-size="17" font-weight="700" fill="#7A5A00">Електроенергія</text>
+      <text x="141" y="112" text-anchor="middle" font-size="15" fill="#3D4757">сервери працюють</text>
+      <text x="141" y="134" text-anchor="middle" font-size="15" fill="#3D4757">цілодобово</text>
+      <rect x="295" y="14" width="270" height="140" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+      <text x="430" y="52" text-anchor="middle" font-size="26">💧</text>
+      <text x="430" y="84" text-anchor="middle" font-size="17" font-weight="700" fill="#0033A0">Вода</text>
+      <text x="430" y="112" text-anchor="middle" font-size="15" fill="#3D4757">деякі дата-центри</text>
+      <text x="430" y="134" text-anchor="middle" font-size="15" fill="#3D4757">охолоджують водою</text>
+      <rect x="584" y="14" width="270" height="140" rx="12" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+      <text x="719" y="52" text-anchor="middle" font-size="26">♻️</text>
+      <text x="719" y="84" text-anchor="middle" font-size="17" font-weight="700" fill="#96271B">Електронне сміття</text>
+      <text x="719" y="112" text-anchor="middle" font-size="15" fill="#3D4757">старі пристрої —</text>
+      <text x="719" y="134" text-anchor="middle" font-size="15" fill="#3D4757">на переробку</text>
+      <rect x="6" y="166" width="848" height="36" rx="10" fill="#E9F4ED"/>
+      <text x="430" y="190" text-anchor="middle" font-size="15" fill="#155C32">зберігай потрібне • стискай, коли висока якість не потрібна • не створюй зайвого</text>
+    </g>
+  </svg>

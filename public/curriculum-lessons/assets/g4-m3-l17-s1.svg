@@ -1,0 +1,30 @@
+<svg viewBox="0 0 860 190" role="img" aria-labelledby="g4u17a-t g4u17a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g4u17a-t">П'ять кроків роботи з кодом</title>
+    <desc id="g4u17a-d">Передбач: що зробить програма. Запусти: перевір у Scratch. Досліди: чому вийшло саме так. Зміни: одну річ і запусти знову. Створи: власний варіант. Стрілка від «Створи» повертається до «Передбач».</desc>
+    <g font-family="Arial, sans-serif" text-anchor="middle">
+      <rect x="6" y="20" width="156" height="110" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+      <text x="84" y="58" font-size="17" font-weight="700" fill="#7A5A00">1. Передбач</text>
+      <text x="84" y="86" font-size="15" fill="#3D4757">що зробить</text>
+      <text x="84" y="106" font-size="15" fill="#3D4757">програма?</text>
+      <rect x="180" y="20" width="156" height="110" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+      <text x="258" y="58" font-size="17" font-weight="700" fill="#0033A0">2. Запусти</text>
+      <text x="258" y="86" font-size="15" fill="#3D4757">перевір</text>
+      <text x="258" y="106" font-size="15" fill="#3D4757">у Scratch</text>
+      <rect x="354" y="20" width="156" height="110" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+      <text x="432" y="58" font-size="17" font-weight="700" fill="#0033A0">3. Досліди</text>
+      <text x="432" y="86" font-size="15" fill="#3D4757">чому вийшло</text>
+      <text x="432" y="106" font-size="15" fill="#3D4757">саме так?</text>
+      <rect x="528" y="20" width="156" height="110" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+      <text x="606" y="58" font-size="17" font-weight="700" fill="#155C32">4. Зміни</text>
+      <text x="606" y="86" font-size="15" fill="#3D4757">одну річ —</text>
+      <text x="606" y="106" font-size="15" fill="#3D4757">і знову запусти</text>
+      <rect x="702" y="20" width="152" height="110" rx="12" fill="#0033A0"/>
+      <text x="778" y="58" font-size="17" font-weight="700" fill="#FFFFFF">5. Створи</text>
+      <text x="778" y="86" font-size="15" fill="#D6E0F5">власний</text>
+      <text x="778" y="106" font-size="15" fill="#D6E0F5">варіант</text>
+    </g>
+    <g fill="#0033A0"><polygon points="164,69 176,75 164,81"/><polygon points="338,69 350,75 338,81"/><polygon points="512,69 524,75 512,81"/><polygon points="686,69 698,75 686,81"/></g>
+    <path d="M778 134 V166 H84 V142" fill="none" stroke="#B38600" stroke-width="3" stroke-dasharray="8 6"/>
+    <polygon points="76,144 84,132 92,144" fill="#B38600"/>
+    <text x="430" y="184" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">зошит — для прогнозу й записів, Scratch — для запуску й змін</text>
+  </svg>

@@ -1,0 +1,26 @@
+<svg viewBox="0 0 860 190" role="img" aria-labelledby="g4u8c-t g4u8c-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+      <title id="g4u8c-t">Легенда шифру Pigpen</title>
+      <desc id="g4u8c-d">Перша сітка три на три містить літери від A до I без крапок. Друга така сама сітка — літери від J до R, у кожній клітинці крапка. Третя фігура — косий хрест із літерами S угорі, T ліворуч, U праворуч, V унизу. Четвертий косий хрест — літери W, X, Y, Z з крапками.</desc>
+      <g stroke="#1A1A1A" stroke-width="3" fill="none">
+        <path d="M70 20 V170 M120 20 V170 M20 70 H170 M20 120 H170"/>
+        <path d="M260 20 V170 M310 20 V170 M210 70 H360 M210 120 H360"/>
+        <path d="M410 25 L550 165 M550 25 L410 165"/>
+        <path d="M620 25 L760 165 M760 25 L620 165"/>
+      </g>
+      <g font-size="20" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif" text-anchor="middle">
+        <text x="45" y="52">A</text><text x="95" y="52">B</text><text x="145" y="52">C</text>
+        <text x="45" y="102">D</text><text x="95" y="102">E</text><text x="145" y="102">F</text>
+        <text x="45" y="152">G</text><text x="95" y="152">H</text><text x="145" y="152">I</text>
+        <text x="235" y="48">J</text><text x="285" y="48">K</text><text x="335" y="48">L</text>
+        <text x="235" y="98">M</text><text x="285" y="98">N</text><text x="335" y="98">O</text>
+        <text x="235" y="148">P</text><text x="285" y="148">Q</text><text x="335" y="148">R</text>
+        <text x="480" y="62">S</text><text x="440" y="102">T</text><text x="520" y="102">U</text><text x="480" y="148">V</text>
+        <text x="690" y="58">W</text><text x="650" y="98">X</text><text x="730" y="98">Y</text><text x="690" y="144">Z</text>
+      </g>
+      <g fill="#1A1A1A">
+        <circle cx="235" cy="58" r="3.5"/><circle cx="285" cy="58" r="3.5"/><circle cx="335" cy="58" r="3.5"/>
+        <circle cx="235" cy="108" r="3.5"/><circle cx="285" cy="108" r="3.5"/><circle cx="335" cy="108" r="3.5"/>
+        <circle cx="235" cy="158" r="3.5"/><circle cx="285" cy="158" r="3.5"/><circle cx="335" cy="158" r="3.5"/>
+        <circle cx="690" cy="66" r="3.5"/><circle cx="650" cy="106" r="3.5"/><circle cx="730" cy="106" r="3.5"/><circle cx="690" cy="152" r="3.5"/>
+      </g>
+    </svg>

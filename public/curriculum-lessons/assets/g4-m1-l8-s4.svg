@@ -1,0 +1,11 @@
+<svg viewBox="0 0 860 120" role="img" aria-labelledby="g4u8d-t g4u8d-d" style="display:block;width:100%;height:auto;margin:12px 0;" xmlns="http://www.w3.org/2000/svg">
+      <title id="g4u8d-t">Три символи Pigpen для розшифрування</title>
+      <desc id="g4u8d-d">Перший символ — форма літери U, відкрита згори, з крапкою всередині. Другий — повний квадрат без крапки. Третій — кут, схожий на знак «менше», відкритий праворуч, з крапкою всередині.</desc>
+      <g stroke="#1A1A1A" stroke-width="4" fill="none">
+        <path d="M60 20 V80 H120 V20"/>
+        <path d="M200 20 H260 V80 H200 Z"/>
+        <path d="M400 20 L350 50 L400 80"/>
+      </g>
+      <g fill="#1A1A1A"><circle cx="90" cy="55" r="5"/><circle cx="385" cy="50" r="5"/></g>
+      <g font-size="17" fill="#3D4757" font-family="Arial, sans-serif" text-anchor="middle"><text x="90" y="108">1</text><text x="230" y="108">2</text><text x="375" y="108">3</text></g>
+    </svg>

@@ -1,0 +1,53 @@
+<svg viewBox="0 0 800 240" role="img" aria-labelledby="svg-title-models svg-desc-models" style="display:block;width:100%;height:auto;max-width:800px;margin:18px auto;" xmlns="http://www.w3.org/2000/svg">
+      <title id="svg-title-models">Три моделі даних: Таблиця, Піктограма, Діаграма</title>
+      <desc id="svg-desc-models">Схема демонструє подання однакових даних про улюблені фрукти трьома різними способами.</desc>
+      
+      <!-- Model 1: Table -->
+      <rect x="10" y="20" width="240" height="200" rx="10" fill="#FFFFFF" stroke="#D9E2F0" stroke-width="2"/>
+      <rect x="10" y="20" width="240" height="36" rx="10" fill="#0033A0"/>
+      <text x="130" y="43" font-family="sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">1. Таблиця (Table)</text>
+      <text x="25" y="80" font-family="sans-serif" font-size="13" font-weight="bold" fill="#1A1A1A">Фрукт</text>
+      <text x="180" y="80" font-family="sans-serif" font-size="13" font-weight="bold" fill="#1A1A1A">Кількість</text>
+      <line x1="20" y1="90" x2="240" y2="90" stroke="#D9E2F0" stroke-width="1"/>
+      <text x="25" y="120" font-family="sans-serif" font-size="13" fill="#52606D">Яблуко</text>
+      <text x="195" y="120" font-family="sans-serif" font-size="13" font-weight="bold" fill="#0033A0">4</text>
+      <text x="25" y="150" font-family="sans-serif" font-size="13" fill="#52606D">Банан</text>
+      <text x="195" y="150" font-family="sans-serif" font-size="13" font-weight="bold" fill="#0033A0">2</text>
+      <text x="25" y="180" font-family="sans-serif" font-size="13" fill="#52606D">Груша</text>
+      <text x="195" y="180" font-family="sans-serif" font-size="13" font-weight="bold" fill="#0033A0">4</text>
+
+      <!-- Model 2: Pictogram -->
+      <rect x="280" y="20" width="240" height="200" rx="10" fill="#F0F4F8" stroke="#0033A0" stroke-width="2"/>
+      <rect x="280" y="20" width="240" height="36" rx="10" fill="#0033A0"/>
+      <text x="400" y="43" font-family="sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">2. Піктограма (Pictogram)</text>
+      <text x="295" y="85" font-family="sans-serif" font-size="13" fill="#1A1A1A">Яблуко: 🍎🍎🍎🍎</text>
+      <text x="295" y="125" font-family="sans-serif" font-size="13" fill="#1A1A1A">Банан: 🍌🍌</text>
+      <text x="295" y="165" font-family="sans-serif" font-size="13" fill="#1A1A1A">Груша: 🍐🍐🍐🍐</text>
+      <text x="400" y="205" font-family="sans-serif" font-size="15" font-weight="bold" fill="#0033A0" text-anchor="middle">🔑 Ключ: 1 значок = 1 фрукт</text>
+
+      <!-- Model 3: Bar Chart -->
+      <rect x="550" y="20" width="240" height="200" rx="10" fill="#FFFFFF" stroke="#D9E2F0" stroke-width="2"/>
+      <rect x="550" y="20" width="240" height="36" rx="10" fill="#0033A0"/>
+      <text x="670" y="43" font-family="sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">3. Діаграма (Chart)</text>
+      
+      <!-- Axis lines -->
+      <line x1="580" y1="180" x2="760" y2="180" stroke="#1A1A1A" stroke-width="1.5"/>
+      <line x1="580" y1="80" x2="580" y2="180" stroke="#1A1A1A" stroke-width="1.5"/>
+      
+      <!-- Apple bar -->
+      <rect x="600" y="100" width="30" height="80" fill="#0033A0" rx="3"/>
+      <text x="615" y="196" font-family="sans-serif" font-size="13" fill="#1A1A1A" text-anchor="middle">Ябл</text>
+      
+      <!-- Banana bar -->
+      <rect x="655" y="140" width="30" height="40" fill="#FFD700" rx="3"/>
+      <text x="670" y="196" font-family="sans-serif" font-size="13" fill="#1A1A1A" text-anchor="middle">Бан</text>
+      
+      <!-- Pear bar -->
+      <rect x="710" y="100" width="30" height="80" fill="#0033A0" rx="3"/>
+      <text x="725" y="196" font-family="sans-serif" font-size="13" fill="#1A1A1A" text-anchor="middle">Гр</text>
+      
+      <!-- Scale ticks -->
+      <text x="572" y="104" font-family="sans-serif" font-size="12" fill="#52606D" text-anchor="end">4</text>
+      <text x="572" y="144" font-family="sans-serif" font-size="12" fill="#52606D" text-anchor="end">2</text>
+      <text x="572" y="184" font-family="sans-serif" font-size="12" fill="#52606D" text-anchor="end">0</text>
+    </svg>

@@ -1,0 +1,31 @@
+<svg viewBox="0 0 700 170" role="img" aria-labelledby="g1u12-t g1u12-d" style="display:block;width:100%;height:auto;margin:18px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g1u12-t">Шлях файлу: зберегти, покласти в папку, знайти, відкрити</title>
+    <desc id="g1u12-d">Спочатку робота стає файлом і отримує назву. Файл лягає в папку. Пізніше файл шукають за назвою. І нарешті відкривають знову.</desc>
+
+    <rect x="6" y="30" width="148" height="104" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="80" y="68" text-anchor="middle" font-size="28" font-family="Arial, sans-serif">📄</text>
+    <text x="80" y="100" text-anchor="middle" font-size="16" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Файл</text>
+    <text x="80" y="122" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">file</text>
+    <path d="M154 82 H170" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="170,75 182,82 170,89" fill="#0033A0"/>
+
+    <rect x="188" y="30" width="148" height="104" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="262" y="68" text-anchor="middle" font-size="28" font-family="Arial, sans-serif">📁</text>
+    <text x="262" y="100" text-anchor="middle" font-size="16" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">Папка</text>
+    <text x="262" y="122" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">folder</text>
+    <path d="M336 82 H352" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="352,75 364,82 352,89" fill="#0033A0"/>
+
+    <rect x="370" y="30" width="148" height="104" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="444" y="68" text-anchor="middle" font-size="28" font-family="Arial, sans-serif">🔍</text>
+    <text x="444" y="100" text-anchor="middle" font-size="16" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">Знайди</text>
+    <text x="444" y="122" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">find</text>
+    <path d="M518 82 H534" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="534,75 546,82 534,89" fill="#0033A0"/>
+
+    <rect x="546" y="30" width="148" height="104" rx="12" fill="#F0F4F8" stroke="#0033A0" stroke-width="2"/>
+    <text x="620" y="68" text-anchor="middle" font-size="28" font-family="Arial, sans-serif">📂</text>
+    <text x="620" y="100" text-anchor="middle" font-size="16" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Відкрий</text>
+    <text x="620" y="122" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">open</text>
+    <text x="350" y="158" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">Назва потрібна, щоб знайти файл пізніше.</text>
+  </svg>

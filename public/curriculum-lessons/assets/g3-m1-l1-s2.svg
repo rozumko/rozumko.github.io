@@ -1,0 +1,28 @@
+<svg viewBox="0 0 880 230" role="img" aria-labelledby="g3u1b-t g3u1b-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g3u1b-t">Зразок стрічки часу: як слухали музику</title>
+    <desc id="g3u1b-d">Чотири кроки на одній лінії: платівка, касета, компакт-диск, стримінг. Під кожним кроком підписано, що саме змінилося. Наскрізний підпис нагадує: носій змінювався щоразу, а потреба зберігати дані лишалася.</desc>
+
+    <line x1="40" y1="96" x2="840" y2="96" stroke="#D9E2F0" stroke-width="4"/>
+
+    <circle cx="100" cy="96" r="13" fill="#0033A0"/>
+    <text x="100" y="58" text-anchor="middle" font-size="26" font-family="Arial, sans-serif">💿</text>
+    <text x="100" y="132" text-anchor="middle" font-size="16" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Платівка</text>
+    <text x="100" y="154" text-anchor="middle" font-size="14" fill="#3D4757" font-family="Arial, sans-serif">звук у канавці</text>
+
+    <circle cx="330" cy="96" r="13" fill="#0033A0"/>
+    <text x="330" y="58" text-anchor="middle" font-size="26" font-family="Arial, sans-serif">📼</text>
+    <text x="330" y="132" text-anchor="middle" font-size="16" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Касета</text>
+    <text x="330" y="154" text-anchor="middle" font-size="14" fill="#3D4757" font-family="Arial, sans-serif">звук на плівці</text>
+
+    <circle cx="560" cy="96" r="13" fill="#0033A0"/>
+    <text x="560" y="58" text-anchor="middle" font-size="26" font-family="Arial, sans-serif">📀</text>
+    <text x="560" y="132" text-anchor="middle" font-size="16" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Компакт-диск</text>
+    <text x="560" y="154" text-anchor="middle" font-size="14" fill="#3D4757" font-family="Arial, sans-serif">звук числами</text>
+
+    <circle cx="790" cy="96" r="13" fill="#FFD700" stroke="#B38600" stroke-width="3"/>
+    <text x="790" y="58" text-anchor="middle" font-size="26" font-family="Arial, sans-serif">📱</text>
+    <text x="790" y="132" text-anchor="middle" font-size="16" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">Стримінг</text>
+    <text x="790" y="154" text-anchor="middle" font-size="14" fill="#3D4757" font-family="Arial, sans-serif">звук на сервері</text>
+
+    <text x="440" y="200" text-anchor="middle" font-size="16" fill="#3D4757" font-family="Arial, sans-serif">Носій змінювався щоразу. Потреба десь зберігати дані — жодного разу.</text>
+  </svg>

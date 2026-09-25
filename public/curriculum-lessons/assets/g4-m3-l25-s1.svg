@@ -1,0 +1,25 @@
+<svg viewBox="0 0 860 230" role="img" aria-labelledby="g4u25a-t g4u25a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g4u25a-t">Введення, подія, скрипт і результат</title>
+    <desc id="g4u25a-d">Приклад: введення — натиснута клавіша A. Подія — «коли натиснуто клавішу a». Скрипт — змінити ефект кольору. Виведення — кіт змінює колір. Нижче примітка: подія «коли я отримую повідомлення» запускається не людиною, а іншим скриптом програми.</desc>
+    <g font-family="Arial, sans-serif" text-anchor="middle">
+      <rect x="6" y="20" width="196" height="130" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+      <text x="104" y="54" font-size="17" font-weight="700" fill="#7A5A00">INPUT</text>
+      <text x="104" y="90" font-size="26">⌨️</text>
+      <text x="104" y="126" font-size="15" fill="#3D4757">клавіша A</text>
+      <rect x="226" y="20" width="196" height="130" rx="12" fill="#FFF4D6" stroke="#B38600" stroke-width="2"/>
+      <text x="324" y="54" font-size="17" font-weight="700" fill="#7A5A00">EVENT</text>
+      <text x="324" y="92" font-size="15" fill="#3D4757">коли натиснуто</text>
+      <text x="324" y="114" font-size="15" fill="#3D4757">клавішу [a]</text>
+      <rect x="446" y="20" width="196" height="130" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+      <text x="544" y="54" font-size="17" font-weight="700" fill="#0033A0">SCRIPT</text>
+      <text x="544" y="92" font-size="15" fill="#3D4757">змінити ефект</text>
+      <text x="544" y="114" font-size="15" fill="#3D4757">[колір] на (25)</text>
+      <rect x="666" y="20" width="188" height="130" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+      <text x="760" y="54" font-size="17" font-weight="700" fill="#155C32">OUTPUT</text>
+      <text x="760" y="90" font-size="26">🐱</text>
+      <text x="760" y="126" font-size="15" fill="#3D4757">кіт змінив колір</text>
+    </g>
+    <g fill="#0033A0"><polygon points="206,79 220,85 206,91"/><polygon points="426,79 440,85 426,91"/><polygon points="646,79 660,85 646,91"/></g>
+    <rect x="6" y="168" width="848" height="48" rx="10" fill="#F0F4F8"/>
+    <text x="430" y="198" text-anchor="middle" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">Не кожна подія — введення людини: «коли я отримую [повідомлення]» запускає інший скрипт програми.</text>
+  </svg>

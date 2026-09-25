@@ -1,0 +1,29 @@
+<svg viewBox="0 0 860 280" role="img" aria-labelledby="g4u11a-t g4u11a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g4u11a-t">Від форми до таблиці</title>
+    <desc id="g4u11a-d">Ліворуч форма гуртка з трьома питаннями: ім'я (обов'язкове), клас (обов'язкове), хобі (необов'язкове). Стрілка «Надіслати» веде праворуч до таблиці. У таблиці кожне питання стало стовпчиком-полем, а кожна анкета — рядком-записом. В однієї дитини хобі не вказано — клітинка порожня.</desc>
+    <rect x="10" y="20" width="280" height="240" rx="12" fill="#FFFFFF" stroke="#0033A0" stroke-width="2"/>
+    <rect x="10" y="20" width="280" height="44" rx="12" fill="#0033A0"/>
+    <text x="150" y="48" text-anchor="middle" font-size="17" font-weight="700" fill="#FFFFFF" font-family="Arial, sans-serif">📋 ФОРМА</text>
+    <g font-size="15" font-family="Arial, sans-serif">
+      <text x="30" y="92" font-weight="700" fill="#1A1A1A">Ім'я *</text>
+      <rect x="30" y="100" width="240" height="30" rx="5" fill="#F0F4F8" stroke="#D9E2F0"/><text x="42" y="121" fill="#0033A0">Марко</text>
+      <text x="30" y="154" font-weight="700" fill="#1A1A1A">Клас *</text>
+      <rect x="30" y="162" width="240" height="30" rx="5" fill="#F0F4F8" stroke="#D9E2F0"/><text x="42" y="183" fill="#0033A0">4-А</text>
+      <text x="30" y="216" font-weight="700" fill="#3D4757">Хобі (необов'язково)</text>
+      <rect x="30" y="224" width="240" height="26" rx="5" fill="#F0F4F8" stroke="#D9E2F0"/><text x="42" y="243" fill="#0033A0">шахи</text>
+    </g>
+    <path d="M298 140 H366" fill="none" stroke="#B38600" stroke-width="4"/>
+    <polygon points="364,131 380,140 364,149" fill="#B38600"/>
+    <text x="338" y="124" text-anchor="middle" font-size="15" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">Надіслати</text>
+    <rect x="386" y="20" width="464" height="240" rx="12" fill="#FFFFFF" stroke="#0033A0" stroke-width="2"/>
+    <text x="618" y="50" text-anchor="middle" font-size="17" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">🗂 ТАБЛИЦЯ</text>
+    <rect x="402" y="66" width="432" height="36" rx="6" fill="#0033A0"/>
+    <g font-size="15" font-weight="700" fill="#FFFFFF" font-family="Arial, sans-serif"><text x="420" y="90">Ім'я</text><text x="570" y="90">Клас</text><text x="700" y="90">Хобі</text></g>
+    <rect x="402" y="106" width="432" height="34" rx="6" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <g font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">
+      <text x="420" y="129">Марко</text><text x="570" y="129">4-А</text><text x="700" y="129">шахи</text>
+      <text x="420" y="167">Ліна</text><text x="570" y="167">4-Б</text><text x="700" y="167">—</text>
+      <text x="420" y="203">Остап</text><text x="570" y="203">4-А</text><text x="700" y="203">футбол</text>
+    </g>
+    <text x="618" y="244" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">питання → поле, анкета → запис</text>
+  </svg>

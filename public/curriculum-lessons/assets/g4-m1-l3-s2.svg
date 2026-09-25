@@ -1,0 +1,28 @@
+<svg viewBox="0 0 860 300" role="img" aria-labelledby="g4u3b-t g4u3b-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g4u3b-t">Шість бар'єрів цифрового розриву</title>
+    <desc id="g4u3b-d">Вартість: пристрій і тариф коштують грошей. Впевненість: людина боїться щось зламати. Здоров'я: зір, слух чи рухи заважають користуватися пристроєм. Навчання: ніхто не показав, як. Довіра: людина не вірить сайтам і сервісам. Вибір: людина сама вирішує не користуватися.</desc>
+    <rect x="6" y="10" width="272" height="132" rx="12" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+    <text x="142" y="52" text-anchor="middle" font-size="26" font-family="Arial, sans-serif">💰</text>
+    <text x="142" y="86" text-anchor="middle" font-size="17" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">Вартість</text>
+    <text x="142" y="116" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">пристрій і тариф коштують</text>
+    <rect x="294" y="10" width="272" height="132" rx="12" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+    <text x="430" y="52" text-anchor="middle" font-size="26" font-family="Arial, sans-serif">😟</text>
+    <text x="430" y="86" text-anchor="middle" font-size="17" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">Впевненість</text>
+    <text x="430" y="116" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">страшно щось зламати</text>
+    <rect x="582" y="10" width="272" height="132" rx="12" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+    <text x="718" y="52" text-anchor="middle" font-size="26" font-family="Arial, sans-serif">🩺</text>
+    <text x="718" y="86" text-anchor="middle" font-size="17" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">Здоров'я</text>
+    <text x="718" y="116" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">зір, слух чи рухи заважають</text>
+    <rect x="6" y="158" width="272" height="132" rx="12" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+    <text x="142" y="200" text-anchor="middle" font-size="26" font-family="Arial, sans-serif">🎓</text>
+    <text x="142" y="234" text-anchor="middle" font-size="17" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">Навчання</text>
+    <text x="142" y="264" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">ніхто не показав, як</text>
+    <rect x="294" y="158" width="272" height="132" rx="12" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+    <text x="430" y="200" text-anchor="middle" font-size="26" font-family="Arial, sans-serif">🤝</text>
+    <text x="430" y="234" text-anchor="middle" font-size="17" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">Довіра</text>
+    <text x="430" y="264" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">не вірю сайтам і сервісам</text>
+    <rect x="582" y="158" width="272" height="132" rx="12" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+    <text x="718" y="200" text-anchor="middle" font-size="26" font-family="Arial, sans-serif">🙅</text>
+    <text x="718" y="234" text-anchor="middle" font-size="17" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">Вибір</text>
+    <text x="718" y="264" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">вирішую не користуватися</text>
+  </svg>

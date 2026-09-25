@@ -1,0 +1,24 @@
+<svg viewBox="0 0 860 200" role="img" aria-labelledby="g4u4a-t g4u4a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g4u4a-t">Чотири складові облікового запису</title>
+    <desc id="g4u4a-d">Логін показує, хто ти для сервісу. Спосіб входу доводить, що це справді ти. Дозволи визначають, що сервіс може про тебе знати. Історія дій показує, що вже відбувалося в акаунті.</desc>
+    <rect x="6" y="14" width="206" height="172" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="109" y="62" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">🪪</text>
+    <text x="109" y="98" text-anchor="middle" font-size="17" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Логін</text>
+    <text x="109" y="132" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">хто ти</text>
+    <text x="109" y="158" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">для сервісу</text>
+    <rect x="224" y="14" width="206" height="172" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="327" y="62" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">🔐</text>
+    <text x="327" y="98" text-anchor="middle" font-size="17" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">Спосіб входу</text>
+    <text x="327" y="132" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">доводить,</text>
+    <text x="327" y="158" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">що це справді ти</text>
+    <rect x="442" y="14" width="206" height="172" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="545" y="62" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">⚙️</text>
+    <text x="545" y="98" text-anchor="middle" font-size="17" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">Дозволи</text>
+    <text x="545" y="132" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">що сервіс може</text>
+    <text x="545" y="158" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">про тебе знати</text>
+    <rect x="660" y="14" width="194" height="172" rx="12" fill="#F0F4F8" stroke="#0033A0" stroke-width="2"/>
+    <text x="757" y="62" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">🕘</text>
+    <text x="757" y="98" text-anchor="middle" font-size="17" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Історія дій</text>
+    <text x="757" y="132" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">що вже було</text>
+    <text x="757" y="158" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">в акаунті</text>
+  </svg>

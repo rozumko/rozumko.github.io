@@ -1,0 +1,20 @@
+<svg viewBox="0 0 860 170" role="img" aria-labelledby="g3u3b-t g3u3b-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g3u3b-t">Шлях запиту від твого пристрою до сервера компанії</title>
+    <desc id="g3u3b-d">Ти набираєш запит на своєму пристрої. Далі він іде через інтернет на сервер компанії, яка створила чат-бот. Саме там текст опрацьовується, і саме там діють правила цієї компанії, а не твої.</desc>
+    <rect x="6" y="20" width="246" height="128" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="129" y="62" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">⌨️</text>
+    <text x="129" y="98" text-anchor="middle" font-size="17" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">Ти набираєш запит</text>
+    <text x="129" y="126" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">тут правила твої</text>
+    <path d="M258 84 H286" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="286,76 300,84 286,92" fill="#0033A0"/>
+    <rect x="310" y="20" width="226" height="128" rx="12" fill="#F0F4F8" stroke="#0033A0" stroke-width="2"/>
+    <text x="423" y="62" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">🌐</text>
+    <text x="423" y="98" text-anchor="middle" font-size="17" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Через інтернет</text>
+    <text x="423" y="126" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">текст іде далі</text>
+    <path d="M542 84 H570" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="570,76 584,84 570,92" fill="#0033A0"/>
+    <rect x="594" y="20" width="260" height="128" rx="12" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+    <text x="724" y="62" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">🏢</text>
+    <text x="724" y="98" text-anchor="middle" font-size="17" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">Сервер компанії</text>
+    <text x="724" y="126" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">тут правила вже їхні</text>
+  </svg>

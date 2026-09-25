@@ -1,0 +1,29 @@
+<svg viewBox="0 0 780 300" role="img" aria-labelledby="g2u5a-t g2u5a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g2u5a-t">Передача файлу з мережею і без неї</title>
+    <desc id="g2u5a-d">Угорі мережа доступна: планшет надсилає малюнок, і проєктор його показує. Унизу мережа зникла: зв'язок обірвано посередині, малюнок лишається на планшеті, а проєктор нічого не отримує.</desc>
+
+    <rect x="6" y="10" width="768" height="126" rx="10" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="30" y="40" font-size="17" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">🟢 Мережа є</text>
+    <rect x="30" y="56" width="220" height="62" rx="9" fill="#FFFFFF" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="140" y="82" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">📱 Планшет</text>
+    <text x="140" y="105" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">надсилає малюнок</text>
+    <line x1="256" y1="87" x2="500" y2="87" stroke="#1B6B3A" stroke-width="4"/>
+    <polygon points="500,79 514,87 500,95" fill="#1B6B3A"/>
+    <text x="378" y="76" text-anchor="middle" font-size="15" fill="#155C32" font-family="Arial, sans-serif">дані летять</text>
+    <rect x="524" y="56" width="220" height="62" rx="9" fill="#FFFFFF" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="634" y="82" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">📽️ Проєктор</text>
+    <text x="634" y="105" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">показує малюнок</text>
+
+    <rect x="6" y="152" width="768" height="140" rx="10" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+    <text x="30" y="182" font-size="17" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">🔴 Мережі немає • offline</text>
+    <rect x="30" y="198" width="220" height="62" rx="9" fill="#FFFFFF" stroke="#C0392B" stroke-width="2"/>
+    <text x="140" y="224" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">📱 Планшет</text>
+    <text x="140" y="247" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">малюнок лишився тут</text>
+    <line x1="256" y1="229" x2="360" y2="229" stroke="#C0392B" stroke-width="4"/>
+    <line x1="396" y1="229" x2="500" y2="229" stroke="#C0392B" stroke-width="4"/>
+    <text x="378" y="238" text-anchor="middle" font-size="26" font-family="Arial, sans-serif">✂️</text>
+    <text x="378" y="276" text-anchor="middle" font-size="15" fill="#96271B" font-family="Arial, sans-serif">зв'язок обірвано</text>
+    <rect x="524" y="198" width="220" height="62" rx="9" fill="#FFFFFF" stroke="#C0392B" stroke-width="2"/>
+    <text x="634" y="224" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">📽️ Проєктор</text>
+    <text x="634" y="247" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">не отримав нічого</text>
+  </svg>

@@ -1,0 +1,20 @@
+<svg viewBox="0 0 700 170" role="img" aria-labelledby="g1u2b-t g1u2b-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g1u2b-t">Що робити зі старим пристроєм</title>
+    <desc id="g1u2b-d">Спершу пристрій ремонтують. Якщо він ще працює — віддають тому, кому потрібен. І лише зовсім зламаний несуть на переробку, де з нього дістають цінні матеріали.</desc>
+    <rect x="6" y="34" width="208" height="100" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="110" y="72" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">🔧</text>
+    <text x="110" y="104" text-anchor="middle" font-size="18" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">Полагодити</text>
+    <text x="110" y="126" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">спершу до майстра</text>
+    <path d="M218 84 H238" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="238,77 250,84 238,91" fill="#0033A0"/>
+    <rect x="254" y="34" width="208" height="100" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="358" y="72" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">🎁</text>
+    <text x="358" y="104" text-anchor="middle" font-size="18" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Віддати</text>
+    <text x="358" y="126" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">якщо ще працює</text>
+    <path d="M466 84 H486" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="486,77 498,84 486,91" fill="#0033A0"/>
+    <rect x="502" y="34" width="192" height="100" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="598" y="72" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">♻️</text>
+    <text x="598" y="104" text-anchor="middle" font-size="18" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">На переробку</text>
+    <text x="598" y="126" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">лише в кінці</text>
+  </svg>

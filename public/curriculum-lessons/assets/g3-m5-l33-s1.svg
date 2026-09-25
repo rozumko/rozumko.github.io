@@ -1,0 +1,21 @@
+<svg viewBox="0 0 860 200" role="img" aria-labelledby="g3u33a-t g3u33a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g3u33a-t">Шлях сигналу в micro:bit</title>
+    <desc id="g3u33a-d">Фізичний сигнал: кнопка A чи B або струшування. Програма в micro:bit. Фізичний результат: малюнок на світлодіодах або звук.</desc>
+    <rect x="6" y="14" width="258" height="130" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="135" y="52" text-anchor="middle" font-size="24" font-family="Arial, sans-serif">🔘</text>
+    <text x="135" y="86" text-anchor="middle" font-size="16" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">1. Сигнал</text>
+    <text x="135" y="112" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">кнопка A / B</text>
+    <path d="M268 79 H286" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="286,72 296,79 286,86" fill="#0033A0"/>
+    <rect x="300" y="14" width="258" height="130" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="429" y="52" text-anchor="middle" font-size="24" font-family="Arial, sans-serif">🧠</text>
+    <text x="429" y="86" text-anchor="middle" font-size="16" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">2. Програма</text>
+    <text x="429" y="112" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">у micro:bit</text>
+    <path d="M562 79 H580" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="580,72 590,79 580,86" fill="#0033A0"/>
+    <rect x="594" y="14" width="258" height="130" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="723" y="52" text-anchor="middle" font-size="24" font-family="Arial, sans-serif">💡</text>
+    <text x="723" y="86" text-anchor="middle" font-size="16" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">3. Результат</text>
+    <text x="723" y="112" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">світлодіоди</text>
+    <text x="430" y="182" text-anchor="middle" font-size="16" fill="#3D4757" font-family="Arial, sans-serif">Спершу перевір у симуляторі, потім — на справжній платі.</text>
+  </svg>

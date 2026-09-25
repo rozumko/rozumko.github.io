@@ -1,0 +1,26 @@
+<svg viewBox="0 0 800 230" role="img" aria-labelledby="svg-title-text svg-desc-text" style="display:block;width:100%;height:auto;max-width:800px;margin:18px auto;" xmlns="http://www.w3.org/2000/svg">
+      <title id="svg-title-text">Кнопки текстового редактора, які потрібні на уроці</title>
+      <desc id="svg-desc-text">Угорі панель кнопок: Ж — жирний, три кнопки вирівнювання, Копіювати, Вставити і Скасувати. Унизу аркуш, на якому виділено заголовок «Наш шкільний день». Спочатку виділи слова мишкою, потім натисни кнопку вгорі.</desc>
+      <rect x="20" y="18" width="760" height="60" rx="10" fill="#F0F4F8" stroke="#D9E2F0" stroke-width="2"/>
+      <rect x="36" y="28" width="60" height="40" rx="6" fill="#FFFFFF" stroke="#B9C6DA"/>
+      <text x="66" y="56" font-family="sans-serif" font-size="24" font-weight="bold" fill="#1A1A1A" text-anchor="middle">Ж</text>
+      <rect x="110" y="28" width="60" height="40" rx="6" fill="#FFFFFF" stroke="#B9C6DA"/><path d="M 122 38 H 158" stroke="#1A1A1A" stroke-width="3"/><path d="M 122 46 H 146" stroke="#1A1A1A" stroke-width="3"/><path d="M 122 54 H 158" stroke="#1A1A1A" stroke-width="3"/><path d="M 122 62 H 146" stroke="#1A1A1A" stroke-width="3"/>
+      <rect x="176" y="28" width="60" height="40" rx="6" fill="#FFFFFF" stroke="#B9C6DA"/><path d="M 188 38 H 224" stroke="#1A1A1A" stroke-width="3"/><path d="M 194 46 H 218" stroke="#1A1A1A" stroke-width="3"/><path d="M 188 54 H 224" stroke="#1A1A1A" stroke-width="3"/><path d="M 194 62 H 218" stroke="#1A1A1A" stroke-width="3"/>
+      <rect x="242" y="28" width="60" height="40" rx="6" fill="#FFFFFF" stroke="#B9C6DA"/><path d="M 254 38 H 290" stroke="#1A1A1A" stroke-width="3"/><path d="M 266 46 H 290" stroke="#1A1A1A" stroke-width="3"/><path d="M 254 54 H 290" stroke="#1A1A1A" stroke-width="3"/><path d="M 266 62 H 290" stroke="#1A1A1A" stroke-width="3"/>
+      <rect x="322" y="28" width="140" height="40" rx="6" fill="#FFFFFF" stroke="#B9C6DA"/>
+      <text x="392" y="54" font-family="sans-serif" font-size="16" fill="#1A1A1A" text-anchor="middle">📋 Копіювати</text>
+      <rect x="472" y="28" width="130" height="40" rx="6" fill="#FFFFFF" stroke="#B9C6DA"/>
+      <text x="537" y="54" font-family="sans-serif" font-size="16" fill="#1A1A1A" text-anchor="middle">📌 Вставити</text>
+      <rect x="612" y="28" width="152" height="40" rx="6" fill="#FFFFFF" stroke="#B9C6DA"/>
+      <text x="688" y="54" font-family="sans-serif" font-size="16" fill="#1A1A1A" text-anchor="middle">↶ Скасувати</text>
+      <text x="66" y="98" font-family="sans-serif" font-size="14" fill="#52606D" text-anchor="middle">bold</text>
+      <text x="206" y="98" font-family="sans-serif" font-size="14" fill="#52606D" text-anchor="middle">align</text>
+      <text x="392" y="98" font-family="sans-serif" font-size="14" fill="#52606D" text-anchor="middle">copy</text>
+      <text x="537" y="98" font-family="sans-serif" font-size="14" fill="#52606D" text-anchor="middle">paste</text>
+      <text x="688" y="98" font-family="sans-serif" font-size="14" fill="#52606D" text-anchor="middle">undo</text>
+      <rect x="20" y="112" width="760" height="108" rx="10" fill="#FFFFFF" stroke="#D9E2F0" stroke-width="2"/>
+      <rect x="250" y="126" width="300" height="36" rx="4" fill="#0033A0"/>
+      <text x="400" y="151" font-family="sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Наш шкільний день</text>
+      <text x="40" y="200" font-family="sans-serif" font-size="16" font-weight="bold" fill="#0033A0">1. Спочатку виділи слова мишкою</text>
+      <text x="440" y="200" font-family="sans-serif" font-size="16" font-weight="bold" fill="#0033A0">2. Потім натисни кнопку вгорі</text>
+    </svg>

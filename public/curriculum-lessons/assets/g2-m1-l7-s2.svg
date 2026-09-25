@@ -1,0 +1,16 @@
+<svg viewBox="0 0 780 230" role="img" aria-labelledby="g2u7b-t g2u7b-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g2u7b-t">Коротке слово проти довгої парольної фрази</title>
+    <desc id="g2u7b-d">Коротке слово, навіть із заміненими літерами й значками, лишається коротким і легко підбирається. Довга фраза з чотирьох не пов'язаних між собою слів набагато міцніша й водночас легша для запам'ятовування.</desc>
+
+    <rect x="6" y="14" width="768" height="94" rx="10" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+    <text x="30" y="46" font-size="17" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">❌ Коротке слово зі значками</text>
+    <text x="30" y="78" font-size="20" font-weight="700" fill="#1A1A1A" font-family="Arial, sans-serif">w@teR!</text>
+    <text x="200" y="78" font-size="16" fill="#96271B" font-family="Arial, sans-serif">6 символів — виглядає складно, але коротко</text>
+    <text x="30" y="99" font-size="15" fill="#96271B" font-family="Arial, sans-serif">Заміна літер на значки — давно відомий прийом, його легко передбачити.</text>
+
+    <rect x="6" y="122" width="768" height="94" rx="10" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="30" y="154" font-size="17" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">✅ Довга вигадана фраза</text>
+    <text x="30" y="186" font-size="20" font-weight="700" fill="#1A1A1A" font-family="Arial, sans-serif">Water-Cloud-Lemon-Train</text>
+    <text x="400" y="186" font-size="16" fill="#155C32" font-family="Arial, sans-serif">23 символи — і легко згадати</text>
+    <text x="30" y="207" font-size="15" fill="#155C32" font-family="Arial, sans-serif">Чотири не пов'язані слова. Уяви їх картинкою — і фраза запам'ятається.</text>
+  </svg>

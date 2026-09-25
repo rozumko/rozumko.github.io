@@ -1,0 +1,21 @@
+<svg viewBox="0 0 860 250" role="img" aria-labelledby="g4u28a-t g4u28a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g4u28a-t">Керована система розумної теплиці</title>
+    <desc id="g4u28a-d">Введення: датчик вимірює температуру повітря. Опрацювання: програма перевіряє правило «якщо тепліше за 28 градусів — відчинити кватирку». Виведення: мотор відчиняє кватирку. Унизу смуга: люди й організації проєктують систему, налаштовують правило і стежать за її роботою.</desc>
+    <g font-family="Arial, sans-serif" text-anchor="middle">
+      <rect x="6" y="20" width="262" height="140" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+      <text x="137" y="54" font-size="17" font-weight="700" fill="#0033A0">INPUT • введення</text>
+      <text x="137" y="94" font-size="28">🌡️</text>
+      <text x="137" y="128" font-size="15" fill="#3D4757">датчик температури</text>
+      <rect x="298" y="20" width="262" height="140" rx="12" fill="#0033A0"/>
+      <text x="429" y="54" font-size="17" font-weight="700" fill="#FFFFFF">PROCESS • програма</text>
+      <text x="429" y="94" font-size="15" fill="#FFFFFF">якщо тепліше за 28 °C —</text>
+      <text x="429" y="118" font-size="15" fill="#FFD700">відчинити кватирку</text>
+      <rect x="590" y="20" width="264" height="140" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+      <text x="722" y="54" font-size="17" font-weight="700" fill="#155C32">OUTPUT • виведення</text>
+      <text x="722" y="94" font-size="28">🪟</text>
+      <text x="722" y="128" font-size="15" fill="#3D4757">мотор відчиняє кватирку</text>
+    </g>
+    <g fill="#0033A0"><polygon points="272,84 286,90 272,96"/><polygon points="564,84 578,90 564,96"/></g>
+    <rect x="6" y="180" width="848" height="56" rx="10" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="430" y="214" text-anchor="middle" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">👩‍🔧 Люди проєктують систему, задають правило і стежать за її роботою</text>
+  </svg>

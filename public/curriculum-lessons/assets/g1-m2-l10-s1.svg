@@ -1,0 +1,24 @@
+<svg viewBox="0 0 600 180" style="display: block; width: 100%; height: auto; background: #FFFFFF; border-radius: 6px; border: 1px solid #E2E8F0;" aria-label="Карта чарівних клавіш комп'ютера" xmlns="http://www.w3.org/2000/svg">
+        <!-- Background grid representing a keyboard -->
+        <rect x="10" y="10" width="580" height="160" rx="8" fill="#F1F5F9" stroke="#94A3B8" stroke-width="2"/>
+
+        <!-- Shift Key -->
+        <rect x="25" y="100" width="80" height="35" rx="4" fill="#3B82F6" stroke="#1D4ED8" stroke-width="1"/>
+        <text x="65" y="122" font-family="sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Shift ⇧</text>
+
+        <!-- Space Key -->
+        <rect x="150" y="100" width="260" height="35" rx="4" fill="#10B981" stroke="#047857" stroke-width="1"/>
+        <text x="280" y="122" font-family="sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Space (Пробіл) ␣</text>
+
+        <!-- Backspace Key -->
+        <rect x="475" y="40" width="90" height="35" rx="4" fill="#EF4444" stroke="#B91C1C" stroke-width="1"/>
+        <text x="520" y="62" font-family="sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Backspace ⌫</text>
+
+        <!-- Enter Key -->
+        <rect x="485" y="100" width="80" height="35" rx="4" fill="#F59E0B" stroke="#B45309" stroke-width="1"/>
+        <text x="525" y="122" font-family="sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Enter ↵</text>
+
+        <!-- Letters area placeholder -->
+        <rect x="115" y="40" width="345" height="45" rx="4" fill="#E2E8F0" stroke="#CBD5E1" stroke-width="1"/>
+        <text x="287" y="68" font-family="sans-serif" font-size="12" fill="#475569" text-anchor="middle">Клавіші з літерами (Letters) та цифрами</text>
+      </svg>

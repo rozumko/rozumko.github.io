@@ -1,0 +1,29 @@
+<svg viewBox="0 0 660 300" role="img" aria-labelledby="g1u2-t g1u2-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g1u2-t">П'ять справ, у яких допомагають комп'ютери</title>
+    <desc id="g1u2-d">Спілкування — відеодзвінки друзям. Розваги — ігри, музика, мультфільми. Творчість — малюнки й власні історії. Дослідження — пошук відповідей про погоду й космос. Керування — робота світлофорів, роботів та іграшок.</desc>
+
+    <rect x="6" y="10" width="206" height="130" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="109" y="52" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">📞</text>
+    <text x="109" y="86" text-anchor="middle" font-size="18" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Спілкування</text>
+    <text x="109" y="112" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">communication</text>
+
+    <rect x="228" y="10" width="206" height="130" rx="12" fill="#F3ECFB" stroke="#6B3FA0" stroke-width="2"/>
+    <text x="331" y="52" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">🎮</text>
+    <text x="331" y="86" text-anchor="middle" font-size="18" font-weight="700" fill="#5A3490" font-family="Arial, sans-serif">Розваги</text>
+    <text x="331" y="112" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">entertainment</text>
+
+    <rect x="450" y="10" width="206" height="130" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="553" y="52" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">🎨</text>
+    <text x="553" y="86" text-anchor="middle" font-size="18" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">Творчість</text>
+    <text x="553" y="112" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">creativity</text>
+
+    <rect x="117" y="154" width="206" height="130" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="220" y="196" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">🔍</text>
+    <text x="220" y="230" text-anchor="middle" font-size="18" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">Дослідження</text>
+    <text x="220" y="256" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">research</text>
+
+    <rect x="339" y="154" width="206" height="130" rx="12" fill="#F0F4F8" stroke="#0033A0" stroke-width="2"/>
+    <text x="442" y="196" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">⚙️</text>
+    <text x="442" y="230" text-anchor="middle" font-size="18" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Керування</text>
+    <text x="442" y="256" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">control</text>
+  </svg>

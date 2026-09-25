@@ -1,0 +1,21 @@
+<svg viewBox="0 0 860 200" role="img" aria-labelledby="g3u14a-t g3u14a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g3u14a-t">Одне значення 12 у чотирьох форматах</title>
+    <desc id="g3u14a-d">Текст: кабінет 12 — його не рахують. Число: 12 яблук — можна додавати. Дата: 12 жовтня — день місяця. Гроші: 12 грн — ціна.</desc>
+    <rect x="6" y="14" width="200" height="150" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="106" y="50" text-anchor="middle" font-size="17" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">🔤 Text</text>
+    <text x="106" y="92" text-anchor="middle" font-size="20" font-weight="700" fill="#1A1A1A" font-family="Arial, sans-serif">Кабінет 12</text>
+    <text x="106" y="130" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">назва, не рахуємо</text>
+    <rect x="224" y="14" width="200" height="150" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="324" y="50" text-anchor="middle" font-size="17" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">🔢 Number</text>
+    <text x="324" y="92" text-anchor="middle" font-size="20" font-weight="700" fill="#1A1A1A" font-family="Arial, sans-serif">12</text>
+    <text x="324" y="130" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">можна додавати</text>
+    <rect x="442" y="14" width="200" height="150" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="542" y="50" text-anchor="middle" font-size="17" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">📅 Date</text>
+    <text x="542" y="92" text-anchor="middle" font-size="20" font-weight="700" fill="#1A1A1A" font-family="Arial, sans-serif">12.10.2026</text>
+    <text x="542" y="130" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">день у календарі</text>
+    <rect x="660" y="14" width="194" height="150" rx="12" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+    <text x="757" y="50" text-anchor="middle" font-size="17" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">💰 Currency</text>
+    <text x="757" y="92" text-anchor="middle" font-size="20" font-weight="700" fill="#1A1A1A" font-family="Arial, sans-serif">12 грн</text>
+    <text x="757" y="130" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">ціна, гроші</text>
+    <text x="430" y="190" text-anchor="middle" font-size="16" fill="#3D4757" font-family="Arial, sans-serif">Формат не змінює факт — він пояснює, як його читати.</text>
+  </svg>

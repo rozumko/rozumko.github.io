@@ -1,0 +1,28 @@
+<svg viewBox="0 0 860 200" role="img" aria-labelledby="g3u9a-t g3u9a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g3u9a-t">Як перевіряють твердження</title>
+    <desc id="g3u9a-d">Чотири кроки: знайти твердження, відкрити надійне джерело, порівняти, поставити статус. Статус може бути: підтверджено, помилково або невідомо.</desc>
+    <rect x="6" y="14" width="190" height="120" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="101" y="54" text-anchor="middle" font-size="24" font-family="Arial, sans-serif">🔎</text>
+    <text x="101" y="86" text-anchor="middle" font-size="17" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">1. Знайди</text>
+    <text x="101" y="112" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">твердження</text>
+    <path d="M200 74 H216" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="216,67 228,74 216,81" fill="#0033A0"/>
+    <rect x="232" y="14" width="190" height="120" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="327" y="54" text-anchor="middle" font-size="24" font-family="Arial, sans-serif">📚</text>
+    <text x="327" y="86" text-anchor="middle" font-size="17" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">2. Відкрий</text>
+    <text x="327" y="112" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">надійне джерело</text>
+    <path d="M426 74 H442" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="442,67 454,74 442,81" fill="#0033A0"/>
+    <rect x="458" y="14" width="190" height="120" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="553" y="54" text-anchor="middle" font-size="24" font-family="Arial, sans-serif">⚖️</text>
+    <text x="553" y="86" text-anchor="middle" font-size="17" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">3. Порівняй</text>
+    <text x="553" y="112" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">що збігається</text>
+    <path d="M652 74 H668" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="668,67 680,74 668,81" fill="#0033A0"/>
+    <rect x="684" y="14" width="170" height="120" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="769" y="44" text-anchor="middle" font-size="17" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">4. Статус</text>
+    <text x="769" y="72" text-anchor="middle" font-size="15" fill="#155C32" font-family="Arial, sans-serif">✅ Confirmed</text>
+    <text x="769" y="96" text-anchor="middle" font-size="15" fill="#96271B" font-family="Arial, sans-serif">❌ Incorrect</text>
+    <text x="769" y="120" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">❓ Uncertain</text>
+    <text x="430" y="176" text-anchor="middle" font-size="16" fill="#3D4757" font-family="Arial, sans-serif">Джерела не збігаються? Не вгадуй — став «Uncertain» і перевір ще одне.</text>
+  </svg>

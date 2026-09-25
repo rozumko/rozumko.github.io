@@ -1,0 +1,16 @@
+<svg viewBox="0 0 860 230" role="img" aria-labelledby="g3u7a-t g3u7a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g3u7a-t">Пошук в інтернеті і пошук у папках</title>
+    <desc id="g3u7a-d">Ліворуч пошук в інтернеті: у рядок вводять ключові слова, результат — сайти, статті й відео. Праворуч пошук у папках: вводять назву файлу або тип, наприклад .docx чи .jpg, результат — файли і папка, де вони лежать.</desc>
+    <rect x="6" y="14" width="418" height="200" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="215" y="48" text-anchor="middle" font-size="18" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">🌐 Пошук в інтернеті</text>
+    <rect x="32" y="70" width="366" height="44" rx="8" fill="#FFFFFF" stroke="#0033A0" stroke-width="2"/>
+    <text x="50" y="99" font-size="16" fill="#3D4757" font-family="Arial, sans-serif">🔍 морська вода сіль</text>
+    <text x="215" y="150" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">вводиш: ключові слова</text>
+    <text x="215" y="182" text-anchor="middle" font-size="16" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">знаходиш: сайти, статті, відео</text>
+    <rect x="442" y="14" width="412" height="200" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="648" y="48" text-anchor="middle" font-size="18" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">📁 Пошук у папках</text>
+    <rect x="466" y="70" width="364" height="44" rx="8" fill="#FFFFFF" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="484" y="99" font-size="16" fill="#3D4757" font-family="Arial, sans-serif">🔍 Розклад   або   .docx</text>
+    <text x="648" y="150" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">вводиш: назву або тип файлу</text>
+    <text x="648" y="182" text-anchor="middle" font-size="16" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">знаходиш: файл і його папку</text>
+  </svg>

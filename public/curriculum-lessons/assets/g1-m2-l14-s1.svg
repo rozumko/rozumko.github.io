@@ -1,0 +1,33 @@
+<svg aria-label="Ілюстрація до теми уроку" viewBox="0 0 600 130" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: auto; max-height: 130px; display: block;">
+        <!-- Card 1: Subject -->
+        <rect x="10" y="10" width="125" height="70" rx="8" fill="#EBFBEE" stroke="#48BB78" stroke-width="2"/>
+        <text x="72.5" y="38" font-size="12" font-weight="bold" fill="#2F855A" text-anchor="middle">1. Хто / Що</text>
+        <text x="72.5" y="58" font-size="14" font-weight="bold" fill="#1A1A1A" text-anchor="middle">Subject</text>
+
+        <!-- Plus 1 -->
+        <text x="147.5" y="50" font-size="20" font-weight="bold" fill="#718096" text-anchor="middle">+</text>
+
+        <!-- Card 2: Colour -->
+        <rect x="160" y="10" width="125" height="70" rx="8" fill="#FFF5F5" stroke="#F56565" stroke-width="2"/>
+        <text x="222.5" y="38" font-size="12" font-weight="bold" fill="#C53030" text-anchor="middle">2. Колір</text>
+        <text x="222.5" y="58" font-size="14" font-weight="bold" fill="#1A1A1A" text-anchor="middle">Colour</text>
+
+        <!-- Plus 2 -->
+        <text x="297.5" y="50" font-size="20" font-weight="bold" fill="#718096" text-anchor="middle">+</text>
+
+        <!-- Card 3: Action -->
+        <rect x="310" y="10" width="125" height="70" rx="8" fill="#EBF8FF" stroke="#4299E1" stroke-width="2"/>
+        <text x="372.5" y="38" font-size="12" font-weight="bold" fill="#2B6CB0" text-anchor="middle">3. Дія</text>
+        <text x="372.5" y="58" font-size="14" font-weight="bold" fill="#1A1A1A" text-anchor="middle">Action</text>
+
+        <!-- Plus 3 -->
+        <text x="447.5" y="50" font-size="20" font-weight="bold" fill="#718096" text-anchor="middle">+</text>
+
+        <!-- Card 4: Place -->
+        <rect x="460" y="10" width="130" height="70" rx="8" fill="#FAF5FF" stroke="#9F7AEA" stroke-width="2"/>
+        <text x="525" y="38" font-size="12" font-weight="bold" fill="#6B46C1" text-anchor="middle">4. Місце</text>
+        <text x="525" y="58" font-size="14" font-weight="bold" fill="#1A1A1A" text-anchor="middle">Place</text>
+
+        <!-- Formula Text -->
+        <text x="300" y="115" font-size="12" font-style="italic" fill="#4A5568" text-anchor="middle">Приклад: "A happy orange cat (1+2) sleeping (3) on a blue chair (4)"</text>
+      </svg>

@@ -1,0 +1,27 @@
+<svg viewBox="0 0 860 200" role="img" aria-labelledby="g3u34a-t g3u34a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g3u34a-t">Автоматична система: датчик, програма керування, дія, людина</title>
+    <desc id="g3u34a-d">Датчик вимірює, програма керування вирішує, пристрій діє. Людина проєктує, налаштовує й стежить за системою.</desc>
+    <rect x="6" y="14" width="185" height="130" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="98.5" y="52" text-anchor="middle" font-size="24" font-family="Arial, sans-serif">📡</text>
+    <text x="98.5" y="86" text-anchor="middle" font-size="16" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">1. Датчик</text>
+    <text x="98.5" y="112" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">вимірює</text>
+    <path d="M195 79 H213" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="213,72 223,79 213,86" fill="#0033A0"/>
+    <rect x="227" y="14" width="185" height="130" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="319.5" y="52" text-anchor="middle" font-size="24" font-family="Arial, sans-serif">🧠</text>
+    <text x="319.5" y="86" text-anchor="middle" font-size="16" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">2. Програма</text>
+    <text x="319.5" y="112" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">керування</text>
+    <path d="M416 79 H434" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="434,72 444,79 434,86" fill="#0033A0"/>
+    <rect x="448" y="14" width="185" height="130" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="540.5" y="52" text-anchor="middle" font-size="24" font-family="Arial, sans-serif">💡</text>
+    <text x="540.5" y="86" text-anchor="middle" font-size="16" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">3. Дія</text>
+    <text x="540.5" y="112" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">світло, мотор</text>
+    <path d="M637 79 H655" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="655,72 665,79 655,86" fill="#0033A0"/>
+    <rect x="669" y="14" width="185" height="130" rx="12" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+    <text x="761.5" y="52" text-anchor="middle" font-size="24" font-family="Arial, sans-serif">👩‍🔧</text>
+    <text x="761.5" y="86" text-anchor="middle" font-size="16" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">4. Людина</text>
+    <text x="761.5" y="112" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">стежить</text>
+    <text x="430" y="182" text-anchor="middle" font-size="16" fill="#3D4757" font-family="Arial, sans-serif">Навіть автоматичній системі потрібна людина.</text>
+  </svg>

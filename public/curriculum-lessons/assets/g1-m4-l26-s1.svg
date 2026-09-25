@@ -1,0 +1,54 @@
+<svg viewBox="0 0 600 240" role="img" aria-labelledby="svg-title svg-desc" style="display:block; width:100%; height:auto; max-width:600px; margin:16px auto;" xmlns="http://www.w3.org/2000/svg">
+        <title id="svg-title">Схема процесу налагодження (Debugging Cycle)</title>
+        <desc id="svg-desc">Ця схема показує 5 кроків налагодження: Predict, Run, Find Bug, Fix 1 Step, Test.</desc>
+        <!-- Background -->
+        <rect width="600" height="240" rx="8" fill="#FAFAFA"/>
+
+        <!-- 5 Steps Chain -->
+        <g transform="translate(15, 20)">
+          <!-- Step 1 -->
+          <rect x="0" y="0" width="100" height="60" rx="6" fill="#F0F4F8" stroke="#0033A0" stroke-width="2"/>
+          <text x="50" y="25" font-size="12" font-family="sans-serif" font-weight="bold" fill="#0033A0" text-anchor="middle">1. Predict</text>
+          <text x="50" y="45" font-size="12" font-family="sans-serif" fill="#555555" text-anchor="middle">Спрогнозуй</text>
+
+          <!-- Arrow -->
+          <path d="M 105 30 L 120 30" stroke="#FFD700" stroke-width="3" fill="none"/>
+
+          <!-- Step 2 -->
+          <rect x="125" y="0" width="100" height="60" rx="6" fill="#F0F4F8" stroke="#0033A0" stroke-width="2"/>
+          <text x="175" y="25" font-size="12" font-family="sans-serif" font-weight="bold" fill="#0033A0" text-anchor="middle">2. Run</text>
+          <text x="175" y="45" font-size="12" font-family="sans-serif" fill="#555555" text-anchor="middle">Запусти</text>
+
+          <!-- Arrow -->
+          <path d="M 230 30 L 245 30" stroke="#FFD700" stroke-width="3" fill="none"/>
+
+          <!-- Step 3 -->
+          <rect x="250" y="0" width="100" height="60" rx="6" fill="#FFF2F2" stroke="#D32F2F" stroke-width="2"/>
+          <text x="300" y="25" font-size="12" font-family="sans-serif" font-weight="bold" fill="#D32F2F" text-anchor="middle">3. Find Bug 🐛</text>
+          <text x="300" y="45" font-size="12" font-family="sans-serif" fill="#555555" text-anchor="middle">Знайди баг</text>
+
+          <!-- Arrow -->
+          <path d="M 355 30 L 370 30" stroke="#FFD700" stroke-width="3" fill="none"/>
+
+          <!-- Step 4 -->
+          <rect x="375" y="0" width="95" height="60" rx="6" fill="#FFFDF0" stroke="#B38600" stroke-width="2"/>
+          <text x="422" y="25" font-size="12" font-family="sans-serif" font-weight="bold" fill="#B38600" text-anchor="middle">4. Fix (1 step)</text>
+          <text x="422" y="45" font-size="12" font-family="sans-serif" fill="#555555" text-anchor="middle">Виправ 1 крок</text>
+
+          <!-- Arrow -->
+          <path d="M 475 30 L 490 30" stroke="#FFD700" stroke-width="3" fill="none"/>
+
+          <!-- Step 5 -->
+          <rect x="495" y="0" width="75" height="60" rx="6" fill="#E8F5E9" stroke="#2E7D32" stroke-width="2"/>
+          <text x="532" y="25" font-size="12" font-family="sans-serif" font-weight="bold" fill="#2E7D32" text-anchor="middle">5. Test</text>
+          <text x="532" y="45" font-size="12" font-family="sans-serif" fill="#555555" text-anchor="middle">Перевір</text>
+        </g>
+
+        <!-- Core debugging reminder -->
+        <g transform="translate(75, 110)">
+          <rect width="450" height="90" rx="8" fill="#ffffff" stroke="#D9E2F0" stroke-width="1.5"/>
+          <text x="225" y="28" font-size="13" font-family="sans-serif" font-weight="bold" fill="#0033A0" text-anchor="middle">Одне виправлення за раз</text>
+          <text x="225" y="53" font-size="12" font-family="sans-serif" fill="#1A1A1A" text-anchor="middle">Знайди команду → зміни її → протестуй ще раз</text>
+          <text x="225" y="75" font-size="12" font-family="sans-serif" fill="#2E7D32" text-anchor="middle">Так видно, яка саме зміна допомогла.</text>
+        </g>
+      </svg>

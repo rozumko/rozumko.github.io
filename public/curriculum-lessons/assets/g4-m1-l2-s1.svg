@@ -1,0 +1,27 @@
+<svg viewBox="0 0 860 250" role="img" aria-labelledby="g4u2a-t g4u2a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g4u2a-t">Клієнт і сервер: запит і відповідь</title>
+    <desc id="g4u2a-d">Ліворуч клієнт — браузер на твоєму пристрої. Праворуч сервер — комп'ютер, що зберігає сайт. Верхня стрілка: крок 1, запит — клієнт просить сторінку за URL. Нижня стрілка: крок 2, відповідь — сервер надсилає текст і картинки сторінки. Обидві стрілки проходять через Інтернет.</desc>
+    <rect x="6" y="30" width="226" height="170" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="119" y="76" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">💻</text>
+    <text x="119" y="114" text-anchor="middle" font-size="17" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">CLIENT • клієнт</text>
+    <text x="119" y="146" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">браузер на твоєму</text>
+    <text x="119" y="168" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">пристрої</text>
+
+    <path d="M242 88 H606" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="606,80 620,88 606,96" fill="#0033A0"/>
+    <text x="430" y="50" text-anchor="middle" font-size="16" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">1. REQUEST • запит</text>
+    <text x="430" y="74" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">«надішли сторінку за цим URL»</text>
+
+    <path d="M620 142 H256" fill="none" stroke="#1B6B3A" stroke-width="3"/>
+    <polygon points="256,134 242,142 256,150" fill="#1B6B3A"/>
+    <text x="430" y="168" text-anchor="middle" font-size="16" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">2. RESPONSE • відповідь</text>
+    <text x="430" y="192" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">текст і картинки сторінки</text>
+
+    <rect x="628" y="30" width="226" height="170" rx="12" fill="#0033A0"/>
+    <text x="741" y="76" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">🗄️</text>
+    <text x="741" y="114" text-anchor="middle" font-size="17" font-weight="700" fill="#FFFFFF" font-family="Arial, sans-serif">SERVER • сервер</text>
+    <text x="741" y="146" text-anchor="middle" font-size="15" fill="#D6E0F5" font-family="Arial, sans-serif">комп'ютер, що</text>
+    <text x="741" y="168" text-anchor="middle" font-size="15" fill="#D6E0F5" font-family="Arial, sans-serif">зберігає сайт</text>
+
+    <text x="430" y="232" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">обидва шляхи проходять через Інтернет</text>
+  </svg>

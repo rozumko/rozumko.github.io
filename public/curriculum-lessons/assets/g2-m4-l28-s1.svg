@@ -1,0 +1,29 @@
+<svg viewBox="0 0 800 250" role="img" aria-labelledby="svg-title-ieo svg-desc-ieo" style="display:block;width:100%;height:auto;max-width:800px;margin:18px auto;" xmlns="http://www.w3.org/2000/svg">
+      <title id="svg-title-ieo">Два приклади: введення, подія і виведення у Scratch</title>
+      <desc id="svg-desc-ieo">Перший приклад: ти натискаєш Пропуск — це введення; запускається скрипт «коли клавішу пропуск натиснуто» — це подія; котик стрибає — це виведення. Другий приклад: нового введення немає, інший спрайт надсилає повідомлення; запускається скрипт «коли я отримую повідомлення»; котик каже «Привіт!».</desc>
+      <text x="130" y="26" font-family="sans-serif" font-size="15" font-weight="bold" fill="#0033A0" text-anchor="middle">Введення (input)</text>
+      <text x="400" y="26" font-family="sans-serif" font-size="15" font-weight="bold" fill="#0033A0" text-anchor="middle">Подія (event)</text>
+      <text x="670" y="26" font-family="sans-serif" font-size="15" font-weight="bold" fill="#0033A0" text-anchor="middle">Виведення (output)</text>
+      <rect x="20" y="44" width="220" height="74" rx="10" fill="#FFFFFF" stroke="#0033A0" stroke-width="2"/>
+      <text x="130" y="76" font-family="sans-serif" font-size="15" font-weight="bold" fill="#1A1A1A" text-anchor="middle">⌨️ Натискаю Пропуск</text>
+      <text x="130" y="99" font-family="sans-serif" font-size="13" fill="#52606D" text-anchor="middle">твоя дія</text>
+      <path d="M 246 81 H 268" stroke="#0033A0" stroke-width="3"/><polygon points="268,75 276,81 268,87" fill="#0033A0"/>
+      <rect x="290" y="44" width="220" height="74" rx="10" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+      <rect x="300" y="56" width="200" height="50" rx="8" fill="#FFD700"/>
+      <text x="400" y="77" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1A1A1A" text-anchor="middle">коли клавішу</text>
+      <text x="400" y="96" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1A1A1A" text-anchor="middle">пропуск натиснуто</text>
+      <path d="M 516 81 H 538" stroke="#0033A0" stroke-width="3"/><polygon points="538,75 546,81 538,87" fill="#0033A0"/>
+      <rect x="560" y="44" width="220" height="74" rx="10" fill="#F0F4F8" stroke="#0033A0" stroke-width="2"/>
+      <text x="670" y="87" font-family="sans-serif" font-size="15" font-weight="bold" fill="#0033A0" text-anchor="middle">🐱 Котик стрибає</text>
+      <rect x="20" y="150" width="220" height="74" rx="10" fill="#FAFAFA" stroke="#B9C6DA" stroke-width="2" stroke-dasharray="6 4"/>
+      <text x="130" y="182" font-family="sans-serif" font-size="15" font-weight="bold" fill="#1A1A1A" text-anchor="middle">нового введення немає</text>
+      <text x="130" y="205" font-family="sans-serif" font-size="13" fill="#52606D" text-anchor="middle">сигнал від іншого спрайта</text>
+      <path d="M 246 187 H 268" stroke="#0033A0" stroke-width="3"/><polygon points="268,181 276,187 268,193" fill="#0033A0"/>
+      <rect x="290" y="150" width="220" height="74" rx="10" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+      <rect x="300" y="162" width="200" height="50" rx="8" fill="#FFD700"/>
+      <text x="400" y="183" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1A1A1A" text-anchor="middle">коли я отримую</text>
+      <text x="400" y="202" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1A1A1A" text-anchor="middle">повідомлення</text>
+      <path d="M 516 187 H 538" stroke="#0033A0" stroke-width="3"/><polygon points="538,181 546,187 538,193" fill="#0033A0"/>
+      <rect x="560" y="150" width="220" height="74" rx="10" fill="#F0F4F8" stroke="#0033A0" stroke-width="2"/>
+      <text x="670" y="193" font-family="sans-serif" font-size="15" font-weight="bold" fill="#0033A0" text-anchor="middle">💬 Котик: «Привіт!»</text>
+    </svg>

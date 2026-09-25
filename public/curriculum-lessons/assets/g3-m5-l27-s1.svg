@@ -1,0 +1,18 @@
+<svg viewBox="0 0 860 220" role="img" aria-labelledby="g3u27a-t g3u27a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g3u27a-t">Два скрипти стартують разом і узгоджені блоком чекати</title>
+    <desc id="g3u27a-d">Зелений прапорець запускає два скрипти одночасно. Котик говорить «Привіт!» 2 секунди, потім чекає. Песик спершу чекає 2 секунди, а потім відповідає. Репліки йдуть по черзі й не накладаються.</desc>
+    <rect x="330" y="8" width="200" height="40" rx="10" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="430" y="34" text-anchor="middle" font-size="16" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">🏁 прапорець</text>
+    <path d="M380 48 L230 70 M480 48 L630 70" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <rect x="30" y="72" width="380" height="120" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="220" y="98" text-anchor="middle" font-size="17" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">🐱 Котик</text>
+    <text x="50" y="128" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">1. говорити «Привіт!» 2 секунди</text>
+    <text x="50" y="154" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">2. чекати 2 секунди</text>
+    <text x="50" y="180" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">3. перемістити на 50 кроків</text>
+    <rect x="450" y="72" width="380" height="120" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="640" y="98" text-anchor="middle" font-size="17" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">🐶 Песик</text>
+    <text x="470" y="128" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">1. чекати 2 секунди</text>
+    <text x="470" y="154" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">2. говорити «Привіт, Котику!» 2 с</text>
+    <text x="470" y="180" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">3. увімкнути звук «Гав»</text>
+    <text x="430" y="212" text-anchor="middle" font-size="16" fill="#3D4757" font-family="Arial, sans-serif">Стартують разом, а говорять по черзі.</text>
+  </svg>

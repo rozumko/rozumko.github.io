@@ -1,0 +1,28 @@
+<svg viewBox="0 0 860 210" role="img" aria-labelledby="g4u6a-t g4u6a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g4u6a-t">Чотири інструменти спілкування та їхні задачі</title>
+    <desc id="g4u6a-d">Email підходить для офіційного звернення до дорослого, бо лишає запис. Чат — для короткого швидкого питання, але його легко зрозуміти не так. Відеодзвінок — коли тема складна й потрібні обличчя та тон голосу. Спільний документ — коли кілька людей працюють над одним текстом і видно, хто що змінив.</desc>
+    <rect x="6" y="14" width="206" height="182" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="109" y="58" text-anchor="middle" font-size="28" font-family="Arial, sans-serif">✉️</text>
+    <text x="109" y="92" text-anchor="middle" font-size="17" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Email</text>
+    <text x="109" y="124" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">офіційно, до</text>
+    <text x="109" y="146" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">дорослого</text>
+    <text x="109" y="176" text-anchor="middle" font-size="15" fill="#0033A0" font-family="Arial, sans-serif">лишає запис</text>
+    <rect x="224" y="14" width="206" height="182" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="327" y="58" text-anchor="middle" font-size="28" font-family="Arial, sans-serif">💬</text>
+    <text x="327" y="92" text-anchor="middle" font-size="17" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">Чат</text>
+    <text x="327" y="124" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">коротке</text>
+    <text x="327" y="146" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">швидке питання</text>
+    <text x="327" y="176" text-anchor="middle" font-size="15" fill="#7A5A00" font-family="Arial, sans-serif">легко зрозуміти не так</text>
+    <rect x="442" y="14" width="206" height="182" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="545" y="58" text-anchor="middle" font-size="28" font-family="Arial, sans-serif">📹</text>
+    <text x="545" y="92" text-anchor="middle" font-size="17" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">Відеодзвінок</text>
+    <text x="545" y="124" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">складна тема,</text>
+    <text x="545" y="146" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">потрібні емоції</text>
+    <text x="545" y="176" text-anchor="middle" font-size="15" fill="#155C32" font-family="Arial, sans-serif">видно обличчя й тон</text>
+    <rect x="660" y="14" width="194" height="182" rx="12" fill="#F0F4F8" stroke="#0033A0" stroke-width="2"/>
+    <text x="757" y="58" text-anchor="middle" font-size="28" font-family="Arial, sans-serif">📄</text>
+    <text x="757" y="92" text-anchor="middle" font-size="17" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Спільний документ</text>
+    <text x="757" y="124" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">кілька людей</text>
+    <text x="757" y="146" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">над одним текстом</text>
+    <text x="757" y="176" text-anchor="middle" font-size="15" fill="#0033A0" font-family="Arial, sans-serif">видно, хто що змінив</text>
+  </svg>

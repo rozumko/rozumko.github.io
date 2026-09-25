@@ -1,0 +1,32 @@
+<svg viewBox="0 0 600 120" style="width: 100%; max-width: 500px; display: block; margin: 0 auto;" aria-label="Схема процесу розпізнавання голосу комп'ютером" xmlns="http://www.w3.org/2000/svg">
+        <!-- Блок 1: Голос -->
+        <rect x="10" y="20" width="120" height="50" rx="6" fill="#FFFDF0" stroke="#FFE0A3" stroke-width="2"/>
+        <text x="70" y="45" font-size="12" font-weight="bold" fill="#B38600" text-anchor="middle">🗣️ Голос</text>
+        <text x="70" y="60" font-size="12" fill="#777777" text-anchor="middle">(Ми говоримо)</text>
+
+        <!-- Стрілка 1 -->
+        <path d="M 140 45 L 170 45" stroke="#41B6E6" stroke-width="3" fill="none"/>
+        <polygon points="175,45 168,40 168,50" fill="#41B6E6"/>
+
+        <!-- Блок 2: Мікрофон -->
+        <rect x="185" y="20" width="120" height="50" rx="6" fill="#F4F6FA" stroke="#41B6E6" stroke-width="2"/>
+        <text x="245" y="45" font-size="12" font-weight="bold" fill="#0033A0" text-anchor="middle">🎙️ Мікрофон</text>
+        <text x="245" y="60" font-size="12" fill="#555555" text-anchor="middle">Введення (Input)</text>
+
+        <!-- Стрілка 2 -->
+        <path d="M 315 45 L 345 45" stroke="#41B6E6" stroke-width="3" fill="none"/>
+        <polygon points="350,45 343,40 345,50" fill="#41B6E6"/>
+
+        <!-- Блок 3: ШІ / Текст -->
+        <rect x="360" y="20" width="120" height="50" rx="6" fill="#E8F5E9" stroke="#2E7D32" stroke-width="2"/>
+        <text x="420" y="45" font-size="12" font-weight="bold" fill="#2E7D32" text-anchor="middle">🤖 Штучний інтелект</text>
+        <text x="420" y="60" font-size="12" fill="#2E7D32" text-anchor="middle">Speech recognition</text>
+
+        <!-- Стрілка 3 -->
+        <path d="M 490 45 L 520 45" stroke="#2E7D32" stroke-width="3" fill="none"/>
+        <polygon points="525,45 518,40 518,50" fill="#2E7D32"/>
+
+        <!-- Блок 4: Результат -->
+        <rect x="535" y="30" width="55" height="30" rx="4" fill="#ffffff" stroke="#777777" stroke-dasharray="3,3"/>
+        <text x="562" y="48" font-size="12" font-weight="bold" fill="#333333" text-anchor="middle">📝 Текст</text>
+      </svg>
