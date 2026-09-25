@@ -75,6 +75,8 @@ import {
   type OutcomeRole,
   type PackInfo,
 } from './curriculum-model.js'
+import { lessonToText, parseLessonText, type TextIssue } from './curriculum-text.js'
+import { LESSON_TEXT_PROMPT, LESSON_TEXT_TEMPLATES } from './curriculum-text-templates.js'
 
 const STATUS_LABELS: Record<CurriculumLessonStatus, string> = {
   draft: 'Чернетка',
@@ -263,16 +265,8 @@ function outcomeLabel(id: string): string {
 export function initCurriculumTab() {
   $<HTMLInputElement>('cl-filter-search').addEventListener('input', renderList)
   $<HTMLSelectElement>('cl-filter-status').addEventListener('change', renderList)
-  $('cl-new-btn').addEventListener('click', () => { void startNewLesson() })
+  $('cl-new-btn').addEventListener('click', () => { void openNewLesson() })
   $('cl-template-btn').addEventListener('click', () => { void downloadTemplate() })
-  $('cl-copy-prompt').addEventListener('click', () => {
-    const prompt = $<HTMLTextAreaElement>('cl-ai-prompt')
-    const copy = navigator.clipboard?.writeText(prompt.value)
-    if (!copy) { prompt.focus(); prompt.select(); return }
-    void copy.then(() => {
-      $('cl-copy-prompt').textContent = 'Скопійовано'
-    }).catch(() => { prompt.focus(); prompt.select() })
-  })
   $<HTMLInputElement>('cl-import-file').addEventListener('change', event => {
     const input = event.currentTarget as HTMLInputElement
     const file = input.files?.[0]
@@ -388,15 +382,104 @@ function freeLessonId(grade: number): string {
   return `g${grade}-new-l${n}`
 }
 
-async function startNewLesson() {
+/** Copies a text to the clipboard; without clipboard access, selects it for Ctrl+C. */
+function copyText(text: string, source: HTMLTextAreaElement, trigger: HTMLButtonElement) {
+  const done = navigator.clipboard?.writeText(text)
+  if (!done) { source.focus(); source.select(); return }
+  void done.then(() => { trigger.textContent = 'Скопійовано' }).catch(() => { source.focus(); source.select() })
+}
+
+/**
+ * «Створити урок»: the author picks a lesson template or pastes their own
+ * text (written by hand or rewritten by an AI assistant from HTML, Word or
+ * notes). The text becomes an unsaved draft; an empty field gives an empty
+ * lesson to build with «+».
+ */
+async function openNewLesson() {
   if (!packs.length) await loadCurriculumTab()
   const pack = packs[0]
-  if (!pack) {
+  const info = pack ? packInfo(pack.id) : null
+  if (!info) {
     $('cl-list-error').textContent = 'Немає жодного предмета.'
     return
   }
-  const grade = pack.gradeRange.min
-  startEditor(null, newLesson({ id: freeLessonId(grade), title: 'Новий урок', grade, pack: packInfo(pack.id)! }), true)
+  const { body, close } = overlay('Новий урок')
+  body.append(el('p', 'adm-field-hint', 'Урок пишеться звичайним текстом: перший рядок — назва, кожен крок починається з «## ». '
+    + 'Рядки з [слайд] потрапляють на дошку, «Для вчителя:» бачить лише вчитель, «?» з варіантами «+ / -» стає завданням. '
+    + 'Порожнє поле дасть порожній урок, який можна скласти кнопкою «+».'))
+
+  const area = el('textarea', 'adm-input adm-input--code')
+  area.rows = 18
+  area.spellcheck = false
+  // The last template put into the field: replacing it needs no confirmation.
+  let applied = ''
+  const replaceNote = el('p', 'adm-field-hint')
+  replaceNote.hidden = true
+  const templateIds = LESSON_TEXT_TEMPLATES.map(t => t.id)
+  const labels = Object.fromEntries(LESSON_TEXT_TEMPLATES.map(t => [t.id, t.label]))
+  const applyTemplate = (id: string, force = false) => {
+    const text = LESSON_TEXT_TEMPLATES.find(t => t.id === id)?.text ?? ''
+    if (!force && area.value.trim() && area.value !== applied) {
+      replaceNote.hidden = false
+      return
+    }
+    area.value = text
+    applied = text
+    replaceNote.hidden = true
+  }
+  const picker = select(templateIds, labels, templateIds[0]!, id => applyTemplate(id))
+  replaceNote.append('У полі вже є ваш текст. ', button('Замінити його каркасом', 'btn-adm-ghost btn--sm', () => {
+    applyTemplate(picker.value, true)
+    area.focus()
+  }))
+  body.append(field('З чого почати', picker, 'Каркас заповнить поле нижче: змініть тексти під свій урок.'), replaceNote)
+
+  const ai = el('details', 'cl-import-help')
+  ai.append(el('summary', undefined, 'Є готовий урок у HTML, Word чи конспекті?'))
+  const aiSteps = el('ol')
+  for (const step of [
+    'Скопіюйте промпт нижче.',
+    'Відкрийте ChatGPT, Claude або Gemini, вставте промпт і додайте файл уроку (або вставте його текст).',
+    'Скопіюйте відповідь у поле «Текст уроку» й натисніть «Створити чернетку».',
+  ]) aiSteps.append(el('li', undefined, step))
+  const prompt = el('textarea', 'adm-input')
+  prompt.readOnly = true
+  prompt.rows = 6
+  prompt.value = LESSON_TEXT_PROMPT
+  const copyPrompt = button('Скопіювати промпт', 'btn-adm-ghost btn--sm', () => copyText(LESSON_TEXT_PROMPT, prompt, copyPrompt))
+  ai.append(aiSteps, field('Промпт для ШІ', prompt), copyPrompt,
+    el('p', 'adm-field-hint', 'ШІ бере правильні відповіді лише з вашого матеріалу. Схеми без https-адреси він замінить описом для вчителя.'))
+  body.append(ai, field('Текст уроку', area))
+
+  const issues = el('div', 'cl-text-issues')
+  issues.setAttribute('role', 'status')
+  const create = button('Створити чернетку', 'btn-adm-emerald', () => {
+    if (!area.value.trim()) {
+      close()
+      const grade = info.gradeRange.min
+      startEditor(null, newLesson({ id: freeLessonId(grade), title: 'Новий урок', grade, pack: info }), true)
+      setMessage('Порожній урок: додавайте кроки кнопкою «+».')
+      return
+    }
+    const result = parseLessonText(area.value, { pack: info, lessonId: freeLessonId })
+    const describe = (list: TextIssue[]) => list.map(issue => issue.line ? `Рядок ${issue.line}: ${issue.message}` : issue.message)
+    if (!result.lesson) {
+      issues.replaceChildren(el('p', 'adm-form-error', 'Виправте текст і спробуйте ще раз:'), issueList(describe(result.errors)))
+      area.focus()
+      return
+    }
+    close()
+    const lesson = result.lesson
+    startEditor(null, lesson, true)
+    const steps = lesson.blocks.filter(b => b.runtime?.step).length
+    const tasks = lesson.blocks.filter(b => b.type === 'activity').length
+    const slides = lesson.blocks.filter(b => b.views.presentation).length
+    const notes = describe(result.warnings)
+    setMessage(`Урок створено з тексту: кроків ${steps}, завдань ${tasks}, слайдів ${slides}. `
+      + `${notes.length ? `Зверніть увагу: ${notes.join(' ')} ` : ''}Перевірте план і слайди, потім натисніть «Зберегти».`)
+  })
+  body.append(issues, create)
+  area.focus()
 }
 
 async function importFile(file: File) {
@@ -747,6 +830,7 @@ function renderEditor() {
   actions.append(
     button('Переглянути план', 'btn-adm-violet', openPreview),
     button('Переглянути слайди', 'btn-adm-ghost', openSlides),
+    button('Урок як текст', 'btn-adm-ghost', openTextExport),
     button('Завантажити JSON', 'btn-adm-ghost', downloadJson),
   )
   if (state.row) actions.append(button('Історія', 'btn-adm-ghost', () => { void openHistory() }))
@@ -1788,6 +1872,31 @@ function changeStatus(status: CurriculumLessonStatus) {
 function downloadJson() {
   if (!editor) return
   downloadDefinition(editor.lesson, `${editor.lesson.id}.json`)
+}
+
+/** The draft in the plain-text format: to edit elsewhere (or with an AI assistant) and paste back. */
+function openTextExport() {
+  if (!editor || blockedByJson()) return
+  const { text, skipped } = lessonToText(editor.lesson)
+  const { body } = overlay('Урок як текст')
+  body.append(el('p', 'adm-field-hint', 'Цей текст можна змінити й створити з нього новий урок («Створити урок»). '
+    + 'У текст не входять результати навчання, словник, хвилини кроків і нотатки до слайдів.'))
+  if (skipped.length) {
+    const names = skipped.map(s => {
+      const type = s.type.startsWith('activity:') ? s.type.slice('activity:'.length) : s.type
+      return s.type.startsWith('activity:')
+        ? `завдання «${MECHANIC_LABELS[type as ActivityMechanic] ?? type}»`
+        : `«${BLOCK_TYPE_LABELS[type as LessonBlockType] ?? type}»`
+    })
+    body.append(el('p', 'adm-form-error', `Не ввійшли в текст: ${names.join(', ')}.`))
+  }
+  const area = el('textarea', 'adm-input adm-input--code')
+  area.readOnly = true
+  area.rows = 20
+  area.value = text
+  body.append(field('Текст уроку', area))
+  const copy = button('Скопіювати', 'btn-adm-emerald', () => copyText(text, area, copy))
+  body.append(copy)
 }
 
 function downloadDefinition(lesson: EditableLesson, filename: string) {

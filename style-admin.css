@@ -1189,6 +1189,7 @@
 .cl-import-help { margin: var(--sp-3) 0 var(--sp-4); padding: var(--sp-3) var(--sp-4); border: 1px solid var(--adm-border); border-radius: var(--r-md); color: var(--adm-text); }
 .cl-import-help > summary { cursor: pointer; font-weight: 600; }
 .cl-import-help > p { margin: var(--sp-3) 0; }
+.cl-import-help > ol { margin: var(--sp-3) 0; padding-left: 1.5em; }
 .cl-import-help > textarea { display: block; width: 100%; margin: var(--sp-2) 0; }
 .cl-ed-header { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-3); }
 .cl-ed-header .admin-section-title { margin: 0; }
