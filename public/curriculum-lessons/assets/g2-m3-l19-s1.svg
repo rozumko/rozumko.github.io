@@ -1,0 +1,31 @@
+<svg viewBox="0 0 800 220" role="img" aria-labelledby="svg-title-dec svg-desc-dec" style="display:block;width:100%;height:auto;max-width:800px;margin:18px auto;" xmlns="http://www.w3.org/2000/svg">
+      <title id="svg-title-dec">Схема прийняття рішення на основі даних і думки людини</title>
+      <desc id="svg-desc-dec">Схема показує, що розумне рішення утворюється з поєднання даних (діаграми) та оцінки людини (обмеження та правила).</desc>
+      
+      <!-- Box 1: Data -->
+      <rect x="20" y="30" width="220" height="160" rx="10" fill="#FFFFFF" stroke="#D9E2F0" stroke-width="2"/>
+      <rect x="20" y="30" width="220" height="36" rx="10" fill="#0033A0"/>
+      <text x="130" y="53" font-family="sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">1. Дані (Data)</text>
+      <text x="130" y="95" font-family="sans-serif" font-size="13" fill="#1A1A1A" text-anchor="middle">📊 Таблиці та діаграми</text>
+      <text x="130" y="125" font-family="sans-serif" font-size="12" fill="#52606D" text-anchor="middle">«Що показують цифри?»</text>
+
+      <!-- Plus sign -->
+      <text x="265" y="120" font-family="sans-serif" font-size="24" font-weight="bold" fill="#0033A0" text-anchor="middle">+</text>
+
+      <!-- Box 2: Human Judgment -->
+      <rect x="290" y="30" width="220" height="160" rx="10" fill="#FFF9DB" stroke="#FFD700" stroke-width="2"/>
+      <rect x="290" y="30" width="220" height="36" rx="10" fill="#FFD700"/>
+      <text x="400" y="53" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1A1A1A" text-anchor="middle">2. Оцінка людини</text>
+      <text x="400" y="95" font-family="sans-serif" font-size="13" fill="#1A1A1A" text-anchor="middle">🧠 Обмеження та правила</text>
+      <text x="400" y="125" font-family="sans-serif" font-size="12" fill="#52606D" text-anchor="middle">«Чи достатньо у нас ресурсів?»</text>
+
+      <!-- Equals sign -->
+      <text x="535" y="120" font-family="sans-serif" font-size="24" font-weight="bold" fill="#0033A0" text-anchor="middle">=</text>
+
+      <!-- Box 3: Decision -->
+      <rect x="560" y="30" width="220" height="160" rx="10" fill="#F0F4F8" stroke="#0033A0" stroke-width="2"/>
+      <rect x="560" y="30" width="220" height="36" rx="10" fill="#0033A0"/>
+      <text x="670" y="53" font-family="sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">3. Розумне рішення</text>
+      <text x="670" y="95" font-family="sans-serif" font-size="13" font-weight="bold" fill="#0033A0" text-anchor="middle">💡 Обґрунтований вибір</text>
+      <text x="670" y="125" font-family="sans-serif" font-size="12" fill="#52606D" text-anchor="middle">«Дані показують…, тому…»</text>
+    </svg>

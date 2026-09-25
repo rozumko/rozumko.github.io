@@ -1,0 +1,18 @@
+<svg viewBox="0 0 660 240" role="img" aria-labelledby="g1u4-t g1u4-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g1u4-t">Звідки програма бере свої правила</title>
+    <desc id="g1u4-d">У звичайній програмі, як калькулятор, правила заздалегідь задала людина. Штучний інтелект, як чат-бот, сам знайшов закономірності у безлічі прикладів.</desc>
+
+    <rect x="6" y="14" width="318" height="212" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="165" y="58" text-anchor="middle" font-size="32" fill="#1A1A1A" font-family="Arial, sans-serif">🧮</text>
+    <text x="165" y="96" text-anchor="middle" font-size="19" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Звичайна програма</text>
+    <text x="165" y="134" text-anchor="middle" font-size="16" fill="#3D4757" font-family="Arial, sans-serif">Правила задала людина</text>
+    <text x="165" y="162" text-anchor="middle" font-size="16" fill="#3D4757" font-family="Arial, sans-serif">наперед.</text>
+    <text x="165" y="200" text-anchor="middle" font-size="17" font-weight="700" fill="#1A1A1A" font-family="Arial, sans-serif">Приклад: калькулятор</text>
+
+    <rect x="336" y="14" width="318" height="212" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="495" y="58" text-anchor="middle" font-size="32" fill="#1A1A1A" font-family="Arial, sans-serif">🤖</text>
+    <text x="495" y="96" text-anchor="middle" font-size="19" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">Штучний інтелект</text>
+    <text x="495" y="134" text-anchor="middle" font-size="16" fill="#3D4757" font-family="Arial, sans-serif">Правила знайшов сам</text>
+    <text x="495" y="162" text-anchor="middle" font-size="16" fill="#3D4757" font-family="Arial, sans-serif">у безлічі прикладів.</text>
+    <text x="495" y="200" text-anchor="middle" font-size="17" font-weight="700" fill="#1A1A1A" font-family="Arial, sans-serif">Приклад: чат-бот</text>
+  </svg>

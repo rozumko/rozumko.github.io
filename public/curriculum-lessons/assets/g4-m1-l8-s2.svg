@@ -1,0 +1,18 @@
+<svg viewBox="0 0 860 250" role="img" aria-labelledby="g4u8b-t g4u8b-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g4u8b-t">Таблиця шифру Цезаря з ключем 3</title>
+    <desc id="g4u8b-d">Два блоки по тринадцять літер. Верхній рядок кожного блоку — звичайна літера, нижній — шифрована, зсунута на три кроки вперед. A стає D, B стає E, C стає F і так далі. Наприкінці алфавіту відлік іде з початку: X стає A, Y стає B, Z стає C.</desc>
+    <text x="10" y="50" font-size="15" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">plain</text>
+    <text x="10" y="100" font-size="15" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">cipher</text>
+    <rect x="86" y="74" width="768" height="38" rx="8" fill="#FFF2F2"/>
+    <g font-size="22" font-weight="700" font-family="'Courier New',monospace" text-anchor="middle">
+      <text x="110" y="50" fill="#0033A0">A</text><text x="166" y="50" fill="#0033A0">B</text><text x="222" y="50" fill="#0033A0">C</text><text x="278" y="50" fill="#0033A0">D</text><text x="334" y="50" fill="#0033A0">E</text><text x="390" y="50" fill="#0033A0">F</text><text x="446" y="50" fill="#0033A0">G</text><text x="502" y="50" fill="#0033A0">H</text><text x="558" y="50" fill="#0033A0">I</text><text x="614" y="50" fill="#0033A0">J</text><text x="670" y="50" fill="#0033A0">K</text><text x="726" y="50" fill="#0033A0">L</text><text x="782" y="50" fill="#0033A0">M</text>
+      <text x="110" y="100" fill="#96271B">D</text><text x="166" y="100" fill="#96271B">E</text><text x="222" y="100" fill="#96271B">F</text><text x="278" y="100" fill="#96271B">G</text><text x="334" y="100" fill="#96271B">H</text><text x="390" y="100" fill="#96271B">I</text><text x="446" y="100" fill="#96271B">J</text><text x="502" y="100" fill="#96271B">K</text><text x="558" y="100" fill="#96271B">L</text><text x="614" y="100" fill="#96271B">M</text><text x="670" y="100" fill="#96271B">N</text><text x="726" y="100" fill="#96271B">O</text><text x="782" y="100" fill="#96271B">P</text>
+      <text x="110" y="170" fill="#0033A0">N</text><text x="166" y="170" fill="#0033A0">O</text><text x="222" y="170" fill="#0033A0">P</text><text x="278" y="170" fill="#0033A0">Q</text><text x="334" y="170" fill="#0033A0">R</text><text x="390" y="170" fill="#0033A0">S</text><text x="446" y="170" fill="#0033A0">T</text><text x="502" y="170" fill="#0033A0">U</text><text x="558" y="170" fill="#0033A0">V</text><text x="614" y="170" fill="#0033A0">W</text><text x="670" y="170" fill="#0033A0">X</text><text x="726" y="170" fill="#0033A0">Y</text><text x="782" y="170" fill="#0033A0">Z</text>
+    </g>
+    <text x="10" y="170" font-size="15" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">plain</text>
+    <text x="10" y="220" font-size="15" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">cipher</text>
+    <rect x="86" y="194" width="768" height="38" rx="8" fill="#FFF2F2"/>
+    <g font-size="22" font-weight="700" font-family="'Courier New',monospace" text-anchor="middle" fill="#96271B">
+      <text x="110" y="220">Q</text><text x="166" y="220">R</text><text x="222" y="220">S</text><text x="278" y="220">T</text><text x="334" y="220">U</text><text x="390" y="220">V</text><text x="446" y="220">W</text><text x="502" y="220">X</text><text x="558" y="220">Y</text><text x="614" y="220">Z</text><text x="670" y="220">A</text><text x="726" y="220">B</text><text x="782" y="220">C</text>
+    </g>
+  </svg>

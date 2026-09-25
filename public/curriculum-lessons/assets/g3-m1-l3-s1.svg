@@ -1,0 +1,35 @@
+<svg viewBox="0 0 860 250" role="img" aria-labelledby="g3u3a-t g3u3a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g3u3a-t">Чому очищення історії прибирає не все</title>
+    <desc id="g3u3a-d">Історія браузера лежить на твоєму пристрої, і її справді можна стерти. Але частина даних може лишитися деінде: у журналі сервісу, у резервних копіях або в інших людей, якщо ті зберегли чи переслали твоє повідомлення. Туди кнопка «очистити» не дістає.</desc>
+
+    <rect x="6" y="14" width="264" height="164" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="138" y="58" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">🧹</text>
+    <text x="138" y="94" text-anchor="middle" font-size="17" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">Історія браузера</text>
+    <text x="138" y="124" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">лежить на твоєму</text>
+    <text x="138" y="146" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">пристрої</text>
+    <text x="138" y="170" text-anchor="middle" font-size="15" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">✅ стирається</text>
+
+    <path d="M276 96 H298" fill="none" stroke="#96271B" stroke-width="3"/>
+    <polygon points="298,88 312,96 298,104" fill="#96271B"/>
+    <text x="294" y="132" text-anchor="middle" font-size="15" fill="#96271B" font-family="Arial, sans-serif">а щось могло лишитися</text>
+
+    <rect x="326" y="14" width="170" height="164" rx="12" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+    <text x="411" y="58" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">📋</text>
+    <text x="411" y="94" text-anchor="middle" font-size="16" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">Журнал сервісу</text>
+    <text x="411" y="124" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">activity log</text>
+    <text x="411" y="152" text-anchor="middle" font-size="15" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">❓ може лишитися</text>
+
+    <rect x="510" y="14" width="170" height="164" rx="12" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+    <text x="595" y="58" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">💾</text>
+    <text x="595" y="94" text-anchor="middle" font-size="16" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">Резервна копія</text>
+    <text x="595" y="124" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">backup</text>
+    <text x="595" y="152" text-anchor="middle" font-size="15" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">❓ може лишитися</text>
+
+    <rect x="694" y="14" width="160" height="164" rx="12" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+    <text x="774" y="58" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">👥</text>
+    <text x="774" y="94" text-anchor="middle" font-size="16" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">Інші люди</text>
+    <text x="774" y="124" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">скріншот, пересилання</text>
+    <text x="774" y="152" text-anchor="middle" font-size="15" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">❓ може лишитися</text>
+
+    <text x="430" y="222" text-anchor="middle" font-size="16" fill="#3D4757" font-family="Arial, sans-serif">Кнопка «очистити» дістає лише до першої скриньки. До решти — ні.</text>
+  </svg>

@@ -1,0 +1,16 @@
+<svg viewBox="0 0 860 280" role="img" aria-labelledby="g3u5a-t g3u5a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g3u5a-t">Два питання медіадетектива</title>
+    <desc id="g3u5a-d">Перше питання: як це створено? Можливі відповіді: камерою, відредаговано, створено ШІ або невідомо. Друге питання: чи підтверджує джерело те, що нам розповідають? Можливі відповіді: так, ні або ще ні. Підсумок: справжнє фото може вводити в оману, а картинка від ШІ може ілюструвати правдивий факт.</desc>
+    <rect x="6" y="14" width="418" height="210" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="215" y="50" text-anchor="middle" font-size="18" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">1. Як це створено?</text>
+    <text x="32" y="90" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">📷 Камерою</text>
+    <text x="32" y="124" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">✂️ Відредаговано (edited)</text>
+    <text x="32" y="158" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">🤖 Створено ШІ (generated)</text>
+    <text x="32" y="192" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">❓ Невідомо (uncertain)</text>
+    <rect x="442" y="14" width="412" height="210" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="648" y="50" text-anchor="middle" font-size="18" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">2. Чи це підтверджено?</text>
+    <text x="468" y="90" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">✅ Так — надійне джерело це каже</text>
+    <text x="468" y="124" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">❌ Ні — факти кажуть інше</text>
+    <text x="468" y="158" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">⏳ Ще ні — треба перевірити</text>
+    <text x="430" y="262" text-anchor="middle" font-size="16" fill="#3D4757" font-family="Arial, sans-serif">Справжнє фото може вводити в оману. Картинка від ШІ може показувати правду.</text>
+  </svg>

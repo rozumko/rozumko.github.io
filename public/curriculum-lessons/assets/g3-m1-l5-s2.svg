@@ -1,0 +1,21 @@
+<svg viewBox="0 0 860 180" role="img" aria-labelledby="g3u5b-t g3u5b-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g3u5b-t">Чотири кроки перевірки зображення</title>
+    <desc id="g3u5b-d">Спершу дивимося на джерело: хто це опублікував. Потім на автора й дату. Далі на контекст: що було навколо цієї події. І нарешті шукаємо те саме в іншому надійному джерелі. Якщо жоден крок не дав відповіді, чесно кажемо, що визначити неможливо.</desc>
+    <rect x="6" y="14" width="200" height="116" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="106" y="52" text-anchor="middle" font-size="24" font-family="Arial, sans-serif">🔗</text>
+    <text x="106" y="82" text-anchor="middle" font-size="17" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">1. Джерело</text>
+    <text x="106" y="110" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">хто опублікував</text>
+    <rect x="224" y="14" width="190" height="116" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="319" y="52" text-anchor="middle" font-size="24" font-family="Arial, sans-serif">✍️</text>
+    <text x="319" y="82" text-anchor="middle" font-size="17" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">2. Автор і дата</text>
+    <text x="319" y="110" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">коли й ким зроблено</text>
+    <rect x="432" y="14" width="190" height="116" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="527" y="52" text-anchor="middle" font-size="24" font-family="Arial, sans-serif">🖼️</text>
+    <text x="527" y="82" text-anchor="middle" font-size="17" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">3. Контекст</text>
+    <text x="527" y="110" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">що було навколо</text>
+    <rect x="640" y="14" width="214" height="116" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="747" y="52" text-anchor="middle" font-size="24" font-family="Arial, sans-serif">✅</text>
+    <text x="747" y="82" text-anchor="middle" font-size="17" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">4. Друге джерело</text>
+    <text x="747" y="110" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">чи підтверджує ще хтось</text>
+    <text x="430" y="164" text-anchor="middle" font-size="16" fill="#96271B" font-family="Arial, sans-serif">Жоден крок не дав відповіді? Чесна відповідь — «не можу визначити».</text>
+  </svg>

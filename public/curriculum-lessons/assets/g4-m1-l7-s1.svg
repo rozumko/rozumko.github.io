@@ -1,0 +1,34 @@
+<svg viewBox="0 0 860 260" role="img" aria-labelledby="g4u7a-t g4u7a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g4u7a-t">Куди може потрапити допис до видалення</title>
+    <desc id="g4u7a-d">Ліворуч мій допис, який я видаляю зі свого екрана. Від нього чотири стрілки: хтось скопіював, допис переслали в групу, зробили знімок екрана, сервіс зберіг резервну копію на сервері. Від усіх чотирьох копій стрілки ведуть праворуч, до нової аудиторії, яка може побачити допис навіть пізніше.</desc>
+    <defs>
+      <marker id="g4u7a-m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#0033A0"/></marker>
+    </defs>
+    <rect x="6" y="80" width="214" height="100" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="113" y="118" text-anchor="middle" font-size="17" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">📱 Мій допис</text>
+    <text x="113" y="148" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">видаляю з екрана</text>
+
+    <path d="M222 130 L286 37" fill="none" stroke="#0033A0" stroke-width="2" marker-end="url(#g4u7a-m)"/>
+    <path d="M222 130 L286 99" fill="none" stroke="#0033A0" stroke-width="2" marker-end="url(#g4u7a-m)"/>
+    <path d="M222 130 L286 161" fill="none" stroke="#0033A0" stroke-width="2" marker-end="url(#g4u7a-m)"/>
+    <path d="M222 130 L286 223" fill="none" stroke="#0033A0" stroke-width="2" marker-end="url(#g4u7a-m)"/>
+
+    <rect x="290" y="14" width="290" height="46" rx="10" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="306" y="43" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">📋 Copy — хтось скопіював</text>
+    <rect x="290" y="76" width="290" height="46" rx="10" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="306" y="105" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">📤 Share — переслали в групу</text>
+    <rect x="290" y="138" width="290" height="46" rx="10" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="306" y="167" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">📸 Screenshot — знімок екрана</text>
+    <rect x="290" y="200" width="290" height="46" rx="10" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="306" y="229" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">💾 Backup — копія на сервері</text>
+
+    <path d="M582 37 L636 126" fill="none" stroke="#0033A0" stroke-width="2" marker-end="url(#g4u7a-m)"/>
+    <path d="M582 99 L636 128" fill="none" stroke="#0033A0" stroke-width="2" marker-end="url(#g4u7a-m)"/>
+    <path d="M582 161 L636 132" fill="none" stroke="#0033A0" stroke-width="2" marker-end="url(#g4u7a-m)"/>
+    <path d="M582 223 L636 134" fill="none" stroke="#0033A0" stroke-width="2" marker-end="url(#g4u7a-m)"/>
+
+    <rect x="640" y="80" width="214" height="100" rx="12" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+    <text x="747" y="116" text-anchor="middle" font-size="17" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">👀 Нова аудиторія</text>
+    <text x="747" y="144" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">може побачити</text>
+    <text x="747" y="166" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">навіть пізніше</text>
+  </svg>

@@ -1,0 +1,35 @@
+<svg viewBox="0 0 880 200" role="img" aria-labelledby="g3u1-t g3u1-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g3u1-t">Чотири ланки в прикладі з мультфільмом</title>
+    <desc id="g3u1-d">Пристрій передає запит до програми. Програма звертається через мережу до сервісу. Сервіс повертає мультфільм тим самим шляхом назад.</desc>
+
+    <rect x="6" y="40" width="196" height="96" rx="10" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="104" y="70" text-anchor="middle" font-size="24" font-family="Arial, sans-serif">📱</text>
+    <text x="104" y="97" text-anchor="middle" font-size="16" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Device</text>
+    <text x="104" y="119" text-anchor="middle" font-size="14" fill="#3D4757" font-family="Arial, sans-serif">планшет</text>
+
+    <path d="M206 88 H228" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="228,81 239,88 228,95" fill="#0033A0"/>
+
+    <rect x="243" y="40" width="196" height="96" rx="10" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="341" y="70" text-anchor="middle" font-size="24" font-family="Arial, sans-serif">💾</text>
+    <text x="341" y="97" text-anchor="middle" font-size="16" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">Software</text>
+    <text x="341" y="119" text-anchor="middle" font-size="14" fill="#3D4757" font-family="Arial, sans-serif">застосунок</text>
+
+    <path d="M443 88 H465" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="465,81 476,88 465,95" fill="#0033A0"/>
+
+    <rect x="480" y="40" width="196" height="96" rx="10" fill="#0033A0"/>
+    <text x="578" y="70" text-anchor="middle" font-size="24" font-family="Arial, sans-serif">📶</text>
+    <text x="578" y="97" text-anchor="middle" font-size="16" font-weight="700" fill="#FFFFFF" font-family="Arial, sans-serif">Network</text>
+    <text x="578" y="119" text-anchor="middle" font-size="14" fill="#D6E0F5" font-family="Arial, sans-serif">Wi-Fi та інтернет</text>
+
+    <path d="M680 88 H702" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="702,81 713,88 702,95" fill="#0033A0"/>
+
+    <rect x="717" y="40" width="157" height="96" rx="10" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="795" y="70" text-anchor="middle" font-size="24" font-family="Arial, sans-serif">🎬</text>
+    <text x="795" y="97" text-anchor="middle" font-size="16" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">Service</text>
+    <text x="795" y="119" text-anchor="middle" font-size="14" fill="#3D4757" font-family="Arial, sans-serif">відео з мережі</text>
+
+    <text x="440" y="176" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">Розірветься будь-яка ланка — мультфільм не піде.</text>
+  </svg>

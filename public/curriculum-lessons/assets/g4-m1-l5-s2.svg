@@ -1,0 +1,22 @@
+<svg viewBox="0 0 860 210" role="img" aria-labelledby="g4u5b-t g4u5b-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g4u5b-t">Обов'язкові, налаштувальні та рекламні cookies</title>
+    <desc id="g4u5b-d">Обов'язкові cookies потрібні для входу, кошика й сесії: без них сайт відкриється, але не впізнає тебе. Налаштувальні пам'ятають мову й тему — без них доведеться щоразу обирати заново. Рекламні стежать за інтересами, і без них сайт працює як звичайно.</desc>
+    <rect x="6" y="14" width="276" height="182" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="144" y="56" text-anchor="middle" font-size="28" font-family="Arial, sans-serif">🔧</text>
+    <text x="144" y="90" text-anchor="middle" font-size="17" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">Обов'язкові</text>
+    <text x="144" y="120" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">Вхід, кошик, сесія</text>
+    <text x="144" y="150" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">Без них сайт відкриється,</text>
+    <text x="144" y="172" text-anchor="middle" font-size="15" fill="#155C32" font-family="Arial, sans-serif">але не впізнає тебе</text>
+    <rect x="292" y="14" width="276" height="182" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="430" y="56" text-anchor="middle" font-size="28" font-family="Arial, sans-serif">🎛️</text>
+    <text x="430" y="90" text-anchor="middle" font-size="17" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">Налаштувальні</text>
+    <text x="430" y="120" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">Мова, тема, розмір</text>
+    <text x="430" y="150" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">Без них обиратимеш</text>
+    <text x="430" y="172" text-anchor="middle" font-size="15" fill="#7A5A00" font-family="Arial, sans-serif">щоразу заново</text>
+    <rect x="578" y="14" width="276" height="182" rx="12" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+    <text x="716" y="56" text-anchor="middle" font-size="28" font-family="Arial, sans-serif">📢</text>
+    <text x="716" y="90" text-anchor="middle" font-size="17" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">Рекламні</text>
+    <text x="716" y="120" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">Стежать за інтересами</text>
+    <text x="716" y="150" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">Без них сайт</text>
+    <text x="716" y="172" text-anchor="middle" font-size="15" fill="#96271B" font-family="Arial, sans-serif">працює як звичайно</text>
+  </svg>

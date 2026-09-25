@@ -1,0 +1,23 @@
+<svg viewBox="0 0 860 220" role="img" aria-labelledby="g4u15a-t g4u15a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g4u15a-t">Три місця, де людина впливає на результат ШІ</title>
+    <desc id="g4u15a-d">Перший блок: навчальні дані — чи всіх у них враховано. Другий блок: промпт — чи зрозумілі мета й умови. Третій блок: перевірка людиною — чи підтверджують твердження надійні джерела і чи справедливий результат.</desc>
+    <g font-family="Arial, sans-serif">
+      <rect x="6" y="20" width="262" height="170" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+      <text x="137" y="56" text-anchor="middle" font-size="17" font-weight="700" fill="#0033A0">1. Навчальні дані</text>
+      <text x="137" y="100" text-anchor="middle" font-size="30">📚</text>
+      <text x="137" y="142" text-anchor="middle" font-size="15" fill="#3D4757">чи всіх у них</text>
+      <text x="137" y="164" text-anchor="middle" font-size="15" fill="#3D4757">враховано?</text>
+      <path d="M272 105 H286" fill="none" stroke="#0033A0" stroke-width="3"/><polygon points="284,97 296,105 284,113" fill="#0033A0"/>
+      <rect x="298" y="20" width="262" height="170" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+      <text x="429" y="56" text-anchor="middle" font-size="17" font-weight="700" fill="#7A5A00">2. Промпт</text>
+      <text x="429" y="100" text-anchor="middle" font-size="30">✍️</text>
+      <text x="429" y="142" text-anchor="middle" font-size="15" fill="#3D4757">чи зрозумілі мета</text>
+      <text x="429" y="164" text-anchor="middle" font-size="15" fill="#3D4757">та умови?</text>
+      <path d="M564 105 H578" fill="none" stroke="#0033A0" stroke-width="3"/><polygon points="576,97 588,105 576,113" fill="#0033A0"/>
+      <rect x="590" y="20" width="264" height="170" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+      <text x="722" y="56" text-anchor="middle" font-size="17" font-weight="700" fill="#155C32">3. Перевірка людиною</text>
+      <text x="722" y="100" text-anchor="middle" font-size="30">🧑‍⚖️</text>
+      <text x="722" y="142" text-anchor="middle" font-size="15" fill="#3D4757">чи підтверджують джерела?</text>
+      <text x="722" y="164" text-anchor="middle" font-size="15" fill="#3D4757">чи результат справедливий?</text>
+    </g>
+  </svg>

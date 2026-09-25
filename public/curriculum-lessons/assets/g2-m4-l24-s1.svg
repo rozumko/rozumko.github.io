@@ -1,0 +1,37 @@
+<svg viewBox="0 0 800 240" role="img" aria-labelledby="svg-title-mod svg-desc-mod" style="display:block;width:100%;height:auto;max-width:800px;margin:18px auto;" xmlns="http://www.w3.org/2000/svg">
+      <title id="svg-title-mod">Порівняння реальної системи, двох моделей та симуляції</title>
+      <desc id="svg-desc-mod">Схема демонструє перехід від реальної системи до двох типів моделей (схема й таблиця) та випробування їх у симуляції.</desc>
+      
+      <!-- Box 1: Reality -->
+      <rect x="20" y="30" width="220" height="180" rx="10" fill="#FFFFFF" stroke="#D9E2F0" stroke-width="2"/>
+      <rect x="20" y="30" width="220" height="36" rx="10" fill="#0033A0"/>
+      <text x="130" y="53" font-family="sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">1. Реальна система</text>
+      <text x="130" y="100" font-family="sans-serif" font-size="32" text-anchor="middle">🏫 🏃</text>
+      <text x="130" y="145" font-family="sans-serif" font-size="13" font-weight="bold" fill="#0033A0" text-anchor="middle">Справжній рух у школі</text>
+      <text x="130" y="170" font-family="sans-serif" font-size="12" fill="#52606D" text-anchor="middle">Усі дрібні деталі</text>
+
+      <!-- Arrow 1 -->
+      <path d="M 250 120 L 280 120" stroke="#0033A0" stroke-width="3" fill="none"/>
+      <polygon points="280,115 290,120 280,125" fill="#0033A0"/>
+
+      <!-- Box 2: Models -->
+      <rect x="300" y="30" width="220" height="180" rx="10" fill="#F0F4F8" stroke="#0033A0" stroke-width="2"/>
+      <rect x="300" y="30" width="220" height="36" rx="10" fill="#0033A0"/>
+      <text x="410" y="53" font-family="sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">2. Дві моделі (Models)</text>
+      <text x="410" y="90" font-family="sans-serif" font-size="13" font-weight="bold" fill="#1A1A1A" text-anchor="middle">🗺️ Модель А: Схема-карта</text>
+      <text x="410" y="115" font-family="sans-serif" font-size="13" font-weight="bold" fill="#1A1A1A" text-anchor="middle">📊 Модель Б: Таблиця кроків</text>
+      <text x="410" y="155" font-family="sans-serif" font-size="12" fill="#0033A0" text-anchor="middle">Мета (Purpose): показує шлях</text>
+      <text x="410" y="175" font-family="sans-serif" font-size="12" fill="#C53030" text-anchor="middle">Межі (Limit): без дрібниць</text>
+
+      <!-- Arrow 2 -->
+      <path d="M 530 120 L 560 120" stroke="#0033A0" stroke-width="3" fill="none"/>
+      <polygon points="560,115 570,120 560,125" fill="#0033A0"/>
+
+      <!-- Box 3: Simulation -->
+      <rect x="580" y="30" width="200" height="180" rx="10" fill="#FFF9DB" stroke="#FFD700" stroke-width="2"/>
+      <rect x="580" y="30" width="200" height="36" rx="10" fill="#FFD700"/>
+      <text x="680" y="53" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1A1A1A" text-anchor="middle">3. Симуляція</text>
+      <text x="680" y="100" font-family="sans-serif" font-size="32" text-anchor="middle">🧸 💻</text>
+      <text x="680" y="145" font-family="sans-serif" font-size="13" font-weight="bold" fill="#0033A0" text-anchor="middle">Відтворюємо ситуацію</text>
+      <text x="680" y="170" font-family="sans-serif" font-size="12" fill="#52606D" text-anchor="middle">«Що станеться?»</text>
+    </svg>

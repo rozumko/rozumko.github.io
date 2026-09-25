@@ -1,0 +1,24 @@
+<svg viewBox="0 0 660 210" role="img" aria-labelledby="g1u1b-t g1u1b-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g1u1b-t">Три питання перед вибором способу</title>
+    <desc id="g1u1b-d">Перше питання про мету: що саме я хочу зробити. Друге про здоров'я: чи довго я вже за екраном. Третє про ресурси: чи заряджений пристрій і чи є інтернет.</desc>
+
+    <rect x="6" y="16" width="204" height="150" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="108" y="62" text-anchor="middle" font-size="34" font-family="Arial, sans-serif">🎯</text>
+    <text x="108" y="98" text-anchor="middle" font-size="19" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Мета</text>
+    <text x="108" y="126" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">Що саме я хочу</text>
+    <text x="108" y="146" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">зробити?</text>
+
+    <rect x="228" y="16" width="204" height="150" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="330" y="62" text-anchor="middle" font-size="34" font-family="Arial, sans-serif">❤️</text>
+    <text x="330" y="98" text-anchor="middle" font-size="19" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">Здоров'я</text>
+    <text x="330" y="126" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">Чи довго я вже</text>
+    <text x="330" y="146" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">за екраном?</text>
+
+    <rect x="450" y="16" width="204" height="150" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="552" y="62" text-anchor="middle" font-size="34" font-family="Arial, sans-serif">🔋</text>
+    <text x="552" y="98" text-anchor="middle" font-size="19" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">Ресурси</text>
+    <text x="552" y="126" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">Чи є заряд</text>
+    <text x="552" y="146" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">та інтернет?</text>
+
+    <text x="330" y="196" text-anchor="middle" font-size="16" fill="#3D4757" font-family="Arial, sans-serif">Відповіді допоможуть обрати спосіб або зробити перерву.</text>
+  </svg>

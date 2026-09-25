@@ -1,0 +1,44 @@
+<svg viewBox="0 0 700 260" role="img" aria-labelledby="g2u1b-t g2u1b-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g2u1b-t">Три системи за одним правилом входу, опрацювання і виходу</title>
+    <desc id="g2u1b-d">Камера бачить кота, програма складає знімок, і фото з'являється на екрані. Датчик міряє тепло, правило вирішує, що стало холодно, і обігрівач вмикається. Натиснута кнопка замикає схему, і лунає дзвінок.</desc>
+
+    <text x="112" y="26" text-anchor="middle" font-size="15" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">ВХІД</text>
+    <text x="350" y="26" text-anchor="middle" font-size="15" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">ОПРАЦЮВАННЯ</text>
+    <text x="588" y="26" text-anchor="middle" font-size="15" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">ВИХІД</text>
+
+    <rect x="6" y="40" width="212" height="58" rx="9" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="112" y="66" text-anchor="middle" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">📷 камера бачить кота</text>
+    <text x="112" y="87" text-anchor="middle" font-size="14" fill="#3D4757" font-family="Arial, sans-serif">Фотоапарат у планшеті</text>
+    <path d="M222 69 H240" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="240,62 251,69 240,76" fill="#0033A0"/>
+    <rect x="256" y="40" width="188" height="58" rx="9" fill="#F0F4F8"/>
+    <text x="350" y="75" text-anchor="middle" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">програма складає знімок</text>
+    <path d="M448 69 H466" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="466,62 477,69 466,76" fill="#0033A0"/>
+    <rect x="482" y="40" width="212" height="58" rx="9" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="588" y="75" text-anchor="middle" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">🖼️ фото на екрані</text>
+
+    <rect x="6" y="112" width="212" height="58" rx="9" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="112" y="138" text-anchor="middle" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">🌡️ датчик міряє тепло</text>
+    <text x="112" y="159" text-anchor="middle" font-size="14" fill="#3D4757" font-family="Arial, sans-serif">Обігрівач з датчиком</text>
+    <path d="M222 141 H240" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="240,134 251,141 240,148" fill="#0033A0"/>
+    <rect x="256" y="112" width="188" height="58" rx="9" fill="#F0F4F8"/>
+    <text x="350" y="147" text-anchor="middle" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">правило: стало холодно</text>
+    <path d="M448 141 H466" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="466,134 477,141 466,148" fill="#0033A0"/>
+    <rect x="482" y="112" width="212" height="58" rx="9" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="588" y="147" text-anchor="middle" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">🔥 обігрівач вмикається</text>
+
+    <rect x="6" y="184" width="212" height="58" rx="9" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="112" y="210" text-anchor="middle" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">🔔 натискаєш кнопку</text>
+    <text x="112" y="231" text-anchor="middle" font-size="14" fill="#3D4757" font-family="Arial, sans-serif">Дверний дзвінок</text>
+    <path d="M222 213 H240" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="240,206 251,213 240,220" fill="#0033A0"/>
+    <rect x="256" y="184" width="188" height="58" rx="9" fill="#F0F4F8"/>
+    <text x="350" y="219" text-anchor="middle" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">схема замикається</text>
+    <path d="M448 213 H466" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="466,206 477,213 466,220" fill="#0033A0"/>
+    <rect x="482" y="184" width="212" height="58" rx="9" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="588" y="219" text-anchor="middle" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">🔊 лунає дзвінок</text>
+  </svg>

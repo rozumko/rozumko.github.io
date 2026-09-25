@@ -1,0 +1,25 @@
+<svg viewBox="0 0 760 200" role="img" aria-labelledby="g2u2b-t g2u2b-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g2u2b-t">Три налаштування доступності</title>
+    <desc id="g2u2b-d">Озвучування тексту читає написане на екрані вголос. Голосове введення дозволяє диктувати слова замість набору на клавіатурі. Екранний збільшувач робить дрібний текст великим.</desc>
+
+    <rect x="6" y="14" width="240" height="172" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="126" y="60" text-anchor="middle" font-size="32" font-family="Arial, sans-serif">🔊</text>
+    <text x="126" y="98" text-anchor="middle" font-size="17" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">Озвучування</text>
+    <text x="126" y="128" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">комп'ютер читає</text>
+    <text x="126" y="150" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">написане вголос</text>
+    <text x="126" y="174" text-anchor="middle" font-size="14" fill="#155C32" font-family="Arial, sans-serif">text-to-speech</text>
+
+    <rect x="260" y="14" width="240" height="172" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="380" y="60" text-anchor="middle" font-size="32" font-family="Arial, sans-serif">🗣️</text>
+    <text x="380" y="98" text-anchor="middle" font-size="17" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Голосове введення</text>
+    <text x="380" y="128" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">диктуєш слова</text>
+    <text x="380" y="150" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">замість набору</text>
+    <text x="380" y="174" text-anchor="middle" font-size="14" fill="#0033A0" font-family="Arial, sans-serif">voice typing</text>
+
+    <rect x="514" y="14" width="240" height="172" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="634" y="60" text-anchor="middle" font-size="32" font-family="Arial, sans-serif">🔍</text>
+    <text x="634" y="98" text-anchor="middle" font-size="17" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">Збільшувач</text>
+    <text x="634" y="128" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">дрібний текст</text>
+    <text x="634" y="150" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">стає великим</text>
+    <text x="634" y="174" text-anchor="middle" font-size="14" fill="#7A5A00" font-family="Arial, sans-serif">magnifier</text>
+  </svg>

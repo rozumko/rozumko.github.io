@@ -1,0 +1,25 @@
+<svg viewBox="0 0 780 200" role="img" aria-labelledby="g2u5b-t g2u5b-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g2u5b-t">Три ризики спільної мережі</title>
+    <desc id="g2u5b-d">Перший ризик — особисті дані: прізвище, адресу, телефон і паролі в мережу не надсилають. Другий — підозрілі спливаючі вікна, через натискання на які потрапляють шкідливі програми. Третій — вміст, не призначений для дітей.</desc>
+
+    <rect x="6" y="14" width="248" height="172" rx="12" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+    <text x="130" y="62" text-anchor="middle" font-size="32" font-family="Arial, sans-serif">🔑</text>
+    <text x="130" y="100" text-anchor="middle" font-size="17" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">Особисті дані</text>
+    <text x="130" y="132" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">Прізвище, адреса,</text>
+    <text x="130" y="154" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">телефон, пароль —</text>
+    <text x="130" y="176" text-anchor="middle" font-size="15" fill="#96271B" font-family="Arial, sans-serif">не надсилаємо</text>
+
+    <rect x="266" y="14" width="248" height="172" rx="12" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+    <text x="390" y="62" text-anchor="middle" font-size="32" font-family="Arial, sans-serif">🪟</text>
+    <text x="390" y="100" text-anchor="middle" font-size="17" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">Дивні вікна</text>
+    <text x="390" y="132" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">Спливло саме —</text>
+    <text x="390" y="154" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">не натискай.</text>
+    <text x="390" y="176" text-anchor="middle" font-size="15" fill="#96271B" font-family="Arial, sans-serif">Так заходять віруси</text>
+
+    <rect x="526" y="14" width="248" height="172" rx="12" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+    <text x="650" y="62" text-anchor="middle" font-size="32" font-family="Arial, sans-serif">🚫</text>
+    <text x="650" y="100" text-anchor="middle" font-size="17" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">Чужий вміст</text>
+    <text x="650" y="132" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">Трапляється й те,</text>
+    <text x="650" y="154" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">що не для дітей.</text>
+    <text x="650" y="176" text-anchor="middle" font-size="15" fill="#96271B" font-family="Arial, sans-serif">Закрий і скажи</text>
+  </svg>

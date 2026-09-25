@@ -1,0 +1,32 @@
+<svg viewBox="0 0 880 250" role="img" aria-labelledby="g4u1b-t g4u1b-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g4u1b-t">Схема системи керування вуличного ліхтаря</title>
+    <desc id="g4u1b-d">Вхід: датчик освітлення вимірює, скільки світла надворі. Опрацювання: правило «якщо стало темніше за поріг, то ввімкнути» перевіряється щохвилини. Вихід: реле вмикає лампу. Внизу позначено, що жодного застосунку в цій системі немає — програма одна і вбудована.</desc>
+
+    <rect x="6" y="26" width="266" height="122" rx="10" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="139" y="54" text-anchor="middle" font-size="16" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">INPUT • вхід</text>
+    <text x="139" y="88" text-anchor="middle" font-size="26" font-family="Arial, sans-serif">🌗</text>
+    <text x="139" y="114" text-anchor="middle" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">датчик освітлення</text>
+    <text x="139" y="134" text-anchor="middle" font-size="14" fill="#3D4757" font-family="Arial, sans-serif">міряє, скільки світла надворі</text>
+
+    <path d="M276 87 H298" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="298,79 311,87 298,95" fill="#0033A0"/>
+
+    <rect x="316" y="26" width="266" height="122" rx="10" fill="#0033A0"/>
+    <text x="449" y="54" text-anchor="middle" font-size="16" font-weight="700" fill="#FFFFFF" font-family="Arial, sans-serif">PROCESS • опрацювання</text>
+    <text x="449" y="88" text-anchor="middle" font-size="26" font-family="Arial, sans-serif">⚙️</text>
+    <text x="449" y="114" text-anchor="middle" font-size="15" fill="#FFFFFF" font-family="Arial, sans-serif">якщо темніше за поріг —</text>
+    <text x="449" y="134" text-anchor="middle" font-size="15" fill="#FFFFFF" font-family="Arial, sans-serif">то ввімкнути</text>
+
+    <path d="M586 87 H608" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="608,79 621,87 608,95" fill="#0033A0"/>
+
+    <rect x="626" y="26" width="248" height="122" rx="10" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="750" y="54" text-anchor="middle" font-size="16" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">OUTPUT • вихід</text>
+    <text x="750" y="88" text-anchor="middle" font-size="26" font-family="Arial, sans-serif">💡</text>
+    <text x="750" y="114" text-anchor="middle" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">реле вмикає лампу</text>
+    <text x="750" y="134" text-anchor="middle" font-size="14" fill="#3D4757" font-family="Arial, sans-serif">на вулиці стає світло</text>
+
+    <rect x="6" y="170" width="868" height="60" rx="10" fill="#F0F4F8"/>
+    <text x="30" y="196" font-size="15" font-weight="700" fill="#1A1A1A" font-family="Arial, sans-serif">Чому це спеціалізована control system:</text>
+    <text x="30" y="218" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">її головне завдання — зчитувати датчик і керувати лампою за програмою.</text>
+  </svg>

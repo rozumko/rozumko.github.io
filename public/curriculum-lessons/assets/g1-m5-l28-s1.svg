@@ -1,0 +1,46 @@
+<svg viewBox="0 0 600 220" role="img" aria-labelledby="svg-title svg-desc" style="display:block; width:100%; height:auto; max-width:600px; margin:16px auto;" xmlns="http://www.w3.org/2000/svg">
+        <title id="svg-title">Схема створення першої самостійної програми у ScratchJr</title>
+        <desc id="svg-desc">Ця схема показує трьохкроковий процес: упорядковані кроки перетворюються на блоки коду Script, який запускається кнопкою Run.</desc>
+        <!-- Background -->
+        <rect width="600" height="220" rx="8" fill="#FAFAFA"/>
+
+        <!-- Step 1: Algorithm -->
+        <g transform="translate(15, 20)">
+          <rect width="165" height="180" rx="8" fill="#F0F4F8" stroke="#0033A0" stroke-width="2"/>
+          <text x="82" y="30" font-size="12" font-family="sans-serif" font-weight="bold" fill="#0033A0" text-anchor="middle">1. Алгоритм (Plan)</text>
+          <text x="82" y="66" font-size="28" text-anchor="middle">🧠</text>
+          <text x="82" y="90" font-size="12" font-family="sans-serif" fill="#1A1A1A" text-anchor="middle">Ідея у голові:</text>
+          <text x="82" y="110" font-size="12" font-family="sans-serif" fill="#555555" text-anchor="middle">"Котик зробить 3 кроки</text>
+          <text x="82" y="130" font-size="12" font-family="sans-serif" fill="#555555" text-anchor="middle">вправо і підстрибне"</text>
+        </g>
+
+        <!-- Arrow 1 -->
+        <path d="M 190 110 L 210 110" stroke="#FFD700" stroke-width="3" stroke-dasharray="2" fill="none"/>
+
+        <!-- Step 2: Code Blocks Script -->
+        <g transform="translate(215, 20)">
+          <rect width="180" height="180" rx="8" fill="#FFFDF0" stroke="#FFE0A3" stroke-width="2"/>
+          <text x="90" y="30" font-size="12" font-family="sans-serif" font-weight="bold" fill="#B38600" text-anchor="middle">2. Скрипт (Script)</text>
+          <!-- Blocks visual -->
+          <rect x="15" y="50" width="40" height="35" rx="4" fill="#4CAF50"/>
+          <text x="35" y="72" font-size="14" fill="#ffffff" font-weight="bold" text-anchor="middle">🚩</text>
+          <rect x="58" y="50" width="50" height="35" rx="4" fill="#0033A0"/>
+          <text x="83" y="72" font-size="12" fill="#ffffff" font-weight="bold" text-anchor="middle">➔ 3</text>
+          <rect x="111" y="50" width="50" height="35" rx="4" fill="#0033A0"/>
+          <text x="136" y="72" font-size="12" fill="#ffffff" font-weight="bold" text-anchor="middle">⬆ 1</text>
+          <text x="90" y="115" font-size="12" font-family="sans-serif" fill="#1A1A1A" text-anchor="middle">З'єднані блоки коду</text>
+          <text x="90" y="135" font-size="12" font-family="sans-serif" fill="#B38600" font-weight="bold" text-anchor="middle">Code Blocks</text>
+        </g>
+
+        <!-- Arrow 2 -->
+        <path d="M 400 110 L 420 110" stroke="#FFD700" stroke-width="3" stroke-dasharray="2" fill="none"/>
+
+        <!-- Step 3: Run Program -->
+        <g transform="translate(425, 20)">
+          <rect width="160" height="180" rx="8" fill="#E8F5E9" stroke="#C8E6C9" stroke-width="2"/>
+          <text x="80" y="30" font-size="12" font-family="sans-serif" font-weight="bold" fill="#2E7D32" text-anchor="middle">3. Запуск (Run)</text>
+          <text x="80" y="65" font-size="28" text-anchor="middle">🐱▶️</text>
+          <text x="80" y="95" font-size="12" font-family="sans-serif" fill="#1A1A1A" text-anchor="middle">Котик рухається!</text>
+          <text x="80" y="115" font-size="12" font-family="sans-serif" fill="#2E7D32" font-weight="bold" text-anchor="middle">Перша програма</text>
+        </g>
+      </svg>

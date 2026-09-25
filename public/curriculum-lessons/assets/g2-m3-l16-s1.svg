@@ -1,0 +1,22 @@
+<svg viewBox="0 0 800 220" role="img" aria-labelledby="svg-title-form svg-desc-form" style="display:block;width:100%;height:auto;max-width:800px;margin:18px auto;" xmlns="http://www.w3.org/2000/svg">
+      <title id="svg-title-form">Порівняння вільного тексту та цифрової форми з варіантами</title>
+      <desc id="svg-desc-form">У вільному тексті ту саму тварину записують по-різному: «собака», «песик», «Гавчик», — і відповіді важко порахувати. Форма з варіантами «Собака», «Кішка», «Інше» розкладає відповіді за категоріями.</desc>
+      
+      <!-- Left Box: Free Text -->
+      <rect x="20" y="20" width="350" height="180" rx="10" fill="#FAFAFA" stroke="#D9E2F0" stroke-width="2"/>
+      <rect x="20" y="20" width="350" height="40" rx="10" fill="#E2E8F0"/>
+      <text x="195" y="45" font-family="sans-serif" font-size="15" font-weight="bold" fill="#1A1A1A" text-anchor="middle">Вільний текст (без варіантів)</text>
+      <text x="195" y="85" font-family="sans-serif" font-size="14" fill="#52606D" text-anchor="middle">«собака», «песик», «Гавчик»</text>
+      <path d="M 195 100 L 195 125" stroke="#D9E2F0" stroke-width="2"/>
+      <rect x="85" y="130" width="220" height="45" rx="6" fill="#FFFFFF" stroke="#D9E2F0" stroke-width="1.5"/>
+      <text x="195" y="157" font-family="sans-serif" font-size="13" font-weight="bold" fill="#D32F2F" text-anchor="middle">Важко порівняти та обчислити</text>
+
+      <!-- Right Box: Digital Form Options -->
+      <rect x="430" y="20" width="350" height="180" rx="10" fill="#F0F4F8" stroke="#0033A0" stroke-width="2"/>
+      <rect x="430" y="20" width="350" height="40" rx="10" fill="#0033A0"/>
+      <text x="605" y="45" font-family="sans-serif" font-size="15" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Цифрова форма (з варіантами)</text>
+      <text x="605" y="85" font-family="sans-serif" font-size="14" fill="#1A1A1A" text-anchor="middle">🔘 Собака   🔘 Кішка   🔘 Інше</text>
+      <path d="M 605 100 L 605 125" stroke="#0033A0" stroke-width="2"/>
+      <rect x="495" y="130" width="220" height="45" rx="6" fill="#FFFFFF" stroke="#0033A0" stroke-width="1.5"/>
+      <text x="605" y="157" font-family="sans-serif" font-size="13" font-weight="bold" fill="#0033A0" text-anchor="middle">Легко порахувати</text>
+    </svg>

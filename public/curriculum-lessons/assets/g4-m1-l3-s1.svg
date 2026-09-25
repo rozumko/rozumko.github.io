@@ -1,0 +1,20 @@
+<svg viewBox="0 0 860 260" role="img" aria-labelledby="g4u3a-t g4u3a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g4u3a-t">Порівняння Ethernet і Wi-Fi</title>
+    <desc id="g4u3a-d">Ethernet: кабель від пристрою до роутера; зазвичай стабільніший; швидкість передбачуваніша; але пристрій прив'язаний до кабелю. Wi-Fi: радіосигнал від точки доступу; можна пересуватися з пристроєм; легко підключити багато пристроїв; але заважають стіни й відстань. Внизу: обидва способи можуть бути безпечними, якщо мережу правильно налаштовано.</desc>
+    <rect x="6" y="10" width="418" height="186" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="30" y="44" font-size="18" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">🔌 Ethernet • дротове</text>
+    <text x="30" y="80" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">кабель від пристрою до роутера</text>
+    <text x="30" y="110" font-size="15" fill="#155C32" font-family="Arial, sans-serif">✔ зазвичай стабільніший</text>
+    <text x="30" y="138" font-size="15" fill="#155C32" font-family="Arial, sans-serif">✔ швидкість передбачуваніша</text>
+    <text x="30" y="166" font-size="15" fill="#96271B" font-family="Arial, sans-serif">✖ пристрій прив'язаний до кабелю</text>
+
+    <rect x="436" y="10" width="418" height="186" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="460" y="44" font-size="18" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">📶 Wi-Fi • бездротове</text>
+    <text x="460" y="80" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">радіосигнал від точки доступу</text>
+    <text x="460" y="110" font-size="15" fill="#155C32" font-family="Arial, sans-serif">✔ можна пересуватися з пристроєм</text>
+    <text x="460" y="138" font-size="15" fill="#155C32" font-family="Arial, sans-serif">✔ легко підключити багато пристроїв</text>
+    <text x="460" y="166" font-size="15" fill="#96271B" font-family="Arial, sans-serif">✖ заважають стіни й відстань</text>
+
+    <rect x="6" y="208" width="848" height="44" rx="10" fill="#F0F4F8"/>
+    <text x="430" y="236" text-anchor="middle" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">Обидва способи можуть бути безпечними, якщо мережу правильно налаштовано.</text>
+  </svg>

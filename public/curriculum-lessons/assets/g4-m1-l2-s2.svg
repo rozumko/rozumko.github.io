@@ -1,0 +1,24 @@
+<svg viewBox="0 0 860 220" role="img" aria-labelledby="g4u2b-t g4u2b-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g4u2b-t">Чотири частини веб-адреси</title>
+    <desc id="g4u2b-d">Протокол https означає захищене з'єднання. Далі йде доменне ім'я — назва сайту. Закінчення домену вказує на тип або країну. Після скісної риски йде шлях до конкретної сторінки всередині сайту.</desc>
+    <rect x="6" y="14" width="848" height="54" rx="10" fill="#F0F4F8"/>
+    <text x="30" y="50" font-size="21" font-weight="700" fill="#1A1A1A" font-family="'Courier New',monospace">https://  example.com  /pages/  info.html</text>
+    <rect x="6" y="84" width="206" height="122" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="109" y="116" text-anchor="middle" font-size="17" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">https://</text>
+    <text x="109" y="148" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">протокол</text>
+    <text x="109" y="176" text-anchor="middle" font-size="15" fill="#155C32" font-family="Arial, sans-serif">🔒 з'єднання</text>
+    <text x="109" y="196" text-anchor="middle" font-size="15" fill="#155C32" font-family="Arial, sans-serif">захищене</text>
+    <rect x="224" y="84" width="206" height="122" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="327" y="116" text-anchor="middle" font-size="17" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">example</text>
+    <text x="327" y="148" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">доменне ім'я</text>
+    <text x="327" y="176" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">назва</text>
+    <text x="327" y="196" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">сайту</text>
+    <rect x="442" y="84" width="206" height="122" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="545" y="116" text-anchor="middle" font-size="17" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">.com</text>
+    <text x="545" y="148" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">тип або країна</text>
+    <text x="545" y="176" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">.ua .org .com</text>
+    <rect x="660" y="84" width="194" height="122" rx="12" fill="#F0F4F8" stroke="#0033A0" stroke-width="2"/>
+    <text x="757" y="116" text-anchor="middle" font-size="17" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">/pages/info.html</text>
+    <text x="757" y="148" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">шлях до сторінки</text>
+    <text x="757" y="176" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">усередині сайту</text>
+  </svg>

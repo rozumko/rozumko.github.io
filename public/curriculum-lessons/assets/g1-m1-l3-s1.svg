@@ -1,0 +1,28 @@
+<svg viewBox="0 0 660 320" role="img" aria-labelledby="g1u3-t g1u3-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g1u3-t">Чотири види комп'ютерів від найбільшого до найменшого</title>
+    <desc id="g1u3-d">Desktop стоїть на столі й має окремі монітор, клавіатуру та мишу. Laptop складається й носиться в рюкзаку. Tablet плоский, керується дотиком пальця. Smartphone найменший, вміщується в кишеню.</desc>
+
+    <rect x="6" y="10" width="318" height="140" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="165" y="56" text-anchor="middle" font-size="34" font-family="Arial, sans-serif">🖥️</text>
+    <text x="165" y="92" text-anchor="middle" font-size="20" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Desktop</text>
+    <text x="165" y="120" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">стоїть на столі,</text>
+    <text x="165" y="140" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">миша й клавіатура окремо</text>
+
+    <rect x="336" y="10" width="318" height="140" rx="12" fill="#F0F4F8" stroke="#0033A0" stroke-width="2"/>
+    <text x="495" y="56" text-anchor="middle" font-size="34" font-family="Arial, sans-serif">💻</text>
+    <text x="495" y="92" text-anchor="middle" font-size="20" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Laptop</text>
+    <text x="495" y="120" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">складається навпіл,</text>
+    <text x="495" y="140" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">носиться в рюкзаку</text>
+
+    <rect x="6" y="166" width="318" height="140" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="165" y="212" text-anchor="middle" font-size="34" font-family="Arial, sans-serif">📱</text>
+    <text x="165" y="248" text-anchor="middle" font-size="20" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">Tablet</text>
+    <text x="165" y="276" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">плоский, слухається</text>
+    <text x="165" y="296" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">дотику пальця</text>
+
+    <rect x="336" y="166" width="318" height="140" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="495" y="212" text-anchor="middle" font-size="34" font-family="Arial, sans-serif">📲</text>
+    <text x="495" y="248" text-anchor="middle" font-size="20" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">Smartphone</text>
+    <text x="495" y="276" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">найменший,</text>
+    <text x="495" y="296" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">вміщується в кишеню</text>
+  </svg>

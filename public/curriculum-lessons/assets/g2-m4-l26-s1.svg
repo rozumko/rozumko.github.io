@@ -1,0 +1,44 @@
+<svg viewBox="0 0 800 240" role="img" aria-labelledby="svg-title-seq svg-desc-seq" style="display:block;width:100%;height:auto;max-width:800px;margin:18px auto;" xmlns="http://www.w3.org/2000/svg">
+      <title id="svg-title-seq">Планування руху спрайта за послідовністю блоків</title>
+      <desc id="svg-desc-seq">Схема демонструє рух котика на сітці від початкової позиції через блоки переміщення та повороту до кінцевої позиції зі зірочкою.</desc>
+      
+      <!-- Grid Area -->
+      <rect x="20" y="20" width="360" height="200" rx="8" fill="#FFFFFF" stroke="#D9E2F0" stroke-width="2"/>
+      
+      <!-- Grid Lines -->
+      <line x1="110" y1="20" x2="110" y2="220" stroke="#E2E8F0" stroke-width="1.5"/>
+      <line x1="200" y1="20" x2="200" y2="220" stroke="#E2E8F0" stroke-width="1.5"/>
+      <line x1="290" y1="20" x2="290" y2="220" stroke="#E2E8F0" stroke-width="1.5"/>
+      <line x1="20" y1="70" x2="380" y2="70" stroke="#E2E8F0" stroke-width="1.5"/>
+      <line x1="20" y1="120" x2="380" y2="120" stroke="#E2E8F0" stroke-width="1.5"/>
+      <line x1="20" y1="170" x2="380" y2="170" stroke="#E2E8F0" stroke-width="1.5"/>
+
+      <!-- Start Position (A1) -->
+      <rect x="25" y="175" width="80" height="40" rx="6" fill="#FFD700"/>
+      <text x="65" y="200" font-family="sans-serif" font-size="12" font-weight="bold" fill="#1A1A1A" text-anchor="middle">🐱 Start</text>
+
+      <!-- Path arrow -->
+      <path d="M 65 175 L 65 95 L 245 95" stroke="#0033A0" stroke-width="3" stroke-dasharray="6,4" fill="none"/>
+      <polygon points="245,90 255,95 245,100" fill="#0033A0"/>
+
+      <!-- End Position (C3) -->
+      <rect x="255" y="75" width="80" height="40" rx="6" fill="#0033A0"/>
+      <text x="295" y="100" font-family="sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">⭐ End</text>
+
+      <!-- Code Sequence Box -->
+      <rect x="420" y="20" width="360" height="200" rx="10" fill="#F0F4F8" stroke="#0033A0" stroke-width="2"/>
+      <rect x="420" y="20" width="360" height="36" rx="10" fill="#0033A0"/>
+      <text x="600" y="44" font-family="sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Послідовність блоків (Sequence)</text>
+
+      <rect x="440" y="68" width="320" height="26" rx="4" fill="#FFD700"/>
+      <text x="600" y="85" font-family="sans-serif" font-size="12" font-weight="bold" fill="#1A1A1A" text-anchor="middle">коли 🚩 натиснуто</text>
+
+      <rect x="440" y="100" width="320" height="26" rx="4" fill="#4C97FF"/>
+      <text x="600" y="117" font-family="sans-serif" font-size="12" fill="#FFFFFF" text-anchor="middle">перемістити на 60 кроків (steps)</text>
+
+      <rect x="440" y="132" width="320" height="26" rx="4" fill="#4C97FF"/>
+      <text x="600" y="149" font-family="sans-serif" font-size="12" fill="#FFFFFF" text-anchor="middle">поворот ↷ на 90 градусів (turn)</text>
+
+      <rect x="440" y="164" width="320" height="26" rx="4" fill="#4C97FF"/>
+      <text x="600" y="181" font-family="sans-serif" font-size="12" fill="#FFFFFF" text-anchor="middle">перемістити на 100 кроків (steps)</text>
+    </svg>

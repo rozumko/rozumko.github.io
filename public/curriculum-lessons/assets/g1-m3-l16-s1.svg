@@ -1,0 +1,44 @@
+<svg viewBox="0 0 600 180" style="width: 100%; height: auto; display: block; margin: 16px 0;" aria-label="Схема сортування об'єктів" xmlns="http://www.w3.org/2000/svg">
+      <!-- Background -->
+      <rect width="600" height="180" rx="10" fill="#FAFDFE" stroke="#BCE3F9" stroke-width="2"/>
+
+      <!-- Left Side: Objects -->
+      <g transform="translate(10, 10)">
+        <rect x="10" y="30" width="130" height="100" rx="8" fill="#ffffff" stroke="#0033A0" stroke-dasharray="4 4" stroke-width="2"/>
+        <text x="75" y="55" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#0033A0" text-anchor="middle">Об'єкти (Objects)</text>
+        <text x="75" y="95" font-family="system-ui, sans-serif" font-size="22" text-anchor="middle">🍎 🍌 🔴 🟡</text>
+      </g>
+
+      <!-- Arrow 1 -->
+      <g transform="translate(160, 75)">
+        <path d="M 0 5 L 40 5 L 40 0 L 50 8 L 40 16 L 40 11 L 0 11 Z" fill="#41B6E6"/>
+        <text x="25" y="-5" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#0033A0" text-anchor="middle">Властивості</text>
+      </g>
+
+      <!-- Middle Side: Rule (AI/Human) -->
+      <g transform="translate(230, 10)">
+        <rect x="0" y="30" width="140" height="100" rx="8" fill="#FFFDF0" stroke="#FFE0A3" stroke-width="2"/>
+        <text x="70" y="55" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#B38600" text-anchor="middle">Правило сортування</text>
+        <text x="70" y="75" font-family="system-ui, sans-serif" font-size="12" fill="#555555" text-anchor="middle">«За КОЛЬОРОМ»</text>
+        <text x="70" y="95" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#B38600" text-anchor="middle">Color Rule 🎨</text>
+      </g>
+
+      <!-- Arrow 2 -->
+      <g transform="translate(390, 75)">
+        <path d="M 0 5 L 40 5 L 40 0 L 50 8 L 40 16 L 40 11 L 0 11 Z" fill="#41B6E6"/>
+        <text x="25" y="-5" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#0033A0" text-anchor="middle">Розподіл</text>
+      </g>
+
+      <!-- Right Side: Sorted Groups -->
+      <g transform="translate(460, 10)">
+        <!-- Red Box -->
+        <rect x="0" y="15" width="110" height="60" rx="6" fill="#FFF2F2" stroke="#F9D2D2" stroke-width="1.5"/>
+        <text x="55" y="32" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#D32F2F" text-anchor="middle">Червоні (Red) 🔴</text>
+        <text x="55" y="58" font-family="system-ui, sans-serif" font-size="18" text-anchor="middle">🍎 🔴</text>
+
+        <!-- Yellow Box -->
+        <rect x="0" y="85" width="110" height="60" rx="6" fill="#FFFDF0" stroke="#FFE0A3" stroke-width="1.5"/>
+        <text x="55" y="102" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#B38600" text-anchor="middle">Жовті (Yellow) 🟡</text>
+        <text x="55" y="128" font-family="system-ui, sans-serif" font-size="18" text-anchor="middle">🍌 🟡</text>
+      </g>
+    </svg>

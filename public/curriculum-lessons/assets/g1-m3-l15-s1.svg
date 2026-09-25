@@ -1,0 +1,40 @@
+<svg viewBox="0 0 740 280" width="100%" style="background-color: #FAFDFE; border: 1px solid #BCE3F9; border-radius: 8px;" role="img" aria-label="Схема зв'язку органів чуття, типів даних та пристроїв комп'ютера" xmlns="http://www.w3.org/2000/svg">
+        <!-- Main Title -->
+        <text x="370" y="30" text-anchor="middle" fill="#0033A0" font-size="16" font-weight="bold">Як наші відчуття стають даними комп'ютера</text>
+
+        <!-- Headers -->
+        <text x="92.5" y="70" text-anchor="middle" fill="#555555" font-size="14" font-weight="bold">Як отримуємо</text>
+        <text x="277.5" y="70" text-anchor="middle" fill="#555555" font-size="14" font-weight="bold">Що робимо</text>
+        <text x="462.5" y="70" text-anchor="middle" fill="#0033A0" font-size="14" font-weight="bold">Тип даних (Data Type)</text>
+        <text x="647.5" y="70" text-anchor="middle" fill="#2E7D32" font-size="14" font-weight="bold">Пристрій введення</text>
+
+        <!-- Rows backgrounds -->
+        <rect x="10" y="85" width="720" height="40" rx="6" fill="#FFFDF0" stroke="#FFE0A3" stroke-width="1"/>
+        <rect x="10" y="130" width="720" height="40" rx="6" fill="#F0FBF4" stroke="#BCF9C8" stroke-width="1"/>
+        <rect x="10" y="175" width="720" height="40" rx="6" fill="#F4F8FF" stroke="#BCE3F9" stroke-width="1"/>
+        <rect x="10" y="220" width="720" height="40" rx="6" fill="#FFF5F5" stroke="#F9D2D2" stroke-width="1"/>
+
+        <!-- Row 1: Word -->
+        <text x="92.5" y="110" text-anchor="middle" font-size="14" fill="#333333">👀 Очі (Sight)</text>
+        <text x="277.5" y="110" text-anchor="middle" font-size="14" fill="#555555">📖 Читання букв</text>
+        <text x="462.5" y="110" text-anchor="middle" font-size="14" fill="#0033A0" font-weight="bold">📝 Word (слово)</text>
+        <text x="647.5" y="110" text-anchor="middle" font-size="14" fill="#2E7D32">⌨️ Keyboard (клавіатура)</text>
+
+        <!-- Row 2: Number -->
+        <text x="92.5" y="155" text-anchor="middle" font-size="14" fill="#333333">🔢 Лічба</text>
+        <text x="277.5" y="155" text-anchor="middle" font-size="14" fill="#555555">🔢 Лічба предметів</text>
+        <text x="462.5" y="155" text-anchor="middle" font-size="14" fill="#0033A0" font-weight="bold">🔢 Number (число)</text>
+        <text x="647.5" y="155" text-anchor="middle" font-size="14" fill="#2E7D32">⌨️ Keyboard / Mouse</text>
+
+        <!-- Row 3: Image -->
+        <text x="92.5" y="200" text-anchor="middle" font-size="14" fill="#333333">👀 Очі (Sight)</text>
+        <text x="277.5" y="200" text-anchor="middle" font-size="14" fill="#555555">🖼️ Споглядання краси</text>
+        <text x="462.5" y="200" text-anchor="middle" font-size="14" fill="#0033A0" font-weight="bold">🖼️ Image (зображення)</text>
+        <text x="647.5" y="200" text-anchor="middle" font-size="14" fill="#2E7D32">📸 Camera / Touchscreen</text>
+
+        <!-- Row 4: Sound -->
+        <text x="92.5" y="245" text-anchor="middle" font-size="14" fill="#333333">👂 Вуха (Hearing)</text>
+        <text x="277.5" y="245" text-anchor="middle" font-size="14" fill="#555555">🎵 Слухання звуків</text>
+        <text x="462.5" y="245" text-anchor="middle" font-size="14" fill="#0033A0" font-weight="bold">🔊 Sound (звук)</text>
+        <text x="647.5" y="245" text-anchor="middle" font-size="14" fill="#2E7D32">🎙️ Microphone (мікрофон)</text>
+      </svg>

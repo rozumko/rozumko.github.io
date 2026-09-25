@@ -1,0 +1,19 @@
+<svg viewBox="0 0 780 140" role="img" aria-labelledby="g2u4b-t g2u4b-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g2u4b-t">Три значки стану з'єднання</title>
+    <desc id="g2u4b-d">Значок дуг означає підключення через Wi-Fi. Значок штекера означає підключення кабелем. Перекреслений значок означає, що мережі немає і пристрій офлайн.</desc>
+
+    <rect x="6" y="10" width="248" height="120" rx="10" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="130" y="56" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">📶</text>
+    <text x="130" y="88" text-anchor="middle" font-size="17" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">Wi-Fi</text>
+    <text x="130" y="114" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">підключено без дроту</text>
+
+    <rect x="266" y="10" width="248" height="120" rx="10" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="390" y="56" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">🔌</text>
+    <text x="390" y="88" text-anchor="middle" font-size="17" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Ethernet</text>
+    <text x="390" y="114" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">підключено кабелем</text>
+
+    <rect x="526" y="10" width="248" height="120" rx="10" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+    <text x="650" y="56" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">❌</text>
+    <text x="650" y="88" text-anchor="middle" font-size="17" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">Not connected</text>
+    <text x="650" y="114" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">мережі немає, офлайн</text>
+  </svg>

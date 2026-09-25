@@ -1,0 +1,50 @@
+<svg viewBox="0 0 600 320" role="img" aria-labelledby="lesson-svg-title lesson-svg-desc" style="display:block;width:100%;height:auto;max-width:600px;margin:16px auto;" xmlns="http://www.w3.org/2000/svg">
+        <title id="lesson-svg-title">Схема навчання штучного інтелекту</title>
+        <desc id="lesson-svg-desc">Ця схема показує, як ШІ вчиться на прикладах червоних машинок і синіх літаків, і чому він помиляється при зустрічі з синьою машинкою.</desc>
+        <!-- Background elements -->
+        <rect x="10" y="10" width="580" height="300" rx="6" fill="#FAFAFA"/>
+
+        <!-- Step 1: Training Set -->
+        <rect x="20" y="30" width="160" height="110" rx="8" fill="#ffffff" stroke="#0033A0" stroke-width="2"/>
+        <text x="100" y="55" font-size="12" font-family="sans-serif" font-weight="bold" fill="#0033A0" text-anchor="middle">Приклади для навчання</text>
+        <!-- Red cars -->
+        <circle cx="50" cy="85" r="10" fill="#D32F2F"/>
+        <text x="50" y="110" font-size="12" font-family="sans-serif" fill="#1A1A1A" text-anchor="middle">Червоні машинки</text>
+        <!-- Blue plane placeholder -->
+        <polygon points="140,75 155,95 125,95" fill="#0033A0"/>
+        <text x="140" y="110" font-size="12" font-family="sans-serif" fill="#1A1A1A" text-anchor="middle">Синій літак</text>
+
+        <!-- Arrow to AI -->
+        <path d="M 190 85 L 240 85" stroke="#FFD700" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+
+        <!-- Step 2: AI learning patterns -->
+        <rect x="250" y="30" width="150" height="110" rx="8" fill="#FFFDF0" stroke="#FFE0A3" stroke-width="2"/>
+        <text x="325" y="55" font-size="12" font-family="sans-serif" font-weight="bold" fill="#B38600" text-anchor="middle">ШІ знаходить закономірність</text>
+        <text x="325" y="80" font-size="12" font-family="sans-serif" fill="#1A1A1A" text-anchor="middle">Система може пов'язати</text>
+        <text x="325" y="100" font-size="12" font-family="sans-serif" fill="#1A1A1A" text-anchor="middle">синій колір із літаками</text>
+
+        <!-- Arrow to Test -->
+        <path d="M 325 150 L 325 190" stroke="#FFD700" stroke-width="3" fill="none"/>
+
+        <!-- Step 3: Test Object -->
+        <rect x="20" y="190" width="160" height="100" rx="8" fill="#ffffff" stroke="#0033A0" stroke-width="2"/>
+        <text x="100" y="215" font-size="12" font-family="sans-serif" font-weight="bold" fill="#0033A0" text-anchor="middle">Новий предмет</text>
+        <circle cx="100" cy="245" r="10" fill="#0033A0"/>
+        <text x="100" y="275" font-size="12" font-family="sans-serif" fill="#D32F2F" font-weight="bold" text-anchor="middle">Синя машинка</text>
+
+        <!-- Arrow from Test to Prediction -->
+        <path d="M 190 240 L 240 240" stroke="#FFD700" stroke-width="3" fill="none"/>
+
+        <!-- Step 4: Output / Error -->
+        <rect x="250" y="190" width="320" height="100" rx="8" fill="#FFF2F2" stroke="#F9D2D2" stroke-width="2"/>
+        <text x="410" y="215" font-size="12" font-family="sans-serif" font-weight="bold" fill="#D32F2F" text-anchor="middle">Передбачення ШІ (Prediction)</text>
+        <text x="410" y="245" font-size="14" font-family="sans-serif" font-weight="bold" fill="#0033A0" text-anchor="middle">"Це ЛІТАК!" ❌</text>
+      <text x="410" y="270" font-size="12" font-family="sans-serif" fill="#D32F2F" text-anchor="middle">Помилка через недостатньо різні приклади</text>
+
+        <!-- Definitions for arrows -->
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#FFD700"/>
+          </marker>
+        </defs>
+      </svg>

@@ -1,0 +1,20 @@
+<svg viewBox="0 0 860 220" role="img" aria-labelledby="g3u10a-t g3u10a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g3u10a-t">Три питання перед використанням чужого матеріалу</title>
+    <desc id="g3u10a-d">Перше питання: чи безпечно відкривати сайт — це вирішує вчитель. Друге: чи дозволено використовувати матеріал — це каже дозвіл автора або ліцензія. Третє: як підписати — вказати автора і джерело. Безпечний сайт ще не означає дозвіл, а підпис не замінює дозволу.</desc>
+    <rect x="6" y="14" width="272" height="150" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="142" y="52" text-anchor="middle" font-size="26" font-family="Arial, sans-serif">🛡</text>
+    <text x="142" y="86" text-anchor="middle" font-size="17" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">1. Чи безпечно?</text>
+    <text x="142" y="114" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">сайт перевірив учитель</text>
+    <text x="142" y="140" text-anchor="middle" font-size="15" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">safety</text>
+    <rect x="294" y="14" width="272" height="150" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="430" y="52" text-anchor="middle" font-size="26" font-family="Arial, sans-serif">✅</text>
+    <text x="430" y="86" text-anchor="middle" font-size="17" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">2. Чи дозволено?</text>
+    <text x="430" y="114" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">дозвіл автора або ліцензія</text>
+    <text x="430" y="140" text-anchor="middle" font-size="15" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">permission / licence</text>
+    <rect x="582" y="14" width="272" height="150" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="718" y="52" text-anchor="middle" font-size="26" font-family="Arial, sans-serif">🏷</text>
+    <text x="718" y="86" text-anchor="middle" font-size="17" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">3. Як підписати?</text>
+    <text x="718" y="114" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">автор + джерело</text>
+    <text x="718" y="140" text-anchor="middle" font-size="15" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">credit</text>
+    <text x="430" y="200" text-anchor="middle" font-size="16" fill="#3D4757" font-family="Arial, sans-serif">Безпечний сайт — ще не дозвіл. Підпис не замінює дозволу.</text>
+  </svg>

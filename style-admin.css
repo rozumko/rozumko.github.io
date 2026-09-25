@@ -1189,6 +1189,7 @@
 .cl-import-help { margin: var(--sp-3) 0 var(--sp-4); padding: var(--sp-3) var(--sp-4); border: 1px solid var(--adm-border); border-radius: var(--r-md); color: var(--adm-text); }
 .cl-import-help > summary { cursor: pointer; font-weight: 600; }
 .cl-import-help > p { margin: var(--sp-3) 0; }
+.cl-import-help > ol { margin: var(--sp-3) 0; padding-left: 1.5em; }
 .cl-import-help > textarea { display: block; width: 100%; margin: var(--sp-2) 0; }
 .cl-ed-header { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-3); }
 .cl-ed-header .admin-section-title { margin: 0; }
@@ -1299,13 +1300,11 @@
 .cl-insert__menu[hidden] { display: none; }
 .cl-insert__title { margin: 0 0 var(--sp-2); font-size: var(--font-size-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--adm-text-muted); }
 .cl-insert__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: var(--sp-2); }
-.cl-insert__grid--compact { grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); margin-top: var(--sp-2); }
 .cl-insert__choice { display: grid; gap: 2px; padding: var(--sp-2) var(--sp-3); border: 1px solid var(--adm-border); border-radius: var(--r-sm); background: var(--adm-bg); color: var(--adm-text); font: inherit; text-align: left; cursor: pointer; }
 .cl-insert__choice span { font-size: var(--font-size-xs); color: var(--adm-text-muted); }
 .cl-insert__choice:hover:not(:disabled) { border-color: var(--adm-sky); }
 .cl-insert__choice:focus-visible { outline: 3px solid var(--adm-sky); outline-offset: 1px; }
 .cl-insert__choice:disabled { opacity: 0.5; cursor: default; }
-.cl-insert__more > summary { cursor: pointer; font-weight: 700; color: var(--adm-text-muted); }
 /* Drag and drop of blocks */
 .cl-block__handle { position: absolute; z-index: 1; top: var(--sp-3); left: var(--sp-2); display: grid; place-items: center; width: 1.5rem; height: 1.5rem; color: var(--adm-text-faint); cursor: grab; user-select: none; }
 .cl-block__handle:hover { color: var(--adm-sky); }
@@ -1317,7 +1316,10 @@
 .cl-answer-row > input[type="radio"] { width: 1.2rem; height: 1.2rem; }
 .cl-advanced { border-top: 1px solid var(--adm-border); padding-top: var(--sp-2); }
 .cl-advanced > summary { color: var(--adm-sky); cursor: pointer; font-size: var(--font-size-sm); }
-.cl-advanced > .cl-field { margin-top: var(--sp-3); }
+.cl-advanced > .cl-field, .cl-advanced > .cl-switches, .cl-advanced > .adm-form-grid { margin-top: var(--sp-3); }
+/* An old-type block offers a one-click conversion to «Текст і медіа». */
+.cl-convert { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); padding: var(--sp-3); border: 1px dashed var(--adm-border); border-radius: var(--r-md); background: var(--adm-tint); }
+.cl-convert p { flex: 1 1 18rem; margin: 0; font-size: var(--font-size-sm); color: var(--adm-text-muted); }
 .cl-block-issues { margin: 0; padding-left: var(--sp-5); color: var(--adm-danger-text); font-size: var(--font-size-sm); }
 .cl-badge--error { background: var(--adm-danger-soft); color: var(--adm-danger-strong); }
 .cl-json { font-family: 'Courier New', monospace; font-size: var(--font-size-xs); }

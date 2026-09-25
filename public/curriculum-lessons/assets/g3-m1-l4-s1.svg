@@ -1,0 +1,16 @@
+<svg viewBox="0 0 860 250" role="img" aria-labelledby="g3u4a-t g3u4a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g3u4a-t">Фраза наодинці і та сама фраза в груповому чаті</title>
+    <desc id="g3u4a-d">Наодинці фразу чують двоє, вона не зберігається, а голос і обличчя допомагають зрозуміти жарт. У груповому чаті її бачить уся група, її можна перечитати й переслати, а голосу й обличчя немає, тож жарт легше зрозуміти не так.</desc>
+    <rect x="6" y="14" width="418" height="222" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="215" y="50" text-anchor="middle" font-size="18" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">🗣️ Наодинці</text>
+    <text x="32" y="90" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">👥 Чують двоє</text>
+    <text x="32" y="126" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">⏳ Не зберігається</text>
+    <text x="32" y="162" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">😊 Видно обличчя й тон</text>
+    <text x="32" y="212" font-size="15" fill="#155C32" font-family="Arial, sans-serif">Жарт легше зрозуміти як жарт</text>
+    <rect x="442" y="14" width="412" height="222" rx="12" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+    <text x="648" y="50" text-anchor="middle" font-size="18" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">💬 У груповому чаті</text>
+    <text x="468" y="90" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">👥 Бачить уся група</text>
+    <text x="468" y="126" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">📌 Можна перечитати й переслати</text>
+    <text x="468" y="162" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">🚫 Немає голосу й обличчя</text>
+    <text x="468" y="212" font-size="15" fill="#96271B" font-family="Arial, sans-serif">Жарт легше зрозуміти не так</text>
+  </svg>

@@ -1,0 +1,18 @@
+<svg viewBox="0 0 860 240" role="img" aria-labelledby="g3u31a-t g3u31a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g3u31a-t">Вісім блоків і цикл «повторити 4» з однаковим результатом</title>
+    <desc id="g3u31a-d">Ліворуч вісім блоків: чотири рази «перемістити на 50 кроків» і «поворот на 90 градусів». Праворуч один блок «повторити 4», а в ньому два блоки. Обидва варіанти малюють той самий квадрат.</desc>
+    <rect x="6" y="14" width="418" height="190" rx="12" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+    <text x="215" y="44" text-anchor="middle" font-size="17" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">Без циклу: 8 блоків</text>
+    <text x="40" y="76" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">перемістити на 50 · поворот ↻ 90</text>
+    <text x="40" y="102" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">перемістити на 50 · поворот ↻ 90</text>
+    <text x="40" y="128" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">перемістити на 50 · поворот ↻ 90</text>
+    <text x="40" y="154" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">перемістити на 50 · поворот ↻ 90</text>
+    <text x="215" y="188" text-anchor="middle" font-size="15" fill="#96271B" font-family="Arial, sans-serif">легко збитися й пропустити пару</text>
+    <rect x="442" y="14" width="412" height="190" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="648" y="44" text-anchor="middle" font-size="17" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">З циклом: 3 блоки</text>
+    <text x="480" y="86" font-size="16" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">повторити (4)</text>
+    <text x="510" y="116" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">перемістити на 50 кроків</text>
+    <text x="510" y="142" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">поворот ↻ на 90 градусів</text>
+    <text x="648" y="188" text-anchor="middle" font-size="15" fill="#155C32" font-family="Arial, sans-serif">коротше й легше змінити</text>
+    <text x="430" y="228" text-anchor="middle" font-size="16" fill="#3D4757" font-family="Arial, sans-serif">Результат однаковий: той самий квадрат ⬜</text>
+  </svg>

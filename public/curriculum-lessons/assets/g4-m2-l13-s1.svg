@@ -1,0 +1,38 @@
+<svg viewBox="0 0 860 230" role="img" aria-labelledby="g4u13a-t g4u13a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g4u13a-t">Шлях даних від датчика до пристрою виведення</title>
+    <desc id="g4u13a-d">Чотири кроки. Датчик вимірює температуру в теплиці. Дані: показник 28 градусів. Програма перевіряє правило: якщо температура більша за 25 градусів, увімкнути вентилятор. Виведення: вентилятор вмикається, на екрані з'являється попередження.</desc>
+    <g font-family="Arial, sans-serif">
+      <rect x="6" y="20" width="196" height="170" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+      <text x="104" y="56" text-anchor="middle" font-size="17" font-weight="700" fill="#0033A0">1. SENSOR</text>
+      <text x="104" y="98" text-anchor="middle" font-size="30">🌡️</text>
+      <text x="104" y="140" text-anchor="middle" font-size="15" fill="#3D4757">вимірює</text>
+      <text x="104" y="162" text-anchor="middle" font-size="15" fill="#3D4757">температуру</text>
+
+      <path d="M204 105 H214" fill="none" stroke="#0033A0" stroke-width="3"/><polygon points="212,97 224,105 212,113" fill="#0033A0"/>
+
+      <rect x="226" y="20" width="196" height="170" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+      <text x="324" y="56" text-anchor="middle" font-size="17" font-weight="700" fill="#7A5A00">2. DATA</text>
+      <text x="324" y="106" text-anchor="middle" font-size="30" font-weight="700" fill="#0033A0">28 °C</text>
+      <text x="324" y="150" text-anchor="middle" font-size="15" fill="#3D4757">показник</text>
+      <text x="324" y="172" text-anchor="middle" font-size="15" fill="#3D4757">(reading)</text>
+
+      <path d="M424 105 H434" fill="none" stroke="#0033A0" stroke-width="3"/><polygon points="432,97 444,105 432,113" fill="#0033A0"/>
+
+      <rect x="446" y="20" width="196" height="170" rx="12" fill="#0033A0"/>
+      <text x="544" y="56" text-anchor="middle" font-size="17" font-weight="700" fill="#FFFFFF">3. PROGRAM</text>
+      <text x="544" y="104" text-anchor="middle" font-size="15" fill="#FFFFFF">якщо більше</text>
+      <text x="544" y="126" text-anchor="middle" font-size="15" fill="#FFFFFF">за 25 °C —</text>
+      <text x="544" y="148" text-anchor="middle" font-size="15" fill="#FFD700">увімкни</text>
+      <text x="544" y="170" text-anchor="middle" font-size="15" fill="#FFD700">вентилятор</text>
+
+      <path d="M644 105 H654" fill="none" stroke="#0033A0" stroke-width="3"/><polygon points="652,97 664,105 652,113" fill="#0033A0"/>
+
+      <rect x="666" y="20" width="188" height="170" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+      <text x="760" y="56" text-anchor="middle" font-size="17" font-weight="700" fill="#155C32">4. OUTPUT</text>
+      <text x="760" y="98" text-anchor="middle" font-size="30">🌀</text>
+      <text x="760" y="140" text-anchor="middle" font-size="15" fill="#3D4757">вентилятор,</text>
+      <text x="760" y="162" text-anchor="middle" font-size="15" fill="#3D4757">попередження</text>
+
+      <text x="430" y="218" text-anchor="middle" font-size="15" fill="#3D4757">датчик → дані → програма → пристрій виведення</text>
+    </g>
+  </svg>

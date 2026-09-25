@@ -1,0 +1,35 @@
+<svg viewBox="0 0 500 130" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: auto; display: block; margin: 0 auto; max-width: 450px;" aria-label="Схема створення малюнка: від ідеї до збереження файлу підписаного автором">
+        <!-- Background grid/styles -->
+        <rect width="500" height="130" rx="8" fill="#FFFFFF"/>
+
+        <!-- Step 1: Idea / Author -->
+        <rect x="15" y="25" width="110" height="80" rx="6" fill="#F0F4F8" stroke="#0033A0" stroke-width="1.5"/>
+        <text x="70" y="50" font-size="12" font-weight="bold" fill="#0033A0" text-anchor="middle">1. Задум</text>
+        <text x="70" y="70" font-size="10" fill="#555555" text-anchor="middle">Автор (Author)</text>
+        <text x="70" y="90" font-size="11" font-weight="bold" fill="#333333" text-anchor="middle">Людина 🧑‍🎨</text>
+
+        <!-- Arrow 1 -->
+        <path d="M 135 65 L 165 65" stroke="#41B6E6" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+
+        <!-- Step 2: Tools -->
+        <rect x="180" y="25" width="140" height="80" rx="6" fill="#FAFDFE" stroke="#41B6E6" stroke-width="1.5"/>
+        <text x="250" y="48" font-size="11" font-weight="bold" fill="#0033A0" text-anchor="middle">2. Інструменти</text>
+        <text x="250" y="68" font-size="10" fill="#333333" text-anchor="middle">Пензлик • Фігури • Гумка</text>
+        <text x="250" y="88" font-size="10" font-weight="bold" fill="#D32F2F" text-anchor="middle">Скасування (Undo) ↩️</text>
+
+        <!-- Arrow 2 -->
+        <path d="M 330 65 L 360 65" stroke="#41B6E6" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+
+        <!-- Step 3: Saved Artefact -->
+        <rect x="375" y="25" width="110" height="80" rx="6" fill="#E8F5E9" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="430" y="50" font-size="12" font-weight="bold" fill="#2E7D32" text-anchor="middle">3. Результат</text>
+        <text x="430" y="70" font-size="10" fill="#555555" text-anchor="middle">Збереження (Save)</text>
+        <text x="430" y="90" font-size="11" font-weight="bold" fill="#2E7D32" text-anchor="middle">Мій малюнок 🖼️</text>
+
+        <!-- Defs for arrows -->
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1 L 10 5 L 0 9 z" fill="#41B6E6"/>
+          </marker>
+        </defs>
+      </svg>

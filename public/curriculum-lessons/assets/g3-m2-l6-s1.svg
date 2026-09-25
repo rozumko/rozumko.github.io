@@ -1,0 +1,26 @@
+<svg viewBox="0 0 860 240" role="img" aria-labelledby="g3u6a-t g3u6a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g3u6a-t">Гіперпосилання і QR-код</title>
+    <desc id="g3u6a-d">Ліворуч гіперпосилання: це може бути підкреслений текст, кнопка або картинка, яку натискають. Праворуч QR-код: камера зчитує його, пристрій показує адресу й питає, чи відкрити її. Спершу читаєш адресу, потім вирішуєш.</desc>
+    <rect x="6" y="14" width="418" height="200" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="215" y="48" text-anchor="middle" font-size="18" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">🔗 Гіперпосилання</text>
+    <text x="40" y="92" font-size="16" fill="#0033A0" text-decoration="underline" font-family="Arial, sans-serif">Читати про дельфінів</text>
+    <rect x="40" y="110" width="170" height="36" rx="8" fill="#0033A0"/>
+    <text x="125" y="134" text-anchor="middle" font-size="16" font-weight="700" fill="#FFFFFF" font-family="Arial, sans-serif">Відкрити гру</text>
+    <rect x="240" y="104" width="150" height="48" rx="8" fill="#FFFFFF" stroke="#0033A0" stroke-width="2"/>
+    <text x="315" y="136" text-anchor="middle" font-size="24" font-family="Arial, sans-serif">🖼️ 🐬</text>
+    <text x="215" y="190" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">текст, кнопка чи картинка — натискаєш</text>
+
+    <rect x="442" y="14" width="412" height="200" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="648" y="48" text-anchor="middle" font-size="18" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">▦ QR-код</text>
+    <rect x="470" y="72" width="80" height="80" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>
+    <rect x="478" y="80" width="22" height="22" fill="#1A1A1A"/>
+    <rect x="520" y="80" width="22" height="22" fill="#1A1A1A"/>
+    <rect x="478" y="122" width="22" height="22" fill="#1A1A1A"/>
+    <rect x="522" y="124" width="10" height="10" fill="#1A1A1A"/>
+    <path d="M560 112 H600" fill="none" stroke="#B38600" stroke-width="3"/>
+    <polygon points="600,105 612,112 600,119" fill="#B38600"/>
+    <rect x="620" y="76" width="214" height="72" rx="10" fill="#FFFFFF" stroke="#B38600" stroke-width="2"/>
+    <text x="727" y="104" text-anchor="middle" font-size="15" fill="#1A1A1A" font-family="Arial, sans-serif">Відкрити itnauka.org?</text>
+    <text x="727" y="132" text-anchor="middle" font-size="15" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">Так  /  Ні</text>
+    <text x="648" y="190" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">спершу читаєш адресу — потім вирішуєш</text>
+  </svg>

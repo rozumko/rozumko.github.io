@@ -1,0 +1,22 @@
+<svg viewBox="0 0 780 330" role="img" aria-labelledby="g2u3a-t g2u3a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g2u3a-t">Три види помічників: програма, автоматизація, штучний інтелект</title>
+    <desc id="g2u3a-d">Програма виконує команди й дає завжди однаковий результат, наприклад калькулятор. Автоматизація сама виконує дію за заданим правилом «якщо, то», наприклад автоматичні двері. Штучний інтелект працює з даними, шукає в них закономірності й може помилятися, наприклад голосовий помічник.</desc>
+
+    <rect x="6" y="14" width="768" height="94" rx="10" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="34" y="46" font-size="26" font-family="Arial, sans-serif">📱</text>
+    <text x="76" y="46" font-size="18" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Програма</text>
+    <text x="76" y="72" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">Виконує команди. Результат завжди однаковий.</text>
+    <text x="76" y="95" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">Приклад: калькулятор. 2 + 2 — і сьогодні, і завтра 4.</text>
+
+    <rect x="6" y="118" width="768" height="94" rx="10" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="34" y="150" font-size="26" font-family="Arial, sans-serif">🚦</text>
+    <text x="76" y="150" font-size="18" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">Автоматизація</text>
+    <text x="76" y="176" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">Сама виконує дію за заданим правилом «якщо, то».</text>
+    <text x="76" y="199" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">Приклад: двері в магазині. Є рух — відчиняються.</text>
+
+    <rect x="6" y="222" width="768" height="94" rx="10" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="34" y="254" font-size="26" font-family="Arial, sans-serif">🧠</text>
+    <text x="76" y="254" font-size="18" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">Штучний інтелект (ШІ)</text>
+    <text x="76" y="280" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">Працює з даними й шукає в них закономірності. Може помилятися.</text>
+    <text x="76" y="303" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">Приклад: голосовий помічник упізнає різні голоси.</text>
+  </svg>

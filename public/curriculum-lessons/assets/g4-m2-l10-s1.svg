@@ -1,0 +1,17 @@
+<svg viewBox="0 0 860 260" role="img" aria-labelledby="g4u10a-t g4u10a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g4u10a-t">Та сама картинка з різною роздільною здатністю</title>
+    <desc id="g4u10a-d">Три однакові квадрати з жовтим колом. Перший поділено на 4 на 4 — 16 пікселів. Другий на 8 на 8 — 64 пікселі. Третій на 16 на 16 — 256 пікселів. Що більше пікселів, то чіткіша картинка і то більше даних треба зберегти.</desc>
+    <g fill="#FFF9DB" stroke="#0033A0" stroke-width="2">
+      <rect x="60" y="40" width="160" height="160"/><rect x="350" y="40" width="160" height="160"/><rect x="640" y="40" width="160" height="160"/>
+    </g>
+    <g fill="#FFD700"><circle cx="140" cy="120" r="55"/><circle cx="430" cy="120" r="55"/><circle cx="720" cy="120" r="55"/></g>
+    <g stroke="#0033A0" stroke-width="1" fill="none" opacity="0.6">
+      <path d="M100 40V200M60 80H220M140 40V200M60 120H220M180 40V200M60 160H220"/>
+      <path d="M370 40V200M350 60H510M390 40V200M350 80H510M410 40V200M350 100H510M430 40V200M350 120H510M450 40V200M350 140H510M470 40V200M350 160H510M490 40V200M350 180H510"/>
+      <path d="M650 40V200M640 50H800M660 40V200M640 60H800M670 40V200M640 70H800M680 40V200M640 80H800M690 40V200M640 90H800M700 40V200M640 100H800M710 40V200M640 110H800M720 40V200M640 120H800M730 40V200M640 130H800M740 40V200M640 140H800M750 40V200M640 150H800M760 40V200M640 160H800M770 40V200M640 170H800M780 40V200M640 180H800M790 40V200M640 190H800"/>
+    </g>
+    <g font-size="16" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif" text-anchor="middle">
+      <text x="140" y="228">16 пікселів</text><text x="430" y="228">64 пікселі</text><text x="720" y="228">256 пікселів</text>
+    </g>
+    <text x="430" y="252" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">більше пікселів → чіткіша картинка → більше даних</text>
+  </svg>

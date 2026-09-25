@@ -1,0 +1,40 @@
+<svg viewBox="0 0 600 240" role="img" aria-labelledby="svg-title svg-desc" style="display:block; width:100%; height:auto; max-width:600px; margin:16px auto;" xmlns="http://www.w3.org/2000/svg">
+        <title id="svg-title">Схема трьох способів звернення</title>
+        <desc id="svg-desc">Ця схема показує різницю між точним алгоритмом для робота, проханням про допомогу до людини та промптом для ШІ з людським рішенням.</desc>
+        <!-- Background -->
+        <rect width="600" height="240" rx="8" fill="#FAFAFA"/>
+
+        <!-- Column 1: Algorithm -->
+        <g transform="translate(10, 10)">
+          <rect width="180" height="220" rx="6" fill="#F0F4F8" stroke="#0033A0" stroke-width="1.5"/>
+          <text x="90" y="30" font-size="12" font-family="sans-serif" font-weight="bold" fill="#0033A0" text-anchor="middle">🤖 Алгоритм (Algorithm)</text>
+          <text x="15" y="60" font-size="12" font-family="sans-serif" fill="#1A1A1A">• Точна інструкція</text>
+          <text x="15" y="80" font-size="12" font-family="sans-serif" fill="#1A1A1A">• Строгий порядок</text>
+          <text x="15" y="100" font-size="12" font-family="sans-serif" fill="#1A1A1A">• очікувана поведінка</text>
+          <rect x="15" y="150" width="150" height="45" rx="4" fill="#ffffff" stroke="#0033A0"/>
+          <text x="90" y="177" font-size="12" font-family="sans-serif" font-weight="bold" fill="#0033A0" text-anchor="middle">Очікуваний результат ⚙️</text>
+        </g>
+
+        <!-- Column 2: Human Help -->
+        <g transform="translate(210, 10)">
+          <rect width="180" height="220" rx="6" fill="#FFFDF0" stroke="#FFE0A3" stroke-width="1.5"/>
+          <text x="90" y="30" font-size="12" font-family="sans-serif" font-weight="bold" fill="#B38600" text-anchor="middle">🤝 Прохання (Human)</text>
+          <text x="15" y="60" font-size="12" font-family="sans-serif" fill="#1A1A1A">• Ввічливе прохання</text>
+          <text x="15" y="80" font-size="12" font-family="sans-serif" fill="#1A1A1A">• Живе спілкування</text>
+          <text x="15" y="100" font-size="12" font-family="sans-serif" fill="#1A1A1A">• Розуміє почуття</text>
+          <rect x="15" y="150" width="150" height="45" rx="4" fill="#ffffff" stroke="#B38600"/>
+          <text x="90" y="177" font-size="12" font-family="sans-serif" font-weight="bold" fill="#B38600" text-anchor="middle">Взаємодопомога ❤️</text>
+        </g>
+
+        <!-- Column 3: AI Prompt -->
+        <g transform="translate(410, 10)">
+          <rect width="180" height="220" rx="6" fill="#E8F5E9" stroke="#C8E6C9" stroke-width="1.5"/>
+          <text x="90" y="30" font-size="12" font-family="sans-serif" font-weight="bold" fill="#2E7D32" text-anchor="middle">✨ Промпт (AI Prompt)</text>
+          <text x="15" y="60" font-size="12" font-family="sans-serif" fill="#1A1A1A">• Текстова підказка</text>
+          <text x="15" y="80" font-size="12" font-family="sans-serif" fill="#1A1A1A">• Дія + Об'єкт + Деталі</text>
+          <text x="15" y="100" font-size="12" font-family="sans-serif" fill="#1A1A1A">• ШІ пропонує ідеї</text>
+          <text x="15" y="120" font-size="12" font-family="sans-serif" fill="#1A1A1A">• Сам нічого не почне</text>
+          <rect x="15" y="150" width="150" height="45" rx="4" fill="#ffffff" stroke="#2E7D32"/>
+          <text x="90" y="177" font-size="12" font-family="sans-serif" font-weight="bold" fill="#2E7D32" text-anchor="middle">Рішення людини 🧠</text>
+        </g>
+      </svg>

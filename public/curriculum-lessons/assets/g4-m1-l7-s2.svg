@@ -1,0 +1,24 @@
+<svg viewBox="0 0 860 190" role="img" aria-labelledby="g4u7b-t g4u7b-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g4u7b-t">Чотири питання перед публікацією</title>
+    <desc id="g4u7b-d">Перше питання: хто це побачить, крім тих, кому призначено. Друге: чи є на фото чи в тексті інші люди, які не давали згоди. Третє: як це читатиметься через кілька років. Четверте: чи зможу я спокійно пояснити це дорослому.</desc>
+    <rect x="6" y="14" width="206" height="162" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="109" y="56" text-anchor="middle" font-size="26" font-family="Arial, sans-serif">👥</text>
+    <text x="109" y="90" text-anchor="middle" font-size="17" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">1. Хто побачить</text>
+    <text x="109" y="122" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">крім тих, кому</text>
+    <text x="109" y="144" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">призначено</text>
+    <rect x="224" y="14" width="206" height="162" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="327" y="56" text-anchor="middle" font-size="26" font-family="Arial, sans-serif">🙋</text>
+    <text x="327" y="90" text-anchor="middle" font-size="17" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">2. Чи є там інші</text>
+    <text x="327" y="122" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">хто не давав</text>
+    <text x="327" y="144" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">згоди</text>
+    <rect x="442" y="14" width="206" height="162" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="545" y="56" text-anchor="middle" font-size="26" font-family="Arial, sans-serif">📅</text>
+    <text x="545" y="90" text-anchor="middle" font-size="17" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">3. А через роки</text>
+    <text x="545" y="122" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">як це прочитає</text>
+    <text x="545" y="144" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">хтось інший</text>
+    <rect x="660" y="14" width="194" height="162" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="757" y="56" text-anchor="middle" font-size="26" font-family="Arial, sans-serif">🗣️</text>
+    <text x="757" y="90" text-anchor="middle" font-size="17" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">4. Чи поясню</text>
+    <text x="757" y="122" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">спокійно</text>
+    <text x="757" y="144" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">дорослому</text>
+  </svg>

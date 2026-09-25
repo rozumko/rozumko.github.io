@@ -1,0 +1,63 @@
+<svg viewBox="0 0 800 300" role="img" aria-labelledby="lesson-svg-title lesson-svg-desc" style="display:block;width:100%;height:auto;max-width:800px;margin:0 auto;" xmlns="http://www.w3.org/2000/svg">
+    <title id="lesson-svg-title">Дві моделі одних даних: таблиця та піктограма</title>
+    <desc id="lesson-svg-desc">Зліва показано таблицю з числами (Яблуко — 5, Банан — 2, Ківі — 1). Справа показано піктограму, де один значок означає один голос.</desc>
+
+    <!-- Background grid/panels -->
+    <rect x="10" y="10" width="360" height="280" rx="8" fill="#FAFAFA" stroke="#D9E2F0" stroke-width="2"/>
+    <rect x="430" y="10" width="360" height="280" rx="8" fill="#FAFAFA" stroke="#D9E2F0" stroke-width="2"/>
+
+    <!-- Left panel: Table title -->
+    <text x="190" y="40" font-family="system-ui, sans-serif" font-size="18" font-weight="bold" fill="#0033A0" text-anchor="middle">1. Таблиця даних (Table)</text>
+
+    <!-- Table drawing -->
+    <!-- Header row -->
+    <rect x="30" y="65" width="320" height="40" fill="#0033A0" rx="4"/>
+    <text x="100" y="90" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Фрукт (Fruit)</text>
+    <text x="270" y="90" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Голоси (Votes)</text>
+
+    <!-- Row 1: Apple -->
+    <rect x="30" y="115" width="320" height="40" fill="#FFFFFF" stroke="#E2E8F0" rx="4"/>
+    <text x="100" y="140" font-family="system-ui, sans-serif" font-size="15" fill="#1A1A1A" text-anchor="middle">🍎 Яблуко</text>
+    <text x="270" y="140" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" fill="#0033A0" text-anchor="middle">5</text>
+
+    <!-- Row 2: Banana -->
+    <rect x="30" y="165" width="320" height="40" fill="#FFFFFF" stroke="#E2E8F0" rx="4"/>
+    <text x="100" y="190" font-family="system-ui, sans-serif" font-size="15" fill="#1A1A1A" text-anchor="middle">🍌 Банан</text>
+    <text x="270" y="190" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" fill="#0033A0" text-anchor="middle">2</text>
+
+    <!-- Row 3: Kiwi -->
+    <rect x="30" y="215" width="320" height="40" fill="#FFFFFF" stroke="#E2E8F0" rx="4"/>
+    <text x="100" y="240" font-family="system-ui, sans-serif" font-size="15" fill="#1A1A1A" text-anchor="middle">🥝 Ківі</text>
+    <text x="270" y="240" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" fill="#0033A0" text-anchor="middle">1</text>
+
+    <!-- Connection arrow -->
+    <path d="M 385,150 L 415,150" stroke="#FFD700" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <polygon points="415,145 425,150 415,155" fill="#FFD700"/>
+    <text x="400" y="130" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" fill="#B38600" text-anchor="middle">Модель</text>
+
+    <!-- Right panel: Pictogram title -->
+    <text x="610" y="40" font-family="system-ui, sans-serif" font-size="18" font-weight="bold" fill="#0033A0" text-anchor="middle">2. Піктограма (Pictogram)</text>
+
+    <!-- Pictogram rows -->
+    <!-- Row 1: Apple pictogram -->
+    <text x="460" y="110" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" fill="#1A1A1A">🍎</text>
+    <circle cx="510" cy="105" r="14" fill="#FF4D4D" stroke="#CC0000" stroke-width="2"/>
+    <circle cx="545" cy="105" r="14" fill="#FF4D4D" stroke="#CC0000" stroke-width="2"/>
+    <circle cx="580" cy="105" r="14" fill="#FF4D4D" stroke="#CC0000" stroke-width="2"/>
+    <circle cx="615" cy="105" r="14" fill="#FF4D4D" stroke="#CC0000" stroke-width="2"/>
+    <circle cx="650" cy="105" r="14" fill="#FF4D4D" stroke="#CC0000" stroke-width="2"/>
+
+    <!-- Row 2: Banana pictogram -->
+    <text x="460" y="170" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" fill="#1A1A1A">🍌</text>
+    <rect x="496" y="156" width="28" height="28" rx="6" fill="#FFEB3B" stroke="#B38600" stroke-width="2"/>
+    <rect x="531" y="156" width="28" height="28" rx="6" fill="#FFEB3B" stroke="#B38600" stroke-width="2"/>
+
+    <!-- Row 3: Kiwi pictogram -->
+    <text x="460" y="230" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" fill="#1A1A1A">🥝</text>
+    <circle cx="510" cy="225" r="14" fill="#7CB342" stroke="#33691E" stroke-width="2"/>
+
+    <!-- Legend -->
+    <rect x="450" y="260" width="320" height="22" rx="4" fill="#E2E8F0"/>
+    <circle cx="470" cy="271" r="6" fill="#0033A0"/>
+    <text x="485" y="275" font-family="system-ui, sans-serif" font-size="15" fill="#1A1A1A">Кожен значок на схемі = 1 голос дитини</text>
+  </svg>

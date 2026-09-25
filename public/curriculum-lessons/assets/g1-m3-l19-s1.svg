@@ -1,0 +1,27 @@
+<svg viewBox="0 0 600 200" width="100%" style="max-height: 180px; display: block; margin: 0 auto;" aria-label="Схема: Що показує модель фруктів, а що залишається в реальності" xmlns="http://www.w3.org/2000/svg">
+        <!-- Background -->
+        <rect width="600" height="200" rx="10" fill="#f8fdff"/>
+
+        <!-- Left Box: Model shows -->
+        <rect x="20" y="30" width="250" height="140" rx="8" fill="#e3f2fd" stroke="#41b6e6" stroke-width="2"/>
+        <text x="145" y="55" fill="#0033A0" font-size="14" font-weight="bold" text-anchor="middle">Модель показує (Shows):</text>
+        <circle cx="60" cy="90" r="10" fill="#e53935"/>
+        <text x="80" y="95" fill="#333333" font-size="12">Яблуко — 5 голосів</text>
+        <circle cx="60" cy="125" r="10" fill="#ffeb3b"/>
+        <text x="80" y="130" fill="#333333" font-size="12">Банан — 2 голоси</text>
+      <text x="145" y="160" fill="#2e7d32" font-size="12" font-style="italic" text-anchor="middle">Найбільше голосів: яблуко</text>
+
+        <!-- Center arrow -->
+        <g stroke="#0033a0" stroke-width="3" fill="none">
+          <path d="M 285,100 L 315,100"/>
+          <path d="M 305,90 L 315,100 L 305,110"/>
+        </g>
+        <text x="300" y="85" fill="#0033a0" font-size="12" font-weight="bold" text-anchor="middle">Але...</text>
+
+        <!-- Right Box: Reality hides -->
+        <rect x="330" y="30" width="250" height="140" rx="8" fill="#fff3e0" stroke="#ffb74d" stroke-width="2"/>
+        <text x="455" y="55" fill="#b38600" font-size="14" font-weight="bold" text-anchor="middle">Модель НЕ повідомляє:</text>
+        <text x="350" y="90" fill="#555555" font-size="12">❌ Чи є в когось алергія?</text>
+        <text x="350" y="115" fill="#555555" font-size="12">❌ Чи стиглі ці фрукти?</text>
+        <text x="350" y="140" fill="#555555" font-size="12">❌ Що любить інший клас?</text>
+      </svg>

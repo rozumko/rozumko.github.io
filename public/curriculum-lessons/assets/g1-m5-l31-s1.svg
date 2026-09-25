@@ -1,0 +1,39 @@
+<svg viewBox="0 0 600 240" role="img" aria-labelledby="svg-title svg-desc" style="display:block; width:100%; height:auto; max-width:600px; margin:16px auto;" xmlns="http://www.w3.org/2000/svg">
+        <title id="svg-title">Схема синхронізації діалогу у ScratchJr</title>
+        <desc id="svg-desc">Ця схема показує таймлайн діалогу двох персонажів: поки Котик говорить репліку Hello, Зайчик чекає у блоці Wait, після чого Зайчик говорить свою репліку Hi.</desc>
+        <!-- Background -->
+        <rect width="600" height="240" rx="8" fill="#FAFAFA"/>
+
+        <!-- Timeline Header -->
+        <text x="300" y="25" font-size="13" font-family="sans-serif" font-weight="bold" fill="#0033A0" text-anchor="middle">⏱️ Синхронізація діалогу (Turn-taking with Wait)</text>
+
+        <!-- Character 1: Cat Row -->
+        <g transform="translate(20, 45)">
+          <rect width="560" height="80" rx="6" fill="#F0F4F8" stroke="#0033A0" stroke-width="1.5"/>
+          <text x="50" y="30" font-size="20" text-anchor="middle">🐱</text>
+          <text x="50" y="55" font-size="12" font-family="sans-serif" font-weight="bold" fill="#0033A0" text-anchor="middle">Котик</text>
+
+          <!-- Block 1: Say Hello -->
+          <rect x="110" y="20" width="200" height="40" rx="4" fill="#E91E63"/>
+          <text x="210" y="44" font-size="12" font-family="sans-serif" font-weight="bold" fill="#ffffff" text-anchor="middle">💬 Say "Hello!"</text>
+
+          <!-- Block 2: Wait -->
+          <rect x="320" y="20" width="220" height="40" rx="4" fill="#FF9800"/>
+          <text x="430" y="44" font-size="12" font-family="sans-serif" font-weight="bold" fill="#ffffff" text-anchor="middle">⏳ Wait 20 (≈ 2 sec)</text>
+        </g>
+
+        <!-- Character 2: Bunny Row -->
+        <g transform="translate(20, 140)">
+          <rect width="560" height="80" rx="6" fill="#FFFDF0" stroke="#FFE0A3" stroke-width="1.5"/>
+          <text x="50" y="30" font-size="20" text-anchor="middle">🐰</text>
+          <text x="50" y="55" font-size="12" font-family="sans-serif" font-weight="bold" fill="#B38600" text-anchor="middle">Зайчик</text>
+
+          <!-- Block 1: Wait -->
+          <rect x="110" y="20" width="200" height="40" rx="4" fill="#FF9800"/>
+          <text x="210" y="44" font-size="12" font-family="sans-serif" font-weight="bold" fill="#ffffff" text-anchor="middle">⏳ Wait 20 (Чекає 2 sec)</text>
+
+          <!-- Block 2: Say Answer -->
+          <rect x="320" y="20" width="220" height="40" rx="4" fill="#E91E63"/>
+          <text x="430" y="44" font-size="12" font-family="sans-serif" font-weight="bold" fill="#ffffff" text-anchor="middle">💬 Say "Hi!"</text>
+        </g>
+      </svg>

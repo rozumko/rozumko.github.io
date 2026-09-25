@@ -1,0 +1,24 @@
+<svg viewBox="0 0 660 300" role="img" aria-labelledby="g1u5-t g1u5-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g1u5-t">Чотири правила здорового робочого місця</title>
+    <desc id="g1u5-d">Спина рівна, а не зігнута. Екран на відстані витягнутої руки від очей. Напої стоять на іншому столі, подалі від клавіатури. Кожні п'ятнадцять хвилин потрібна перерва, щоб порухатися.</desc>
+
+    <rect x="6" y="10" width="318" height="130" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="165" y="52" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">🪑</text>
+    <text x="165" y="86" text-anchor="middle" font-size="19" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">Спина рівна</text>
+    <text x="165" y="114" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">не згинайся дугою</text>
+
+    <rect x="336" y="10" width="318" height="130" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="495" y="52" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">📏</text>
+    <text x="495" y="86" text-anchor="middle" font-size="19" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Екран далі</text>
+    <text x="495" y="114" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">на витягнуту руку</text>
+
+    <rect x="6" y="156" width="318" height="130" rx="12" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+    <text x="165" y="198" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">🥤</text>
+    <text x="165" y="232" text-anchor="middle" font-size="19" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">Напої окремо</text>
+    <text x="165" y="260" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">подалі від клавіатури</text>
+
+    <rect x="336" y="156" width="318" height="130" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="495" y="198" text-anchor="middle" font-size="30" font-family="Arial, sans-serif">⏰</text>
+    <text x="495" y="232" text-anchor="middle" font-size="19" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">Перерва</text>
+    <text x="495" y="260" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">за сигналом учителя</text>
+  </svg>

@@ -1,0 +1,40 @@
+<svg viewBox="0 0 800 300" role="img" aria-labelledby="svg-title-sort svg-desc-sort" style="display:block;width:100%;height:auto;max-width:800px;margin:18px auto;" xmlns="http://www.w3.org/2000/svg">
+      <title id="svg-title-sort">Таблиця до і після сортування за категорією</title>
+      <desc id="svg-desc-sort">Ліворуч таблиця з п'ятьма предметами вперемішку. Після кнопки «Сортувати за категорією» праворуч ті самі п'ять предметів: спершу всі канцтовари, потім увесь спорт. Записів так само п'ять — змінився лише порядок.</desc>
+      <rect x="20" y="46" width="290" height="190" rx="8" fill="#FFFFFF" stroke="#B9C6DA" stroke-width="2"/>
+      <text x="165" y="36" font-family="sans-serif" font-size="15" font-weight="bold" fill="#0033A0" text-anchor="middle">До сортування</text>
+      <rect x="20" y="46" width="290" height="36" rx="8" fill="#F0F4F8"/>
+      <text x="32" y="70" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1A1A1A">Предмет</text>
+      <text x="170" y="70" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1A1A1A">Категорія ▾</text>
+      <text x="32" y="116" font-family="sans-serif" font-size="14" fill="#1A1A1A">Олівець</text>
+      <text x="170" y="116" font-family="sans-serif" font-size="14" fill="#1A1A1A">Канцтовари</text>
+      <text x="32" y="142" font-family="sans-serif" font-size="14" fill="#1A1A1A">М'яч</text>
+      <text x="170" y="142" font-family="sans-serif" font-size="14" fill="#1A1A1A">Спорт</text>
+      <text x="32" y="168" font-family="sans-serif" font-size="14" fill="#1A1A1A">Зошит</text>
+      <text x="170" y="168" font-family="sans-serif" font-size="14" fill="#1A1A1A">Канцтовари</text>
+      <text x="32" y="194" font-family="sans-serif" font-size="14" fill="#1A1A1A">Скакалка</text>
+      <text x="170" y="194" font-family="sans-serif" font-size="14" fill="#1A1A1A">Спорт</text>
+      <text x="32" y="220" font-family="sans-serif" font-size="14" fill="#1A1A1A">Лінійка</text>
+      <text x="170" y="220" font-family="sans-serif" font-size="14" fill="#1A1A1A">Канцтовари</text>
+      <text x="165" y="258" font-family="sans-serif" font-size="14" fill="#52606D" text-anchor="middle">5 записів</text>
+      <rect x="322" y="120" width="156" height="50" rx="8" fill="#0033A0"/>
+      <text x="400" y="142" font-family="sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Сортувати</text>
+      <text x="400" y="160" font-family="sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">за категорією ➔</text>
+      <rect x="490" y="46" width="290" height="190" rx="8" fill="#FFFFFF" stroke="#B9C6DA" stroke-width="2"/>
+      <text x="635" y="36" font-family="sans-serif" font-size="15" font-weight="bold" fill="#0033A0" text-anchor="middle">Після сортування</text>
+      <rect x="490" y="46" width="290" height="36" rx="8" fill="#F0F4F8"/>
+      <text x="502" y="70" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1A1A1A">Предмет</text>
+      <text x="640" y="70" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1A1A1A">Категорія ▾</text>
+      <text x="502" y="116" font-family="sans-serif" font-size="14" fill="#1A1A1A">Олівець</text>
+      <text x="640" y="116" font-family="sans-serif" font-size="14" fill="#1A1A1A">Канцтовари</text>
+      <text x="502" y="142" font-family="sans-serif" font-size="14" fill="#1A1A1A">Зошит</text>
+      <text x="640" y="142" font-family="sans-serif" font-size="14" fill="#1A1A1A">Канцтовари</text>
+      <text x="502" y="168" font-family="sans-serif" font-size="14" fill="#1A1A1A">Лінійка</text>
+      <text x="640" y="168" font-family="sans-serif" font-size="14" fill="#1A1A1A">Канцтовари</text>
+      <text x="502" y="194" font-family="sans-serif" font-size="14" fill="#1A1A1A">М'яч</text>
+      <text x="640" y="194" font-family="sans-serif" font-size="14" fill="#1A1A1A">Спорт</text>
+      <text x="502" y="220" font-family="sans-serif" font-size="14" fill="#1A1A1A">Скакалка</text>
+      <text x="640" y="220" font-family="sans-serif" font-size="14" fill="#1A1A1A">Спорт</text>
+      <text x="635" y="258" font-family="sans-serif" font-size="14" fill="#52606D" text-anchor="middle">5 записів</text>
+      <text x="400" y="290" font-family="sans-serif" font-size="16" font-weight="bold" fill="#155C32" text-anchor="middle">✅ Записів стільки ж — змінився лише порядок</text>
+    </svg>

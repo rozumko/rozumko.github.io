@@ -197,6 +197,7 @@ test('an admin fixes a lesson with the server’s help, saves it and publishes i
   // Take the support block onto the board, with two points on its slide.
   const support = block(page, 'g2-m2-l8-b09')
   await support.locator(':scope > summary').click()
+  await support.locator('.cl-advanced > summary').click()
   await support.getByLabel('Показувати на дошці').check()
   await support.getByLabel(/Тези на слайді/).fill('Назва підказує вміст\nРозширення — після крапки')
   await view.getByRole('button', { name: 'Зберегти' }).click()
@@ -227,9 +228,12 @@ test('a new lesson gets an activity linked to an outcome from the directory, and
   const template = JSON.parse(readFileSync(await templateDownload.path(), 'utf8'))
   expect(template.blocks.map((entry: any) => entry.type)).toEqual(['hero', 'explanation', 'canvas', 'practice', 'activity'])
   expect(prepareCurriculumDefinition(template, null, 1, PACK).blocks).toHaveLength(5)
-  await page.getByRole('button', { name: 'Створити з шаблону' }).click()
+  // An empty text field gives an empty lesson to build with «+».
+  await page.getByRole('button', { name: 'Створити урок' }).click()
+  await page.getByRole('dialog', { name: 'Новий урок' }).getByRole('button', { name: 'Створити чернетку' }).click()
 
   const view = editorView(page)
+  await expect(view.locator('.cl-ed-message')).toContainText('Порожній урок')
   await expect(view.getByText('Ще не збережено')).toBeVisible()
   const id = view.getByLabel('ID уроку')
   await id.fill('g2-m3-l1')
@@ -272,6 +276,63 @@ test('a new lesson gets an activity linked to an outcome from the directory, and
   await expect(preview.locator('.le-document')).toContainText('Алгоритми навколо нас')
   await preview.getByRole('button', { name: 'Закрити' }).click()
   await expect(preview).toHaveCount(0)
+})
+
+test('a lesson written as plain text becomes a saved draft, and the draft can be copied back as text', async ({ page }) => {
+  const { rows } = await mockCurriculumAdmin(page)
+  await openCurriculumTab(page)
+  await page.getByRole('button', { name: 'Створити урок' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Новий урок' })
+  const text = dialog.getByLabel('Текст уроку')
+  await expect(text).toBeFocused()
+
+  // A template fills the field; the author's own text is replaced only on request.
+  const start = dialog.getByLabel('З чого почати')
+  await start.selectOption({ label: 'Урок 25 хв (1–2 клас)' })
+  await expect(text).toHaveValue(/^Назва уроку\nКлас: 1\n/)
+  await start.selectOption({ label: 'Практична робота' })
+  await expect(text).toHaveValue(/^Практична робота: назва\n/)
+  await text.fill('Мій урок')
+  await start.selectOption({ label: 'Урок-обговорення без пристроїв' })
+  await expect(text).toHaveValue('Мій урок')
+  await dialog.getByRole('button', { name: 'Замінити його каркасом' }).click()
+  await expect(text).toHaveValue(/^Урок-обговорення: назва\n/)
+
+  // The AI prompt explains the format and carries its example.
+  await dialog.getByText('Є готовий урок у HTML, Word чи конспекті?').click()
+  await expect(dialog.getByLabel('Промпт для ШІ')).toHaveValue(/Поверни лише текст уроку[\s\S]*Приклад формату:\n\n# Цифрове і нецифрове/)
+
+  // A task without a marked answer is refused with its line; nothing is guessed.
+  await text.fill('Цифрове навколо нас\nКлас: 2\n\n## Перевір себе\n? Яка справа нецифрова?\n- Фото з телефона\n- Класики')
+  await dialog.getByRole('button', { name: 'Створити чернетку' }).click()
+  await expect(dialog.locator('.cl-text-issues')).toContainText('Рядок 5: Питання «Яка справа нецифрова?»: позначте правильну відповідь')
+  const results = await new AxeBuilder({ page }).include('.cl-overlay').withTags(WCAG_AA_TAGS).analyze()
+  expect(results.violations.map(v => v.id)).toEqual([])
+
+  await text.fill([
+    'Цифрове навколо нас', 'Клас: 2', 'Цілі:', '- Розрізняти цифрові справи.', '',
+    '## Два способи', 'Кота можна намалювати на планшеті або на папері.', '[слайд] **Цифровий** — з пристроєм.',
+    'Для вчителя: Фото на телефон — теж цифрова справа.', '',
+    '## Перевір себе', '? Яка справа нецифрова?', '- Фото з телефона', '+ Класики', '= Класики не потребують пристрою.',
+  ].join('\n'))
+  await dialog.getByRole('button', { name: 'Створити чернетку' }).click()
+  await expect(dialog).toHaveCount(0)
+
+  const view = editorView(page)
+  await expect(view.locator('.cl-ed-message')).toContainText('Урок створено з тексту: кроків 3, завдань 1, слайдів 3')
+  await view.getByRole('button', { name: 'Зберегти' }).click()
+  await expect(view.locator('.cl-ed-message')).toContainText('Збережено. Редакція 1')
+  const stored = rows.get('g2-new-l1')!.draftContent as any
+  expect(stored.blocks.map((b: any) => b.type)).toEqual(['hero', 'canvas', 'activity'])
+  expect(stored.blocks[1].content.board).toEqual([{ type: 'paragraph', text: { uk: '**Цифровий** — з пристроєм.' } }])
+  expect(stored.blocks[1].content.student).toHaveLength(2)
+  expect(stored.blocks[1].content.teacher).toHaveLength(3)
+  expect(stored.blocks[2].activity.scoring.key).toEqual({ correctOptionId: 'b', explanation: { uk: 'Класики не потребують пристрою.' } })
+
+  await view.getByRole('button', { name: 'Урок як текст' }).click()
+  const exported = page.getByRole('dialog', { name: 'Урок як текст' })
+  await expect(exported.getByLabel('Текст уроку')).toHaveValue(/## Два способи\nКота можна намалювати на планшеті або на папері\.\n\[слайд\] \*\*Цифровий\*\* — з пристроєм\.\nДля вчителя: Фото на телефон/)
+  await expect(exported.getByLabel('Текст уроку')).toHaveValue(/\? Яка справа нецифрова\?\n- Фото з телефона\n\+ Класики\n= Класики/)
 })
 
 test('a free block imports HTML into separate teacher, board and student views', async ({ page }) => {
@@ -413,4 +474,51 @@ test('the «+» menu inserts content or a task anywhere, and blocks can be dragg
   const saved = rows.get('g2-m2-l8')!.draftContent as any
   expect(saved.blocks.map((entry: any) => entry.id).slice(0, 2)).toEqual([movedId, insertedId])
   expect(saved.blocks[1].activity.mechanic).toBe('classify')
+})
+
+test('an old block turns into «Текст і медіа» in one click, and rare settings sit under «Додатково»', async ({ page }) => {
+  const { rows } = await mockCurriculumAdmin(page)
+  await openCurriculumTab(page)
+  await page.locator('[data-lesson-id="g2-m2-l8"]').getByRole('button', { name: 'Редагувати' }).click()
+  const view = editorView(page)
+  // The «+» menu offers only the simple kinds.
+  await view.getByRole('button', { name: 'Додати блок на початок уроку', exact: true }).click()
+  await expect(view.getByRole('button', { name: /Перерва/ })).toBeVisible()
+  await expect(view.getByText('Інші типи блоків')).toHaveCount(0)
+  await page.keyboard.press('Escape')
+
+  const explanation = block(page, 'g2-m2-l8-b05')
+  await explanation.locator(':scope > summary').click()
+  // Technical fields are folded away; the block id is not shown in the header.
+  await expect(explanation.getByLabel('Формат')).toBeHidden()
+  await expect(explanation.locator(':scope > summary')).not.toContainText('g2-m2-l8-b05')
+  await explanation.getByRole('button', { name: 'Перетворити на «Текст і медіа»' }).click()
+  await page.locator('#modal-ok-btn').click()
+
+  const converted = block(page, 'g2-m2-l8-b05')
+  await expect(converted.getByRole('tab', { name: 'Учитель' })).toHaveAttribute('aria-selected', 'true')
+  await expect(converted.getByRole('textbox', { name: 'Вміст для вкладки «Учитель»' })).not.toBeEmpty()
+  await view.getByRole('button', { name: 'Зберегти' }).click()
+  await expect(view.locator('.cl-ed-message')).toContainText('Збережено')
+  const saved = (rows.get('g2-m2-l8')!.draftContent as any).blocks.find((entry: any) => entry.id === 'g2-m2-l8-b05')
+  expect(saved.type).toBe('canvas')
+  expect(saved.content.teacher.length).toBeGreaterThan(0)
+  expect(saved.views.presentation).toBe(true)
+})
+
+test('all old blocks of a lesson convert at once and the lesson still saves', async ({ page }) => {
+  const { rows } = await mockCurriculumAdmin(page)
+  await openCurriculumTab(page)
+  await page.locator('[data-lesson-id="g2-m2-l8"]').getByRole('button', { name: 'Редагувати' }).click()
+  const view = editorView(page)
+  await view.getByRole('button', { name: /^Перетворити всі \(\d+\)$/ }).click()
+  await page.locator('#modal-ok-btn').click()
+  await expect(view.getByRole('button', { name: /^Перетворити всі/ })).toHaveCount(0)
+  await view.getByRole('button', { name: 'Перевірити' }).click()
+  await expect(view.locator('.cl-issues')).toHaveCount(0)
+  await view.getByRole('button', { name: 'Зберегти' }).click()
+  await expect(view.locator('.cl-ed-message')).toContainText('Збережено')
+  const types = new Set((rows.get('g2-m2-l8')!.draftContent as any).blocks.map((entry: any) => entry.type))
+  expect([...types].sort()).toEqual(expect.arrayContaining(['canvas']))
+  for (const old of ['explanation', 'discussion', 'support', 'reflection', 'teacher-note']) expect(types.has(old)).toBe(false)
 })

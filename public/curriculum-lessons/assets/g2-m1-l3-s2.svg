@@ -1,0 +1,17 @@
+<svg viewBox="0 0 780 250" role="img" aria-labelledby="g2u3b-t g2u3b-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g2u3b-t">Чому одного правила роботу замало</title>
+    <desc id="g2u3b-d">Правило «якщо жовтий, то лимон» правильно спрацьовує на лимоні. Але на жовтому помідорі воно дає помилку: помідор жовтий, проте це не лимон. Одна ознака надто бідна, щоб розпізнати предмет.</desc>
+
+    <rect x="6" y="14" width="768" height="54" rx="10" fill="#F0F4F8"/>
+    <text x="390" y="48" text-anchor="middle" font-size="19" font-weight="700" fill="#1A1A1A" font-family="Arial, sans-serif">Правило робота: якщо жовтий → то це лимон</text>
+
+    <rect x="6" y="86" width="376" height="150" rx="10" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="194" y="132" text-anchor="middle" font-size="38" font-family="Arial, sans-serif">🍋</text>
+    <text x="194" y="170" text-anchor="middle" font-size="18" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">Робот каже: лимон</text>
+    <text x="194" y="200" text-anchor="middle" font-size="16" fill="#3D4757" font-family="Arial, sans-serif">✅ Правильно</text>
+
+    <rect x="398" y="86" width="376" height="150" rx="10" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+    <text x="586" y="132" text-anchor="middle" font-size="38" font-family="Arial, sans-serif">🍅</text>
+    <text x="586" y="170" text-anchor="middle" font-size="18" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">Робот каже: лимон</text>
+    <text x="586" y="200" text-anchor="middle" font-size="16" fill="#96271B" font-family="Arial, sans-serif">❌ Помилка — це помідор</text>
+  </svg>

@@ -1,0 +1,18 @@
+<svg viewBox="0 0 860 240" role="img" aria-labelledby="g3u2b-t g3u2b-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g3u2b-t">Одна властивість мережі дає і перевагу, і ризик</title>
+    <desc id="g3u2b-d">Спільний доступ дозволяє швидко ділитися, але водночас твої файли бачать інші. Робота через сервіс звільняє від носіння файлів, але без зв'язку багато що зупиняється. Мережа дає доступ до знань, проте він є не в усіх — це цифровий розрив.</desc>
+
+    <rect x="6" y="10" width="418" height="222" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="215" y="46" text-anchor="middle" font-size="18" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">💚 Перевага • benefit</text>
+    <text x="32" y="86" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">📂 Спільний доступ до файлів</text>
+    <text x="32" y="126" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">☁️ Робота з будь-якого пристрою</text>
+    <text x="32" y="166" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">🌍 Доступ до знань усього світу</text>
+    <text x="32" y="210" font-size="15" fill="#155C32" font-family="Arial, sans-serif">Разом ми можемо більше</text>
+
+    <rect x="442" y="10" width="412" height="222" rx="12" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+    <text x="648" y="46" text-anchor="middle" font-size="18" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">💔 Ризик • risk</text>
+    <text x="468" y="86" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">👀 Твої файли бачать інші</text>
+    <text x="468" y="126" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">🔌 Без зв'язку багато що зупиняється</text>
+    <text x="468" y="166" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">⚖️ Доступ є не в усіх</text>
+    <text x="468" y="210" font-size="15" fill="#96271B" font-family="Arial, sans-serif">Це і є цифровий розрив</text>
+  </svg>

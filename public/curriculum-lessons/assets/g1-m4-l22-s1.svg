@@ -1,0 +1,46 @@
+<svg viewBox="0 0 600 320" role="img" aria-labelledby="lesson-svg-title lesson-svg-desc" style="display:block;width:100%;height:auto;max-width:600px;margin:16px auto;" xmlns="http://www.w3.org/2000/svg">
+        <title id="lesson-svg-title">Порядок кроків та результат</title>
+        <desc id="lesson-svg-desc">Ця схема показує різницю між правильним алгоритмом (шкарпетки потім взуття) та помилковим алгоритмом (взуття потім шкарпетки).</desc>
+        <!-- Background elements -->
+        <rect x="10" y="10" width="580" height="300" rx="6" fill="#FAFAFA"/>
+
+        <!-- Algorithm A: Correct -->
+        <rect x="30" y="30" width="240" height="260" rx="8" fill="#ffffff" stroke="#2E7D32" stroke-width="2"/>
+        <text x="150" y="55" font-size="13" font-family="sans-serif" font-weight="bold" fill="#2E7D32" text-anchor="middle">Правильний порядок ✅</text>
+
+        <text x="150" y="90" font-size="12" font-family="sans-serif" fill="#1A1A1A" text-anchor="middle">1. Одягни шкарпетки 🧦</text>
+        <!-- Arrow down -->
+        <path d="M 150 100 L 150 120" stroke="#2E7D32" stroke-width="2" fill="none"/>
+        <polygon points="146,120 154,120 150,126" fill="#2E7D32"/>
+
+        <text x="150" y="145" font-size="12" font-family="sans-serif" fill="#1A1A1A" text-anchor="middle">2. Взуй черевички 👟</text>
+        <!-- Arrow down -->
+        <path d="M 150 155 L 150 175" stroke="#2E7D32" stroke-width="2" fill="none"/>
+        <polygon points="146,175 154,175 150,181" fill="#2E7D32"/>
+
+        <!-- Correct result visualization -->
+        <rect x="50" y="195" width="200" height="75" rx="6" fill="#E8F5E9" stroke="#C8E6C9" stroke-width="1"/>
+        <text x="150" y="220" font-size="12" font-family="sans-serif" font-weight="bold" fill="#2E7D32" text-anchor="middle">Результат (Output):</text>
+        <text x="150" y="240" font-size="12" font-family="sans-serif" fill="#1A1A1A" text-anchor="middle">Гарні та взуті ніжки! 👣</text>
+        <text x="150" y="258" font-size="12" font-family="sans-serif" fill="#2E7D32" font-weight="bold" text-anchor="middle">Усе працює правильно!</text>
+
+        <!-- Algorithm B: Incorrect -->
+        <rect x="330" y="30" width="240" height="260" rx="8" fill="#ffffff" stroke="#D32F2F" stroke-width="2"/>
+        <text x="450" y="55" font-size="13" font-family="sans-serif" font-weight="bold" fill="#D32F2F" text-anchor="middle">Змінений порядок ❌</text>
+
+        <text x="450" y="90" font-size="12" font-family="sans-serif" fill="#1A1A1A" text-anchor="middle">1. Взуй черевички 👟</text>
+        <!-- Arrow down -->
+        <path d="M 450 100 L 450 120" stroke="#D32F2F" stroke-width="2" fill="none"/>
+        <polygon points="446,120 454,120 450,126" fill="#D32F2F"/>
+
+        <text x="450" y="145" font-size="12" font-family="sans-serif" fill="#1A1A1A" text-anchor="middle">2. Одягни шкарпетки 🧦</text>
+        <!-- Arrow down -->
+        <path d="M 450 155 L 450 175" stroke="#D32F2F" stroke-width="2" fill="none"/>
+        <polygon points="446,175 454,175 450,181" fill="#D32F2F"/>
+
+        <!-- Incorrect result visualization -->
+        <rect x="350" y="195" width="200" height="75" rx="6" fill="#FFF2F2" stroke="#F9D2D2" stroke-width="1"/>
+        <text x="450" y="220" font-size="12" font-family="sans-serif" font-weight="bold" fill="#D32F2F" text-anchor="middle">Результат (Output):</text>
+        <text x="450" y="240" font-size="12" font-family="sans-serif" fill="#1A1A1A" text-anchor="middle">Шкарпетки на черевиках! 🧦👟</text>
+        <text x="450" y="258" font-size="12" font-family="sans-serif" fill="#D32F2F" font-weight="bold" text-anchor="middle">Помилка в алгоритмі!</text>
+      </svg>

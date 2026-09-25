@@ -1,0 +1,19 @@
+<svg viewBox="0 0 860 240" role="img" aria-labelledby="g3u8a-t g3u8a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g3u8a-t">Пошукова система і діалог із ШІ</title>
+    <desc id="g3u8a-d">Ліворуч пошукова система: запит, потім список посилань, кожен наступний запит починається заново. Праворуч діалог із ШІ: промпт, відповідь, уточнювальне запитання, покращена відповідь — кожен крок спирається на попередній.</desc>
+    <rect x="6" y="14" width="418" height="210" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="215" y="48" text-anchor="middle" font-size="18" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">🔍 Пошукова система</text>
+    <rect x="40" y="68" width="350" height="40" rx="8" fill="#FFFFFF" stroke="#0033A0" stroke-width="2"/>
+    <text x="215" y="94" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">Запит: листя восени колір</text>
+    <text x="215" y="130" text-anchor="middle" font-size="18" fill="#0033A0" font-family="Arial, sans-serif">↓</text>
+    <rect x="40" y="142" width="350" height="40" rx="8" fill="#FFFFFF" stroke="#0033A0" stroke-width="2"/>
+    <text x="215" y="168" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">🔗 список посилань на сайти</text>
+    <text x="215" y="210" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">новий запит — знову з нуля</text>
+    <rect x="442" y="14" width="412" height="210" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="648" y="48" text-anchor="middle" font-size="18" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">🤖 Діалог із ШІ</text>
+    <text x="470" y="84" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">1. Промпт</text>
+    <text x="470" y="114" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">2. Відповідь (output)</text>
+    <text x="470" y="144" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">3. Уточнення (follow-up)</text>
+    <text x="470" y="174" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">4. Покращена відповідь</text>
+    <text x="648" y="210" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">кожен крок спирається на попередній</text>
+  </svg>

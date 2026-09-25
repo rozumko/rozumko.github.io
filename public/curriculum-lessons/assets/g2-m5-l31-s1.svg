@@ -1,0 +1,37 @@
+<svg viewBox="0 0 800 240" role="img" aria-labelledby="svg-title-paint svg-desc-paint" style="display:block;width:100%;height:auto;max-width:800px;margin:18px auto;" xmlns="http://www.w3.org/2000/svg">
+      <title id="svg-title-paint">Складові графічного редактора Scratch</title>
+      <desc id="svg-desc-paint">Схема демонструє роботу з редактором Paint Editor у Scratch: створення спрайта, костюмів, тла та використання інструментів малювання.</desc>
+      
+      <!-- Box 1: Sprite & Costumes -->
+      <rect x="20" y="30" width="220" height="180" rx="10" fill="#FFFFFF" stroke="#D9E2F0" stroke-width="2"/>
+      <rect x="20" y="30" width="220" height="36" rx="10" fill="#0033A0"/>
+      <text x="130" y="53" font-family="sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">1. Персонаж (Sprite)</text>
+      <text x="130" y="95" font-family="sans-serif" font-size="28" text-anchor="middle">👾 🎭</text>
+      <text x="130" y="135" font-family="sans-serif" font-size="13" font-weight="bold" fill="#0033A0" text-anchor="middle">Костюми (Costumes)</text>
+      <text x="130" y="160" font-family="sans-serif" font-size="12" fill="#52606D" text-anchor="middle">Зміна вигляду об'єкта</text>
+
+      <!-- Arrow 1 -->
+      <path d="M 250 120 L 270 120" stroke="#0033A0" stroke-width="3" fill="none"/>
+      <polygon points="270,115 280,120 270,125" fill="#0033A0"/>
+
+      <!-- Box 2: Tools -->
+      <rect x="290" y="30" width="220" height="180" rx="10" fill="#F0F4F8" stroke="#0033A0" stroke-width="2"/>
+      <rect x="290" y="30" width="220" height="36" rx="10" fill="#0033A0"/>
+      <text x="400" y="53" font-family="sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">2. Інструменти (Tools)</text>
+      <text x="400" y="85" font-family="sans-serif" font-size="12" fill="#1A1A1A" text-anchor="middle">↖️ Select • 🪣 Fill</text>
+      <text x="400" y="110" font-family="sans-serif" font-size="12" fill="#1A1A1A" text-anchor="middle">⭕ Shapes</text>
+      <text x="400" y="145" font-family="sans-serif" font-size="13" font-weight="bold" fill="#0033A0" text-anchor="middle">Форма та колір</text>
+      <text x="400" y="168" font-family="sans-serif" font-size="12" fill="#52606D" text-anchor="middle">Зміна розміру (Resize)</text>
+
+      <!-- Arrow 2 -->
+      <path d="M 520 120 L 540 120" stroke="#0033A0" stroke-width="3" fill="none"/>
+      <polygon points="540,115 550,120 540,125" fill="#0033A0"/>
+
+      <!-- Box 3: Backdrop & Output -->
+      <rect x="560" y="30" width="220" height="180" rx="10" fill="#FFF9DB" stroke="#FFD700" stroke-width="2"/>
+      <rect x="560" y="30" width="220" height="36" rx="10" fill="#FFD700"/>
+      <text x="670" y="53" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1A1A1A" text-anchor="middle">3. Тло (Backdrop)</text>
+      <text x="670" y="95" font-family="sans-serif" font-size="28" text-anchor="middle">🏞️ 🏙️</text>
+      <text x="670" y="135" font-family="sans-serif" font-size="13" font-weight="bold" fill="#0033A0" text-anchor="middle">Оригінальна сцена</text>
+      <text x="670" y="160" font-family="sans-serif" font-size="12" fill="#52606D" text-anchor="middle">Змістовні назви об'єктів</text>
+    </svg>

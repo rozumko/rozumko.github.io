@@ -1,0 +1,29 @@
+<svg viewBox="0 0 860 230" role="img" aria-labelledby="g4u14a-t g4u14a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g4u14a-t">Вхід, модель і результат симуляції пожежі</title>
+    <desc id="g4u14a-d">Ліворуч вхідні параметри: швидкість вітру й сухість лісу. Посередині модель лісу з правилами і припущенням, що ліс рівний, без річок і пагорбів. Праворуч результат: як швидко поширюється вогонь.</desc>
+    <g font-family="Arial, sans-serif">
+      <rect x="6" y="20" width="236" height="170" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+      <text x="124" y="54" text-anchor="middle" font-size="17" font-weight="700" fill="#0033A0">INPUT • параметри</text>
+      <text x="26" y="100" font-size="15" fill="#1A1A1A">💨 вітер: слабкий / сильний</text>
+      <text x="26" y="136" font-size="15" fill="#1A1A1A">🍂 сухість лісу: 10–90 %</text>
+
+      <path d="M246 105 H262" fill="none" stroke="#0033A0" stroke-width="3"/><polygon points="260,97 272,105 260,113" fill="#0033A0"/>
+
+      <rect x="274" y="20" width="312" height="170" rx="12" fill="#0033A0"/>
+      <text x="430" y="54" text-anchor="middle" font-size="17" font-weight="700" fill="#FFFFFF">MODEL • модель лісу</text>
+      <text x="430" y="92" text-anchor="middle" font-size="15" fill="#D6E0F5">правила: як вогонь переходить</text>
+      <text x="430" y="114" text-anchor="middle" font-size="15" fill="#D6E0F5">від дерева до дерева</text>
+      <text x="430" y="150" text-anchor="middle" font-size="15" fill="#FFD700">припущення: ліс рівний,</text>
+      <text x="430" y="172" text-anchor="middle" font-size="15" fill="#FFD700">без річок і пагорбів</text>
+
+      <path d="M590 105 H606" fill="none" stroke="#0033A0" stroke-width="3"/><polygon points="604,97 616,105 604,113" fill="#0033A0"/>
+
+      <rect x="618" y="20" width="236" height="170" rx="12" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+      <text x="736" y="54" text-anchor="middle" font-size="17" font-weight="700" fill="#96271B">OUTPUT • результат</text>
+      <text x="736" y="100" text-anchor="middle" font-size="30">🔥</text>
+      <text x="736" y="140" text-anchor="middle" font-size="15" fill="#3D4757">як швидко й куди</text>
+      <text x="736" y="162" text-anchor="middle" font-size="15" fill="#3D4757">поширюється вогонь</text>
+
+      <text x="430" y="220" text-anchor="middle" font-size="15" fill="#3D4757">змінюємо один параметр → дивимося, як змінився результат</text>
+    </g>
+  </svg>

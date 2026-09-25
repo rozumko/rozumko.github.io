@@ -1,0 +1,15 @@
+<svg viewBox="0 0 860 220" role="img" aria-labelledby="g3u23a-t g3u23a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g3u23a-t">Довгий і лаконічний алгоритм з однаковим результатом</title>
+    <desc id="g3u23a-d">Ліворуч довгий алгоритм: вперед, вперед, поверни ліворуч, поверни праворуч, вперед — п'ять кроків. Праворуч лаконічний: вперед на 3 клітинки — один крок. Обидва приводять робота до прапорця.</desc>
+    <rect x="6" y="14" width="418" height="170" rx="12" fill="#FFF2F2" stroke="#C0392B" stroke-width="2"/>
+    <text x="215" y="46" text-anchor="middle" font-size="17" font-weight="700" fill="#96271B" font-family="Arial, sans-serif">Довгий: 5 кроків</text>
+    <text x="40" y="80" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">1. Вперед   2. Вперед</text>
+    <text x="40" y="110" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">3. Поверни ліворуч   4. Поверни праворуч</text>
+    <text x="40" y="140" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">5. Вперед</text>
+    <text x="215" y="170" text-anchor="middle" font-size="15" fill="#96271B" font-family="Arial, sans-serif">кроки 3 і 4 скасовують один одного</text>
+    <rect x="442" y="14" width="412" height="170" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="648" y="46" text-anchor="middle" font-size="17" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">Лаконічний: 1 крок</text>
+    <text x="648" y="104" text-anchor="middle" font-size="20" font-weight="700" fill="#1A1A1A" font-family="Arial, sans-serif">Вперед на 3 клітинки</text>
+    <text x="648" y="170" text-anchor="middle" font-size="15" fill="#155C32" font-family="Arial, sans-serif">зайве прибрано, повтори об'єднано</text>
+    <text x="430" y="210" text-anchor="middle" font-size="16" fill="#3D4757" font-family="Arial, sans-serif">Результат однаковий: робот біля прапорця 🚩</text>
+  </svg>

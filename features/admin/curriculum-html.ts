@@ -4,6 +4,7 @@
 import type { CanvasItem, LocalizedText } from '../lesson-engine/types.js'
 import { safeMediaUrl } from '../lesson-engine/canvas-view.js'
 import { parseRichText } from '../lesson-engine/rich-text.js'
+import { youtubeId } from './curriculum-text.js'
 
 // Mirrors the limits in backend/src/lib/curriculum-lesson-schema.ts, so an
 // import that looks successful also saves.
@@ -25,19 +26,7 @@ const richHtml = (value: string): string => parseRichText(value).map(token => {
   return token.kind === 'strong' ? `<strong>${text}</strong>` : token.kind === 'code' ? `<code>${text}</code>` : text
 }).join('')
 
-export function youtubeId(value: string): string | null {
-  try {
-    const url = new URL(value)
-    if (url.protocol !== 'https:') return null
-    const host = url.hostname.toLowerCase()
-    let id: string | null = null
-    if (host === 'youtu.be') id = url.pathname.slice(1).split('/')[0] ?? null
-    else if (['youtube.com', 'www.youtube.com', 'www.youtube-nocookie.com', 'youtube-nocookie.com', 'm.youtube.com'].includes(host)) {
-      id = url.pathname === '/watch' ? url.searchParams.get('v') : url.pathname.match(/^\/(?:embed|shorts|live)\/([^/]+)/)?.[1] ?? null
-    }
-    return id && /^[A-Za-z0-9_-]{11}$/.test(id) ? id : null
-  } catch { return null }
-}
+export { youtubeId }
 
 /** Wraps the trimmed text in a marker, keeping the surrounding spaces outside it. */
 function mark(text: string, marker: string): string {

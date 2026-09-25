@@ -1,0 +1,23 @@
+<svg viewBox="0 0 700 200" role="img" aria-labelledby="g1u5b-t g1u5b-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g1u5b-t">Кому говорити, коли щось не так</title>
+    <desc id="g1u5b-d">Якщо на екрані з'явилося щось дивне або стало неприємно, потрібно зупинитися, не натискати нічого і покликати довіреного дорослого — маму, тата або вчителя.</desc>
+    <rect x="6" y="14" width="216" height="172" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="114" y="66" text-anchor="middle" font-size="34" font-family="Arial, sans-serif">✋</text>
+    <text x="114" y="106" text-anchor="middle" font-size="19" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">1. Зупинись</text>
+    <text x="114" y="140" text-anchor="middle" font-size="16" fill="#3D4757" font-family="Arial, sans-serif">нічого не</text>
+    <text x="114" y="164" text-anchor="middle" font-size="16" fill="#3D4757" font-family="Arial, sans-serif">натискай</text>
+    <path d="M226 100 H248" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="248,93 260,100 248,107" fill="#0033A0"/>
+    <rect x="264" y="14" width="216" height="172" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="372" y="66" text-anchor="middle" font-size="34" font-family="Arial, sans-serif">🙋</text>
+    <text x="372" y="106" text-anchor="middle" font-size="19" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">2. Поклич</text>
+    <text x="372" y="140" text-anchor="middle" font-size="16" fill="#3D4757" font-family="Arial, sans-serif">маму, тата</text>
+    <text x="372" y="164" text-anchor="middle" font-size="16" fill="#3D4757" font-family="Arial, sans-serif">або вчителя</text>
+    <path d="M484 100 H506" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="506,93 518,100 506,107" fill="#0033A0"/>
+    <rect x="522" y="14" width="172" height="172" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="608" y="66" text-anchor="middle" font-size="34" font-family="Arial, sans-serif">💬</text>
+    <text x="608" y="106" text-anchor="middle" font-size="19" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">3. Розкажи</text>
+    <text x="608" y="140" text-anchor="middle" font-size="16" fill="#3D4757" font-family="Arial, sans-serif">що саме</text>
+    <text x="608" y="164" text-anchor="middle" font-size="16" fill="#3D4757" font-family="Arial, sans-serif">ти побачив</text>
+  </svg>

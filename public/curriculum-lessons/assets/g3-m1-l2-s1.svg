@@ -1,0 +1,32 @@
+<svg viewBox="0 0 860 230" role="img" aria-labelledby="g3u2a-t g3u2a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g3u2a-t">Чотири види обладнання шкільної та домашньої мережі</title>
+    <desc id="g3u2a-d">Роутер з'єднує мережу школи чи дому з інтернетом. Точка доступу Wi-Fi під'єднує пристрої до мережі без кабелю. Мережевий принтер друкує те, що надсилають з різних пристроїв. Сервер або хмара зберігає файли.</desc>
+
+    <rect x="6" y="14" width="206" height="200" rx="12" fill="#FFD700" stroke="#B38600" stroke-width="2"/>
+    <text x="109" y="66" text-anchor="middle" font-size="32" font-family="Arial, sans-serif">🌐</text>
+    <text x="109" y="104" text-anchor="middle" font-size="17" font-weight="700" fill="#1A1A1A" font-family="Arial, sans-serif">Router</text>
+    <text x="109" y="140" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">З'єднує мережу</text>
+    <text x="109" y="164" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">з інтернетом</text>
+    <text x="109" y="196" text-anchor="middle" font-size="15" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">вихід назовні</text>
+
+    <rect x="224" y="14" width="206" height="200" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="327" y="66" text-anchor="middle" font-size="32" font-family="Arial, sans-serif">📶</text>
+    <text x="327" y="104" text-anchor="middle" font-size="17" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">Access point</text>
+    <text x="327" y="140" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">Під'єднує пристрої</text>
+    <text x="327" y="164" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">без кабелю, по Wi-Fi</text>
+    <text x="327" y="196" text-anchor="middle" font-size="15" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">бездротовий вхід</text>
+
+    <rect x="442" y="14" width="206" height="200" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="545" y="66" text-anchor="middle" font-size="32" font-family="Arial, sans-serif">🖨️</text>
+    <text x="545" y="104" text-anchor="middle" font-size="17" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Network printer</text>
+    <text x="545" y="140" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">Друкує те, що</text>
+    <text x="545" y="164" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">надсилають усі</text>
+    <text x="545" y="196" text-anchor="middle" font-size="15" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">спільний ресурс</text>
+
+    <rect x="660" y="14" width="194" height="200" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="757" y="66" text-anchor="middle" font-size="32" font-family="Arial, sans-serif">☁️</text>
+    <text x="757" y="104" text-anchor="middle" font-size="17" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">Server / Cloud</text>
+    <text x="757" y="140" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">Зберігає проєкти</text>
+    <text x="757" y="164" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">і домашні завдання</text>
+    <text x="757" y="196" text-anchor="middle" font-size="15" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">спільні файли</text>
+  </svg>

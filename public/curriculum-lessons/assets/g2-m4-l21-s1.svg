@@ -1,0 +1,43 @@
+<svg viewBox="0 0 800 220" role="img" aria-labelledby="svg-title-alg svg-desc-alg" style="display:block;width:100%;height:auto;max-width:800px;margin:18px auto;" xmlns="http://www.w3.org/2000/svg">
+      <title id="svg-title-alg">Схема лінійного алгоритму з точними кроками</title>
+      <desc id="svg-desc-alg">Схема демонструє послідовність дій від блоку Початок через точні кроки до блоку Фініш.</desc>
+      
+      <!-- Start Block -->
+      <rect x="10" y="80" width="110" height="50" rx="25" fill="#FFD700" stroke="#1A1A1A" stroke-width="2"/>
+      <text x="65" y="110" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1A1A1A" text-anchor="middle">Початок</text>
+
+      <!-- Arrow 1 -->
+      <path d="M 120 105 L 150 105" stroke="#0033A0" stroke-width="2.5" fill="none"/>
+      <polygon points="150,100 160,105 150,110" fill="#0033A0"/>
+
+      <!-- Step 1 -->
+      <rect x="160" y="70" width="130" height="70" rx="8" fill="#FFFFFF" stroke="#0033A0" stroke-width="2"/>
+      <text x="225" y="100" font-family="sans-serif" font-size="13" font-weight="bold" fill="#0033A0" text-anchor="middle">Крок 1</text>
+      <text x="225" y="120" font-family="sans-serif" font-size="12" fill="#52606D" text-anchor="middle">Візьми олівець</text>
+
+      <!-- Arrow 2 -->
+      <path d="M 290 105 L 320 105" stroke="#0033A0" stroke-width="2.5" fill="none"/>
+      <polygon points="320,100 330,105 320,110" fill="#0033A0"/>
+
+      <!-- Step 2 -->
+      <rect x="330" y="70" width="130" height="70" rx="8" fill="#FFFFFF" stroke="#0033A0" stroke-width="2"/>
+      <text x="395" y="100" font-family="sans-serif" font-size="13" font-weight="bold" fill="#0033A0" text-anchor="middle">Крок 2</text>
+      <text x="395" y="120" font-family="sans-serif" font-size="12" fill="#52606D" text-anchor="middle">Проведи лінію</text>
+
+      <!-- Arrow 3 -->
+      <path d="M 460 105 L 490 105" stroke="#0033A0" stroke-width="2.5" fill="none"/>
+      <polygon points="490,100 500,105 490,110" fill="#0033A0"/>
+
+      <!-- Step 3 -->
+      <rect x="500" y="70" width="130" height="70" rx="8" fill="#FFFFFF" stroke="#0033A0" stroke-width="2"/>
+      <text x="565" y="100" font-family="sans-serif" font-size="13" font-weight="bold" fill="#0033A0" text-anchor="middle">Крок 3</text>
+      <text x="565" y="120" font-family="sans-serif" font-size="12" fill="#52606D" text-anchor="middle">Поклади олівець</text>
+
+      <!-- Arrow 4 -->
+      <path d="M 630 105 L 660 105" stroke="#0033A0" stroke-width="2.5" fill="none"/>
+      <polygon points="660,100 670,105 660,110" fill="#0033A0"/>
+
+      <!-- Finish Block -->
+      <rect x="670" y="80" width="110" height="50" rx="25" fill="#0033A0" stroke="#0033A0" stroke-width="2"/>
+      <text x="725" y="110" font-family="sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Фініш</text>
+    </svg>

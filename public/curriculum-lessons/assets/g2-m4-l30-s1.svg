@@ -1,0 +1,56 @@
+<svg viewBox="0 0 800 240" role="img" aria-labelledby="svg-title-robot svg-desc-robot" style="display:block;width:100%;height:auto;max-width:800px;margin:18px auto;" xmlns="http://www.w3.org/2000/svg">
+      <title id="svg-title-robot">Кнопки Bee-Bot і сітка з перешкодою</title>
+      <desc id="svg-desc-robot">Схема показує кнопки керування робота та ігрову сітку з роботом у старті, перешкодою та точкою призначення.</desc>
+      
+      <!-- Robot Buttons Box -->
+      <rect x="20" y="20" width="250" height="200" rx="10" fill="#FFF9DB" stroke="#FFD700" stroke-width="2"/>
+      <text x="145" y="45" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1A1A1A" text-anchor="middle">Кнопки Bee-Bot</text>
+
+      <rect x="110" y="60" width="70" height="30" rx="6" fill="#0033A0"/>
+      <text x="145" y="80" font-family="sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Forward ⬆️</text>
+
+      <rect x="40" y="100" width="65" height="30" rx="6" fill="#0033A0"/>
+      <text x="72" y="120" font-family="sans-serif" font-size="11" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Left ↩️</text>
+
+      <circle cx="145" cy="115" r="16" fill="#C53030"/>
+      <text x="145" y="120" font-family="sans-serif" font-size="11" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Clear X</text>
+
+      <rect x="180" y="100" width="65" height="30" rx="6" fill="#0033A0"/>
+      <text x="212" y="120" font-family="sans-serif" font-size="11" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Right ↪️</text>
+
+      <rect x="110" y="140" width="70" height="30" rx="6" fill="#0033A0"/>
+      <text x="145" y="160" font-family="sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Backward ⬇️</text>
+
+      <rect x="80" y="180" width="130" height="30" rx="15" fill="#2F855A"/>
+      <text x="145" y="200" font-family="sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF" text-anchor="middle">GO 🟢</text>
+
+      <!-- Arrow -->
+      <path d="M 285 120 L 315 120" stroke="#0033A0" stroke-width="3" fill="none"/>
+      <polygon points="315,115 325,120 315,125" fill="#0033A0"/>
+
+      <!-- Grid Map -->
+      <rect x="340" y="20" width="440" height="200" rx="10" fill="#FFFFFF" stroke="#D9E2F0" stroke-width="2"/>
+      
+      <!-- Grid Lines -->
+      <line x1="450" y1="20" x2="450" y2="220" stroke="#E2E8F0" stroke-width="1.5"/>
+      <line x1="560" y1="20" x2="560" y2="220" stroke="#E2E8F0" stroke-width="1.5"/>
+      <line x1="670" y1="20" x2="670" y2="220" stroke="#E2E8F0" stroke-width="1.5"/>
+
+      <line x1="340" y1="86" x2="780" y2="86" stroke="#E2E8F0" stroke-width="1.5"/>
+      <line x1="340" y1="152" x2="780" y2="152" stroke="#E2E8F0" stroke-width="1.5"/>
+
+      <!-- Start (A1) -->
+      <rect x="345" y="157" width="100" height="58" rx="6" fill="#FFD700"/>
+      <text x="395" y="192" font-family="sans-serif" font-size="13" font-weight="bold" fill="#1A1A1A" text-anchor="middle">🐝 Старт</text>
+
+      <!-- Obstacle (B2) -->
+      <rect x="455" y="91" width="100" height="58" rx="6" fill="#FED7D7"/>
+      <text x="505" y="126" font-family="sans-serif" font-size="13" font-weight="bold" fill="#C53030" text-anchor="middle">🚧 Obstacle</text>
+
+      <!-- Destination (C1) -->
+      <rect x="675" y="157" width="100" height="58" rx="6" fill="#0033A0"/>
+      <text x="725" y="192" font-family="sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF" text-anchor="middle">🎯 Destination</text>
+
+      <!-- Path Route -->
+      <path d="M 395 157 L 395 53 L 725 53 L 725 157" stroke="#0033A0" stroke-width="3" stroke-dasharray="6,4" fill="none"/>
+    </svg>

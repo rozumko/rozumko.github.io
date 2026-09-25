@@ -1,0 +1,18 @@
+<svg viewBox="0 0 860 230" role="img" aria-labelledby="g3u12a-t g3u12a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g3u12a-t">Структура папок і пошук файлу</title>
+    <desc id="g3u12a-d">Ліворуч головна папка Проєкт_Школа з трьома вкладеними папками: Тексти, Малюнки, Музика. У папці Малюнки лежить файл Замок.png. Праворуч рядок пошуку: слово «Замок» знаходить цей файл, не відкриваючи кожну папку.</desc>
+    <rect x="6" y="14" width="470" height="200" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="30" y="50" font-size="17" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">📁 Проєкт_Школа</text>
+    <text x="70" y="88" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">📁 Тексти</text>
+    <text x="70" y="124" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">📁 Малюнки</text>
+    <text x="110" y="158" font-size="16" fill="#155C32" font-family="Arial, sans-serif">🖼 Замок.png</text>
+    <text x="70" y="194" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">📁 Музика</text>
+    <path d="M50 58 V182" fill="none" stroke="#0033A0" stroke-width="2"/>
+    <path d="M90 132 V150" fill="none" stroke="#0033A0" stroke-width="2"/>
+    <rect x="494" y="14" width="360" height="200" rx="12" fill="#E9F4ED" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="674" y="50" text-anchor="middle" font-size="17" font-weight="700" fill="#155C32" font-family="Arial, sans-serif">🔍 Пошук у папках</text>
+    <rect x="520" y="70" width="308" height="42" rx="8" fill="#FFFFFF" stroke="#1B6B3A" stroke-width="2"/>
+    <text x="538" y="97" font-size="16" fill="#3D4757" font-family="Arial, sans-serif">🔍 Замок</text>
+    <text x="674" y="146" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">→ Малюнки / Замок.png</text>
+    <text x="674" y="184" text-anchor="middle" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">не треба відкривати кожну папку</text>
+  </svg>

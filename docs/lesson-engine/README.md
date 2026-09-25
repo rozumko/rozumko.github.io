@@ -787,6 +787,53 @@ Decisions:
   (items, table size, text length) with warnings. Italic is not supported:
   lesson markup has only `**bold**` and `` `code` ``. Interactive questions
   remain native activity blocks so dispatch and server scoring still apply.
+- **Authors see three kinds of blocks.** The «+» menu offers «Текст і медіа»
+  (canvas), «Перерва» and the task mechanics. The other block types stay in
+  the schema, so existing lessons keep working, but are no longer offered.
+  `convertToCanvas` (`features/admin/curriculum-model.ts`) turns an old block
+  into a canvas block — per block or for the whole lesson — keeping its id,
+  order, step, outcomes, timing and speaker notes. The teacher view gets the
+  full content, including expected answers; the board gets the slide points
+  and images, or the public content when the slide had none; devices get
+  content only where the old block was already shown there. Hero, objectives,
+  vocabulary, activities and breaks are not converted: they render
+  lesson-level data or carry behaviour of their own. Visibility switches,
+  format, minutes, the task id and the JSON source sit under one «Додатково»
+  fold; block ids are not shown in the block header.
+- **Structured text is the authoring input, not a guessing importer.** A
+  lesson can be written in a plain-text format
+  ([lesson-text-format.md](./lesson-text-format.md)) and pasted via «Створити
+  урок». `## …` starts a step, `[слайд]` puts a line on the board (else
+  the step's first picture or sentence), `Для вчителя:` keeps a line
+  teacher-only, and `?` with `+`/`-`, `Правда:`/`Неправда:` or `[Група]`
+  lines becomes a server-scored task. The author marks the right answer: a
+  task without one is an error with its line number, never a guess.
+  «Урок як текст» writes a draft back in the same format, so text → lesson →
+  text → lesson is lossless for what the format holds. Converting other
+  material (HTML, Word, notes) into this format is done outside the core — by
+  an AI prompt or a one-off script — rather than by a universal importer.
+  «Створити урок» is one dialog: a template picker (lesson skeletons written
+  in the same format, `curriculum-text-templates.ts`), the AI prompt with the
+  format's example, and the text field; an empty field gives an empty lesson.
+  The old JSON prompt is gone; JSON import and the JSON template stay for
+  bulk and advanced use.
+- **The CS_SchoolToday lessons were imported through the same text format.**
+  `scripts/import-cs-schooltoday.mjs` rewrites each lesson HTML and its
+  teacher note into lesson text and parses it with `parseLessonText`; inline
+  SVG diagrams become files in `public/curriculum-lessons/assets/`
+  (`<lessonId>-sN.svg`) and a step's first diagram is its slide. Ids follow the
+  lesson number within the grade (`g2-m2-l8`). All 140 lessons are imported;
+  the hand-built `g2-m2-l8` and `g4-m2-l9` are replaced by their imported
+  versions on publish (their earlier published versions stay with past runs
+  and reports; the fixture `g2-m2-l8.lesson.json` is unchanged). A `<select>`
+  self-check becomes a scored task only when its revealed answer names exactly
+  one option (answer letter, «Так»/«Ні», or most of the option's own words,
+  ignoring words of the question); an answer shared by several questions never
+  becomes a key. The rest stay as text with the answer for the teacher.
+  `publish-curriculum-lesson.ts` accepts a folder, validates every file before
+  sending anything and signs in once.
+  The parser is pure (`features/admin/curriculum-text.ts`) and every parsed
+  lesson in its tests passes the real server validator.
 - **The server stays the only judge.** «Перевірити» calls
   `POST /api/admin/curriculum/lessons/validate` (the same checks as a save,
   nothing stored). Save and publish errors come back with paths. The editor

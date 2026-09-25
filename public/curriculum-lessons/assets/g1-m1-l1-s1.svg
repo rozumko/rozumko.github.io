@@ -1,0 +1,20 @@
+<svg viewBox="0 0 640 240" role="img" aria-labelledby="shema-1-nazva shema-1-opys" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="shema-1-nazva">Одну справу можна зробити двома способами</title>
+    <desc id="shema-1-opys">Від картки «Намалювати кота» відходять дві стрілки. Верхня веде до картки «На планшеті» — це цифровий спосіб. Нижня веде до картки «На папері» — це нецифровий спосіб.</desc>
+
+    <rect x="8" y="90" width="182" height="60" rx="10" fill="#0033A0"/>
+    <text x="99" y="126" text-anchor="middle" font-size="18" font-weight="700" fill="#FFFFFF" font-family="Arial, sans-serif">Намалювати кота</text>
+
+    <path d="M190 120 H243 V63 H276" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="276,55 289,63 276,71" fill="#0033A0"/>
+    <path d="M190 120 H243 V183 H276" fill="none" stroke="#0033A0" stroke-width="3"/>
+    <polygon points="276,175 289,183 276,191" fill="#0033A0"/>
+
+    <rect x="296" y="26" width="336" height="74" rx="10" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="318" y="60" font-size="19" font-weight="700" fill="#1A1A1A" font-family="Arial, sans-serif">📱 На планшеті</text>
+    <text x="318" y="84" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">цифровий спосіб • digital</text>
+
+    <rect x="296" y="146" width="336" height="74" rx="10" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="318" y="180" font-size="19" font-weight="700" fill="#1A1A1A" font-family="Arial, sans-serif">✏️ На папері</text>
+    <text x="318" y="204" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">нецифровий спосіб • non-digital</text>
+  </svg>

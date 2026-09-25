@@ -1,0 +1,60 @@
+<svg viewBox="0 0 800 220" role="img" aria-labelledby="svg-title-debug-cycle svg-desc-debug-cycle" style="display:block;width:100%;height:auto;max-width:800px;margin:18px auto;" xmlns="http://www.w3.org/2000/svg">
+      <title id="svg-title-debug-cycle">Цикл регулярного тестування та налагодження програм</title>
+      <desc id="svg-desc-debug-cycle">Схема показує 5 послідовних кроків налагодження: Спрогнозуй, Запусти, Опиши проблему, Зміни одну річ і Запусти знову.</desc>
+      
+      <!-- Step 1 -->
+      <rect x="10" y="30" width="135" height="160" rx="8" fill="#FFFFFF" stroke="#D9E2F0" stroke-width="2"/>
+      <rect x="10" y="30" width="135" height="32" rx="8" fill="#0033A0"/>
+      <text x="77" y="51" font-family="sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">1. Predict</text>
+      <text x="77" y="95" font-family="sans-serif" font-size="24" text-anchor="middle">🧠</text>
+      <text x="77" y="130" font-family="sans-serif" font-size="12" font-weight="bold" fill="#0033A0" text-anchor="middle">Спрогнозуй</text>
+      <text x="77" y="150" font-family="sans-serif" font-size="13" fill="#52606D" text-anchor="middle">результат</text>
+
+      <!-- Arrow 1 -->
+      <path d="M 150 110 L 165 110" stroke="#0033A0" stroke-width="2" fill="none"/>
+      <polygon points="165,106 172,110 165,114" fill="#0033A0"/>
+
+      <!-- Step 2 -->
+      <rect x="175" y="30" width="135" height="160" rx="8" fill="#FFFFFF" stroke="#D9E2F0" stroke-width="2"/>
+      <rect x="175" y="30" width="135" height="32" rx="8" fill="#0033A0"/>
+      <text x="242" y="51" font-family="sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">2. Run</text>
+      <text x="242" y="95" font-family="sans-serif" font-size="24" text-anchor="middle">🚩</text>
+      <text x="242" y="130" font-family="sans-serif" font-size="12" font-weight="bold" fill="#0033A0" text-anchor="middle">Запусти</text>
+      <text x="242" y="150" font-family="sans-serif" font-size="13" fill="#52606D" text-anchor="middle">команду</text>
+
+      <!-- Arrow 2 -->
+      <path d="M 315 110 L 330 110" stroke="#0033A0" stroke-width="2" fill="none"/>
+      <polygon points="330,106 337,110 330,114" fill="#0033A0"/>
+
+      <!-- Step 3 -->
+      <rect x="340" y="30" width="135" height="160" rx="8" fill="#FFF5F5" stroke="#FEB2B2" stroke-width="2"/>
+      <rect x="340" y="30" width="135" height="32" rx="8" fill="#C53030"/>
+      <text x="407" y="51" font-family="sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">3. Describe</text>
+      <text x="407" y="95" font-family="sans-serif" font-size="24" text-anchor="middle">🐛</text>
+      <text x="407" y="130" font-family="sans-serif" font-size="12" font-weight="bold" fill="#C53030" text-anchor="middle">Опиши</text>
+      <text x="407" y="150" font-family="sans-serif" font-size="13" fill="#52606D" text-anchor="middle">помилку</text>
+
+      <!-- Arrow 3 -->
+      <path d="M 480 110 L 495 110" stroke="#0033A0" stroke-width="2" fill="none"/>
+      <polygon points="495,106 502,110 495,114" fill="#0033A0"/>
+
+      <!-- Step 4 -->
+      <rect x="505" y="30" width="135" height="160" rx="8" fill="#FFFFFF" stroke="#D9E2F0" stroke-width="2"/>
+      <rect x="505" y="30" width="135" height="32" rx="8" fill="#0033A0"/>
+      <text x="572" y="51" font-family="sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">4. Change</text>
+      <text x="572" y="95" font-family="sans-serif" font-size="24" text-anchor="middle">✏️</text>
+      <text x="572" y="130" font-family="sans-serif" font-size="12" font-weight="bold" fill="#0033A0" text-anchor="middle">Зміни одну річ</text>
+      <text x="572" y="150" font-family="sans-serif" font-size="13" fill="#52606D" text-anchor="middle">у коді</text>
+
+      <!-- Arrow 4 -->
+      <path d="M 645 110 L 660 110" stroke="#0033A0" stroke-width="2" fill="none"/>
+      <polygon points="660,106 667,110 660,114" fill="#0033A0"/>
+
+      <!-- Step 5 -->
+      <rect x="670" y="30" width="120" height="160" rx="8" fill="#FFF9DB" stroke="#FFD700" stroke-width="2"/>
+      <rect x="670" y="30" width="120" height="32" rx="8" fill="#FFD700"/>
+      <text x="730" y="51" font-family="sans-serif" font-size="12" font-weight="bold" fill="#1A1A1A" text-anchor="middle">5. Run again</text>
+      <text x="730" y="95" font-family="sans-serif" font-size="24" text-anchor="middle">✨</text>
+      <text x="730" y="130" font-family="sans-serif" font-size="13" font-weight="bold" fill="#0033A0" text-anchor="middle">Бажаний</text>
+      <text x="730" y="150" font-family="sans-serif" font-size="13" fill="#52606D" text-anchor="middle">результат!</text>
+    </svg>

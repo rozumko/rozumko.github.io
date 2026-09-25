@@ -1,0 +1,22 @@
+<svg viewBox="0 0 860 270" role="img" aria-labelledby="g3u16a-t g3u16a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g3u16a-t">Будова стовпчастої діаграми</title>
+    <desc id="g3u16a-d">Діаграма «Прочитані книжки за тиждень». Ліворуч шкала від 0 до 15. Три стовпчики: Казки — 12, Пригоди — 15, найвищий, Поезія — 4, найнижчий. Під стовпчиками назви категорій.</desc>
+    <text x="430" y="30" text-anchor="middle" font-size="18" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Прочитані книжки за тиждень</text>
+    <text x="250" y="30" text-anchor="end" font-size="15" fill="#7A5A00" font-family="Arial, sans-serif">заголовок →</text>
+    <path d="M200 50 V220 H700" fill="none" stroke="#1A1A1A" stroke-width="2"/>
+    <text x="190" y="224" text-anchor="end" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">0</text>
+    <text x="190" y="167" text-anchor="end" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">5</text>
+    <text x="190" y="110" text-anchor="end" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">10</text>
+    <text x="190" y="53" text-anchor="end" font-size="15" fill="#3D4757" font-family="Arial, sans-serif">15</text>
+    <text x="120" y="140" text-anchor="middle" font-size="15" fill="#7A5A00" font-family="Arial, sans-serif">шкала →</text>
+    <rect x="250" y="84" width="90" height="136" fill="#0033A0"/>
+    <text x="295" y="76" text-anchor="middle" font-size="16" font-weight="700" fill="#1A1A1A" font-family="Arial, sans-serif">12</text>
+    <rect x="400" y="50" width="90" height="170" fill="#155C32"/>
+    <text x="445" y="44" text-anchor="middle" font-size="16" font-weight="700" fill="#1A1A1A" font-family="Arial, sans-serif">15</text>
+    <rect x="550" y="175" width="90" height="45" fill="#B38600"/>
+    <text x="595" y="167" text-anchor="middle" font-size="16" font-weight="700" fill="#1A1A1A" font-family="Arial, sans-serif">4</text>
+    <text x="295" y="244" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">Казки</text>
+    <text x="445" y="244" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">Пригоди</text>
+    <text x="595" y="244" text-anchor="middle" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">Поезія</text>
+    <text x="780" y="244" text-anchor="middle" font-size="15" fill="#7A5A00" font-family="Arial, sans-serif">← категорії</text>
+  </svg>

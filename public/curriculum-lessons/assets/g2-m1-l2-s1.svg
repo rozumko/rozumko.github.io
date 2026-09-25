@@ -1,0 +1,22 @@
+<svg viewBox="0 0 760 280" role="img" aria-labelledby="g2u2a-t g2u2a-d" style="display:block;width:100%;height:auto;margin:16px 0;" xmlns="http://www.w3.org/2000/svg">
+    <title id="g2u2a-t">Порівняння портативного і настільного пристрою</title>
+    <desc id="g2u2a-d">Портативний пристрій легкий, працює від батареї і слухається пальця, але екран у нього малий і довгий текст набирати повільно. Настільний комп'ютер має великий екран, справжню клавіатуру й до нього легко підключити принтер, зате він стоїть на місці й потребує розетки.</desc>
+
+    <rect x="6" y="10" width="368" height="262" rx="12" fill="#FFF9DB" stroke="#B38600" stroke-width="2"/>
+    <text x="190" y="48" text-anchor="middle" font-size="28" font-family="Arial, sans-serif">📱 💻</text>
+    <text x="190" y="80" text-anchor="middle" font-size="19" font-weight="700" fill="#7A5A00" font-family="Arial, sans-serif">Портативний</text>
+    <text x="30" y="118" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">✅ легкий, носиться всюди</text>
+    <text x="30" y="146" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">✅ працює від батареї</text>
+    <text x="30" y="174" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">✅ слухається пальця</text>
+    <text x="30" y="212" font-size="16" fill="#96271B" font-family="Arial, sans-serif">➖ екран малий</text>
+    <text x="30" y="248" font-size="16" fill="#96271B" font-family="Arial, sans-serif">➖ довгий текст — повільно</text>
+
+    <rect x="386" y="10" width="368" height="262" rx="12" fill="#EAF0FC" stroke="#0033A0" stroke-width="2"/>
+    <text x="570" y="48" text-anchor="middle" font-size="28" font-family="Arial, sans-serif">🖥️ ⌨️</text>
+    <text x="570" y="80" text-anchor="middle" font-size="19" font-weight="700" fill="#0033A0" font-family="Arial, sans-serif">Настільний</text>
+    <text x="410" y="118" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">✅ великий екран</text>
+    <text x="410" y="146" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">✅ справжня клавіатура</text>
+    <text x="410" y="174" font-size="16" fill="#1A1A1A" font-family="Arial, sans-serif">✅ легко підключити принтер</text>
+    <text x="410" y="212" font-size="16" fill="#96271B" font-family="Arial, sans-serif">➖ стоїть на одному місці</text>
+    <text x="410" y="248" font-size="16" fill="#96271B" font-family="Arial, sans-serif">➖ потрібна розетка</text>
+  </svg>
