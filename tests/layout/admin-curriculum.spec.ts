@@ -247,7 +247,7 @@ test('a new lesson gets an activity linked to an outcome from the directory, and
   await expect(activity.locator('.cl-activity')).toContainText('на пристроях')
   await activity.getByRole('button', { name: 'Налаштувати завдання' }).click()
   const setup = page.getByRole('dialog', { name: 'Завдання: Вибір однієї відповіді' })
-  await setup.getByLabel('Запитання або інструкція').fill('Який крок перший?')
+  await setup.getByLabel('Запитання для дитини').fill('Який крок перший?')
   await setup.getByRole('textbox', { name: 'Варіант 1' }).fill('Спланувати дії')
   await setup.getByRole('textbox', { name: 'Варіант 2' }).fill('Виконати дії')
   await setup.getByRole('radio', { name: 'Правильна відповідь: варіант 2' }).check()

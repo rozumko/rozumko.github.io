@@ -24,10 +24,19 @@ import {
   setOnBoard,
   setOnDevices,
   toggleItemOutcome,
+  CHOICE_LIMITS,
+  TRUEFALSE_LIMITS,
+  addChoiceOption,
+  addStatement,
+  removeChoiceOption,
+  removeStatement,
+  setChoiceCorrect,
+  setStatementAnswer,
   type EditableBlock,
   type EditableLesson,
   type EditableOutcomeLink,
   type Json,
+  type PackInfo,
 } from './curriculum-model.js'
 
 export interface ActivityDialogHost {
@@ -42,8 +51,8 @@ export interface ActivityDialogHost {
   removeOutcome(outcomeId: string): void
   /** Asks, then swaps the mechanic's template in; calls `done` only if it did. */
   switchMechanic(mechanic: ActivityMechanic, done: () => void): void
-  /** Step 1 for mechanics without their own layout yet (the classic form). */
-  classicForm(): HTMLElement
+  /** Games and external tools the subject pack allows. */
+  pack: PackInfo | null
   contentFields(): HTMLElement
   slideFields(): HTMLElement | null
   jsonFields(): HTMLElement
@@ -216,10 +225,10 @@ export function openActivityDialog(host: ActivityDialogHost, initial: Step = 'ta
     }
     main.append(el('p', 'adm-label', 'Тип завдання'), tiles)
 
-    if (activity.mechanic !== 'classify') {
-      main.append(host.classicForm())
-      return
-    }
+    if (activity.mechanic === 'choice') return renderChoice(main, aside)
+    if (activity.mechanic === 'truefalse') return renderTrueFalse(main, aside)
+    if (activity.mechanic === 'game') return renderGame(main)
+    if (activity.mechanic === 'external') return renderExternal(main)
 
     const config = activity.config
     const promptId = `ad-prompt-${idCounter}`
@@ -341,6 +350,185 @@ export function openActivityDialog(host: ActivityDialogHost, initial: Step = 'ta
     drop.setAttribute('aria-label', `Прибрати картку «${text(item.label) || 'без тексту'}»`)
     row.append(drop)
     return row
+  }
+
+  /** A labelled textarea bound to a localized field; `optional` drops an emptied field. */
+  function textField(target: Json, key: string, label: string, options: { optional?: boolean; rows?: number; onInput?: () => void } = {}): HTMLElement {
+    const wrap = el('div', 'ad-field')
+    const id = `ad-f-${++idCounter}`
+    const labelEl = el('label', 'adm-label', label)
+    labelEl.htmlFor = id
+    const area = el('textarea', 'adm-input')
+    area.id = id
+    area.rows = options.rows ?? 2
+    area.value = text(target[key])
+    area.addEventListener('input', () => {
+      if (options.optional && !area.value.trim()) delete target[key]
+      else setText(target, key, area.value)
+      host.touched()
+      options.onInput?.()
+    })
+    wrap.append(labelEl, area)
+    return wrap
+  }
+
+  /** A one-line text that grows with its content (answers, statements). */
+  function lineField(target: Json, key: string, label: string, onInput: () => void): HTMLTextAreaElement {
+    const area = el('textarea', 'adm-input adm-input--sm ad-card-row__text')
+    area.rows = 1
+    area.maxLength = 200
+    area.value = text(target[key])
+    area.placeholder = label
+    area.setAttribute('aria-label', label)
+    area.addEventListener('keydown', event => { if (event.key === 'Enter') event.preventDefault() })
+    area.addEventListener('input', () => { setText(target, key, area.value); host.touched(); onInput() })
+    return area
+  }
+
+  function previewPanel(aside: HTMLElement): (fill: (screen: HTMLElement) => void) => void {
+    const panel = el('div', 'ad-panel')
+    panel.append(el('p', 'adm-label', 'Так побачить дитина'))
+    const screen = el('div', 'ad-preview')
+    panel.append(screen)
+    aside.append(panel)
+    return fill => { screen.replaceChildren(); fill(screen) }
+  }
+
+  function renderChoice(main: HTMLElement, aside: HTMLElement) {
+    const activity = block.activity!
+    const config = activity.config
+    const options = (Array.isArray(config.options) ? config.options as unknown[] : []).filter(isRecord)
+    const correct = activity.scoring.key?.correctOptionId
+    const paint = previewPanel(aside)
+    const refresh = () => paint(screen => {
+      screen.append(el('p', 'ad-preview__prompt', text(config.prompt) || 'Запитання'))
+      const list = el('div', 'ad-preview__options')
+      for (const option of options) list.append(el('span', 'ad-preview__option', text(option.text) || '…'))
+      screen.append(list)
+    })
+    main.append(textField(config, 'prompt', 'Запитання для дитини', { onInput: refresh }))
+
+    main.append(el('p', 'adm-label', 'Варіанти відповіді (позначте правильний)'))
+    const group = el('div', 'ad-answers')
+    group.setAttribute('role', 'radiogroup')
+    group.setAttribute('aria-label', 'Правильна відповідь')
+    const name = `ad-correct-${++idCounter}`
+    options.forEach((option, i) => {
+      const optionId = String(option.id)
+      const row = el('div', `ad-answer${optionId === correct ? ' ad-answer--right' : ''}`)
+      const pick = el('input')
+      pick.type = 'radio'
+      pick.name = name
+      pick.checked = optionId === correct
+      pick.setAttribute('aria-label', `Правильна відповідь: варіант ${i + 1}`)
+      pick.addEventListener('change', () => { setChoiceCorrect(activity, optionId); structural() })
+      row.append(pick, lineField(option, 'text', `Варіант ${i + 1}`, refresh))
+      if (options.length > CHOICE_LIMITS.options.min) {
+        const drop = button('×', 'btn-adm-ghost btn--sm', () => { if (removeChoiceOption(activity, optionId)) structural() })
+        drop.setAttribute('aria-label', `Прибрати варіант ${i + 1}`)
+        row.append(drop)
+      }
+      group.append(row)
+    })
+    main.append(group)
+    if (options.length < CHOICE_LIMITS.options.max) main.append(button('+ Варіант', 'ad-add', () => { addChoiceOption(activity); structural() }))
+    const key = activity.scoring.key ?? {}
+    activity.scoring.key = key
+    main.append(textField(key, 'explanation', 'Пояснення після відповіді (у тренуванні дитина його бачить)', { optional: true }))
+    refresh()
+  }
+
+  function renderTrueFalse(main: HTMLElement, aside: HTMLElement) {
+    const activity = block.activity!
+    const config = activity.config
+    const statements = (Array.isArray(config.statements) ? config.statements as unknown[] : []).filter(isRecord)
+    const answers = isRecord(activity.scoring.key?.answers) ? activity.scoring.key!.answers as Record<string, unknown> : {}
+    const paint = previewPanel(aside)
+    const refresh = () => paint(screen => {
+      if (text(config.prompt)) screen.append(el('p', 'ad-preview__prompt', text(config.prompt)))
+      for (const statement of statements.slice(0, 5)) {
+        const row = el('div', 'ad-preview__statement')
+        row.append(el('span', undefined, text(statement.text) || '…'), el('span', 'ad-preview__yesno', 'Так · Ні'))
+        screen.append(row)
+      }
+      if (statements.length > 5) screen.append(el('span', 'ad-preview__chip', `ще ${statements.length - 5}`))
+    })
+    main.append(textField(config, 'prompt', 'Загальна інструкція (необов’язково)', { optional: true, onInput: refresh }))
+    main.append(el('p', 'adm-label', 'Твердження і правильні відповіді'))
+    const list = el('div', 'ad-answers')
+    statements.forEach((statement, i) => {
+      const statementId = String(statement.id)
+      const row = el('div', 'ad-answer')
+      const toggle = el('div', 'ad-yesno')
+      toggle.setAttribute('role', 'group')
+      toggle.setAttribute('aria-label', `Правильна відповідь на твердження ${i + 1}`)
+      for (const [value, label] of [[true, 'Так'], [false, 'Ні']] as const) {
+        const on = answers[statementId] === value
+        const b = button(label, `ad-yesno__btn${on ? ' ad-yesno__btn--on' : ''}`, () => { setStatementAnswer(activity, statementId, value); structural() })
+        b.setAttribute('aria-pressed', String(on))
+        toggle.append(b)
+      }
+      row.append(lineField(statement, 'text', `Твердження ${i + 1}`, refresh), toggle)
+      if (statements.length > TRUEFALSE_LIMITS.statements.min) {
+        const drop = button('×', 'btn-adm-ghost btn--sm', () => { if (removeStatement(activity, statementId)) structural() })
+        drop.setAttribute('aria-label', `Прибрати твердження ${i + 1}`)
+        row.append(drop)
+      }
+      list.append(row)
+    })
+    main.append(list)
+    if (statements.length < TRUEFALSE_LIMITS.statements.max) main.append(button('+ Твердження', 'ad-add', () => { addStatement(activity); structural() }))
+    refresh()
+  }
+
+  /** Tiles for the pack's games or tools; `none` explains an empty allowlist. */
+  function pickTiles(label: string, none: string, entries: { key: string; hint?: string }[], current: unknown, pick: (key: string) => void): HTMLElement[] {
+    if (!entries.length) return [el('p', 'adm-label', label), el('p', 'adm-field-hint', none)]
+    const tiles = el('div', 'ad-tiles')
+    tiles.setAttribute('role', 'group')
+    tiles.setAttribute('aria-label', label)
+    for (const entry of entries) {
+      const on = current === entry.key
+      const tile = button('', `ad-tile${on ? ' ad-tile--on' : ''}`, () => { pick(entry.key); structural() })
+      tile.setAttribute('aria-pressed', String(on))
+      tile.append(el('span', 'ad-tile__title', entry.key))
+      if (entry.hint) tile.append(el('span', 'ad-tile__hint', entry.hint))
+      tiles.append(tile)
+    }
+    return [el('p', 'adm-label', label), tiles]
+  }
+
+  function renderGame(main: HTMLElement) {
+    const config = block.activity!.config
+    const games = host.pack?.games ?? []
+    main.append(...pickTiles('Гра', 'Для цього предмета ігор ще немає.',
+      games.map(game => ({ key: game.key, hint: `Рівні: ${game.levels.join(', ')}` })), config.gameKey, key => {
+        config.gameKey = key
+        config.level = games.find(game => game.key === key)?.levels[0] ?? ''
+      }))
+    const levels = games.find(game => game.key === config.gameKey)?.levels ?? []
+    if (levels.length) {
+      const row = el('div', 'ad-yesno')
+      row.setAttribute('role', 'group')
+      row.setAttribute('aria-label', 'Рівень')
+      for (const level of levels) {
+        const on = config.level === level
+        const b = button(level, `ad-yesno__btn${on ? ' ad-yesno__btn--on' : ''}`, () => { config.level = level; structural() })
+        b.setAttribute('aria-pressed', String(on))
+        row.append(b)
+      }
+      main.append(el('p', 'adm-label', 'Рівень'), row)
+    }
+    main.append(textField(config, 'instructions', 'Що сказати дитині перед грою (необов’язково)', { optional: true }))
+    main.append(el('p', 'adm-field-hint', 'Гра сама повідомляє результат, тому для оцінки вона дає лише допоміжний доказ.'))
+  }
+
+  function renderExternal(main: HTMLElement) {
+    const config = block.activity!.config
+    main.append(...pickTiles('Тренажер', 'Для цього предмета тренажерів ще немає.',
+      (host.pack?.tools ?? []).map(tool => ({ key: tool.key })), config.toolKey, key => { config.toolKey = key }))
+    main.append(textField(config, 'instructions', 'Що сказати дитині (необов’язково)', { optional: true }))
+    main.append(el('p', 'adm-field-hint', 'Тренажер відкривається окремо й нічого не повертає: це лише тренування.'))
   }
 
   // ── Step 2: what we check ──────────────────────────────────────────────────

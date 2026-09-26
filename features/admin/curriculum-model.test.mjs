@@ -30,6 +30,12 @@ import {
   removeClassifyItem,
   setActivityPurpose,
   toggleItemOutcome,
+  addChoiceOption,
+  addStatement,
+  removeChoiceOption,
+  removeStatement,
+  setChoiceCorrect,
+  setStatementAnswer,
   renameLesson,
   setOnBoard,
   setStudentAudience,
@@ -338,4 +344,54 @@ test('cards move between groups; removing a card or a group keeps the key and th
   assert.equal(activity.scoring.key.placement[second], 'c1', 'orphaned cards move to the first group')
   assert.equal(removeClassifyCategory(activity, 'c2'), false, 'two groups is the minimum')
   assertValid(lesson, 'edited sorting')
+})
+
+test('choice options: two to six, removing the right answer moves it, readiness sees empty text', () => {
+  const lesson = newLesson({ id: 'g1-m2-l9', title: 'Пристрої', grade: 1, pack: PACK_INFO })
+  const block = newBlock('activity', lesson, PACK_INFO)
+  block.activity = activityTemplate('choice', 'pick-1', PACK_INFO)
+  lesson.blocks.push(block)
+  const activity = block.activity
+  assert.equal(removeChoiceOption(activity, 'b'), false, 'two options is the minimum')
+  const c = addChoiceOption(activity)
+  assert.ok(activityReadiness(block, code).some(check => check.text === 'Є варіант без тексту.'))
+  activity.config.options.find(o => o.id === c).text = { uk: 'Варіант В' }
+  setChoiceCorrect(activity, c)
+  assert.equal(activity.scoring.key.correctOptionId, c)
+  setChoiceCorrect(activity, 'ghost')
+  assert.equal(activity.scoring.key.correctOptionId, c, 'unknown ids are ignored')
+  assert.equal(removeChoiceOption(activity, c), true)
+  assert.equal(activity.scoring.key.correctOptionId, 'a', 'the first remaining option becomes right')
+  while (addChoiceOption(activity)) { /* fill up */ }
+  assert.equal(activity.config.options.length, 6)
+  for (const option of activity.config.options) if (!option.text.uk) option.text = { uk: 'Варіант' }
+  assertValid(lesson, 'six options')
+})
+
+test('truefalse statements: answers and outcome tags follow adds and removals', () => {
+  const lesson = newLesson({ id: 'g1-m2-l9', title: 'Пристрої', grade: 1, pack: PACK_INFO })
+  const block = newBlock('activity', lesson, PACK_INFO)
+  block.activity = activityTemplate('truefalse', 'tf-1', PACK_INFO)
+  lesson.blocks.push(block)
+  const activity = block.activity
+  const index = lesson.blocks.length - 1
+  assert.equal(removeStatement(activity, 's1'), false, 'one statement is the minimum')
+  const s2 = addStatement(activity)
+  const s3 = addStatement(activity)
+  assert.equal(activity.scoring.key.answers[s2], true, 'a new statement starts as «Так»')
+  setStatementAnswer(activity, s2, false)
+  assert.equal(activity.scoring.key.answers[s2], false)
+  for (const s of activity.config.statements) s.text = { uk: `Твердження ${s.id}` }
+
+  addActivityOutcome(lesson, index, 'int-files-organize')
+  setActivityPurpose(lesson, block, 'evidence')
+  const link = activity.outcomes[0]
+  toggleItemOutcome(activity, link, 's1')
+  assert.deepEqual(link.items, [s2, s3])
+  assertValid(lesson, 'tagged statements')
+
+  assert.equal(removeStatement(activity, s3), true)
+  assert.equal(s3 in activity.scoring.key.answers, false)
+  assert.deepEqual(link.items, [s2])
+  assert.ok(activityReadiness(block, code).some(check => check.level === 'warn' && check.text.includes('щонайменше 2')))
 })
