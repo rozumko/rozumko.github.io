@@ -46,7 +46,13 @@ export function prepareOutcome(raw: unknown): LearningOutcome {
     input.title = title
   }
   if (Array.isArray(input.mappings)) {
-    input.mappings = input.mappings.map(m => (isRecord(m) ? { ...m, framework: trimmed(m.framework), ref: trimmed(m.ref) } : m))
+    input.mappings = input.mappings.map(m => {
+      if (!isRecord(m)) return m
+      const mapping: Record<string, unknown> = { ...m, framework: trimmed(m.framework), ref: trimmed(m.ref) }
+      // The editor sends '' for "strength not set".
+      if (mapping.strength === '' || mapping.strength === null) delete mapping.strength
+      return mapping
+    })
   }
 
   const issues = validateLearningOutcome(input)

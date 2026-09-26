@@ -1173,7 +1173,7 @@
 .of-mappings { border: 0; padding: 0; margin: 0; min-width: 0; }
 .of-mapping-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr) auto;
   gap: var(--sp-2);
   align-items: end;
   margin: var(--sp-2) 0;

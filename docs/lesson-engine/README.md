@@ -733,6 +733,18 @@ Decisions:
   comes from; `mappings` (up to 10 `{framework, ref}` pairs, e.g.
   `cambridge 3Pc.01`) link the same skill in other documents. The core still
   knows no framework names. Codes are unique per pack.
+- **Evidence targets skills; frameworks are mappings.** Lessons and evidence
+  link Rozumko skills (`source: internal`, narrow enough for one activity to
+  check). The national standard and Cambridge are never evidence targets:
+  a broad NUSH result bundles several skills, and a Cambridge objective next
+  to it would count one student action twice. They appear only in `mappings`.
+- **Framework keys carry the edition.** `nush-ifo-2018` (standard in force),
+  `nush-ifo-2028` (new standard, not seeded until its codes are checked
+  against the approved text), `cambridge-0059` (Computing), `cambridge-0072`
+  (Digital Literacy). The same code in two editions is two different refs.
+- **Mapping strength.** Optional `strength`: `direct`, `partial` or
+  `supporting`. It is a methodological judgement, not an official
+  equivalence, and the tab shows it next to each mapping.
 - **Audited.** Every create, edit and archive writes an append-only
   revision in the same transaction; writes use `edit_version` optimistic
   locking.
@@ -741,6 +753,10 @@ Code:
 - Migration `0057`: `curriculum_outcomes`, `curriculum_outcome_revisions`
   (RLS on, guard and append-only triggers), seeded with the two pilot
   outcomes under their existing ids.
+- Migration `0058` (data only): the grade 2 pilot "input and output devices"
+  (`INF-2-DEV-1..3`) and mappings with strength for the two file outcomes,
+  each change with a revision. `INF-2-FILES-1` maps only partially, to a
+  Stage 3 objective: whether the topic belongs in grade 2 is open.
 - `backend/src/lib/curriculum-outcome-rules.ts` (pure: `prepareOutcome` uses
   the same rules as pack validation, `outcomeRegistry`, `outcomeUsage`).
 - `/api/admin/curriculum/`: `packs` (GET), `outcomes` (GET with usage, POST),

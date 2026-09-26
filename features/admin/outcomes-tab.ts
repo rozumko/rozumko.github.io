@@ -11,12 +11,15 @@ import {
   type AdminCurriculumOutcome,
   type AdminSubjectPack,
   type ApiError,
+  type CurriculumMappingStrength,
+  type CurriculumOutcomeMapping,
   type CurriculumOutcomeSource,
 } from '../api/client.js'
 import { $ } from '../../utils/dom.js'
 import { createFocusTrap } from '../../utils/focus-trap.js'
 import { showConfirm, friendlyError } from './ui.js'
 import {
+  MAPPING_STRENGTH_LABELS,
   OUTCOME_FRAMEWORK_SUGGESTIONS,
   OUTCOME_SOURCE_LABELS,
   describeOutcomeIssue,
@@ -177,7 +180,7 @@ function toggleStatus(outcome: AdminCurriculumOutcome, lessons: string[]) {
   showConfirm(`Зняти «${outcome.code}» з використання?${warning} Звіти про вже проведені уроки не зміняться.`, () => { void run() })
 }
 
-function addMappingRow(mapping: { framework: string; ref: string }, focus = false) {
+function addMappingRow(mapping: CurriculumOutcomeMapping, focus = false) {
   const host = $('of-mappings')
   const index = host.childElementCount + 1
   const row = el('div', 'of-mapping-row')
@@ -194,13 +197,18 @@ function addMappingRow(mapping: { framework: string; ref: string }, focus = fals
   ref.value = mapping.ref
   ref.setAttribute('aria-label', `Відповідність ${index}: код або критерій`)
   ref.placeholder = 'напр. 3Pc.01'
+  const strength = el('select', 'adm-input adm-input--sm of-strength')
+  strength.setAttribute('aria-label', `Відповідність ${index}: сила зв'язку`)
+  strength.append(new Option('сила не вказана', ''))
+  for (const [value, label] of Object.entries(MAPPING_STRENGTH_LABELS)) strength.append(new Option(label, value))
+  strength.value = mapping.strength ?? ''
   const remove = button('Прибрати', 'btn-adm-ghost btn--sm')
   remove.setAttribute('aria-label', `Прибрати відповідність ${index}`)
   remove.addEventListener('click', () => {
     row.remove()
     $('of-add-mapping').focus()
   })
-  row.append(framework, ref, remove)
+  row.append(framework, ref, strength, remove)
   host.append(row)
   if (focus) framework.focus()
 }
@@ -259,6 +267,7 @@ async function save() {
     mappings: [...$('of-mappings').querySelectorAll('.of-mapping-row')].map(row => ({
       framework: row.querySelector<HTMLInputElement>('.of-framework')!.value,
       ref: row.querySelector<HTMLInputElement>('.of-ref')!.value,
+      strength: row.querySelector<HTMLSelectElement>('.of-strength')!.value as CurriculumMappingStrength | '',
     })),
   })
   const idValue = $<HTMLInputElement>('of-id').value.trim()

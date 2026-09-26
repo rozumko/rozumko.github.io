@@ -4,13 +4,19 @@
     "title": { "uk": "Розрізняє ім’я файла та розширення і пояснює, навіщо потрібне розширення" },
     "source": "internal",
     "gradeBand": "1-2",
-    "mappings": []
+    "mappings": [
+      { "framework": "cambridge-0059", "ref": "3CS.04", "strength": "partial" }
+    ]
   },
   "int-files-organize": {
     "code": "INF-2-FILES-2",
     "title": { "uk": "Створює, перейменовує, переміщує та знаходить файли в тематичній папці" },
     "source": "internal",
     "gradeBand": "1-2",
-    "mappings": []
+    "mappings": [
+      { "framework": "cambridge-0072", "ref": "2TC.10", "strength": "direct" },
+      { "framework": "cambridge-0072", "ref": "1TC.09", "strength": "supporting" },
+      { "framework": "nush-ifo-2018", "ref": "2 ІФО 3.3.1", "strength": "supporting" }
+    ]
   }
 }

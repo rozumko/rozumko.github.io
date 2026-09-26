@@ -32,10 +32,14 @@ test('the form becomes a payload without empty optional fields or blank mapping 
   assert.deepEqual(outcomeInputFromForm({
     code: ' 2 ІФО 2.1-1 ', titleUk: ' Складає ', titleEn: ' ', source: 'national-standard',
     sourceRef: '', gradeBand: ' 1-2 ',
-    mappings: [{ framework: ' cambridge ', ref: ' 3Pc.01 ' }, { framework: '', ref: '  ' }],
+    mappings: [
+      { framework: ' cambridge ', ref: ' 3Pc.01 ', strength: '' },
+      { framework: 'nush-ifo-2018', ref: '2 ІФО 3.1.1', strength: 'partial' },
+      { framework: '', ref: '  ', strength: '' },
+    ],
   }), {
     code: '2 ІФО 2.1-1', title: { uk: 'Складає' }, source: 'national-standard', gradeBand: '1-2',
-    mappings: [{ framework: 'cambridge', ref: '3Pc.01' }],
+    mappings: [{ framework: 'cambridge', ref: '3Pc.01' }, { framework: 'nush-ifo-2018', ref: '2 ІФО 3.1.1', strength: 'partial' }],
   })
 })
 
@@ -43,6 +47,9 @@ test('server issues read as field names in Ukrainian', () => {
   assert.equal(describeOutcomeIssue({ path: 'code', message: 'must be a non-empty string' }), 'Код: не може бути порожнім')
   assert.equal(describeOutcomeIssue({ path: 'title.uk', message: 'must not contain HTML markup' }), 'Формулювання: без HTML-розмітки')
   assert.equal(describeOutcomeIssue({ path: 'mappings[1].ref', message: 'must be a non-empty string' }), 'Відповідність 2 → код: не може бути порожнім')
+  assert.equal(describeOutcomeIssue({ path: 'mappings[0].strength', message: 'must be one of: direct, partial, supporting' }),
+    'Відповідність 1 → сила: must be one of: direct, partial, supporting')
   assert.equal(describeOutcomeIssue({ path: 'weird', message: 'odd' }), 'weird: odd')
   assert.equal(mappingSummary(outcome({ mappings: [{ framework: 'nush', ref: 'a' }, { framework: 'cambridge', ref: 'b' }] })), 'nush a · cambridge b')
+  assert.equal(mappingSummary(outcome({ mappings: [{ framework: 'cambridge-0059', ref: '2CS.03', strength: 'direct' }] })), 'cambridge-0059 2CS.03 (пряма)')
 })
