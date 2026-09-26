@@ -17,7 +17,9 @@ import {
   newLesson,
   nextBlockId,
   outcomeCoverage,
+  outcomeItemChoices,
   removeLessonOutcome,
+  setOutcomeItems,
   renameLesson,
   setOnBoard,
   setStudentAudience,
@@ -137,6 +139,21 @@ test('a game can only be supporting evidence', () => {
   lesson.blocks.push(block)
   addActivityOutcome(lesson, 1, 'int-files-organize')
   assert.equal(block.activity.outcomes[0].evidenceRole, 'supporting')
+  assert.deepEqual(outcomeItemChoices(block.activity), [], 'a game has no items to split evidence by')
+})
+
+test('an outcome link narrows to chosen classify items; all items means the whole activity', () => {
+  const activity = activityTemplate('classify', 'sort-1', PACK_INFO)
+  activity.config.items.push({ id: 'i3', label: { uk: 'Предмет 3' } })
+  activity.scoring.key.placement.i3 = 'c1'
+  const link = { outcomeId: 'int-files-organize', evidenceRole: 'primary' }
+  assert.deepEqual(outcomeItemChoices(activity).map(c => c.label), ['Предмет 1', 'Предмет 2', 'Предмет 3'])
+
+  setOutcomeItems(activity, link, ['i3', 'i1', 'ghost'])
+  assert.deepEqual(link.items, ['i1', 'i3'], 'config order, unknown ids dropped')
+  setOutcomeItems(activity, link, ['i1', 'i2', 'i3'])
+  assert.equal('items' in link, false)
+  assert.deepEqual(outcomeItemChoices({ ...activity, scoring: { mode: 'client-unverified' } }), [])
 })
 
 test('teacher-only blocks leave the board; the board needs children to see the block', () => {

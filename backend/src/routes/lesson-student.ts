@@ -464,7 +464,11 @@ export async function lessonStudentRoutes(app: FastifyInstance) {
         }).returning()
 
         // Evidence activities record outcome evidence in the same transaction.
-        const evidence = evidenceRowsForAttempt(found.activity, { trust: scored.result.trust, normalizedScore: scored.result.normalizedScore })
+        const evidence = evidenceRowsForAttempt(found.activity, {
+          trust: scored.result.trust,
+          normalizedScore: scored.result.normalizedScore,
+          itemResults: scored.itemResults,
+        })
         if (evidence.length > 0) {
           const [runStudent] = await tx.select({ classStudentId: lessonRunStudents.classStudentId })
             .from(lessonRunStudents).where(eq(lessonRunStudents.id, studentId)).limit(1)

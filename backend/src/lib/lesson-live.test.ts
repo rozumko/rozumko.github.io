@@ -46,6 +46,8 @@ test('student scoring: practice gets feedback, evidence gets none, external take
   assert.equal(p.result.trust, 'server-verified'); assert.equal(p.result.correct, 1); assert.ok(p.feedback?.explanation)
   const e = scoreStudentAttempt(evidence, { answer: { optionId: 'a' } })
   assert.equal(e.feedback, null); assert.equal(e.result.correct, 0)
+  // Per-item results stay on the server for item-level evidence.
+  assert.deepEqual(e.itemResults, [{ id: 'a', correct: false }])
   assert.deepEqual(e.answerPayload, { answer: { optionId: 'a' } })
   assert.throws(() => scoreStudentAttempt(external, { answer: {} }), ActivityAnswerError)
   assert.throws(() => scoreStudentAttempt(practice, { answer: { optionId: 'zzz' } }), ActivityAnswerError)

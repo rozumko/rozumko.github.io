@@ -18,18 +18,31 @@ export interface EvidenceRowInput {
 /**
  * Evidence rows one attempt produces: only evidence activities, one row per
  * targeted outcome. A client-reported result is never recorded as primary.
+ * A link that names `items` scores only those items; without per-item results
+ * it records nothing rather than borrow the whole activity's score.
  */
 export function evidenceRowsForAttempt(
   activity: ActivitySpec,
-  attempt: { trust: EvidenceTrust; normalizedScore: number },
+  attempt: { trust: EvidenceTrust; normalizedScore: number; itemResults?: { id: string; correct: boolean }[] | null },
 ): EvidenceRowInput[] {
   if (activity.telemetry !== 'evidence') return []
-  return (activity.outcomes ?? []).map(link => ({
-    outcomeId: link.outcomeId,
-    evidenceRole: attempt.trust === 'client-unverified' ? 'supporting' : link.evidenceRole,
-    trust: attempt.trust,
-    score: attempt.normalizedScore,
-  }))
+  const rows: EvidenceRowInput[] = []
+  for (const link of activity.outcomes ?? []) {
+    let score = attempt.normalizedScore
+    if (link.items) {
+      const wanted = new Set(link.items)
+      const slice = (attempt.itemResults ?? []).filter(item => wanted.has(item.id))
+      if (slice.length === 0) continue
+      score = slice.filter(item => item.correct).length / slice.length
+    }
+    rows.push({
+      outcomeId: link.outcomeId,
+      evidenceRole: attempt.trust === 'client-unverified' ? 'supporting' : link.evidenceRole,
+      trust: attempt.trust,
+      score,
+    })
+  }
+  return rows
 }
 
 export type OutcomeStatus = 'demonstrated' | 'progressing' | 'needs-support' | 'not-enough-evidence'

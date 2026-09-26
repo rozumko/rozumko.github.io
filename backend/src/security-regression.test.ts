@@ -594,6 +594,9 @@ test('learning evidence is append-only, never primary when client-reported, and 
   assert.match(journal, /"tag": "0053_add_student_outcome_evidence"/)
   // Written inside the attempt transaction, from the run's frozen activity.
   assert.match(student, /evidenceRowsForAttempt\(found\.activity[\s\S]{0,600}tx\.insert\(studentOutcomeEvidence\)/)
+  // Per-item correctness feeds evidence only; a device never receives it.
+  assert.match(student, /evidenceRowsForAttempt\(found\.activity, \{[^}]*itemResults: scored\.itemResults,\s*\}\)/)
+  assert.doesNotMatch(student.replace('itemResults: scored.itemResults,', ''), /itemResults/)
   // Only verified primary evidence can decide a summary.
   assert.match(evidence, /e\.evidenceRole === 'primary' && e\.trust !== 'client-unverified'/)
 })

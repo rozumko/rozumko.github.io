@@ -149,6 +149,29 @@ test('classify and truefalse keys must cover every item exactly', () => {
   expectError(extraItem, `blocks[${cl}].activity.scoring.key.placement.ghost`)
 })
 
+test('an outcome link may narrow evidence to at least two known, distinct items of a server-scored activity', () => {
+  const lesson = fixture('test-subject.lesson.json')
+  const cl = blockIndex(lesson, 'ts-l1-b04')
+  const at = `blocks[${cl}].activity.outcomes[0].items`
+  const withItems = (items: unknown, patch: (a: Record<string, any>) => void = () => {}) => {
+    const copy = structuredClone(lesson)
+    copy.blocks[cl].activity.outcomes[0].items = items
+    patch(copy.blocks[cl].activity)
+    return copy
+  }
+
+  expectValid(withItems(['i1', 'i2']))
+  expectError(withItems(['i1']), at)
+  expectError(withItems(['i1', 'ghost']), `${at}[1]`)
+  expectError(withItems(['i1', 'i1']), `${at}[1]`)
+  expectError(withItems('i1'), at)
+  // Per-item evidence needs per-item server scoring: not a game, not a client-reported result.
+  expectError(withItems(['i1', 'i2'], a => {
+    a.scoring = { mode: 'client-unverified' }
+    a.outcomes[0].evidenceRole = 'supporting'
+  }), at)
+})
+
 // ── Audience and projection boundaries ───────────────────────────────────────
 
 test('teacher-only material never reaches presentation or remote views', () => {

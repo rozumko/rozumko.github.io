@@ -390,6 +390,14 @@ Decisions:
   client-reported (game) result is always demoted to `supporting`, and the
   DB check `evidence_role <> 'primary' OR trust <> 'client-unverified'` backs
   this up.
+- **Item-level evidence.** An outcome link may name `items` (classify items
+  or truefalse statements of a server-scored activity, at least two, known and
+  distinct). Its evidence score is then the share of those items answered
+  correctly, so one sorting can evidence "familiar devices" and "a new device
+  by its function" separately. Links without `items` keep the whole-activity
+  score. Per-item correctness (`ScoredAttempt.itemResults`) stays on the
+  server: an evidence device still gets neither a score nor per-item feedback.
+  The editor shows «Картки для цього результату» under each link.
 - **The written rule** (printed on the report): only the latest *primary,
   verified* evidence decides the result:
   - ≥ 80% → «Продемонстровано»;

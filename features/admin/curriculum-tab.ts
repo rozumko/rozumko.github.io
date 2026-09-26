@@ -58,17 +58,21 @@ import {
   newLesson,
   optionalText,
   outcomeCoverage,
+  outcomeItemChoices,
   parseJson,
   removeActivityOutcome,
   removeLessonOutcome,
   renameLesson,
   setOnBoard,
   setOnDevices,
+  setOutcomeItems,
   setStep,
   setStudentAudience,
   shortTextFromLines,
   withoutAnswerKeys,
+  type EditableActivity,
   type EditableBlock,
+  type EditableOutcomeLink,
   type EditableLesson,
   type EvidenceRole,
   type Issue,
@@ -1627,6 +1631,38 @@ function renderActivityForm(block: EditableBlock, pack: PackInfo | null): HTMLEl
 }
 
 /** `more` is the block's «Додатково» fold, where the technical task id lives. */
+/** Which items evidence this outcome; all checked means the whole activity counts. */
+function renderOutcomeItems(activity: EditableActivity, link: EditableOutcomeLink, choices: { id: string; label: string }[]): HTMLElement {
+  const box = el('details', 'cl-link-items')
+  const summary = el('summary')
+  const describe = () => {
+    summary.textContent = link.items
+      ? `Картки для цього результату: ${link.items.length} з ${choices.length}`
+      : 'Картки для цього результату: усі'
+  }
+  describe()
+  box.append(summary, el('p', 'question-item__meta',
+    'Позначте картки, які перевіряють саме це вміння. Бал доказу рахується тільки за ними; потрібно щонайменше 2.'))
+  const group = el('div', 'cl-switches')
+  for (const choice of choices) {
+    const label = el('label', 'cl-check')
+    const input = el('input')
+    input.type = 'checkbox'
+    input.value = choice.id
+    input.checked = !link.items || link.items.includes(choice.id)
+    input.addEventListener('change', () => {
+      const checked = [...group.querySelectorAll<HTMLInputElement>('input:checked')].map(i => i.value)
+      setOutcomeItems(activity, link, checked)
+      describe()
+      touched()
+    })
+    label.append(input, document.createTextNode(choice.label))
+    group.append(label)
+  }
+  box.append(group)
+  return box
+}
+
 function renderActivityFields(block: EditableBlock, index: number, more: HTMLElement): HTMLElement {
   const state = editor!
   const lesson = state.lesson
@@ -1638,7 +1674,9 @@ function renderActivityFields(block: EditableBlock, index: number, more: HTMLEle
   grid.append(field('Механіка', select(EDITOR_MECHANICS, MECHANIC_LABELS, activity.mechanic, mechanic => {
     showConfirm('Змінити механіку? Налаштування й ключ відповіді буде замінено шаблоном нової механіки.', () => {
       const template = activityTemplate(mechanic, activity.instanceId, pack)
-      block.activity = { ...template, telemetry: activity.telemetry, outcomes: activity.outcomes, attempts: activity.attempts }
+      // Item choices name the old mechanic's items, so they do not survive a switch.
+      const outcomes = activity.outcomes?.map(({ items: _items, ...link }) => link)
+      block.activity = { ...template, telemetry: activity.telemetry, outcomes, attempts: activity.attempts }
       if (!block.activity.outcomes) delete block.activity.outcomes
       if (!block.activity.attempts) delete block.activity.attempts
       state.jsonErrors.delete(`config:${block.id}`)
@@ -1683,6 +1721,8 @@ function renderActivityFields(block: EditableBlock, index: number, more: HTMLEle
       changed()
     }))
     li.lastElementChild!.setAttribute('aria-label', `Прибрати зв’язок: ${outcomeLabel(link.outcomeId)}`)
+    const choices = outcomeItemChoices(activity)
+    if (choices.length > 0) li.append(renderOutcomeItems(activity, link, choices))
     list.append(li)
   }
   if (!activity.outcomes?.length) list.append(el('li', 'question-item__meta', activity.telemetry === 'evidence' ? 'Доказ має бути пов’язаний хоча б з одним результатом.' : 'Не пов’язане з результатами.'))
