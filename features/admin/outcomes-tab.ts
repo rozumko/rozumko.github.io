@@ -1,14 +1,18 @@
 // Admin tab "Результати навчання": the Lesson Engine learning outcome
 // directory. Outcomes are archived, never deleted (student evidence refers to
 // them), and their id and subject pack never change after creation.
+// «Стандарти й програми» shows the read-only NUSH/Cambridge catalogue and
+// which skills cover each entry.
 
 import {
   createAdminCurriculumOutcome,
   getAdminCurriculumOutcomes,
+  getAdminFrameworkRefs,
   getAdminSubjectPacks,
   setAdminCurriculumOutcomeStatus,
   updateAdminCurriculumOutcome,
   type AdminCurriculumOutcome,
+  type AdminFrameworkRef,
   type AdminSubjectPack,
   type ApiError,
   type CurriculumMappingStrength,
@@ -24,14 +28,23 @@ import {
   OUTCOME_SOURCE_LABELS,
   describeOutcomeIssue,
   filterOutcomes,
+  filterRefs,
+  frameworkTitle,
+  levelLabel,
   mappingSummary,
   outcomeInputFromForm,
+  refCoverage,
+  refKey,
+  refLevels,
+  skillDraftFromRef,
 } from './outcomes-model.js'
 
 let outcomes: AdminCurriculumOutcome[] = []
 let usage: Record<string, string[]> = {}
 let packs: AdminSubjectPack[] = []
 let editing: AdminCurriculumOutcome | null = null
+let refs: AdminFrameworkRef[] = []
+let refsLoaded = false
 let removeTrap: (() => void) | null = null
 let loaded = false
 
@@ -57,6 +70,12 @@ export function initOutcomesTab() {
   $<HTMLSelectElement>('o-filter-pack').addEventListener('change', renderList)
   $<HTMLSelectElement>('o-filter-status').addEventListener('change', renderList)
   $('add-outcome-btn').addEventListener('click', () => openEditor(null))
+  $('o-view-skills').addEventListener('click', () => setView('skills'))
+  $('o-view-catalog').addEventListener('click', () => setView('catalog'))
+  $<HTMLInputElement>('oc-search').addEventListener('input', renderCatalog)
+  $<HTMLSelectElement>('oc-framework').addEventListener('change', () => { fillLevelSelect(); renderCatalog() })
+  $<HTMLSelectElement>('oc-level').addEventListener('change', renderCatalog)
+  $<HTMLInputElement>('oc-uncovered').addEventListener('change', renderCatalog)
   $('of-add-mapping').addEventListener('click', () => addMappingRow({ framework: '', ref: '' }, true))
   $('of-cancel').addEventListener('click', closeEditor)
   $<HTMLFormElement>('outcome-form').addEventListener('submit', event => {
@@ -88,12 +107,137 @@ export async function loadOutcomesTab() {
       loaded = true
     }
     renderList()
+    await loadCatalog()
   } catch (err) {
     const status = (err as ApiError).status
     $('o-load-error').textContent = status === 404
       ? 'Керовані уроки вимкнені на сервері (LESSON_ENGINE_ENABLED).'
       : friendlyError((err as Error).message)
   }
+}
+
+/** The catalogue loads once; a failure leaves the skills view working. */
+async function loadCatalog() {
+  if (!refsLoaded) {
+    try {
+      refs = (await getAdminFrameworkRefs()).refs ?? []
+      refsLoaded = true
+      $('oc-error').textContent = ''
+      fillLevelSelect()
+      fillRefLists()
+    } catch (err) {
+      $('oc-error').textContent = `Не вдалося завантажити стандарти: ${friendlyError((err as Error).message)}`
+    }
+  }
+  renderCatalog()
+}
+
+function setView(view: 'skills' | 'catalog') {
+  const catalog = view === 'catalog'
+  $('o-catalog-view').hidden = !catalog
+  $('o-skills-view').hidden = catalog
+  $('o-view-skills').classList.toggle('o-view--on', !catalog)
+  $('o-view-catalog').classList.toggle('o-view--on', catalog)
+  $('o-view-skills').setAttribute('aria-pressed', String(!catalog))
+  $('o-view-catalog').setAttribute('aria-pressed', String(catalog))
+}
+
+function fillLevelSelect() {
+  const select = $<HTMLSelectElement>('oc-level')
+  const framework = $<HTMLSelectElement>('oc-framework').value
+  select.replaceChildren(new Option('Усі класи', ''))
+  for (const level of refLevels(refs, framework)) select.append(new Option(levelLabel({ framework, level }), level))
+}
+
+/** One datalist of codes per framework, for the mapping rows in the editor. */
+function fillRefLists() {
+  const host = $('of-ref-lists')
+  host.replaceChildren()
+  for (const framework of new Set(refs.map(ref => ref.framework))) {
+    const list = el('datalist')
+    list.id = `of-refs-${framework}`
+    for (const ref of refs.filter(r => r.framework === framework)) {
+      const option = el('option')
+      option.value = ref.code
+      option.label = ref.title.length > 90 ? `${ref.title.slice(0, 89)}…` : ref.title
+      list.append(option)
+    }
+    host.append(list)
+  }
+}
+
+function findRef(framework: string, code: string): AdminFrameworkRef | undefined {
+  return refs.find(ref => ref.framework === framework.trim() && ref.code === code.trim())
+}
+
+function renderCatalog() {
+  const list = $('oc-list')
+  const coverage = refCoverage(outcomes)
+  const framework = $<HTMLSelectElement>('oc-framework').value
+  const inFramework = refs.filter(ref => ref.framework === framework)
+  const covered = inFramework.filter(ref => coverage.has(refKey(ref.framework, ref.code))).length
+  const filtered = filterRefs(refs, {
+    framework,
+    level: $<HTMLSelectElement>('oc-level').value,
+    query: $<HTMLInputElement>('oc-search').value,
+    uncoveredOnly: $<HTMLInputElement>('oc-uncovered').checked,
+  }, coverage)
+  $('oc-count').textContent = refsLoaded ? `${filtered.length} із ${inFramework.length} · покрито вміннями: ${covered}` : ''
+  list.replaceChildren()
+  if (!refsLoaded) return
+  if (filtered.length === 0) {
+    const empty = el('div', 'admin-empty-state')
+    const inner = el('div')
+    inner.append(el('p', 'admin-empty-state__title', inFramework.length ? 'За цими фільтрами нічого не знайдено' : 'Каталог порожній: застосуйте міграцію 0059'))
+    empty.append(inner)
+    list.append(empty)
+    return
+  }
+  for (const ref of filtered) {
+    const covers = coverage.get(refKey(ref.framework, ref.code)) ?? []
+    const item = el('div', 'question-item')
+    item.dataset.refCode = ref.code
+    const left = el('div', 'question-item__left')
+    const badges = el('div', 'question-item__badges')
+    badges.append(el('span', 'qi-badge qi-badge--type', levelLabel(ref)))
+    // NUSH groups are long general results: the badge shows the code, the meta line the wording.
+    const longGroup = !!ref.groupTitle && ref.groupTitle.length > 60
+    if (ref.groupTitle) badges.append(el('span', 'qi-badge qi-badge--type', longGroup ? String(ref.groupCode) : ref.groupTitle))
+    badges.append(covers.length
+      ? el('span', 'qi-badge qi-badge--easy', `вмінь: ${covers.length}`)
+      : el('span', 'qi-badge qi-badge--medium', 'не покрито'))
+    const text = el('p', 'question-item__text')
+    const wording = el('span', undefined, ` — ${ref.title}`)
+    wording.lang = ref.lang
+    text.append(el('strong', undefined, ref.code), wording)
+    left.append(badges, text)
+    if (covers.length) {
+      const names = covers.map(c => `${c.code}${c.strength ? ` (${MAPPING_STRENGTH_LABELS[c.strength]})` : ''}`)
+      left.append(el('p', 'question-item__meta', `Покривають: ${names.join(', ')}`))
+    }
+    if (longGroup) left.append(el('p', 'question-item__meta', `${ref.groupCode}: ${ref.groupTitle}`))
+    if (ref.examples.length) left.append(foldList(`Приклади завдань МОН (${ref.examples.length})`, ref.examples, 'uk'))
+    if (ref.guidance) left.append(foldList('Примітки Cambridge', [ref.guidance], 'en'))
+    left.append(el('p', 'question-item__meta', ref.source))
+
+    const actions = el('div', 'question-item__actions')
+    const create = button('Створити вміння', 'btn-adm-ghost')
+    create.setAttribute('aria-label', `Створити вміння з відповідністю ${ref.code}`)
+    create.addEventListener('click', () => openEditor(null, skillDraftFromRef(ref)))
+    actions.append(create)
+    item.append(left, actions)
+    list.append(item)
+  }
+}
+
+function foldList(title: string, lines: string[], lang: string): HTMLDetailsElement {
+  const fold = el('details', 'oc-fold')
+  fold.append(el('summary', undefined, title))
+  const ul = el('ul')
+  ul.lang = lang
+  for (const line of lines) ul.append(el('li', undefined, line))
+  fold.append(ul)
+  return fold
 }
 
 function fillPackSelect(select: HTMLSelectElement, withAll: boolean) {
@@ -208,12 +352,24 @@ function addMappingRow(mapping: CurriculumOutcomeMapping, focus = false) {
     row.remove()
     $('of-add-mapping').focus()
   })
-  row.append(framework, ref, strength, remove)
+  const hint = el('p', 'adm-field-hint of-ref-hint')
+  const describe = () => {
+    ref.setAttribute('list', `of-refs-${framework.value.trim()}`)
+    const found = findRef(framework.value, ref.value)
+    hint.textContent = found ? `${frameworkTitle(found.framework)}, ${levelLabel(found)}: ${found.title}` : ''
+    if (found) hint.lang = found.lang
+    else hint.removeAttribute('lang')
+  }
+  framework.addEventListener('input', describe)
+  ref.addEventListener('input', describe)
+  describe()
+  row.append(framework, ref, strength, remove, hint)
   host.append(row)
   if (focus) framework.focus()
 }
 
-function openEditor(outcome: AdminCurriculumOutcome | null) {
+/** `draft` prefills a new skill from a catalogue entry (grade and a direct mapping). */
+function openEditor(outcome: AdminCurriculumOutcome | null, draft?: { gradeBand: string; mappings: CurriculumOutcomeMapping[] }) {
   editing = outcome
   $('outcome-modal-title').textContent = outcome ? `Редагувати: ${outcome.code}` : 'Новий результат навчання'
   $('of-error').replaceChildren()
@@ -223,14 +379,14 @@ function openEditor(outcome: AdminCurriculumOutcome | null) {
   const id = $<HTMLInputElement>('of-id')
   id.value = outcome?.id ?? ''
   id.disabled = !!outcome
-  $<HTMLSelectElement>('of-source').value = outcome?.source ?? 'national-standard'
+  $<HTMLSelectElement>('of-source').value = outcome?.source ?? (draft ? 'internal' : 'national-standard')
   $<HTMLInputElement>('of-code').value = outcome?.code ?? ''
-  $<HTMLInputElement>('of-grade').value = outcome?.gradeBand ?? ''
+  $<HTMLInputElement>('of-grade').value = outcome?.gradeBand ?? draft?.gradeBand ?? ''
   $<HTMLTextAreaElement>('of-title').value = outcome?.titleUk ?? ''
   $<HTMLInputElement>('of-title-en').value = outcome?.titleEn ?? ''
   $<HTMLInputElement>('of-source-ref').value = outcome?.sourceRef ?? ''
   $('of-mappings').replaceChildren()
-  for (const mapping of outcome?.mappings ?? []) addMappingRow(mapping)
+  for (const mapping of outcome?.mappings ?? draft?.mappings ?? []) addMappingRow(mapping)
 
   $('outcome-modal').classList.remove('hidden')
   removeTrap?.()

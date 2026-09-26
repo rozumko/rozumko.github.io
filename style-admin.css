@@ -1179,6 +1179,17 @@
   margin: var(--sp-2) 0;
 }
 .of-issues { margin: 0; padding-left: var(--sp-5); }
+.of-ref-hint { grid-column: 1 / -1; margin: calc(-1 * var(--sp-1)) 0 0; }
+.of-ref-hint:empty { display: none; }
+
+/* «Результати навчання»: skills vs the NUSH/Cambridge catalogue */
+.o-views { display: inline-flex; gap: var(--sp-1); margin: var(--sp-3) 0; padding: var(--sp-1); border: 1px solid var(--adm-border); border-radius: var(--r-md); background: var(--adm-surface); }
+.o-view { min-height: 40px; padding: 0 var(--sp-4); border: 0; border-radius: var(--r-sm); background: transparent; color: var(--adm-text-muted); font: inherit; font-weight: 600; cursor: pointer; }
+.o-view:hover { color: var(--adm-text); }
+.o-view--on { background: var(--adm-accent-soft); color: var(--adm-text); }
+.oc-fold { margin-top: var(--sp-2); font-size: var(--font-size-sm); color: var(--adm-text); }
+.oc-fold > summary { cursor: pointer; color: var(--adm-text-muted); }
+.oc-fold ul { margin: var(--sp-2) 0 0; padding-left: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-1); }
 @media (max-width: 480px) {
   .of-mapping-row { grid-template-columns: 1fr; }
 }

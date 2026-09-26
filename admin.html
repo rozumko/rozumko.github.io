@@ -403,10 +403,32 @@
             </button>
           </div>
         </div>
-        <p class="admin-section-note">Довідник для керованих уроків: очікувані результати НУШ, критерії Cambridge, результати програми.
-          Активність уроку посилається на результат, і відповіді учнів стають доказами його досягнення.
-          Результат не видаляється, бо на нього посилаються докази учнів: його можна лише зняти з використання.
-          Код і формулювання вносьте з офіційного документа, не вигадуйте.</p>
+        <p class="admin-section-note">Вміння Розумко — конкретні дії, які перевіряє одна активність. Активність уроку посилається на вміння,
+          і відповіді учнів стають доказами. Очікувані результати НУШ і цілі Cambridge — у відповідностях вміння,
+          а повний перелік — у розділі «Стандарти й програми». Вміння не видаляється, бо на нього посилаються докази: його можна лише зняти з використання.</p>
+        <div class="o-views" role="group" aria-label="Що показати">
+          <button type="button" id="o-view-skills" class="o-view o-view--on" aria-pressed="true">Вміння Розумко</button>
+          <button type="button" id="o-view-catalog" class="o-view" aria-pressed="false">Стандарти й програми</button>
+        </div>
+        <div id="o-catalog-view" hidden>
+          <p class="admin-section-note">Орієнтир для планування: результати ІФО та цілі Cambridge з офіційних документів.
+            Біля кожного коду видно, які вміння Розумко його покривають. Доступно лише адміністратору.</p>
+          <div class="admin-filter-bar">
+            <input id="oc-search" class="adm-input adm-input--sm" type="search"
+                   placeholder="Пошук за кодом, словом або розділом" aria-label="Пошук у стандартах"/>
+            <select id="oc-framework" class="adm-input adm-input--sm adm-input--auto" aria-label="Документ">
+              <option value="nush-ifo-2018">ІФО (НУШ, чинна редакція)</option>
+              <option value="cambridge-0059">Cambridge Computing 0059</option>
+              <option value="cambridge-0072">Cambridge Digital Literacy 0072</option>
+            </select>
+            <select id="oc-level" class="adm-input adm-input--sm adm-input--auto" aria-label="Клас або Stage"></select>
+            <label class="cl-check"><input type="checkbox" id="oc-uncovered"/> Лише непокриті</label>
+            <span id="oc-count" class="admin-filter-count"></span>
+          </div>
+          <p id="oc-error" class="adm-form-error" role="alert"></p>
+          <div id="oc-list" class="admin-list admin-list--sm"></div>
+        </div>
+        <div id="o-skills-view">
         <div class="admin-filter-bar">
           <input id="o-filter-search" class="adm-input adm-input--sm" type="search"
                  placeholder="Пошук за кодом, словом або відповідністю" aria-label="Пошук результатів"/>
@@ -422,6 +444,7 @@
         </div>
         <p id="o-load-error" class="adm-form-error" role="alert"></p>
         <div id="outcomes-list" class="admin-list admin-list--sm"></div>
+        </div>
       </section>
 
       <!-- Вкладка: Карта шляху -->
@@ -1208,6 +1231,7 @@
             <i class="fas fa-plus" aria-hidden="true"></i> Відповідність
           </button>
           <datalist id="of-frameworks"></datalist>
+          <div id="of-ref-lists"></div>
         </fieldset>
         <div>
           <label for="of-id" class="adm-label">ID (необов'язково)</label>

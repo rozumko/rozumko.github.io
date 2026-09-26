@@ -73,6 +73,7 @@ environments receive the same schema.
 | `0056_add_classroom_remote_connections` | Lesson Engine ↔ Classroom Remote: one connection per teacher, integration key encrypted at rest (AES-256-GCM, teacher-bound), only a 4-char hint shown (RLS enabled) |
 | `0057_add_curriculum_outcomes` | Lesson Engine learning outcome directory (NUSH / program / Cambridge) + append-only revisions; outcomes are archived, never deleted, id/pack immutable (triggers); seeds the two pilot outcomes (RLS enabled) |
 | `0058_seed_device_outcomes_and_mappings` | Data only: grade 2 pilot outcomes "input and output devices" (`INF-2-DEV-1..3`) and NUSH/Cambridge mappings with strength for the two file outcomes; revisions written; mappings are added only while an outcome has none |
+| `0059_add_curriculum_framework_refs` | Lesson Engine framework catalogue: read-only NUSH informatics results (edition in force, with MON task examples) and Cambridge Primary Computing 0059 / Digital Literacy 0072 Stage 1–4 objectives (licensed wording, admin-only); skills map to entries, evidence never does (RLS enabled) |
 
 `0012` is intentionally idempotent: production received the columns manually
 before the SQL was incorporated into Drizzle history.
@@ -213,7 +214,7 @@ history cannot be hard-deleted. The API is served only when
 
 Migration `0028` enabled RLS on every application table that existed at that
 revision; each later table migration (`0029`, `0031`-`0034`, `0036`-`0038`,
-`0041`, `0047`, `0048`, `0049`, `0050`, `0051`, `0052`, `0053`, `0054`, `0055`, `0056`, `0057`) enables it in the same migration. A regression
+`0041`, `0047`, `0048`, `0049`, `0050`, `0051`, `0052`, `0053`, `0054`, `0055`, `0056`, `0057`, `0059`) enables it in the same migration. A regression
 test in `backend/src/security-regression.test.ts` scans every `pgTable` in
 `schema.ts` and fails if any table lacks an `ENABLE ROW LEVEL SECURITY`
 migration, so this is enforced rather than periodically re-checked by hand.

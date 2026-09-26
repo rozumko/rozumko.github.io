@@ -8,6 +8,7 @@ import type { FastifyInstance, FastifyReply } from 'fastify'
 import { and, asc, desc, eq } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import {
+  curriculumFrameworkRefs,
   curriculumLessonRevisions,
   curriculumLessons,
   curriculumOutcomeRevisions,
@@ -350,6 +351,15 @@ export async function curriculumAdminRoutes(app: FastifyInstance) {
       games: pack.games.map(key => ({ key, levels: resolveActivityDefinition(key).levels.map(level => level.id) })),
     }))
     return reply.send({ packs })
+  })
+
+  // GET /api/admin/curriculum/framework-refs — the read-only catalogue of
+  // NUSH and Cambridge entries skills map to (migration 0059). Admin-only
+  // like every route here: Cambridge wording is licensed material.
+  app.get('/framework-refs', async (_req, reply) => {
+    const refs = await db.select().from(curriculumFrameworkRefs)
+      .orderBy(asc(curriculumFrameworkRefs.framework), asc(curriculumFrameworkRefs.sortOrder))
+    return reply.send({ refs })
   })
 
   // GET /api/admin/curriculum/outcomes — the directory, archived included, with

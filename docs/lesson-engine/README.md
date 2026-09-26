@@ -765,6 +765,31 @@ Code:
   (`INF-2-DEV-1..3`) and mappings with strength for the two file outcomes,
   each change with a revision. `INF-2-FILES-1` maps only partially, to a
   Stage 3 objective: whether the topic belongs in grade 2 is open.
+
+### Framework catalogue
+
+The documents skills map to, kept as a read-only reference for planning:
+the national standard's informatics results (edition in force,
+`nush-ifo-2018`, 30 results with MON task examples) and Cambridge Primary
+Computing 0059 and Digital Literacy 0072, Stages 1–4 (241 objectives, with
+strands and the Digital Literacy guidance), in their official wording.
+
+- **Reference, not evidence.** Evidence still targets Rozumko skills; a
+  catalogue entry is what a skill's mapping `{framework, ref}` names.
+- **Admin-only.** Cambridge wording is licensed material, used here by a
+  Cambridge-certified teacher: `/api/admin/curriculum/framework-refs` sits
+  behind the same flag-first 404 and admin hooks, and no teacher, student or
+  public route reads the table (a regression test checks this).
+- **In the tab.** «Результати навчання» switches between «Вміння Розумко» and
+  «Стандарти й програми»: filter by document, class or Stage, words (MON
+  examples included) and «Лише непокриті»; each code shows the skills that
+  cover it, and «Створити вміння» drafts a skill with a direct mapping. In the
+  skill editor a mapping's code is suggested from the catalogue and its
+  wording is shown under the row.
+- Migration `0059` creates `curriculum_framework_refs` (RLS on, no policies)
+  and inserts the entries once; a wording fix is a new migration. The new
+  NUSH edition (`nush-ifo-2028`) is added the same way once its codes are
+  checked against the approved text.
 - `backend/src/lib/curriculum-outcome-rules.ts` (pure: `prepareOutcome` uses
   the same rules as pack validation, `outcomeRegistry`, `outcomeUsage`).
 - `/api/admin/curriculum/`: `packs` (GET), `outcomes` (GET with usage, POST),

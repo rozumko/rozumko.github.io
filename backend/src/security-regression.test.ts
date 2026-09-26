@@ -429,6 +429,23 @@ test('curriculum lessons are RLS-protected, journaled and keep published version
   assert.match(journal, /"tag": "0049_add_curriculum_lessons"/)
 })
 
+test('the framework catalogue (licensed Cambridge wording) is RLS-protected and read only by the admin routes', () => {
+  const migration = readFileSync(new URL('../drizzle/0059_add_curriculum_framework_refs.sql', import.meta.url), 'utf8')
+  const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')
+  assert.match(migration, /ALTER TABLE public\.curriculum_framework_refs ENABLE ROW LEVEL SECURITY;/)
+  assert.doesNotMatch(migration, /CREATE POLICY/)
+  assert.match(journal, /"tag": "0059_add_curriculum_framework_refs"/)
+
+  const admin = readFileSync(new URL('./routes/curriculum-admin.ts', import.meta.url), 'utf8')
+  assert.match(admin, /app\.addHook\('preHandler', requireAdmin\)/)
+  assert.match(admin, /app\.get\('\/framework-refs'/)
+  const routesDir = new URL('./routes/', import.meta.url)
+  const readers = readdirSync(routesDir)
+    .filter(name => name.endsWith('.ts') && !name.endsWith('.test.ts'))
+    .filter(name => readFileSync(new URL(name, routesDir), 'utf8').includes('curriculumFrameworkRefs'))
+  assert.deepEqual(readers, ['curriculum-admin.ts'])
+})
+
 test('the learning outcome directory is RLS-protected, never deleted and journaled', () => {
   const migration = readFileSync(new URL('../drizzle/0057_add_curriculum_outcomes.sql', import.meta.url), 'utf8')
   const journal = readFileSync(new URL('../drizzle/meta/_journal.json', import.meta.url), 'utf8')
