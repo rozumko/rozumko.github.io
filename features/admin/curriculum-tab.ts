@@ -1479,96 +1479,6 @@ function renderSlideFields(block: EditableBlock): HTMLElement {
   return box
 }
 
-function renderActivityForm(block: EditableBlock, pack: PackInfo | null): HTMLElement {
-  const activity = block.activity!
-  const config = activity.config
-  const key = activity.scoring.key ?? {}
-  const box = el('fieldset', 'cl-fieldset')
-  box.append(el('legend', 'adm-label', 'Умова та відповіді'))
-  const question = activity.mechanic === 'truefalse' ? 'Загальна інструкція' : 'Запитання або інструкція'
-  if (activity.mechanic !== 'game' && activity.mechanic !== 'external') box.append(localizedField(config, 'prompt', question, activity.mechanic !== 'truefalse'))
-
-  if (activity.mechanic === 'choice') {
-    const options = Array.isArray(config.options) ? config.options as unknown[] : []
-    options.forEach((option, index) => {
-      if (!isRecord(option)) return
-      const row = el('div', 'cl-row cl-answer-row')
-      const correct = el('input')
-      correct.type = 'radio'
-      correct.name = `cl-correct-${block.id}`
-      correct.checked = key.correctOptionId === option.id
-      correct.setAttribute('aria-label', `Правильна відповідь: варіант ${index + 1}`)
-      correct.addEventListener('change', () => { key.correctOptionId = option.id; activity.scoring.key = key; touched() })
-      row.append(correct, localizedField(option, 'text', `Варіант ${index + 1}`, true, 1))
-      const remove = button('Прибрати', 'btn-adm-ghost btn--sm', () => {
-        options.splice(index, 1)
-        if (key.correctOptionId === option.id) key.correctOptionId = isRecord(options[0]) ? options[0].id : ''
-        config.options = options
-        activity.scoring.key = key
-        changed()
-      })
-      remove.disabled = options.length <= 2
-      row.append(remove)
-      box.append(row)
-    })
-    const add = button('+ Варіант', 'btn-adm-ghost btn--sm', () => {
-      options.push({ id: nextLocalId(options, 'o'), text: { uk: '' } })
-      config.options = options
-      changed()
-    })
-    add.disabled = options.length >= 6
-    box.append(add, localizedField(key, 'explanation', 'Пояснення після відповіді'))
-    activity.scoring.key = key
-  } else if (activity.mechanic === 'truefalse') {
-    const statements = Array.isArray(config.statements) ? config.statements as unknown[] : []
-    const answers = isRecord(key.answers) ? key.answers : {}
-    statements.forEach((statement, index) => {
-      if (!isRecord(statement)) return
-      const row = el('div', 'cl-row cl-answer-row')
-      row.append(localizedField(statement, 'text', `Твердження ${index + 1}`, true, 1))
-      row.append(field('Правильна відповідь', select(['true', 'false'] as const, { true: 'Так', false: 'Ні' }, String(answers[String(statement.id)]), value => {
-        answers[String(statement.id)] = value === 'true'
-        key.answers = answers
-        activity.scoring.key = key
-        touched()
-      })))
-      row.append(button('Прибрати', 'btn-adm-ghost btn--sm', () => {
-        delete answers[String(statement.id)]
-        statements.splice(index, 1)
-        config.statements = statements
-        changed()
-      }))
-      box.append(row)
-    })
-    const add = button('+ Твердження', 'btn-adm-ghost btn--sm', () => {
-      const id = nextLocalId(statements, 's')
-      statements.push({ id, text: { uk: '' } })
-      answers[id] = true
-      config.statements = statements
-      key.answers = answers
-      activity.scoring.key = key
-      changed()
-    })
-    add.disabled = statements.length >= 10
-    box.append(add)
-  } else if (activity.mechanic === 'external') {
-    const tools = pack?.tools.map(tool => tool.key) ?? []
-    box.append(field('Зовнішній тренажер', select(tools, id => id, String(config.toolKey ?? ''), id => { config.toolKey = id; touched() })))
-    box.append(localizedField(config, 'instructions', 'Інструкція для учнів'))
-  } else if (activity.mechanic === 'game') {
-    const games = pack?.games ?? []
-    box.append(field('Гра', select(games.map(game => game.key), id => id, String(config.gameKey ?? ''), id => {
-      config.gameKey = id
-      config.level = games.find(game => game.key === id)?.levels[0] ?? ''
-      changed()
-    })))
-    const levels = games.find(game => game.key === config.gameKey)?.levels ?? []
-    box.append(field('Рівень', select(levels, id => id, String(config.level ?? ''), id => { config.level = id; touched() })))
-    box.append(localizedField(config, 'instructions', 'Інструкція для учнів'))
-  }
-  return box
-}
-
 /** The raw config and key, for the rare case the forms cannot express. */
 function renderActivityJson(block: EditableBlock): HTMLElement {
   const activity = block.activity!
@@ -1665,7 +1575,7 @@ function openActivityDialogFor(block: EditableBlock) {
         done()
       })
     },
-    classicForm: () => renderActivityForm(block, pack),
+    pack,
     contentFields: () => renderContentFields(block),
     slideFields: () => (block.presentation ? renderSlideFields(block) : null),
     jsonFields: () => renderActivityJson(block),

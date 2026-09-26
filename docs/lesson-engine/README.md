@@ -799,8 +799,10 @@ Decisions:
   activity is one short card (type, purpose, cards, outcomes, devices, the
   first warning). «Налаштувати завдання» opens `activity-dialog.ts`:
   «Що робить учень» (type tiles; for sorting, groups as columns with cards
-  that move between them and a preview of the child's screen; other types
-  keep their form for now), «Що перевіряємо» (purpose: for assessment, a
+  that move between them; for a choice, answers with the right one marked
+  and the explanation; for true/false, statements with «Так / Ні» toggles;
+  for games and tools, tiles from the pack's allowlist; a preview of the
+  child's screen where it helps), «Що перевіряємо» (purpose: for assessment, a
   check during the lesson or practice; outcomes; per-card outcome tags that
   write `items`) and «Показ» (devices, board, slide, heading; attempts, ID
   and JSON folded). A readiness list (`activityReadiness()`) flags settings

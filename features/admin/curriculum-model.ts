@@ -654,6 +654,67 @@ export function removeClassifyCategory(activity: EditableActivity, categoryId: s
   return true
 }
 
+export const CHOICE_LIMITS = { options: { min: 2, max: 6 } } as const
+export const TRUEFALSE_LIMITS = { statements: { min: 1, max: 10 } } as const
+
+/** The config list (options, statements) and the key, created in place when missing. */
+function listParts(activity: EditableActivity, list: 'options' | 'statements'): { entries: Json[]; key: Json } {
+  if (!Array.isArray(activity.config[list])) activity.config[list] = []
+  const key = activity.scoring.key ?? {}
+  activity.scoring.key = key
+  return { entries: (activity.config[list] as unknown[]).filter(isRecord), key }
+}
+
+export function addChoiceOption(activity: EditableActivity): string | null {
+  const { entries } = listParts(activity, 'options')
+  if (entries.length >= CHOICE_LIMITS.options.max) return null
+  const id = freeId(entries, 'o')
+  ;(activity.config.options as unknown[]).push({ id, text: uk('') })
+  return id
+}
+
+/** Removes an option; if it was the right answer, the first remaining one becomes right. */
+export function removeChoiceOption(activity: EditableActivity, optionId: string): boolean {
+  const { entries, key } = listParts(activity, 'options')
+  if (entries.length <= CHOICE_LIMITS.options.min) return false
+  activity.config.options = (activity.config.options as unknown[]).filter(o => !isRecord(o) || o.id !== optionId)
+  if (key.correctOptionId === optionId) key.correctOptionId = String(entries.find(o => o.id !== optionId)!.id)
+  return true
+}
+
+export function setChoiceCorrect(activity: EditableActivity, optionId: string): void {
+  const { entries, key } = listParts(activity, 'options')
+  if (entries.some(o => o.id === optionId)) key.correctOptionId = optionId
+}
+
+/** A new statement starts as «Так», like the template. */
+export function addStatement(activity: EditableActivity): string | null {
+  const { entries, key } = listParts(activity, 'statements')
+  if (entries.length >= TRUEFALSE_LIMITS.statements.max) return null
+  const id = freeId(entries, 's')
+  ;(activity.config.statements as unknown[]).push({ id, text: uk('') })
+  key.answers = { ...(isRecord(key.answers) ? key.answers : {}), [id]: true }
+  return id
+}
+
+/** Removes a statement from the task, the key and every outcome link. */
+export function removeStatement(activity: EditableActivity, statementId: string): boolean {
+  const { entries, key } = listParts(activity, 'statements')
+  if (entries.length <= TRUEFALSE_LIMITS.statements.min) return false
+  activity.config.statements = (activity.config.statements as unknown[]).filter(s => !isRecord(s) || s.id !== statementId)
+  if (isRecord(key.answers)) delete key.answers[statementId]
+  for (const link of activity.outcomes ?? []) {
+    if (link.items) setOutcomeItems(activity, link, link.items.filter(id => id !== statementId))
+  }
+  return true
+}
+
+export function setStatementAnswer(activity: EditableActivity, statementId: string, answer: boolean): void {
+  const { entries, key } = listParts(activity, 'statements')
+  if (!entries.some(s => s.id === statementId)) return
+  key.answers = { ...(isRecord(key.answers) ? key.answers : {}), [statementId]: answer }
+}
+
 export interface ReadinessCheck {
   level: 'ok' | 'warn'
   text: string
@@ -715,9 +776,17 @@ export function activityReadiness(block: EditableBlock, codeOf: (outcomeId: stri
     const homeless = items.filter(item => !groupIds.has(placement[String(item.id)]))
     if (homeless.length) checks.push({ level: 'warn', text: `Картка без групи: ${quoted(homeless.map(item => localizedText(item.label) || String(item.id)))}.` })
   }
-  if (activity.mechanic === 'choice' && !activity.scoring.key?.correctOptionId) {
-    checks.push({ level: 'warn', text: 'Не позначено правильну відповідь.' })
+  if (activity.mechanic === 'choice') {
+    const { entries, key } = listParts(activity, 'options')
+    if (!entries.some(o => o.id === key.correctOptionId)) checks.push({ level: 'warn', text: 'Не позначено правильну відповідь.' })
+    if (entries.some(o => !localizedText(o.text))) checks.push({ level: 'warn', text: 'Є варіант без тексту.' })
   }
+  if (activity.mechanic === 'truefalse') {
+    const { entries } = listParts(activity, 'statements')
+    if (entries.some(s => !localizedText(s.text))) checks.push({ level: 'warn', text: 'Є твердження без тексту.' })
+  }
+  if (activity.mechanic === 'game' && !activity.config.gameKey) checks.push({ level: 'warn', text: 'Не обрано гру.' })
+  if (activity.mechanic === 'external' && !activity.config.toolKey) checks.push({ level: 'warn', text: 'Не обрано тренажер.' })
   return checks
 }
 
