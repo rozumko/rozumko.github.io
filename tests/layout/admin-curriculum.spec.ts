@@ -243,19 +243,31 @@ test('a new lesson gets an activity linked to an outcome from the directory, and
   await insertBlock(view, 1, 'Тест: одна відповідь')
   const activity = block(page, 'g2-m3-l1-b02')
   await expect(activity).toHaveAttribute('open', '')
-  await expect(activity.getByLabel('Надсилати на пристрої учнів')).toBeChecked()
-  await activity.getByLabel('Запитання або інструкція').fill('Який крок перший?')
-  await activity.getByRole('textbox', { name: 'Варіант 1' }).fill('Спланувати дії')
-  await activity.getByRole('textbox', { name: 'Варіант 2' }).fill('Виконати дії')
-  await activity.getByRole('radio', { name: 'Правильна відповідь: варіант 2' }).check()
+  // In the block list an activity is a short card; it is set up in the activity dialog.
+  await expect(activity.locator('.cl-activity')).toContainText('на пристроях')
+  await activity.getByRole('button', { name: 'Налаштувати завдання' }).click()
+  const setup = page.getByRole('dialog', { name: 'Завдання: Вибір однієї відповіді' })
+  await setup.getByLabel('Запитання або інструкція').fill('Який крок перший?')
+  await setup.getByRole('textbox', { name: 'Варіант 1' }).fill('Спланувати дії')
+  await setup.getByRole('textbox', { name: 'Варіант 2' }).fill('Виконати дії')
+  await setup.getByRole('radio', { name: 'Правильна відповідь: варіант 2' }).check()
 
-  await activity.getByLabel('Пов’язати з результатом').fill('INF-2-FILES-2')
-  await activity.getByRole('button', { name: 'Додати', exact: true }).click()
+  await setup.getByRole('button', { name: 'Що перевіряємо', exact: true }).click()
+  await setup.getByLabel('Додати вміння').fill('INF-2-FILES-2')
+  await setup.getByRole('button', { name: 'Додати', exact: true }).click()
+  // Outcomes on a practice task save fine but record nothing: the dialog says so.
+  await expect(setup.locator('.ad-check--warn')).toContainText('завдання не для оцінки')
+  await setup.getByRole('button', { name: 'Готово' }).first().click()
   const coverage = view.locator('[data-outcome-id="int-files-organize"]')
   await expect(coverage).toHaveClass(/cl-coverage__item--partial/)
   await expect(coverage).toContainText('Звіт покаже «Недостатньо даних»')
 
-  await activity.getByLabel('Призначення').selectOption('evidence')
+  await activity.getByRole('button', { name: 'Налаштувати завдання' }).click()
+  await setup.getByRole('button', { name: 'Що перевіряємо', exact: true }).click()
+  await setup.getByRole('button', { name: /^Для оцінки/ }).click()
+  await expect(setup.locator('.ad-check--warn')).toHaveCount(0)
+  await setup.getByRole('button', { name: 'Готово' }).first().click()
+  await expect(activity.locator('.cl-activity')).toContainText('для оцінки')
   await expect(view.locator('[data-outcome-id="int-files-organize"]')).toHaveClass(/cl-coverage__item--ok/)
 
   await view.getByRole('button', { name: 'Зберегти' }).click()
@@ -266,7 +278,8 @@ test('a new lesson gets an activity linked to an outcome from the directory, and
   expect(stored.blocks[1].activity).toMatchObject({ telemetry: 'evidence', outcomes: [{ outcomeId: 'int-files-organize', evidenceRole: 'primary' }] })
   expect(stored.blocks[1].activity.config.prompt.uk).toBe('Який крок перший?')
   expect(stored.blocks[1].activity.scoring.key.correctOptionId).toBe('b')
-  expect(stored.learningOutcomes).toEqual([{ outcomeId: 'int-files-organize', role: 'practised' }])
+  // Switching the purpose to assessment updates the lesson outcome's role too.
+  expect(stored.learningOutcomes).toEqual([{ outcomeId: 'int-files-organize', role: 'assessed' }])
   // Saved lessons keep their id.
   await expect(view.getByLabel('ID уроку')).toBeDisabled()
 

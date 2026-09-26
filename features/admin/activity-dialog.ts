@@ -171,7 +171,10 @@ export function openActivityDialog(host: ActivityDialogHost, initial: Step = 'ta
     STEPS.forEach((s, i) => {
       const b = button('', `ad-step${s.id === step ? ' ad-step--current' : ''}`, () => { step = s.id; render(); nav.querySelector<HTMLElement>('.ad-step--current')?.focus() })
       if (s.id === step) b.setAttribute('aria-current', 'step')
-      b.append(el('span', 'ad-step__n', String(i + 1)), document.createTextNode(s.title))
+      // The number is visual; the name stays the step's title and aria-current marks the step.
+      const n = el('span', 'ad-step__n', String(i + 1))
+      n.setAttribute('aria-hidden', 'true')
+      b.append(n, document.createTextNode(s.title))
       nav.append(b)
     })
     card.append(nav)
