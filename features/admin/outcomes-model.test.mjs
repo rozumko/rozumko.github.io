@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { describeOutcomeIssue, filterOutcomes, mappingSummary, outcomeInputFromForm } from './outcomes-model.ts'
+import { describeOutcomeIssue, filterOutcomes, filterRefs, levelLabel, mappingSummary, outcomeInputFromForm, refCoverage, refKey, refLevels, skillDraftFromRef } from './outcomes-model.ts'
 
 const outcome = (overrides = {}) => ({
   id: 'nush-alg-1', subjectPackId: 'informatics-ua-primary', code: '2 ІФО 2.1-1',
@@ -52,4 +52,42 @@ test('server issues read as field names in Ukrainian', () => {
   assert.equal(describeOutcomeIssue({ path: 'weird', message: 'odd' }), 'weird: odd')
   assert.equal(mappingSummary(outcome({ mappings: [{ framework: 'nush', ref: 'a' }, { framework: 'cambridge', ref: 'b' }] })), 'nush a · cambridge b')
   assert.equal(mappingSummary(outcome({ mappings: [{ framework: 'cambridge-0059', ref: '2CS.03', strength: 'direct' }] })), 'cambridge-0059 2CS.03 (пряма)')
+})
+
+const ref = (overrides = {}) => ({
+  framework: 'nush-ifo-2018', code: '2 ІФО 3.1.1', title: 'Використовує цифрові пристрої', lang: 'uk', level: '1-2',
+  groupCode: 'ІФО 3.1', groupTitle: 'Цифрові пристрої', examples: ['Назвіть пристрої вдома.'], guidance: null, source: 'МОН', sortOrder: 1,
+  ...overrides,
+})
+
+test('catalogue coverage counts active skills per code; archived skills cover nothing', () => {
+  const coverage = refCoverage([
+    outcome({ id: 'a', code: 'INF-2-DEV-1', mappings: [{ framework: 'nush-ifo-2018', ref: '2 ІФО 3.1.1', strength: 'partial' }] }),
+    outcome({ id: 'b', code: 'INF-2-DEV-3', mappings: [{ framework: 'nush-ifo-2018', ref: '2 ІФО 3.1.1' }] }),
+    outcome({ id: 'c', code: 'OLD', status: 'archived', mappings: [{ framework: 'cambridge-0059', ref: '2CS.03' }] }),
+  ])
+  assert.deepEqual(coverage.get(refKey('nush-ifo-2018', '2 ІФО 3.1.1')), [
+    { outcomeId: 'a', code: 'INF-2-DEV-1', strength: 'partial' },
+    { outcomeId: 'b', code: 'INF-2-DEV-3' },
+  ])
+  assert.equal(coverage.has(refKey('cambridge-0059', '2CS.03')), false)
+})
+
+test('catalogue filters by document, level, words (examples included) and gaps; labels read naturally', () => {
+  const refs = [
+    ref(),
+    ref({ code: '4 ІФО 1.1.1', level: '3-4', title: 'Пояснює інформаційні процеси', examples: [] }),
+    ref({ framework: 'cambridge-0059', code: '2CS.03', lang: 'en', level: '2', title: 'Know the difference between input and output devices.', examples: [] }),
+  ]
+  const coverage = new Map([[refKey('nush-ifo-2018', '2 ІФО 3.1.1'), [{ outcomeId: 'a', code: 'X' }]]])
+  const codes = filter => filterRefs(refs, { framework: 'nush-ifo-2018', level: '', query: '', uncoveredOnly: false, ...filter }, coverage).map(r => r.code)
+  assert.deepEqual(codes({}), ['2 ІФО 3.1.1', '4 ІФО 1.1.1'])
+  assert.deepEqual(codes({ level: '3-4' }), ['4 ІФО 1.1.1'])
+  assert.deepEqual(codes({ query: 'вдома' }), ['2 ІФО 3.1.1'], 'MON task examples are searchable')
+  assert.deepEqual(codes({ uncoveredOnly: true }), ['4 ІФО 1.1.1'])
+  assert.deepEqual(codes({ framework: 'cambridge-0059', query: 'OUTPUT' }), ['2CS.03'])
+  assert.deepEqual(refLevels(refs, 'nush-ifo-2018'), ['1-2', '3-4'])
+  assert.equal(levelLabel(refs[0]), '1–2 класи')
+  assert.equal(levelLabel(refs[2]), 'Stage 2')
+  assert.deepEqual(skillDraftFromRef(refs[2]), { gradeBand: '2', mappings: [{ framework: 'cambridge-0059', ref: '2CS.03', strength: 'direct' }] })
 })

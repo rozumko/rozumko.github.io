@@ -414,6 +414,13 @@
       "when": 1790025600000,
       "tag": "0058_seed_device_outcomes_and_mappings",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1790112000000,
+      "tag": "0059_add_curriculum_framework_refs",
+      "breakpoints": true
     }
   ]
 }

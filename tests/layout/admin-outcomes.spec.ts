@@ -27,7 +27,7 @@ const seed = (): Row[] => [{
 }]
 
 /** Admin API with an in-memory outcome directory, validated by the real backend rules. */
-async function mockAdmin(page: Page, options: { lessonEngine: boolean }) {
+async function mockAdmin(page: Page, options: { lessonEngine: boolean; refs?: unknown[] }) {
   const rows = seed()
   const writes: unknown[] = []
   await page.addInitScript(() => {
@@ -42,6 +42,7 @@ async function mockAdmin(page: Page, options: { lessonEngine: boolean }) {
     if (path === '/api/admin/curriculum/packs') {
       return json({ packs: [{ id: 'informatics-ua-primary', subject: 'informatics', title: { uk: 'Розумко Інформатика 1–4' }, gradeRange: { min: 1, max: 4 } }] })
     }
+    if (path === '/api/admin/curriculum/framework-refs') return json({ refs: options.refs ?? [] })
     if (path === '/api/admin/curriculum/outcomes' && request.method() === 'GET') {
       return json({ outcomes: rows, usage: { 'int-files-organize': ['g2-m2-l8'] } })
     }
@@ -152,4 +153,71 @@ test('an admin adds a NUSH outcome with a Cambridge mapping, sees server errors,
   await tab.getByLabel('Стан результату').selectOption('archived')
   await expect(tab.locator('.question-item')).toHaveCount(1)
   await expect(tab).toContainText('INF-2-FILES-2')
+})
+
+const REFS = [
+  {
+    framework: 'nush-ifo-2018', code: '2 ІФО 3.3.1', title: 'Використовує цифрові пристрої, технології для доступу до інформації та спілкування',
+    lang: 'uk', level: '1-2', groupCode: 'ІФО 3.3', groupTitle: 'Використовує цифрові пристрої та технології для доступу до інформації, спілкування та співпраці',
+    examples: ['Знайдіть на планшеті застосунок для малювання.'], guidance: null, source: 'МОН, Інформатична освітня галузь, цикл 1-2 класи', sortOrder: 1,
+  },
+  {
+    framework: 'nush-ifo-2018', code: '4 ІФО 1.1.1', title: 'Пояснює основні інформаційні процеси у близькому для себе середовищі',
+    lang: 'uk', level: '3-4', groupCode: 'ІФО 1.1', groupTitle: 'Досліджує і оцінює вплив інформаційних технологій на своє життя',
+    examples: [], guidance: null, source: 'МОН, Інформатична освітня галузь, цикл 3-4 класи', sortOrder: 2,
+  },
+  {
+    framework: 'cambridge-0072', code: '2TC.10', title: 'Know how to rename digital files and move them to different locations, including to different platforms.',
+    lang: 'en', level: '2', groupCode: 'TC', groupTitle: 'Tools and Content Creation',
+    examples: [], guidance: 'Vocabulary: rename, move, folder.', source: 'Cambridge Primary Digital Literacy 0072, Curriculum Framework v3.0 (February 2026), p. 20', sortOrder: 3,
+  },
+]
+
+test('the standards catalogue shows which skills cover each code and drafts a new skill from one', async ({ page }) => {
+  const { rows, writes } = await mockAdmin(page, { lessonEngine: true, refs: REFS })
+  rows[0]!.mappings = [{ framework: 'cambridge-0072', ref: '2TC.10', strength: 'direct' } as Row['mappings'][number]]
+  await page.goto('/admin.html')
+  await page.getByRole('button', { name: 'Результати навчання' }).click()
+  const tab = page.locator('#tab-outcomes')
+  await tab.getByRole('button', { name: 'Стандарти й програми' }).click()
+  await expect(tab.getByRole('button', { name: 'Стандарти й програми' })).toHaveAttribute('aria-pressed', 'true')
+  await expect(tab.locator('#o-skills-view')).toBeHidden()
+
+  const catalog = tab.locator('#oc-list')
+  await expect(catalog.locator('.question-item')).toHaveCount(2)
+  await expect(tab.locator('#oc-count')).toContainText('2 із 2 · покрито вміннями: 0')
+  await tab.getByLabel('Клас або Stage').selectOption('1-2')
+  await expect(catalog.locator('.question-item')).toHaveCount(1)
+  const ifo = catalog.locator('[data-ref-code="2 ІФО 3.3.1"]')
+  await expect(ifo).toContainText('не покрито')
+  await expect(ifo).toContainText('Приклади завдань МОН (1)')
+
+  const results = await new AxeBuilder({ page }).include('#tab-outcomes').withTags(WCAG_AA_TAGS).analyze()
+  expect(results.violations.map(v => v.id)).toEqual([])
+
+  // Cambridge: covered by the seeded skill; the wording keeps its language.
+  await tab.getByLabel('Документ').selectOption('cambridge-0072')
+  const cambridge = catalog.locator('[data-ref-code="2TC.10"]')
+  await expect(cambridge).toContainText('Покривають: INF-2-FILES-2 (пряма)')
+  await expect(cambridge.locator('[lang="en"]').first()).toContainText('rename digital files')
+  await tab.getByLabel('Лише непокриті').check()
+  await expect(catalog.locator('.question-item')).toHaveCount(0)
+  await tab.getByLabel('Лише непокриті').uncheck()
+
+  // A new skill drafted from a NUSH code: internal source, grade band and a direct mapping with the wording shown.
+  await tab.getByLabel('Документ').selectOption('nush-ifo-2018')
+  await catalog.getByRole('button', { name: 'Створити вміння з відповідністю 2 ІФО 3.3.1' }).click()
+  const modal = page.getByRole('dialog', { name: 'Новий результат навчання' })
+  await expect(modal.getByLabel('Класи')).toHaveValue('1-2')
+  await expect(modal.getByLabel('Джерело')).toHaveValue('internal')
+  await expect(modal.getByLabel('Відповідність 1: код або критерій')).toHaveValue('2 ІФО 3.3.1')
+  await expect(modal.locator('.of-ref-hint')).toContainText('Використовує цифрові пристрої')
+  await modal.getByLabel('Код', { exact: true }).fill('INF-2-DEV-4')
+  await modal.getByLabel('Формулювання', { exact: true }).fill('Знаходить на пристрої застосунок для завдання')
+  await modal.getByRole('button', { name: 'Зберегти' }).click()
+  await expect(modal).toBeHidden()
+  expect(writes[writes.length - 1]).toMatchObject({
+    outcome: { code: 'INF-2-DEV-4', source: 'internal', gradeBand: '1-2', mappings: [{ framework: 'nush-ifo-2018', ref: '2 ІФО 3.3.1', strength: 'direct' }] },
+  })
+  await expect(catalog.locator('[data-ref-code="2 ІФО 3.3.1"]')).toContainText('Покривають: INF-2-DEV-4 (пряма)')
 })

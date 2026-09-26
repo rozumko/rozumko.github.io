@@ -730,6 +730,28 @@ export const curriculumOutcomeRevisions = pgTable('curriculum_outcome_revisions'
   uniqOutcomeEditVersion: unique('curriculum_outcome_revisions_outcome_edit_version_uq').on(t.outcomeId, t.editVersion),
 }))
 
+// ── Lesson Engine: framework catalogue (0059) ─────────────────────────────────
+// Read-only reference of the national standard (NUSH) and Cambridge documents
+// that skills map to. Admin-only: Cambridge wording is licensed material.
+// Evidence never targets these rows.
+export const curriculumFrameworkRefs = pgTable('curriculum_framework_refs', {
+  framework:  text('framework').notNull(),
+  code:       text('code').notNull(),
+  title:      text('title').notNull(),
+  lang:       text('lang').notNull().$type<'uk' | 'en'>(),
+  level:      text('level').notNull(),
+  groupCode:  text('group_code'),
+  groupTitle: text('group_title'),
+  examples:   jsonb('examples').notNull().default([]).$type<string[]>(),
+  guidance:   text('guidance'),
+  source:     text('source').notNull(),
+  sortOrder:  integer('sort_order').notNull(),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.framework, t.code] }),
+}))
+
+export type CurriculumFrameworkRefRow = typeof curriculumFrameworkRefs.$inferSelect
+
 // ── Lesson Engine: lesson runs (0050) ─────────────────────────────────────────
 // A run freezes the published lesson snapshot (answer keys included, server
 // only). Identity and snapshot are immutable and finished/cancelled runs are

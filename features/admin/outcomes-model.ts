@@ -3,6 +3,7 @@
 
 import type {
   AdminCurriculumOutcome,
+  AdminFrameworkRef,
   CurriculumMappingStrength,
   CurriculumOutcomeInput,
   CurriculumOutcomeMapping,
@@ -117,4 +118,76 @@ export function mappingSummary(outcome: Pick<AdminCurriculumOutcome, 'mappings'>
   return outcome.mappings
     .map(m => `${m.framework} ${m.ref}${m.strength ? ` (${MAPPING_STRENGTH_LABELS[m.strength]})` : ''}`)
     .join(' · ')
+}
+
+// ── Framework catalogue (NUSH and Cambridge entries skills map to) ──────────
+
+export const FRAMEWORK_TITLES: Readonly<Record<string, string>> = {
+  'nush-ifo-2018': 'ІФО (НУШ, чинна редакція)',
+  'cambridge-0059': 'Cambridge Computing 0059',
+  'cambridge-0072': 'Cambridge Digital Literacy 0072',
+}
+
+export function frameworkTitle(framework: string): string {
+  return FRAMEWORK_TITLES[framework] ?? framework
+}
+
+/** «1–2 класи» for a NUSH cycle, «Stage 2» for Cambridge. */
+export function levelLabel(ref: Pick<AdminFrameworkRef, 'framework' | 'level'>): string {
+  return ref.framework.startsWith('cambridge-') ? `Stage ${ref.level}` : `${ref.level.replace('-', '–')} класи`
+}
+
+export function refKey(framework: string, code: string): string {
+  return `${framework}|${code}`
+}
+
+export interface RefCover {
+  outcomeId: string
+  code: string
+  strength?: CurriculumMappingStrength
+}
+
+/** catalogue entry → the active skills that map to it (archived skills cover nothing). */
+export function refCoverage(outcomes: readonly AdminCurriculumOutcome[]): Map<string, RefCover[]> {
+  const coverage = new Map<string, RefCover[]>()
+  for (const outcome of outcomes) {
+    if (outcome.status !== 'active') continue
+    for (const mapping of outcome.mappings) {
+      const key = refKey(mapping.framework, mapping.ref)
+      const list = coverage.get(key) ?? []
+      list.push({ outcomeId: outcome.id, code: outcome.code, ...(mapping.strength ? { strength: mapping.strength } : {}) })
+      coverage.set(key, list)
+    }
+  }
+  return coverage
+}
+
+export interface RefFilter {
+  framework: string
+  level: string
+  query: string
+  uncoveredOnly: boolean
+}
+
+/** Search matches the code, the wording, the strand or group, and MON task examples. */
+export function filterRefs(refs: readonly AdminFrameworkRef[], filter: RefFilter, coverage: Map<string, RefCover[]>): AdminFrameworkRef[] {
+  const words = normalize(filter.query).split(/\s+/).filter(Boolean)
+  return refs.filter(ref => {
+    if (filter.framework && ref.framework !== filter.framework) return false
+    if (filter.level && ref.level !== filter.level) return false
+    if (filter.uncoveredOnly && coverage.has(refKey(ref.framework, ref.code))) return false
+    if (words.length === 0) return true
+    const haystack = normalize([ref.code, ref.title, ref.groupCode ?? '', ref.groupTitle ?? '', ...ref.examples].join(' '))
+    return words.every(word => haystack.includes(word))
+  })
+}
+
+/** Levels present in one framework, in catalogue order. */
+export function refLevels(refs: readonly AdminFrameworkRef[], framework: string): string[] {
+  return [...new Set(refs.filter(ref => ref.framework === framework).map(ref => ref.level))]
+}
+
+/** A new Rozumko skill drafted from a catalogue entry: the entry becomes a direct mapping. */
+export function skillDraftFromRef(ref: Pick<AdminFrameworkRef, 'framework' | 'code' | 'level'>): { gradeBand: string; mappings: CurriculumOutcomeMapping[] } {
+  return { gradeBand: ref.level, mappings: [{ framework: ref.framework, ref: ref.code, strength: 'direct' }] }
 }

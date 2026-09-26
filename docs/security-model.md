@@ -170,6 +170,11 @@ Outcomes are validated with the same fail-closed rules as pack registries
 (no HTML, no unknown fields, known source). Student evidence refers to outcome
 IDs, so triggers forbid deleting an outcome or changing its ID or pack.
 Revisions are append-only, and both tables have RLS enabled with no policies.
+The framework catalogue (migration `0059`, `/api/admin/curriculum/
+framework-refs`) holds licensed Cambridge wording and NUSH results for
+planning. It is read-only, served only by that admin route behind the same
+hooks, never by teacher, student or public routes or bundles (regression
+test), and has RLS enabled with no policies.
 Lesson save and publish validate against active directory outcomes only, never
 a code copy (pinned by a security regression test). The admin lesson editor
 checks drafts with `POST /api/admin/curriculum/lessons/validate`. It runs the
@@ -408,8 +413,8 @@ revisions), `0036`-`0038` (`question_revisions`, `micro_lesson_revisions`,
 (`lesson_run_devices`) `0052` (`lesson_run_dispatches`, `activity_attempts`), `0053`
 (`student_outcome_evidence`), `0054` (`device_assignments`) and `0055`
 (`lesson_class_links`, `lesson_class_seats`), `0056`
-(`classroom_remote_connections`) and `0057` (`curriculum_outcomes`,
-`curriculum_outcome_revisions`). A regression test
+(`classroom_remote_connections`), `0057` (`curriculum_outcomes`,
+`curriculum_outcome_revisions`) and `0059` (`curriculum_framework_refs`). A regression test
 fails if any application table is left uncovered.
 Migration `0048` applies the same deny-by-default RLS rule to
 `teacher_question_topics`; its answer-bearing session snapshots remain inside

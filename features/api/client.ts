@@ -1318,6 +1318,25 @@ export function getAdminSubjectPacks(): Promise<{ packs: AdminSubjectPack[] }> {
 }
 
 /** `usage` maps an outcome id to the lessons (draft or published) that target it. */
+/** A catalogue entry (NUSH result or Cambridge objective) that skills map to. Admin-only. */
+export interface AdminFrameworkRef {
+  framework: string
+  code: string
+  title: string
+  lang: 'uk' | 'en'
+  level: string
+  groupCode: string | null
+  groupTitle: string | null
+  examples: string[]
+  guidance: string | null
+  source: string
+  sortOrder: number
+}
+
+export function getAdminFrameworkRefs(): Promise<{ refs?: AdminFrameworkRef[] }> {
+  return authRequest('/api/admin/curriculum/framework-refs')
+}
+
 export function getAdminCurriculumOutcomes(): Promise<{ outcomes: AdminCurriculumOutcome[]; usage: Record<string, string[]> }> {
   return authRequest('/api/admin/curriculum/outcomes')
 }
