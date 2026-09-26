@@ -1,4 +1,25 @@
 import type { CanvasBlock, LessonDefinitionV1, LocalizedText, PracticeBlock } from './curriculum-lesson-schema.js'
+import { studentActivityView } from './lesson-live.js'
+import { findSubjectPack } from './subject-packs.js'
+
+/** The same authored slide as the projector, with an explicit public-field allowlist. */
+export function studentPresentationSlide(lesson: LessonDefinitionV1, blockId: string) {
+  const block = lesson.blocks.find(item => item.id === blockId)
+  if (!block || !block.audience.student || !block.views.presentation || block.type === 'teacher-note' || !block.presentation) return null
+  const content = block.content as unknown as Record<string, unknown>
+  const headline = block.presentation.headline ?? ['title', 'question', 'heading', 'prompt']
+    .map(key => content[key] as LocalizedText | undefined).find(value => typeof value?.uk === 'string') ?? null
+  const assetIds = new Set(block.presentation.assetIds ?? [])
+  return {
+    blockId: block.id,
+    layout: block.presentation.layout,
+    headline,
+    shortText: block.presentation.shortText ?? [],
+    assets: (lesson.assets ?? []).filter(asset => assetIds.has(asset.id)),
+    canvasItems: block.type === 'canvas' ? block.content.board : [],
+    activity: block.type === 'activity' ? studentActivityView(block.activity, findSubjectPack(lesson.subjectPackId)) : null,
+  }
+}
 
 export interface StudentPracticeMaterial {
   kind: 'practice'

@@ -414,8 +414,19 @@ revisions), `0036`-`0038` (`question_revisions`, `micro_lesson_revisions`,
 (`student_outcome_evidence`), `0054` (`device_assignments`) and `0055`
 (`lesson_class_links`, `lesson_class_seats`), `0056`
 (`classroom_remote_connections`), `0057` (`curriculum_outcomes`,
-`curriculum_outcome_revisions`) and `0059` (`curriculum_framework_refs`). A regression test
+`curriculum_outcome_revisions`), `0059` (`curriculum_framework_refs`) and `0061`
+(`lesson_activity_progress`). A regression test
 fails if any application table is left uncovered.
+
+Lesson Engine recovery checkpoints are ungraded raw UI state, scoped to one
+dispatch and run student. They never create attempts or outcome evidence.
+Progress writes and attempt submissions require the current device assignment
+version and student ID, so a laptop left running cannot write after transfer to
+a tablet. Student writes take a shared run lock before locking and re-reading
+the device; teacher reassignment and run transitions take an exclusive run lock.
+Checkpoint revisions prevent stale overwrite. Remote slides expose only the
+projector's public fields, without teacher notes, expected responses, answer
+keys or outcome mappings.
 Migration `0048` applies the same deny-by-default RLS rule to
 `teacher_question_topics`; its answer-bearing session snapshots remain inside
 the already protected `school_session_questions` table.

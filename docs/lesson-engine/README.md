@@ -974,3 +974,11 @@ API runs the real editorial rules).
   it is not embedded or copied wholesale.
 - **Render capacity** — confirm the backend plan has no cold starts during
   lessons before stage G polling goes to a real class.
+
+## Activity recovery and remote slides
+
+Migration `0061` adds ungraded per-student checkpoints and device assignment
+versions. Recovery covers partial selections and exact typing-words positions;
+other games retain aggregate snapshots. The current run slide is available to
+student devices through state polling. See [the recovery contract](./activity-recovery.md)
+for takeover rules when a laptop stays running, rollout requirements and limits.

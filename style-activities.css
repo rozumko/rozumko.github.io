@@ -1838,10 +1838,15 @@
   .virtual-keyboard.has-hint .keyboard-key.is-target { transform: none; }
 }
 
-/* ── Друкуй слова (typing-words) ─────────────────────────────────────────────
+/* ── Type words (typing-words) ───────────────────────────────────────────────
    Text on top, keyboard below: the child reads the next character and the
    keyboard shows where it lives. */
 .tw-root { position: absolute; inset: 0; }
+.tw-touch-input { display: none; }
+@media (pointer: coarse), (max-width: 899px) {
+  .tw-touch-input { display: block; width: min(100%, 28rem); min-height: 3rem; font-size: 1.25rem; }
+  .tw-keyboard { display: none; }
+}
 
 .tw-stage {
   display: flex;

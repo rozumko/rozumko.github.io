@@ -4,8 +4,9 @@ import { MAX_REPORTED_MISTAKES, buildRound } from '../typing-core/round.js'
 import { describeCharacter, displayCharacter, isTextAttempt, issue, matchesCharacter } from '../typing-core/key-input.js'
 import { closeAudio, playComplete, playHit, playMiss } from '../typing-core/typing-audio.js'
 import { ROUND_SIZE, resolveWordsLevel } from './typing-words-data.js'
+import { wordsRecovery } from './typing-words-recovery.js'
 
-// ── Друкуй слова ─────────────────────────────────────────────────────────────
+// ── Type words ───────────────────────────────────────────────────────────────
 // The child types a word (or a sentence) character by character; the keyboard
 // always lights the next key. Ported from the standalone Klavio «Слова»
 // trainer, with the level and the round length coming from the teacher.
@@ -17,13 +18,14 @@ export const mount: ActivityMount = (container, options): ActivityHandle => {
   const { level, onFinish, onProgress } = options
 
   const { mode, items } = resolveWordsLevel(level)
-  const tasks = buildRound(items, ROUND_SIZE[mode])
+  const recovered = wordsRecovery(options.resumeState, level, items, ROUND_SIZE[mode])
+  const tasks = recovered?.tasks ?? buildRound(items, ROUND_SIZE[mode])
   const total = tasks.length
 
-  const startedAt = Date.now()
-  let taskIndex = 0
-  let charIndex = 0
-  let mistakes = 0
+  const startedAt = Date.now() - (recovered?.durationSec ?? 0) * 1000
+  let taskIndex = recovered?.taskIndex ?? 0
+  let charIndex = recovered?.charIndex ?? 0
+  let mistakes = recovered?.mistakes ?? 0
   let locked = false
   let finished = false
   const timers = new Set<number>()
@@ -56,6 +58,15 @@ export const mount: ActivityMount = (container, options): ActivityHandle => {
   const keyboardEl = container.querySelector<HTMLElement>('.tw-keyboard')!
 
   const keyboard = createKeyboard(keyboardEl)
+  const touchInput = document.createElement('input')
+  touchInput.type = 'text'
+  touchInput.className = 'tw-touch-input'
+  touchInput.setAttribute('aria-label', 'Друкуй наступну літеру')
+  touchInput.placeholder = 'Торкнись, щоб друкувати'
+  touchInput.autocomplete = 'off'
+  touchInput.setAttribute('autocapitalize', 'off')
+  touchInput.spellcheck = false
+  stage.append(touchInput)
 
   function currentTask(): string { return tasks[taskIndex] ?? '' }
   function expected(): string { return currentTask()[charIndex] ?? '' }
@@ -104,16 +115,22 @@ export const mount: ActivityMount = (container, options): ActivityHandle => {
     playHit()
     setFeedback('Готово', 'success')
     onProgress?.(taskIndex, total)
+    options.onCheckpoint?.()
 
     if (taskIndex >= total) { later(finish, 220); return }
     later(() => {
       locked = false
       renderTarget('Продовжуй у своєму темпі')
-      stage.focus({ preventScroll: true })
+      if (document.activeElement !== touchInput) stage.focus({ preventScroll: true })
     }, 170)
   }
 
   function onKeyDown(event: KeyboardEvent) {
+    if (event.target === touchInput) return
+    processKey(event)
+  }
+
+  function processKey(event: KeyboardEvent) {
     if (finished || locked || !isTextAttempt(event)) return
     if (event.code === 'Space') event.preventDefault()
 
@@ -124,10 +141,12 @@ export const mount: ActivityMount = (container, options): ActivityHandle => {
       keyboard.flash(event.code, 'is-pressed-correct', 180)
       if (charIndex >= currentTask().length) { completeTask(); return }
       renderTarget()
+      options.onCheckpoint?.()
       return
     }
 
     mistakes += 1
+    options.onCheckpoint?.()
     keyboard.flash(event.code, 'is-pressed-error', 180)
     playMiss()
     const problem = issue(wanted, event)
@@ -139,13 +158,23 @@ export const mount: ActivityMount = (container, options): ActivityHandle => {
   }
 
   window.addEventListener('keydown', onKeyDown)
+  touchInput.addEventListener('input', () => {
+    const key = touchInput.value
+    touchInput.value = ''
+    if ([...key].length !== 1) return
+    const isG = key.toLocaleLowerCase('uk') === 'ґ'
+    processKey(new KeyboardEvent('keydown', { key, code: key === ' ' ? 'Space' : isG ? 'KeyU' : '', ctrlKey: isG, altKey: isG }))
+  })
 
-  onProgress?.(0, total)
+  onProgress?.(taskIndex, total)
   renderTarget('Починай, коли готовий')
+  if (taskIndex >= total) finish()
+  else if (charIndex >= currentTask().length) completeTask()
   stage.focus({ preventScroll: true })
 
   return {
     snapshot: result,
+    checkpoint: () => ({ version: 1, level, tasks: [...tasks], taskIndex, charIndex, mistakes: Math.min(mistakes, MAX_REPORTED_MISTAKES), durationSec: result().durationSec }),
     destroy() {
       finished = true
       timers.forEach(timer => window.clearTimeout(timer))

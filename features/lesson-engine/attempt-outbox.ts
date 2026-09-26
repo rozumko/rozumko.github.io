@@ -13,6 +13,8 @@ export interface OutboxItem {
   deviceId: string
   dispatchId: string
   payload: {
+    lessonRunStudentId?: string
+    assignmentVersion?: number
     answer?: unknown
     gameResult?: { correct: number; total: number; mistakes: number; durationSec: number }
   }

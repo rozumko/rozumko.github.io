@@ -87,6 +87,17 @@
 .lj-task__done-title { margin: 0; font-size: var(--font-size-3xl); font-weight: 900; color: var(--fb-ok-text); }
 .lj-task__status { margin: 0; font-weight: 700; }
 .lj-task__game:empty { display: none; }
+.lj-task__game:not(:empty) { position: relative; height: min(70vh, 40rem); min-height: 26rem; overflow: hidden; }
+.lj-card--slide { max-width: 76rem; }
+.lj-card--slide .le-slide { width: 100%; min-height: 20rem; padding: var(--sp-4); }
+.lj-card--slide .le-slide__headline { font-size: clamp(1.5rem, 5vw, 3rem); }
+.lj-card--slide .le-slide__points { font-size: clamp(1.1rem, 3vw, 1.8rem); }
+.lj-card--slide img { max-width: 100%; height: auto; }
+.lj-task__game .tw-touch-input { display: none; }
+@media (pointer: coarse), (max-width: 899px) {
+  .lj-task__game .tw-touch-input { display: block; width: 100%; min-height: 3rem; font-size: 1.25rem; margin-top: 1rem; }
+  .lj-task__game .tw-keyboard { display: none; }
+}
 
 /* ── Offline outbox (stage J) ─────────────────────────────────── */
 .lj-notice { margin: 0; color: var(--fb-err-text); font-size: var(--font-size-lg); font-weight: 700; }

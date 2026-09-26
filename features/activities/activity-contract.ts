@@ -18,6 +18,9 @@ export interface ActivityRunResult {
 }
 
 export interface ActivityMountOptions {
+  /** Versioned, untrusted recovery state for activities that support continuation. */
+  resumeState?: Record<string, unknown>
+  onCheckpoint?: () => void
   /** Level id from the registry; the teacher chose it when starting the game. */
   level: string
   /** Grade chosen by the teacher for this classroom run. */
@@ -32,6 +35,7 @@ export interface ActivityMountOptions {
 }
 
 export interface ActivityHandle {
+  checkpoint?(): Record<string, unknown>
   /**
    * Result as of right now. The School page calls this when the teacher ends
    * the session before the child is done, so partial work still counts.
