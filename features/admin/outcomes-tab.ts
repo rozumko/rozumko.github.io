@@ -66,7 +66,7 @@ export function initOutcomesTab() {
   const datalist = $('of-frameworks')
   for (const suggestion of OUTCOME_FRAMEWORK_SUGGESTIONS) {
     const option = el('option')
-    option.value = suggestion.key
+    option.value = suggestion.framework
     option.label = suggestion.label
     datalist.append(option)
   }

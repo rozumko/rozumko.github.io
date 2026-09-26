@@ -17,12 +17,12 @@ export const OUTCOME_SOURCE_LABELS: Readonly<Record<CurriculumOutcomeSource, str
 }
 
 /** Framework keys offered for mappings; any other short key is allowed too. */
-export const OUTCOME_FRAMEWORK_SUGGESTIONS: readonly { key: string; label: string }[] = [
-  { key: 'nush-ifo-2018', label: 'Держстандарт НУШ, чинна редакція — ІФО' },
-  { key: 'nush-ifo-2028', label: 'Держстандарт НУШ, нова редакція (з 2028) — ІФО' },
-  { key: 'cambridge-0059', label: 'Cambridge Primary Computing 0059' },
-  { key: 'cambridge-0072', label: 'Cambridge Primary Digital Literacy 0072' },
-  { key: 'program', label: 'Навчальна програма' },
+export const OUTCOME_FRAMEWORK_SUGGESTIONS: readonly { framework: string; label: string }[] = [
+  { framework: 'nush-ifo-2018', label: 'Держстандарт НУШ, чинна редакція — ІФО' },
+  { framework: 'nush-ifo-2028', label: 'Держстандарт НУШ, нова редакція (з 2028) — ІФО' },
+  { framework: 'cambridge-0059', label: 'Cambridge Primary Computing 0059' },
+  { framework: 'cambridge-0072', label: 'Cambridge Primary Digital Literacy 0072' },
+  { framework: 'program', label: 'Навчальна програма' },
 ]
 
 export const MAPPING_STRENGTH_LABELS: Readonly<Record<CurriculumMappingStrength, string>> = {

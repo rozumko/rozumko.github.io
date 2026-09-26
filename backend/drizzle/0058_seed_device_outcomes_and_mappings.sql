@@ -3,7 +3,7 @@
 -- "Outcome directory").
 --
 -- Evidence is written only against Rozumko skills (source 'internal'). The
--- national standard (NUSH, framework keys per edition: nush-ifo-2018 for the
+-- national standard (NUSH; one framework id per edition, nush-ifo-2018 for the
 -- edition in force, nush-ifo-2028 for the new one) and Cambridge
 -- (cambridge-0059 Computing, cambridge-0072 Digital Literacy) live only in
 -- `mappings`. A mapping strength ('direct' | 'partial' | 'supporting') is a
