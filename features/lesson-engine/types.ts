@@ -58,7 +58,7 @@ export interface ActivityView {
   telemetry: ActivityTelemetry
   config: Record<string, unknown>
   scoring: { mode: 'none' | 'server' | 'client-unverified' | 'teacher-observed' }
-  outcomes?: { outcomeId: string; evidenceRole: 'primary' | 'supporting' }[]
+  outcomes?: { outcomeId: string; evidenceRole: 'primary' | 'supporting'; items?: string[] }[]
 }
 
 export interface LessonBlock {

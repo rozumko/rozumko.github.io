@@ -38,8 +38,15 @@ export interface EditableActivity {
   telemetry: ActivityTelemetry
   config: Json
   scoring: { mode: ScoringMode; key?: Json }
-  outcomes?: { outcomeId: string; evidenceRole: EvidenceRole }[]
+  outcomes?: EditableOutcomeLink[]
   attempts?: { max?: number }
+}
+
+/** `items` narrows the evidence to named items (server-checked, at least two). */
+export interface EditableOutcomeLink {
+  outcomeId: string
+  evidenceRole: EvidenceRole
+  items?: string[]
 }
 
 export interface EditableBlock {
@@ -499,6 +506,29 @@ export function addActivityOutcome(lesson: EditableLesson, blockIndex: number, o
   activity.outcomes.push({ outcomeId, evidenceRole: activity.scoring.mode === 'client-unverified' ? 'supporting' : 'primary' })
   syncLessonOutcomes(lesson)
   return true
+}
+
+/**
+ * Items an outcome link can be narrowed to: classify items or truefalse
+ * statements of a server-scored activity. Empty for every other activity.
+ */
+export function outcomeItemChoices(activity: EditableActivity): { id: string; label: string }[] {
+  if (activity.scoring.mode !== 'server') return []
+  const list = activity.mechanic === 'classify' ? 'items' : activity.mechanic === 'truefalse' ? 'statements' : null
+  if (!list || !isRecord(activity.config) || !Array.isArray(activity.config[list])) return []
+  return (activity.config[list] as Json[]).flatMap(entry => {
+    if (!isRecord(entry) || typeof entry.id !== 'string') return []
+    const text = isRecord(entry.label) ? entry.label : isRecord(entry.text) ? entry.text : null
+    return [{ id: entry.id, label: text && typeof text.uk === 'string' && text.uk.trim() ? text.uk : entry.id }]
+  })
+}
+
+/** Checking every item means "the whole activity", so `items` is dropped. */
+export function setOutcomeItems(activity: EditableActivity, link: EditableOutcomeLink, checked: readonly string[]): void {
+  const choices = outcomeItemChoices(activity).map(choice => choice.id)
+  const kept = choices.filter(id => checked.includes(id))
+  if (choices.length === 0 || kept.length === choices.length) delete link.items
+  else link.items = kept
 }
 
 export function removeActivityOutcome(lesson: EditableLesson, blockIndex: number, outcomeId: string): void {

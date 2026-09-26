@@ -18,6 +18,31 @@ test('only evidence activities produce evidence, one row per targeted outcome', 
   ])
 })
 
+test('a link with items is scored only by its items; without item results it records nothing', () => {
+  const sorting: ActivitySpec = {
+    ...evidenceActivity,
+    mechanic: 'classify',
+    outcomes: [
+      { outcomeId: 'dev-familiar', evidenceRole: 'primary', items: ['keyboard', 'monitor', 'mouse'] },
+      { outcomeId: 'dev-new', evidenceRole: 'primary', items: ['scanner', 'projector'] },
+      { outcomeId: 'dev-any', evidenceRole: 'supporting' },
+    ],
+  }
+  const itemResults = [
+    { id: 'keyboard', correct: true }, { id: 'monitor', correct: true }, { id: 'mouse', correct: true },
+    { id: 'scanner', correct: true }, { id: 'projector', correct: false },
+  ]
+  assert.deepEqual(evidenceRowsForAttempt(sorting, { trust: 'server-verified', normalizedScore: 0.8, itemResults }), [
+    { outcomeId: 'dev-familiar', evidenceRole: 'primary', trust: 'server-verified', score: 1 },
+    { outcomeId: 'dev-new', evidenceRole: 'primary', trust: 'server-verified', score: 0.5 },
+    { outcomeId: 'dev-any', evidenceRole: 'supporting', trust: 'server-verified', score: 0.8 },
+  ])
+  assert.deepEqual(
+    evidenceRowsForAttempt(sorting, { trust: 'server-verified', normalizedScore: 0.8, itemResults: null }).map(r => r.outcomeId),
+    ['dev-any'],
+  )
+})
+
 test('a client-reported result is never recorded as primary evidence', () => {
   const game: ActivitySpec = { ...evidenceActivity, mechanic: 'game', scoring: { mode: 'client-unverified' } }
   assert.equal(evidenceRowsForAttempt(game, { trust: 'client-unverified', normalizedScore: 1 })[0]!.evidenceRole, 'supporting')

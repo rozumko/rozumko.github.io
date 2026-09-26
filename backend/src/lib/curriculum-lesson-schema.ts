@@ -251,9 +251,23 @@ export interface ActivitySpec {
     /** Server-only answer key. Stripped by toDisplaySafeLesson(). */
     key?: ChoiceKey | TrueFalseKey | ClassifyKey
   }
-  outcomes?: { outcomeId: string; evidenceRole: EvidenceRole }[]
+  outcomes?: ActivityOutcomeLink[]
   attempts?: { max?: number }
 }
+
+/**
+ * `items` narrows the evidence for this outcome to the named classify items or
+ * truefalse statements, so one activity can evidence several skills, each by
+ * its own items. Without it the whole activity's score counts.
+ */
+export interface ActivityOutcomeLink {
+  outcomeId: string
+  evidenceRole: EvidenceRole
+  items?: string[]
+}
+
+/** One item cannot evidence a skill: with two categories it is a coin toss. */
+export const MIN_ITEMS_PER_OUTCOME = 2
 
 export interface ActivityBlock extends LessonBlockBase {
   type: 'activity'
@@ -613,6 +627,31 @@ const MECHANIC_VALIDATORS: Record<ActivityMechanic, MechanicValidator> = {
   },
 }
 
+/** Item-level evidence needs per-item server scoring: classify items or truefalse statements. */
+function checkOutcomeItems(c: Collector, items: unknown, mechanic: unknown, config: unknown, mode: ScoringMode | null, path: string): void {
+  const list = mechanic === 'classify' ? 'items' : mechanic === 'truefalse' ? 'statements' : null
+  if (!list || mode !== 'server') {
+    c.add(path, 'only server-scored classify or truefalse activities can split evidence by item')
+    return
+  }
+  if (!Array.isArray(items)) {
+    c.add(path, 'must be an array')
+    return
+  }
+  const known = new Set(
+    (isRecord(config) && Array.isArray(config[list]) ? config[list] as unknown[] : [])
+      .map(entry => (isRecord(entry) ? entry.id : undefined))
+      .filter((id): id is string => typeof id === 'string'),
+  )
+  const seen = new Set<string>()
+  items.forEach((id, i) => {
+    if (typeof id !== 'string' || !known.has(id)) c.add(`${path}[${i}]`, `must reference a ${list === 'items' ? 'config item' : 'config statement'}`)
+    else if (seen.has(id)) c.add(`${path}[${i}]`, 'must not repeat')
+    else seen.add(id)
+  })
+  if (items.length < MIN_ITEMS_PER_OUTCOME) c.add(path, `must name at least ${MIN_ITEMS_PER_OUTCOME} items`)
+}
+
 function checkActivity(c: Collector, value: unknown, path: string, ctx: LessonContext): void {
   if (!isRecord(value)) {
     c.add(path, 'must be an object')
@@ -647,11 +686,12 @@ function checkActivity(c: Collector, value: unknown, path: string, ctx: LessonCo
     else outcomes.forEach((o, i) => {
       const p = `${path}.outcomes[${i}]`
       if (!isRecord(o)) return c.add(p, 'must be an object')
-      checkKnownKeys(c, o, ['outcomeId', 'evidenceRole'], p)
+      checkKnownKeys(c, o, ['outcomeId', 'evidenceRole', 'items'], p)
       if (typeof o.outcomeId !== 'string' || !ctx.outcomeIds.has(o.outcomeId)) {
         c.add(`${p}.outcomeId`, 'must reference a lesson learningOutcomes entry')
       }
       checkEnum(c, o.evidenceRole, EVIDENCE_ROLES, `${p}.evidenceRole`)
+      if (o.items !== undefined) checkOutcomeItems(c, o.items, value.mechanic, value.config, mode, `${p}.items`)
     })
   }
 

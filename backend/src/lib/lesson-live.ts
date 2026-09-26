@@ -65,6 +65,8 @@ export interface ScoredAttempt {
   /** Trust follows the mechanic: server mechanics are verified, games are not (DB-checked too). */
   result: Omit<ActivityResultEnvelope, 'trust'> & { durationSec?: number; trust: 'server-verified' | 'client-unverified' }
   feedback: ActivityFeedback | null
+  /** Per-item correctness for item-level evidence. Server-only: never sent to the device. */
+  itemResults: ActivityFeedback['items'] | null
   answerPayload: Record<string, unknown>
 }
 
@@ -100,6 +102,7 @@ export function scoreStudentAttempt(activity: ActivitySpec, submission: { answer
         trust: 'client-unverified',
       },
       feedback: null,
+      itemResults: null,
       answerPayload: { gameResult: normalized },
     }
   }
@@ -108,6 +111,7 @@ export function scoreStudentAttempt(activity: ActivitySpec, submission: { answer
   return {
     result: { ...result, trust: 'server-verified' },
     feedback: activity.telemetry === 'evidence' ? null : feedback,
+    itemResults: feedback.items,
     answerPayload: { answer: submission.answer as Record<string, unknown> },
   }
 }

@@ -233,7 +233,9 @@ Learning evidence (`student_outcome_evidence`, migration `0053`) is written
 only by the server, in the attempt's transaction, from the run's frozen
 activity. It is append-only; the one allowed change is anonymisation when a
 teacher deletes a student. A client-reported result can never be primary
-evidence (DB check). Outcome summaries follow a written, printed rule and
+evidence (DB check). A link that names `items` is scored from the server's
+per-item results for those items only; those results never leave the
+server. Outcome summaries follow a written, printed rule and
 link to their evidence. The report is owner-scoped.
 
 Classroom control (stage I, migration `0054`) goes through one provider
