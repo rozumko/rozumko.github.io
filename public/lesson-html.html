@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex,nofollow">
+  <title>HTML-картка уроку</title>
+</head>
+<body>
+  <p>Ця картка відкривається всередині уроку.</p>
+  <script>
+    // Never execute authored code as a top-level page or in an unsandboxed
+    // same-origin frame. window.origin is null only for an opaque origin.
+    window.addEventListener('DOMContentLoaded', () => {
+      if (window.top !== window.self && window.origin === 'null') {
+        try {
+          const content = decodeURIComponent(location.hash.slice(1));
+          if (content.length <= 70000) {
+            document.open();
+            document.write(content);
+            document.close();
+          }
+        } catch { /* malformed fragments leave the inert placeholder */ }
+      }
+    }, { once: true });
+  </script>
+</body>
+</html>

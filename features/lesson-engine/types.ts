@@ -16,6 +16,9 @@ export type CanvasItem =
   | { type: 'video'; videoId: string }
   | { type: 'learningapps'; appId: string }
   | { type: 'link'; url: string; label: LocalizedText }
+  | { type: 'html'; html: string }
+  | { type: 'pdf'; url: string; label: LocalizedText }
+  | { type: 'file'; mime: 'image/png' | 'image/jpeg' | 'image/webp' | 'application/pdf'; data: string; name: LocalizedText }
 
 export const LESSON_BLOCK_TYPES = [
   'hero', 'essential-question', 'objectives', 'explanation', 'visual', 'discussion',

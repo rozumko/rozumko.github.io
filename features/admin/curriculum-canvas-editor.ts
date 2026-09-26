@@ -150,15 +150,34 @@ function extensions(placeholder: string): Extensions {
     TableKit.configure({ table: { resizable: false }, tableCell: false, tableHeader: false }),
     TableCell.extend({ content: 'paragraph' }),
     TableHeader.extend({ content: 'paragraph' }),
-    CanvasImage, CanvasVideo, CanvasLink, CanvasLearningApps,
+    CanvasImage, CanvasVideo, CanvasLink, CanvasLearningApps, CanvasBuilderItem,
     Placeholder.configure({ placeholder }),
   ]
 }
+
+// Preserve builder cards as inert atoms when an existing lesson is edited here.
+const CanvasBuilderItem = Node.create({
+  name: 'canvasBuilderItem', group: 'block', atom: true, draggable: true,
+  addAttributes: () => ({ data: { default: '', rendered: false } }),
+  parseHTML: () => [{ tag: 'div[data-canvas-item]', getAttrs: node => ({ data: node.getAttribute('data-canvas-item') }) }],
+  renderHTML: ({ node }) => ['div', { 'data-canvas-item': node.attrs.data, class: 'cl-rte__link' }, 'Картка конструктора (HTML / PDF / файл)'],
+})
 
 let pendingTabFocus: string | null = null
 
 // Re-renders replace the DOM; editors whose DOM left the page are released.
 const liveEditors = new Set<Editor>()
+const finalCommits = new WeakMap<Editor, () => void>()
+/** Commit and disconnect observers before a modal removes the editor DOM. */
+export function disposeCanvasEditors(host: HTMLElement): void {
+  for (const editor of liveEditors) {
+    if (!editor.isDestroyed && host.contains(editor.view.dom)) {
+      finalCommits.get(editor)?.()
+      editor.destroy()
+      liveEditors.delete(editor)
+    }
+  }
+}
 function releaseDetachedEditors(): void {
   for (const editor of liveEditors) {
     if (editor.isDestroyed || !editor.view.dom.isConnected) {
@@ -488,6 +507,7 @@ export function renderCanvasEditor(block: EditableBlock, options: CanvasEditorOp
   )
 
   editor.on('update', commit)
+  finalCommits.set(editor, commit)
   editor.on('transaction', bar.refresh)
   bar.refresh()
   status.textContent = `Елементів: ${itemsOf(block, selection.key).length} з ${MAX_ITEMS}.`

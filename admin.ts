@@ -12,6 +12,7 @@ import { initLessonsTab,   loadLessonsTab    } from './features/admin/lessons-ta
 import { initPathTab,      loadPathTab       } from './features/admin/path-tab.js'
 import { initOutcomesTab,   loadOutcomesTab   } from './features/admin/outcomes-tab.js'
 import { initCurriculumTab, loadCurriculumTab } from './features/admin/curriculum-tab.js'
+import { initLessonBuilderTab, loadLessonBuilderTab } from './features/admin/lesson-builder-tab.js'
 import { initPublicationTab, loadPublicationTab, refreshContentDeliveryBanner } from './features/admin/publication-tab.js'
 import { initFunnelPanel, loadFunnelPanel } from './features/admin/funnel-panel.js'
 import { friendlyError } from './features/admin/ui.js'
@@ -129,6 +130,7 @@ const TAB_LOADERS: Record<string, () => unknown> = {
   path: loadPathTab,
   outcomes: loadOutcomesTab,
   curriculum: loadCurriculumTab,
+  'lesson-builder': loadLessonBuilderTab,
   publication: loadPublicationTab,
 }
 const moreToggle = $<HTMLButtonElement>('admin-more-toggle')
@@ -223,5 +225,6 @@ initLessonsTab()
 initPathTab()
 initOutcomesTab()
 initCurriculumTab()
+initLessonBuilderTab()
 initPublicationTab()
 initFunnelPanel()

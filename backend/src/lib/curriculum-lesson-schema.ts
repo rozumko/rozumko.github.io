@@ -145,6 +145,9 @@ export type CanvasItem =
   | { type: 'video'; videoId: string }
   | { type: 'learningapps'; appId: string }
   | { type: 'link'; url: string; label: LocalizedText }
+  | { type: 'html'; html: string }
+  | { type: 'pdf'; url: string; label: LocalizedText }
+  | { type: 'file'; mime: 'image/png' | 'image/jpeg' | 'image/webp' | 'application/pdf'; data: string; name: LocalizedText }
 
 export interface CanvasBlock extends LessonBlockBase {
   type: 'canvas'
@@ -426,8 +429,7 @@ function checkString(c: Collector, value: unknown, path: string, max: number, re
 }
 
 function checkPlainText(c: Collector, value: string, path: string): void {
-  // Content is structured data, never raw HTML: renderers escape everything
-  // and interpret only **bold** and `code`.
+  // Localized text stays plain. Only the explicit sandbox item accepts HTML.
   if (HTML_TAG_RE.test(value)) c.add(path, 'must not contain HTML markup')
 }
 
@@ -769,6 +771,26 @@ function checkCanvasItems(c: Collector, value: unknown, path: string): void {
         checkKnownKeys(c, item, ['type', 'appId'], at)
         checkString(c, item.appId, `${at}.appId`, 20, /^[1-9][0-9]{0,19}$/)
         break
+      case 'html':
+        checkKnownKeys(c, item, ['type', 'html'], at)
+        checkString(c, item.html, `${at}.html`, 65_536)
+        break
+      case 'file': {
+        checkKnownKeys(c, item, ['type', 'mime', 'data', 'name'], at)
+        checkLocalized(c, item.name, `${at}.name`, MAX_SHORT)
+        if (!checkEnum(c, item.mime, ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'], `${at}.mime`)) break
+        if (!checkString(c, item.data, `${at}.data`, 699_052) || typeof item.data !== 'string' || item.data.length > 699_052) break
+        const bytes = Buffer.from(item.data, 'base64')
+        const signatures: Record<string, boolean> = {
+          'image/png': bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])),
+          'image/jpeg': bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255,
+          'image/webp': bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP',
+          'application/pdf': bytes.toString('ascii', 0, 5) === '%PDF-',
+        }
+        if (bytes.length > 524_288 || bytes.toString('base64') !== item.data || !signatures[item.mime]) c.add(`${at}.data`, 'invalid file content or exceeds 512 KiB')
+        break
+      }
+      case 'pdf':
       case 'link':
         checkKnownKeys(c, item, ['type', 'url', 'label'], at)
         checkMediaSrc(c, item.url, `${at}.url`)
@@ -1004,11 +1026,15 @@ function checkBlock(c: Collector, value: unknown, index: number, ctx: LessonCont
 
 /**
  * Validates an untrusted lesson definition. Fail-closed: unknown fields,
- * dangling references and HTML are errors, never silently dropped.
+ * dangling references and HTML in plain text are errors, never silently dropped.
+ * Authored code is accepted only in the bounded sandbox item.
  */
 export function validateLessonDefinition(input: unknown): LessonValidationResult {
   const c = new Collector()
   if (!isRecord(input)) return { ok: false, errors: [{ path: '', message: 'must be an object' }] }
+  if (Buffer.byteLength(JSON.stringify(input), 'utf8') > 4 * 1024 * 1024) {
+    return { ok: false, errors: [{ path: '', message: 'lesson exceeds 4 MiB; remove large files' }] }
+  }
 
   checkKnownKeys(c, input, [
     'schemaVersion', 'id', 'slug', 'subjectPackId', 'subject', 'grade', 'moduleId', 'unitId',

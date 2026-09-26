@@ -80,6 +80,7 @@
       <div class="admin-tabs__row">
         <div class="admin-tabs__group" role="group" aria-label="Уроки" data-lesson-engine hidden>
           <button data-tab="curriculum" class="admin-tab" data-lesson-engine hidden><i class="fas fa-chalkboard" aria-hidden="true"></i> Уроки</button>
+          <button data-tab="lesson-builder" class="admin-tab" data-lesson-engine hidden><i class="fas fa-th-large" aria-hidden="true"></i> Конструктор уроків</button>
           <button data-tab="outcomes"   class="admin-tab" data-lesson-engine hidden><i class="fas fa-bullseye" aria-hidden="true"></i> Результати навчання</button>
         </div>
         <div class="admin-tabs__group" role="group" aria-label="Люди">
@@ -391,6 +392,10 @@
           <div id="cl-list" class="admin-list admin-list--sm"></div>
         </div>
         <div id="cl-editor-view" hidden></div>
+      </section>
+
+      <section id="tab-lesson-builder" class="tab-panel hidden">
+        <div id="lb-root"></div>
       </section>
 
       <!-- Вкладка: довідник результатів навчання (Lesson Engine) -->

@@ -98,7 +98,7 @@ function cspPlugin(apiOrigin: string, supabaseOrigin: string): Plugin {
               : STRICT_CSP
         // Canvas blocks may show images from any https host (an editorial decision).
         const content = usesLessonMedia && !usesTurnstile
-          ? `${base.replace("img-src 'self' data:", "img-src 'self' data: https:")}; frame-src ${YOUTUBE_FRAME_ORIGIN}`
+          ? `${base.replace("img-src 'self' data:", "img-src 'self' data: https:")}; frame-src 'self' data: ${YOUTUBE_FRAME_ORIGIN} https://learningapps.org`
           : base
         return {
           html,
