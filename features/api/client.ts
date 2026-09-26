@@ -1328,6 +1328,8 @@ export interface AdminFrameworkRef {
   groupCode: string | null
   groupTitle: string | null
   examples: string[]
+  /** Other printings of the code, e.g. the MON portal's «2 ІФО 1.1.1» for the standard's «2 ІФО 1.1». */
+  aliases?: string[]
   guidance: string | null
   source: string
   sortOrder: number

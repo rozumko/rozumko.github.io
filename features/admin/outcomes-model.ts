@@ -137,6 +137,13 @@ export function levelLabel(ref: Pick<AdminFrameworkRef, 'framework' | 'level'>):
   return ref.framework.startsWith('cambridge-') ? `Stage ${ref.level}` : `${ref.level.replace('-', '–')} класи`
 }
 
+/** The catalogue entry a mapping names, by its code or an alias (an old portal code). */
+export function findRef(refs: readonly AdminFrameworkRef[], framework: string, code: string): AdminFrameworkRef | undefined {
+  const f = framework.trim()
+  const c = code.trim()
+  return refs.find(ref => ref.framework === f && ref.code === c) ?? refs.find(ref => ref.framework === f && (ref.aliases ?? []).includes(c))
+}
+
 export function refKey(framework: string, code: string): string {
   return `${framework}|${code}`
 }
@@ -169,7 +176,7 @@ export interface RefFilter {
   uncoveredOnly: boolean
 }
 
-/** Search matches the code, the wording, the strand or group, and MON task examples. */
+/** Search matches the code and its aliases, the wording, the strand or group, and MON task examples. */
 export function filterRefs(refs: readonly AdminFrameworkRef[], filter: RefFilter, coverage: Map<string, RefCover[]>): AdminFrameworkRef[] {
   const words = normalize(filter.query).split(/\s+/).filter(Boolean)
   return refs.filter(ref => {
@@ -177,7 +184,7 @@ export function filterRefs(refs: readonly AdminFrameworkRef[], filter: RefFilter
     if (filter.level && ref.level !== filter.level) return false
     if (filter.uncoveredOnly && coverage.has(refKey(ref.framework, ref.code))) return false
     if (words.length === 0) return true
-    const haystack = normalize([ref.code, ref.title, ref.groupCode ?? '', ref.groupTitle ?? '', ...ref.examples].join(' '))
+    const haystack = normalize([ref.code, ...(ref.aliases ?? []), ref.title, ref.groupCode ?? '', ref.groupTitle ?? '', ...ref.examples].join(' '))
     return words.every(word => haystack.includes(word))
   })
 }

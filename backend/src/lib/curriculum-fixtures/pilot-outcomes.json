@@ -16,7 +16,7 @@
     "mappings": [
       { "framework": "cambridge-0072", "ref": "2TC.10", "strength": "direct" },
       { "framework": "cambridge-0072", "ref": "1TC.09", "strength": "supporting" },
-      { "framework": "nush-ifo-2018", "ref": "2 ІФО 3.3.1", "strength": "supporting" }
+      { "framework": "nush-ifo-2018", "ref": "2 ІФО 3.3", "strength": "supporting" }
     ]
   }
 }

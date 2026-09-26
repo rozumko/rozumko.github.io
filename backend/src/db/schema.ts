@@ -743,6 +743,8 @@ export const curriculumFrameworkRefs = pgTable('curriculum_framework_refs', {
   groupCode:  text('group_code'),
   groupTitle: text('group_title'),
   examples:   jsonb('examples').notNull().default([]).$type<string[]>(),
+  /** Other printings of the same code (0060: the MON portal's «2 ІФО 1.1.1» for the standard's «2 ІФО 1.1»). */
+  aliases:    jsonb('aliases').notNull().default([]).$type<string[]>(),
   guidance:   text('guidance'),
   source:     text('source').notNull(),
   sortOrder:  integer('sort_order').notNull(),

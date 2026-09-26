@@ -157,12 +157,12 @@ test('an admin adds a NUSH outcome with a Cambridge mapping, sees server errors,
 
 const REFS = [
   {
-    framework: 'nush-ifo-2018', code: '2 ІФО 3.3.1', title: 'Використовує цифрові пристрої, технології для доступу до інформації та спілкування',
+    framework: 'nush-ifo-2018', code: '2 ІФО 3.3', aliases: ['2 ІФО 3.3.1'], title: 'Використовує цифрові пристрої, технології для доступу до інформації та спілкування',
     lang: 'uk', level: '1-2', groupCode: 'ІФО 3.3', groupTitle: 'Використовує цифрові пристрої та технології для доступу до інформації, спілкування та співпраці',
     examples: ['Знайдіть на планшеті застосунок для малювання.'], guidance: null, source: 'МОН, Інформатична освітня галузь, цикл 1-2 класи', sortOrder: 1,
   },
   {
-    framework: 'nush-ifo-2018', code: '4 ІФО 1.1.1', title: 'Пояснює основні інформаційні процеси у близькому для себе середовищі',
+    framework: 'nush-ifo-2018', code: '4 ІФО 1.1', aliases: ['4 ІФО 1.1.1'], title: 'Пояснює основні інформаційні процеси у близькому для себе середовищі',
     lang: 'uk', level: '3-4', groupCode: 'ІФО 1.1', groupTitle: 'Досліджує і оцінює вплив інформаційних технологій на своє життя',
     examples: [], guidance: null, source: 'МОН, Інформатична освітня галузь, цикл 3-4 класи', sortOrder: 2,
   },
@@ -188,9 +188,14 @@ test('the standards catalogue shows which skills cover each code and drafts a ne
   await expect(tab.locator('#oc-count')).toContainText('2 із 2 · покрито вміннями: 0')
   await tab.getByLabel('Клас або Stage').selectOption('1-2')
   await expect(catalog.locator('.question-item')).toHaveCount(1)
-  const ifo = catalog.locator('[data-ref-code="2 ІФО 3.3.1"]')
+  const ifo = catalog.locator('[data-ref-code="2 ІФО 3.3"]')
   await expect(ifo).toContainText('не покрито')
   await expect(ifo).toContainText('Приклади завдань МОН (1)')
+  // The MON portal prints the standard's codes with an extra level: that spelling still finds the entry.
+  await expect(ifo).toContainText('Інше написання коду: 2 ІФО 3.3.1')
+  await tab.getByLabel('Пошук у стандартах').fill('2 ІФО 3.3.1')
+  await expect(catalog.locator('.question-item')).toHaveCount(1)
+  await tab.getByLabel('Пошук у стандартах').fill('')
 
   const results = await new AxeBuilder({ page }).include('#tab-outcomes').withTags(WCAG_AA_TAGS).analyze()
   expect(results.violations.map(v => v.id)).toEqual([])
@@ -206,18 +211,18 @@ test('the standards catalogue shows which skills cover each code and drafts a ne
 
   // A new skill drafted from a NUSH code: internal source, grade band and a direct mapping with the wording shown.
   await tab.getByLabel('Документ').selectOption('nush-ifo-2018')
-  await catalog.getByRole('button', { name: 'Створити вміння з відповідністю 2 ІФО 3.3.1' }).click()
+  await catalog.getByRole('button', { name: 'Створити вміння з відповідністю 2 ІФО 3.3' }).click()
   const modal = page.getByRole('dialog', { name: 'Новий результат навчання' })
   await expect(modal.getByLabel('Класи')).toHaveValue('1-2')
   await expect(modal.getByLabel('Джерело')).toHaveValue('internal')
-  await expect(modal.getByLabel('Відповідність 1: код або критерій')).toHaveValue('2 ІФО 3.3.1')
+  await expect(modal.getByLabel('Відповідність 1: код або критерій')).toHaveValue('2 ІФО 3.3')
   await expect(modal.locator('.of-ref-hint')).toContainText('Використовує цифрові пристрої')
   await modal.getByLabel('Код', { exact: true }).fill('INF-2-DEV-4')
   await modal.getByLabel('Формулювання', { exact: true }).fill('Знаходить на пристрої застосунок для завдання')
   await modal.getByRole('button', { name: 'Зберегти' }).click()
   await expect(modal).toBeHidden()
   expect(writes[writes.length - 1]).toMatchObject({
-    outcome: { code: 'INF-2-DEV-4', source: 'internal', gradeBand: '1-2', mappings: [{ framework: 'nush-ifo-2018', ref: '2 ІФО 3.3.1', strength: 'direct' }] },
+    outcome: { code: 'INF-2-DEV-4', source: 'internal', gradeBand: '1-2', mappings: [{ framework: 'nush-ifo-2018', ref: '2 ІФО 3.3', strength: 'direct' }] },
   })
-  await expect(catalog.locator('[data-ref-code="2 ІФО 3.3.1"]')).toContainText('Покривають: INF-2-DEV-4 (пряма)')
+  await expect(catalog.locator('[data-ref-code="2 ІФО 3.3"]')).toContainText('Покривають: INF-2-DEV-4 (пряма)')
 })

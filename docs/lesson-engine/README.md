@@ -789,7 +789,19 @@ strands and the Digital Literacy guidance), in their official wording.
 - Migration `0059` creates `curriculum_framework_refs` (RLS on, no policies)
   and inserts the entries once; a wording fix is a new migration. The new
   NUSH edition (`nush-ifo-2028`) is added the same way once its codes are
-  checked against the approved text.
+  checked against the approved text (resolution No 1810 of 26.12.2025,
+  appendix 15; it applies to children starting school from 1 September 2028
+  and codes results by year, group, general and specific result).
+- **Normative NUSH codes (`0060`).** `nush-ifo-2018` is the State Standard of
+  Primary Education, resolution No 87 of 21.02.2018, appendix 7 (edition in
+  force). It codes results as `2 ІФО 1.1`; the MON portal «Інтерактивний
+  поступ», where the catalogue came from, prints `2 ІФО 1.1.1`. The catalogue
+  keeps the normative code, the portal code as an alias (searchable, and a
+  mapping typed with it still shows the entry and names the normative code),
+  and the standard's four general results as groups. The same migration
+  rewrote every `nush-ifo-2018` mapping on skills to the normative code, with
+  a revision; evidence was untouched. The 30 results' wording was checked
+  against the standard's text.
 - `backend/src/lib/curriculum-outcome-rules.ts` (pure: `prepareOutcome` uses
   the same rules as pack validation, `outcomeRegistry`, `outcomeUsage`).
 - `/api/admin/curriculum/`: `packs` (GET), `outcomes` (GET with usage, POST),

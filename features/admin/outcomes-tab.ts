@@ -29,6 +29,7 @@ import {
   describeOutcomeIssue,
   filterOutcomes,
   filterRefs,
+  findRef,
   frameworkTitle,
   levelLabel,
   mappingSummary,
@@ -166,10 +167,6 @@ function fillRefLists() {
   }
 }
 
-function findRef(framework: string, code: string): AdminFrameworkRef | undefined {
-  return refs.find(ref => ref.framework === framework.trim() && ref.code === code.trim())
-}
-
 function renderCatalog() {
   const list = $('oc-list')
   const coverage = refCoverage(outcomes)
@@ -218,6 +215,7 @@ function renderCatalog() {
     if (longGroup) left.append(el('p', 'question-item__meta', `${ref.groupCode}: ${ref.groupTitle}`))
     if (ref.examples.length) left.append(foldList(`Приклади завдань МОН (${ref.examples.length})`, ref.examples, 'uk'))
     if (ref.guidance) left.append(foldList('Примітки Cambridge', [ref.guidance], 'en'))
+    if (ref.aliases?.length) left.append(el('p', 'question-item__meta', `Інше написання коду: ${ref.aliases.join(', ')}`))
     left.append(el('p', 'question-item__meta', ref.source))
 
     const actions = el('div', 'question-item__actions')
@@ -355,8 +353,10 @@ function addMappingRow(mapping: CurriculumOutcomeMapping, focus = false) {
   const hint = el('p', 'adm-field-hint of-ref-hint')
   const describe = () => {
     ref.setAttribute('list', `of-refs-${framework.value.trim()}`)
-    const found = findRef(framework.value, ref.value)
-    hint.textContent = found ? `${frameworkTitle(found.framework)}, ${levelLabel(found)}: ${found.title}` : ''
+    const found = findRef(refs, framework.value, ref.value)
+    // An old portal code still resolves, and the hint names the normative one to use instead.
+    const byAlias = found && found.code !== ref.value.trim() ? ` Код у стандарті: ${found.code}.` : ''
+    hint.textContent = found ? `${frameworkTitle(found.framework)}, ${levelLabel(found)}: ${found.title}${byAlias}` : ''
     if (found) hint.lang = found.lang
     else hint.removeAttribute('lang')
   }
