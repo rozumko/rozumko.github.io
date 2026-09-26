@@ -5,8 +5,16 @@ import type { ActivitySpec, LessonDefinitionV1 } from './curriculum-lesson-schem
 import { holdsLessonAssignment, validateLessonProgress } from './lesson-progress.js'
 import { studentPresentationSlide } from './lesson-student-material.js'
 
-const lesson = JSON.parse(readFileSync(new URL('./curriculum-fixtures/g2-devices-pilot.lesson.json', import.meta.url), 'utf8')) as LessonDefinitionV1
-const activity = lesson.blocks.flatMap(block => block.type === 'activity' && block.activity.mechanic === 'classify' ? [block.activity] : [])[0]!
+const lesson = JSON.parse(readFileSync(new URL('./curriculum-fixtures/g2-m2-l8.lesson.json', import.meta.url), 'utf8')) as LessonDefinitionV1
+const activity: ActivitySpec = {
+  instanceId: 'recovery-classify', mechanic: 'classify', telemetry: 'practice',
+  config: {
+    prompt: { uk: 'Розподіли пристрої' },
+    categories: [{ id: 'input', label: { uk: 'Введення' } }, { id: 'output', label: { uk: 'Виведення' } }],
+    items: [{ id: 'keyboard', label: { uk: 'Клавіатура' } }, { id: 'screen', label: { uk: 'Монітор' } }],
+  },
+  scoring: { mode: 'server', key: { placement: { keyboard: 'input', screen: 'output' } } },
+}
 
 test('incomplete classification is recovery data; foreign items and answer keys are refused', () => {
   const config = activity.config as { items: { id: string }[]; categories: { id: string }[] }
@@ -45,9 +53,10 @@ test('remote slides expose projector fields only, never notes, expected answers,
   assert.equal(json.includes('secret'), false)
   assert.equal(json.includes('scoring'), false)
   const activityBlock = copy.blocks.find(block => block.type === 'activity')!
+  if (activityBlock.type === 'activity') activityBlock.activity = activity
   const projected = studentPresentationSlide(copy, activityBlock.id)
   assert.ok(projected)
-  assert.equal(JSON.stringify(projected).includes('correctCategoryByItem'), false)
+  assert.equal(JSON.stringify(projected).includes('placement'), false)
   assert.equal(JSON.stringify(projected).includes('outcomes'), false)
   assert.equal(JSON.stringify(projected?.activity?.scoring).includes('key'), false)
   block.audience.student = false

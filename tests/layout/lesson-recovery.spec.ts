@@ -6,8 +6,16 @@ import { studentActivityView } from '../../backend/src/lib/lesson-live'
 import { findSubjectPack } from '../../backend/src/lib/subject-packs'
 import { studentPresentationSlide } from '../../backend/src/lib/lesson-student-material'
 
-const lesson = JSON.parse(readFileSync(new URL('../../backend/src/lib/curriculum-fixtures/g2-devices-pilot.lesson.json', import.meta.url), 'utf8')) as LessonDefinitionV1
-const classify = lesson.blocks.flatMap(block => block.type === 'activity' && block.activity.mechanic === 'classify' ? [block.activity] : [])[0]!
+const lesson = JSON.parse(readFileSync(new URL('../../backend/src/lib/curriculum-fixtures/g2-m2-l8.lesson.json', import.meta.url), 'utf8')) as LessonDefinitionV1
+const classify: ActivitySpec = {
+  instanceId: 'recovery-classify', mechanic: 'classify', telemetry: 'practice',
+  config: {
+    prompt: { uk: 'Розподіли пристрої' },
+    categories: [{ id: 'input', label: { uk: 'Введення' } }, { id: 'output', label: { uk: 'Виведення' } }],
+    items: [{ id: 'keyboard', label: { uk: 'Клавіатура' } }, { id: 'screen', label: { uk: 'Монітор' } }],
+  },
+  scoring: { mode: 'server', key: { placement: { keyboard: 'input', screen: 'output' } } },
+}
 const STUDENT = '00000000-0000-4000-8000-00000000a001'
 const LAPTOP = '00000000-0000-4000-8000-00000000d001'
 const TABLET = '00000000-0000-4000-8000-00000000d002'
@@ -86,7 +94,7 @@ test('partial classification survives reload and an offline edit is replayed whe
   await page.reload()
   await expect(second).toBeChecked()
   state.offline = false
-  await expect.poll(() => state.progress?.selection).toEqual({ 'practice-keys': 'output' })
+  await expect.poll(() => state.progress?.selection).toEqual({ 'keyboard': 'output' })
 })
 
 test('the laptop stays running while the tablet resumes; stale laptop writes and submissions cannot replace tablet work', async ({ page: laptop, context }) => {
@@ -101,17 +109,17 @@ test('the laptop stays running while the tablet resumes; stale laptop writes and
   await join(tablet, TABLET)
   await expect(tablet.locator('.le-interactive__question').first().getByRole('radio').first()).toBeChecked()
   await tablet.locator('.le-interactive__question').first().getByRole('radio').nth(1).check()
-  await expect.poll(() => state.progress?.selection).toEqual({ 'practice-keys': 'output' })
+  await expect.poll(() => state.progress?.selection).toEqual({ 'keyboard': 'output' })
   const stale = { deviceId: LAPTOP, deviceToken: 'f'.repeat(64), lessonRunStudentId: STUDENT, assignmentVersion: 1, dispatchId: DISPATCH }
   const statuses = await laptop.evaluate(async ({ stale, revision }) => {
     const send = (path: string, body: unknown) => fetch(`/api/student/lesson/${path}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }).then(response => response.status)
     return [
-      await send('progress', { ...stale, revision, progress: { selection: { 'practice-keys': 'input' } } }),
-      await send('attempt', { ...stale, clientAttemptId: crypto.randomUUID(), answer: { placement: { 'practice-keys': 'input' } } }),
+      await send('progress', { ...stale, revision, progress: { selection: { 'keyboard': 'input' } } }),
+      await send('attempt', { ...stale, clientAttemptId: crypto.randomUUID(), answer: { placement: { 'keyboard': 'input' } } }),
     ]
   }, { stale, revision: state.revision })
   expect(statuses).toEqual([409, 401])
-  expect(state.progress?.selection).toEqual({ 'practice-keys': 'output' })
+  expect(state.progress?.selection).toEqual({ 'keyboard': 'output' })
   expect(state.refused).toBe(2)
 })
 
