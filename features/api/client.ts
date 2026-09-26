@@ -1187,6 +1187,15 @@ export function getTeacherMe(): Promise<{ id: string; authUserId: string; role: 
 
 export type CurriculumOutcomeSource = 'national-standard' | 'program' | 'international' | 'internal'
 
+export type CurriculumMappingStrength = 'direct' | 'partial' | 'supporting'
+
+/** A link to the same skill in another framework; strength is a methodological judgement. */
+export interface CurriculumOutcomeMapping {
+  framework: string
+  ref: string
+  strength?: CurriculumMappingStrength
+}
+
 /** What the editor sends; the server trims, validates and stores it. */
 export interface CurriculumOutcomeInput {
   code: string
@@ -1194,7 +1203,7 @@ export interface CurriculumOutcomeInput {
   source: CurriculumOutcomeSource
   sourceRef?: string
   gradeBand?: string
-  mappings: { framework: string; ref: string }[]
+  mappings: CurriculumOutcomeMapping[]
 }
 
 export interface AdminCurriculumOutcome {
@@ -1206,7 +1215,7 @@ export interface AdminCurriculumOutcome {
   source: CurriculumOutcomeSource
   sourceRef: string | null
   gradeBand: string | null
-  mappings: { framework: string; ref: string }[]
+  mappings: CurriculumOutcomeMapping[]
   status: 'active' | 'archived'
   editVersion: number
   updatedAt: string

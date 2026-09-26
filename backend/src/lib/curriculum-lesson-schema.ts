@@ -334,6 +334,16 @@ export interface SubjectPack {
 export const OUTCOME_SOURCES = ['national-standard', 'program', 'international', 'internal'] as const
 export type OutcomeSource = (typeof OUTCOME_SOURCES)[number]
 
+/** How closely a mapped ref matches the outcome: a methodological judgement, not an official equivalence. */
+export const MAPPING_STRENGTHS = ['direct', 'partial', 'supporting'] as const
+export type MappingStrength = (typeof MAPPING_STRENGTHS)[number]
+
+export interface OutcomeMapping {
+  framework: string
+  ref: string
+  strength?: MappingStrength
+}
+
 /**
  * A pack-owned learning outcome. `mappings` links it to external frameworks
  * without the core knowing what a framework means.
@@ -344,7 +354,7 @@ export interface LearningOutcome {
   source: OutcomeSource
   sourceRef?: string
   gradeBand?: string
-  mappings: { framework: string; ref: string }[]
+  mappings: OutcomeMapping[]
 }
 
 // ── Validation ────────────────────────────────────────────────────────────────
@@ -1095,9 +1105,10 @@ function checkLearningOutcome(c: Collector, outcome: unknown, p: string): void {
   if (!Array.isArray(outcome.mappings)) c.add(at('mappings'), 'must be an array')
   else outcome.mappings.forEach((m, i) => {
     if (!isRecord(m)) return c.add(at(`mappings[${i}]`), 'must be an object')
-    checkKnownKeys(c, m, ['framework', 'ref'], at(`mappings[${i}]`))
+    checkKnownKeys(c, m, ['framework', 'ref', 'strength'], at(`mappings[${i}]`))
     checkString(c, m.framework, at(`mappings[${i}].framework`), MAX_ID)
     checkString(c, m.ref, at(`mappings[${i}].ref`), MAX_SHORT)
+    if (m.strength !== undefined) checkEnum(c, m.strength, MAPPING_STRENGTHS, at(`mappings[${i}].strength`))
   })
 }
 

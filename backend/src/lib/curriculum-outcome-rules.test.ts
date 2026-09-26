@@ -45,6 +45,24 @@ test('the migration seeds exactly the pilot outcomes the reference lesson uses',
   }
 })
 
+test('0058 seeds only internal skills whose mappings pass the directory rules and match the pilot fixture', () => {
+  const seed = readFileSync(new URL('../../drizzle/0058_seed_device_outcomes_and_mappings.sql', import.meta.url), 'utf8')
+  const literals = [...seed.matchAll(/'(\[\s*\{[^']*\])'::jsonb/g)].map(m => JSON.parse(m[1]!) as unknown[])
+  assert.equal(literals.length, 5)
+  for (const mappings of literals) {
+    const outcome = prepareOutcome({ code: 'X-1', title: { uk: 'Текст' }, source: 'internal', mappings })
+    assert.ok(outcome.mappings.every(m => m.strength !== undefined), 'every seeded mapping states its strength')
+  }
+  // Evidence targets skills; frameworks appear only as mappings.
+  for (const values of seed.matchAll(/'informatics-ua-primary', '[^']+',\s*'[^']+', '([a-z-]+)'/g)) {
+    assert.equal(values[1], 'internal')
+  }
+  for (const [id, outcome] of Object.entries(PILOT_OUTCOMES) as [string, { mappings: unknown[] }][]) {
+    assert.ok(seed.includes(`'${id}'`), id)
+    assert.ok(literals.some(m => JSON.stringify(m) === JSON.stringify(outcome.mappings)), `${id} fixture mappings match 0058`)
+  }
+})
+
 test('an outcome is trimmed, empty optional fields are dropped, and it round-trips through a row', () => {
   const outcome = prepareOutcome({
     code: '  2 ІФО 2.1-1 ',
@@ -52,13 +70,19 @@ test('an outcome is trimmed, empty optional fields are dropped, and it round-tri
     source: 'national-standard',
     sourceRef: ' ',
     gradeBand: '',
-    mappings: [{ framework: ' cambridge ', ref: ' 3Alg.01 ' }],
+    mappings: [
+      { framework: ' cambridge ', ref: ' 3Alg.01 ', strength: '' },
+      { framework: 'nush-ifo-2018', ref: '2 ІФО 2.1.1', strength: 'partial' },
+    ],
   })
   assert.deepEqual(outcome, {
     code: '2 ІФО 2.1-1',
     title: { uk: 'Складає прості послідовності команд' },
     source: 'national-standard',
-    mappings: [{ framework: 'cambridge', ref: '3Alg.01' }],
+    mappings: [
+      { framework: 'cambridge', ref: '3Alg.01' },
+      { framework: 'nush-ifo-2018', ref: '2 ІФО 2.1.1', strength: 'partial' },
+    ],
   })
   const columns = outcomeColumns(outcome)
   assert.deepEqual(outcomeFromRow(row({ ...columns })), outcome)
@@ -72,6 +96,10 @@ test('outcomes fail closed with paths: unknown fields, HTML, bad source, too man
   assert.deepEqual(issuePaths(() => prepareOutcome({ ...valid, source: 'rumour' })), ['source'])
   assert.deepEqual(issuePaths(() => prepareOutcome({ ...valid, code: ' ' })), ['code'])
   assert.deepEqual(issuePaths(() => prepareOutcome({ ...valid, mappings: [{ framework: 'nush' }] })), ['mappings[0].ref'])
+  assert.deepEqual(
+    issuePaths(() => prepareOutcome({ ...valid, mappings: [{ framework: 'nush', ref: '1', strength: 'equivalent' }] })),
+    ['mappings[0].strength'],
+  )
   const many = Array.from({ length: MAX_OUTCOME_MAPPINGS + 1 }, (_, i) => ({ framework: 'nush', ref: String(i) }))
   assert.deepEqual(issuePaths(() => prepareOutcome({ ...valid, mappings: many })), ['mappings'])
 })

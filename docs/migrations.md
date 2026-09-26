@@ -72,6 +72,7 @@ environments receive the same schema.
 | `0055_add_class_links_and_seats` | Lesson Engine class link (versioned, HMAC-derived key, nothing secret stored) and remembered seats (salted seat-secret hash → roster student); `lesson_run_devices.seat_hash` (RLS enabled) |
 | `0056_add_classroom_remote_connections` | Lesson Engine ↔ Classroom Remote: one connection per teacher, integration key encrypted at rest (AES-256-GCM, teacher-bound), only a 4-char hint shown (RLS enabled) |
 | `0057_add_curriculum_outcomes` | Lesson Engine learning outcome directory (NUSH / program / Cambridge) + append-only revisions; outcomes are archived, never deleted, id/pack immutable (triggers); seeds the two pilot outcomes (RLS enabled) |
+| `0058_seed_device_outcomes_and_mappings` | Data only: grade 2 pilot outcomes "input and output devices" (`INF-2-DEV-1..3`) and NUSH/Cambridge mappings with strength for the two file outcomes; revisions written; mappings are added only while an outcome has none |
 
 `0012` is intentionally idempotent: production received the columns manually
 before the SQL was incorporated into Drizzle history.

@@ -1,7 +1,13 @@
 // Pure helpers for the admin "Результати навчання" tab (Lesson Engine outcome
 // directory). DOM code lives in outcomes-tab.ts.
 
-import type { AdminCurriculumOutcome, CurriculumOutcomeInput, CurriculumOutcomeSource } from '../api/client.js'
+import type {
+  AdminCurriculumOutcome,
+  CurriculumMappingStrength,
+  CurriculumOutcomeInput,
+  CurriculumOutcomeMapping,
+  CurriculumOutcomeSource,
+} from '../api/client.js'
 
 export const OUTCOME_SOURCE_LABELS: Readonly<Record<CurriculumOutcomeSource, string>> = {
   'national-standard': 'Державний стандарт (НУШ)',
@@ -11,11 +17,19 @@ export const OUTCOME_SOURCE_LABELS: Readonly<Record<CurriculumOutcomeSource, str
 }
 
 /** Framework keys offered for mappings; any other short key is allowed too. */
-export const OUTCOME_FRAMEWORK_SUGGESTIONS: readonly { key: string; label: string }[] = [
-  { key: 'nush', label: 'НУШ — очікуваний результат' },
-  { key: 'cambridge', label: 'Cambridge — success criteria / learning objective' },
-  { key: 'program', label: 'Навчальна програма' },
+export const OUTCOME_FRAMEWORK_SUGGESTIONS: readonly { framework: string; label: string }[] = [
+  { framework: 'nush-ifo-2018', label: 'Держстандарт НУШ, чинна редакція — ІФО' },
+  { framework: 'nush-ifo-2028', label: 'Держстандарт НУШ, нова редакція (з 2028) — ІФО' },
+  { framework: 'cambridge-0059', label: 'Cambridge Primary Computing 0059' },
+  { framework: 'cambridge-0072', label: 'Cambridge Primary Digital Literacy 0072' },
+  { framework: 'program', label: 'Навчальна програма' },
 ]
+
+export const MAPPING_STRENGTH_LABELS: Readonly<Record<CurriculumMappingStrength, string>> = {
+  direct: 'пряма',
+  partial: 'часткова',
+  supporting: 'допоміжна',
+}
 
 export interface OutcomeFilter {
   packId: string
@@ -50,14 +64,18 @@ export function outcomeInputFromForm(form: {
   source: CurriculumOutcomeSource
   sourceRef: string
   gradeBand: string
-  mappings: { framework: string; ref: string }[]
+  mappings: { framework: string; ref: string; strength: CurriculumMappingStrength | '' }[]
 }): CurriculumOutcomeInput {
   const input: CurriculumOutcomeInput = {
     code: form.code.trim(),
     title: { uk: form.titleUk.trim() },
     source: form.source,
     mappings: form.mappings
-      .map(m => ({ framework: m.framework.trim(), ref: m.ref.trim() }))
+      .map(m => {
+        const mapping: CurriculumOutcomeMapping = { framework: m.framework.trim(), ref: m.ref.trim() }
+        if (m.strength) mapping.strength = m.strength
+        return mapping
+      })
       .filter(m => m.framework || m.ref),
   }
   if (form.titleEn.trim()) input.title.en = form.titleEn.trim()
@@ -85,9 +103,10 @@ const MESSAGE_LABELS: Readonly<Record<string, string>> = {
 
 /** One readable line per server validation issue, e.g. «Відповідність 2 → код: не може бути порожнім». */
 export function describeOutcomeIssue(issue: { path: string; message: string }): string {
-  const mapping = /^mappings\[(\d+)\]\.(framework|ref)$/.exec(issue.path)
+  const mapping = /^mappings\[(\d+)\]\.(framework|ref|strength)$/.exec(issue.path)
+  const part = mapping?.[2] === 'framework' ? 'рамка' : mapping?.[2] === 'ref' ? 'код' : 'сила'
   const field = mapping
-    ? `Відповідність ${Number(mapping[1]) + 1} → ${mapping[2] === 'framework' ? 'рамка' : 'код'}`
+    ? `Відповідність ${Number(mapping[1]) + 1} → ${part}`
     : FIELD_LABELS[issue.path] ?? issue.path
   const message = MESSAGE_LABELS[issue.message]
     ?? (/HTML|markup/i.test(issue.message) ? 'без HTML-розмітки' : issue.message)
@@ -95,5 +114,7 @@ export function describeOutcomeIssue(issue: { path: string; message: string }): 
 }
 
 export function mappingSummary(outcome: Pick<AdminCurriculumOutcome, 'mappings'>): string {
-  return outcome.mappings.map(m => `${m.framework} ${m.ref}`).join(' · ')
+  return outcome.mappings
+    .map(m => `${m.framework} ${m.ref}${m.strength ? ` (${MAPPING_STRENGTH_LABELS[m.strength]})` : ''}`)
+    .join(' · ')
 }

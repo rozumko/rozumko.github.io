@@ -705,7 +705,7 @@ export const curriculumOutcomes = pgTable('curriculum_outcomes', {
   source:        text('source').notNull(),
   sourceRef:     text('source_ref'),
   gradeBand:     text('grade_band'),
-  mappings:      jsonb('mappings').notNull().default([]).$type<{ framework: string; ref: string }[]>(),
+  mappings:      jsonb('mappings').notNull().default([]).$type<{ framework: string; ref: string; strength?: 'direct' | 'partial' | 'supporting' }[]>(),
   status:        text('status').notNull().default('active').$type<CurriculumOutcomeStatus>(),
   editVersion:   integer('edit_version').notNull().default(1),
   createdBy:     text('created_by'),
