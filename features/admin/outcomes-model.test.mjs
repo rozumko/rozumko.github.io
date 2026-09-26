@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { describeOutcomeIssue, filterOutcomes, filterRefs, levelLabel, mappingSummary, outcomeInputFromForm, refCoverage, refKey, refLevels, skillDraftFromRef } from './outcomes-model.ts'
+import { describeOutcomeIssue, filterOutcomes, filterRefs, levelLabel, mappingSummary, outcomeInputFromForm, refCoverage, refKey, refLevels, refLinkLevel, skillDraftFromRef } from './outcomes-model.ts'
 
 const outcome = (overrides = {}) => ({
   id: 'nush-alg-1', subjectPackId: 'informatics-ua-primary', code: '2 ІФО 2.1-1',
@@ -79,15 +79,27 @@ test('catalogue filters by document, level, words (examples included) and gaps; 
     ref({ code: '4 ІФО 1.1.1', level: '3-4', title: 'Пояснює інформаційні процеси', examples: [] }),
     ref({ framework: 'cambridge-0059', code: '2CS.03', lang: 'en', level: '2', title: 'Know the difference between input and output devices.', examples: [] }),
   ]
-  const coverage = new Map([[refKey('nush-ifo-2018', '2 ІФО 3.1.1'), [{ outcomeId: 'a', code: 'X' }]]])
-  const codes = filter => filterRefs(refs, { framework: 'nush-ifo-2018', level: '', query: '', uncoveredOnly: false, ...filter }, coverage).map(r => r.code)
+  const coverage = new Map([
+    [refKey('nush-ifo-2018', '2 ІФО 3.1.1'), [{ outcomeId: 'a', code: 'X', strength: 'direct' }]],
+    // A supporting link alone must not hide an entry from «Без прямої відповідності».
+    [refKey('nush-ifo-2018', '4 ІФО 1.1.1'), [{ outcomeId: 'b', code: 'Y', strength: 'supporting' }]],
+  ])
+  const codes = filter => filterRefs(refs, { framework: 'nush-ifo-2018', level: '', query: '', withoutDirectOnly: false, ...filter }, coverage).map(r => r.code)
   assert.deepEqual(codes({}), ['2 ІФО 3.1.1', '4 ІФО 1.1.1'])
   assert.deepEqual(codes({ level: '3-4' }), ['4 ІФО 1.1.1'])
   assert.deepEqual(codes({ query: 'вдома' }), ['2 ІФО 3.1.1'], 'MON task examples are searchable')
-  assert.deepEqual(codes({ uncoveredOnly: true }), ['4 ІФО 1.1.1'])
+  assert.deepEqual(codes({ withoutDirectOnly: true }), ['4 ІФО 1.1.1'])
   assert.deepEqual(codes({ framework: 'cambridge-0059', query: 'OUTPUT' }), ['2CS.03'])
   assert.deepEqual(refLevels(refs, 'nush-ifo-2018'), ['1-2', '3-4'])
   assert.equal(levelLabel(refs[0]), '1–2 класи')
   assert.equal(levelLabel(refs[2]), 'Stage 2')
-  assert.deepEqual(skillDraftFromRef(refs[2]), { gradeBand: '2', mappings: [{ framework: 'cambridge-0059', ref: '2CS.03', strength: 'direct' }] })
+  // The strength is the author's call once the skill is worded: the draft leaves it unset.
+  assert.deepEqual(skillDraftFromRef(refs[2]), { gradeBand: '2', mappings: [{ framework: 'cambridge-0059', ref: '2CS.03' }] })
+})
+
+test('only an author-marked direct mapping makes a catalogue entry directly linked', () => {
+  assert.equal(refLinkLevel(undefined), 'none')
+  assert.equal(refLinkLevel([]), 'none')
+  assert.equal(refLinkLevel([{ outcomeId: 'a', code: 'A', strength: 'supporting' }, { outcomeId: 'b', code: 'B' }]), 'indirect')
+  assert.equal(refLinkLevel([{ outcomeId: 'a', code: 'A', strength: 'partial' }, { outcomeId: 'b', code: 'B', strength: 'direct' }]), 'direct')
 })

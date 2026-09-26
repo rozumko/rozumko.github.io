@@ -147,7 +147,7 @@ export interface RefCover {
   strength?: CurriculumMappingStrength
 }
 
-/** catalogue entry → the active skills that map to it (archived skills cover nothing). */
+/** catalogue entry → the active skills that map to it (archived skills are not counted). */
 export function refCoverage(outcomes: readonly AdminCurriculumOutcome[]): Map<string, RefCover[]> {
   const coverage = new Map<string, RefCover[]>()
   for (const outcome of outcomes) {
@@ -162,11 +162,23 @@ export function refCoverage(outcomes: readonly AdminCurriculumOutcome[]): Map<st
   return coverage
 }
 
+/**
+ * How a catalogue entry is linked to Rozumko skills. Only a mapping the author
+ * marked `direct` counts as a direct link; partial, supporting or unmarked
+ * links are shown but never make an entry look covered.
+ */
+export type RefLinkLevel = 'none' | 'indirect' | 'direct'
+
+export function refLinkLevel(covers: readonly RefCover[] | undefined): RefLinkLevel {
+  if (!covers?.length) return 'none'
+  return covers.some(cover => cover.strength === 'direct') ? 'direct' : 'indirect'
+}
+
 export interface RefFilter {
   framework: string
   level: string
   query: string
-  uncoveredOnly: boolean
+  withoutDirectOnly: boolean
 }
 
 /** Search matches the code, the wording, the strand or group, and MON task examples. */
@@ -175,7 +187,7 @@ export function filterRefs(refs: readonly AdminFrameworkRef[], filter: RefFilter
   return refs.filter(ref => {
     if (filter.framework && ref.framework !== filter.framework) return false
     if (filter.level && ref.level !== filter.level) return false
-    if (filter.uncoveredOnly && coverage.has(refKey(ref.framework, ref.code))) return false
+    if (filter.withoutDirectOnly && refLinkLevel(coverage.get(refKey(ref.framework, ref.code))) === 'direct') return false
     if (words.length === 0) return true
     const haystack = normalize([ref.code, ref.title, ref.groupCode ?? '', ref.groupTitle ?? '', ...ref.examples].join(' '))
     return words.every(word => haystack.includes(word))
@@ -187,7 +199,11 @@ export function refLevels(refs: readonly AdminFrameworkRef[], framework: string)
   return [...new Set(refs.filter(ref => ref.framework === framework).map(ref => ref.level))]
 }
 
-/** A new Rozumko skill drafted from a catalogue entry: the entry becomes a direct mapping. */
+/**
+ * A new Rozumko skill drafted from a catalogue entry. The mapping's strength
+ * stays unset: whether the skill matches the entry directly is the author's
+ * methodological call once the skill is worded, not a side effect of the button.
+ */
 export function skillDraftFromRef(ref: Pick<AdminFrameworkRef, 'framework' | 'code' | 'level'>): { gradeBand: string; mappings: CurriculumOutcomeMapping[] } {
-  return { gradeBand: ref.level, mappings: [{ framework: ref.framework, ref: ref.code, strength: 'direct' }] }
+  return { gradeBand: ref.level, mappings: [{ framework: ref.framework, ref: ref.code }] }
 }
