@@ -4,7 +4,7 @@
 import type { CanvasItem, LocalizedText } from '../lesson-engine/types.js'
 import { safeMediaUrl } from '../lesson-engine/canvas-view.js'
 import { parseRichText } from '../lesson-engine/rich-text.js'
-import { youtubeId } from './curriculum-text.js'
+import { youtubeId, learningAppsId } from './curriculum-text.js'
 
 // Mirrors the limits in backend/src/lib/curriculum-lesson-schema.ts, so an
 // import that looks successful also saves.
@@ -75,6 +75,8 @@ export function parseCanvasHtml(source: string): HtmlImportResult {
   }
 
   const addLink = (anchor: Element, label: string) => {
+    const appId = learningAppsId(anchor.getAttribute('href') ?? '')
+    if (appId) { add({ type: 'learningapps', appId }); return }
     const url = safeMediaUrl(anchor.getAttribute('href') ?? '')
     if (url) add({ type: 'link', url, label: clip(label || url, MAX_SHORT) })
     else warn('Посилання з небезпечною адресою пропущено.')
@@ -121,6 +123,11 @@ export function parseCanvasHtml(source: string): HtmlImportResult {
 
   const visitBlock = (node: Element): void => {
     const tag = node.localName
+    const appId = node.getAttribute('data-learningapps-id')
+    if (appId !== null) {
+      if (/^[1-9][0-9]{0,19}$/.test(appId)) add({ type: 'learningapps', appId })
+      return
+    }
     // The visual editor shows videos as a preview card carrying the ID.
     const videoId = node.getAttribute('data-video-id')
     if (videoId !== null) {
@@ -147,9 +154,11 @@ export function parseCanvasHtml(source: string): HtmlImportResult {
       return
     }
     if (tag === 'iframe') {
+      const appId = learningAppsId(node.getAttribute('src') ?? '')
+      if (appId) { add({ type: 'learningapps', appId }); return }
       const id = youtubeId(node.getAttribute('src') ?? '')
       if (id) add({ type: 'video', videoId: id })
-      else warn('Вбудований ресурс пропущено: підтримується лише YouTube.')
+      else warn('Вбудований ресурс пропущено: підтримуються YouTube та LearningApps.')
       return
     }
     if (tag === 'hr') return
@@ -188,6 +197,7 @@ export function canvasItemsToHtml(items: CanvasItem[]): string {
       case 'table': return `<table><thead><tr>${item.headers.map(cell => `<th>${richHtml(cell.uk)}</th>`).join('')}</tr></thead><tbody>${item.rows.map(row => `<tr>${row.map(cell => `<td>${richHtml(cell.uk)}</td>`).join('')}</tr>`).join('')}</tbody></table>`
       case 'image': return `<img src="${escapeHtml(item.src)}" alt="${escapeHtml(item.alt.uk)}">`
       case 'video': return `<iframe src="https://www.youtube-nocookie.com/embed/${item.videoId}" title="Відео до уроку"></iframe>`
+      case 'learningapps': return `<div data-learningapps-id="${escapeHtml(item.appId)}">LearningApps · ${escapeHtml(item.appId)}</div>`
       // A link is its own line; the marker lets the visual editor keep it as one.
       case 'link': return `<p data-canvas-link><a href="${escapeHtml(item.url)}">${escapeHtml(item.label.uk)}</a></p>`
     }
