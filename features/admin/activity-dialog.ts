@@ -80,9 +80,9 @@ const MECHANIC_HINTS: Readonly<Record<ActivityMechanic, string>> = {
 }
 
 const PURPOSES: readonly { id: ActivityTelemetry; title: string; hint: string }[] = [
-  { id: 'evidence', title: 'Для оцінки', hint: 'Одна спроба. Дитина не бачить, де помилилась. Результат іде у профіль учня і звіт уроку.' },
-  { id: 'checkpoint', title: 'Перевірка на уроці', hint: 'Учитель бачить відповіді класу наживо. У профіль нічого не записується.' },
-  { id: 'practice', title: 'Для тренування', hint: 'Кілька спроб, дитина бачить правильні відповіді. У профіль нічого не записується.' },
+  { id: 'evidence', title: 'Для оцінки', hint: 'Одна спроба. Дитина не бачить, де помилилась. Результат зберігається як доказ і показується у звіті уроку.' },
+  { id: 'checkpoint', title: 'Перевірка на уроці', hint: 'Учитель бачить відповіді класу наживо. Доказом це не стає.' },
+  { id: 'practice', title: 'Для тренування', hint: 'Кілька спроб, дитина бачить правильні відповіді. Доказом це не стає.' },
 ]
 
 /** Tag colours per linked outcome, in link order (badge pairs are contrast-checked). */
@@ -580,7 +580,7 @@ export function openActivityDialog(host: ActivityDialogHost, initial: Step = 'ta
     if (!choices.length || !links.length) return
     const bar = el('div', 'ad-bar')
     bar.append(el('p', 'adm-label', 'Яка картка яке вміння перевіряє'))
-    bar.append(el('p', 'adm-field-hint', `Натисніть мітку, щоб увімкнути чи вимкнути. Кожному вмінню потрібно щонайменше ${MIN_ITEMS_PER_OUTCOME} картки.`))
+    bar.append(el('p', 'adm-field-hint', `Натисніть мітку, щоб увімкнути чи вимкнути. Кожному вмінню потрібно щонайменше ${MIN_ITEMS_PER_OUTCOME} картки, а для надійної оцінки — кілька різних прикладів. Нові картки не рахуються, доки ви їх не позначите.`))
     main.append(bar)
     const grid = el('div', 'ad-matrix')
     for (const choice of choices) {
