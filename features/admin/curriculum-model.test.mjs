@@ -20,6 +20,16 @@ import {
   outcomeItemChoices,
   removeLessonOutcome,
   setOutcomeItems,
+  MIN_ITEMS_PER_OUTCOME,
+  activityReadiness,
+  addClassifyCategory,
+  addClassifyItem,
+  cardsLabel,
+  moveClassifyItem,
+  removeClassifyCategory,
+  removeClassifyItem,
+  setActivityPurpose,
+  toggleItemOutcome,
   renameLesson,
   setOnBoard,
   setStudentAudience,
@@ -27,7 +37,7 @@ import {
   withoutAnswerKeys,
 } from './curriculum-model.ts'
 import { ACTIVITY_MECHANICS, LESSON_BLOCK_TYPES } from '../lesson-engine/types.ts'
-import { validateLessonAgainstPack, validateLessonDefinition } from '../../backend/src/lib/curriculum-lesson-schema.ts'
+import { MIN_ITEMS_PER_OUTCOME as SERVER_MIN_ITEMS, validateLessonAgainstPack, validateLessonDefinition } from '../../backend/src/lib/curriculum-lesson-schema.ts'
 import { SCHOOL_ACTIVITIES } from '../../backend/src/lib/school-activities.ts'
 
 // The informatics pack as the admin /packs route and resolveSubjectPack() describe it.
@@ -242,4 +252,90 @@ test('conversion keeps the expected answer for the teacher only and carries slid
   const activity = newBlock('activity', lesson, PACK_INFO)
   assert.equal(convertToCanvas(activity, lesson), false)
   assert.equal(activity.type, 'activity')
+})
+
+// ── Activity dialog ─────────────────────────────────────────────────────────
+
+test('card labels agree in number; the editor and the server ask for the same card minimum', () => {
+  assert.deepEqual([1, 2, 5, 11, 21, 22, 25].map(cardsLabel), ['1 картка', '2 картки', '5 карток', '11 карток', '21 картка', '22 картки', '25 карток'])
+  assert.equal(MIN_ITEMS_PER_OUTCOME, SERVER_MIN_ITEMS)
+})
+
+function sortingLesson() {
+  const lesson = newLesson({ id: 'g1-m2-l9', title: 'Пристрої', grade: 1, pack: PACK_INFO })
+  const block = newBlock('activity', lesson, PACK_INFO)
+  block.activity = activityTemplate('classify', 'sort-devices', PACK_INFO)
+  lesson.blocks.push(block)
+  for (const [label, group] of [['Клавіатура', 'c1'], ['Монітор', 'c2'], ['Сканер', 'c1'], ['Проєктор', 'c2']]) {
+    const id = addClassifyItem(block.activity, group)
+    block.activity.config.items.find(item => item.id === id).label = { uk: label }
+  }
+  return { lesson, block, index: lesson.blocks.length - 1 }
+}
+
+const code = id => id.toUpperCase()
+
+test('outcomes on a practice task are flagged; one purpose switch makes it valid evidence on devices', () => {
+  const { lesson, block, index } = sortingLesson()
+  block.activity.attempts = { max: 10 }
+  addActivityOutcome(lesson, index, 'int-files-organize')
+  const before = activityReadiness(block, code)
+  assert.equal(before.find(c => c.fix)?.fix, 'make-evidence')
+
+  setActivityPurpose(lesson, block, 'evidence')
+  assert.equal(block.activity.telemetry, 'evidence')
+  assert.equal('attempts' in block.activity, false, 'evidence falls back to one attempt')
+  assert.equal(block.views.remote, true)
+  assert.equal(lesson.learningOutcomes.find(l => l.outcomeId === 'int-files-organize').role, 'assessed')
+  assert.deepEqual(activityReadiness(block, code).filter(c => c.level === 'warn'), [])
+  assertValid(lesson, 'evidence sorting')
+
+  block.views.remote = false
+  assert.equal(activityReadiness(block, code).find(c => c.fix)?.fix, 'send-to-devices')
+})
+
+test('card tags split one sorting between two skills and the result passes the server validator', () => {
+  const { lesson, block, index } = sortingLesson()
+  addActivityOutcome(lesson, index, 'int-files-organize')
+  addActivityOutcome(lesson, index, 'int-files-name-extension')
+  setActivityPurpose(lesson, block, 'evidence')
+  const [familiar, fresh] = block.activity.outcomes
+  const ids = block.activity.config.items.map(item => item.id)
+  for (const id of ids.slice(3)) toggleItemOutcome(block.activity, familiar, id)
+  for (const id of ids.slice(0, 3)) toggleItemOutcome(block.activity, fresh, id)
+  assert.deepEqual(familiar.items, ids.slice(0, 3))
+  assert.deepEqual(fresh.items, ids.slice(3))
+  assert.deepEqual(activityReadiness(block, code).filter(c => c.level === 'warn'), [])
+  assertValid(lesson, 'split sorting')
+
+  // The template brings two cards, so there are six: leave one for the second skill.
+  toggleItemOutcome(block.activity, fresh, ids[4])
+  toggleItemOutcome(block.activity, fresh, ids[5])
+  const warns = activityReadiness(block, code).filter(c => c.level === 'warn').map(c => c.text)
+  assert.ok(warns.some(t => t.startsWith('INT-FILES-NAME-EXTENSION: потрібно щонайменше 2')), warns.join('\n'))
+  assert.ok(warns.some(t => t.startsWith('Не рахується в жодне вміння')), warns.join('\n'))
+})
+
+test('cards move between groups; removing a card or a group keeps the key and the tags consistent', () => {
+  const { lesson, block, index } = sortingLesson()
+  const activity = block.activity
+  addActivityOutcome(lesson, index, 'int-files-organize')
+  const link = activity.outcomes[0]
+  const [first, second] = activity.config.items.map(item => item.id)
+  toggleItemOutcome(activity, link, second)
+  moveClassifyItem(activity, first, 'c2')
+  assert.equal(activity.scoring.key.placement[first], 'c2')
+  moveClassifyItem(activity, first, 'nope')
+  assert.equal(activity.scoring.key.placement[first], 'c2', 'unknown groups are ignored')
+
+  assert.equal(removeClassifyItem(activity, first), true)
+  assert.equal(first in activity.scoring.key.placement, false)
+  assert.equal(link.items.includes(first), false)
+
+  const extra = addClassifyCategory(activity)
+  moveClassifyItem(activity, second, extra)
+  assert.equal(removeClassifyCategory(activity, extra), true)
+  assert.equal(activity.scoring.key.placement[second], 'c1', 'orphaned cards move to the first group')
+  assert.equal(removeClassifyCategory(activity, 'c2'), false, 'two groups is the minimum')
+  assertValid(lesson, 'edited sorting')
 })

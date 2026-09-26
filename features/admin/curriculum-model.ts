@@ -98,6 +98,20 @@ export const LESSON_ID_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/
 
 const uk = (text: string): LocalizedText => ({ uk: text })
 
+/** Same as MIN_ITEMS_PER_OUTCOME in the lesson schema (a unit test keeps them equal). */
+export const MIN_ITEMS_PER_OUTCOME = 2
+
+/** «1 картка», «3 картки», «5 карток». */
+export function cardsLabel(count: number): string {
+  const tens = count % 100
+  const ones = count % 10
+  if (tens < 11 || tens > 14) {
+    if (ones === 1) return `${count} картка`
+    if (ones >= 2 && ones <= 4) return `${count} картки`
+  }
+  return `${count} карток`
+}
+
 // ── Templates ───────────────────────────────────────────────────────────────
 
 /** Same list as ACTIVITY_MECHANICS in lesson-engine/types.ts (a unit test keeps them equal). */
@@ -529,6 +543,186 @@ export function setOutcomeItems(activity: EditableActivity, link: EditableOutcom
   const kept = choices.filter(id => checked.includes(id))
   if (choices.length === 0 || kept.length === choices.length) delete link.items
   else link.items = kept
+}
+
+/** A card counts for a link when the link names it, or names no cards at all. */
+export function itemCountsFor(link: EditableOutcomeLink, itemId: string): boolean {
+  return !link.items || link.items.includes(itemId)
+}
+
+/** Turns one card on or off for one outcome (the coloured tags in the activity dialog). */
+export function toggleItemOutcome(activity: EditableActivity, link: EditableOutcomeLink, itemId: string): void {
+  const current = link.items ?? outcomeItemChoices(activity).map(choice => choice.id)
+  setOutcomeItems(activity, link, current.includes(itemId) ? current.filter(id => id !== itemId) : [...current, itemId])
+}
+
+// ── Activity setup (the three-step activity dialog) ─────────────────────────
+
+/**
+ * Sets what an activity is for. Evidence is done once, on the children's
+ * devices, so a stale attempt limit is dropped and the task is sent to
+ * devices; lesson outcome roles follow unless the author marked one as an
+ * introduction.
+ */
+export function setActivityPurpose(lesson: EditableLesson, block: EditableBlock, telemetry: ActivityTelemetry): void {
+  const activity = block.activity
+  if (!activity) return
+  activity.telemetry = telemetry
+  if (telemetry === 'evidence') {
+    delete activity.attempts
+    setOnDevices(block, true)
+  }
+  for (const link of lesson.learningOutcomes) {
+    if (link.role === 'introduced') continue
+    if (activity.outcomes?.some(o => o.outcomeId === link.outcomeId)) link.role = roleFromLinks(lesson, link.outcomeId)
+  }
+}
+
+export const CLASSIFY_LIMITS = { categories: { min: 2, max: 4 }, items: { min: 2, max: 20 } } as const
+
+interface ClassifyParts {
+  categories: Json[]
+  items: Json[]
+  placement: Record<string, unknown>
+}
+
+/** The classify config and key, created in place when missing. */
+function classifyParts(activity: EditableActivity): ClassifyParts {
+  const config = activity.config
+  if (!Array.isArray(config.categories)) config.categories = []
+  if (!Array.isArray(config.items)) config.items = []
+  const key = activity.scoring.key ?? {}
+  if (!isRecord(key.placement)) key.placement = {}
+  activity.scoring.key = key
+  return {
+    categories: (config.categories as unknown[]).filter(isRecord),
+    items: (config.items as unknown[]).filter(isRecord),
+    placement: key.placement as Record<string, unknown>,
+  }
+}
+
+function freeId(list: Json[], prefix: string): string {
+  const used = new Set(list.map(entry => entry.id))
+  let n = 1
+  while (used.has(`${prefix}${n}`)) n++
+  return `${prefix}${n}`
+}
+
+export function moveClassifyItem(activity: EditableActivity, itemId: string, categoryId: string): void {
+  const { categories, placement } = classifyParts(activity)
+  if (categories.some(category => category.id === categoryId)) placement[itemId] = categoryId
+}
+
+/** Adds an empty card to a group; returns its id, or null at the limit. */
+export function addClassifyItem(activity: EditableActivity, categoryId: string): string | null {
+  const { items, placement } = classifyParts(activity)
+  if (items.length >= CLASSIFY_LIMITS.items.max) return null
+  const id = freeId(items, 'i')
+  ;(activity.config.items as unknown[]).push({ id, label: uk('') })
+  placement[id] = categoryId
+  // A link that names cards keeps naming the same ones; a new card is opt-in.
+  return id
+}
+
+/** Removes a card from the task, the key and every outcome link. */
+export function removeClassifyItem(activity: EditableActivity, itemId: string): boolean {
+  const { items, placement } = classifyParts(activity)
+  if (items.length <= CLASSIFY_LIMITS.items.min) return false
+  activity.config.items = (activity.config.items as unknown[]).filter(item => !isRecord(item) || item.id !== itemId)
+  delete placement[itemId]
+  for (const link of activity.outcomes ?? []) {
+    if (link.items) setOutcomeItems(activity, link, link.items.filter(id => id !== itemId))
+  }
+  return true
+}
+
+export function addClassifyCategory(activity: EditableActivity): string | null {
+  const { categories } = classifyParts(activity)
+  if (categories.length >= CLASSIFY_LIMITS.categories.max) return null
+  const id = freeId(categories, 'c')
+  ;(activity.config.categories as unknown[]).push({ id, label: uk('') })
+  return id
+}
+
+/** Removes a group; its cards move to the first remaining group. */
+export function removeClassifyCategory(activity: EditableActivity, categoryId: string): boolean {
+  const { categories, placement } = classifyParts(activity)
+  if (categories.length <= CLASSIFY_LIMITS.categories.min) return false
+  activity.config.categories = (activity.config.categories as unknown[]).filter(c => !isRecord(c) || c.id !== categoryId)
+  const fallback = String(categories.find(category => category.id !== categoryId)!.id)
+  for (const [itemId, target] of Object.entries(placement)) if (target === categoryId) placement[itemId] = fallback
+  return true
+}
+
+export interface ReadinessCheck {
+  level: 'ok' | 'warn'
+  text: string
+  /** A one-click repair the dialog offers next to the warning. */
+  fix?: 'make-evidence' | 'send-to-devices'
+}
+
+const PURPOSE_SUMMARY: Record<ActivityTelemetry, string> = {
+  evidence: 'Для оцінки: одна спроба, результат іде у профіль учня і звіт',
+  checkpoint: 'Перевірка на уроці: вчитель бачить відповіді класу, у профіль не йде',
+  practice: 'Тренування: результат нікуди не записується',
+}
+
+function quoted(labels: string[]): string {
+  return labels.map(label => `«${label}»`).join(', ')
+}
+
+/**
+ * The dialog's readiness list: settings that save fine but defeat the
+ * author's intent (outcomes on a practice task, evidence not sent to
+ * devices, a skill checked by one card) and gaps the server would refuse.
+ */
+export function activityReadiness(block: EditableBlock, codeOf: (outcomeId: string) => string): ReadinessCheck[] {
+  const activity = block.activity
+  if (!activity) return []
+  const checks: ReadinessCheck[] = [{ level: 'ok', text: PURPOSE_SUMMARY[activity.telemetry] }]
+  const links = activity.outcomes ?? []
+  const evidence = activity.telemetry === 'evidence'
+
+  if (!evidence && links.length > 0) {
+    checks.push({ level: 'warn', text: 'Вміння прив’язані, але завдання не для оцінки: у профіль учня нічого не запишеться.', fix: 'make-evidence' })
+  }
+  if (evidence && links.length === 0) checks.push({ level: 'warn', text: 'Завдання для оцінки, але не прив’язане до жодного вміння.' })
+  if (evidence && !block.views.remote) {
+    checks.push({ level: 'warn', text: 'Завдання для оцінки не надсилається на пристрої: діти не зможуть його виконати.', fix: 'send-to-devices' })
+  }
+  if (evidence && activity.mechanic === 'external') checks.push({ level: 'warn', text: 'Зовнішній тренажер нічого не повертає, тож для оцінки не підходить.' })
+  if (evidence && activity.mechanic === 'game') checks.push({ level: 'ok', text: 'Гра сама повідомляє результат, тому це лише допоміжний доказ.' })
+
+  const choices = outcomeItemChoices(activity)
+  if (evidence && choices.length > 0 && links.length > 0) {
+    for (const link of links) {
+      const count = choices.filter(choice => itemCountsFor(link, choice.id)).length
+      if (count < MIN_ITEMS_PER_OUTCOME) {
+        checks.push({ level: 'warn', text: `${codeOf(link.outcomeId)}: потрібно щонайменше ${MIN_ITEMS_PER_OUTCOME} картки, інакше це вгадування.` })
+      } else {
+        checks.push({ level: 'ok', text: `${codeOf(link.outcomeId)}: ${link.items ? cardsLabel(count) : 'усі картки'}` })
+      }
+    }
+    const loose = choices.filter(choice => !links.some(link => itemCountsFor(link, choice.id)))
+    if (loose.length) checks.push({ level: 'warn', text: `Не рахується в жодне вміння: ${quoted(loose.map(choice => choice.label))}.` })
+  }
+
+  if (activity.mechanic === 'classify') {
+    const { categories, items, placement } = classifyParts(activity)
+    const groupIds = new Set(categories.map(category => category.id))
+    if (categories.some(category => !localizedText(category.label))) checks.push({ level: 'warn', text: 'Є група без назви.' })
+    if (items.some(item => !localizedText(item.label))) checks.push({ level: 'warn', text: 'Є картка без тексту.' })
+    const homeless = items.filter(item => !groupIds.has(placement[String(item.id)]))
+    if (homeless.length) checks.push({ level: 'warn', text: `Картка без групи: ${quoted(homeless.map(item => localizedText(item.label) || String(item.id)))}.` })
+  }
+  if (activity.mechanic === 'choice' && !activity.scoring.key?.correctOptionId) {
+    checks.push({ level: 'warn', text: 'Не позначено правильну відповідь.' })
+  }
+  return checks
+}
+
+function localizedText(value: unknown): string {
+  return isRecord(value) && typeof value.uk === 'string' ? value.uk.trim() : ''
 }
 
 export function removeActivityOutcome(lesson: EditableLesson, blockIndex: number, outcomeId: string): void {
