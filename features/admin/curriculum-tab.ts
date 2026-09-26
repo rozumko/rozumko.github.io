@@ -28,7 +28,6 @@ import { renderLessonDocument } from '../lesson-engine/document-view.js'
 import { openPresentation } from '../lesson-engine/presentation-view.js'
 import { BLOCK_TYPE_LABELS, MODALITY_LABELS } from '../lesson-engine/projection.js'
 import {
-  ACTIVITY_TELEMETRY,
   BLOCK_MODALITIES,
   LESSON_BLOCK_TYPES,
   PRESENTATION_LAYOUTS,
@@ -40,11 +39,12 @@ import {
   type PresentationLayout,
 } from '../lesson-engine/types.js'
 import {
-  EDITOR_MECHANICS,
   LESSON_ID_RE,
+  activityReadiness,
   activityTemplate,
   addActivityOutcome,
   addLessonOutcome,
+  cardsLabel,
   describeIssueMessage,
   describeLessonIssue,
   formatJson,
@@ -65,20 +65,18 @@ import {
   renameLesson,
   setOnBoard,
   setOnDevices,
-  setOutcomeItems,
   setStep,
   setStudentAudience,
   shortTextFromLines,
   withoutAnswerKeys,
-  type EditableActivity,
   type EditableBlock,
-  type EditableOutcomeLink,
   type EditableLesson,
   type EvidenceRole,
   type Issue,
   type OutcomeRole,
   type PackInfo,
 } from './curriculum-model.js'
+import { openActivityDialog } from './activity-dialog.js'
 import { lessonToText, parseLessonText, type TextIssue } from './curriculum-text.js'
 import { LESSON_TEXT_PROMPT, LESSON_TEXT_TEMPLATES } from './curriculum-text-templates.js'
 
@@ -595,13 +593,20 @@ function touched() {
   scheduleBackup()
 }
 
-/** A structural change: rebuild the editor. */
+/** A structural change: rebuild the editor (and the activity dialog, if a shared form in it changed). */
 function changed(focusSelector?: string) {
-  if (!editor) return
+  if (!markChanged()) return
+  if (focusSelector) $('cl-editor-view').querySelector<HTMLElement>(focusSelector)?.focus()
+  activityDialog?.refresh()
+}
+
+/** Marks the draft changed and rebuilds the editor behind any open dialog. */
+function markChanged(): boolean {
+  if (!editor) return false
   editor.dirty = true
   scheduleBackup()
   renderEditor()
-  if (focusSelector) $('cl-editor-view').querySelector<HTMLElement>(focusSelector)?.focus()
+  return true
 }
 
 function updateDirtyUi() {
@@ -1369,10 +1374,6 @@ function renderBlock(block: EditableBlock, index: number, issues: Issue[]): HTML
     }
     advanced.append(switches)
   }
-  // Sending a task to devices is its main choice, so it stays in view.
-  if (block.type === 'activity') {
-    body.append(checkbox('Надсилати на пристрої учнів', block.views.remote, v => { setOnDevices(block, v); changed() }, !block.audience.student))
-  }
 
   const grid = el('div', 'adm-form-grid')
   grid.append(field('Формат', select(BLOCK_MODALITIES, MODALITY_LABELS as Record<BlockModality, string>, block.modality, v => { block.modality = v; touched() })))
@@ -1408,11 +1409,13 @@ function renderBlock(block: EditableBlock, index: number, issues: Issue[]): HTML
         },
       }))
     }, () => { slot.textContent = 'Не вдалося завантажити редактор. Оновіть сторінку.' })
+  } else if (block.activity) {
+    // Heading, slide, devices and the task itself live in the activity dialog.
+    body.append(renderActivitySummary(block))
   } else {
     body.append(renderContentFields(block))
     if (block.presentation) body.append(renderSlideFields(block))
   }
-  if (block.activity) body.append(renderActivityFields(block, index, advanced))
 
   advanced.append(jsonField(`content:${block.id}`, 'Зміст блоку (JSON)', block.content, value => {
     if (!isRecord(value)) return 'Зміст має бути об’єктом { … }.'
@@ -1548,70 +1551,6 @@ function renderActivityForm(block: EditableBlock, pack: PackInfo | null): HTMLEl
     })
     add.disabled = statements.length >= 10
     box.append(add)
-  } else if (activity.mechanic === 'classify') {
-    const categories = Array.isArray(config.categories) ? config.categories as unknown[] : []
-    const items = Array.isArray(config.items) ? config.items as unknown[] : []
-    const placement = isRecord(key.placement) ? key.placement : {}
-    const groups = el('fieldset', 'cl-fieldset')
-    groups.append(el('legend', 'adm-label', 'Групи'))
-    categories.forEach((category, index) => {
-      if (!isRecord(category)) return
-      const row = el('div', 'cl-row cl-answer-row')
-      row.append(localizedField(category, 'label', `Група ${index + 1}`, true, 1))
-      const remove = button('Прибрати', 'btn-adm-ghost btn--sm', () => {
-        categories.splice(index, 1)
-        const fallback = isRecord(categories[0]) ? categories[0].id : ''
-        for (const item of items) if (isRecord(item) && placement[String(item.id)] === category.id) placement[String(item.id)] = fallback
-        config.categories = categories
-        changed()
-      })
-      remove.disabled = categories.length <= 2
-      row.append(remove)
-      groups.append(row)
-    })
-    const addCategory = button('+ Група', 'btn-adm-ghost btn--sm', () => {
-      categories.push({ id: nextLocalId(categories, 'c'), label: { uk: '' } })
-      config.categories = categories
-      changed()
-    })
-    addCategory.disabled = categories.length >= 4
-    groups.append(addCategory)
-    box.append(groups)
-    const things = el('fieldset', 'cl-fieldset')
-    things.append(el('legend', 'adm-label', 'Елементи для сортування'))
-    items.forEach((item, index) => {
-      if (!isRecord(item)) return
-      const row = el('div', 'cl-row cl-answer-row')
-      row.append(localizedField(item, 'label', `Елемент ${index + 1}`, true, 1))
-      const categoryIds = categories.filter(isRecord).map(category => String(category.id))
-      row.append(field('Правильна група', select(categoryIds, id => localizedValue(categories.filter(isRecord).find(category => category.id === id)?.label) || id, String(placement[String(item.id)] ?? ''), id => {
-        placement[String(item.id)] = id
-        key.placement = placement
-        activity.scoring.key = key
-        touched()
-      })))
-      const remove = button('Прибрати', 'btn-adm-ghost btn--sm', () => {
-        delete placement[String(item.id)]
-        items.splice(index, 1)
-        config.items = items
-        changed()
-      })
-      remove.disabled = items.length <= 2
-      row.append(remove)
-      things.append(row)
-    })
-    const addItem = button('+ Елемент', 'btn-adm-ghost btn--sm', () => {
-      const id = nextLocalId(items, 'i')
-      items.push({ id, label: { uk: '' } })
-      placement[id] = isRecord(categories[0]) ? categories[0].id : ''
-      config.items = items
-      key.placement = placement
-      activity.scoring.key = key
-      changed()
-    })
-    addItem.disabled = items.length >= 20
-    things.append(addItem)
-    box.append(things)
   } else if (activity.mechanic === 'external') {
     const tools = pack?.tools.map(tool => tool.key) ?? []
     box.append(field('Зовнішній тренажер', select(tools, id => id, String(config.toolKey ?? ''), id => { config.toolKey = id; touched() })))
@@ -1630,134 +1569,113 @@ function renderActivityForm(block: EditableBlock, pack: PackInfo | null): HTMLEl
   return box
 }
 
-/** `more` is the block's «Додатково» fold, where the technical task id lives. */
-/** Which items evidence this outcome; all checked means the whole activity counts. */
-function renderOutcomeItems(activity: EditableActivity, link: EditableOutcomeLink, choices: { id: string; label: string }[]): HTMLElement {
-  const box = el('details', 'cl-link-items')
-  const summary = el('summary')
-  const describe = () => {
-    summary.textContent = link.items
-      ? `Картки для цього результату: ${link.items.length} з ${choices.length}`
-      : 'Картки для цього результату: усі'
-  }
-  describe()
-  box.append(summary, el('p', 'question-item__meta',
-    'Позначте картки, які перевіряють саме це вміння. Бал доказу рахується тільки за ними; потрібно щонайменше 2.'))
-  const group = el('div', 'cl-switches')
-  for (const choice of choices) {
-    const label = el('label', 'cl-check')
-    const input = el('input')
-    input.type = 'checkbox'
-    input.value = choice.id
-    input.checked = !link.items || link.items.includes(choice.id)
-    input.addEventListener('change', () => {
-      const checked = [...group.querySelectorAll<HTMLInputElement>('input:checked')].map(i => i.value)
-      setOutcomeItems(activity, link, checked)
-      describe()
-      touched()
-    })
-    label.append(input, document.createTextNode(choice.label))
-    group.append(label)
-  }
-  box.append(group)
-  return box
-}
-
-function renderActivityFields(block: EditableBlock, index: number, more: HTMLElement): HTMLElement {
-  const state = editor!
-  const lesson = state.lesson
+/** The raw config and key, for the rare case the forms cannot express. */
+function renderActivityJson(block: EditableBlock): HTMLElement {
   const activity = block.activity!
-  const pack = packInfo(lesson.subjectPackId)
-  const box = el('fieldset', 'cl-fieldset')
-  box.append(el('legend', 'adm-label', 'Завдання'))
-  const grid = el('div', 'adm-form-grid')
-  grid.append(field('Механіка', select(EDITOR_MECHANICS, MECHANIC_LABELS, activity.mechanic, mechanic => {
-    showConfirm('Змінити механіку? Налаштування й ключ відповіді буде замінено шаблоном нової механіки.', () => {
-      const template = activityTemplate(mechanic, activity.instanceId, pack)
-      // Item choices name the old mechanic's items, so they do not survive a switch.
-      const outcomes = activity.outcomes?.map(({ items: _items, ...link }) => link)
-      block.activity = { ...template, telemetry: activity.telemetry, outcomes, attempts: activity.attempts }
-      if (!block.activity.outcomes) delete block.activity.outcomes
-      if (!block.activity.attempts) delete block.activity.attempts
-      state.jsonErrors.delete(`config:${block.id}`)
-      state.jsonErrors.delete(`key:${block.id}`)
-      changed()
-    })
-    renderEditor()
-  })))
-  grid.append(field('Призначення', select(ACTIVITY_TELEMETRY, TELEMETRY_LABELS, activity.telemetry, v => { activity.telemetry = v; changed() }),
-    'Доказ: одна спроба, учень не бачить оцінки, результат іде у звіт.'))
-  const instance = textInput(activity.instanceId, v => { activity.instanceId = v.trim(); touched() }, { maxLength: 64 })
-  instance.classList.add('adm-input--code')
-  more.append(field('ID завдання', instance, 'Унікальний в уроці; не змінюйте після публікації.'))
-  const attempts = el('input', 'adm-input adm-input--sm')
-  attempts.type = 'number'
-  attempts.min = '1'
-  attempts.max = '10'
-  attempts.placeholder = activity.telemetry === 'evidence' ? '1' : '10'
-  attempts.value = activity.attempts?.max ? String(activity.attempts.max) : ''
-  attempts.addEventListener('input', () => {
-    if (attempts.value) activity.attempts = { max: Number(attempts.value) }
-    else delete activity.attempts
-    touched()
-  })
-  grid.append(field('Спроб (необов’язково)', attempts, 'Порожньо: доказ — 1, інше — 10.'))
-  box.append(grid)
-
-  const links = el('div', 'cl-links')
-  links.append(el('p', 'adm-label', 'Результати, які перевіряє завдання'))
-  const list = el('ul', 'cl-link-list')
-  for (const link of activity.outcomes ?? []) {
-    const li = el('li', 'cl-row')
-    li.append(el('span', undefined, outcomeLabel(link.outcomeId)))
-    const role = select(['primary', 'supporting'] as const, { primary: 'Основний доказ', supporting: 'Допоміжний' }, link.evidenceRole, v => {
-      link.evidenceRole = v
-      changed()
-    })
-    role.setAttribute('aria-label', `Вага доказу: ${outcomeLabel(link.outcomeId)}`)
-    if (activity.scoring.mode === 'client-unverified') role.disabled = true
-    li.append(role, button('Прибрати', 'btn-adm-ghost btn--sm', () => {
-      removeActivityOutcome(lesson, index, link.outcomeId)
-      changed()
-    }))
-    li.lastElementChild!.setAttribute('aria-label', `Прибрати зв’язок: ${outcomeLabel(link.outcomeId)}`)
-    const choices = outcomeItemChoices(activity)
-    if (choices.length > 0) li.append(renderOutcomeItems(activity, link, choices))
-    list.append(li)
-  }
-  if (!activity.outcomes?.length) list.append(el('li', 'question-item__meta', activity.telemetry === 'evidence' ? 'Доказ має бути пов’язаний хоча б з одним результатом.' : 'Не пов’язане з результатами.'))
-  links.append(list, outcomePicker('Пов’язати з результатом', id => {
-    if (addActivityOutcome(lesson, index, id)) changed()
-  }))
-  box.append(links)
-
-  box.append(renderActivityForm(block, pack))
-
+  const pack = packInfo(editor!.lesson.subjectPackId)
   let hint = MECHANIC_HINTS[activity.mechanic]
   if (activity.mechanic === 'external' && pack) hint += ` Дозволено: ${pack.tools.map(t => t.key).join(', ') || 'нічого'}.`
   if (activity.mechanic === 'game' && pack) hint += ` Дозволено: ${pack.games.map(g => `${g.key} (${g.levels.join('/')})`).join(', ')}.`
-  const advanced = el('details', 'cl-advanced')
-  advanced.append(el('summary', undefined, 'Розширене редагування завдання (JSON)'))
-  advanced.append(jsonField(`config:${block.id}`, 'Налаштування завдання (JSON)', activity.config, value => {
+  const box = el('div', 'cl-json-pair')
+  box.append(jsonField(`config:${block.id}`, 'Налаштування завдання (JSON)', activity.config, value => {
     if (!isRecord(value)) return 'Налаштування мають бути об’єктом { … }.'
     activity.config = value
     return null
   }, `${hint} ${TEXT_HINT}`))
   if (activity.scoring.mode === 'server') {
-    advanced.append(jsonField(`key:${block.id}`, 'Ключ відповіді (JSON; бачить лише сервер)', activity.scoring.key ?? {}, value => {
+    box.append(jsonField(`key:${block.id}`, 'Ключ відповіді (JSON; бачить лише сервер)', activity.scoring.key ?? {}, value => {
       if (!isRecord(value)) return 'Ключ має бути об’єктом { … }.'
       activity.scoring.key = value
       return null
     }, undefined, 4))
   }
-  advanced.addEventListener('toggle', () => {
-    if (!advanced.open) return
-    const areas = advanced.querySelectorAll<HTMLTextAreaElement>('textarea')
-    if (!editor?.jsonErrors.has(`config:${block.id}`)) areas[0].value = formatJson(activity.config)
-    if (areas[1] && !editor?.jsonErrors.has(`key:${block.id}`)) areas[1].value = formatJson(activity.scoring.key ?? {})
-  })
-  box.append(advanced)
   return box
+}
+
+/** Swaps in the new mechanic's template; purpose, outcomes and attempts stay. */
+function switchMechanic(block: EditableBlock, mechanic: ActivityMechanic) {
+  const state = editor!
+  const activity = block.activity!
+  const template = activityTemplate(mechanic, activity.instanceId, packInfo(state.lesson.subjectPackId))
+  // Card choices name the old mechanic's items, so they do not survive a switch.
+  const outcomes = activity.outcomes?.map(({ items: _items, ...link }) => link)
+  block.activity = { ...template, telemetry: activity.telemetry, outcomes, attempts: activity.attempts }
+  if (!block.activity.outcomes) delete block.activity.outcomes
+  if (!block.activity.attempts) delete block.activity.attempts
+  state.jsonErrors.delete(`config:${block.id}`)
+  state.jsonErrors.delete(`key:${block.id}`)
+}
+
+const PURPOSE_SHORT: Record<ActivityTelemetry, string> = {
+  evidence: 'для оцінки',
+  checkpoint: 'перевірка на уроці',
+  practice: 'тренування',
+}
+
+function outcomeCode(id: string): string {
+  return outcomes.find(o => o.id === id)?.code ?? id
+}
+
+function outcomeTitle(id: string): string {
+  const outcome = outcomes.find(o => o.id === id)
+  return outcome ? `${outcome.titleUk}${outcome.status === 'archived' ? ' (знятий)' : ''}` : ''
+}
+
+/** In the block list an activity is one short card; the dialog does the setup. */
+function renderActivitySummary(block: EditableBlock): HTMLElement {
+  const activity = block.activity!
+  const box = el('div', 'cl-activity')
+  const config = activity.config
+  const prompt = localizedValue(config.prompt) || String(config.gameKey ?? config.toolKey ?? '')
+  box.append(el('p', 'cl-activity__title', `${MECHANIC_LABELS[activity.mechanic]}${prompt ? `: ${prompt}` : ''}`))
+  const facts = [PURPOSE_SHORT[activity.telemetry]]
+  const choices = outcomeItemChoices(activity)
+  if (choices.length) facts.push(cardsLabel(choices.length))
+  if (activity.outcomes?.length) facts.push(activity.outcomes.map(link => outcomeCode(link.outcomeId)).join(', '))
+  facts.push(block.views.remote ? 'на пристроях' : 'не на пристроях')
+  if (block.views.presentation) facts.push('на дошці')
+  box.append(el('p', 'question-item__meta', facts.join(' · ')))
+  const warnings = activityReadiness(block, outcomeCode).filter(check => check.level === 'warn')
+  if (warnings.length) box.append(el('p', 'cl-activity__warn', `Зауважень: ${warnings.length}. ${warnings[0]!.text}`))
+  box.append(button('Налаштувати завдання', 'btn-adm-violet', () => openActivityDialogFor(block)))
+  return box
+}
+
+/** The open activity dialog, redrawn when a shared form inside it changes the lesson. */
+let activityDialog: { refresh: () => void } | null = null
+
+function openActivityDialogFor(block: EditableBlock) {
+  const state = editor!
+  const lesson = state.lesson
+  const pack = packInfo(lesson.subjectPackId)
+  const at = () => lesson.blocks.indexOf(block)
+  activityDialog = openActivityDialog({
+    lesson,
+    block,
+    mechanicLabels: MECHANIC_LABELS,
+    outcomeCode,
+    outcomeTitle,
+    outcomePicker: onPick => outcomePicker('Додати вміння', onPick),
+    addOutcome: id => { addActivityOutcome(lesson, at(), id) },
+    removeOutcome: id => removeActivityOutcome(lesson, at(), id),
+    switchMechanic: (mechanic, done) => {
+      showConfirm('Змінити тип завдання? Умову й відповіді буде замінено шаблоном нового типу.', () => {
+        switchMechanic(block, mechanic)
+        markChanged()
+        done()
+      })
+    },
+    classicForm: () => renderActivityForm(block, pack),
+    contentFields: () => renderContentFields(block),
+    slideFields: () => (block.presentation ? renderSlideFields(block) : null),
+    jsonFields: () => renderActivityJson(block),
+    touched,
+    changed: markChanged,
+    closed: () => {
+      activityDialog = null
+      renderEditor()
+    },
+  })
 }
 
 function renderResourcesSection(): HTMLElement {

@@ -795,6 +795,19 @@ Decisions:
   inserted after any existing block. The JSON fields remain in collapsed
   advanced sections for imported content the forms cannot express. JSON
   syntax errors are shown at the field and block saving.
+- **An activity is set up in a dialog, in three steps.** In the block list an
+  activity is one short card (type, purpose, cards, outcomes, devices, the
+  first warning). «Налаштувати завдання» opens `activity-dialog.ts`:
+  «Що робить учень» (type tiles; for sorting, groups as columns with cards
+  that move between them and a preview of the child's screen; other types
+  keep their form for now), «Що перевіряємо» (purpose: for assessment, a
+  check during the lesson or practice; outcomes; per-card outcome tags that
+  write `items`) and «Показ» (devices, board, slide, heading; attempts, ID
+  and JSON folded). A readiness list (`activityReadiness()`) flags settings
+  that save fine but defeat the intent, such as outcomes on a practice task
+  or evidence not sent to devices, and offers a one-click fix.
+  `setActivityPurpose()` sets telemetry, attempts, devices and outcome roles
+  together, so they cannot disagree.
 - **Free content blocks have three independent surfaces.** A `canvas` block
   stores ordered teacher, board and student item lists. An empty list hides
   that surface.
