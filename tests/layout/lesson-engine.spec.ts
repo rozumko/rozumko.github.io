@@ -656,6 +656,7 @@ async function routeStudentLesson(page: Page, state: { mapped: boolean; runStatu
     return route.fulfill(json({
       runStatus: state.runStatus, lessonTitle: fixture.title, grade: 4, pairingNumber: 4,
       mapped: state.mapped, studentLabel: state.mapped ? 'Марко' : null,
+      lessonRunStudentId: state.mapped ? '00000000-0000-4000-8000-00000000a001' : null, assignmentVersion: 1, slide: null,
       task: null, material: state.material ?? null,
     }))
   })
@@ -815,6 +816,7 @@ async function routeStudentTasks(page: Page, server: StudentServer) {
     const block = server.instanceId ? activityOf(server.instanceId) : null
     return route.fulfill(json({
       runStatus: server.runStatus, lessonTitle: fixture.title, grade: 2, pairingNumber: 4, mapped: true, studentLabel: 'Марко',
+      lessonRunStudentId: '00000000-0000-4000-8000-00000000a001', assignmentVersion: 1, slide: null,
       task: block ? {
         dispatchId: `disp-${server.instanceId}`,
         heading: block.content.heading ?? null,
@@ -826,6 +828,7 @@ async function routeStudentTasks(page: Page, server: StudentServer) {
       } : null,
     }))
   })
+  await page.route('**/api/student/lesson/progress', route => route.fulfill(json({ revision: route.request().postDataJSON().revision + 1 })))
   await page.route('**/api/student/lesson/attempt', async route => {
     const body = route.request().postDataJSON() as { clientAttemptId: string; answer?: unknown; dispatchId: string }
     server.clientIds.push(body.clientAttemptId)

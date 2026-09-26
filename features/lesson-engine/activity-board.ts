@@ -41,6 +41,8 @@ export interface AnswerOutcome {
 }
 
 export interface AnswerFormOptions {
+  initialSelection?: Record<string, string>
+  onSelection?(selection: Record<string, string>): void
   submit(answer: BoardAnswer): Promise<AnswerOutcome>
   submitLabel: string
   /** Whether "try again" is offered after this outcome. */
@@ -77,8 +79,13 @@ export function renderAnswerForm(host: HTMLElement, activity: ActivityView, opti
       input.type = 'radio'
       input.name = `${prefix}-${question.id}`
       input.value = option.value
+      if (options.initialSelection?.[question.id] === option.value) {
+        input.checked = true
+        selection.set(question.id, option.value)
+      }
       input.addEventListener('change', () => {
         selection.set(question.id, option.value)
+        options.onSelection?.(Object.fromEntries(selection))
         submit.disabled = answerFromSelection(activity, selection) === null
       })
       const text = el('span')
@@ -96,7 +103,7 @@ export function renderAnswerForm(host: HTMLElement, activity: ActivityView, opti
   const actions = el('div', 'le-interactive__actions')
   const submit = button(options.submitLabel, 'le-board__action le-board__action--primary')
   submit.type = 'submit'
-  submit.disabled = true
+  submit.disabled = answerFromSelection(activity, selection) === null
   const retry = button('Спробувати ще раз')
   retry.hidden = true
   actions.append(submit, retry)
@@ -143,7 +150,10 @@ export function renderAnswerForm(host: HTMLElement, activity: ActivityView, opti
     }
   })
 
-  retry.addEventListener('click', () => renderAnswerForm(host, activity, options))
+  retry.addEventListener('click', () => {
+    options.onSelection?.({})
+    renderAnswerForm(host, activity, { ...options, initialSelection: {} })
+  })
 
   host.replaceChildren(widget)
   widget.querySelector('input')?.focus()

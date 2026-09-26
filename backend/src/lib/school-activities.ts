@@ -116,7 +116,7 @@ export const SCHOOL_ACTIVITIES: Record<SchoolActivityKey, SchoolActivityDefiniti
   // with how much typing the level asked for.
   'typing-words': {
     key: 'typing-words',
-    device: 'desktop',
+    device: 'any',
     levels: [
       // 18 words per round; a sentence round is 5 items but far more typing.
       { id: 'words-easy',       maxTotal: 18, minDurationSec: 10 },
