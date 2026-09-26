@@ -30,6 +30,7 @@ import {
   filterOutcomes,
   filterRefs,
   findRef,
+  normalizeMappingRefs,
   frameworkTitle,
   levelLabel,
   mappingSummary,
@@ -37,6 +38,7 @@ import {
   refCoverage,
   refKey,
   refLevels,
+  refLinkLevel,
   skillDraftFromRef,
 } from './outcomes-model.js'
 
@@ -76,7 +78,7 @@ export function initOutcomesTab() {
   $<HTMLInputElement>('oc-search').addEventListener('input', renderCatalog)
   $<HTMLSelectElement>('oc-framework').addEventListener('change', () => { fillLevelSelect(); renderCatalog() })
   $<HTMLSelectElement>('oc-level').addEventListener('change', renderCatalog)
-  $<HTMLInputElement>('oc-uncovered').addEventListener('change', renderCatalog)
+  $<HTMLInputElement>('oc-no-direct').addEventListener('change', renderCatalog)
   $('of-add-mapping').addEventListener('click', () => addMappingRow({ framework: '', ref: '' }, true))
   $('of-cancel').addEventListener('click', closeEditor)
   $<HTMLFormElement>('outcome-form').addEventListener('submit', event => {
@@ -169,17 +171,19 @@ function fillRefLists() {
 
 function renderCatalog() {
   const list = $('oc-list')
-  const coverage = refCoverage(outcomes)
+  const coverage = refCoverage(outcomes, refs)
   const framework = $<HTMLSelectElement>('oc-framework').value
   const inFramework = refs.filter(ref => ref.framework === framework)
-  const covered = inFramework.filter(ref => coverage.has(refKey(ref.framework, ref.code))).length
+  const levels = inFramework.map(ref => refLinkLevel(coverage.get(refKey(ref.framework, ref.code))))
+  const direct = levels.filter(level => level === 'direct').length
+  const indirect = levels.filter(level => level === 'indirect').length
   const filtered = filterRefs(refs, {
     framework,
     level: $<HTMLSelectElement>('oc-level').value,
     query: $<HTMLInputElement>('oc-search').value,
-    uncoveredOnly: $<HTMLInputElement>('oc-uncovered').checked,
+    withoutDirectOnly: $<HTMLInputElement>('oc-no-direct').checked,
   }, coverage)
-  $('oc-count').textContent = refsLoaded ? `${filtered.length} із ${inFramework.length} · покрито вміннями: ${covered}` : ''
+  $('oc-count').textContent = refsLoaded ? `${filtered.length} із ${inFramework.length} · з прямою відповідністю: ${direct} · лише з частковими зв’язками: ${indirect}` : ''
   list.replaceChildren()
   if (!refsLoaded) return
   if (filtered.length === 0) {
@@ -200,17 +204,21 @@ function renderCatalog() {
     // NUSH groups are long general results: the badge shows the code, the meta line the wording.
     const longGroup = !!ref.groupTitle && ref.groupTitle.length > 60
     if (ref.groupTitle) badges.append(el('span', 'qi-badge qi-badge--type', longGroup ? String(ref.groupCode) : ref.groupTitle))
-    badges.append(covers.length
-      ? el('span', 'qi-badge qi-badge--easy', `вмінь: ${covers.length}`)
-      : el('span', 'qi-badge qi-badge--medium', 'не покрито'))
+    // Linked is not covered: only an author-marked direct mapping gets the green badge.
+    const link = refLinkLevel(covers)
+    badges.append(link === 'direct'
+      ? el('span', 'qi-badge qi-badge--easy', 'є пряма відповідність')
+      : link === 'indirect'
+        ? el('span', 'qi-badge qi-badge--type', 'лише часткові зв’язки')
+        : el('span', 'qi-badge qi-badge--medium', 'немає вмінь'))
     const text = el('p', 'question-item__text')
     const wording = el('span', undefined, ` — ${ref.title}`)
     wording.lang = ref.lang
     text.append(el('strong', undefined, ref.code), wording)
     left.append(badges, text)
     if (covers.length) {
-      const names = covers.map(c => `${c.code}${c.strength ? ` (${MAPPING_STRENGTH_LABELS[c.strength]})` : ''}`)
-      left.append(el('p', 'question-item__meta', `Покривають: ${names.join(', ')}`))
+      const names = covers.map(c => `${c.code} (${c.strength ? MAPPING_STRENGTH_LABELS[c.strength] : 'сила не вказана'})`)
+      left.append(el('p', 'question-item__meta', `Пов’язані вміння: ${names.join(', ')}`))
     }
     if (longGroup) left.append(el('p', 'question-item__meta', `${ref.groupCode}: ${ref.groupTitle}`))
     if (ref.examples.length) left.append(foldList(`Приклади завдань МОН (${ref.examples.length})`, ref.examples, 'uk'))
@@ -355,7 +363,7 @@ function addMappingRow(mapping: CurriculumOutcomeMapping, focus = false) {
     ref.setAttribute('list', `of-refs-${framework.value.trim()}`)
     const found = findRef(refs, framework.value, ref.value)
     // An old portal code still resolves, and the hint names the normative one to use instead.
-    const byAlias = found && found.code !== ref.value.trim() ? ` Код у стандарті: ${found.code}.` : ''
+    const byAlias = found && found.code !== ref.value.trim() ? ` Код у стандарті: ${found.code}, його й буде збережено.` : ''
     hint.textContent = found ? `${frameworkTitle(found.framework)}, ${levelLabel(found)}: ${found.title}${byAlias}` : ''
     if (found) hint.lang = found.lang
     else hint.removeAttribute('lang')
@@ -426,6 +434,8 @@ async function save() {
       strength: row.querySelector<HTMLSelectElement>('.of-strength')!.value as CurriculumMappingStrength | '',
     })),
   })
+  // An old portal code is stored as the catalogue's normative code.
+  input.mappings = normalizeMappingRefs(input.mappings, refs)
   const idValue = $<HTMLInputElement>('of-id').value.trim()
   if (!editing && idValue && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(idValue)) {
     showErrors('ID: лише малі латинські літери, цифри й дефіси між ними.')

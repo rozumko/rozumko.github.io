@@ -185,11 +185,11 @@ test('the standards catalogue shows which skills cover each code and drafts a ne
 
   const catalog = tab.locator('#oc-list')
   await expect(catalog.locator('.question-item')).toHaveCount(2)
-  await expect(tab.locator('#oc-count')).toContainText('2 із 2 · покрито вміннями: 0')
+  await expect(tab.locator('#oc-count')).toContainText('2 із 2 · з прямою відповідністю: 0 · лише з частковими зв’язками: 0')
   await tab.getByLabel('Клас або Stage').selectOption('1-2')
   await expect(catalog.locator('.question-item')).toHaveCount(1)
   const ifo = catalog.locator('[data-ref-code="2 ІФО 3.3"]')
-  await expect(ifo).toContainText('не покрито')
+  await expect(ifo).toContainText('немає вмінь')
   await expect(ifo).toContainText('Приклади завдань МОН (1)')
   // The MON portal prints the standard's codes with an extra level: that spelling still finds the entry.
   await expect(ifo).toContainText('Інше написання коду: 2 ІФО 3.3.1')
@@ -203,13 +203,14 @@ test('the standards catalogue shows which skills cover each code and drafts a ne
   // Cambridge: covered by the seeded skill; the wording keeps its language.
   await tab.getByLabel('Документ').selectOption('cambridge-0072')
   const cambridge = catalog.locator('[data-ref-code="2TC.10"]')
-  await expect(cambridge).toContainText('Покривають: INF-2-FILES-2 (пряма)')
+  await expect(cambridge).toContainText('є пряма відповідність')
+  await expect(cambridge).toContainText('Пов’язані вміння: INF-2-FILES-2 (пряма)')
   await expect(cambridge.locator('[lang="en"]').first()).toContainText('rename digital files')
-  await tab.getByLabel('Лише непокриті').check()
+  await tab.getByLabel('Без прямої відповідності').check()
   await expect(catalog.locator('.question-item')).toHaveCount(0)
-  await tab.getByLabel('Лише непокриті').uncheck()
+  await tab.getByLabel('Без прямої відповідності').uncheck()
 
-  // A new skill drafted from a NUSH code: internal source, grade band and a direct mapping with the wording shown.
+  // A new skill drafted from a NUSH code: internal source, grade band and a mapping whose strength is left to the author.
   await tab.getByLabel('Документ').selectOption('nush-ifo-2018')
   await catalog.getByRole('button', { name: 'Створити вміння з відповідністю 2 ІФО 3.3' }).click()
   const modal = page.getByRole('dialog', { name: 'Новий результат навчання' })
@@ -217,12 +218,21 @@ test('the standards catalogue shows which skills cover each code and drafts a ne
   await expect(modal.getByLabel('Джерело')).toHaveValue('internal')
   await expect(modal.getByLabel('Відповідність 1: код або критерій')).toHaveValue('2 ІФО 3.3')
   await expect(modal.locator('.of-ref-hint')).toContainText('Використовує цифрові пристрої')
+  await expect(modal.getByLabel('Відповідність 1: сила зв\x27язку')).toHaveValue('')
+  // An old portal code typed into the mapping resolves to the same entry and is saved as the normative code.
+  await modal.getByLabel('Відповідність 1: код або критерій').fill('2 ІФО 3.3.1')
+  await expect(modal.locator('.of-ref-hint')).toContainText('Код у стандарті: 2 ІФО 3.3, його й буде збережено.')
   await modal.getByLabel('Код', { exact: true }).fill('INF-2-DEV-4')
   await modal.getByLabel('Формулювання', { exact: true }).fill('Знаходить на пристрої застосунок для завдання')
   await modal.getByRole('button', { name: 'Зберегти' }).click()
   await expect(modal).toBeHidden()
   expect(writes[writes.length - 1]).toMatchObject({
-    outcome: { code: 'INF-2-DEV-4', source: 'internal', gradeBand: '1-2', mappings: [{ framework: 'nush-ifo-2018', ref: '2 ІФО 3.3', strength: 'direct' }] },
+    outcome: { code: 'INF-2-DEV-4', source: 'internal', gradeBand: '1-2', mappings: [{ framework: 'nush-ifo-2018', ref: '2 ІФО 3.3' }] },
   })
-  await expect(catalog.locator('[data-ref-code="2 ІФО 3.3"]')).toContainText('Покривають: INF-2-DEV-4 (пряма)')
+  // Linked is not covered: without a direct mapping the entry keeps showing up in «Без прямої відповідності».
+  const linked = catalog.locator('[data-ref-code="2 ІФО 3.3"]')
+  await expect(linked).toContainText('лише часткові зв’язки')
+  await expect(linked).toContainText('Пов’язані вміння: INF-2-DEV-4 (сила не вказана)')
+  await tab.getByLabel('Без прямої відповідності').check()
+  await expect(linked).toBeVisible()
 })

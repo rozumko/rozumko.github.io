@@ -24,6 +24,7 @@ import {
   activityReadiness,
   addClassifyCategory,
   addClassifyItem,
+  itemCountsFor,
   cardsLabel,
   moveClassifyItem,
   removeClassifyCategory,
@@ -158,7 +159,7 @@ test('a game can only be supporting evidence', () => {
   assert.deepEqual(outcomeItemChoices(block.activity), [], 'a game has no items to split evidence by')
 })
 
-test('an outcome link narrows to chosen classify items; all items means the whole activity', () => {
+test('an outcome link names its classify items explicitly, even all of them; later cards are opt-in', () => {
   const activity = activityTemplate('classify', 'sort-1', PACK_INFO)
   activity.config.items.push({ id: 'i3', label: { uk: 'Предмет 3' } })
   activity.scoring.key.placement.i3 = 'c1'
@@ -168,7 +169,11 @@ test('an outcome link narrows to chosen classify items; all items means the whol
   setOutcomeItems(activity, link, ['i3', 'i1', 'ghost'])
   assert.deepEqual(link.items, ['i1', 'i3'], 'config order, unknown ids dropped')
   setOutcomeItems(activity, link, ['i1', 'i2', 'i3'])
-  assert.equal('items' in link, false)
+  assert.deepEqual(link.items, ['i1', 'i2', 'i3'], 'all current cards stay an explicit list')
+  // A card added later does not start counting for the skill on its own.
+  const later = addClassifyItem(activity, 'c1')
+  assert.equal(itemCountsFor(link, later), false)
+  assert.deepEqual(link.items, ['i1', 'i2', 'i3'])
   assert.deepEqual(outcomeItemChoices({ ...activity, scoring: { mode: 'client-unverified' } }), [])
 })
 

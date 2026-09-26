@@ -517,7 +517,11 @@ export function addActivityOutcome(lesson: EditableLesson, blockIndex: number, o
   activity.outcomes ??= []
   if (activity.outcomes.some(o => o.outcomeId === outcomeId)) return false
   // Games report their own result, so they can only ever be supporting evidence.
-  activity.outcomes.push({ outcomeId, evidenceRole: activity.scoring.mode === 'client-unverified' ? 'supporting' : 'primary' })
+  const link: EditableOutcomeLink = { outcomeId, evidenceRole: activity.scoring.mode === 'client-unverified' ? 'supporting' : 'primary' }
+  // With cards, the link names today's cards explicitly; later cards are opt-in.
+  const cards = outcomeItemChoices(activity).map(choice => choice.id)
+  if (cards.length) link.items = cards
+  activity.outcomes.push(link)
   syncLessonOutcomes(lesson)
   return true
 }
@@ -537,12 +541,19 @@ export function outcomeItemChoices(activity: EditableActivity): { id: string; la
   })
 }
 
-/** Checking every item means "the whole activity", so `items` is dropped. */
+/**
+ * The cards that evidence this outcome, kept as an explicit list even when
+ * every current card is checked: a card added later must not start counting
+ * for a skill without the author deciding so. Activities without cards keep
+ * no list (the whole activity counts).
+ */
 export function setOutcomeItems(activity: EditableActivity, link: EditableOutcomeLink, checked: readonly string[]): void {
   const choices = outcomeItemChoices(activity).map(choice => choice.id)
-  const kept = choices.filter(id => checked.includes(id))
-  if (choices.length === 0 || kept.length === choices.length) delete link.items
-  else link.items = kept
+  if (choices.length === 0) {
+    delete link.items
+    return
+  }
+  link.items = choices.filter(id => checked.includes(id))
 }
 
 /** A card counts for a link when the link names it, or names no cards at all. */
@@ -723,8 +734,8 @@ export interface ReadinessCheck {
 }
 
 const PURPOSE_SUMMARY: Record<ActivityTelemetry, string> = {
-  evidence: 'Для оцінки: одна спроба, результат іде у профіль учня і звіт',
-  checkpoint: 'Перевірка на уроці: вчитель бачить відповіді класу, у профіль не йде',
+  evidence: 'Для оцінки: одна спроба, результат зберігається як доказ і показується у звіті уроку',
+  checkpoint: 'Перевірка на уроці: вчитель бачить відповіді класу, доказом це не стає',
   practice: 'Тренування: результат нікуди не записується',
 }
 
@@ -745,7 +756,7 @@ export function activityReadiness(block: EditableBlock, codeOf: (outcomeId: stri
   const evidence = activity.telemetry === 'evidence'
 
   if (!evidence && links.length > 0) {
-    checks.push({ level: 'warn', text: 'Вміння прив’язані, але завдання не для оцінки: у профіль учня нічого не запишеться.', fix: 'make-evidence' })
+    checks.push({ level: 'warn', text: 'Вміння прив’язані, але завдання не для оцінки: доказів для цих вмінь не буде.', fix: 'make-evidence' })
   }
   if (evidence && links.length === 0) checks.push({ level: 'warn', text: 'Завдання для оцінки, але не прив’язане до жодного вміння.' })
   if (evidence && !block.views.remote) {
@@ -759,9 +770,12 @@ export function activityReadiness(block: EditableBlock, codeOf: (outcomeId: stri
     for (const link of links) {
       const count = choices.filter(choice => itemCountsFor(link, choice.id)).length
       if (count < MIN_ITEMS_PER_OUTCOME) {
-        checks.push({ level: 'warn', text: `${codeOf(link.outcomeId)}: потрібно щонайменше ${MIN_ITEMS_PER_OUTCOME} картки, інакше це вгадування.` })
+        checks.push({ level: 'warn', text: `${codeOf(link.outcomeId)}: потрібно щонайменше ${MIN_ITEMS_PER_OUTCOME} картки; одна картка — це вгадування.` })
       } else {
-        checks.push({ level: 'ok', text: `${codeOf(link.outcomeId)}: ${link.items ? cardsLabel(count) : 'усі картки'}` })
+        checks.push({ level: 'ok', text: link.items
+          ? `${codeOf(link.outcomeId)}: ${cardsLabel(count)}${count === MIN_ITEMS_PER_OUTCOME ? ' — це мінімум; для надійної оцінки краще кілька різних прикладів' : ''}`
+          // A link saved before explicit card lists: it scores the whole activity, later cards included.
+          : `${codeOf(link.outcomeId)}: уся активність, зокрема картки, які додадуть пізніше` })
       }
     }
     const loose = choices.filter(choice => !links.some(link => itemCountsFor(link, choice.id)))

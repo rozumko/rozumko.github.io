@@ -397,7 +397,11 @@ Decisions:
   by its function" separately. Links without `items` keep the whole-activity
   score. Per-item correctness (`ScoredAttempt.itemResults`) stays on the
   server: an evidence device still gets neither a score nor per-item feedback.
-  The editor shows «Картки для цього результату» under each link.
+  The editor keeps a link's cards as an explicit list, even when every
+  current card is ticked, so a card added later counts for no skill until
+  the author tags it; a link without `items` (saved before) scores the whole
+  activity and the dialog says so. Two cards is the technical minimum, not
+  proof of a skill: the dialog asks for several different examples.
 - **The written rule** (printed on the report): only the latest *primary,
   verified* evidence decides the result:
   - ≥ 80% → «Продемонстровано»;
@@ -782,10 +786,15 @@ strands and the Digital Literacy guidance), in their official wording.
   public route reads the table (a regression test checks this).
 - **In the tab.** «Результати навчання» switches between «Вміння Розумко» and
   «Стандарти й програми»: filter by document, class or Stage, words (MON
-  examples included) and «Лише непокриті»; each code shows the skills that
-  cover it, and «Створити вміння» drafts a skill with a direct mapping. In the
-  skill editor a mapping's code is suggested from the catalogue and its
-  wording is shown under the row.
+  examples included) and «Без прямої відповідності»; each code shows the
+  skills linked to it with the strength of each link. **Linked is not
+  covered:** only an author-marked `direct` mapping gets the green «є пряма
+  відповідність»; partial, supporting or unmarked links read «лише часткові
+  зв’язки», and the catalogue never claims a result is checked or achieved.
+  «Створити вміння» drafts a skill with the mapping but leaves its strength
+  unset: that is the author's call once the skill is worded. In the skill
+  editor a mapping's code is suggested from the catalogue and its wording is
+  shown under the row.
 - Migration `0059` creates `curriculum_framework_refs` (RLS on, no policies)
   and inserts the entries once; a wording fix is a new migration. The new
   NUSH edition (`nush-ifo-2028`) is added the same way once its codes are
@@ -796,8 +805,9 @@ strands and the Digital Literacy guidance), in their official wording.
   Primary Education, resolution No 87 of 21.02.2018, appendix 7 (edition in
   force). It codes results as `2 ІФО 1.1`; the MON portal «Інтерактивний
   поступ», where the catalogue came from, prints `2 ІФО 1.1.1`. The catalogue
-  keeps the normative code, the portal code as an alias (searchable, and a
-  mapping typed with it still shows the entry and names the normative code),
+  keeps the normative code, the portal code as an alias (searchable; a
+  mapping typed with it resolves to the entry, is saved as the normative
+  code, and an old stored alias still counts for that entry),
   and the standard's four general results as groups. The same migration
   rewrote every `nush-ifo-2018` mapping on skills to the normative code, with
   a revision; evidence was untouched. The 30 results' wording was checked
