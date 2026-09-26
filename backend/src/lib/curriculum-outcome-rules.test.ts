@@ -57,9 +57,17 @@ test('0058 seeds only internal skills whose mappings pass the directory rules an
   for (const values of seed.matchAll(/'informatics-ua-primary', '[^']+',\s*'[^']+', '([a-z-]+)'/g)) {
     assert.equal(values[1], 'internal')
   }
+  // The fixture is the directory as it stands after 0060 rewrote portal NUSH codes to normative ones.
+  const normative = readFileSync(new URL('../../drizzle/0060_normative_nush_codes.sql', import.meta.url), 'utf8')
+  const PORTAL_CODE = String.raw`^([24] ІФО [0-9]\.[0-9])\.1$`
+  assert.ok(normative.includes(`'${PORTAL_CODE}'`), '0060 rewrites exactly the portal form')
+  const after0060 = (mappings: unknown[]) => mappings.map(m => {
+    const mapping = m as { framework: string; ref: string }
+    return mapping.framework === 'nush-ifo-2018' ? { ...mapping, ref: mapping.ref.replace(new RegExp(PORTAL_CODE), '$1') } : mapping
+  })
   for (const [id, outcome] of Object.entries(PILOT_OUTCOMES) as [string, { mappings: unknown[] }][]) {
     assert.ok(seed.includes(`'${id}'`), id)
-    assert.ok(literals.some(m => JSON.stringify(m) === JSON.stringify(outcome.mappings)), `${id} fixture mappings match 0058`)
+    assert.ok(literals.some(m => JSON.stringify(after0060(m)) === JSON.stringify(outcome.mappings)), `${id} fixture mappings match 0058 after 0060`)
   }
 })
 

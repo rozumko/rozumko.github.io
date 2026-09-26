@@ -74,6 +74,7 @@ environments receive the same schema.
 | `0057_add_curriculum_outcomes` | Lesson Engine learning outcome directory (NUSH / program / Cambridge) + append-only revisions; outcomes are archived, never deleted, id/pack immutable (triggers); seeds the two pilot outcomes (RLS enabled) |
 | `0058_seed_device_outcomes_and_mappings` | Data only: grade 2 pilot outcomes "input and output devices" (`INF-2-DEV-1..3`) and NUSH/Cambridge mappings with strength for the two file outcomes; revisions written; mappings are added only while an outcome has none |
 | `0059_add_curriculum_framework_refs` | Lesson Engine framework catalogue: read-only NUSH informatics results (edition in force, with MON task examples) and Cambridge Primary Computing 0059 / Digital Literacy 0072 Stage 1–4 objectives (licensed wording, admin-only); skills map to entries, evidence never does (RLS enabled) |
+| `0060_normative_nush_codes` | Catalogue NUSH codes become the State Standard's (`2 ІФО 1.1`, resolution No 87, appendix 7) with the MON portal code (`2 ІФО 1.1.1`) kept as an alias and the standard's general results as groups; `nush-ifo-2018` mappings on skills rewritten to normative codes with revisions; idempotent |
 
 `0012` is intentionally idempotent: production received the columns manually
 before the SQL was incorporated into Drizzle history.

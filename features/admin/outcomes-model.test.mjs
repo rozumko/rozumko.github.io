@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { describeOutcomeIssue, filterOutcomes, filterRefs, levelLabel, mappingSummary, outcomeInputFromForm, refCoverage, refKey, refLevels, skillDraftFromRef } from './outcomes-model.ts'
+import { describeOutcomeIssue, filterOutcomes, filterRefs, findRef, levelLabel, mappingSummary, outcomeInputFromForm, refCoverage, refKey, refLevels, skillDraftFromRef } from './outcomes-model.ts'
 
 const outcome = (overrides = {}) => ({
   id: 'nush-alg-1', subjectPackId: 'informatics-ua-primary', code: '2 ІФО 2.1-1',
@@ -90,4 +90,12 @@ test('catalogue filters by document, level, words (examples included) and gaps; 
   assert.equal(levelLabel(refs[0]), '1–2 класи')
   assert.equal(levelLabel(refs[2]), 'Stage 2')
   assert.deepEqual(skillDraftFromRef(refs[2]), { gradeBand: '2', mappings: [{ framework: 'cambridge-0059', ref: '2CS.03', strength: 'direct' }] })
+})
+
+test('a portal code is an alias: search and the mapping hint find the normative entry', () => {
+  const refs = [ref({ code: '2 ІФО 3.1', aliases: ['2 ІФО 3.1.1'] }), ref({ code: '2 ІФО 3.3', aliases: ['2 ІФО 3.3.1'] })]
+  assert.deepEqual(filterRefs(refs, { framework: 'nush-ifo-2018', level: '', query: '3.1.1', withoutDirectOnly: false }, new Map()).map(r => r.code), ['2 ІФО 3.1'])
+  assert.equal(findRef(refs, 'nush-ifo-2018', ' 2 ІФО 3.3 ')?.code, '2 ІФО 3.3')
+  assert.equal(findRef(refs, 'nush-ifo-2018', '2 ІФО 3.3.1')?.code, '2 ІФО 3.3')
+  assert.equal(findRef(refs, 'cambridge-0059', '2 ІФО 3.3'), undefined)
 })
