@@ -10,6 +10,9 @@
 import './frontend-security.js'
 import { exchangeLessonLaunch, getLessonDeviceState, joinLessonByClassLink, joinLessonRun, submitLessonAttempt, type ApiError } from './features/api/client.js'
 import { renderStudentTask, type StudentTaskView } from './features/lesson-engine/student-task.js'
+import { createProgressSaver } from './features/lesson-engine/progress-saver.js'
+import { renderSlide } from './features/lesson-engine/presentation-view.js'
+import { saveLessonProgress } from './features/api/client.js'
 import { renderStudentPractice } from './features/lesson-engine/practice-view.js'
 import { renderStudentCanvas } from './features/lesson-engine/canvas-view.js'
 import { createAttemptOutbox } from './features/lesson-engine/attempt-outbox.js'
@@ -45,14 +48,23 @@ const classLink = parseClassLinkFragment(location.hash)
 let shownDispatchId: string | null = null
 let shownMaterialId: string | null = null
 let taskView: StudentTaskView | null = null
+let progressSaver: ReturnType<typeof createProgressSaver> | null = null
+let progressTimer: number | null = null
+let shownSlideId: string | null = null
+let assignmentKey: string | null = null
 
 function clearTask() {
   taskView?.leave()
+  void progressSaver?.flush()
+  progressSaver = null
+  if (progressTimer !== null) window.clearInterval(progressTimer)
+  progressTimer = null
   taskView = null
   shownDispatchId = null
   shownMaterialId = null
+  shownSlideId = null
   taskHost.replaceChildren()
-  waitSection.classList.remove('lj-card--task')
+  waitSection.classList.remove('lj-card--task', 'lj-card--slide')
 }
 
 function readDevice(): StoredDevice | null {
@@ -86,6 +98,8 @@ const outbox = createAttemptOutbox<LessonAttemptResponse>({
       deviceToken: device.deviceToken,
       dispatchId: item.dispatchId,
       clientAttemptId: item.clientAttemptId,
+      lessonRunStudentId: item.payload.lessonRunStudentId ?? '',
+      assignmentVersion: item.payload.assignmentVersion ?? -1,
       ...(item.payload as Pick<Parameters<typeof submitLessonAttempt>[0], 'answer' | 'gameResult'>),
     })
   },
@@ -99,7 +113,8 @@ const outbox = createAttemptOutbox<LessonAttemptResponse>({
   },
 })
 
-window.addEventListener('online', () => void outbox.flush())
+window.addEventListener('online', () => { void outbox.flush(); void progressSaver?.flush() })
+window.addEventListener('pagehide', () => { taskView?.leave(); void progressSaver?.flush() })
 
 /**
  * This browser's seat: a random secret kept across lessons, so the teacher
@@ -164,6 +179,11 @@ function showJoin(message = '') {
 }
 
 function renderState(device: StoredDevice, state: LessonDeviceState) {
+  const nextAssignment = `${state.lessonRunStudentId ?? ''}:${state.assignmentVersion}`
+  if (assignmentKey !== nextAssignment) {
+    clearTask()
+    assignmentKey = nextAssignment
+  }
   joinSection.hidden = true
   waitSection.hidden = false
   lessonEl.textContent = state.lessonTitle.uk
@@ -203,6 +223,26 @@ function renderState(device: StoredDevice, state: LessonDeviceState) {
       return
     }
     clearTask()
+    if (state.slide) {
+      statusEl.textContent = 'Слайд учителя'
+      if (shownSlideId === state.slide.blockId) return
+      clearTask()
+      shownSlideId = state.slide.blockId
+      waitSection.classList.add('lj-card--task', 'lj-card--slide')
+      const slide = state.slide
+      taskHost.replaceChildren(renderSlide({
+        blockId: slide.blockId,
+        presentation: { layout: slide.layout, ...(slide.headline ? { headline: slide.headline } : {}), shortText: slide.shortText },
+        assets: slide.assets,
+        block: {
+          id: slide.blockId, type: slide.canvasItems.length ? 'canvas' : 'hero',
+          audience: { teacher: false, student: true }, views: { document: false, presentation: true, remote: true },
+          modality: 'screen', content: { board: slide.canvasItems },
+          ...(slide.activity ? { activity: slide.activity } : {}),
+        },
+      }))
+      return
+    }
     statusEl.textContent = `Привіт, ${state.studentLabel}! Чекай на завдання від учителя.`
     return
   }
@@ -214,8 +254,29 @@ function renderState(device: StoredDevice, state: LessonDeviceState) {
   shownDispatchId = state.task.dispatchId
   waitSection.classList.add('lj-card--task')
   const dispatchId = state.task.dispatchId
-  taskView = renderStudentTask(taskHost, state.task, state.grade, {
-    submit: ({ clientAttemptId, ...payload }) => outbox.submit({ clientAttemptId, deviceId: device.deviceId, dispatchId, payload }),
+  const studentId = state.lessonRunStudentId
+  const version = state.assignmentVersion
+  const draftKey = `rozumko_lesson_draft:${device.deviceId}:${version}:${dispatchId}`
+  const saver = createProgressSaver(state.task.progressRevision ?? 0, state.task.progress ?? null, {
+    read: () => localStorage.getItem(draftKey),
+    write: value => { if (value) localStorage.setItem(draftKey, value); else localStorage.removeItem(draftKey) },
+    send: (revision, progress) => saveLessonProgress({
+      deviceId: device.deviceId, deviceToken: device.deviceToken, lessonRunStudentId: studentId!,
+      assignmentVersion: version, dispatchId, revision, progress,
+    }),
+    refused: () => {
+      if (shownDispatchId === dispatchId && assignmentKey === nextAssignment) {
+        clearTask()
+        noticeEl.textContent = 'Оновлюємо завдання після зміни пристрою або стану уроку.'
+      }
+    },
+  })
+  progressSaver = saver
+  progressTimer = window.setInterval(() => { void saver.flush() }, 1000)
+  const task = { ...state.task, progress: saver.initial }
+  taskView = renderStudentTask(taskHost, task, state.grade, {
+    saveProgress: progress => saver.save(progress),
+    submit: ({ clientAttemptId, ...payload }) => outbox.submit({ clientAttemptId, deviceId: device.deviceId, dispatchId, payload: { ...payload, lessonRunStudentId: studentId!, assignmentVersion: version } }),
     newAttemptId: () => crypto.randomUUID(),
     queued: outbox.hasPending(device.deviceId, dispatchId),
   })

@@ -1560,6 +1560,8 @@ export function exchangeLessonLaunch(launchToken: string): Promise<LessonDeviceJ
 
 /** One submission; retrying with the same clientAttemptId returns the stored result. */
 export function submitLessonAttempt(payload: {
+  lessonRunStudentId: string
+  assignmentVersion: number
   deviceId: string
   deviceToken: string
   dispatchId: string
@@ -1573,6 +1575,14 @@ export function submitLessonAttempt(payload: {
 /** Token goes in the body, never the URL. */
 export function getLessonDeviceState(deviceId: string, deviceToken: string): Promise<LessonDeviceState> {
   return request('/api/student/lesson/state', { method: 'POST', body: JSON.stringify({ deviceId, deviceToken }) })
+}
+
+/** Recovery checkpoints are separate from scored submissions. */
+export function saveLessonProgress(payload: {
+  deviceId: string; deviceToken: string; lessonRunStudentId: string; assignmentVersion: number;
+  dispatchId: string; revision: number; progress: import('../lesson-engine/types.js').LessonProgress;
+}): Promise<{ revision: number }> {
+  return request('/api/student/lesson/progress', { method: 'POST', body: JSON.stringify(payload) })
 }
 
 /** "Do it together" on the board: the server scores the class answer. */

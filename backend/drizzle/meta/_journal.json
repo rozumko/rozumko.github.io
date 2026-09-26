@@ -428,6 +428,13 @@
       "when": 1790198400000,
       "tag": "0060_normative_nush_codes",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1790284800000,
+      "tag": "0061_add_lesson_activity_progress",
+      "breakpoints": true
     }
   ]
 }

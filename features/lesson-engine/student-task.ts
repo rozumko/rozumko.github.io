@@ -9,9 +9,10 @@ import type { ActivityHandle, ActivityRunResult } from '../activities/activity-c
 import { renderAnswerForm, type AnswerOutcome } from './activity-board.js'
 import { QueuedAttemptError } from './attempt-outbox.js'
 import { richElement } from './rich-text.js'
-import type { BoardAnswer, LessonAttemptResponse, StudentTask } from './types.js'
+import type { BoardAnswer, LessonAttemptResponse, LessonProgress, StudentTask } from './types.js'
 
 export interface StudentTaskDeps {
+  saveProgress?(progress: LessonProgress): void
   /** Resolves with the server's answer; rejects with QueuedAttemptError when saved for later. */
   submit(payload: { clientAttemptId: string; answer?: BoardAnswer; gameResult?: ActivityRunResult }): Promise<LessonAttemptResponse>
   newAttemptId(): string
@@ -100,6 +101,8 @@ export function renderStudentTask(host: HTMLElement, task: StudentTask, grade: n
     body.replaceChildren()
     renderAnswerForm(body, activity, {
       submitLabel: 'Надіслати',
+      initialSelection: task.progress?.selection,
+      onSelection: selection => deps.saveProgress?.({ selection }),
       submit: async (answer): Promise<AnswerOutcome> => {
         const response = await send({ answer })
         return { result: response.result, feedback: response.feedback, attemptsLeft: response.attemptsLeft }
@@ -139,12 +142,13 @@ export function renderStudentTask(host: HTMLElement, task: StudentTask, grade: n
     return { leave() {}, delivered }
   }
 
-  if (task.attemptsUsed >= task.attemptsMax) {
+  if (task.attemptsUsed >= task.attemptsMax || (task.attemptsUsed > 0 &&
+    (activity.mechanic === 'game' || (task.lastResult !== null && task.lastResult.correct === task.lastResult.total)))) {
     body.append(doneMessage(task))
     return NO_VIEW
   }
 
-  if (activity.mechanic === 'game') return { leave: renderStudentGame(body, task, grade, send), delivered }
+  if (activity.mechanic === 'game') return { leave: renderStudentGame(body, task, grade, send, deps.saveProgress), delivered }
 
   renderForm()
   return { leave() {}, delivered }
@@ -155,6 +159,7 @@ function renderStudentGame(
   task: StudentTask,
   grade: number,
   send: (payload: { gameResult: ActivityRunResult }) => Promise<LessonAttemptResponse>,
+  saveProgress?: (progress: LessonProgress) => void,
 ): () => void {
   const info = findActivity(String(task.activity.config.gameKey ?? ''))
   const level = info ? findActivityLevel(info, String(task.activity.config.level ?? '')) : null
@@ -162,7 +167,7 @@ function renderStudentGame(
     body.append(el('p', 'lj-error', 'Гру не знайдено.'))
     return () => {}
   }
-  const start = el('button', 'lj-button', `Почати: ${info.label}`)
+  const start = el('button', 'lj-button', `${task.progress?.gameState ? 'Продовжити' : 'Почати'}: ${info.label}`)
   start.type = 'button'
   const stage = el('div', 'lj-task__game')
   const status = el('p', 'lj-task__status')
@@ -173,8 +178,20 @@ function renderStudentGame(
   body.append(start, stage, status, resend)
 
   let handle: ActivityHandle | null = null
-  let finished: ActivityRunResult | null = null
+  let finished: ActivityRunResult | null = task.progress?.finished ? task.progress.gameResult ?? null : null
   let disposed = false
+  let checkpointTimer: number | null = null
+  const checkpoint = () => {
+    if (handle) saveProgress?.({ gameResult: handle.snapshot(), gameState: handle.checkpoint?.(), finished: false })
+  }
+
+  if (finished) {
+    start.hidden = true
+    resend.hidden = false
+    status.textContent = 'Результат збережено. Надішли його вчителю.'
+  } else if (task.progress?.gameResult && !task.progress.gameState) {
+    status.textContent = 'Проміжний результат збережено. Ця гра почнеться заново.'
+  }
 
   async function report() {
     if (!finished) return
@@ -204,6 +221,8 @@ function renderStudentGame(
       handle = mount(stage, {
         level: level.id,
         grade,
+        resumeState: task.progress?.gameState,
+        onCheckpoint: () => checkpoint(),
         onFinish: result => {
           finished = {
             correct: Math.round(result.correct),
@@ -211,12 +230,16 @@ function renderStudentGame(
             mistakes: Math.round(result.mistakes),
             durationSec: Math.round(result.durationSec),
           }
+          saveProgress?.({ gameResult: finished, finished: true })
+          if (checkpointTimer !== null) window.clearInterval(checkpointTimer)
           handle?.destroy()
           handle = null
           stage.replaceChildren()
           void report()
         },
       })
+      checkpoint()
+      checkpointTimer = window.setInterval(checkpoint, 1000)
     } catch {
       status.textContent = 'Не вдалося завантажити гру.'
       start.disabled = false
@@ -226,6 +249,8 @@ function renderStudentGame(
 
   return () => {
     disposed = true
+    checkpoint()
+    if (checkpointTimer !== null) window.clearInterval(checkpointTimer)
     handle?.destroy()
   }
 }

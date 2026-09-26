@@ -1,10 +1,13 @@
-import test from 'node:test'
+import test, { mock } from 'node:test'
 import assert from 'node:assert/strict'
 import Fastify, { type InjectOptions } from 'fastify'
 
 process.env.ATTEMPT_SECRET ??= 'a'.repeat(64)
 
 const { lessonStudentRoutes } = await import('./lesson-student.js')
+const { db } = await import('../db/index.js')
+const { lessonRunDevices, lessonRuns } = await import('../db/schema.js')
+const { generateDeviceToken } = await import('../lib/lesson-device.js')
 
 const DEVICE = '00000000-0000-4000-8000-000000000001'
 
@@ -61,11 +64,67 @@ test('a well-formed but forged device token is refused before any database acces
 })
 
 const ATTEMPT = {
+  lessonRunStudentId: DEVICE,
+  assignmentVersion: 0,
   deviceId: DEVICE,
   deviceToken: 'b'.repeat(64),
   dispatchId: '00000000-0000-4000-8000-000000000002',
   clientAttemptId: '00000000-0000-4000-8000-000000000003',
 }
+
+test('progress requires valid IDs, assignment version and a genuine token before any DB access', async () => {
+  const payload = { ...ATTEMPT, revision: 0, progress: { selection: {} } }
+  const { clientAttemptId: _unused, ...progress } = payload
+  await withApp('true', async app => {
+    for (const body of [
+      { ...progress, lessonRunStudentId: 'not-a-uuid' },
+      { ...progress, dispatchId: 'not-a-uuid' },
+      { ...progress, assignmentVersion: -1 },
+      { ...progress, revision: -1 },
+      { ...progress, progress: [] },
+    ]) assert.equal((await app.inject({ method: 'POST', url: '/api/student/lesson/progress', payload: body })).statusCode, 400)
+    assert.equal((await app.inject({ method: 'POST', url: '/api/student/lesson/progress', payload: progress })).statusCode, 401)
+  })
+  await withApp(undefined, async app => {
+    assert.equal((await app.inject({ method: 'POST', url: '/api/student/lesson/progress', payload: progress })).statusCode, 404)
+  })
+})
+
+test('both progress and attempts re-read the assignment after acquiring the run lock and refuse a still-running old laptop', async () => {
+  let runLocked = false
+  let rereads = 0
+  const replacement = { id: DEVICE, lessonRunId: DEVICE, lessonRunStudentId: DEVICE, assignmentVersion: 3, revokedAt: null, expiresAt: new Date(Date.now() + 60000) }
+  const transaction = mock.method(db, 'transaction', async (fn: (tx: unknown) => Promise<unknown>) => fn({
+    select() {
+      let rows: unknown[] = []
+      const query = {
+        from(table: unknown) {
+          if (table === lessonRuns) { runLocked = true; rows = [{ id: DEVICE }] }
+          else if (table === lessonRunDevices && !runLocked) rows = [{ runId: DEVICE }]
+          else { assert.equal(runLocked, true); rereads++; rows = [{ device: replacement, runStatus: 'active', lessonSnapshot: {} }] }
+          return query
+        },
+        innerJoin() { return query }, where() { return query }, limit() { return query }, for() { return query },
+        then(resolve: (value: unknown[]) => unknown) { return Promise.resolve(rows).then(resolve) },
+      }
+      return query
+    },
+    insert() { assert.fail('a stale assignment must not write') },
+  }) as never)
+  try {
+    await withApp('true', async app => {
+      const body = { ...ATTEMPT, assignmentVersion: 1, deviceToken: generateDeviceToken(DEVICE) }
+      const { clientAttemptId: _unused, ...progress } = body
+      const saved = await app.inject({ method: 'POST', url: '/api/student/lesson/progress', payload: { ...progress, revision: 0, progress: { selection: {} } } })
+      assert.equal(saved.statusCode, 409)
+      assert.equal(saved.json().code, 'ASSIGNMENT_CHANGED')
+      runLocked = false
+      const attempted = await app.inject({ method: 'POST', url: '/api/student/lesson/attempt', payload: { ...body, answer: { optionId: 'b' } } })
+      assert.equal(attempted.statusCode, 401)
+      assert.equal(rereads, 2)
+    })
+  } finally { transaction.mock.restore() }
+})
 
 test('attempts are validated before any database access and need a genuine device token', async () => {
   await withApp('true', async app => {

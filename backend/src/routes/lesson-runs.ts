@@ -5,7 +5,7 @@
 // indistinguishable from a missing one. Dark unless LESSON_ENGINE_ENABLED.
 
 import type { FastifyInstance, FastifyReply } from 'fastify'
-import { and, asc, desc, eq, inArray, isNotNull, isNull, ne, or } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNotNull, isNull, ne, or, sql } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import {
   classStudents,
@@ -448,7 +448,7 @@ export async function lessonRunRoutes(app: FastifyInstance) {
         if (!device) throw new DeviceNotFoundError()
         if (studentId === null) {
           if (device.lessonRunStudentId === null) return
-          await tx.update(lessonRunDevices).set({ lessonRunStudentId: null }).where(eq(lessonRunDevices.id, deviceId))
+          await tx.update(lessonRunDevices).set({ lessonRunStudentId: null, assignmentVersion: sql`${lessonRunDevices.assignmentVersion} + 1` }).where(eq(lessonRunDevices.id, deviceId))
           // An unmapped seat is forgotten, so it is not auto-mapped next lesson.
           if (device.seatHash) {
             await tx.delete(lessonClassSeats).where(and(eq(lessonClassSeats.classId, run.classId), eq(lessonClassSeats.seatHash, device.seatHash)))
@@ -467,10 +467,10 @@ export async function lessonRunRoutes(app: FastifyInstance) {
         if (!student) throw new DeviceNotFoundError('Учня не знайдено в цьому уроці')
         if (device.lessonRunStudentId === student.id) return
         // Free the student's previous device first (one live device per student).
-        await tx.update(lessonRunDevices).set({ lessonRunStudentId: null }).where(and(
+        await tx.update(lessonRunDevices).set({ lessonRunStudentId: null, assignmentVersion: sql`${lessonRunDevices.assignmentVersion} + 1` }).where(and(
           eq(lessonRunDevices.lessonRunStudentId, student.id), isNull(lessonRunDevices.revokedAt),
         ))
-        await tx.update(lessonRunDevices).set({ lessonRunStudentId: student.id }).where(eq(lessonRunDevices.id, deviceId))
+        await tx.update(lessonRunDevices).set({ lessonRunStudentId: student.id, assignmentVersion: sql`${lessonRunDevices.assignmentVersion} + 1` }).where(eq(lessonRunDevices.id, deviceId))
         await tx.update(lessonRunStudents).set({ status: 'joined', joinedAt: student.joinedAt ?? new Date() })
           .where(eq(lessonRunStudents.id, student.id))
         // Remember the seat: one seat per student and one student per seat in this class.

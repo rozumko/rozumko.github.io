@@ -4,9 +4,10 @@
 // the roster. Tokens travel in request bodies, never in URLs.
 
 import type { FastifyInstance, FastifyReply } from 'fastify'
+import { isDeepStrictEqual } from 'node:util'
 import { and, asc, desc, eq, gt, inArray, isNull, sql } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { activityAttempts, classStudents, lessonClassLinks, lessonClassSeats, lessonRunDevices, lessonRunDispatches, lessonRunEvents, lessonRunStudents, lessonRuns, studentOutcomeEvidence } from '../db/schema.js'
+import { activityAttempts, classStudents, lessonActivityProgress, lessonClassLinks, lessonClassSeats, lessonRunDevices, lessonRunDispatches, lessonRunEvents, lessonRunStudents, lessonRuns, studentOutcomeEvidence } from '../db/schema.js'
 import { isLessonEngineEnabled } from '../lib/lesson-engine-flag.js'
 import { isUniqueViolation } from '../lib/db-errors.js'
 import { OPEN_RUN_STATUSES } from '../lib/lesson-run-state.js'
@@ -14,7 +15,8 @@ import type { ActivitySpec, LessonDefinitionV1 } from '../lib/curriculum-lesson-
 import { ActivityAnswerError } from '../lib/curriculum-activity-scoring.js'
 import { findSubjectPack } from '../lib/subject-packs.js'
 import { acceptsAttempts, attemptLimit, scoreStudentAttempt, studentActivityView } from '../lib/lesson-live.js'
-import { studentPracticeMaterial } from '../lib/lesson-student-material.js'
+import { studentPracticeMaterial, studentPresentationSlide } from '../lib/lesson-student-material.js'
+import { holdsLessonAssignment, validateLessonProgress } from '../lib/lesson-progress.js'
 import { evidenceRowsForAttempt } from '../lib/lesson-evidence.js'
 import type { AttemptRefusalCode } from '../lib/lesson-attempt-refusals.js'
 import { RATE_LIMIT_MAX, RATE_LIMIT_WINDOW, createVerifiedBodyRateLimit } from '../lib/rate-limit-policy.js'
@@ -96,6 +98,18 @@ const classJoinRateLimit = createVerifiedBodyRateLimit({
 })
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0]
+
+/** Shared run locks allow parallel pupils; teacher mutations take an exclusive lock. */
+async function lockStudentDevice(tx: Tx, deviceId: string) {
+  const [candidate] = await tx.select({ runId: lessonRunDevices.lessonRunId }).from(lessonRunDevices)
+    .where(eq(lessonRunDevices.id, deviceId)).limit(1)
+  if (!candidate) return null
+  await tx.select({ id: lessonRuns.id }).from(lessonRuns).where(eq(lessonRuns.id, candidate.runId)).for('share')
+  const [row] = await tx.select({ device: lessonRunDevices, runStatus: lessonRuns.status, lessonSnapshot: lessonRuns.lessonSnapshot })
+    .from(lessonRunDevices).innerJoin(lessonRuns, eq(lessonRuns.id, lessonRunDevices.lessonRunId))
+    .where(eq(lessonRunDevices.id, deviceId)).limit(1).for('update', { of: lessonRunDevices })
+  return row && deviceLiveness(row.device) === 'live' ? row : null
+}
 
 interface JoinOptions {
   /** Code joins must still match the run's current code under the lock. */
@@ -350,6 +364,8 @@ export async function lessonStudentRoutes(app: FastifyInstance) {
           .where(and(eq(activityAttempts.dispatchId, dispatch.id), eq(activityAttempts.lessonRunStudentId, studentId)))
           .orderBy(asc(activityAttempts.attemptNo))
         const last = attempts.at(-1)
+        const [saved] = await db.select({ revision: lessonActivityProgress.revision, progress: lessonActivityProgress.progress })
+          .from(lessonActivityProgress).where(and(eq(lessonActivityProgress.dispatchId, dispatch.id), eq(lessonActivityProgress.lessonRunStudentId, studentId))).limit(1)
         task = {
           dispatchId: dispatch.id,
           heading: found.heading,
@@ -357,6 +373,8 @@ export async function lessonStudentRoutes(app: FastifyInstance) {
           acceptsAttempts: acceptsAttempts(found.activity),
           attemptsUsed: attempts.length,
           attemptsMax: attemptLimit(found.activity),
+          progress: saved?.progress ?? null,
+          progressRevision: saved?.revision ?? 0,
           // Evidence shows only that an answer was received, never its score.
           lastResult: last && found.activity.telemetry !== 'evidence' ? { correct: last.correct, total: last.total } : null,
         }
@@ -366,6 +384,9 @@ export async function lessonStudentRoutes(app: FastifyInstance) {
     return reply.send({
       task,
       material,
+      slide: row.device.lessonRunStudentId && row.runStatus === 'active' ? studentPresentationSlide(lesson, row.currentBlockId) : null,
+      lessonRunStudentId: row.device.lessonRunStudentId,
+      assignmentVersion: row.device.assignmentVersion,
       runStatus: row.runStatus,
       lessonTitle: lesson.title,
       grade: lesson.grade,
@@ -376,17 +397,66 @@ export async function lessonStudentRoutes(app: FastifyInstance) {
     })
   })
 
+  // Checkpoints accept incomplete work and never create attempts or outcome evidence.
+  app.post<{ Body: { deviceId: string; deviceToken: string; lessonRunStudentId: string; assignmentVersion: number; dispatchId: string; revision: number; progress: Record<string, unknown> } }>('/progress', {
+    bodyLimit: 49_152,
+    config: { rateLimit: createVerifiedBodyRateLimit({ scope: 'lesson-device-progress', max: 120, resource: verifiedDevice }) },
+    schema: { body: {
+      type: 'object', additionalProperties: false,
+      required: ['deviceId', 'deviceToken', 'lessonRunStudentId', 'assignmentVersion', 'dispatchId', 'revision', 'progress'],
+      properties: {
+        ...deviceBody.properties,
+        lessonRunStudentId: { type: 'string', format: 'uuid' },
+        assignmentVersion: { type: 'integer', minimum: 0 },
+        dispatchId: { type: 'string', format: 'uuid' },
+        revision: { type: 'integer', minimum: 0, maximum: 2147483646 },
+        progress: { type: 'object' },
+      },
+    } },
+  }, async (req, reply) => {
+    const { deviceId, deviceToken, lessonRunStudentId, assignmentVersion, dispatchId, revision } = req.body
+    if (!verifyDeviceToken(deviceId, deviceToken)) return reply.code(401).send({ error: 'Приєднайся до уроку ще раз.', code: 'DEVICE_INVALID' })
+    try {
+      const response = await db.transaction(async tx => {
+        const row = await lockStudentDevice(tx, deviceId)
+        if (!row) return { status: 401, body: { code: 'DEVICE_INVALID', error: 'Приєднайся до уроку ще раз.' } }
+        if (!holdsLessonAssignment(row.device, lessonRunStudentId, assignmentVersion)) return { status: 409, body: { code: 'ASSIGNMENT_CHANGED', error: 'Учитель змінив пристрій учня.' } }
+        if (!['active', 'paused'].includes(row.runStatus)) return { status: 409, body: { code: 'RUN_CLOSED', error: 'Урок уже завершено.' } }
+        const [dispatch] = await tx.select().from(lessonRunDispatches).where(and(eq(lessonRunDispatches.id, dispatchId), eq(lessonRunDispatches.lessonRunId, row.device.lessonRunId))).limit(1)
+        // A final checkpoint may arrive after the close signal reached the device.
+        if (!dispatch || (dispatch.closedAt && Date.now() - dispatch.closedAt.getTime() > 60_000)) return { status: 409, body: { code: 'DISPATCH_CLOSED', error: 'Завдання вже закрите.' } }
+        const found = findActivity(row.lessonSnapshot as unknown as LessonDefinitionV1, dispatch.activityInstanceId)
+        if (!found) return { status: 409, body: { code: 'NOT_ACCEPTING', error: 'Завдання не знайдено.' } }
+        const progress = validateLessonProgress(found.activity, req.body.progress)
+        const [previous] = await tx.select().from(lessonActivityProgress).where(and(eq(lessonActivityProgress.dispatchId, dispatchId), eq(lessonActivityProgress.lessonRunStudentId, lessonRunStudentId))).limit(1)
+        if ((previous?.revision ?? 0) !== revision) {
+          if (previous?.lessonRunDeviceId === deviceId && previous.revision === revision + 1 && isDeepStrictEqual(previous.progress, progress)) return { status: 200, body: { revision: previous.revision } }
+          return { status: 409, body: { code: 'PROGRESS_CONFLICT', error: 'Стан завдання змінився. Оновлюємо його.' } }
+        }
+        await tx.insert(lessonActivityProgress).values({ dispatchId, lessonRunStudentId, lessonRunDeviceId: deviceId, revision: revision + 1, progress })
+          .onConflictDoUpdate({ target: [lessonActivityProgress.dispatchId, lessonActivityProgress.lessonRunStudentId], set: { lessonRunDeviceId: deviceId, revision: revision + 1, progress, updatedAt: new Date() } })
+        return { status: 200, body: { revision: revision + 1 } }
+      })
+      return reply.code(response.status).send(response.body)
+    } catch (err) {
+      if (err instanceof ActivityAnswerError) return reply.code(400).send({ error: err.message })
+      throw err
+    }
+  })
+
   // POST /api/student/lesson/attempt — one submission from a mapped device.
   // Idempotent per (device, clientAttemptId): a retry returns the same result.
-  app.post<{ Body: { deviceId: string; deviceToken: string; dispatchId: string; clientAttemptId: string; answer?: unknown; gameResult?: unknown } }>('/attempt', {
+  app.post<{ Body: { deviceId: string; deviceToken: string; lessonRunStudentId: string; assignmentVersion: number; dispatchId: string; clientAttemptId: string; answer?: unknown; gameResult?: unknown } }>('/attempt', {
     config: { rateLimit: deviceAttemptRateLimit },
     schema: {
       body: {
         type: 'object',
-        required: ['deviceId', 'deviceToken', 'dispatchId', 'clientAttemptId'],
+        required: ['deviceId', 'deviceToken', 'lessonRunStudentId', 'assignmentVersion', 'dispatchId', 'clientAttemptId'],
         additionalProperties: false,
         properties: {
           ...deviceBody.properties,
+          lessonRunStudentId: { type: 'string', format: 'uuid' },
+          assignmentVersion: { type: 'integer', minimum: 0 },
           dispatchId: { type: 'string', format: 'uuid' },
           clientAttemptId: { type: 'string', format: 'uuid' },
           answer: { type: 'object' },
@@ -407,12 +477,8 @@ export async function lessonStudentRoutes(app: FastifyInstance) {
 
     try {
       const outcome = await db.transaction(async tx => {
-        // Locking the device serialises this child's submissions.
-        const [row] = await tx.select({ device: lessonRunDevices, runStatus: lessonRuns.status, lessonSnapshot: lessonRuns.lessonSnapshot })
-          .from(lessonRunDevices)
-          .innerJoin(lessonRuns, eq(lessonRuns.id, lessonRunDevices.lessonRunId))
-          .where(eq(lessonRunDevices.id, deviceId)).limit(1).for('update', { of: lessonRunDevices })
-        if (!row || deviceLiveness(row.device) !== 'live') return { status: 401 as const }
+        const row = await lockStudentDevice(tx, deviceId)
+        if (!row || !holdsLessonAssignment(row.device, req.body.lessonRunStudentId, req.body.assignmentVersion)) return { status: 401 as const }
         const studentId = row.device.lessonRunStudentId
         if (!studentId) throw new AttemptRefusedError('NOT_MAPPED', 'Зачекай, поки вчитель тебе призначить.')
         const lesson = row.lessonSnapshot as unknown as LessonDefinitionV1

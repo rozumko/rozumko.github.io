@@ -819,6 +819,7 @@ export type LessonRunEventRow = typeof lessonRunEvents.$inferSelect
 // Anonymous device joined to a run by code (0051). The teacher maps it to a
 // roster student; revoked devices are kept (never deleted) for the audit trail.
 export const lessonRunDevices = pgTable('lesson_run_devices', {
+  assignmentVersion: integer('assignment_version').notNull().default(0),
   id:                 uuid('id').primaryKey().defaultRandom(),
   lessonRunId:        uuid('lesson_run_id').notNull().references(() => lessonRuns.id, { onDelete: 'restrict' }),
   pairingNumber:      integer('pairing_number').notNull(),
@@ -852,6 +853,17 @@ export const lessonRunDispatches = pgTable('lesson_run_dispatches', {
 })
 
 export type LessonRunDispatchRow = typeof lessonRunDispatches.$inferSelect
+
+// Mutable recovery checkpoints (0061), scoped to one run student and dispatch.
+export const lessonActivityProgress = pgTable('lesson_activity_progress', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  dispatchId: uuid('dispatch_id').notNull().references(() => lessonRunDispatches.id, { onDelete: 'cascade' }),
+  lessonRunStudentId: uuid('lesson_run_student_id').notNull().references(() => lessonRunStudents.id, { onDelete: 'cascade' }),
+  lessonRunDeviceId: uuid('lesson_run_device_id').notNull().references(() => lessonRunDevices.id, { onDelete: 'cascade' }),
+  revision: integer('revision').notNull(),
+  progress: jsonb('progress').notNull().$type<Record<string, unknown>>(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, t => ({ uniqStudentDispatch: unique('lesson_activity_progress_student_dispatch_uq').on(t.dispatchId, t.lessonRunStudentId) }))
 
 // One submission from one mapped device (0052). Append-only; idempotent per
 // (device, client_attempt_id). Trust is derived from the mechanic (DB-checked).

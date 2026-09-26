@@ -194,6 +194,8 @@ export interface LessonDeviceJoin {
 }
 
 export interface StudentTask {
+  progress?: LessonProgress | null
+  progressRevision?: number
   dispatchId: string
   heading: LocalizedText | null
   /** Display-safe: no key ever. External tools carry their allowlisted URL. */
@@ -203,6 +205,23 @@ export interface StudentTask {
   attemptsMax: number
   /** Withheld for evidence. */
   lastResult: { correct: number; total: number } | null
+}
+
+export interface LessonProgress {
+  selection?: Record<string, string>
+  gameState?: Record<string, unknown>
+  gameResult?: { correct: number; total: number; mistakes: number; durationSec: number }
+  finished?: boolean
+}
+
+export interface StudentSlide {
+  activity: ActivityView | null
+  blockId: string
+  layout: PresentationLayout
+  headline: LocalizedText | null
+  shortText: LocalizedText[]
+  assets: LessonAsset[]
+  canvasItems: CanvasItem[]
 }
 
 export interface StudentPracticeMaterial {
@@ -230,6 +249,9 @@ export interface LessonAttemptResponse {
 }
 
 export interface LessonDeviceState {
+  lessonRunStudentId: string | null
+  assignmentVersion: number
+  slide: StudentSlide | null
   task: StudentTask | null
   material: StudentPracticeMaterial | StudentCanvasMaterial | null
   runStatus: LessonRunStatus

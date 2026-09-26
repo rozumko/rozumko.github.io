@@ -95,10 +95,10 @@ export const ACTIVITIES: readonly ActivityInfo[] = [
     label: 'Друкуй слова',
     description: 'Дитина друкує слова або речення по літері — клавіатура підсвічує наступну клавішу.',
     hint: 'Друкуй текст по літері. Наступна клавіша світиться на клавіатурі.',
-    device: 'desktop',
+    device: 'any',
     group: 'keyboard',
     icon: 'fa-font',
-    minWidth: 900,
+    minWidth: 360,
     levelLabel: 'Що друкувати',
     levels: [
       { id: 'words-easy',       label: 'Короткі слова',   description: '18 слів до 5 літер' },
