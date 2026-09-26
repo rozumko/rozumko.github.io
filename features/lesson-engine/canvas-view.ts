@@ -76,6 +76,29 @@ export function renderCanvasItems(items: CanvasItem[], variant: 'teacher' | 'boa
         root.append(iframe)
         break
       }
+      case 'learningapps': {
+        if (!/^[1-9][0-9]{0,19}$/.test(item.appId)) break
+        const section = el('section', 'le-canvas__learningapps')
+        const iframe = el('iframe', 'le-canvas__exercise')
+        iframe.src = `https://learningapps.org/watch?app=${item.appId}&disableanalytics=1`
+        iframe.title = 'Вправа LearningApps'
+        iframe.loading = 'lazy'
+        iframe.referrerPolicy = 'no-referrer'
+        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms')
+        iframe.allowFullscreen = true
+        const link = el('a', 'le-canvas__link')
+        link.href = `https://learningapps.org/view${item.appId}`
+        link.textContent = 'Відкрити на LearningApps ↗'
+        link.target = '_blank'
+        link.rel = 'noopener noreferrer'
+        const full = el('button', 'btn btn--secondary')
+        full.type = 'button'
+        full.textContent = 'На весь екран'
+        full.addEventListener('click', () => { void iframe.requestFullscreen?.().catch(() => {}) })
+        section.append(iframe, full, link)
+        root.append(section)
+        break
+      }
       case 'link': {
         const href = safeMediaUrl(item.url)
         if (!href) break

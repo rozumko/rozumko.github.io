@@ -69,6 +69,17 @@ export interface TextParseOptions {
 
 const uk = (text: string): LocalizedText => ({ uk: text })
 
+/** Only public LearningApps view links and numeric embed IDs are accepted. */
+export function learningAppsId(value: string): string | null {
+  try {
+    const url = new URL(value)
+    if (url.protocol !== 'https:' || url.hostname !== 'learningapps.org' || url.port || url.username || url.password) return null
+    const id = url.pathname.match(/^\/view([1-9][0-9]{0,19})\/?$/)?.[1]
+      ?? (url.pathname === '/watch' ? url.searchParams.get('app') : null)
+    return id && /^[1-9][0-9]{0,19}$/.test(id) ? id : null
+  } catch { return null }
+}
+
 export function youtubeId(value: string): string | null {
   try {
     const url = new URL(value)
@@ -298,8 +309,10 @@ export function parseLessonText(source: string, options: TextParseOptions): Text
         item = { type: 'image', src, alt: uk(alt) }
       } else if (link || bareUrl) {
         const url = link ? link[2]! : bareUrl!
+        const appId = learningAppsId(url)
         const video = youtubeId(url)
-        if (video) item = { type: 'video', videoId: video }
+        if (appId) item = { type: 'learningapps', appId }
+        else if (video) item = { type: 'video', videoId: video }
         else if (!isMediaUrl(url)) {
           error(line, 'Посилання має починатися з https://.')
           continue
@@ -604,6 +617,7 @@ function itemLines(item: Item): string[] {
       return [row(item.headers as LocalizedText[]), ...(item.rows as LocalizedText[][]).map(row)]
     }
     case 'image': return [`![${text(item.alt)}](${String(item.src)})`]
+    case 'learningapps': return [`https://learningapps.org/view${String(item.appId)}`]
     case 'video': return [`https://www.youtube.com/watch?v=${String(item.videoId)}`]
     case 'link': return [`[${text(item.label)}](${String(item.url)})`]
     default: return []

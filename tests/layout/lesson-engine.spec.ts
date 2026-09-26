@@ -694,6 +694,23 @@ test('a mapped child sees the student view of a free block', async ({ page }) =>
   await expect(page.getByRole('table').getByRole('row').nth(1).getByRole('cell')).toHaveText(['Книга', '2024'])
 })
 
+test('LearningApps material renders on a student device with a constrained iframe and fallback link', async ({ page }) => {
+  await page.route('https://learningapps.org/**', route => route.fulfill({ contentType: 'text/html', body: '<p>Exercise</p>' }))
+  const material = {
+    kind: 'canvas', blockId: 'learningapps-block', heading: { uk: 'Вправа LearningApps' },
+    items: [{ type: 'learningapps', appId: '20183559' }],
+  }
+  await routeStudentLesson(page, { mapped: true, runStatus: 'active', material })
+  await page.goto('/lesson-join.html?code=482913')
+  await page.getByRole('button', { name: 'Приєднатися' }).click()
+  const frame = page.locator('.le-canvas__exercise')
+  await expect(frame).toBeVisible()
+  await expect(frame).toHaveAttribute('src', 'https://learningapps.org/watch?app=20183559&disableanalytics=1')
+  await expect(frame).toHaveAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms')
+  await expect(page.getByRole('link', { name: 'Відкрити на LearningApps ↗' })).toHaveAttribute('href', 'https://learningapps.org/view20183559')
+  await expect(page.getByRole('button', { name: 'На весь екран' })).toBeVisible()
+})
+
 test('a child joins with the code, shows their number, and is greeted once mapped', async ({ page }) => {
   const state = { mapped: false, runStatus: 'active' }
   const stateRequests: string[] = []

@@ -14,6 +14,7 @@ export type CanvasItem =
   | { type: 'table'; headers: LocalizedText[]; rows: LocalizedText[][] }
   | { type: 'image'; src: string; alt: LocalizedText }
   | { type: 'video'; videoId: string }
+  | { type: 'learningapps'; appId: string }
   | { type: 'link'; url: string; label: LocalizedText }
 
 export const LESSON_BLOCK_TYPES = [

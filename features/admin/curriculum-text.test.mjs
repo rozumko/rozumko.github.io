@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 
-import { lessonToText, parseLessonText, youtubeId } from './curriculum-text.ts'
+import { lessonToText, parseLessonText, youtubeId, learningAppsId } from './curriculum-text.ts'
 import { LESSON_TEXT_EXAMPLE, LESSON_TEXT_PROMPT, LESSON_TEXT_TEMPLATES } from './curriculum-text-templates.ts'
 import { newBlock, newLesson } from './curriculum-model.ts'
 import { validateLessonAgainstPack, validateLessonDefinition } from '../../backend/src/lib/curriculum-lesson-schema.ts'
@@ -26,6 +26,29 @@ const SERVER_PACK = {
   outcomes: PILOT_OUTCOMES,
 }
 const OPTIONS = { pack: PACK_INFO, lessonId: grade => `g${grade}-new-l1` }
+
+test('LearningApps links normalize to numeric IDs and reject foreign hosts and credentials', () => {
+  assert.equal(learningAppsId('https://learningapps.org/view20183559'), '20183559')
+  assert.equal(learningAppsId('https://learningapps.org/watch?app=20183559&disableanalytics=1'), '20183559')
+  for (const url of ['http://learningapps.org/view20183559', 'https://learningapps.org.evil.test/view20183559', 'https://user@learningapps.org/view20183559', 'https://learningapps.org/watch?app=javascript:alert(1)', 'https://learningapps.org/view0']) {
+    assert.equal(learningAppsId(url), null, url)
+  }
+})
+
+test('LearningApps text import survives export and server validation without scoring', () => {
+  const source = '# Вправи\nКлас: 2\n## Вправа\n[слайд] https://learningapps.org/view20183559'
+  const parsed = parseLessonText(source, OPTIONS)
+  const lesson = parsed.lesson
+  assert.ok(lesson)
+  const canvas = lesson.blocks.find(b => b.type === 'canvas' && b.content.board.some(i => i.type === 'learningapps'))
+  assert.deepEqual(canvas.content.board, [{ type: 'learningapps', appId: '20183559' }])
+  assertValid(lesson, 'LearningApps')
+  assert.match(lessonToText(lesson).text, /https:\/\/learningapps.org\/view20183559/)
+  canvas.content.board[0].appId = '../evil'
+  assert.equal(validateLessonDefinition(lesson).ok, false)
+  canvas.content.board[0] = { type: 'learningapps', appId: '20183559', url: 'https://evil.test' }
+  assert.equal(validateLessonDefinition(lesson).ok, false)
+})
 
 function assertValid(lesson, label) {
   const result = validateLessonDefinition(structuredClone(lesson))

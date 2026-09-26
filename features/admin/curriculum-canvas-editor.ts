@@ -12,6 +12,7 @@ import { TableCell, TableHeader, TableKit } from '@tiptap/extension-table'
 import { Placeholder } from '@tiptap/extensions'
 import type { CanvasItem } from '../lesson-engine/types.js'
 import { safeMediaUrl } from '../lesson-engine/canvas-view.js'
+import { learningAppsId } from './curriculum-text.js'
 import { canvasItemsToHtml, parseCanvasHtml, youtubeId } from './curriculum-html.js'
 import type { EditableBlock } from './curriculum-model.js'
 
@@ -106,6 +107,19 @@ const CanvasVideo = Node.create({
     ['span', { class: 'cl-rte__video-label' }, `▶ YouTube · ${node.attrs.videoId}`]],
 })
 
+const CanvasLearningApps = Node.create({
+  name: 'canvasLearningApps',
+  group: 'block',
+  atom: true,
+  draggable: true,
+  addAttributes: () => ({ appId: { default: '', rendered: false } }),
+  parseHTML: () => [{ tag: 'div[data-learningapps-id]', getAttrs: node => {
+    const appId = node.getAttribute('data-learningapps-id') ?? ''
+    return /^[1-9][0-9]{0,19}$/.test(appId) ? { appId } : false
+  } }],
+  renderHTML: ({ node }) => ['div', { 'data-learningapps-id': node.attrs.appId, class: 'cl-rte__link' }, `LearningApps · ${node.attrs.appId}`],
+})
+
 const CanvasLink = Node.create({
   name: 'canvasLink',
   group: 'block',
@@ -136,7 +150,7 @@ function extensions(placeholder: string): Extensions {
     TableKit.configure({ table: { resizable: false }, tableCell: false, tableHeader: false }),
     TableCell.extend({ content: 'paragraph' }),
     TableHeader.extend({ content: 'paragraph' }),
-    CanvasImage, CanvasVideo, CanvasLink,
+    CanvasImage, CanvasVideo, CanvasLink, CanvasLearningApps,
     Placeholder.configure({ placeholder }),
   ]
 }
@@ -156,8 +170,8 @@ function releaseDetachedEditors(): void {
 
 // ── Insert/edit dialog for links, images and videos ─────────────────────────
 
-type MediaKind = 'canvasLink' | 'canvasImage' | 'canvasVideo'
-const MEDIA_TITLES: Record<MediaKind, string> = { canvasLink: 'Посилання', canvasImage: 'Зображення', canvasVideo: 'Відео YouTube' }
+type MediaKind = 'canvasLink' | 'canvasImage' | 'canvasVideo' | 'canvasLearningApps'
+const MEDIA_TITLES: Record<MediaKind, string> = { canvasLink: 'Посилання', canvasImage: 'Зображення', canvasVideo: 'Відео YouTube', canvasLearningApps: 'Вправа LearningApps' }
 
 function mediaDialog(editor: Editor, host: HTMLElement, kind: MediaKind): void {
   const selection = editor.state.selection
@@ -186,6 +200,26 @@ function mediaDialog(editor: Editor, host: HTMLElement, kind: MediaKind): void {
       if (!safe) return 'Потрібна адреса, що починається з https:// або /.'
       if (!alt.control.value.trim()) return 'Додайте короткий опис зображення.'
       return { src: safe, alt: alt.control.value.trim() }
+    }
+  } else if (kind === 'canvasLearningApps') {
+    const url = input('Посилання на вправу LearningApps', editing?.appId ? `https://learningapps.org/view${editing.appId}` : '')
+    const preview = el('iframe', 'cl-rte__exercise-preview')
+    preview.title = 'Попередній перегляд LearningApps'
+    preview.hidden = true
+    preview.referrerPolicy = 'no-referrer'
+    preview.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms')
+    const refresh = () => {
+      const appId = learningAppsId(url.control.value.trim())
+      preview.hidden = !appId
+      if (appId) preview.src = `https://learningapps.org/watch?app=${appId}&disableanalytics=1`
+      else preview.removeAttribute('src')
+    }
+    url.control.addEventListener('change', refresh)
+    form.append(url.wrap, button('Переглянути вправу', refresh), preview)
+    if (editing) refresh()
+    read = () => {
+      const appId = learningAppsId(url.control.value.trim())
+      return appId ? { appId } : 'Потрібне посилання LearningApps, наприклад https://learningapps.org/view20183559'
     }
   } else {
     const url = input('Посилання на відео YouTube', editing?.videoId ? `https://www.youtube.com/watch?v=${editing.videoId}` : '')
@@ -272,6 +306,7 @@ function toolbar(editor: Editor, dialogHost: HTMLElement, toggleSource: () => vo
     tool('🔗 Посилання', 'Вставити посилання', () => mediaDialog(editor, dialogHost, 'canvasLink')),
     tool('🖼 Зображення', 'Вставити зображення', () => mediaDialog(editor, dialogHost, 'canvasImage')),
     tool('▶ YouTube', 'Вставити відео YouTube', () => mediaDialog(editor, dialogHost, 'canvasVideo')),
+    tool('LearningApps', 'Вставити вправу LearningApps', () => mediaDialog(editor, dialogHost, 'canvasLearningApps')),
   )
   const tableTools = group(
     tool('+ рядок', 'Додати рядок нижче', () => chain().addRowAfter().run(), { enabled: () => editor.can().addRowAfter() }),
@@ -379,8 +414,15 @@ export function renderCanvasEditor(block: EditableBlock, options: CanvasEditorOp
         if (parsed.warnings.length) status.textContent = `Під час вставлення: ${parsed.warnings.join(' ')}`
         return canvasItemsToHtml(parsed.items)
       },
+      handlePaste: (_view, event) => {
+        const appId = learningAppsId(event.clipboardData?.getData('text/plain').trim() ?? '')
+        if (!appId) return false
+        event.preventDefault()
+        editor.chain().focus().insertContent({ type: 'canvasLearningApps', attrs: { appId } }).run()
+        return true
+      },
       handleDoubleClickOn: (_view, _pos, node) => {
-        if (node.type.name !== 'canvasLink' && node.type.name !== 'canvasImage' && node.type.name !== 'canvasVideo') return false
+        if (node.type.name !== 'canvasLink' && node.type.name !== 'canvasImage' && node.type.name !== 'canvasVideo' && node.type.name !== 'canvasLearningApps') return false
         mediaDialog(editor, dialogHost, node.type.name)
         return true
       },

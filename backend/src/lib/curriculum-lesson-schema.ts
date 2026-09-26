@@ -143,6 +143,7 @@ export type CanvasItem =
   | { type: 'table'; headers: LocalizedText[]; rows: LocalizedText[][] }
   | { type: 'image'; src: string; alt: LocalizedText }
   | { type: 'video'; videoId: string }
+  | { type: 'learningapps'; appId: string }
   | { type: 'link'; url: string; label: LocalizedText }
 
 export interface CanvasBlock extends LessonBlockBase {
@@ -763,6 +764,10 @@ function checkCanvasItems(c: Collector, value: unknown, path: string): void {
       case 'video':
         checkKnownKeys(c, item, ['type', 'videoId'], at)
         checkString(c, item.videoId, `${at}.videoId`, 11, /^[A-Za-z0-9_-]{11}$/)
+        break
+      case 'learningapps':
+        checkKnownKeys(c, item, ['type', 'appId'], at)
+        checkString(c, item.appId, `${at}.appId`, 20, /^[1-9][0-9]{0,19}$/)
         break
       case 'link':
         checkKnownKeys(c, item, ['type', 'url', 'label'], at)
