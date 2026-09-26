@@ -1,5 +1,6 @@
 // Converts pasted HTML into the Lesson Engine's small, auditable content tree.
-// No HTML, attributes, scripts or styles are stored in a lesson definition.
+// Ordinary pasted HTML becomes structured content. Marked builder items remain
+// opaque data and their authored code is rendered only in a sandbox.
 
 import type { CanvasItem, LocalizedText } from '../lesson-engine/types.js'
 import { safeMediaUrl } from '../lesson-engine/canvas-view.js'
@@ -122,6 +123,13 @@ export function parseCanvasHtml(source: string): HtmlImportResult {
   }
 
   const visitBlock = (node: Element): void => {
+    const opaque = node.getAttribute('data-canvas-item')
+    if (opaque) {
+      try {
+        const item = JSON.parse(opaque) as CanvasItem
+        if (['html', 'pdf', 'file'].includes(item.type)) { add(item); return }
+      } catch { warn('Невірна картка конструктора.') }
+    }
     const tag = node.localName
     const appId = node.getAttribute('data-learningapps-id')
     if (appId !== null) {
@@ -200,6 +208,9 @@ export function canvasItemsToHtml(items: CanvasItem[]): string {
       case 'learningapps': return `<div data-learningapps-id="${escapeHtml(item.appId)}">LearningApps · ${escapeHtml(item.appId)}</div>`
       // A link is its own line; the marker lets the visual editor keep it as one.
       case 'link': return `<p data-canvas-link><a href="${escapeHtml(item.url)}">${escapeHtml(item.label.uk)}</a></p>`
+      case 'html':
+      case 'pdf':
+      case 'file': return `<div data-canvas-item="${escapeHtml(JSON.stringify(item))}">${item.type === 'html' ? 'HTML-картка' : escapeHtml(item.type === 'file' ? item.name.uk : item.label.uk)} — редагується в Конструкторі уроків</div>`
     }
   }).join('\n')
 }

@@ -140,8 +140,8 @@ A curriculum lesson carries server-only answer keys in
 `activity.scoring.key`. The admin API returns them; nothing else does.
 `toDisplaySafeLesson()` in `backend/src/lib/curriculum-lesson-schema.ts` is the
 single exit point that strips them for any non-admin consumer. Definitions are
-validated fail-closed on every save and again on publish: unknown fields, raw
-HTML, dangling references, an unregistered subject pack, and external tools
+validated fail-closed on every save and again on publish: unknown fields, HTML
+in plain text, dangling references, an unregistered subject pack, and external tools
 missing from the pack allowlist are all rejected. Publishing requires `review`.
 A published version is immutable, enforced by a database trigger rather than
 by route code alone. Revision history is append-only, also by trigger. Both
@@ -221,14 +221,34 @@ board item list; teacher and student lists are stripped before crossing that
 window boundary. HTML pasted in the admin editor is converted to validated
 structured items, with no authored HTML stored or rendered.
 
+The admin **Lesson Builder** adds explicit `html`, `pdf` and `file` canvas
+items without changing the editorial/run/identity model. HTML (up to 65,536
+characters) renders only in `lesson-html.html` under `sandbox="allow-scripts"`
+without `allow-same-origin`. The static runner refuses top-level and
+non-opaque-origin execution. Its CSP denies connections, external scripts,
+frames, forms and objects; inline CSS/JS and data images/fonts are permitted.
+The fragment carrying content is never sent to the static server. Application
+pages keep `script-src 'self'`; only the isolated runner allows inline scripts.
+Files are bounded to 512 KiB, canonical base64, verified MIME/signature pairs
+for PNG/JPEG/WebP/PDF only (never HTML/SVG). Definitions are capped at 4 MiB;
+only admin lesson create/update/validate routes accept bodies up to 5 MiB.
+Uploaded PDFs use fixed-MIME opaque-origin data documents; remote PDF links
+open separately. The browser's material inbox is scoped to the authenticated
+admin ID and stores canvas items only, never scored activity definitions.
+Saved lessons remain server-owned, revisioned, and key-stripped at every
+teacher/student/projector boundary. Unpublished drafts can be presented by
+the admin, but student runs still require an explicitly published snapshot.
+
 Canvas media is scoped in the CSP to `admin.html`, `lesson-engine.html`,
 `lesson-board.html` and `lesson-join.html`. By editorial decision, images may
 come from any https host (or a site path): those pages allow `img-src https:`,
 and images render with `referrerpolicy="no-referrer"`. Every other page keeps
 `img-src 'self' data:`. Videos are 11-character YouTube IDs rendered only as
-`https://www.youtube-nocookie.com/embed/<id>`, the single `frame-src` origin
-on the same pages. Links may point to any https page and open in a new tab
-with `noopener noreferrer`. Scripts stay same-origin everywhere.
+`https://www.youtube-nocookie.com/embed/<id>`. The same pages also allow
+LearningApps, same-origin sandbox runners and fixed-MIME data PDF frames.
+Links may point to any https page and open in a new tab with
+`noopener noreferrer`. Application scripts stay same-origin; the isolated
+HTML runner's narrowly scoped inline-script exception is described above.
 
 The admin visual editor (Tiptap, loaded on demand) is a view over the same
 structured items: its schema allows only the item types above, pasted HTML

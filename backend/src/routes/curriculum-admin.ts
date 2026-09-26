@@ -121,6 +121,7 @@ export async function curriculumAdminRoutes(app: FastifyInstance) {
   // POST /api/admin/curriculum/lessons/validate — the editor's "check" button:
   // the same checks as a save, nothing is stored. `lessonId` pins an existing row.
   app.post<{ Body: { definition: unknown; lessonId?: string } }>('/lessons/validate', {
+    bodyLimit: 5 * 1024 * 1024,
     schema: {
       body: {
         type: 'object',
@@ -144,6 +145,7 @@ export async function curriculumAdminRoutes(app: FastifyInstance) {
 
   // POST /api/admin/curriculum/lessons — create a draft from a full definition
   app.post<{ Body: { definition: unknown } }>('/lessons', {
+    bodyLimit: 5 * 1024 * 1024,
     schema: {
       body: { type: 'object', required: ['definition'], properties: { definition: { type: 'object' } } },
     },
@@ -177,6 +179,7 @@ export async function curriculumAdminRoutes(app: FastifyInstance) {
   // bumps content_version and returns the lesson to draft. The published
   // snapshot is untouched until the next publish.
   app.put<{ Params: { id: string }; Body: { definition: unknown; expectedEditVersion: number } }>('/lessons/:id', {
+    bodyLimit: 5 * 1024 * 1024,
     schema: {
       params: idParams,
       body: {

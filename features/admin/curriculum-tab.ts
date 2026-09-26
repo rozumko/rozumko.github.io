@@ -366,6 +366,10 @@ function startEditor(row: AdminCurriculumLesson | null, lesson: EditableLesson, 
   $('cl-editor-view').querySelector<HTMLElement>('h2')?.focus()
 }
 
+export async function openCurriculumLessonEditor(id: string) {
+  await openLesson(id)
+}
+
 async function openLesson(id: string) {
   $('cl-list-error').textContent = ''
   try {

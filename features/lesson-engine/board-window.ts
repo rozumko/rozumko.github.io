@@ -41,6 +41,7 @@ export interface BoardWindowController {
   /** Hides the controls, e.g. once the lesson is finished. */
   setEnabled(enabled: boolean): void
   close(): void
+  destroy(): void
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] {
@@ -255,13 +256,14 @@ export function mountBoardWindow(lesson: LessonDefinition, options: BoardWindowO
     detach()
   }
 
-  document.addEventListener('keydown', event => {
+  const onKeyDown = (event: KeyboardEvent) => {
     if (!isOpen() || !enabled) return
     const delta = slideKeyDelta(event)
     if (delta === 0) return
     event.preventDefault()
     moveTo(index + delta, true)
-  })
+  }
+  document.addEventListener('keydown', onKeyDown)
   // Leaving or reloading this page leaves the board on its last slide: the next
   // "open" re-takes the same window without losing its place or full screen.
 
@@ -286,5 +288,11 @@ export function mountBoardWindow(lesson: LessonDefinition, options: BoardWindowO
       render()
     },
     close,
+    destroy() {
+      close()
+      channel?.close()
+      document.removeEventListener('keydown', onKeyDown)
+      element.remove()
+    },
   }
 }
