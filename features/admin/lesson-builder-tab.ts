@@ -1,77 +1,79 @@
+// Lesson Builder: a large board of collected materials on the left (one canvas
+// per topic, Miro-like) and the lesson outline on the right. Scattered ideas are
+// dragged into a structured lesson. Cards show thumbnails only; a click opens a
+// dialog with the preview and every action.
+
 import {
-  getAdminCurriculumLessons, getAdminCurriculumLesson, getAdminSubjectPacks, getAdminCurriculumOutcomes,
+  getAdminCurriculumLessons, getAdminCurriculumLesson, getAdminSubjectPacks, getAdminCurriculumOutcomes, getAdminCurriculumCards,
   createAdminCurriculumLesson, updateAdminCurriculumLesson, validateAdminCurriculumLesson,
   setAdminCurriculumLessonStatus, getTeacherMe, checkCurriculumActivity,
-  type AdminCurriculumLesson, type AdminCurriculumLessonSummary, type AdminSubjectPack, type AdminCurriculumOutcome, type ApiError,
+  getBuilderBoards, createBuilderBoard, renameBuilderBoard, deleteBuilderBoard, getBuilderMaterials, searchBuilderMaterials,
+  createBuilderMaterial, updateBuilderMaterial, saveBuilderPositions, deleteBuilderMaterials,
+  type AdminCurriculumLesson, type AdminCurriculumLessonSummary, type AdminSubjectPack, type AdminCurriculumOutcome,
+  type AdminCurriculumCardLesson, type ApiError, type BuilderBoard, type BuilderMaterial, type BuilderMaterialKind,
 } from '../api/client.js'
 import {
   newLesson, newBlock, moveBlockTo, withoutAnswerKeys, activityTemplate, addActivityOutcome, removeActivityOutcome,
   setOnBoard, setOnDevices, convertToCanvas, CONVERTIBLE_TYPES, describeLessonIssue, type EditableLesson, type EditableBlock,
 } from './curriculum-model.js'
 import { renderCanvasItems } from '../lesson-engine/canvas-view.js'
-import { renderSlide, openPresentation } from '../lesson-engine/presentation-view.js'
+import { renderSlide } from '../lesson-engine/presentation-view.js'
 import { mountBoardWindow, type BoardWindowController } from '../lesson-engine/board-window.js'
 import { presentationSlides, MECHANIC_LABELS } from '../lesson-engine/projection.js'
 import type { CanvasItem, LessonDefinition } from '../lesson-engine/types.js'
 import { openActivityDialog } from './activity-dialog.js'
 import { createFocusTrap } from '../../utils/focus-trap.js'
 import { friendlyError, showConfirm } from './ui.js'
-import { blockTitle, blockKind, canvasItems, resourceItem, makeMaterial, appendSourceBlocks, lessonSize, KIND_LABELS, BUILDER_KINDS, type BuilderKind } from './lesson-builder-model.js'
-import { fileItem, materialInbox, type BuilderMaterial } from './lesson-builder-storage.js'
+import { blockTitle, blockKind, canvasItems, resourceItem, makeMaterial, appendSourceBlocks, lessonSize, KIND_LABELS, type BuilderKind } from './lesson-builder-model.js'
+import { fileItem, materialInbox } from './lesson-builder-storage.js'
+import { mountBoardCanvas, type BoardCanvas, type CanvasCard } from './builder-canvas.js'
+import { freeSpot, type Placed, type Point } from './builder-canvas-model.js'
 
-let summaries: AdminCurriculumLessonSummary[] = []
+const MATERIAL_KINDS: BuilderMaterialKind[] = ['text', 'image', 'video', 'pdf', 'html', 'learningapps', 'link']
+const LESSON_KINDS: BuilderKind[] = ['text', 'image', 'video', 'pdf', 'html', 'learningapps', 'link', 'activity']
+const DEFAULT_BOARD = 'Мої матеріали'
+const LAST_BOARD_KEY = 'rozumko_builder_board'
+const MAX_LESSON_BYTES = 4 * 1024 * 1024
+
 let packs: AdminSubjectPack[] = []
 let outcomes: AdminCurriculumOutcome[] = []
-let inbox: BuilderMaterial[] = []
+let summaries: AdminCurriculumLessonSummary[] = []
 let owner = ''
+let loaded = false
+
+// Board state
+let boards: BuilderBoard[] = []
+let boardId: string | null = null
+let materials: BuilderMaterial[] = []
+let query = ''
+let kindFilter: BuilderMaterialKind | '' = ''
+let searchResults: BuilderMaterial[] | null = null
+let searchTimer: number | null = null
+let searchSeq = 0
+let canvas: BoardCanvas | null = null
+const pendingPositions = new Map<string, Placed>()
+let positionsTimer: number | null = null
+
+// "From lessons" drawer
+let cardIndex: AdminCurriculumCardLesson[] | null = null
+let drawerKind: BuilderKind | '' = ''
+let drawerQuery = ''
+
+// Lesson state
 let lesson: EditableLesson | null = null
 let row: AdminCurriculumLesson | null = null
 let dirty = false
 let busy = false
-let loaded = false
-let selected: string | null = null
 let reserved = new Set<string>()
-let source: EditableLesson | null = null
 let undo: EditableLesson[] = []
 let redo: EditableLesson[] = []
 let board: BoardWindowController | null = null
 let presenting = false
-const filters = { query: '', pack: '', grade: '', topic: '', kind: '' }
 const sourceCache = new Map<string, EditableLesson>()
-const pendingSources = new Set<string>()
-const failedSources = new Set<string>()
-const sourceRequests = new Map<string, Promise<EditableLesson>>()
-let activeSourceRequests = 0
-const sourceWaiters: (() => void)[] = []
-const thumbnailObserver = new ResizeObserver(entries => {
-  for (const entry of entries) (entry.target as HTMLElement).style.setProperty('--lb-scale', String(entry.contentRect.width / 640))
-})
-function clearThumbnails(host: HTMLElement) {
-  host.querySelectorAll('.lb-thumb').forEach(node => thumbnailObserver.unobserve(node))
-}
-function draggable(node: HTMLElement, payload: object) {
-  node.draggable = true
-  node.addEventListener('dragstart', event => {
-    if (!event.dataTransfer) return
-    event.dataTransfer.setData('application/x-rozumko-card', JSON.stringify(payload))
-    event.dataTransfer.effectAllowed = 'copyMove'
-    const ghost = node.cloneNode(true) as HTMLElement
-    ghost.classList.add('lb-drag-ghost')
-    ghost.style.width = `${Math.min(node.offsetWidth, 150)}px`
-    ghost.style.top = `${Math.max(0, Math.min(event.clientY, innerHeight - 180))}px`
-    ghost.style.left = `${Math.max(0, Math.min(event.clientX, innerWidth - 150))}px`
-    document.body.append(ghost)
-    event.dataTransfer.setDragImage(ghost, 40, 30)
-    requestAnimationFrame(() => ghost.remove())
-    node.classList.add('lb-dragging')
-  })
-  node.addEventListener('dragend', () => {
-    node.classList.remove('lb-dragging')
-    document.querySelectorAll('.lb-insert-before,.lb-insert-after').forEach(target => target.classList.remove('lb-insert-before', 'lb-insert-after'))
-  })
-}
 
 const root = () => document.getElementById('lb-root')!
+const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) as T | null
+
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text?: string): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag)
   node.className = cls
@@ -82,6 +84,12 @@ function button(label: string, run: () => void, cls = 'btn-adm-ghost btn--sm') {
   const node = el('button', cls, label)
   node.type = 'button'
   node.addEventListener('click', run)
+  return node
+}
+function iconButton(label: string, icon: string, run: () => void, cls = 'btn-adm-ghost btn--sm lb-icon') {
+  const node = button(icon, run, cls)
+  node.setAttribute('aria-label', label)
+  node.title = label
   return node
 }
 function field(label: string, value: string, change: (value: string) => void, multiline = false): HTMLElement {
@@ -96,41 +104,78 @@ function field(label: string, value: string, change: (value: string) => void, mu
 function picker(label: string, values: [string, string][], value: string, change: (v: string) => void): HTMLElement {
   const wrap = el('label', 'lb-field')
   const select = el('select', 'adm-input adm-input--sm')
-  select.setAttribute('aria-label', label)
   for (const [id, text] of values) select.append(new Option(text, id))
   select.value = value
   select.addEventListener('change', () => change(select.value))
   wrap.append(el('span', 'adm-label', label), select)
   return wrap
 }
-function checkbox(label: string, value: boolean, change: (v: boolean) => void): HTMLElement {
-  const wrap = el('label', 'cl-check')
-  const input = el('input')
-  input.type = 'checkbox'
-  input.checked = value
-  input.addEventListener('change', () => change(input.checked))
-  wrap.append(input, ` ${label}`)
-  return wrap
+function menu(label: string, items: [string, () => void][]): HTMLElement {
+  const details = el('details', 'lb-menu')
+  const summary = el('summary', 'btn-adm-ghost btn--sm lb-icon', '⋯')
+  summary.setAttribute('aria-label', label)
+  summary.title = label
+  const list = el('div', 'lb-menu__list')
+  for (const [text, run] of items) list.append(button(text, () => { details.open = false; run() }, 'lb-menu__item'))
+  details.append(summary, list)
+  return details
 }
-function message(text: string, error = false) {
-  const host = document.getElementById('lb-message')!
-  host.className = error ? 'adm-form-error' : 'adm-field-hint'
-  host.textContent = text
+
+// ── Toasts replace inline messages, so nothing shifts the layout ──
+function toast(text: string, options: { error?: boolean; action?: [string, () => void] } = {}) {
+  let host = byId('lb-toasts')
+  if (!host) { host = el('div', 'lb-toasts'); host.id = 'lb-toasts'; document.body.append(host) }
+  const item = el('div', `lb-toast${options.error ? ' lb-toast--error' : ''}`)
+  item.setAttribute('role', options.error ? 'alert' : 'status')
+  item.append(el('span', '', text))
+  if (options.action) {
+    const [label, run] = options.action
+    item.append(button(label, () => { item.remove(); run() }, 'lb-toast__action'))
+  }
+  host.append(item)
+  // At most two at a time: a burst of additions must not bury the board.
+  while (host.childElementCount > 2) host.firstElementChild!.remove()
+  window.setTimeout(() => item.remove(), options.error ? 8000 : 4000)
 }
 function report(err: unknown) {
   const error = err as ApiError
   const issues = error.body?.issues as { path: string; message: string }[] | undefined
-  if (error.status === 409) {
-    message('Урок уже змінив інший редактор. Ваші зміни залишилися в конструкторі. Експортуйте JSON перед оновленням.', true)
+  if (error.status === 409 && !issues) {
+    toast('Урок уже змінив інший редактор. Ваші зміни залишилися тут: експортуйте JSON перед оновленням.', { error: true })
     return
   }
-  message(issues?.length ? issues.map(describeLessonIssue).join(' · ') : friendlyError(error.message), true)
+  toast(issues?.length ? issues.map(describeLessonIssue).join(' · ') : friendlyError(error.message), { error: true })
 }
+
+function modal(title: string, options: { wide?: boolean; guard?: () => boolean } = {}) {
+  const overlay = el('div', 'question-modal-overlay cl-overlay')
+  overlay.setAttribute('role', 'dialog'); overlay.setAttribute('aria-modal', 'true'); overlay.setAttribute('aria-label', title)
+  const card = el('div', `question-modal-card cl-overlay__card lb-dialog${options.wide ? ' lb-dialog--wide' : ''}`)
+  const header = el('div', 'cl-overlay__head')
+  const body = el('div', 'cl-overlay__body')
+  const opener = document.activeElement as HTMLElement | null
+  let removeTrap = () => {}
+  let beforeClose = () => {}
+  const close = (force = false) => {
+    if (!force && options.guard && !options.guard()) return
+    beforeClose(); removeTrap(); overlay.remove(); opener?.focus({ preventScroll: true })
+  }
+  const attempt = () => {
+    if (options.guard && !options.guard()) showConfirm('Закрити без збереження змін?', () => close(true))
+    else close(true)
+  }
+  header.append(el('h3', '', title), button('Закрити', attempt))
+  card.append(header, body); overlay.append(card); document.body.append(overlay)
+  removeTrap = createFocusTrap(overlay, attempt)
+  header.querySelector('button')!.focus()
+  return { body, card, close: () => close(true), onClose: (callback: () => void) => { beforeClose = callback } }
+}
+
 function pack() { return packs.find(p => p.id === lesson?.subjectPackId) ?? packs[0]! }
 function checkpoint() {
   if (!lesson) return
   undo.push(structuredClone(lesson))
-  if (undo.length > 15) undo.shift()
+  if (undo.length > 30) undo.shift()
   redo = []
 }
 function changed() {
@@ -139,22 +184,107 @@ function changed() {
   updateActions()
 }
 function updateActions() {
-  for (const node of root().querySelectorAll<HTMLButtonElement>('[data-save]')) node.disabled = busy || !lesson
-  for (const node of root().querySelectorAll<HTMLButtonElement>('[data-start]')) node.disabled = busy || !lesson?.blocks.length
-  root().querySelector<HTMLButtonElement>('[data-undo]')!.disabled = busy || !undo.length
-  root().querySelector<HTMLButtonElement>('[data-redo]')!.disabled = busy || !redo.length
-  const status = document.getElementById('lb-save-state')!
-  status.textContent = busy ? 'Зберігаємо…' : dirty ? 'Є незбережені зміни' : row ? 'Збережено на сервері' : 'Новий урок'
-  for (const input of root().querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input,select,textarea')) input.disabled = busy
+  const host = root()
+  for (const node of host.querySelectorAll<HTMLButtonElement>('[data-save]')) node.disabled = busy || !lesson
+  for (const node of host.querySelectorAll<HTMLButtonElement>('[data-start]')) node.disabled = busy || !lesson?.blocks.length
+  const undoButton = host.querySelector<HTMLButtonElement>('[data-undo]')
+  const redoButton = host.querySelector<HTMLButtonElement>('[data-redo]')
+  if (undoButton) undoButton.disabled = busy || !undo.length
+  if (redoButton) redoButton.disabled = busy || !redo.length
+  const status = byId('lb-save-state')
+  if (status) status.textContent = busy ? 'Зберігаємо…' : dirty ? 'Є незбережені зміни' : row ? 'Збережено' : 'Новий урок'
 }
 function dropBoard() {
   board?.destroy()
   board = null
   presenting = false
 }
+function rememberBoard(id: string | null) {
+  try { if (id) localStorage.setItem(LAST_BOARD_KEY, id); else localStorage.removeItem(LAST_BOARD_KEY) } catch { /* per-viewer convenience only */ }
+}
+function rememberedBoard(): string | null {
+  try { return localStorage.getItem(LAST_BOARD_KEY) } catch { return null }
+}
 
+// ── Thumbnails ──
+// A 640×400 slide scaled into whatever box holds it. Layout width is used, so
+// cards inside the zoomed canvas keep a stable scale. Detached thumbnails
+// report size 0 once and are released.
+const thumbScale = new ResizeObserver(entries => {
+  for (const entry of entries) {
+    const node = entry.target as HTMLElement
+    if (!node.isConnected) { thumbScale.unobserve(node); continue }
+    if (entry.contentRect.width) node.style.setProperty('--lb-scale', String(entry.contentRect.width / 640))
+  }
+})
+function thumb(block: EditableBlock, context: EditableLesson = lesson!): HTMLElement {
+  const kind = blockKind(block)
+  const node = el('div', 'lb-thumb lb-thumb--' + kind)
+  node.setAttribute('aria-hidden', 'true')
+  const layer = el('div', 'lb-thumb-content')
+  const items = canvasItems(block)
+  const video = items.find(item => item.type === 'video')
+  const file = items.find(item => item.type === 'file')
+  if (video?.type === 'video') {
+    const image = el('img')
+    image.src = `https://i.ytimg.com/vi/${video.videoId}/hqdefault.jpg`
+    image.alt = ''
+    layer.append(image)
+  } else if (kind === 'html') {
+    // Authored code never runs in a thumbnail: dozens of live frames would stall the board.
+    const html = items.find(item => item.type === 'html')
+    const text = html?.type === 'html' ? html.html.replace(/<(script|style)[\s\S]*?<\/\1>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : ''
+    layer.append(el('div', 'lb-thumb-symbol', '</>'), el('strong', '', text.slice(0, 80) || blockTitle(block)))
+  } else if (kind === 'pdf' || kind === 'learningapps' || (file?.type === 'file' && !file.data)) {
+    layer.append(el('div', 'lb-thumb-symbol', kind === 'pdf' ? 'PDF' : kind === 'learningapps' ? 'LearningApps' : '🖼'), el('strong', '', blockTitle(block)))
+  } else {
+    // Only the projected view is used; answer keys and teacher notes are excluded.
+    const safe = withoutAnswerKeys({ ...context, blocks: [block] }) as unknown as LessonDefinition
+    const slide = presentationSlides(safe)[0]
+    if (slide) layer.append(renderSlide(slide))
+    else layer.append(el('strong', '', blockTitle(block)))
+  }
+  layer.inert = true
+  layer.querySelectorAll('iframe').forEach(frame => frame.remove())
+  layer.querySelectorAll('img').forEach(image => { image.loading = 'lazy'; image.referrerPolicy = 'no-referrer'; image.draggable = false })
+  node.append(layer)
+  thumbScale.observe(node)
+  return node
+}
+
+/** A full-size preview for dialogs: live media and sandboxed HTML are allowed here. */
+function preview(block: EditableBlock, context: EditableLesson): HTMLElement {
+  const host = el('div', 'lb-dialog-preview')
+  const safe = withoutAnswerKeys({ ...context, blocks: [block] }) as unknown as LessonDefinition
+  const slide = presentationSlides(safe)[0]
+  if (slide) host.append(renderSlide(slide))
+  else if (block.type === 'canvas') host.append(renderCanvasItems(canvasItems(block), 'teacher'))
+  else host.append(el('p', 'lb-dialog-note', 'Ця картка не показується на проєкторі.'))
+  return host
+}
+
+function materialBlock(material: Pick<BuilderMaterial, 'title' | 'items'>): EditableBlock {
+  return makeMaterial(lesson!, pack(), material.title, material.items, reserved)
+}
+/** Lesson blocks for several materials at once; each gets its own fresh ID. */
+function materialBlocks(list: Pick<BuilderMaterial, 'title' | 'items'>[]): EditableBlock[] {
+  const taken = new Set(reserved)
+  return list.map(material => {
+    const block = makeMaterial(lesson!, pack(), material.title, material.items, taken)
+    taken.add(block.id)
+    return block
+  })
+}
+
+// ── Entry points ──
 export function initLessonBuilderTab() {
   window.addEventListener('beforeunload', event => { if (dirty) event.preventDefault() })
+  // Menus close on any click outside them, like native menus.
+  document.addEventListener('pointerdown', event => {
+    for (const open of document.querySelectorAll<HTMLDetailsElement>('.lb-menu[open]')) {
+      if (!open.contains(event.target as Node)) open.open = false
+    }
+  })
   // Tab changes stop the local show and release its keyboard/channel listeners.
   document.querySelectorAll<HTMLElement>('.admin-tab').forEach(tab => tab.addEventListener('click', () => {
     if (tab.dataset.tab !== 'lesson-builder') dropBoard()
@@ -168,38 +298,60 @@ export async function loadLessonBuilderTab() {
   }
   root().textContent = 'Завантажуємо конструктор…'
   try {
-    const [list, registry, directory, me] = await Promise.all([
-      getAdminCurriculumLessons(), getAdminSubjectPacks(), getAdminCurriculumOutcomes(), getTeacherMe(),
+    const [list, registry, directory, me, boardList] = await Promise.all([
+      getAdminCurriculumLessons(), getAdminSubjectPacks(), getAdminCurriculumOutcomes(), getTeacherMe(), getBuilderBoards(),
     ])
     summaries = list.lessons
     packs = registry.packs
     outcomes = directory.outcomes
     owner = me.id
+    boards = boardList.boards
     if (!packs.length) throw new Error('Немає доступного предмета для уроку.')
-    try { inbox = await materialInbox(owner) } catch { inbox = [] }
-    filters.pack = packs[0]!.id
     loaded = true
     createLesson()
+    const remembered = rememberedBoard()
+    await openBoard(boards.find(b => b.id === remembered)?.id ?? boards[0]?.id ?? null)
+    await importBrowserInbox()
   } catch (err) {
     root().replaceChildren(el('p', 'adm-form-error', friendlyError((err as Error).message)), button('Спробувати ще раз', () => { void loadLessonBuilderTab() }))
   }
 }
 
+/** The pre-board library lived in this browser only; move it to the server once. */
+async function importBrowserInbox() {
+  let legacy: Awaited<ReturnType<typeof materialInbox>> = []
+  try { legacy = await materialInbox(owner) } catch { return }
+  if (!legacy.length) return
+  try {
+    const target = await ensureBoard()
+    let moved = 0
+    for (const item of legacy) {
+      const at = freeSpot(materials, { x: 0, y: 0 })
+      const { material } = await createBuilderMaterial(target, { title: item.title.slice(0, 200) || 'Матеріал', items: item.items, x: at.x, y: at.y })
+      materials.push(material)
+      moved++
+    }
+    await materialInbox(owner, [])
+    await refreshBoards()
+    renderBoard()
+    toast(`Перенесено ${moved} матеріал(и) з цього браузера на дошку «${boards.find(b => b.id === target)?.title ?? DEFAULT_BOARD}».`)
+  } catch (err) { report(err) }
+}
+
 function createLesson() {
   dropBoard()
-  const selectedPack = packs.find(p => p.id === filters.pack) ?? packs[0]!
-  lesson = newLesson({ id: `builder-${crypto.randomUUID()}`, title: 'Новий урок', grade: Number(filters.grade) || selectedPack.gradeRange.min, pack: selectedPack })
+  const selectedPack = packs.find(p => p.id === lesson?.subjectPackId) ?? packs[0]!
+  lesson = newLesson({ id: `builder-${crypto.randomUUID()}`, title: 'Новий урок', grade: selectedPack.gradeRange.min, pack: selectedPack })
   lesson.metadata.sourceRef = 'visual-builder'
   row = null
   dirty = false
   reserved = new Set()
   undo = []; redo = []
-  selected = lesson.blocks[0]?.id ?? null
   render()
 }
 function discardThen(run: () => void) {
   if (busy) return
-  if (dirty) showConfirm('Є незбережені зміни. Відкрити інший урок без збереження?', run)
+  if (dirty) showConfirm('Є незбережені зміни в уроці. Продовжити без збереження?', run)
   else run()
 }
 async function openSaved(id: string) {
@@ -208,521 +360,857 @@ async function openSaved(id: string) {
     dropBoard()
     row = result.lesson
     lesson = structuredClone(row.draftContent) as unknown as EditableLesson
-    filters.pack = lesson.subjectPackId
     dirty = false
     reserved = new Set((row.publishedSnapshot?.blocks as EditableBlock[] | undefined)?.map(b => b.id) ?? [])
     undo = []; redo = []
-    selected = lesson.blocks[0]?.id ?? null
     render()
   } catch (err) { report(err) }
 }
 
+// ── Layout ──
 function render() {
-  clearThumbnails(root())
-  root().querySelectorAll('[data-lesson]').forEach(node => visibleLessons.unobserve(node))
-  root().replaceChildren()
-  const header = el('div', 'admin-section-header')
-  const heading = el('div')
-  heading.append(el('h2', 'admin-section-title', 'Конструктор уроків'), el('p', 'admin-section-note', 'Оберіть матеріал → перетягніть у структуру уроку.'))
-  const actions = el('div', 'admin-section-actions')
-  actions.append(button('Новий урок', () => discardThen(createLesson)), button('Збережені уроки', showSaved), button('Оновити бібліотеку', () => { void refreshLibrary() }))
-  header.append(heading, actions)
-  const status = el('p', 'adm-field-hint')
-  status.id = 'lb-message'
-  status.setAttribute('role', 'status')
+  const host = root()
+  canvas?.destroy()
+  canvas = null
+  host.replaceChildren()
   const layout = el('div', 'lb-layout')
-  const library = el('section', 'lb-library')
-  library.setAttribute('aria-label', 'Бібліотека матеріалів')
-  const filterBar = el('div', 'lb-filters')
-  const search = field('Пошук матеріалів', filters.query, v => { filters.query = v; renderLibrary() })
-  search.querySelector('input')!.type = 'search'
-  filterBar.append(search,
-    picker('Предмет', packs.map(p => [p.id, p.title.uk]), filters.pack, v => { filters.pack = v; source = null; renderLibrary() }),
-    picker('Клас', [['', 'Усі класи'], ...Array.from({ length: 4 }, (_, i) => [String(i + 1), `${i + 1} клас`] as [string, string])], filters.grade, v => { filters.grade = v; renderLibrary() }),
-    field('Тема / модуль', filters.topic, v => { filters.topic = v; renderLibrary() }),
-    picker('Тип картки', [['', 'Усі типи'], ...BUILDER_KINDS.map(k => [k, KIND_LABELS[k]] as [string, string])], filters.kind, v => { filters.kind = v; renderLibrary() }),
-  )
-  const capture = el('div', 'lb-capture')
-  capture.tabIndex = 0
-  capture.setAttribute('aria-label', 'Додати матеріал: перетягніть файл або вставте посилання')
-  capture.append(el('span', 'lb-capture-hint', 'Файл або посилання: перетягніть сюди чи Ctrl+V'))
-  const types = el('div', 'lb-type-buttons')
-  for (const kind of BUILDER_KINDS.filter(k => k !== 'lesson')) types.append(button(`+ ${KIND_LABELS[kind]}`, () => { addMenu.open = false; addDialog(kind) }))
+
+  // Left: boards
+  const area = el('section', 'lb-board')
+  area.setAttribute('aria-label', 'Дошки матеріалів')
+  const tabs = el('div', 'lb-boardbar')
+  tabs.id = 'lb-boardbar'
+  const toolbar = el('div', 'lb-toolbar')
+  const search = el('input', 'adm-input lb-search')
+  search.type = 'search'
+  search.placeholder = 'Пошук по всіх дошках'
+  search.setAttribute('aria-label', 'Пошук матеріалів по всіх дошках')
+  search.value = query
+  search.addEventListener('input', () => scheduleSearch(search.value))
+  const chips = el('div', 'lb-chips')
+  chips.setAttribute('role', 'group')
+  chips.setAttribute('aria-label', 'Тип матеріалу')
+  chips.id = 'lb-chips'
   const upload = el('input', 'sr-only')
   upload.type = 'file'; upload.multiple = true
   upload.accept = 'image/png,image/jpeg,image/webp,application/pdf'
   upload.setAttribute('aria-label', 'Завантажити файли')
-  upload.addEventListener('change', () => { void captureFiles([...upload.files ?? []]); upload.value = '' })
-  types.append(button('Завантажити файли', () => upload.click()), upload)
-  const addMenu = el('details', 'lb-add-menu')
-  addMenu.append(el('summary', '', '+ Додати матеріал'), types)
-  types.append(el('p', 'lb-bank-note', 'PNG, JPEG, WebP, PDF — до 512 КіБ. Бібліотека матеріалів зберігається в цьому браузері; збережені уроки доступні з інших пристроїв.'))
-  capture.append(addMenu)
-  capture.addEventListener('dragover', event => { event.preventDefault(); capture.classList.add('lb-drop-active') })
-  capture.addEventListener('dragleave', () => capture.classList.remove('lb-drop-active'))
-  capture.addEventListener('drop', event => {
-    event.preventDefault(); capture.classList.remove('lb-drop-active')
-    const data = event.dataTransfer
-    if (!data || data.getData('application/x-rozumko-card')) return
-    if (data.files.length) void captureFiles([...data.files])
-    else captureTransfer(data)
+  upload.addEventListener('change', () => { void captureFiles([...upload.files ?? []], canvas?.centre() ?? { x: 0, y: 0 }); upload.value = '' })
+  const add = menu('Додати матеріал', [
+    ...MATERIAL_KINDS.map(kind => [KIND_LABELS[kind], () => addDialog(kind, 'board')] as [string, () => void]),
+    ['Файл з комп’ютера…', () => upload.click()],
+  ])
+  add.classList.add('lb-add')
+  add.querySelector('summary')!.textContent = '+ Додати'
+  add.querySelector('summary')!.className = 'btn-adm-emerald btn--sm'
+  toolbar.append(search, chips,
+    button('Упорядкувати', arrangeBoard), button('З уроків', () => { void toggleDrawer() }), add, upload)
+  const found = el('div', 'lb-found')
+  found.id = 'lb-found'
+  found.hidden = true
+  canvas = mountBoardCanvas({
+    label: 'Полотно матеріалів',
+    emptyHint: 'Перетягніть сюди файли, картинки чи посилання, вставте їх через Ctrl+V або натисніть «+ Додати».',
+    onOpen: id => { const m = materials.find(item => item.id === id); if (m) materialDialog(m) },
+    onMove: queuePositions,
+    onDelete: ids => { void removeMaterials(ids) },
+    // Several cards keep their reading order on the board: top to bottom, then left to right.
+    onDropOutside: (ids, client) => dropIntoLesson(client, () => materialBlocks(materials
+      .filter(m => ids.includes(m.id)).sort((a, b) => a.y - b.y || a.x - b.x))),
+    onDragOutside: client => markInsertion(client),
+    onExternalDrop: (data, at) => capture(data, at),
+    onPaste: (data, at) => capture(data, at),
   })
-  capture.addEventListener('paste', event => {
-    if ((event.target as Element).closest('input,textarea,[contenteditable]')) return
-    const data = event.clipboardData
-    if (!data) return
-    event.preventDefault()
-    if (data.files.length) void captureFiles([...data.files])
-    else captureTransfer(data)
-  })
-  const cards = el('div', 'lb-cards'); cards.id = 'lb-library-cards'
-  library.append(filterBar, capture, cards)
-  const sequence = el('section', 'lb-lesson')
-  sequence.setAttribute('aria-label', 'Послідовність уроку')
-  const settings = el('details', 'lb-settings')
-  settings.append(el('summary', '', 'Параметри уроку'))
-  const meta = el('div', 'lb-meta')
-  const titleField = field('Назва уроку', lesson!.title.uk, v => {
-    lesson!.title.uk = v; dirty = true
+  const stage = el('div', 'lb-stage')
+  const drawer = el('aside', 'lb-drawer')
+  drawer.id = 'lb-drawer'
+  drawer.hidden = true
+  drawer.setAttribute('aria-label', 'Картки з уроків')
+  stage.append(canvas.element, drawer)
+  area.append(tabs, toolbar, found, stage, el('p', 'lb-hint', 'Тягніть фон — рух полотном · Ctrl + колесо — масштаб · Shift + тягнути — виділити кілька · перетягніть картку в урок праворуч'))
+
+  // Right: lesson outline
+  const outline = el('section', 'lb-lesson')
+  outline.setAttribute('aria-label', 'Структура уроку')
+  const head = el('div', 'lb-lesson-head')
+  const title = el('input', 'adm-input lb-lesson-title')
+  title.value = lesson!.title.uk
+  title.setAttribute('aria-label', 'Назва уроку')
+  title.addEventListener('input', () => {
+    lesson!.title.uk = title.value
     const hero = lesson!.blocks.find(b => b.type === 'hero')
-    if (hero) { hero.content.title = { uk: v }; if (hero.presentation) hero.presentation.headline = { uk: v } }
-    renderSequence(); updateActions()
+    if (hero) { hero.content.title = { uk: title.value }; if (hero.presentation) hero.presentation.headline = { uk: title.value } }
+    dirty = true
+    updateActions()
   })
-  meta.append(picker('Предмет уроку', packs.map(p => [p.id, p.title.uk]), lesson!.subjectPackId, v => {
-    if (row || lesson!.blocks.length > 1) { message('Предмет можна змінити в новому порожньому уроці.', true); render(); return }
-    const p = packs.find(p => p.id === v)!
-    checkpoint(); lesson!.subjectPackId = v; lesson!.subject = p.subject; lesson!.grade = p.gradeRange.min; filters.pack = v; dirty = true; render()
-  }), picker('Клас уроку', Array.from({ length: pack().gradeRange.max - pack().gradeRange.min + 1 }, (_, i) => {
-    const g = pack().gradeRange.min + i; return [String(g), `${g} клас`] as [string, string]
-  }), String(lesson!.grade), v => { checkpoint(); lesson!.grade = Number(v); changed() }),
-  field('Тема / модуль уроку (латиницею)', lesson!.moduleId ?? '', v => { if (v.trim()) lesson!.moduleId = v.trim(); else delete lesson!.moduleId; dirty = true; updateActions() }))
-  const controls = el('div', 'lb-actions')
-  const undoButton = button('↶ Скасувати', () => historyMove(undo, redo)); undoButton.dataset.undo = ''
-  const redoButton = button('↷ Повторити', () => historyMove(redo, undo)); redoButton.dataset.redo = ''
-  undoButton.setAttribute('aria-label', '↶ Скасувати'); undoButton.title = 'Скасувати'; undoButton.textContent = '↶'
-  redoButton.setAttribute('aria-label', '↷ Повторити'); redoButton.title = 'Повторити'; redoButton.textContent = '↷'
-  const expand = button('Розширити урок', () => { layout.classList.toggle('lb-layout--wide'); expand.textContent = layout.classList.contains('lb-layout--wide') ? 'Звузити урок' : 'Розширити урок' })
-  controls.append(undoButton, redoButton)
-  settings.append(meta, expand, button('Експорт JSON', exportLesson))
-  const blocks = el('ol', 'lb-sequence'); blocks.id = 'lb-sequence'
-  blocks.addEventListener('dragover', e => e.preventDefault())
-  blocks.addEventListener('drop', event => {
-    if ((event.target as Element).closest('[data-block]')) return
-    event.preventDefault(); void dropCard(event.dataTransfer, lesson!.blocks.length)
-  })
+  // The hero thumbnail follows once typing is done, not on every keystroke.
+  title.addEventListener('change', () => renderSequence())
+  const undoButton = iconButton('Скасувати', '↶', () => historyMove(undo, redo)); undoButton.dataset.undo = ''
+  const redoButton = iconButton('Повторити', '↷', () => historyMove(redo, undo)); redoButton.dataset.redo = ''
+  head.append(title, undoButton, redoButton, menu('Дії з уроком', [
+    ['Новий урок', () => discardThen(createLesson)],
+    ['Відкрити урок…', openLessonDialog],
+    ['Параметри уроку…', settingsDialog],
+    ['Повний редактор', () => { void openFullEditor() }],
+    ['Експорт JSON', exportLesson],
+  ]))
+  const sequence = el('ol', 'lb-sequence')
+  sequence.id = 'lb-sequence'
+  sequence.setAttribute('aria-label', 'Кроки уроку')
+  const quick = el('div', 'lb-quick')
+  quick.append(button('+ Текстовий слайд', () => addDialog('text', 'lesson')), button('+ Завдання', addActivity))
   const footer = el('div', 'lb-footer')
   const saved = el('p', 'adm-field-hint'); saved.id = 'lb-save-state'; saved.setAttribute('role', 'status')
-  const save = button('Зберегти урок', () => { void saveLesson() }, 'btn-adm-emerald'); save.dataset.save = ''
-  const start = button('Розпочати урок', () => { void startLesson() }, 'btn-adm-violet'); start.dataset.start = ''
+  const save = button('Зберегти', () => { void saveLesson() }, 'btn-adm-slate'); save.dataset.save = ''
+  const start = button('Провести урок', conductDialog, 'btn-adm-emerald'); start.dataset.start = ''
   footer.append(saved, save, start)
-  const sequenceHead = el('div', 'lb-sequence-head')
-  sequenceHead.append(el('h3', '', 'Структура уроку'), controls)
-  sequence.append(sequenceHead, titleField, settings, blocks, footer)
-  layout.append(library, sequence)
+  outline.append(head, sequence, quick, footer)
+  layout.append(area, outline)
+
   const console = el('section', 'lb-console'); console.id = 'lb-console'; console.hidden = true
-  root().append(header, status, layout, console)
-  renderLibrary(); renderSequence(); updateActions()
+  host.append(el('h2', 'sr-only', 'Конструктор уроків'), layout, console)
+  renderBoardBar(); renderChips(); renderBoard(); renderSequence(); updateActions()
+  requestAnimationFrame(() => canvas?.fit())
 }
 
 function historyMove(from: EditableLesson[], to: EditableLesson[]) {
   if (!lesson || !from.length || busy) return
   to.push(structuredClone(lesson)); lesson = from.pop()!
-  selected = lesson.blocks.find(b => b.id === selected)?.id ?? lesson.blocks[0]?.id ?? null
-  dropBoard(); dirty = true; render()
+  dropBoard(); dirty = true
+  const title = root().querySelector<HTMLInputElement>('.lb-lesson-title')
+  if (title) title.value = lesson.title.uk
+  renderSequence(); updateActions()
 }
 
-async function refreshLibrary() {
-  try { summaries = (await getAdminCurriculumLessons()).lessons; sourceCache.clear(); failedSources.clear(); source = null; renderLibrary(); message('Бібліотеку оновлено.') }
-  catch (err) { report(err) }
+// ── Boards ──
+async function refreshBoards() {
+  boards = (await getBuilderBoards()).boards
+  renderBoardBar()
 }
-function matches(title: string, subject: string, grade: number, topic: string, kind: BuilderKind, checkQuery = true): boolean {
-  return (!filters.pack || subject === filters.pack) && (!filters.grade || grade === Number(filters.grade))
-    && (!filters.topic.trim() || `${topic} ${title}`.toLowerCase().includes(filters.topic.trim().toLowerCase()))
-    && (!filters.kind || kind === filters.kind) && (!checkQuery || !filters.query.trim() || title.toLowerCase().includes(filters.query.trim().toLowerCase()))
+async function openBoard(id: string | null) {
+  boardId = id
+  rememberBoard(id)
+  materials = []
+  renderBoardBar()
+  if (id) {
+    try { materials = (await getBuilderMaterials(id)).materials }
+    catch (err) { report(err) }
+  }
+  renderBoard()
+  canvas?.fit()
 }
-
-function thumb(block: EditableBlock, context = lesson!): HTMLElement {
-  const node = el('div', 'lb-thumb lb-thumb--' + blockKind(block))
-  node.setAttribute('aria-hidden', 'true')
-  const layer = el('div', 'lb-thumb-content')
-  // Only the projected view is used; answer keys and teacher notes are excluded.
-  const safe = withoutAnswerKeys({ ...context, blocks: [block] }) as unknown as LessonDefinition
-  const slide = presentationSlides(safe)[0]
-  const video = canvasItems(block).find(item => item.type === 'video')
-  if (video?.type === 'video') {
-    const image = el('img'); image.src = `https://i.ytimg.com/vi/${video.videoId}/hqdefault.jpg`; image.alt = ''; image.loading = 'lazy'; image.referrerPolicy = 'no-referrer'
-    layer.append(image)
-  } else if (blockKind(block) === 'learningapps' || blockKind(block) === 'pdf') {
-    layer.append(el('div', 'lb-thumb-symbol', blockKind(block) === 'pdf' ? 'PDF' : 'LearningApps'), el('strong', '', blockTitle(block)))
-  } else if (slide) layer.append(renderSlide(slide))
-  else layer.append(el('strong', '', blockTitle(block)))
-  layer.inert = true
-  layer.querySelectorAll('iframe').forEach(frame => { frame.loading = 'lazy' })
-  layer.querySelectorAll('img').forEach(image => { image.loading = 'lazy'; image.referrerPolicy = 'no-referrer' })
-  node.append(layer)
-  thumbnailObserver.observe(node)
-  return node
+async function ensureBoard(): Promise<string> {
+  if (boardId) return boardId
+  const existing = boards.find(b => b.title === DEFAULT_BOARD)
+  if (existing) { await openBoard(existing.id); return existing.id }
+  const { board: created } = await createBuilderBoard(DEFAULT_BOARD)
+  boards = [created, ...boards]
+  boardId = created.id
+  rememberBoard(created.id)
+  renderBoardBar()
+  return created.id
 }
-function materialCard(title: string, thumbnail: HTMLElement, payload: object, inspect: () => void) {
-  const card = el('article', 'lb-card')
-  card.tabIndex = 0; card.setAttribute('role', 'button'); card.setAttribute('aria-label', title)
-  card.append(thumbnail, el('h3', '', title))
-  draggable(card, payload)
-  card.addEventListener('click', inspect)
-  card.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); inspect() } })
-  return card
+function renderBoardBar() {
+  const bar = byId('lb-boardbar')
+  if (!bar) return
+  bar.replaceChildren()
+  const list = el('div', 'lb-boardtabs')
+  list.setAttribute('role', 'tablist')
+  list.setAttribute('aria-label', 'Дошки')
+  for (const item of boards) {
+    const tab = button(item.title, () => { if (item.id !== boardId) void openBoard(item.id) }, 'lb-boardtab')
+    tab.setAttribute('role', 'tab')
+    tab.setAttribute('aria-selected', String(item.id === boardId))
+    tab.title = `${item.title} · ${item.materialCount} матеріал(ів)`
+    list.append(tab)
+  }
+  bar.append(list, button('+ Дошка', newBoardDialog, 'lb-boardtab lb-boardtab--new'))
+  const current = boards.find(b => b.id === boardId)
+  if (current) bar.append(menu('Дії з дошкою', [
+    ['Перейменувати…', () => renameBoardDialog(current)],
+    ['Видалити дошку…', () => deleteBoard(current)],
+  ]))
 }
-function inspectMaterial(title: string, block: EditableBlock, context: EditableLesson, add: () => void, remove?: () => void) {
-  const { body, close } = modal(title)
-  const safe = withoutAnswerKeys({ ...context, blocks: [block] }) as unknown as LessonDefinition
-  const slide = presentationSlides(safe)[0]
-  const preview = el('div', 'lb-dialog-preview')
-  if (slide) preview.append(renderSlide(slide))
-  else preview.append(el('p', '', blockTitle(block)))
-  body.append(preview, button('Додати до уроку', () => { add(); close() }, 'btn-adm-emerald'))
-  if (remove) body.append(button('Прибрати з бібліотеки', () => { remove(); close() }))
-}
-async function cachedSource(id: string): Promise<EditableLesson> {
-  const cached = sourceCache.get(id)
-  if (cached) return cached
-  const pending = sourceRequests.get(id)
-  if (pending) return pending
-  const request = (async () => {
-    if (activeSourceRequests >= 4) await new Promise<void>(resolve => sourceWaiters.push(resolve))
-    activeSourceRequests++
+function newBoardDialog() {
+  const { body, close } = modal('Нова дошка')
+  let title = ''
+  const input = field('Назва дошки (тема)', '', v => { title = v })
+  const create = button('Створити', async () => {
+    if (!title.trim()) return
     try {
-      const definition = (await getAdminCurriculumLesson(id)).lesson.draftContent as unknown as EditableLesson
-      sourceCache.set(id, definition)
-      return definition
-    } finally {
-      activeSourceRequests--; sourceWaiters.shift()?.(); sourceRequests.delete(id)
-    }
-  })()
-  sourceRequests.set(id, request)
-  return request
+      const { board: created } = await createBuilderBoard(title.trim())
+      boards = [created, ...boards]
+      close()
+      await openBoard(created.id)
+    } catch (err) { report(err) }
+  }, 'btn-adm-emerald')
+  input.querySelector('input')!.addEventListener('keydown', event => { if (event.key === 'Enter') create.click() })
+  body.append(input, create)
+  input.querySelector('input')!.focus()
 }
-const visibleLessons = new IntersectionObserver(entries => {
-  for (const entry of entries) {
-    if (!entry.isIntersecting) continue
-    visibleLessons.unobserve(entry.target)
-    const card = entry.target as HTMLElement
-    const id = card.dataset.lesson!
-    void cachedSource(id).then(definition => {
-      if (!card.isConnected) return
-      const block = definition.blocks.find(b => b.views.presentation && b.type !== 'hero') ?? definition.blocks.find(b => b.views.presentation)
-      if (block) card.querySelector('.lb-thumb')?.replaceWith(thumb(block, definition))
-    }).catch(() => { card.title = 'Не вдалося завантажити перегляд. Натисніть, щоб повторити.' })
-  }
-})
-function renderLibrary() {
-  const host = document.getElementById('lb-library-cards')!
-  clearThumbnails(host)
-  host.querySelectorAll('[data-lesson]').forEach(node => visibleLessons.unobserve(node))
-  host.replaceChildren()
-  for (const material of inbox) {
-    const dummy = makeMaterial(lesson!, pack(), material.title, material.items)
-    if (!matches(material.title, material.subjectPackId, material.grade, material.topic, blockKind(dummy))) continue
-    host.append(materialCard(material.title, thumb(dummy), { inbox: material.id }, () => inspectMaterial(material.title, dummy, lesson!, () => addInbox(material), () => {
-      inbox = inbox.filter(m => m.id !== material.id); void persistInbox(); renderLibrary()
-    })))
-  }
-  if (source) {
-    const section = el('section', 'lb-source')
-    section.append(el('h3', '', 'Картки: ' + source.title.uk), button('До бібліотеки', () => { source = null; renderLibrary() }))
-    const grid = el('div', 'lb-cards')
-    for (const block of source.blocks) {
-      if (!matches(blockTitle(block), source.subjectPackId, source.grade, source.moduleId ?? '', blockKind(block))) continue
-      const context = source
-      grid.append(materialCard(blockTitle(block), thumb(block, context), { source: context.id, block: block.id }, () => inspectMaterial(blockTitle(block), block, context, () => addSource(context, [block]))))
-    }
-    section.append(grid); host.append(section)
-    return
-  }
-  for (const saved of summaries) {
-    // All metadata filters are conjunctive; a type filter never bypasses search/topic.
-    if (!matches(saved.title, saved.subjectPackId, saved.grade, saved.moduleId ?? '', filters.kind && filters.kind !== 'lesson' ? filters.kind as BuilderKind : 'lesson', !filters.kind || filters.kind === 'lesson')) continue
-    if (filters.kind && filters.kind !== 'lesson') {
-      const definition = sourceCache.get(saved.id)
-      if (!definition) {
-        if (failedSources.has(saved.id)) continue
-        if (!pendingSources.has(saved.id)) {
-          pendingSources.add(saved.id)
-          void cachedSource(saved.id).catch(err => { failedSources.add(saved.id); report(err) }).finally(() => {
-            pendingSources.delete(saved.id)
-            // Render the batch once instead of recreating every HTML frame per response.
-            if (!pendingSources.size) renderLibrary()
-          })
-        }
-        continue
-      }
-      for (const block of definition.blocks) {
-        if (!matches(`${blockTitle(block)} ${saved.title}`, saved.subjectPackId, saved.grade, saved.moduleId ?? '', blockKind(block))) continue
-        const card = materialCard(blockTitle(block), thumb(block, definition), { lesson: saved.id, block: block.id }, () => inspectMaterial(blockTitle(block), block, definition, () => addSource(definition, [block])))
-        host.append(card)
-      }
-      continue
-    }
-    const thumbnail = el('div', 'lb-thumb lb-thumb--lesson')
-    thumbnail.append(el('span', '', saved.title))
-    const card = materialCard(saved.title, thumbnail, { lesson: saved.id }, () => {
-      const { body, close } = modal(saved.title)
-      body.append(button('Переглянути картки', () => { close(); void loadSource(saved.id) }), button('Додати весь урок', () => { close(); void addSavedSource(saved.id) }, 'btn-adm-emerald'))
-    })
-    card.dataset.lesson = saved.id
-    host.append(card); visibleLessons.observe(card)
-  }
-  if (pendingSources.size && filters.kind && filters.kind !== 'lesson') host.append(el('p', 'adm-field-hint lb-loading', 'Завантажуємо картки з уроків…'))
-  if (failedSources.size && filters.kind && filters.kind !== 'lesson') host.append(el('p', 'adm-field-hint', 'Частину карток не завантажено. Натисніть «Оновити бібліотеку», щоб повторити.'))
-  if (!host.childElementCount) host.append(el('p', 'adm-field-hint', 'Немає матеріалів. Змініть фільтри або додайте свій.'))
+function renameBoardDialog(current: BuilderBoard) {
+  const { body, close } = modal('Перейменувати дошку')
+  let title = current.title
+  body.append(field('Назва дошки', title, v => { title = v }), button('Зберегти', async () => {
+    if (!title.trim()) return
+    try { await renameBuilderBoard(current.id, title.trim()); close(); await refreshBoards() } catch (err) { report(err) }
+  }, 'btn-adm-emerald'))
+}
+function deleteBoard(current: BuilderBoard) {
+  showConfirm(`Видалити дошку «${current.title}» разом з її матеріалами (${current.materialCount})? Уроки, куди ви їх уже додали, не зміняться.`, () => {
+    void (async () => {
+      try {
+        await deleteBuilderBoard(current.id)
+        boards = boards.filter(b => b.id !== current.id)
+        await openBoard(boards[0]?.id ?? null)
+      } catch (err) { report(err) }
+    })()
+  })
 }
 
-async function loadSource(id: string) {
-  try { source = await cachedSource(id); renderLibrary() }
-  catch (err) { report(err) }
-}
-async function addSavedSource(id: string) {
-  try { const src = await cachedSource(id); addSource(src, src.blocks) }
-  catch (err) { report(err) }
-}
-function addSource(src: EditableLesson, blocks: EditableBlock[]) {
-  if (busy) return
-  const before = structuredClone(lesson!)
-  try {
-    checkpoint()
-    const ids = appendSourceBlocks(lesson!, src, blocks, pack(), reserved)
-    if (lessonSize(lesson!) > 4 * 1024 * 1024) throw new Error('Урок перевищує 4 МіБ. Приберіть великі файли.')
-    selected = ids[0] ?? selected; changed()
-  } catch (err) { lesson = before; undo.pop(); report(err) }
-}
-function addInbox(material: BuilderMaterial) {
-  if (busy) return
-  if (material.subjectPackId !== lesson!.subjectPackId) { message('Матеріал належить іншому предмету.', true); return }
-  const block = makeMaterial(lesson!, pack(), material.title, material.items, reserved)
-  appendMaterial(block)
-}
-function appendMaterial(block: EditableBlock) {
-  if (lesson!.blocks.length >= 60) { message('Максимум 60 карток в одному уроці.', true); return }
-  checkpoint(); lesson!.blocks.push(block)
-  if (lessonSize(lesson!) > 4 * 1024 * 1024) { lesson = undo.pop()!; message('Урок перевищує 4 МіБ. Приберіть великі файли.', true); return }
-  selected = block.id; changed()
+function renderChips() {
+  const chips = byId('lb-chips')
+  if (!chips) return
+  chips.replaceChildren()
+  for (const kind of ['', ...MATERIAL_KINDS] as (BuilderMaterialKind | '')[]) {
+    const chip = button(kind ? KIND_LABELS[kind] : 'Усі', () => { kindFilter = kind; renderChips(); paintMatches() }, 'lb-chip')
+    chip.setAttribute('aria-pressed', String(kindFilter === kind))
+    chips.append(chip)
+  }
 }
 
-function renderSequence() {
-  const host = document.getElementById('lb-sequence')!
-  clearThumbnails(host)
-  host.replaceChildren()
-  for (const [index, block] of lesson!.blocks.entries()) {
-    const item = el('li', `lb-step${selected === block.id ? ' lb-step--selected' : ''}`)
-    item.dataset.block = block.id
-    draggable(item, { move: block.id })
-    let after = false
-    item.addEventListener('dragover', event => {
-      event.preventDefault(); event.stopPropagation()
-      after = event.clientY > item.getBoundingClientRect().top + item.offsetHeight / 2
-      item.classList.toggle('lb-insert-before', !after); item.classList.toggle('lb-insert-after', after)
-    })
-    item.addEventListener('dragleave', event => { if (!item.contains(event.relatedTarget as Node)) item.classList.remove('lb-insert-before', 'lb-insert-after') })
-    item.addEventListener('drop', event => {
-      event.preventDefault(); event.stopPropagation(); item.classList.remove('lb-insert-before', 'lb-insert-after')
-      void dropCard(event.dataTransfer, index + (after ? 1 : 0))
-    })
-    const choose = button((index + 1) + '. ' + blockTitle(block), () => {
-      selected = block.id
-      host.querySelectorAll('.lb-step--open').forEach(node => { if (node !== item) node.classList.remove('lb-step--open') })
-      item.classList.toggle('lb-step--open')
-      host.querySelectorAll('.lb-step').forEach(node => node.classList.toggle('lb-step--selected', node === item))
-      host.querySelectorAll('.lb-step-title').forEach(node => node.setAttribute('aria-pressed', String(node === choose)))
-      choose.setAttribute('aria-expanded', String(item.classList.contains('lb-step--open')))
-      if (presenting) board?.follow(block.id)
-    }, 'lb-step-title')
-    choose.setAttribute('aria-expanded', 'false')
-    choose.setAttribute('aria-pressed', String(selected === block.id))
-    const actions = el('div', 'lb-step-actions')
-    const up = button('↑', () => reorder(index, index - 1)); up.disabled = index === 0; up.setAttribute('aria-label', `Перемістити картку ${index + 1} вище`)
-    const down = button('↓', () => reorder(index, index + 1)); down.disabled = index === lesson!.blocks.length - 1; down.setAttribute('aria-label', `Перемістити картку ${index + 1} нижче`)
-    actions.append(button('Переглянути', () => {
-      const { body } = modal(blockTitle(block))
-      const safe = withoutAnswerKeys(lesson!) as unknown as LessonDefinition
-      const slide = presentationSlides(safe).find(s => s.blockId === block.id)
-      if (slide) { const preview = el('div', 'lb-dialog-preview'); preview.append(renderSlide(slide)); body.append(preview) }
-      else body.append(el('p', '', 'Ця картка не показується на проєкторі.'))
-    }), button('Редагувати', () => editBlock(block)), button('Копія', () => addSource(lesson!, [block])), up, down, button('Видалити', () => {
-      checkpoint(); reserved.add(block.id); lesson!.blocks.splice(index, 1); selected = lesson!.blocks[Math.min(index, lesson!.blocks.length - 1)]?.id ?? null; changed()
-    }))
-    const badges = [block.views.presentation ? 'Проєктор' : '', block.views.remote ? 'Пристрої учнів' : '', block.type === 'teacher-note' ? 'Лише вчитель' : ''].filter(Boolean)
-    item.append(thumb(block), choose, actions)
-    item.title = badges.join(' · ')
-    host.append(item)
-  }
-  if (!lesson!.blocks.length) host.append(el('li', 'adm-field-hint', 'Додайте або перетягніть картку з бібліотеки.'))
+function renderBoard() {
+  if (!canvas || !lesson) return
+  canvas.setCards(materials.map((material): CanvasCard => ({
+    id: material.id, x: material.x, y: material.y, title: material.title, version: material.updatedAt,
+    render: () => thumb(materialBlock(material)),
+  })))
+  paintMatches()
 }
-function reorder(from: number, to: number) {
-  if (busy || from === to || to < 0 || to >= lesson!.blocks.length) return
-  checkpoint(); moveBlockTo(lesson!, from, to); changed()
+
+// ── Search and filters: dim the board, list matches from other boards ──
+function scheduleSearch(value: string) {
+  query = value.trim()
+  if (searchTimer !== null) window.clearTimeout(searchTimer)
+  searchTimer = window.setTimeout(() => { void runSearch() }, 250)
 }
-async function dropCard(data: DataTransfer | null, index: number) {
-  if (!data || busy) return
-  const raw = data.getData('application/x-rozumko-card')
-  if (!raw) {
-    if (data.files.length) await captureFiles([...data.files])
-    else captureTransfer(data)
-    return
-  }
+async function runSearch() {
+  const seq = ++searchSeq
+  if (query.length < 2) { searchResults = null; paintMatches(); return }
   try {
-    const card = JSON.parse(raw)
-    if (typeof card.move === 'string') { const from = lesson!.blocks.findIndex(b => b.id === card.move); if (from >= 0) reorder(from, Math.min(index > from ? index - 1 : index, lesson!.blocks.length - 1)); return }
-    const count = lesson!.blocks.length
-    if (typeof card.inbox === 'string') { const m = inbox.find(m => m.id === card.inbox); if (m) addInbox(m) }
-    else if (typeof card.lesson === 'string') { const src = await cachedSource(card.lesson); addSource(src, typeof card.block === 'string' ? src.blocks.filter(b => b.id === card.block) : src.blocks) }
-    else if (source?.id === card.source) { const b = source.blocks.find(b => b.id === card.block); if (b) addSource(source, [b]) }
-    if (index < count && lesson!.blocks.length > count) {
-      const appended = lesson!.blocks.splice(count)
-      lesson!.blocks.splice(index, 0, ...appended)
-      changed()
-    }
+    const { materials: found } = await searchBuilderMaterials(query)
+    if (seq !== searchSeq) return
+    searchResults = found
+    paintMatches()
+  } catch (err) { report(err) }
+}
+function paintMatches() {
+  if (!canvas) return
+  const byQuery = searchResults ? new Set(searchResults.map(m => m.id)) : null
+  const active = byQuery !== null || kindFilter !== ''
+  const ids = materials.filter(m => (!kindFilter || m.kind === kindFilter) && (!byQuery || byQuery.has(m.id))).map(m => m.id)
+  canvas.setMatches(active ? new Set(ids) : null)
+  const found = byId('lb-found')
+  if (!found) return
+  found.replaceChildren()
+  const elsewhere = (searchResults ?? []).filter(m => m.boardId !== boardId && (!kindFilter || m.kind === kindFilter))
+  found.hidden = !active
+  if (!active) return
+  const summary = el('p', 'lb-found__summary', `На цій дошці: ${ids.length}${searchResults ? ` · на інших дошках: ${elsewhere.length}` : ''}`)
+  if (ids.length) summary.append(button('Показати знайдені', () => canvas?.fit(ids), 'lb-link'))
+  found.append(summary)
+  if (!elsewhere.length) return
+  const strip = el('div', 'lb-found__strip')
+  for (const material of elsewhere) {
+    const card = el('button', 'lb-mini')
+    card.type = 'button'
+    card.title = `${material.title} · дошка «${material.boardTitle ?? ''}»`
+    card.setAttribute('aria-label', card.title)
+    card.append(thumb(materialBlock(material)))
+    pointerDrag(card, {
+      click: () => materialDialog(material),
+      drop: client => { dropIntoLesson(client, () => [materialBlock(material)]) },
+    })
+    strip.append(card)
+  }
+  found.append(strip)
+}
+
+// ── Materials ──
+function queuePositions(positions: Placed[]) {
+  for (const position of positions) {
+    pendingPositions.set(position.id, position)
+    const material = materials.find(m => m.id === position.id)
+    if (material) { material.x = position.x; material.y = position.y }
+  }
+  if (positionsTimer !== null) window.clearTimeout(positionsTimer)
+  positionsTimer = window.setTimeout(() => { void flushPositions() }, 400)
+}
+async function flushPositions() {
+  positionsTimer = null
+  if (!boardId || !pendingPositions.size) return
+  const batch = [...pendingPositions.values()]
+  pendingPositions.clear()
+  try { await saveBuilderPositions(boardId, batch) }
+  catch (err) { report(err) }
+}
+function arrangeBoard() {
+  if (!canvas || !materials.length) return
+  const rank = (m: BuilderMaterial) => MATERIAL_KINDS.indexOf(m.kind)
+  const order = [...materials].sort((a, b) => rank(a) - rank(b) || a.title.localeCompare(b.title, 'uk')).map(m => m.id)
+  queuePositions(canvas.arrange(order))
+}
+
+async function createMaterial(title: string, items: CanvasItem[], at: Point): Promise<BuilderMaterial | null> {
+  try {
+    const target = await ensureBoard()
+    const spot = freeSpot(materials, at)
+    const { material } = await createBuilderMaterial(target, { title: title.slice(0, 200) || 'Матеріал', items, x: spot.x, y: spot.y })
+    if (target === boardId) { materials.push(material); renderBoard() }
+    void refreshBoards()
+    toast(`«${material.title}» на дошці.`, { action: ['Додати в урок', () => appendToLesson([materialBlock(material)], lesson!.blocks.length)] })
+    return material
+  } catch (err) { report(err); return null }
+}
+async function removeMaterials(ids: string[]) {
+  const removed = materials.filter(m => ids.includes(m.id))
+  if (!removed.length) return
+  try {
+    await deleteBuilderMaterials(ids)
+    materials = materials.filter(m => !ids.includes(m.id))
+    renderBoard()
+    void refreshBoards()
+    const target = boardId!
+    toast(removed.length === 1 ? `«${removed[0]!.title}» видалено.` : `Видалено матеріалів: ${removed.length}.`, {
+      action: ['Повернути', () => {
+        void (async () => {
+          for (const m of removed) {
+            try {
+              const { material } = await createBuilderMaterial(target, { title: m.title, items: m.items, x: m.x, y: m.y })
+              if (target === boardId) materials.push(material)
+            } catch (err) { report(err) }
+          }
+          renderBoard(); void refreshBoards()
+        })()
+      }],
+    })
   } catch (err) { report(err) }
 }
 
-function modal(title: string) {
-  const overlay = el('div', 'question-modal-overlay cl-overlay')
-  overlay.setAttribute('role', 'dialog'); overlay.setAttribute('aria-modal', 'true'); overlay.setAttribute('aria-label', title)
-  const card = el('div', 'question-modal-card cl-overlay__card lb-dialog')
-  const header = el('div', 'cl-overlay__head')
-  const body = el('div', 'cl-overlay__body')
-  const opener = document.activeElement as HTMLElement | null
-  let removeTrap = () => {}
-  let beforeClose = () => {}
-  const close = () => { beforeClose(); removeTrap(); overlay.remove(); opener?.focus() }
-  header.append(el('h3', '', title), button('Закрити', close))
-  card.append(header, body); overlay.append(card); document.body.append(overlay)
-  removeTrap = createFocusTrap(overlay, close)
-  header.querySelector('button')!.focus()
-  return { body, card, close, onClose: (callback: () => void) => { beforeClose = callback } }
-}
-
-function addDialog(kind: BuilderKind) {
-  if (!lesson || busy) return
-  if (kind === 'activity') {
-    const block = newBlock('activity', lesson, pack(), reserved)
-    appendMaterial(block); editBlock(block); return
-  }
-  const { body, card, close } = modal(`Додати: ${KIND_LABELS[kind]}`)
-  if (kind === 'html') card.classList.add('lb-dialog--html')
-  let title = KIND_LABELS[kind]
-  let value = kind === 'html' ? '<h1>Привіт, клас!</h1>\n<p>Мій матеріал уроку</p>' : ''
-  body.append(field('Назва картки / опис', title, v => { title = v }))
-  const content = field(kind === 'html' ? 'HTML, CSS та JavaScript' : kind === 'text' ? 'Текст картки' : 'Посилання на матеріал', value, v => { value = v }, kind === 'html' || kind === 'text')
-  if (kind === 'html') {
-    content.querySelector('textarea')!.classList.add('adm-input--code')
-    content.querySelector('textarea')!.maxLength = 65_536
-  }
-  body.append(content)
-  const preview = el('div', 'lb-dialog-preview')
-  const error = el('p', 'adm-form-error'); error.setAttribute('role', 'alert')
-  const read = (): CanvasItem[] => {
-    if (!title.trim() || title.length > 200) throw new Error('Додайте назву картки (до 200 символів).')
-    if (!value.trim()) throw new Error('Додайте вміст картки.')
-    if (kind === 'html') return [{ type: 'html', html: value }]
-    if (kind === 'text') {
-      const lines = value.split(/\n\s*\n/).filter(v => v.trim())
-      if (lines.length > 20 || lines.some(v => v.length > 2000)) throw new Error('До 20 абзаців, кожен до 2000 символів.')
-      return lines.map(text => ({ type: 'paragraph', text: { uk: text } }))
-    }
-    return [resourceItem(value, kind, title)]
-  }
-  if (kind === 'html') body.append(el('p', 'adm-field-hint', 'Код працює в ізольованій картці. Підтримуються вбудовані CSS та JavaScript; зовнішні бібліотеки, мережеві запити й доступ до платформи недоступні.'), button('Оновити перегляд HTML', () => {
-    try { preview.replaceChildren(renderCanvasItems(read(), 'teacher')); error.textContent = '' } catch (err) { error.textContent = (err as Error).message }
-  }))
-  if (kind === 'link') body.append(el('p', 'adm-field-hint', 'Звичайний сайт відкривається окремо. Для показу всередині уроку використайте YouTube, LearningApps або HTML-картку.'))
-  body.append(preview, error, button('Додати картку', () => {
-    try { const items = read(); captureMaterial(title, items); close() } catch (err) { error.textContent = (err as Error).message }
-  }, 'btn-adm-emerald'))
-}
-
-async function persistInbox() {
-  try { await materialInbox(owner, inbox) } catch { message('Матеріали додано, але браузер не зберіг бібліотеку. Збережіть урок на сервері.', true) }
-}
-function captureMaterial(title: string, items: CanvasItem[]) {
-  const material: BuilderMaterial = {
-    id: crypto.randomUUID(), title, items: structuredClone(items), subjectPackId: filters.pack || lesson!.subjectPackId,
-    grade: Number(filters.grade) || lesson!.grade, topic: filters.topic,
-  }
-  inbox.unshift(material); void persistInbox(); renderLibrary(); addInbox(material)
-  message(material.topic ? 'Картку додано до бібліотеки й уроку.' : 'Картку додано. Тему можна уточнити в параметрах уроку.')
-}
-async function captureFiles(files: File[]) {
-  if (busy) return
-  for (const file of files) {
-    try { captureMaterial(file.name.slice(0, 200), [await fileItem(file)]) } catch (err) { report(err); break }
-  }
-}
-function captureTransfer(data: DataTransfer) {
+function capture(data: DataTransfer, at: Point) {
+  if (data.files.length) { void captureFiles([...data.files], at); return }
   try {
     const html = data.getData('text/html')
     const doc = html ? new DOMParser().parseFromString(html, 'text/html') : null
     const image = doc?.querySelector('img[src]')
     const raw = image?.getAttribute('src') ?? data.getData('text/uri-list').split('\n').find(v => v && !v.startsWith('#')) ?? data.getData('text/plain')
     const label = image?.getAttribute('alt')?.slice(0, 200) || doc?.querySelector('a')?.textContent?.trim().slice(0, 200) || 'Новий матеріал'
-    captureMaterial(label, [resourceItem(raw, image ? 'image' : undefined, label)])
+    void createMaterial(label, [resourceItem(raw, image ? 'image' : undefined, label)], at)
   } catch (err) { report(err) }
+}
+async function captureFiles(files: File[], at: Point) {
+  for (const file of files) {
+    try { await createMaterial(file.name.replace(/\.[a-z0-9]+$/i, '').slice(0, 200), [await fileItem(file)], at) }
+    catch (err) { report(err) }
+  }
+}
+
+function materialDialog(material: BuilderMaterial) {
+  const { body, close } = modal(material.title, { wide: true })
+  body.append(preview(materialBlock(material), lesson!))
+  const actions = el('div', 'lb-dialog-actions')
+  actions.append(
+    button('Додати в урок', () => { appendToLesson([materialBlock(material)], lesson!.blocks.length); close() }, 'btn-adm-emerald'),
+    button('Редагувати', () => { close(); addDialog(material.kind, 'board', material) }, 'btn-adm-slate'),
+  )
+  if (material.boardId === boardId) actions.append(button('Видалити', () => { close(); void removeMaterials([material.id]) }, 'btn-adm-ghost'))
+  else actions.append(button(`Відкрити дошку «${material.boardTitle ?? ''}»`, () => {
+    close()
+    void openBoard(material.boardId).then(() => canvas?.focusCard(material.id))
+  }, 'btn-adm-ghost'))
+  const others = boards.filter(b => b.id !== material.boardId)
+  if (others.length) {
+    const move = picker('Перемістити на дошку', [['', 'Оберіть дошку'], ...others.map(b => [b.id, b.title] as [string, string])], '', async target => {
+      if (!target) return
+      try {
+        const spot = freeSpot([], { x: 0, y: 0 })
+        await updateBuilderMaterial(material.id, { boardId: target, x: spot.x, y: spot.y })
+        materials = materials.filter(m => m.id !== material.id)
+        renderBoard(); void refreshBoards(); close()
+        toast(`«${material.title}» перенесено на дошку «${boards.find(b => b.id === target)?.title ?? ''}».`)
+      } catch (err) { report(err) }
+    })
+    move.classList.add('lb-move')
+    actions.append(move)
+  }
+  body.append(actions)
+}
+
+// ── Adding and editing a material (board) or a text slide (lesson) ──
+const EXTERNAL_CODE = /<script[^>]+src\s*=|<link[^>]+href\s*=\s*["']?https?:|@import|(?:src|href)\s*=\s*["']?https?:\/\/|fetch\(|XMLHttpRequest/i
+
+function addDialog(kind: BuilderKind, target: 'board' | 'lesson', existing?: BuilderMaterial) {
+  if (!lesson || busy) return
+  const editing = existing !== undefined
+  let dirtyForm = false
+  const { body, card, close } = modal(editing ? `Редагувати: ${existing.title}` : `Додати: ${KIND_LABELS[kind]}`, { wide: kind === 'html', guard: () => !dirtyForm })
+  if (kind === 'html') card.classList.add('lb-dialog--html')
+  const current = existing?.items ?? []
+  const firstHtml = current.find(item => item.type === 'html')
+  const urlItem = current.find(item => item.type !== 'paragraph' && item.type !== 'heading' && item.type !== 'html' && item.type !== 'file')
+  let title = existing?.title ?? ''
+  let value = kind === 'html'
+    ? (firstHtml?.type === 'html' ? firstHtml.html : '<h1>Привіт, клас!</h1>\n<p>Мій матеріал уроку</p>')
+    : kind === 'text'
+      ? current.filter(item => item.type === 'paragraph').map(item => item.type === 'paragraph' ? item.text.uk : '').join('\n\n')
+      : urlItem ? urlValue(urlItem) : ''
+  const hasFile = current.some(item => item.type === 'file')
+  const titleField = field(kind === 'text' ? 'Заголовок слайда' : 'Назва', title, v => { title = v; dirtyForm = true })
+  body.append(titleField)
+  const preview = el('div', 'lb-dialog-preview')
+  const error = el('p', 'adm-form-error'); error.setAttribute('role', 'alert')
+  const warning = el('p', 'adm-field-hint lb-warning')
+  const read = (): CanvasItem[] => {
+    if (!title.trim() || title.length > 200) throw new Error('Додайте назву (до 200 символів).')
+    if (hasFile && editing) return current
+    if (!value.trim()) throw new Error('Додайте вміст.')
+    if (kind === 'html') return [{ type: 'html', html: value }]
+    if (kind === 'text') {
+      const lines = value.split(/\n\s*\n/).filter(v => v.trim())
+      if (lines.length > 20 || lines.some(v => v.length > 2000)) throw new Error('До 20 абзаців, кожен до 2000 символів.')
+      return lines.map(text => ({ type: 'paragraph', text: { uk: text.trim() } }))
+    }
+    return [resourceItem(value, kind, title)]
+  }
+  const refresh = () => {
+    try {
+      preview.replaceChildren(renderCanvasItems(read(), 'teacher'))
+      error.textContent = ''
+    } catch (err) { preview.replaceChildren(); error.textContent = (err as Error).message }
+    warning.textContent = kind === 'html' && EXTERNAL_CODE.test(value)
+      ? 'Зовнішні бібліотеки, шрифти, картинки за посиланням і мережеві запити в картці не завантажаться. Вбудуйте CSS і JavaScript у код.'
+      : ''
+  }
+  let timer: number | null = null
+  const later = () => { if (timer !== null) window.clearTimeout(timer); timer = window.setTimeout(refresh, 500) }
+  if (!(hasFile && editing)) {
+    const label = kind === 'html' ? 'HTML, CSS та JavaScript' : kind === 'text' ? 'Текст (абзаци через порожній рядок)' : 'Посилання'
+    const content = field(label, value, v => { value = v; dirtyForm = true; later() }, kind === 'html' || kind === 'text')
+    if (kind === 'html') {
+      const area = content.querySelector('textarea')!
+      area.classList.add('adm-input--code'); area.maxLength = 65_536; area.spellcheck = false
+    }
+    body.append(content)
+    if (kind === 'image' || kind === 'pdf') {
+      const upload = el('input', 'sr-only')
+      upload.type = 'file'
+      upload.accept = kind === 'pdf' ? 'application/pdf' : 'image/png,image/jpeg,image/webp'
+      upload.addEventListener('change', () => {
+        const file = upload.files?.[0]
+        if (!file) return
+        void fileItem(file).then(item => {
+          dirtyForm = false
+          close()
+          const name = title.trim() || file.name.replace(/\.[a-z0-9]+$/i, '')
+          if (target === 'lesson') appendToLesson([makeMaterial(lesson!, pack(), name, [item], reserved)], lesson!.blocks.length)
+          else void createMaterial(name, [item], canvas?.centre() ?? { x: 0, y: 0 })
+        }, err => { error.textContent = (err as Error).message })
+      })
+      body.append(el('p', 'adm-field-hint', 'або'), button(kind === 'pdf' ? 'Обрати PDF з комп’ютера' : 'Обрати зображення з комп’ютера', () => upload.click()), upload,
+        el('p', 'adm-field-hint', kind === 'pdf' ? 'PDF до 512 КіБ. Більші файли додайте посиланням.' : 'Великі фото автоматично стискаються.'))
+    }
+    if (kind === 'link') body.append(el('p', 'adm-field-hint', 'Звичайний сайт відкривається окремою вкладкою. Всередині уроку показуються YouTube, LearningApps і HTML-картки.'))
+  }
+  body.append(warning, preview, error)
+  const save = button(editing ? 'Зберегти' : target === 'lesson' ? 'Додати в урок' : 'Додати на дошку', () => {
+    let items: CanvasItem[]
+    try { items = read() } catch (err) { error.textContent = (err as Error).message; return }
+    dirtyForm = false
+    close()
+    if (editing) {
+      void updateBuilderMaterial(existing.id, { title: title.trim(), items }).then(({ material }) => {
+        materials = materials.map(m => m.id === material.id ? material : m)
+        renderBoard()
+      }, report)
+    } else if (target === 'lesson') {
+      appendToLesson([makeMaterial(lesson!, pack(), title.trim(), items, reserved)], lesson!.blocks.length)
+    } else void createMaterial(title.trim(), items, canvas?.centre() ?? { x: 0, y: 0 })
+  }, 'btn-adm-emerald')
+  body.append(save)
+  if (value || editing) refresh()
+  titleField.querySelector('input')!.focus()
+}
+function urlValue(item: CanvasItem): string {
+  switch (item.type) {
+    case 'video': return `https://www.youtube.com/watch?v=${item.videoId}`
+    case 'learningapps': return `https://learningapps.org/watch?v=p${item.appId}`
+    case 'image': return item.src
+    case 'link': case 'pdf': return item.url
+    default: return ''
+  }
+}
+
+// ── "From lessons" drawer: every saved lesson's cards, grouped by lesson ──
+async function toggleDrawer() {
+  const drawer = byId('lb-drawer')
+  if (!drawer) return
+  if (!drawer.hidden) { drawer.hidden = true; return }
+  drawer.hidden = false
+  if (!cardIndex) {
+    drawer.replaceChildren(el('p', 'adm-field-hint', 'Завантажуємо картки з уроків…'))
+    try { cardIndex = (await getAdminCurriculumCards()).lessons }
+    catch (err) { report(err); drawer.hidden = true; return }
+  }
+  renderDrawer()
+}
+const lazyThumbs = new IntersectionObserver(entries => {
+  for (const entry of entries) {
+    if (!entry.isIntersecting) continue
+    lazyThumbs.unobserve(entry.target)
+    ;(entry.target as HTMLElement & { renderThumb?: () => void }).renderThumb?.()
+  }
+})
+function renderDrawer() {
+  const drawer = byId('lb-drawer')
+  if (!drawer || !cardIndex || !lesson) return
+  const head = el('div', 'lb-drawer__head')
+  const search = el('input', 'adm-input lb-search')
+  search.type = 'search'
+  search.placeholder = 'Урок або картка'
+  search.setAttribute('aria-label', 'Пошук у картках уроків')
+  search.value = drawerQuery
+  search.addEventListener('input', () => { drawerQuery = search.value; renderDrawerBody() })
+  const chips = el('div', 'lb-chips')
+  chips.setAttribute('role', 'group')
+  chips.setAttribute('aria-label', 'Тип картки')
+  for (const kind of ['', ...LESSON_KINDS] as (BuilderKind | '')[]) {
+    const chip = button(kind ? KIND_LABELS[kind] : 'Усі', () => { drawerKind = kind; renderDrawer() }, 'lb-chip')
+    chip.setAttribute('aria-pressed', String(drawerKind === kind))
+    chips.append(chip)
+  }
+  head.append(el('h3', '', 'Картки з уроків'), iconButton('Закрити', '×', () => { drawer.hidden = true }), search, chips)
+  const list = el('div', 'lb-drawer__body')
+  list.id = 'lb-drawer-body'
+  drawer.replaceChildren(head, list)
+  renderDrawerBody()
+}
+function renderDrawerBody() {
+  const list = byId('lb-drawer-body')
+  if (!list || !cardIndex || !lesson) return
+  list.querySelectorAll('.lb-mini').forEach(node => lazyThumbs.unobserve(node))
+  list.replaceChildren()
+  const needle = drawerQuery.trim().toLowerCase()
+  let shown = 0
+  for (const entry of cardIndex) {
+    const definition = entry.definition as unknown as EditableLesson
+    if (definition.subjectPackId !== lesson.subjectPackId) continue
+    const lessonMatch = !needle || definition.title.uk.toLowerCase().includes(needle)
+    const blocks = definition.blocks.filter(block => block.type !== 'hero'
+      && (!drawerKind || blockKind(block) === drawerKind)
+      && (lessonMatch || blockTitle(block).toLowerCase().includes(needle)))
+    if (!blocks.length) continue
+    const group = el('details', 'lb-group')
+    group.open = Boolean(needle || drawerKind)
+    const summary = el('summary', '', `${definition.grade} кл. · ${definition.title.uk}`)
+    summary.append(el('span', 'lb-group__count', String(blocks.length)))
+    const grid = el('div', 'lb-group__grid')
+    const fill = () => {
+      if (grid.childElementCount) return
+      for (const block of blocks) {
+        const card = el('button', 'lb-mini') as HTMLButtonElement & { renderThumb?: () => void }
+        card.type = 'button'
+        card.title = blockTitle(block)
+        card.setAttribute('aria-label', `${blockTitle(block)} · ${definition.title.uk}`)
+        card.renderThumb = () => card.append(thumb(block, definition))
+        lazyThumbs.observe(card)
+        pointerDrag(card, {
+          click: () => lessonCardDialog(entry.id, definition, block),
+          drop: client => { void dropLessonCard(entry.id, block.id, client) },
+        })
+        grid.append(card)
+      }
+    }
+    group.addEventListener('toggle', () => { if (group.open) fill() })
+    if (group.open) fill()
+    group.append(summary, grid)
+    list.append(group)
+    shown++
+  }
+  if (!shown) list.append(el('p', 'adm-field-hint', 'Нічого не знайдено. Змініть пошук або тип.'))
+}
+async function fullSource(id: string): Promise<EditableLesson> {
+  const cached = sourceCache.get(id)
+  if (cached) return cached
+  const definition = (await getAdminCurriculumLesson(id)).lesson.draftContent as unknown as EditableLesson
+  sourceCache.set(id, definition)
+  return definition
+}
+async function dropLessonCard(lessonId: string, blockId: string, client: Point) {
+  const index = sequenceIndexAt(client)
+  const onBoard = index === null ? canvas?.worldAt(client) ?? null : null
+  if (index === null && !onBoard) return
+  try {
+    const source = await fullSource(lessonId)
+    const block = source.blocks.find(b => b.id === blockId)
+    if (!block) return
+    if (index !== null) addSource(source, [block], index)
+    else if (block.type === 'canvas' && !block.activity) void createMaterial(blockTitle(block), canvasItems(block), onBoard!)
+    else toast('На дошку можна покласти лише матеріали. Завдання додавайте прямо в урок.', { error: true })
+  } catch (err) { report(err) }
+}
+function lessonCardDialog(lessonId: string, definition: EditableLesson, block: EditableBlock) {
+  const { body, close } = modal(blockTitle(block), { wide: true })
+  body.append(el('p', 'adm-field-hint', `З уроку: ${definition.grade} кл. · ${definition.title.uk}`), preview(block, definition))
+  const actions = el('div', 'lb-dialog-actions')
+  actions.append(button('Додати в урок', () => {
+    close()
+    void fullSource(lessonId).then(source => {
+      const full = source.blocks.find(b => b.id === block.id)
+      if (full) addSource(source, [full], lesson!.blocks.length)
+    }, report)
+  }, 'btn-adm-emerald'))
+  if (block.type === 'canvas' && !block.activity) actions.append(button('На дошку', () => {
+    close()
+    void fullSource(lessonId).then(source => {
+      const full = source.blocks.find(b => b.id === block.id)
+      if (full) void createMaterial(blockTitle(full), canvasItems(full), canvas?.centre() ?? { x: 0, y: 0 })
+    }, report)
+  }, 'btn-adm-slate'))
+  body.append(actions)
+}
+
+// ── Pointer drag from a panel into the lesson (or onto the board) ──
+function pointerDrag(node: HTMLElement, handlers: { click(): void; drop(client: Point): void }) {
+  node.addEventListener('pointerdown', event => {
+    if (event.button !== 0) return
+    const start = { x: event.clientX, y: event.clientY }
+    let ghost: HTMLElement | null = null
+    node.setPointerCapture(event.pointerId)
+    const move = (e: PointerEvent) => {
+      if (!ghost && Math.hypot(e.clientX - start.x, e.clientY - start.y) < 5) return
+      if (!ghost) {
+        ghost = el('div', 'bc-ghost')
+        ghost.append(node.firstElementChild?.cloneNode(true) ?? el('span'))
+        document.body.append(ghost)
+      }
+      ghost.style.left = `${e.clientX + 8}px`
+      ghost.style.top = `${e.clientY + 8}px`
+      markInsertion({ x: e.clientX, y: e.clientY })
+    }
+    const up = (e: PointerEvent) => {
+      node.removeEventListener('pointermove', move)
+      node.removeEventListener('pointerup', up)
+      node.removeEventListener('pointercancel', up)
+      markInsertion(null)
+      if (!ghost) { if (e.type === 'pointerup') handlers.click(); return }
+      ghost.remove()
+      if (e.type === 'pointerup') handlers.drop({ x: e.clientX, y: e.clientY })
+    }
+    node.addEventListener('pointermove', move)
+    node.addEventListener('pointerup', up)
+    node.addEventListener('pointercancel', up)
+  })
+  node.addEventListener('click', event => { if (event.detail === 0) handlers.click() })
+}
+
+// ── Lesson outline ──
+function sequenceIndexAt(client: Point): number | null {
+  const list = byId('lb-sequence')
+  if (!list || !lesson) return null
+  const box = list.getBoundingClientRect()
+  if (client.x < box.left || client.x > box.right || client.y < box.top - 24 || client.y > box.bottom + 24) return null
+  const steps = [...list.querySelectorAll<HTMLElement>('.lb-step')]
+  const index = steps.findIndex(step => { const r = step.getBoundingClientRect(); return client.y < r.top + r.height / 2 })
+  return index === -1 ? lesson.blocks.length : index
+}
+function markInsertion(client: Point | null) {
+  const list = byId('lb-sequence')
+  if (!list) return
+  list.querySelectorAll('.lb-insert-before').forEach(node => node.classList.remove('lb-insert-before'))
+  list.classList.remove('lb-sequence--target', 'lb-insert-end')
+  const index = client ? sequenceIndexAt(client) : null
+  if (index === null) return
+  list.classList.add('lb-sequence--target')
+  const steps = list.querySelectorAll<HTMLElement>('.lb-step')
+  if (index < steps.length) steps[index]!.classList.add('lb-insert-before')
+  else list.classList.add('lb-insert-end')
+}
+function dropIntoLesson(client: Point, blocks: () => EditableBlock[]): boolean {
+  const index = sequenceIndexAt(client)
+  if (index === null) return false
+  appendToLesson(blocks(), index)
+  return true
+}
+function appendToLesson(blocks: EditableBlock[], index: number) {
+  if (!lesson || busy || !blocks.length) return
+  if (lesson.blocks.length + blocks.length > 60) { toast('В одному уроці може бути не більше 60 карток.', { error: true }); return }
+  checkpoint()
+  lesson.blocks.splice(index, 0, ...blocks)
+  if (lessonSize(lesson) > MAX_LESSON_BYTES) {
+    lesson = undo.pop()!
+    toast('Урок перевищує 4 МіБ. Приберіть великі файли.', { error: true })
+    return
+  }
+  changed()
+}
+function addSource(source: EditableLesson, blocks: EditableBlock[], index: number) {
+  if (!lesson || busy) return
+  const before = structuredClone(lesson)
+  try {
+    checkpoint()
+    const count = lesson.blocks.length
+    appendSourceBlocks(lesson, source, blocks, pack(), reserved)
+    if (lessonSize(lesson) > MAX_LESSON_BYTES) throw new Error('Урок перевищує 4 МіБ. Приберіть великі файли.')
+    if (index < count) lesson.blocks.splice(index, 0, ...lesson.blocks.splice(count))
+    changed()
+  } catch (err) { lesson = before; undo.pop(); report(err) }
+}
+function addActivity() {
+  if (!lesson || busy) return
+  const block = newBlock('activity', lesson, pack(), reserved)
+  appendToLesson([block], lesson.blocks.length)
+  editActivity(block, true)
+}
+
+function renderSequence() {
+  const host = byId('lb-sequence')
+  if (!host || !lesson) return
+  host.replaceChildren()
+  for (const [index, block] of lesson.blocks.entries()) {
+    const item = el('li', 'lb-step')
+    item.dataset.block = block.id
+    const card = el('button', 'lb-step__card')
+    card.type = 'button'
+    const title = blockTitle(block)
+    const shown = [block.views.presentation ? 'проєктор' : '', block.views.remote ? 'пристрої' : ''].filter(Boolean).join(' + ') || 'лише вчитель'
+    card.title = `${index + 1}. ${title} · ${shown}`
+    card.setAttribute('aria-label', card.title)
+    card.append(el('span', 'lb-step__number', String(index + 1)), thumb(block))
+    pointerDrag(card, {
+      click: () => stepDialog(block.id),
+      drop: client => {
+        const to = sequenceIndexAt(client)
+        const from = lesson!.blocks.findIndex(b => b.id === block.id)
+        if (to === null || from < 0) return
+        reorder(from, to > from ? to - 1 : to)
+      },
+    })
+    item.append(card)
+    host.append(item)
+  }
+  if (!lesson.blocks.length) host.append(el('li', 'lb-sequence__empty', 'Перетягніть сюди картки з дошки.'))
+}
+function reorder(from: number, to: number) {
+  if (!lesson || busy || from === to || to < 0 || to >= lesson.blocks.length) return
+  checkpoint(); moveBlockTo(lesson, from, to); changed()
+}
+
+function stepDialog(blockId: string) {
+  if (!lesson) return
+  const index = lesson.blocks.findIndex(b => b.id === blockId)
+  const block = lesson.blocks[index]
+  if (!block) return
+  const { body, close } = modal(`${index + 1}. ${blockTitle(block)}`, { wide: true })
+  body.append(preview(block, lesson))
+  const actions = el('div', 'lb-dialog-actions')
+  const up = button('↑ Вище', () => { reorder(index, index - 1); close(); stepDialog(blockId) })
+  up.disabled = index === 0
+  const down = button('↓ Нижче', () => { reorder(index, index + 1); close(); stepDialog(blockId) })
+  down.disabled = index === lesson.blocks.length - 1
+  actions.append(
+    button('Редагувати', () => { close(); editBlock(block) }, 'btn-adm-emerald'),
+    button('Копія', () => { close(); addSource(lesson!, [block], index + 1) }),
+    up, down,
+    button('Видалити з уроку', () => {
+      close(); checkpoint(); reserved.add(block.id); lesson!.blocks.splice(index, 1); changed()
+      toast(`«${blockTitle(block)}» прибрано з уроку.`, { action: ['Повернути', () => historyMove(undo, redo)] })
+    }),
+  )
+  body.append(actions)
+  if (block.type !== 'teacher-note') {
+    const mode = block.views.presentation && block.views.remote ? 'both' : block.views.remote ? 'devices' : block.views.presentation ? 'board' : 'none'
+    const show = picker('Де показувати', [
+      ['board', 'Проєктор'], ['devices', 'Пристрої учнів'], ['both', 'Проєктор і пристрої'], ['none', 'Лише вчителю'],
+    ], mode, value => {
+      checkpoint()
+      setShow(block, value)
+      changed()
+    })
+    show.classList.add('lb-show')
+    body.append(show)
+  }
+}
+function setShow(block: EditableBlock, value: string) {
+  const onDevices = value === 'devices' || value === 'both'
+  if (block.type === 'canvas' && onDevices && !(block.content.student as CanvasItem[]).length) block.content.student = structuredClone(block.content.board)
+  setOnBoard(block, value === 'board' || value === 'both')
+  setOnDevices(block, onDevices)
 }
 
 function editBlock(block: EditableBlock) {
-  if (busy) return
+  if (busy || !lesson) return
   if (block.activity) { editActivity(block); return }
   const working = structuredClone(block)
-  if (working.type !== 'canvas' && CONVERTIBLE_TYPES.has(working.type)) convertToCanvas(working, lesson!)
-  const { body, card, close, onClose } = modal(`Редагувати: ${blockTitle(block)}`)
-  let title = blockTitle(block)
-  body.append(field('Назва картки', title, v => { title = v; working.content.heading = { uk: v } }))
+  if (working.type !== 'canvas' && CONVERTIBLE_TYPES.has(working.type)) convertToCanvas(working, lesson)
+  let touched = false
+  const { body, card, close, onClose } = modal(`Редагувати: ${blockTitle(block)}`, { wide: true, guard: () => !touched })
+  body.append(field('Назва картки', blockTitle(block), v => { working.content.heading = { uk: v }; touched = true }))
   const htmlItems = canvasItems(working)
+  const apply = () => {
+    touched = false
+    close()
+    checkpoint()
+    Object.assign(block, working)
+    changed()
+  }
   if (htmlItems.length === 1 && htmlItems[0]!.type === 'html') {
     card.classList.add('lb-dialog--html')
     let code = htmlItems[0]!.html
-    const codeField = field('HTML, CSS та JavaScript', code, v => { code = v }, true)
-    const area = codeField.querySelector('textarea')!; area.classList.add('adm-input--code'); area.maxLength = 65_536
-    const preview = el('div', 'lb-dialog-preview')
-    const refresh = () => preview.replaceChildren(renderCanvasItems([{ type: 'html', html: code }], 'teacher'))
-    body.append(codeField, button('Оновити перегляд HTML', refresh), preview)
-    refresh()
-    body.append(button('Застосувати', () => {
-      if (!code.trim() || !title.trim()) return
-      checkpoint()
+    const codeField = field('HTML, CSS та JavaScript', code, v => { code = v; touched = true; later() }, true)
+    const area = codeField.querySelector('textarea')!; area.classList.add('adm-input--code'); area.maxLength = 65_536; area.spellcheck = false
+    const view = el('div', 'lb-dialog-preview')
+    const warning = el('p', 'adm-field-hint lb-warning')
+    const error = el('p', 'adm-form-error'); error.setAttribute('role', 'alert')
+    const refresh = () => {
+      view.replaceChildren(renderCanvasItems([{ type: 'html', html: code }], 'teacher'))
+      warning.textContent = EXTERNAL_CODE.test(code) ? 'Зовнішні бібліотеки, шрифти, картинки за посиланням і мережеві запити в картці не завантажаться.' : ''
+    }
+    let timer: number | null = null
+    const later = () => { if (timer !== null) window.clearTimeout(timer); timer = window.setTimeout(refresh, 500) }
+    body.append(codeField, warning, view, error, button('Застосувати', () => {
+      if (!code.trim()) { error.textContent = 'Код не може бути порожнім.'; return }
       for (const surface of ['teacher', 'board', 'student']) {
         if ((working.content[surface] as CanvasItem[]).length) working.content[surface] = [{ type: 'html', html: code }]
       }
-      Object.assign(block, working); close(); changed()
+      apply()
     }, 'btn-adm-emerald'))
+    refresh()
   } else if (working.type === 'canvas') {
     let surface: 'teacher' | 'board' | 'student' = 'board'
     const editorHost = el('div')
-    body.append(editorHost, button('Застосувати', () => {
-      checkpoint(); close(); Object.assign(block, working); changed()
-    }, 'btn-adm-emerald'))
+    body.append(editorHost, button('Застосувати', apply, 'btn-adm-emerald'))
     editorHost.textContent = 'Завантажуємо редактор…'
     void import('./curriculum-canvas-editor.js').then(({ renderCanvasEditor, disposeCanvasEditors }) => {
       if (!editorHost.isConnected) return
       onClose(() => disposeCanvasEditors(editorHost))
       const refresh = () => editorHost.replaceChildren(renderCanvasEditor(working, {
-        selected: surface, select: s => { surface = s; refresh() }, touched: () => {}, changed: refresh, viewsChanged: () => {},
+        selected: surface, select: s => { surface = s; refresh() }, touched: () => { touched = true }, changed: () => { touched = true; refresh() }, viewsChanged: () => {},
       }))
       refresh()
     }, () => { editorHost.textContent = 'Не вдалося завантажити редактор. Оновіть сторінку.' })
   } else {
     body.append(el('p', 'adm-field-hint', 'Для цього службового блоку доступні повні налаштування в розділі «Уроки».'), button('Відкрити повний редактор', () => { close(); void openFullEditor() }))
   }
-  body.append(checkbox('Показувати на проєкторі', working.views.presentation, value => setOnBoard(working, value)),
-    checkbox('Показувати учням під час цього кроку', working.views.remote, value => {
-      if (working.type === 'canvas' && value && !(working.content.student as CanvasItem[]).length) working.content.student = structuredClone(working.content.board)
-      setOnDevices(working, value)
-    }))
 }
 
-function editActivity(block: EditableBlock) {
-  checkpoint()
+/** Opening the dialog records one undo step; an unchanged dialog leaves none behind. */
+function editActivity(block: EditableBlock, justAdded = false) {
+  if (!lesson) return
+  const before = JSON.stringify(lesson)
+  if (!justAdded) checkpoint()
   const touch = () => { dirty = true; updateActions() }
   const dialog = openActivityDialog({
-    lesson: lesson!, block, mechanicLabels: MECHANIC_LABELS, pack: pack(),
+    lesson, block, mechanicLabels: MECHANIC_LABELS, pack: pack(),
     outcomeCode: id => outcomes.find(o => o.id === id)?.code ?? id,
     outcomeTitle: id => outcomes.find(o => o.id === id)?.titleUk ?? id,
     outcomePicker: onPick => picker('Результат навчання', [['', 'Оберіть вміння'], ...outcomes.filter(o => o.status === 'active' && o.subjectPackId === lesson!.subjectPackId).map(o => [o.id, `${o.code}: ${o.titleUk}`] as [string, string])], '', id => { if (id) onPick(id) }),
@@ -730,15 +1218,60 @@ function editActivity(block: EditableBlock) {
     removeOutcome: id => { removeActivityOutcome(lesson!, lesson!.blocks.indexOf(block), id); touch() },
     switchMechanic: (mechanic, done) => {
       const apply = () => { block.activity = activityTemplate(mechanic, block.activity!.instanceId, pack()); touch(); done() }
-      showConfirm('Замінити тип активності? Її поточні запитання буде замінено шаблоном.', apply)
+      showConfirm('Замінити тип завдання? Його поточні запитання буде замінено шаблоном.', apply)
     },
-    contentFields: () => field('Назва активності', blockTitle(block), v => { block.content.heading = { uk: v }; touch() }),
+    contentFields: () => field('Назва завдання', blockTitle(block), v => { block.content.heading = { uk: v }; touch() }),
     slideFields: () => null,
     jsonFields: () => el('p', 'adm-field-hint', 'Розширені налаштування доступні в повному редакторі «Уроки».'),
-    touched: touch, changed: () => { touch(); dialog.refresh() }, closed: changed,
+    touched: touch, changed: () => { touch(); dialog.refresh() },
+    closed: () => {
+      if (!justAdded && JSON.stringify(lesson) === before) undo.pop()
+      changed()
+    },
   })
 }
 
+// ── Lesson dialogs ──
+function openLessonDialog() {
+  const { body, close } = modal('Відкрити урок', { wide: true })
+  const list = el('div', 'lb-saved')
+  let needle = ''
+  const paint = () => {
+    list.replaceChildren()
+    const rows = summaries.filter(s => !needle || s.title.toLowerCase().includes(needle))
+    for (const summary of rows.slice(0, 200)) {
+      const item = button(`${summary.grade} кл. · ${summary.title}`, () => { close(); discardThen(() => { void openSaved(summary.id) }) }, 'lb-saved-row')
+      item.append(el('span', 'adm-field-hint', summary.status === 'published' ? 'Опубліковано' : 'Чернетка'))
+      list.append(item)
+    }
+    if (!rows.length) list.append(el('p', 'adm-field-hint', 'Уроків не знайдено.'))
+  }
+  const search = field('Пошук', '', v => { needle = v.trim().toLowerCase(); paint() })
+  body.append(search, list)
+  paint()
+  search.querySelector('input')!.focus()
+}
+function settingsDialog() {
+  if (!lesson) return
+  const { body } = modal('Параметри уроку')
+  const empty = !row && lesson.blocks.length <= 1
+  const grades = Array.from({ length: pack().gradeRange.max - pack().gradeRange.min + 1 }, (_, i) => {
+    const g = pack().gradeRange.min + i
+    return [String(g), `${g} клас`] as [string, string]
+  })
+  if (empty) body.append(picker('Предмет', packs.map(p => [p.id, p.title.uk]), lesson.subjectPackId, v => {
+    const p = packs.find(item => item.id === v)!
+    checkpoint(); lesson!.subjectPackId = v; lesson!.subject = p.subject; lesson!.grade = p.gradeRange.min; changed()
+  }))
+  body.append(picker('Клас', grades, String(lesson.grade), v => { checkpoint(); lesson!.grade = Number(v); changed() }))
+  const modules = [...new Set(summaries.filter(s => s.subjectPackId === lesson!.subjectPackId && s.grade === lesson!.grade && s.moduleId).map(s => s.moduleId!))].sort()
+  body.append(picker('Модуль', [['', 'Без модуля'], ...modules.map(m => [m, m] as [string, string])], lesson.moduleId ?? '', v => {
+    if (v) lesson!.moduleId = v; else delete lesson!.moduleId
+    dirty = true; updateActions()
+  }))
+}
+
+// ── Saving and conducting ──
 async function saveLesson(): Promise<boolean> {
   if (!lesson || busy) return false
   busy = true; updateActions()
@@ -747,58 +1280,76 @@ async function saveLesson(): Promise<boolean> {
     row = result.lesson
     lesson = structuredClone(row.draftContent) as unknown as EditableLesson
     sourceCache.set(row.id, structuredClone(lesson))
+    cardIndex = null
     dirty = false
-    const summary = { ...row }
-    summaries = [...summaries.filter(s => s.id !== row!.id), summary]
-    source = null
-    renderLibrary(); renderSequence()
-    message('Урок збережено на сервері. Його картки доступні в бібліотеці.')
+    summaries = [...summaries.filter(s => s.id !== row!.id), { ...row }]
+    renderSequence()
+    toast('Урок збережено.')
     return true
   } catch (err) { report(err); return false }
   finally { busy = false; updateActions() }
 }
+function conductDialog() {
+  if (!lesson?.blocks.length) return
+  const { body, close } = modal('Провести урок')
+  const option = (title: string, note: string, run: () => void) => {
+    const node = button(title, () => { close(); run() }, 'lb-choice')
+    node.append(el('span', 'lb-choice__note', note))
+    return node
+  }
+  body.append(
+    option('Лише проєктор', 'Показ слайдів на екрані класу. Учні нічого не відкривають.', () => { void startLesson() }),
+    option('З класом', 'Учні приєднуються з пристроїв, виконують завдання, ви бачите результати. Урок буде опубліковано.', () => { void conductWithStudents() }),
+  )
+}
 async function startLesson() {
   if (busy || !lesson?.blocks.length) return
+  // A save already runs every server-side check.
   if ((dirty || !row) && !await saveLesson()) return
-  try {
-    const validation = await validateAdminCurriculumLesson(lesson, row!.id)
-    if (!validation.ok) { message(validation.issues.map(describeLessonIssue).join(' · '), true); return }
-    startPresentation()
-  } catch (err) { report(err) }
+  if (!dirty && row) {
+    try {
+      const validation = await validateAdminCurriculumLesson(lesson, row.id)
+      if (!validation.ok) { toast(validation.issues.map(describeLessonIssue).join(' · '), { error: true }); return }
+    } catch (err) { report(err); return }
+  }
+  startPresentation()
 }
 function startPresentation() {
   dropBoard()
   const safe = withoutAnswerKeys(lesson!) as unknown as LessonDefinition
   const slides = presentationSlides(safe)
-  if (!slides.length) { message('Увімкніть показ на проєкторі хоча б для однієї картки.', true); return }
+  if (!slides.length) { toast('Увімкніть показ на проєкторі хоча б для однієї картки.', { error: true }); return }
   presenting = true
   root().querySelector<HTMLElement>('.lb-layout')!.hidden = true
-  const host = document.getElementById('lb-console')!
+  const host = byId('lb-console')!
   host.replaceChildren(); host.hidden = false
+  let selected = slides[0]!.blockId
   board = mountBoardWindow(safe, {
     ...(row?.status === 'published' && !dirty ? { check: (instanceId, answer) => checkCurriculumActivity(row!.id, instanceId, answer) } : {}),
-    onSlideChange: id => { selected = id; renderSequence(); highlight() },
+    onSlideChange: id => { selected = id; highlight() },
   })
   const rail = el('div', 'lb-console-rail')
   for (const slide of slides) {
-    const btn = button(blockTitle(slide.block as unknown as EditableBlock), () => { selected = slide.blockId; board!.follow(slide.blockId); renderSequence(); highlight() }, 'lb-console-card')
+    const btn = button(blockTitle(slide.block as unknown as EditableBlock), () => { selected = slide.blockId; board!.follow(slide.blockId); highlight() }, 'lb-console-card')
     btn.dataset.slide = slide.blockId
     btn.prepend(thumb(slide.block as unknown as EditableBlock)); rail.append(btn)
   }
   const highlight = () => rail.querySelectorAll<HTMLButtonElement>('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.slide === selected)))
   highlight()
-  host.append(el('h3', '', 'Пульт уроку'), board.element, rail,
-    button('Провести з учнями', () => { void conductWithStudents() }, 'btn-adm-emerald'),
-    el('p', 'adm-field-hint', 'Проведення з учнями використовує опубліковану версію та наявну панель класу: приєднання, запуск завдань і результати.'),
-    button('Повернутися до конструктора', () => { dropBoard(); host.hidden = true; root().querySelector<HTMLElement>('.lb-layout')!.hidden = false }))
+  const actions = el('div', 'lb-dialog-actions')
+  actions.append(
+    button('Повернутися до конструктора', () => { dropBoard(); host.hidden = true; root().querySelector<HTMLElement>('.lb-layout')!.hidden = false }, 'btn-adm-slate'),
+    button('Провести з класом', () => { void conductWithStudents() }, 'btn-adm-emerald'),
+  )
+  host.append(el('h3', '', 'Пульт уроку'), board.element, rail, actions)
   host.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 async function conductWithStudents() {
-  if (busy || !row) return
-  if (dirty) { message('Збережіть зміни та розпочніть урок знову.', true); return }
+  if (busy || !lesson) return
+  if ((dirty || !row) && !await saveLesson()) return
   const navigate = () => { location.href = `lesson-engine.html?lesson=${encodeURIComponent(row!.id)}` }
-  if (row.status === 'published') { navigate(); return }
-  showConfirm('Опублікувати цю версію уроку та відкрити панель проведення з учнями? Опублікований урок стане доступним учителям.', () => {
+  if (row!.status === 'published') { navigate(); return }
+  showConfirm('Опублікувати цю версію уроку та відкрити панель проведення з класом? Опублікований урок стане доступним учителям.', () => {
     void (async () => {
       busy = true; updateActions()
       try {
@@ -810,17 +1361,6 @@ async function conductWithStudents() {
       finally { busy = false; updateActions() }
     })()
   })
-}
-function showSaved() {
-  const { body, close } = modal('Збережені уроки')
-  if (!summaries.length) body.append(el('p', '', 'Збережених уроків ще немає.'))
-  for (const summary of summaries) {
-    const item = el('div', 'lb-saved-row')
-    item.append(el('strong', '', summary.title), el('span', 'adm-field-hint', `${summary.grade} клас · ${summary.status === 'published' ? 'Опубліковано' : 'Чернетка'}`), button('Відкрити', () => {
-      close(); discardThen(() => { void openSaved(summary.id) })
-    }))
-    body.append(item)
-  }
 }
 async function openFullEditor() {
   if ((dirty || !row) && !await saveLesson()) return
