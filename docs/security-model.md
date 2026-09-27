@@ -239,6 +239,21 @@ Saved lessons remain server-owned, revisioned, and key-stripped at every
 teacher/student/projector boundary. Unpublished drafts can be presented by
 the admin, but student runs still require an explicitly published snapshot.
 
+Builder **boards** (`/api/admin/builder`, migration `0062`) replace the
+browser-only material inbox. `builder_boards` and `builder_materials` have RLS
+enabled with no policies and are reachable only through the flag-gated,
+admin-only routes. Every query is scoped to `owner_id = req.user.id`, so a
+foreign board or material is indistinguishable from a missing one; moving a
+material requires owning the target board. All IDs are UUID-validated and
+canvas coordinates are bounded integers, before auth or database access.
+Material content goes through the same fail-closed canvas-item validator as a
+lesson (`canvasItemIssues`), capped at 1 MiB per material and 300 per board.
+Scored activities and answer keys are never stored on a board. Search matches a
+server-derived lower-case `search_text` (titles and visible text, never file
+payloads or HTML code) with `%`/`_` escaped. `GET /api/admin/curriculum/cards`
+returns draft blocks for the builder's card library with embedded file payloads
+emptied; it is admin-only like every other curriculum admin route.
+
 Canvas media is scoped in the CSP to `admin.html`, `lesson-engine.html`,
 `lesson-board.html` and `lesson-join.html`. By editorial decision, images may
 come from any https host (or a site path): those pages allow `img-src https:`,

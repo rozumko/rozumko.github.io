@@ -2,6 +2,7 @@ import type {
   ActivityFeedback,
   ActivityResult,
   BoardAnswer,
+  CanvasItem,
   CurriculumLessonSummary,
   LessonAttemptResponse,
   LessonDefinition,
@@ -1274,6 +1275,84 @@ export function getAdminCurriculumLessons(): Promise<{ lessons: AdminCurriculumL
 
 export function getAdminCurriculumLesson(id: string): Promise<{ lesson: AdminCurriculumLesson }> {
   return authRequest(`/api/admin/curriculum/lessons/${encodeURIComponent(id)}`)
+}
+
+/** Every draft's blocks for the builder's card library; embedded file payloads are empty. */
+export interface AdminCurriculumCardLesson {
+  id: string
+  status: CurriculumLessonStatus
+  editVersion: number
+  definition: Record<string, unknown>
+}
+
+export function getAdminCurriculumCards(): Promise<{ lessons: AdminCurriculumCardLesson[] }> {
+  return authRequest('/api/admin/curriculum/cards')
+}
+
+// ── Lesson Builder boards: owner-scoped topic boards of collected materials ──
+
+export type BuilderMaterialKind = 'text' | 'image' | 'video' | 'learningapps' | 'pdf' | 'html' | 'link'
+
+export interface BuilderBoard {
+  id: string
+  title: string
+  updatedAt: string
+  materialCount: number
+}
+
+export interface BuilderMaterial {
+  id: string
+  boardId: string
+  title: string
+  kind: BuilderMaterialKind
+  items: CanvasItem[]
+  x: number
+  y: number
+  updatedAt: string
+  /** Present in cross-board search results. */
+  boardTitle?: string
+}
+
+const builderPath = (path: string) => `/api/admin/builder${path}`
+
+export function getBuilderBoards(): Promise<{ boards: BuilderBoard[] }> {
+  return authRequest(builderPath('/boards'))
+}
+
+export function createBuilderBoard(title: string): Promise<{ board: BuilderBoard }> {
+  return authRequest(builderPath('/boards'), { method: 'POST', body: JSON.stringify({ title }) })
+}
+
+export function renameBuilderBoard(id: string, title: string): Promise<{ board: Pick<BuilderBoard, 'id' | 'title' | 'updatedAt'> }> {
+  return authRequest(builderPath(`/boards/${encodeURIComponent(id)}`), { method: 'PATCH', body: JSON.stringify({ title }) })
+}
+
+export function deleteBuilderBoard(id: string): Promise<void> {
+  return authRequest(builderPath(`/boards/${encodeURIComponent(id)}`), { method: 'DELETE' })
+}
+
+export function getBuilderMaterials(boardId: string): Promise<{ materials: BuilderMaterial[] }> {
+  return authRequest(builderPath(`/boards/${encodeURIComponent(boardId)}/materials`))
+}
+
+export function searchBuilderMaterials(query: string): Promise<{ materials: BuilderMaterial[] }> {
+  return authRequest(builderPath(`/materials?q=${encodeURIComponent(query)}`))
+}
+
+export function createBuilderMaterial(boardId: string, material: { title: string; items: CanvasItem[]; x: number; y: number }): Promise<{ material: BuilderMaterial }> {
+  return authRequest(builderPath(`/boards/${encodeURIComponent(boardId)}/materials`), { method: 'POST', body: JSON.stringify(material) })
+}
+
+export function updateBuilderMaterial(id: string, changes: Partial<Pick<BuilderMaterial, 'title' | 'items' | 'x' | 'y' | 'boardId'>>): Promise<{ material: BuilderMaterial }> {
+  return authRequest(builderPath(`/materials/${encodeURIComponent(id)}`), { method: 'PATCH', body: JSON.stringify(changes) })
+}
+
+export function saveBuilderPositions(boardId: string, positions: { id: string; x: number; y: number }[]): Promise<void> {
+  return authRequest(builderPath(`/boards/${encodeURIComponent(boardId)}/positions`), { method: 'PUT', body: JSON.stringify({ positions }) })
+}
+
+export function deleteBuilderMaterials(ids: string[]): Promise<{ deleted: string[] }> {
+  return authRequest(builderPath('/materials/delete'), { method: 'POST', body: JSON.stringify({ ids }) })
 }
 
 /** Runs every save-time check without storing anything. */

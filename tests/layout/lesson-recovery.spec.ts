@@ -6,6 +6,9 @@ import { studentActivityView } from '../../backend/src/lib/lesson-live'
 import { findSubjectPack } from '../../backend/src/lib/subject-packs'
 import { studentPresentationSlide } from '../../backend/src/lib/lesson-student-material'
 
+// Background checkpoints are throttled (first send ~0.5 s, then at most one per 3 s).
+const SAVED = { timeout: 10_000 }
+
 const lesson = JSON.parse(readFileSync(new URL('../../backend/src/lib/curriculum-fixtures/g2-m2-l8.lesson.json', import.meta.url), 'utf8')) as LessonDefinitionV1
 const classify: ActivitySpec = {
   instanceId: 'recovery-classify', mechanic: 'classify', telemetry: 'practice',
@@ -85,7 +88,7 @@ test('partial classification survives reload and an offline edit is replayed whe
   await join(page, LAPTOP)
   const first = page.locator('.le-interactive__question').first().getByRole('radio').first()
   await first.check()
-  await expect.poll(() => state.accepted).toBeGreaterThan(0)
+  await expect.poll(() => state.accepted, SAVED).toBeGreaterThan(0)
   await page.reload()
   await expect(first).toBeChecked()
   state.offline = true
@@ -94,14 +97,14 @@ test('partial classification survives reload and an offline edit is replayed whe
   await page.reload()
   await expect(second).toBeChecked()
   state.offline = false
-  await expect.poll(() => state.progress?.selection).toEqual({ 'keyboard': 'output' })
+  await expect.poll(() => state.progress?.selection, SAVED).toEqual({ 'keyboard': 'output' })
 })
 
 test('the laptop stays running while the tablet resumes; stale laptop writes and submissions cannot replace tablet work', async ({ page: laptop, context }) => {
   const state = await recoveryServer(context)
   await join(laptop, LAPTOP)
   await laptop.locator('.le-interactive__question').first().getByRole('radio').first().check()
-  await expect.poll(() => state.accepted).toBeGreaterThan(0)
+  await expect.poll(() => state.accepted, SAVED).toBeGreaterThan(0)
   const tablet = await context.newPage()
   state.devices.set(LAPTOP, { lessonRunStudentId: null, assignmentVersion: 2 })
   state.devices.set(TABLET, { lessonRunStudentId: STUDENT, assignmentVersion: 1 })
@@ -109,7 +112,7 @@ test('the laptop stays running while the tablet resumes; stale laptop writes and
   await join(tablet, TABLET)
   await expect(tablet.locator('.le-interactive__question').first().getByRole('radio').first()).toBeChecked()
   await tablet.locator('.le-interactive__question').first().getByRole('radio').nth(1).check()
-  await expect.poll(() => state.progress?.selection).toEqual({ 'keyboard': 'output' })
+  await expect.poll(() => state.progress?.selection, SAVED).toEqual({ 'keyboard': 'output' })
   const stale = { deviceId: LAPTOP, deviceToken: 'f'.repeat(64), lessonRunStudentId: STUDENT, assignmentVersion: 1, dispatchId: DISPATCH }
   const statuses = await laptop.evaluate(async ({ stale, revision }) => {
     const send = (path: string, body: unknown) => fetch(`/api/student/lesson/${path}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }).then(response => response.status)
@@ -159,7 +162,7 @@ test('typing words resumes the exact shuffled word and letter on a narrow tablet
     const isG = key.toLocaleLowerCase('uk') === 'ґ'
     window.dispatchEvent(new KeyboardEvent('keydown', { key, code: isG ? 'KeyU' : '', ctrlKey: isG, altKey: isG }))
   }, key)
-  await expect.poll(() => (state.progress?.gameState as { charIndex?: number })?.charIndex).toBe(1)
+  await expect.poll(() => (state.progress?.gameState as { charIndex?: number })?.charIndex, SAVED).toBe(1)
   state.devices.set(LAPTOP, { lessonRunStudentId: null, assignmentVersion: 2 })
   state.devices.set(TABLET, { lessonRunStudentId: STUDENT, assignmentVersion: 1 })
   const tablet = await context.newPage()
@@ -170,7 +173,7 @@ test('typing words resumes the exact shuffled word and letter on a narrow tablet
   await expect(tablet.locator('.tw-target__done')).toHaveText(key)
   const next = (await tablet.locator('.tw-target__current').textContent())!.trim()
   await tablet.getByRole('textbox', { name: 'Друкуй наступну літеру' }).fill(next)
-  await expect.poll(() => (state.progress?.gameState as { charIndex?: number })?.charIndex).toBe(2)
+  await expect.poll(() => (state.progress?.gameState as { charIndex?: number })?.charIndex, SAVED).toBe(2)
   const overflow = await tablet.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)
   expect(overflow).toBe(false)
 })
