@@ -46,7 +46,7 @@ export async function refreshContentDeliveryBanner() {
       } catch {
         const banner = $('content-delivery-banner')
         banner.classList.remove('hidden')
-        $('content-delivery-title').textContent = 'Не вдалося перевірити стан відкритого сайту'
+        $('content-delivery-title').textContent = 'Стан сайту недоступний'
         $('content-delivery-detail').textContent = 'Відкрий журнал сайту та повтори перевірку.'
         $<HTMLButtonElement>('content-delivery-action').classList.add('hidden')
       }
@@ -66,8 +66,8 @@ function renderDeliveryBanner(state: AdminContentDeliveryState | undefined) {
     banner.classList.remove('hidden')
     action.classList.add('hidden')
     $('content-delivery-title').textContent = state.activePublicationStatus === 'running'
-      ? 'Відкритий сайт оновлюється'
-      : 'Оновлення відкритого сайту в черзі'
+      ? 'Сайт оновлюється'
+      : 'Оновлення в черзі'
     $('content-delivery-detail').textContent = state.activeMatchesCurrent
       ? 'Усі накопичені зміни входять до поточного запуску.'
       : 'Поточний запуск завершується; новіші зміни залишаться для наступного оновлення.'
@@ -77,7 +77,7 @@ function renderDeliveryBanner(state: AdminContentDeliveryState | undefined) {
     banner.classList.remove('hidden')
     action.classList.remove('hidden')
     action.disabled = false
-    $('content-delivery-title').textContent = 'Є зміни для відкритого сайту'
+    $('content-delivery-title').textContent = 'Є зміни для сайту'
     $('content-delivery-detail').textContent = 'Опубліковані зміни накопичено. Онови статичний сайт один раз, коли завершиш редагування.'
     return
   }

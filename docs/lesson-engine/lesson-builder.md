@@ -10,8 +10,15 @@ configuration are needed.
 
 ## Authoring
 
-- Library / sequence split with search, subject, grade, topic/module and type
-  filters; the sequence can be expanded and stacks on narrow screens.
+- A bounded workspace with six/seven thumbnail columns on laptop/wide screens,
+  one filter row, and an independently scrolling compact lesson outline.
+  Card actions and previews open on selection; lesson metadata stays collapsed.
+  The material picker and HTML editor are compact, and site publication status
+  lives in the admin header. Narrow screens stack the two workspace panels.
+- Search, subject, grade, topic/module and type filters combine conjunctively.
+  Type filters expose matching blocks from saved lessons. Thumbnails fetch
+  definitions on visibility, reuse a cache and limit concurrent requests to four.
+  Dragging uses a thumbnail ghost and before/after insertion markers.
 - Capture by URL paste, cross-tab image/URL drop, or PNG/JPEG/WebP/PDF upload.
   Capture inherits the current subject, grade and topic filters. Missing topics
   do not block use. URL-backed images still depend on the external host.
