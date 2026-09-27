@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { validateLessonDefinition } from '../../backend/src/lib/curriculum-lesson-schema'
 import { prepareMaterial } from '../../backend/src/lib/builder-materials'
 import { withoutFilePayloads } from '../../backend/src/lib/curriculum-card-index'
@@ -23,6 +24,7 @@ async function mockBuilder(page: Page, options: { enabled?: boolean; seedLessons
   for (const definition of options.seedLessons ?? []) rows.set(definition.id, lessonRow(definition))
   const boards = new Map<string, any>()
   const materials = new Map<string, any>()
+  const assets = new Map<string, { mime: string; bytes: Buffer }>()
   const calls: { method: string; path: string; body: any }[] = []
   let seq = 0
   const uuid = () => `00000000-0000-4000-8000-${String(++seq).padStart(12, '0')}`
@@ -35,9 +37,22 @@ async function mockBuilder(page: Page, options: { enabled?: boolean; seedLessons
     const url = new URL(req.url())
     const path = url.pathname
     const method = req.method()
-    const body = method === 'GET' || method === 'DELETE' ? null : req.postDataJSON()
+    const body = (req.headers()['content-type'] ?? '').includes('json') ? req.postDataJSON() : null
     calls.push({ method, path, body })
     const json = (data: unknown, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(data) })
+    // Lesson file storage: content-addressed, like the server.
+    if (path === '/api/admin/assets' && method === 'POST') {
+      const bytes = req.postDataBuffer()!
+      const mime = req.headers()['content-type']!
+      const sha256 = createHash('sha256').update(bytes).digest('hex')
+      assets.set(sha256, { mime, bytes })
+      return json({ sha256, mime, size: bytes.length }, 201)
+    }
+    const assetMatch = /^\/api\/assets\/([0-9a-f]{64})$/.exec(path)
+    if (assetMatch) {
+      const asset = assets.get(assetMatch[1]!)
+      return asset ? route.fulfill({ status: 200, contentType: asset.mime, body: asset.bytes }) : json({ error: 'Файл не знайдено' }, 404)
+    }
     if (path === '/api/teacher/me') return json({ id: 'builder-admin', role: 'admin', name: 'Адмін', features: { lessonEngine: options.enabled ?? true } })
     if (path === '/api/admin/curriculum/packs') return json({ packs: [{ id: 'informatics-ua-primary', subject: 'informatics', title: { uk: 'Інформатика' }, gradeRange: { min: 1, max: 4 }, games: [{ key: 'windows', levels: ['easy'] }], tools: [] }] })
     if (path === '/api/admin/curriculum/outcomes') return json({ outcomes: [], usage: {} })
@@ -111,7 +126,7 @@ async function mockBuilder(page: Page, options: { enabled?: boolean; seedLessons
     }
     return json({ teachers: [], parents: [], events: [], results: [], questions: [], lessons: [], missions: [], maps: [], items: [] })
   })
-  return { rows, boards, materials, calls }
+  return { rows, boards, materials, calls, assets }
 }
 
 async function openBuilder(page: Page) {
@@ -290,7 +305,7 @@ test('a pasted LearningApps link and an uploaded image become server-side board 
   expect([...boards.values()].map(b => b.title)).toEqual(['Мої матеріали'])
   const saved = [...materials.values()]
   expect(saved[0].items[0]).toEqual({ type: 'learningapps', appId: '12345' })
-  expect(saved[1].items[0].type).toBe('file')
+  expect(saved[1].items[0].type).toBe('asset')
   // Cards do not overlap and survive a reload.
   expect(saved[0].x !== saved[1].x || saved[0].y !== saved[1].y).toBe(true)
   await page.reload()
@@ -440,19 +455,24 @@ test('HTML runner refuses direct navigation and unsandboxed same-origin embeddin
   expect(await page.locator('body').getAttribute('data-escaped')).toBeNull()
 })
 
-test('embedded PDF files have a bounded native preview and download fallback', async ({ page }) => {
-  const { rows } = await mockBuilder(page)
+test('uploaded PDFs are stored once by hash and previewed from the file storage, not embedded in the lesson', async ({ page }) => {
+  const { rows, assets } = await mockBuilder(page)
   await openBuilder(page)
   const pdf = Buffer.from('%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Count 0 /Kids [] >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF')
+  const sha256 = createHash('sha256').update(pdf).digest('hex')
   await page.getByLabel('Завантажити файли', { exact: true }).setInputFiles({ name: 'lesson.pdf', mimeType: 'application/pdf', buffer: pdf })
   await expect(page.locator('.bc-card')).toHaveCount(1)
+  expect([...assets.keys()]).toEqual([sha256])
   await page.locator('.bc-card').first().click()
   const dialog = page.getByRole('dialog', { name: 'lesson' })
-  await expect(dialog.locator('.lb-dialog-preview iframe.le-canvas__document')).toHaveAttribute('src', /^data:application\/pdf;base64,/)
-  await expect(dialog.locator('.lb-dialog-preview a[download]')).toHaveAttribute('download', 'lesson.pdf')
+  await expect(dialog.locator('.lb-dialog-preview iframe.le-canvas__document')).toHaveAttribute('src', new RegExp(`/api/assets/${sha256}$`))
+  await expect(dialog.locator('.lb-dialog-preview a.le-canvas__link')).toHaveAttribute('href', new RegExp(`/api/assets/${sha256}$`))
   await dialog.getByRole('button', { name: 'Додати в урок' }).click()
   await save(page)
-  expect([...rows.values()][0].draftContent.blocks[1].content.board[0].mime).toBe('application/pdf')
+  const saved = [...rows.values()][0].draftContent
+  expect(saved.blocks[1].content.board[0]).toEqual({ type: 'asset', sha256, mime: 'application/pdf', name: { uk: 'lesson.pdf' } })
+  // The lesson carries a reference, never the file itself.
+  expect(JSON.stringify(saved)).not.toContain(pdf.toString('base64').slice(0, 24))
 })
 
 test('the constructor respects the existing Lesson Engine feature flag', async ({ page }) => {

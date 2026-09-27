@@ -56,10 +56,15 @@ are protected by an unload warning.
 Migration `0062_add_builder_boards` must be applied before the updated backend
 serves the builder.
 
-Embedded files are limited to 512 KiB each; total serialized lesson size is
-4 MiB. This keeps audited snapshots bounded without introducing an object
-storage service. Larger PDFs can be linked and opened separately. Supported
-uploaded PDFs render through the browser PDF viewer, with a download fallback.
+Uploaded files (PNG, JPEG, WebP, PDF, up to 2 MB; photos are shrunk first) go
+to the lesson file storage (migration `0063`, `/api/admin/assets`) once, by
+content hash; lessons and board materials keep only `{ type: 'asset', sha256 }`
+references, so revisions, run snapshots and device polls stay small. Browsers
+cache these files permanently. Uploaded PDFs render through the browser PDF
+viewer, with a link fallback; larger PDFs can be linked. Older lessons may still
+carry embedded `file` items (≤ 512 KiB, total lesson ≤ 4 MiB); they keep working,
+and `backend/scripts/convert-lesson-files.ts` (dry run by default, `--apply`)
+moves them from drafts and board materials into the storage.
 
 ## Conducting
 

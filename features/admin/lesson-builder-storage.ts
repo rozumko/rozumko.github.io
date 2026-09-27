@@ -1,6 +1,7 @@
 // Legacy browser material inbox (canvas content only, never scored activities).
 // Boards replaced it; the builder imports what is left here once, then clears it.
 import type { CanvasItem } from '../lesson-engine/types.js'
+import { uploadLessonAsset, type LessonFileMime } from '../api/client.js'
 export interface BuilderMaterial {
   id: string; title: string; subjectPackId: string; grade: number; topic: string; items: CanvasItem[]
 }
@@ -26,7 +27,8 @@ export async function materialInbox(owner: string, write?: BuilderMaterial[]): P
   } finally { database.close() }
 }
 
-const MAX_FILE_BYTES = 524_288
+// Matches the server (lesson_assets, 0063). Photos are shrunk well below it.
+const MAX_FILE_BYTES = 2 * 1024 * 1024
 
 function toBlob(canvas: HTMLCanvasElement, type: string, quality: number): Promise<Blob | null> {
   return new Promise(resolve => canvas.toBlob(resolve, type, quality))
@@ -54,18 +56,14 @@ async function shrinkImage(file: File): Promise<File> {
       }
     }
   } finally { bitmap.close() }
-  throw new Error('Зображення не вдалося стиснути до 512 КіБ. Оберіть менше фото.')
+  throw new Error('Зображення не вдалося стиснути до 2 МБ. Оберіть менше фото.')
 }
 
+/** Uploads the file to lesson file storage and returns the item that references it. */
 export async function fileItem(source: File): Promise<CanvasItem> {
   if (!['image/png', 'image/jpeg', 'image/webp', 'application/pdf'].includes(source.type)) throw new Error('Підтримуються PNG, JPEG, WebP і PDF. HTML вставте в картку «HTML-код».')
   const file = source.type === 'application/pdf' ? source : await shrinkImage(source)
-  if (file.size > MAX_FILE_BYTES) throw new Error('Файл завеликий: до 512 КіБ. Для більших PDF вставте посилання.')
-  const data = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '')
-    reader.onerror = () => reject(reader.error)
-    reader.readAsDataURL(file)
-  })
-  return { type: 'file', mime: file.type as 'image/png' | 'image/jpeg' | 'image/webp' | 'application/pdf', data, name: { uk: file.name.slice(0, 200) } }
+  if (file.size > MAX_FILE_BYTES) throw new Error('Файл завеликий: до 2 МБ. Для більших PDF вставте посилання.')
+  const stored = await uploadLessonAsset(file, file.type as LessonFileMime)
+  return { type: 'asset', sha256: stored.sha256, mime: stored.mime, name: { uk: file.name.slice(0, 200) } }
 }

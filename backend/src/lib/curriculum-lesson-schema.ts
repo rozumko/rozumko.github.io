@@ -137,6 +137,21 @@ export interface PracticeBlock extends LessonBlockBase {
 }
 
 /** One authored block with independently composed teacher, board and student views. */
+export const LESSON_FILE_MIMES = ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'] as const
+export type LessonFileMime = typeof LESSON_FILE_MIMES[number]
+export const ASSET_SHA256_PATTERN = '^[0-9a-f]{64}$'
+
+/** Only these raster images and PDFs, recognised by their leading bytes (never HTML or SVG). */
+export function fileSignatureMatches(mime: string, bytes: Buffer): boolean {
+  switch (mime) {
+    case 'image/png': return bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
+    case 'image/jpeg': return bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255
+    case 'image/webp': return bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP'
+    case 'application/pdf': return bytes.toString('ascii', 0, 5) === '%PDF-'
+    default: return false
+  }
+}
+
 export type CanvasItem =
   | { type: 'paragraph' | 'heading'; text: LocalizedText }
   | { type: 'list'; ordered?: boolean; items: LocalizedText[] }
@@ -147,7 +162,9 @@ export type CanvasItem =
   | { type: 'link'; url: string; label: LocalizedText }
   | { type: 'html'; html: string }
   | { type: 'pdf'; url: string; label: LocalizedText }
-  | { type: 'file'; mime: 'image/png' | 'image/jpeg' | 'image/webp' | 'application/pdf'; data: string; name: LocalizedText }
+  | { type: 'file'; mime: LessonFileMime; data: string; name: LocalizedText }
+  /** A file in lesson_assets (0063), referenced by the SHA-256 of its bytes. */
+  | { type: 'asset'; sha256: string; mime: LessonFileMime; name: LocalizedText }
 
 export interface CanvasBlock extends LessonBlockBase {
   type: 'canvas'
@@ -785,18 +802,19 @@ function checkCanvasItems(c: Collector, value: unknown, path: string): void {
       case 'file': {
         checkKnownKeys(c, item, ['type', 'mime', 'data', 'name'], at)
         checkLocalized(c, item.name, `${at}.name`, MAX_SHORT)
-        if (!checkEnum(c, item.mime, ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'], `${at}.mime`)) break
+        if (!checkEnum(c, item.mime, LESSON_FILE_MIMES, `${at}.mime`)) break
         if (!checkString(c, item.data, `${at}.data`, 699_052) || typeof item.data !== 'string' || item.data.length > 699_052) break
         const bytes = Buffer.from(item.data, 'base64')
-        const signatures: Record<string, boolean> = {
-          'image/png': bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])),
-          'image/jpeg': bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255,
-          'image/webp': bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP',
-          'application/pdf': bytes.toString('ascii', 0, 5) === '%PDF-',
-        }
-        if (bytes.length > 524_288 || bytes.toString('base64') !== item.data || !signatures[item.mime]) c.add(`${at}.data`, 'invalid file content or exceeds 512 KiB')
+        if (bytes.length > 524_288 || bytes.toString('base64') !== item.data || !fileSignatureMatches(item.mime as string, bytes)) c.add(`${at}.data`, 'invalid file content or exceeds 512 KiB')
         break
       }
+      case 'asset':
+        // Existence is checked against lesson_assets by the routes that store a definition.
+        checkKnownKeys(c, item, ['type', 'sha256', 'mime', 'name'], at)
+        checkString(c, item.sha256, `${at}.sha256`, 64, new RegExp(ASSET_SHA256_PATTERN))
+        checkEnum(c, item.mime, LESSON_FILE_MIMES, `${at}.mime`)
+        checkLocalized(c, item.name, `${at}.name`, MAX_SHORT)
+        break
       case 'pdf':
       case 'link':
         checkKnownKeys(c, item, ['type', 'url', 'label'], at)

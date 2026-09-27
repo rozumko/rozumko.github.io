@@ -28,6 +28,11 @@ const API_URL = ENV.VITE_API_URL || 'https://rozumko-github-io.onrender.com'
 const SUPABASE_URL = ENV.VITE_SUPABASE_URL || 'https://ivcufigpmamgkfxwulzl.supabase.co'
 const SUPABASE_ANON_KEY = ENV.VITE_SUPABASE_ANON_KEY || 'sb_publishable_thaWciLcFJKxX3rcGbnGmg_2kLtAzNn'
 
+/** A stored lesson file by content hash; loaded directly by <img> and PDF frames, cached for good. */
+export function lessonAssetUrl(sha256: string): string | null {
+  return /^[0-9a-f]{64}$/.test(sha256) ? `${API_URL}/api/assets/${sha256}` : null
+}
+
 // Cloudflare Turnstile SITE KEY (публічний — призначений для вставки у фронтенд).
 // SECRET KEY сюди НЕ кладемо: він живе лише в Supabase → Authentication →
 // Bot and Abuse Protection. Захист стає примусовим після увімкнення Turnstile там.
@@ -1353,6 +1358,13 @@ export function saveBuilderPositions(boardId: string, positions: { id: string; x
 
 export function deleteBuilderMaterials(ids: string[]): Promise<{ deleted: string[] }> {
   return authRequest(builderPath('/materials/delete'), { method: 'POST', body: JSON.stringify({ ids }) })
+}
+
+export type LessonFileMime = 'image/png' | 'image/jpeg' | 'image/webp' | 'application/pdf'
+
+/** Stores a lesson file once by content hash; the body is the file itself. */
+export function uploadLessonAsset(file: Blob, mime: LessonFileMime): Promise<{ sha256: string; mime: LessonFileMime; size: number }> {
+  return authRequest('/api/admin/assets', { method: 'POST', body: file, headers: { 'Content-Type': mime } })
 }
 
 /** Runs every save-time check without storing anything. */

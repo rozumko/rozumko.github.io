@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { pgTable, text, integer, smallint, date, boolean, timestamp, jsonb, uuid, unique, primaryKey, numeric } from 'drizzle-orm/pg-core'
+import { pgTable, text, integer, smallint, date, boolean, timestamp, jsonb, uuid, unique, primaryKey, numeric, customType } from 'drizzle-orm/pg-core'
 
 /**
  * Типи питань:
@@ -895,6 +895,18 @@ export const builderMaterials = pgTable('builder_materials', {
 })
 
 export type BuilderMaterialRow = typeof builderMaterials.$inferSelect
+
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => 'bytea' })
+
+// Lesson files stored once by content hash (0063); immutable (trigger).
+export const lessonAssets = pgTable('lesson_assets', {
+  sha256:    text('sha256').primaryKey(),
+  mime:      text('mime').notNull(),
+  bytes:     bytea('bytes').notNull(),
+  size:      integer('size').notNull(),
+  createdBy: uuid('created_by').references(() => appUsers.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
 
 // One submission from one mapped device (0052). Append-only; idempotent per
 // (device, client_attempt_id). Trust is derived from the mechanic (DB-checked).

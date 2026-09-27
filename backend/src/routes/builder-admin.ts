@@ -10,6 +10,7 @@ import { builderBoards, builderMaterials } from '../db/schema.js'
 import { requireAdmin } from '../lib/auth.js'
 import { isLessonEngineEnabled } from '../lib/lesson-engine-flag.js'
 import { MAX_BOARD_MATERIALS, MaterialValidationError, prepareMaterial } from '../lib/builder-materials.js'
+import { assetIssues } from '../lib/lesson-assets.js'
 
 const MAX_BOARDS = 100
 const uuid = { type: 'string', format: 'uuid' } as const
@@ -137,6 +138,8 @@ export async function builderAdminRoutes(app: FastifyInstance, options: BuilderA
   }, async (req, reply) => {
     try {
       const prepared = prepareMaterial(req.body)
+      const missing = await assetIssues(prepared.items)
+      if (missing.length) throw new MaterialValidationError(missing)
       if (!await ownBoard(req.user!.id, req.params.id)) return reply.code(404).send({ error: 'Дошку не знайдено' })
       const [{ total }] = await db.select({ total: count() }).from(builderMaterials).where(eq(builderMaterials.boardId, req.params.id))
       if (total >= MAX_BOARD_MATERIALS) return reply.code(409).send({ error: `На дошці може бути до ${MAX_BOARD_MATERIALS} матеріалів. Створіть нову дошку.` })
@@ -168,6 +171,8 @@ export async function builderAdminRoutes(app: FastifyInstance, options: BuilderA
       const content = title !== undefined || items !== undefined
         ? prepareMaterial({ title: title ?? current.title, items: items ?? current.items })
         : null
+      const missing = content ? await assetIssues(content.items) : []
+      if (missing.length) throw new MaterialValidationError(missing)
       if (boardId && boardId !== current.boardId && !await ownBoard(ownerId, boardId)) return reply.code(404).send({ error: 'Дошку не знайдено' })
       const [material] = await db.update(builderMaterials).set({
         ...(content ?? {}),

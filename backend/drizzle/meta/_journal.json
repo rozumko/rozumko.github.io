@@ -442,6 +442,13 @@
       "when": 1790371200000,
       "tag": "0062_add_builder_boards",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1790457600000,
+      "tag": "0063_add_lesson_assets",
+      "breakpoints": true
     }
   ]
 }

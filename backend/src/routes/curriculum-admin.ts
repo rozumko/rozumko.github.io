@@ -23,6 +23,7 @@ import { resolveSubjectPack } from '../lib/curriculum-outcomes.js'
 import { SUBJECT_PACKS, findSubjectPack } from '../lib/subject-packs.js'
 import { resolveActivityDefinition } from '../lib/school-activities.js'
 import { withoutFilePayloads } from '../lib/curriculum-card-index.js'
+import { assetIssues } from '../lib/lesson-assets.js'
 import {
   OUTCOME_ID_PATTERN,
   OUTCOME_STATUSES,
@@ -72,6 +73,12 @@ const outcomeIdParams = {
 const packIdSchema = { type: 'string', maxLength: 64, pattern: CURRICULUM_LESSON_ID_PATTERN } as const
 
 const OUTCOME_CONFLICT_MESSAGE = 'Результат уже змінив інший редактор. Онови дані й повтори дію.'
+
+/** The schema checks shape; every referenced lesson file must also exist with its declared type. */
+async function requireAssets(lesson: unknown): Promise<void> {
+  const issues = await assetIssues(lesson)
+  if (issues.length) throw new CurriculumValidationError(issues)
+}
 
 function sendError(reply: FastifyReply, err: unknown) {
   if (err instanceof CurriculumValidationError || err instanceof OutcomeValidationError) {
@@ -153,7 +160,7 @@ export async function curriculumAdminRoutes(app: FastifyInstance) {
   }, async (req, reply) => {
     try {
       const pack = await resolveSubjectPack(peekSubjectPackId(req.body.definition), ACTIVE_ONLY)
-      prepareCurriculumDefinition(req.body.definition, req.body.lessonId ?? null, 1, pack)
+      await requireAssets(prepareCurriculumDefinition(req.body.definition, req.body.lessonId ?? null, 1, pack))
       return reply.send({ ok: true, issues: [] })
     } catch (err) {
       if (err instanceof CurriculumValidationError) return reply.send({ ok: false, issues: err.issues })
@@ -171,6 +178,7 @@ export async function curriculumAdminRoutes(app: FastifyInstance) {
     try {
       const pack = await resolveSubjectPack(peekSubjectPackId(req.body.definition), ACTIVE_ONLY)
       const lesson = prepareCurriculumDefinition(req.body.definition, null, 1, pack)
+      await requireAssets(lesson)
       const created = await db.transaction(async tx => {
         const [row] = await tx.insert(curriculumLessons).values({
           id: lesson.id,
@@ -215,6 +223,7 @@ export async function curriculumAdminRoutes(app: FastifyInstance) {
 
       const pack = await resolveSubjectPack(peekSubjectPackId(req.body.definition), ACTIVE_ONLY)
       const lesson = prepareCurriculumDefinition(req.body.definition, id, existing.contentVersion, pack)
+      await requireAssets(lesson)
       if (!curriculumDefinitionChanged(existing.draftContent, lesson)) {
         return reply.send({ lesson: existing, changed: false })
       }
@@ -278,6 +287,7 @@ export async function curriculumAdminRoutes(app: FastifyInstance) {
         if (status === 'published') {
           const pack = await resolveSubjectPack(peekSubjectPackId(current.draftContent), ACTIVE_ONLY)
           const lesson = prepareCurriculumDefinition(current.draftContent, id, current.contentVersion, pack)
+          await requireAssets(lesson)
           updates.publishedVersion = current.contentVersion
           updates.publishedSnapshot = lesson as unknown as Record<string, unknown>
           updates.publishedAt = now
@@ -335,6 +345,7 @@ export async function curriculumAdminRoutes(app: FastifyInstance) {
       const restored = draftFromCurriculumRevision(revision.snapshot)
       const pack = await resolveSubjectPack(peekSubjectPackId(restored), ACTIVE_ONLY)
       const lesson = prepareCurriculumDefinition(restored, id, contentVersion, pack)
+      await requireAssets(lesson)
       const updated = await db.transaction(async tx => {
         const [row] = await tx.update(curriculumLessons).set({
           ...curriculumRowColumns(lesson),

@@ -21,6 +21,10 @@ export const RATE_LIMIT_MAX = {
   lessonJoin: 120,
   // A lab laptop on a class link waits for the next lesson (one call per 15 s).
   lessonClassJoin: 20,
+  // Lesson files, per IP: 30 devices × ~15 files on first open behind one NAT;
+  // responses are immutable, so browsers do not ask again.
+  lessonAssetRead: 600,
+  lessonAssetUpload: 60,
 } as const
 
 type VerifiedResourceRateLimitOptions = {

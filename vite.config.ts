@@ -97,8 +97,10 @@ function cspPlugin(apiOrigin: string, supabaseOrigin: string): Plugin {
               ? ANALYTICS_CSP
               : STRICT_CSP
         // Canvas blocks may show images from any https host (an editorial decision).
+        // Stored lesson files come from the API origin (named explicitly: a local
+        // API is plain http); PDFs among them open in a frame.
         const content = usesLessonMedia && !usesTurnstile
-          ? `${base.replace("img-src 'self' data:", "img-src 'self' data: https:")}; frame-src 'self' data: ${YOUTUBE_FRAME_ORIGIN} https://learningapps.org`
+          ? `${base.replace("img-src 'self' data:", `img-src 'self' data: https: ${apiOrigin}`)}; frame-src 'self' data: ${apiOrigin} ${YOUTUBE_FRAME_ORIGIN} https://learningapps.org`
           : base
         return {
           html,
