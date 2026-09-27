@@ -36,7 +36,7 @@ export function blockKind(block: EditableBlock): BuilderKind {
   if (block.type === 'visual') return 'image'
   const item = canvasItems(block).find(item => !['paragraph', 'heading', 'list', 'table'].includes(item.type))
   if (!item) return 'text'
-  if (item.type === 'file') return item.mime === 'application/pdf' ? 'pdf' : 'image'
+  if (item.type === 'file' || item.type === 'asset') return item.mime === 'application/pdf' ? 'pdf' : 'image'
   return ['image', 'video', 'learningapps', 'pdf', 'html', 'link'].includes(item.type) ? item.type as BuilderKind : 'text'
 }
 

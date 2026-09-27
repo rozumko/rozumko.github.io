@@ -757,14 +757,14 @@ function addDialog(kind: BuilderKind, target: 'board' | 'lesson', existing?: Bui
   if (kind === 'html') card.classList.add('lb-dialog--html')
   const current = existing?.items ?? []
   const firstHtml = current.find(item => item.type === 'html')
-  const urlItem = current.find(item => item.type !== 'paragraph' && item.type !== 'heading' && item.type !== 'html' && item.type !== 'file')
+  const urlItem = current.find(item => item.type !== 'paragraph' && item.type !== 'heading' && item.type !== 'html' && item.type !== 'file' && item.type !== 'asset')
   let title = existing?.title ?? ''
   let value = kind === 'html'
     ? (firstHtml?.type === 'html' ? firstHtml.html : '<h1>Привіт, клас!</h1>\n<p>Мій матеріал уроку</p>')
     : kind === 'text'
       ? current.filter(item => item.type === 'paragraph').map(item => item.type === 'paragraph' ? item.text.uk : '').join('\n\n')
       : urlItem ? urlValue(urlItem) : ''
-  const hasFile = current.some(item => item.type === 'file')
+  const hasFile = current.some(item => item.type === 'file' || item.type === 'asset')
   const titleField = field(kind === 'text' ? 'Заголовок слайда' : 'Назва', title, v => { title = v; dirtyForm = true })
   body.append(titleField)
   const preview = el('div', 'lb-dialog-preview')
@@ -817,7 +817,7 @@ function addDialog(kind: BuilderKind, target: 'board' | 'lesson', existing?: Bui
         }, err => { error.textContent = (err as Error).message })
       })
       body.append(el('p', 'adm-field-hint', 'або'), button(kind === 'pdf' ? 'Обрати PDF з комп’ютера' : 'Обрати зображення з комп’ютера', () => upload.click()), upload,
-        el('p', 'adm-field-hint', kind === 'pdf' ? 'PDF до 512 КіБ. Більші файли додайте посиланням.' : 'Великі фото автоматично стискаються.'))
+        el('p', 'adm-field-hint', kind === 'pdf' ? 'PDF до 2 МБ. Більші файли додайте посиланням.' : 'Великі фото автоматично стискаються.'))
     }
     if (kind === 'link') body.append(el('p', 'adm-field-hint', 'Звичайний сайт відкривається окремою вкладкою. Всередині уроку показуються YouTube, LearningApps і HTML-картки.'))
   }

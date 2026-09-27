@@ -19,6 +19,8 @@ export type CanvasItem =
   | { type: 'html'; html: string }
   | { type: 'pdf'; url: string; label: LocalizedText }
   | { type: 'file'; mime: 'image/png' | 'image/jpeg' | 'image/webp' | 'application/pdf'; data: string; name: LocalizedText }
+  /** A file in the lesson file storage, fetched from the API by content hash. */
+  | { type: 'asset'; sha256: string; mime: 'image/png' | 'image/jpeg' | 'image/webp' | 'application/pdf'; name: LocalizedText }
 
 export const LESSON_BLOCK_TYPES = [
   'hero', 'essential-question', 'objectives', 'explanation', 'visual', 'discussion',

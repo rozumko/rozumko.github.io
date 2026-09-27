@@ -25,7 +25,7 @@ export interface PreparedMaterial {
 export function materialKind(items: CanvasItem[]): BuilderMaterialKind {
   const media = items.find(item => !['paragraph', 'heading', 'list', 'table'].includes(item.type))
   if (!media) return 'text'
-  if (media.type === 'file') return media.mime === 'application/pdf' ? 'pdf' : 'image'
+  if (media.type === 'file' || media.type === 'asset') return media.mime === 'application/pdf' ? 'pdf' : 'image'
   return media.type as BuilderMaterialKind
 }
 
@@ -38,7 +38,7 @@ export function materialSearchText(title: string, items: CanvasItem[]): string {
       case 'table': parts.push(...item.headers.map(h => h.uk), ...item.rows.flat().map(cell => cell.uk)); break
       case 'image': parts.push(item.alt.uk); break
       case 'link': case 'pdf': parts.push(item.label.uk); break
-      case 'file': parts.push(item.name.uk); break
+      case 'file': case 'asset': parts.push(item.name.uk); break
       // Authored HTML is code: only its visible text is worth matching.
       case 'html': parts.push(item.html.replace(/<(script|style)[\s\S]*?<\/\1>/gi, ' ').replace(/<[^>]+>/g, ' ')); break
     }

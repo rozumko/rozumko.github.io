@@ -254,6 +254,23 @@ payloads or HTML code) with `%`/`_` escaped. `GET /api/admin/curriculum/cards`
 returns draft blocks for the builder's card library with embedded file payloads
 emptied; it is admin-only like every other curriculum admin route.
 
+Lesson **file storage** (migration `0063`) keeps uploaded images and PDFs once,
+addressed by the SHA-256 of their bytes, instead of base64 copies inside every
+draft, revision and run snapshot. `POST /api/admin/assets` is flag-gated and
+admin-only; the body is the raw file (≤ 2 MiB), accepted only when its leading
+bytes match PNG, JPEG, WebP or PDF and the declared type (never HTML or SVG).
+Rows are immutable (trigger) and RLS-protected with no policies. Lessons and
+board materials reference them as `{ type: 'asset', sha256, mime, name }`; every
+save, validation, publish and restore checks that each referenced file exists
+with that type, fail-closed. `GET /api/assets/:sha256` is public while the flag
+is on (a hash is unguessable without the file; drafts' files are not secret
+teaching materials), rate-limited per IP for a class behind one NAT, and served
+with the stored type, `nosniff`, `Cache-Control: immutable`, `no-referrer` and,
+for images, `Content-Security-Policy: default-src 'none'; sandbox`. PDFs omit
+the sandbox because browser viewers refuse sandboxed documents; the type is
+fixed and verified, so they cannot carry HTML. Lesson pages add the API origin
+to `img-src` and `frame-src` for these files only.
+
 Canvas media is scoped in the CSP to `admin.html`, `lesson-engine.html`,
 `lesson-board.html` and `lesson-join.html`. By editorial decision, images may
 come from any https host (or a site path): those pages allow `img-src https:`,

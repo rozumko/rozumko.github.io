@@ -1,6 +1,7 @@
 import { richElement } from './rich-text.js'
 import type { CanvasItem, StudentCanvasMaterial } from './types.js'
 import { renderHtmlCard } from './html-card.js'
+import { lessonAssetUrl } from '../api/client.js'
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag)
@@ -32,6 +33,20 @@ export function renderCanvasItems(items: CanvasItem[], variant: 'teacher' | 'boa
           const image = el('img', 'le-canvas__image')
           image.src = src
           image.alt = item.name.uk
+          root.append(image)
+        }
+        break
+      }
+      case 'asset': {
+        // Served by the API with this fixed type and nosniff; never HTML or SVG.
+        const src = lessonAssetUrl(item.sha256)
+        if (!src) break
+        if (item.mime === 'application/pdf') root.append(pdfCard(src, item.name.uk, true))
+        else {
+          const image = el('img', 'le-canvas__image')
+          image.src = src
+          image.alt = item.name.uk
+          image.referrerPolicy = 'no-referrer'
           root.append(image)
         }
         break
@@ -135,13 +150,15 @@ export function renderCanvasItems(items: CanvasItem[], variant: 'teacher' | 'boa
   return root
 }
 
-function pdfCard(url: string, label: string): HTMLElement {
+/** `stored`: a lesson file from the API, served only as application/pdf. */
+function pdfCard(url: string, label: string, stored = false): HTMLElement {
   const section = el('section', 'le-canvas__pdf')
-  if (url.startsWith('data:application/pdf;base64,')) {
+  if (stored || url.startsWith('data:application/pdf;base64,')) {
     const frame = el('iframe', 'le-canvas__document')
     frame.title = label
     frame.referrerPolicy = 'no-referrer'
-    // Data documents have an opaque origin and a fixed PDF MIME. Browser PDF
+    // Data documents have an opaque origin and a fixed PDF MIME; stored files
+    // come from the API origin with a fixed PDF type and nosniff. Browser PDF
     // viewers need an unsandboxed frame; no authored HTML can enter this path.
     frame.src = url
     section.append(frame)

@@ -127,7 +127,7 @@ export function parseCanvasHtml(source: string): HtmlImportResult {
     if (opaque) {
       try {
         const item = JSON.parse(opaque) as CanvasItem
-        if (['html', 'pdf', 'file'].includes(item.type)) { add(item); return }
+        if (['html', 'pdf', 'file', 'asset'].includes(item.type)) { add(item); return }
       } catch { warn('Невірна картка конструктора.') }
     }
     const tag = node.localName
@@ -210,7 +210,8 @@ export function canvasItemsToHtml(items: CanvasItem[]): string {
       case 'link': return `<p data-canvas-link><a href="${escapeHtml(item.url)}">${escapeHtml(item.label.uk)}</a></p>`
       case 'html':
       case 'pdf':
-      case 'file': return `<div data-canvas-item="${escapeHtml(JSON.stringify(item))}">${item.type === 'html' ? 'HTML-картка' : escapeHtml(item.type === 'file' ? item.name.uk : item.label.uk)} — редагується в Конструкторі уроків</div>`
+      case 'file':
+      case 'asset': return `<div data-canvas-item="${escapeHtml(JSON.stringify(item))}">${item.type === 'html' ? 'HTML-картка' : escapeHtml(item.type === 'file' || item.type === 'asset' ? item.name.uk : item.label.uk)} — редагується в Конструкторі уроків</div>`
     }
   }).join('\n')
 }
