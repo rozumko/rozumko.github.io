@@ -63,6 +63,58 @@ test('a well-formed but forged device token is refused before any database acces
   })
 })
 
+test('a malformed known step id is rejected before any database access', async () => {
+  await withApp('true', async app => {
+    for (const knownBlockId of ['', 'Bad Id', 'x'.repeat(65), '../b1']) {
+      const response = await app.inject({ method: 'POST', url: '/api/student/lesson/state', payload: { deviceId: DEVICE, deviceToken: 'b'.repeat(64), knownBlockId } })
+      assert.equal(response.statusCode, 400, knownBlockId)
+    }
+  })
+})
+
+test('device polls read the run snapshot once and skip the step already on screen', async () => {
+  const { readFileSync } = await import('node:fs')
+  const { lessonRunDispatches } = await import('../db/schema.js')
+  const lesson = JSON.parse(readFileSync(new URL('../lib/curriculum-fixtures/g2-m2-l8.lesson.json', import.meta.url), 'utf8'))
+  const block = lesson.blocks.find((b: { presentation?: unknown; audience: { student: boolean }; type: string }) => b.presentation && b.audience.student && b.type !== 'teacher-note')
+  const RUN = '00000000-0000-4000-8000-0000000000aa'
+  const device = { id: DEVICE, lessonRunId: RUN, lessonRunStudentId: DEVICE, assignmentVersion: 0, pairingNumber: 4, revokedAt: null, expiresAt: new Date(Date.now() + 60000) }
+  let snapshotReads = 0
+  const select = mock.method(db, 'select', () => {
+    let rows: unknown[] = []
+    const query = {
+      from(table: unknown) {
+        if (table === lessonRunDevices) rows = [{ device, runStatus: 'active', currentBlockId: block.id, label: 'Оля' }]
+        else if (table === lessonRuns) { snapshotReads++; rows = [{ lessonSnapshot: lesson }] }
+        else if (table === lessonRunDispatches) rows = []
+        return query
+      },
+      innerJoin() { return query }, leftJoin() { return query }, where() { return query }, limit() { return query },
+      then(resolve: (value: unknown[]) => unknown) { return Promise.resolve(rows).then(resolve) },
+    }
+    return query
+  })
+  const update = mock.method(db, 'update', () => ({ set: () => ({ where: async () => undefined }) }))
+  try {
+    await withApp('true', async app => {
+      const poll = (knownBlockId?: string) => app.inject({
+        method: 'POST', url: '/api/student/lesson/state',
+        payload: { deviceId: DEVICE, deviceToken: generateDeviceToken(DEVICE), ...(knownBlockId ? { knownBlockId } : {}) },
+      })
+      const first = (await poll()).json()
+      assert.equal(first.slide.blockId, block.id)
+      assert.equal(first.contentUnchanged, false)
+      const again = (await poll(block.id)).json()
+      assert.equal(again.contentUnchanged, true)
+      assert.equal(again.slide, null)
+      assert.equal(again.material, null)
+      const stale = (await poll('some-other-step')).json()
+      assert.equal(stale.slide.blockId, block.id)
+      assert.equal(snapshotReads, 1)
+    })
+  } finally { select.mock.restore(); update.mock.restore() }
+})
+
 const ATTEMPT = {
   lessonRunStudentId: DEVICE,
   assignmentVersion: 0,

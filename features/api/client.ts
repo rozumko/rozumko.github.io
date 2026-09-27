@@ -1572,9 +1572,9 @@ export function submitLessonAttempt(payload: {
   return request('/api/student/lesson/attempt', { method: 'POST', body: JSON.stringify(payload) })
 }
 
-/** Token goes in the body, never the URL. */
-export function getLessonDeviceState(deviceId: string, deviceToken: string): Promise<LessonDeviceState> {
-  return request('/api/student/lesson/state', { method: 'POST', body: JSON.stringify({ deviceId, deviceToken }) })
+/** Token goes in the body, never the URL. `knownBlockId` skips re-sending the step already on screen. */
+export function getLessonDeviceState(deviceId: string, deviceToken: string, knownBlockId?: string | null): Promise<LessonDeviceState> {
+  return request('/api/student/lesson/state', { method: 'POST', body: JSON.stringify({ deviceId, deviceToken, ...(knownBlockId ? { knownBlockId } : {}) }) })
 }
 
 /** Recovery checkpoints are separate from scored submissions. */

@@ -22,6 +22,26 @@ test('a changed answer during an in-flight close checkpoint is also delivered', 
   assert.equal(stored, null)
 })
 
+test('a background send makes one request and leaves newer edits for the next throttled send', async () => {
+  let release
+  const gate = new Promise(resolve => { release = resolve })
+  const calls = []
+  const saver = createProgressSaver(0, null, {
+    read: () => null, write() {}, refused: () => assert.fail('unexpected refusal'),
+    send: async (revision, progress) => { calls.push(progress); await gate; return { revision: revision + 1 } },
+  })
+  saver.save({ selection: { a: 'input' } })
+  const flush = saver.flush(false)
+  saver.save({ selection: { a: 'output' } })
+  release()
+  await flush
+  assert.equal(calls.length, 1)
+  assert.equal(saver.hasPending(), true)
+  await saver.flush(false)
+  assert.equal(calls.at(-1).selection.a, 'output')
+  assert.equal(saver.hasPending(), false)
+})
+
 test('offline work survives a reload, but cannot replace a newer server revision', async () => {
   let stored = null
   const deps = { read: () => stored, write: value => { stored = value }, refused() {}, send: async () => { throw new Error('offline') } }

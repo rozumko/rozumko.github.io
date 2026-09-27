@@ -1467,6 +1467,7 @@
 #lb-root .btn--sm { min-height: 30px; padding: 5px 9px; font-size: 12px; }
 .lb-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; height: max(420px, calc(100dvh - 220px)); }
 .lb-layout--wide { grid-template-columns: minmax(0, 1fr) 400px; }
+.lb-layout[hidden], .lb-console[hidden] { display: none; }
 .lb-library { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 .lb-lesson { display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: 12px; border: 1px solid var(--adm-border); border-radius: 12px; background: var(--adm-surface); }
 .lb-filters { display: grid; grid-template-columns: 1.4fr 1.4fr .8fr 1fr 1fr; gap: 8px; margin-bottom: 8px; }
