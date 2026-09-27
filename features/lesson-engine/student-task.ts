@@ -20,8 +20,12 @@ export interface StudentTaskDeps {
   queued: boolean
 }
 
+const GAME_CHECKPOINT_MS = 5000
+
 export interface StudentTaskView {
   leave(): void
+  /** Captures in-progress game state now, e.g. before the tab is hidden. */
+  checkpoint?(): void
   /** The waiting answer reached the server in the background. */
   delivered(response: LessonAttemptResponse): void
 }
@@ -148,7 +152,7 @@ export function renderStudentTask(host: HTMLElement, task: StudentTask, grade: n
     return NO_VIEW
   }
 
-  if (activity.mechanic === 'game') return { leave: renderStudentGame(body, task, grade, send, deps.saveProgress), delivered }
+  if (activity.mechanic === 'game') return { ...renderStudentGame(body, task, grade, send, deps.saveProgress), delivered }
 
   renderForm()
   return { leave() {}, delivered }
@@ -160,12 +164,12 @@ function renderStudentGame(
   grade: number,
   send: (payload: { gameResult: ActivityRunResult }) => Promise<LessonAttemptResponse>,
   saveProgress?: (progress: LessonProgress) => void,
-): () => void {
+): { leave(): void; checkpoint(): void } {
   const info = findActivity(String(task.activity.config.gameKey ?? ''))
   const level = info ? findActivityLevel(info, String(task.activity.config.level ?? '')) : null
   if (!info || !level) {
     body.append(el('p', 'lj-error', 'Гру не знайдено.'))
-    return () => {}
+    return { leave() {}, checkpoint() {} }
   }
   const start = el('button', 'lj-button', `${task.progress?.gameState ? 'Продовжити' : 'Почати'}: ${info.label}`)
   start.type = 'button'
@@ -239,7 +243,9 @@ function renderStudentGame(
         },
       })
       checkpoint()
-      checkpointTimer = window.setInterval(checkpoint, 1000)
+      // Games with an adapter also checkpoint on their own events (onCheckpoint);
+      // this timer only bounds how much time a game without one can lose.
+      checkpointTimer = window.setInterval(checkpoint, GAME_CHECKPOINT_MS)
     } catch {
       status.textContent = 'Не вдалося завантажити гру.'
       start.disabled = false
@@ -247,10 +253,13 @@ function renderStudentGame(
   })
   resend.addEventListener('click', () => void report())
 
-  return () => {
-    disposed = true
-    checkpoint()
-    if (checkpointTimer !== null) window.clearInterval(checkpointTimer)
-    handle?.destroy()
+  return {
+    checkpoint,
+    leave() {
+      disposed = true
+      checkpoint()
+      if (checkpointTimer !== null) window.clearInterval(checkpointTimer)
+      handle?.destroy()
+    },
   }
 }

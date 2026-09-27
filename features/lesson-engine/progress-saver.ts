@@ -43,12 +43,19 @@ export function createProgressSaver(revision: number, initial: LessonProgress | 
     persist()
   }
 
-  function flush(): Promise<void> {
+  /**
+   * `drain` keeps sending until the latest state is confirmed (closing a task,
+   * leaving the page). Background sends pass `false`: one request, and the
+   * caller's throttle decides when the next one goes.
+   */
+  function flush(drain = true): Promise<void> {
     if (inFlight) return inFlight
     if (stopped || !pending || !progress) return Promise.resolve()
     inFlight = (async () => {
       try {
-        while (pending && progress && !stopped) {
+        let first = true
+        while ((first || drain) && pending && progress && !stopped) {
+          first = false
           const current = progress
           sent = current
           persist()
@@ -72,5 +79,5 @@ export function createProgressSaver(revision: number, initial: LessonProgress | 
     return inFlight
   }
 
-  return { initial: progress, save, flush }
+  return { initial: progress, save, flush, hasPending: () => pending && !stopped }
 }

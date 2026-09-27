@@ -128,6 +128,12 @@ test('remote slides follow the current teacher slide after an activity closes; p
   state.open = false
   await join(page, LAPTOP)
   await expect(page.locator('.le-slide')).toHaveAttribute('data-block-id', lesson.blocks[0]!.id)
+  // Polls must not rebuild the slide: that would restart its videos and HTML cards.
+  await page.locator('.le-slide').evaluate(node => { node.dataset.firstRender = 'yes' })
+  const polled = page.waitForRequest(request => request.url().endsWith('/api/student/lesson/state') && request.postDataJSON().knownBlockId === lesson.blocks[0]!.id)
+  await polled
+  await page.waitForTimeout(2500)
+  await expect(page.locator('.le-slide')).toHaveAttribute('data-first-render', 'yes')
   const next = lesson.blocks.find(block => block.id !== lesson.blocks[0]!.id && block.presentation && block.audience.student)!
   state.slide = studentPresentationSlide(lesson, next.id)
   await expect(page.locator('.le-slide')).toHaveAttribute('data-block-id', next.id)

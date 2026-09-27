@@ -255,6 +255,8 @@ export interface LessonDeviceState {
   lessonRunStudentId: string | null
   assignmentVersion: number
   slide: StudentSlide | null
+  /** The step the device reported as shown is still current; slide/material were omitted. */
+  contentUnchanged?: boolean
   task: StudentTask | null
   material: StudentPracticeMaterial | StudentCanvasMaterial | null
   runStatus: LessonRunStatus

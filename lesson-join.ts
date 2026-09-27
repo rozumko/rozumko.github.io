@@ -26,6 +26,11 @@ const SEAT_KEY = 'rozumko_lesson_seat'
 const POLL_MS = 2000
 // A laptop on a class link waiting for the lesson to begin.
 const CLASS_WAIT_MS = 15_000
+// Work is kept locally at once. A first change after a pause reaches the server
+// quickly; while a child keeps working, sends are spaced out so a class of 30
+// writes at most ~10 checkpoints per second instead of one per child per second.
+const PROGRESS_FIRST_DELAY_MS = 500
+const PROGRESS_MIN_GAP_MS = 3000
 
 const joinSection = document.getElementById('lj-join') as HTMLElement
 const waitSection = document.getElementById('lj-wait') as HTMLElement
@@ -50,14 +55,28 @@ let shownMaterialId: string | null = null
 let taskView: StudentTaskView | null = null
 let progressSaver: ReturnType<typeof createProgressSaver> | null = null
 let progressTimer: number | null = null
+let lastProgressSendAt = 0
 let shownSlideId: string | null = null
 let assignmentKey: string | null = null
+
+/** Throttled background send; failures stay pending and are retried the same way. */
+function sendProgressSoon() {
+  if (progressTimer !== null || !progressSaver?.hasPending()) return
+  const wait = Math.max(PROGRESS_FIRST_DELAY_MS, lastProgressSendAt + PROGRESS_MIN_GAP_MS - Date.now())
+  progressTimer = window.setTimeout(() => {
+    progressTimer = null
+    const saver = progressSaver
+    if (!saver) return
+    lastProgressSendAt = Date.now()
+    void saver.flush(false).then(() => { if (progressSaver === saver) sendProgressSoon() })
+  }, wait)
+}
 
 function clearTask() {
   taskView?.leave()
   void progressSaver?.flush()
   progressSaver = null
-  if (progressTimer !== null) window.clearInterval(progressTimer)
+  if (progressTimer !== null) window.clearTimeout(progressTimer)
   progressTimer = null
   taskView = null
   shownDispatchId = null
@@ -115,6 +134,10 @@ const outbox = createAttemptOutbox<LessonAttemptResponse>({
 
 window.addEventListener('online', () => { void outbox.flush(); void progressSaver?.flush() })
 window.addEventListener('pagehide', () => { taskView?.leave(); void progressSaver?.flush() })
+// A tablet switching apps may never come back to this tab: send what is pending.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') { taskView?.checkpoint?.(); void progressSaver?.flush() }
+})
 
 /**
  * This browser's seat: a random secret kept across lessons, so the teacher
@@ -210,6 +233,8 @@ function renderState(device: StoredDevice, state: LessonDeviceState) {
     return
   }
   if (!state.task) {
+    // The step on screen is still current; the server did not re-send it.
+    if (state.contentUnchanged) return
     if (state.material) {
       statusEl.textContent = state.material.kind === 'canvas'
         ? `${state.studentLabel}, матеріал уроку:`
@@ -222,9 +247,9 @@ function renderState(device: StoredDevice, state: LessonDeviceState) {
       else renderStudentPractice(taskHost, state.material)
       return
     }
-    clearTask()
     if (state.slide) {
       statusEl.textContent = 'Слайд учителя'
+      // Re-rendering would restart videos and HTML cards on every poll.
       if (shownSlideId === state.slide.blockId) return
       clearTask()
       shownSlideId = state.slide.blockId
@@ -243,6 +268,7 @@ function renderState(device: StoredDevice, state: LessonDeviceState) {
       }))
       return
     }
+    clearTask()
     statusEl.textContent = `Привіт, ${state.studentLabel}! Чекай на завдання від учителя.`
     return
   }
@@ -272,10 +298,11 @@ function renderState(device: StoredDevice, state: LessonDeviceState) {
     },
   })
   progressSaver = saver
-  progressTimer = window.setInterval(() => { void saver.flush() }, 1000)
+  // A draft restored from this browser is sent without waiting for a new edit.
+  sendProgressSoon()
   const task = { ...state.task, progress: saver.initial }
   taskView = renderStudentTask(taskHost, task, state.grade, {
-    saveProgress: progress => saver.save(progress),
+    saveProgress: progress => { saver.save(progress); sendProgressSoon() },
     submit: ({ clientAttemptId, ...payload }) => outbox.submit({ clientAttemptId, deviceId: device.deviceId, dispatchId, payload: { ...payload, lessonRunStudentId: studentId!, assignmentVersion: version } }),
     newAttemptId: () => crypto.randomUUID(),
     queued: outbox.hasPending(device.deviceId, dispatchId),
@@ -286,7 +313,8 @@ async function refresh(device: StoredDevice) {
   // Waiting answers go first; the flush is single-flight and never blocks the poll.
   void outbox.flush()
   try {
-    renderState(device, await getLessonDeviceState(device.deviceId, device.deviceToken))
+    const knownBlockId = shownDispatchId === null ? shownMaterialId ?? shownSlideId : null
+    renderState(device, await getLessonDeviceState(device.deviceId, device.deviceToken, knownBlockId))
   } catch (err) {
     if ((err as ApiError).status === 401 || (err as ApiError).status === 404) {
       void outbox.dropDevice(device.deviceId)

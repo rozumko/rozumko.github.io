@@ -18,8 +18,12 @@ their aggregate snapshot only and explicitly show that the game restarts;
 full continuation requires their own `checkpoint`/`resumeState` adapter.
 External tools do not expose a recovery contract.
 
-Changes first persist locally, then flush about once per second. A task being
-removed or paused captures the last game checkpoint and flushes it. The server
+Changes first persist locally. The first change after a pause is sent after
+about half a second; while a child keeps working, background sends are spaced
+at least three seconds apart (one request each), so a class of 30 writes at
+most ~10 checkpoints per second. Games without their own checkpoint events are
+sampled every five seconds. A task being removed or paused, the page being
+hidden or left, and reconnection capture the last game checkpoint and drain it. The server
 accepts a final checkpoint for up to 60 seconds after dispatch closure; it never
 accepts a scored answer to a closed dispatch. A finished/cancelled run accepts
 neither new checkpoints nor new attempts. Recovery ignores local drafts older
@@ -57,6 +61,12 @@ are excluded. The student renders the slide with the same slide renderer as the
 projector. Active tasks take priority; an authored student practice material
 retains its existing priority over the slide. Pausing shows the attention screen.
 Synchronization uses the existing state polling and requires connectivity.
+A device that already shows the current step's slide or material reports its
+`knownBlockId`; the server then omits that payload (`contentUnchanged`), since a
+run snapshot never changes. The server keeps a bounded in-memory LRU of parsed
+run snapshots (`lib/run-snapshot-cache.ts`), so polls no longer read the
+snapshot column. The device never re-renders a slide that is already shown,
+so videos and HTML cards are not restarted by polling.
 
 ## Verification
 

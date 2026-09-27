@@ -108,6 +108,8 @@ test('saved HTML survives reload, remains editable and is projected through the 
   await editor.getByRole('button', { name: 'Застосувати' }).click()
   await page.getByRole('button', { name: 'Розпочати урок', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Пульт уроку' })).toBeVisible()
+  // The console replaces the workspace; stale edits there would not reach the board.
+  await expect(page.locator('.lb-layout')).toBeHidden()
   const popupPromise = page.waitForEvent('popup')
   await page.getByRole('button', { name: 'Відкрити на проєкторі', exact: true }).click()
   const popup = await popupPromise
@@ -118,6 +120,9 @@ test('saved HTML survives reload, remains editable and is projected through the 
   expect(saved.views.remote).toBe(true)
   expect(saved.content.student[0].html).toBe('<h1>Змінений матеріал</h1>')
   await popup.close()
+  await page.getByRole('button', { name: 'Повернутися до конструктора' }).click()
+  await expect(page.locator('.lb-layout')).toBeVisible()
+  await expect(page.locator('#lb-console')).toBeHidden()
 })
 
 test('native activity editor, duplication, keyboard reordering and undo preserve distinct identities', async ({ page }) => {
