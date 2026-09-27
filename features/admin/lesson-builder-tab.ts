@@ -39,6 +39,7 @@ let presenting = false
 const filters = { query: '', pack: '', grade: '', topic: '', kind: '' }
 const sourceCache = new Map<string, EditableLesson>()
 const pendingSources = new Set<string>()
+const failedSources = new Set<string>()
 const sourceRequests = new Map<string, Promise<EditableLesson>>()
 let activeSourceRequests = 0
 const sourceWaiters: (() => void)[] = []
@@ -331,7 +332,7 @@ function historyMove(from: EditableLesson[], to: EditableLesson[]) {
 }
 
 async function refreshLibrary() {
-  try { summaries = (await getAdminCurriculumLessons()).lessons; sourceCache.clear(); source = null; renderLibrary(); message('Бібліотеку оновлено.') }
+  try { summaries = (await getAdminCurriculumLessons()).lessons; sourceCache.clear(); failedSources.clear(); source = null; renderLibrary(); message('Бібліотеку оновлено.') }
   catch (err) { report(err) }
 }
 function matches(title: string, subject: string, grade: number, topic: string, kind: BuilderKind, checkQuery = true): boolean {
@@ -443,13 +444,14 @@ function renderLibrary() {
     if (filters.kind && filters.kind !== 'lesson') {
       const definition = sourceCache.get(saved.id)
       if (!definition) {
+        if (failedSources.has(saved.id)) continue
         if (!pendingSources.has(saved.id)) {
           pendingSources.add(saved.id)
-          void cachedSource(saved.id).then(() => {
+          void cachedSource(saved.id).catch(err => { failedSources.add(saved.id); report(err) }).finally(() => {
             pendingSources.delete(saved.id)
             // Render the batch once instead of recreating every HTML frame per response.
             if (!pendingSources.size) renderLibrary()
-          }).catch(err => { pendingSources.delete(saved.id); report(err) })
+          })
         }
         continue
       }
@@ -470,6 +472,7 @@ function renderLibrary() {
     host.append(card); visibleLessons.observe(card)
   }
   if (pendingSources.size && filters.kind && filters.kind !== 'lesson') host.append(el('p', 'adm-field-hint lb-loading', 'Завантажуємо картки з уроків…'))
+  if (failedSources.size && filters.kind && filters.kind !== 'lesson') host.append(el('p', 'adm-field-hint', 'Частину карток не завантажено. Натисніть «Оновити бібліотеку», щоб повторити.'))
   if (!host.childElementCount) host.append(el('p', 'adm-field-hint', 'Немає матеріалів. Змініть фільтри або додайте свій.'))
 }
 

@@ -347,3 +347,26 @@ test('pending site changes stay in a compact header indicator', async ({ page })
   await expect(page.locator('#main-content #content-delivery-banner')).toHaveCount(0)
   expect((await indicator.boundingBox())!.height).toBeLessThan(50)
 })
+
+
+test('a failed definition fetch finishes loading and can be retried from the library toolbar', async ({ page }) => {
+  const { rows } = await mockBuilder(page)
+  await openBuilder(page)
+  const dialog = await addHtml(page, '<h1>Повторне завантаження</h1>')
+  await dialog.getByRole('button', { name: 'Додати картку' }).click()
+  await page.getByRole('button', { name: 'Зберегти урок', exact: true }).click()
+  await expect(page.locator('#lb-save-state')).toHaveText('Збережено на сервері')
+  const saved = [...rows.values()][0]
+  let unavailable = true
+  await page.route('**/api/admin/curriculum/lessons/' + saved.id, route => route.fulfill({
+    status: unavailable ? 503 : 200, json: unavailable ? { error: 'Матеріал тимчасово недоступний' } : { lesson: saved },
+  }))
+  await page.getByRole('button', { name: 'Оновити бібліотеку', exact: true }).click()
+  await page.getByLabel('Тип картки', { exact: true }).selectOption('html')
+  await expect(page.locator('#lb-library-cards').getByText('Частину карток не завантажено.', { exact: false })).toBeVisible()
+  await expect(page.locator('#lb-library-cards .lb-loading')).toHaveCount(0)
+  unavailable = false
+  await page.getByRole('button', { name: 'Оновити бібліотеку', exact: true }).click()
+  await expect(page.locator('#lb-library-cards .lb-card')).toHaveCount(2)
+  await expect(page.locator('#lb-library-cards .lb-loading')).toHaveCount(0)
+})
