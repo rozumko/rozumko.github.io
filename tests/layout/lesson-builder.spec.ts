@@ -51,6 +51,8 @@ async function openBuilder(page: Page) {
 }
 
 async function addHtml(page: Page, code: string, title = 'Моя HTML-картка') {
+  const menu = page.locator('.lb-add-menu')
+  if (await menu.getAttribute('open') === null) await menu.locator('summary').click()
   await page.getByRole('button', { name: '+ HTML-код', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: 'Додати: HTML-код' })
   await dialog.getByLabel('Назва картки / опис').fill(title)
@@ -98,6 +100,7 @@ test('saved HTML survives reload, remains editable and is projected through the 
   await page.getByRole('button', { name: 'Збережені уроки', exact: true }).click()
   await page.getByRole('dialog', { name: 'Збережені уроки' }).getByRole('button', { name: 'Відкрити', exact: true }).click()
   await expect(page.locator('#lb-root').getByLabel('Назва уроку', { exact: true })).toHaveValue('Урок із HTML')
+  await page.locator('#lb-sequence > li').nth(1).locator('.lb-step-title').click()
   await page.locator('#lb-sequence > li').nth(1).getByRole('button', { name: 'Редагувати', exact: true }).click()
   const editor = page.getByRole('dialog', { name: 'Редагувати: Моя HTML-картка' })
   await editor.getByLabel('HTML, CSS та JavaScript').fill('<h1>Змінений матеріал</h1>')
@@ -120,11 +123,14 @@ test('saved HTML survives reload, remains editable and is projected through the 
 test('native activity editor, duplication, keyboard reordering and undo preserve distinct identities', async ({ page }) => {
   const { rows } = await mockBuilder(page)
   await openBuilder(page)
+  await page.locator('.lb-add-menu summary').click()
   await page.getByRole('button', { name: '+ Тест / активність', exact: true }).click()
   await page.getByRole('dialog').getByRole('button', { name: 'Готово', exact: true }).click()
   const step = page.locator('#lb-sequence > li').nth(1)
+  await step.locator('.lb-step-title').click()
   await step.getByRole('button', { name: 'Копія', exact: true }).click()
   await expect(page.locator('#lb-sequence > li')).toHaveCount(3)
+  await page.locator('#lb-sequence > li').nth(2).locator('.lb-step-title').click()
   await page.getByRole('button', { name: 'Перемістити картку 3 вище' }).click()
   await page.getByRole('button', { name: '↶ Скасувати', exact: true }).click()
   await page.getByRole('button', { name: 'Зберегти урок', exact: true }).click()
@@ -194,8 +200,11 @@ test('embedded PDF files have a bounded native preview and download fallback', a
   const pdf = Buffer.from('%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Count 0 /Kids [] >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF')
   await page.getByLabel('Завантажити файли', { exact: true }).setInputFiles({ name: 'lesson.pdf', mimeType: 'application/pdf', buffer: pdf })
   await expect(page.locator('#lb-sequence > li')).toHaveCount(2)
-  await expect(page.locator('#lb-preview iframe.le-canvas__document')).toHaveAttribute('src', /^data:application\/pdf;base64,/)
-  await expect(page.locator('#lb-preview a[download]')).toHaveAttribute('download', 'lesson.pdf')
+  await page.locator('#lb-sequence > li').nth(1).locator('.lb-step-title').click()
+  await page.locator('#lb-sequence > li').nth(1).getByRole('button', { name: 'Переглянути', exact: true }).click()
+  await expect(page.locator('.lb-dialog-preview iframe.le-canvas__document')).toHaveAttribute('src', /^data:application\/pdf;base64,/)
+  await expect(page.locator('.lb-dialog-preview a[download]')).toHaveAttribute('download', 'lesson.pdf')
+  await page.getByRole('dialog').getByRole('button', { name: 'Закрити', exact: true }).click()
   await page.getByRole('button', { name: 'Зберегти урок', exact: true }).click()
   await expect(page.locator('#lb-save-state')).toHaveText('Збережено на сервері')
   expect([...rows.values()][0].draftContent.blocks[1].content.board[0].mime).toBe('application/pdf')
@@ -241,6 +250,7 @@ test('mixed HTML and text survive editing in the shared rich-text editor', async
   await page.reload()
   await page.getByRole('button', { name: 'Збережені уроки', exact: true }).click()
   await page.getByRole('dialog', { name: 'Збережені уроки' }).getByRole('button', { name: 'Відкрити', exact: true }).click()
+  await page.locator('#lb-sequence > li').nth(1).locator('.lb-step-title').click()
   await page.locator('#lb-sequence > li').nth(1).getByRole('button', { name: 'Редагувати', exact: true }).click()
   const editor = page.getByRole('dialog', { name: 'Редагувати: Моя HTML-картка' })
   const rich = editor.getByRole('textbox', { name: 'Вміст для вкладки «Презентація»' })
@@ -257,4 +267,106 @@ test('mixed HTML and text survive editing in the shared rich-text editor', async
   expect(updated.filter((item: any) => item.type === 'html')).toEqual([{ type: 'html', html: code }])
   expect(updated.some((item: any) => item.type === 'paragraph' && item.text.uk.includes('доповнене'))).toBe(true)
   expect(updated.some((item: any) => item.type === 'paragraph' && item.text.uk.includes('Пояснення'))).toBe(true)
+})
+
+
+test('compact workspace shows seven columns, conjunctive filters and a bounded long lesson', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1920, height: 1080 })
+  const { rows } = await mockBuilder(page)
+  await openBuilder(page)
+  const dialog = await addHtml(page, '<style>body{background:#f9dc88}</style><h1>Дроби</h1><p>Знайди половину</p>')
+  await dialog.getByRole('button', { name: 'Додати картку' }).click()
+  await page.getByRole('button', { name: 'Зберегти урок', exact: true }).click()
+  await expect(page.locator('#lb-save-state')).toHaveText('Збережено на сервері')
+  const template = structuredClone([...rows.values()][0])
+  rows.clear()
+  for (let i = 0; i < 28; i++) {
+    const row = structuredClone(template)
+    row.id = 'material-' + i; row.title = 'Матеріал ' + String(i).padStart(2, '0')
+    row.grade = i < 24 ? 1 : 2; row.moduleId = i < 24 ? 'fractions' : 'geometry'
+    row.draftContent.id = row.id; row.draftContent.title.uk = row.title
+    row.draftContent.grade = row.grade; row.draftContent.moduleId = row.moduleId
+    rows.set(row.id, row)
+  }
+  await page.getByRole('button', { name: 'Оновити бібліотеку', exact: true }).click()
+  await expect(page.locator('#lb-library-cards > .lb-card')).toHaveCount(29)
+  const first = await page.locator('#lb-library-cards > .lb-card').nth(0).boundingBox()
+  const seventh = await page.locator('#lb-library-cards > .lb-card').nth(6).boundingBox()
+  expect(first!.y).toBe(seventh!.y)
+  expect(first!.width).toBeLessThan(230)
+  await expect(page.locator('#lb-sequence .lb-step-actions:visible')).toHaveCount(0)
+  const filterBoxes = await page.locator('.lb-filters .adm-input').evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().top))
+  expect(new Set(filterBoxes).size).toBe(1)
+  await page.getByLabel('Пошук матеріалів', { exact: true }).fill('немає такого матеріалу')
+  await page.getByLabel('Тип картки', { exact: true }).selectOption('html')
+  await expect(page.locator('#lb-library-cards .lb-card')).toHaveCount(0)
+  await page.getByLabel('Пошук матеріалів', { exact: true }).fill('')
+  await page.locator('#lb-root').getByLabel('Клас', { exact: true }).selectOption('2')
+  await expect(page.locator('#lb-library-cards .lb-card')).toHaveCount(4)
+  await page.getByLabel('Тема / модуль', { exact: true }).fill('fractions')
+  await expect(page.locator('#lb-library-cards .lb-card')).toHaveCount(0)
+  await page.locator('#lb-root').getByLabel('Клас', { exact: true }).selectOption('1')
+  await expect(page.locator('#lb-library-cards .lb-card')).toHaveCount(24)
+  await page.getByLabel('Пошук матеріалів', { exact: true }).fill('Матеріал 03')
+  await expect(page.locator('#lb-library-cards .lb-card')).toHaveCount(1)
+  await page.getByLabel('Пошук матеріалів', { exact: true }).fill('')
+  await page.getByLabel('Тема / модуль', { exact: true }).fill('')
+  await page.locator('#lb-root').getByLabel('Клас', { exact: true }).selectOption('')
+  await page.getByLabel('Тип картки', { exact: true }).selectOption('')
+  await page.locator('#lb-library-cards > .lb-card').first().dragTo(page.locator('#lb-sequence > li').first(), { targetPosition: { x: 20, y: 3 } })
+  await expect(page.locator('#lb-sequence > li')).toHaveCount(3)
+  await expect(page.locator('#lb-sequence > li').first().locator('.lb-step-title')).toHaveText('1. Моя HTML-картка')
+  for (let i = 0; i < 16; i++) {
+    await page.locator('#lb-sequence > li').last().locator('.lb-step-title').click()
+    await page.locator('#lb-sequence > li').last().getByRole('button', { name: 'Копія', exact: true }).click()
+  }
+  const outline = await page.locator('#lb-sequence').evaluate(node => ({ height: node.clientHeight, scrollHeight: node.scrollHeight }))
+  expect(outline.scrollHeight).toBeGreaterThan(outline.height)
+  const save = await page.getByRole('button', { name: 'Зберегти урок', exact: true }).boundingBox()
+  expect(save!.y + save!.height).toBeLessThan(1080)
+  await page.locator('#lb-sequence').evaluate(node => { node.scrollTop = 0 })
+  await expect(page.locator('#lb-library-cards .lb-thumb iframe').first()).toBeAttached()
+  const caption = await page.locator('#lb-library-cards > .lb-card').nth(1).locator(':scope > h3').boundingBox()
+  expect(caption!.height).toBeGreaterThanOrEqual(30)
+  await page.screenshot({ path: testInfo.outputPath('compact-builder-light.png') })
+  await page.getByRole('button', { name: 'Темна тема', exact: true }).click()
+  await page.screenshot({ path: testInfo.outputPath('compact-builder-dark.png') })
+})
+
+
+test('pending site changes stay in a compact header indicator', async ({ page }) => {
+  await mockBuilder(page)
+  await page.route('**/api/admin/content-publications', route => route.fulfill({
+    json: { publications: [], deliveryState: { pendingChanges: true, activePublicationId: null, activePublicationStatus: null, activeMatchesCurrent: false } },
+  }))
+  await openBuilder(page)
+  const indicator = page.locator('.admin-header #content-delivery-banner')
+  await expect(indicator).toBeVisible()
+  await expect(indicator.locator('#content-delivery-title')).toHaveText('Є зміни для сайту')
+  await expect(indicator.getByRole('button', { name: 'Оновити сайт', exact: true })).toBeEnabled()
+  await expect(page.locator('#main-content #content-delivery-banner')).toHaveCount(0)
+  expect((await indicator.boundingBox())!.height).toBeLessThan(50)
+})
+
+
+test('a failed definition fetch finishes loading and can be retried from the library toolbar', async ({ page }) => {
+  const { rows } = await mockBuilder(page)
+  await openBuilder(page)
+  const dialog = await addHtml(page, '<h1>Повторне завантаження</h1>')
+  await dialog.getByRole('button', { name: 'Додати картку' }).click()
+  await page.getByRole('button', { name: 'Зберегти урок', exact: true }).click()
+  await expect(page.locator('#lb-save-state')).toHaveText('Збережено на сервері')
+  const saved = [...rows.values()][0]
+  let unavailable = true
+  await page.route('**/api/admin/curriculum/lessons/' + saved.id, route => route.fulfill({
+    status: unavailable ? 503 : 200, json: unavailable ? { error: 'Матеріал тимчасово недоступний' } : { lesson: saved },
+  }))
+  await page.getByRole('button', { name: 'Оновити бібліотеку', exact: true }).click()
+  await page.getByLabel('Тип картки', { exact: true }).selectOption('html')
+  await expect(page.locator('#lb-library-cards').getByText('Частину карток не завантажено.', { exact: false })).toBeVisible()
+  await expect(page.locator('#lb-library-cards .lb-loading')).toHaveCount(0)
+  unavailable = false
+  await page.getByRole('button', { name: 'Оновити бібліотеку', exact: true }).click()
+  await expect(page.locator('#lb-library-cards .lb-card')).toHaveCount(2)
+  await expect(page.locator('#lb-library-cards .lb-loading')).toHaveCount(0)
 })
