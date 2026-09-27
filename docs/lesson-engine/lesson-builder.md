@@ -35,11 +35,19 @@ configuration are needed.
 
 ## Storage limits
 
-The capture inbox is local IndexedDB scoped to the admin ID. It is explicitly
-labelled as this browser's library. Saving a lesson puts its cards in the
-server-backed lesson library, accessible on other devices. The local inbox
-stores only non-scored canvas materials; no answer keys are persisted there.
-Unsaved lesson edits stay in memory and are protected by an unload warning.
+Collected materials live on server-side **boards** (migration `0062`,
+`/api/admin/builder`): one board per topic, each a canvas where every material
+keeps its position. Boards are owner-scoped and available on any device;
+search spans all of the owner's boards. A material holds only non-scored canvas
+items (max 1 MiB, 300 per board); tests and activities come from saved lessons
+or are created in the lesson itself. The legacy browser inbox (IndexedDB) is
+imported into a board on first open and then cleared. Saved lessons remain the
+shared card library, served in one request by `GET /api/admin/curriculum/cards`
+with embedded file payloads emptied. Unsaved lesson edits stay in memory and
+are protected by an unload warning.
+
+Migration `0062_add_builder_boards` must be applied before the updated backend
+serves the builder.
 
 Embedded files are limited to 512 KiB each; total serialized lesson size is
 4 MiB. This keeps audited snapshots bounded without introducing an object

@@ -735,6 +735,13 @@ function checkTableCells(c: Collector, table: Record<string, unknown>, path: str
   })
 }
 
+/** The lesson canvas-item rules, for content stored outside a lesson (builder boards). */
+export function canvasItemIssues(value: unknown, path = 'items'): LessonValidationIssue[] {
+  const c = new Collector()
+  checkCanvasItems(c, value, path)
+  return c.errors
+}
+
 function checkCanvasItems(c: Collector, value: unknown, path: string): void {
   if (!Array.isArray(value) || value.length > MAX_LIST) {
     c.add(path, `must be an array of at most ${MAX_LIST} items`)

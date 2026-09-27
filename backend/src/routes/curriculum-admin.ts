@@ -22,6 +22,7 @@ import { isUniqueViolation } from '../lib/db-errors.js'
 import { resolveSubjectPack } from '../lib/curriculum-outcomes.js'
 import { SUBJECT_PACKS, findSubjectPack } from '../lib/subject-packs.js'
 import { resolveActivityDefinition } from '../lib/school-activities.js'
+import { withoutFilePayloads } from '../lib/curriculum-card-index.js'
 import {
   OUTCOME_ID_PATTERN,
   OUTCOME_STATUSES,
@@ -108,6 +109,23 @@ export async function curriculumAdminRoutes(app: FastifyInstance) {
       asc(curriculumLessons.subjectPackId), asc(curriculumLessons.grade),
       asc(curriculumLessons.moduleId), asc(curriculumLessons.lessonNumber), asc(curriculumLessons.id),
     )
+    return reply.send({ lessons })
+  })
+
+  // GET /api/admin/curriculum/cards — every draft's blocks for the builder's card
+  // library, file payloads emptied (see withoutFilePayloads). One query instead
+  // of one request per lesson.
+  app.get('/cards', async (_req, reply) => {
+    const rows = await db.select({
+      id: curriculumLessons.id,
+      status: curriculumLessons.status,
+      editVersion: curriculumLessons.editVersion,
+      draftContent: curriculumLessons.draftContent,
+    }).from(curriculumLessons).orderBy(
+      asc(curriculumLessons.subjectPackId), asc(curriculumLessons.grade),
+      asc(curriculumLessons.moduleId), asc(curriculumLessons.lessonNumber), asc(curriculumLessons.id),
+    )
+    const lessons = rows.map(row => ({ id: row.id, status: row.status, editVersion: row.editVersion, definition: withoutFilePayloads(row.draftContent) }))
     return reply.send({ lessons })
   })
 

@@ -865,6 +865,37 @@ export const lessonActivityProgress = pgTable('lesson_activity_progress', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, t => ({ uniqStudentDispatch: unique('lesson_activity_progress_student_dispatch_uq').on(t.dispatchId, t.lessonRunStudentId) }))
 
+// Lesson Builder topic boards (0062): owner-scoped canvases of collected materials.
+export const builderBoards = pgTable('builder_boards', {
+  id:        uuid('id').primaryKey().defaultRandom(),
+  ownerId:   uuid('owner_id').notNull().references(() => appUsers.id, { onDelete: 'cascade' }),
+  title:     text('title').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type BuilderBoardRow = typeof builderBoards.$inferSelect
+
+export const BUILDER_MATERIAL_KINDS = ['text', 'image', 'video', 'learningapps', 'pdf', 'html', 'link'] as const
+export type BuilderMaterialKind = typeof BUILDER_MATERIAL_KINDS[number]
+
+// One material card on a board: validated canvas items plus its canvas position.
+export const builderMaterials = pgTable('builder_materials', {
+  id:         uuid('id').primaryKey().defaultRandom(),
+  boardId:    uuid('board_id').notNull().references(() => builderBoards.id, { onDelete: 'cascade' }),
+  ownerId:    uuid('owner_id').notNull().references(() => appUsers.id, { onDelete: 'cascade' }),
+  title:      text('title').notNull(),
+  kind:       text('kind').notNull().$type<BuilderMaterialKind>(),
+  items:      jsonb('items').notNull().$type<unknown[]>(),
+  searchText: text('search_text').notNull().default(''),
+  x:          integer('x').notNull().default(0),
+  y:          integer('y').notNull().default(0),
+  createdAt:  timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:  timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+export type BuilderMaterialRow = typeof builderMaterials.$inferSelect
+
 // One submission from one mapped device (0052). Append-only; idempotent per
 // (device, client_attempt_id). Trust is derived from the mechanic (DB-checked).
 export const activityAttempts = pgTable('activity_attempts', {
