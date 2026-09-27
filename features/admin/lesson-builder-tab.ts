@@ -319,7 +319,7 @@ export async function loadLessonBuilderTab() {
 
 /** The pre-board library lived in this browser only; move it to the server once. */
 async function importBrowserInbox() {
-  let legacy: Awaited<ReturnType<typeof materialInbox>> = []
+  let legacy: Awaited<ReturnType<typeof materialInbox>>
   try { legacy = await materialInbox(owner) } catch { return }
   if (!legacy.length) return
   try {
